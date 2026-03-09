@@ -201,3 +201,40 @@ FROM extraction_confidence GROUP BY field_name ORDER BY field_name;
 | 100 | ~15 min | ~30 min |
 | 1,000 | ~3 h | ~5 h |
 | 15,000 | ~45 h | ~65 h |
+
+---
+
+## EarthGPT iOS
+
+Lightweight satellite anomaly detection engine optimized for iOS and a-Shell, co-resident in this repo. See `earthgpt/` for the core package and `scripts/` for 18 single-command pipeline stage runners.
+
+**Pipeline stages**: queue generation → tile sweep → multiscale pass → propagation → seam reconstruction → seam chaining → corridor graph → clustering → cascade refinement → target ranking → GeoJSON export
+
+```bash
+pip install requests python-dotenv folium
+python scripts/01_generate_queue.py   # start pipeline
+```
+
+---
+
+## GEBCO Bathymetry Pipeline
+
+Regional subset extraction and terrain-derivative analysis for the GEBCO 2023 global 15 arc-second bathymetry grid. See `gebco/` for the package.
+
+```bash
+pip install numpy scipy xarray netCDF4
+python -c "from gebco import open_gebco, subset_region; help(subset_region)"
+```
+
+---
+
+## LLM Pipeline (PRUAP Social Data)
+
+RAG index and local LLM query over Puerto Rico UAP/UFO Reddit data. See `prepare_data.py`, `rag_pipeline.py`, `query_llm.py`.
+
+```bash
+pip install chromadb sentence-transformers transformers torch accelerate
+python prepare_data.py                    # clean + chunk PRUAP_MASTER_SOCIAL.csv
+python rag_pipeline.py --build            # build ChromaDB vector index
+python query_llm.py "UAP sightings near Aguadilla?"
+```
