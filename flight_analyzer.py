@@ -424,25 +424,52 @@ class FlightDatabase:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_track_flight ON track_points(flight_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenshots_flight ON screenshots(flight_id)")
 
+        # Evidence-chain columns added in integration hardening upgrade
+        _NEW_SCREENSHOT_COLS = [
+            ("sha256", "TEXT"),
+            ("coordinate_method", "TEXT"),
+            ("coordinate_confidence", "REAL"),
+            ("estimated_error_m", "REAL"),
+            ("review_status", "TEXT DEFAULT 'pending'"),
+        ]
+        for col_name, col_type in _NEW_SCREENSHOT_COLS:
+            try:
+                cursor.execute(f"ALTER TABLE screenshots ADD COLUMN {col_name} {col_type}")
+            except sqlite3.OperationalError:
+                pass
+
         conn.commit()
         conn.close()
 
     def store_screenshot(self, screenshot_id: str, image_path: str,
-                        data: ExtractedFlightData):
+                        data: ExtractedFlightData,
+                        coordinate_method: str = "fixed_pr_bounds",
+                        coordinate_confidence: float = 0.65,
+                        estimated_error_m: float = 1500.0):
+        sha256_hex = None
+        try:
+            sha256_hex = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
+        except Exception:
+            pass
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute('''
             INSERT OR REPLACE INTO screenshots
             (screenshot_id, image_path, flight_id, processed_at,
              callsign, altitude_ft, ground_speed_mph,
-             latitude, longitude, timestamp, raw_text, ocr_confidence)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             latitude, longitude, timestamp, raw_text, ocr_confidence,
+             sha256, coordinate_method, coordinate_confidence,
+             estimated_error_m, review_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             screenshot_id, image_path, None,
             datetime.utcnow().isoformat(),
             data.callsign, data.altitude_ft, data.ground_speed_mph,
             data.latitude, data.longitude, data.timestamp,
             data.raw_text[:2000], data.ocr_confidence,
+            sha256_hex, coordinate_method, coordinate_confidence,
+            estimated_error_m, "pending",
         ))
         conn.commit()
         conn.close()

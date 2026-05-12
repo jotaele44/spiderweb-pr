@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "review_item",
+  "type": "object",
+  "required": ["schema_name", "record_json", "routed_at"],
+  "properties": {
+    "schema_name":  {"type": "string", "minLength": 1},
+    "record_json":  {"type": "string"},
+    "errors":       {"type": ["string", "null"]},
+    "routed_at":    {"type": "string"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "export_manifest",
+  "type": "object",
+  "required": ["generated_at", "db_path", "files"],
+  "properties": {
+    "generated_at":   {"type": "string"},
+    "db_path":        {"type": "string"},
+    "schema_version": {"type": "string"},
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["filename", "record_count"],
+        "properties": {
+          "filename":     {"type": "string"},
+          "record_count": {"type": "integer", "minimum": 0},
+          "format":       {"type": ["string", "null"]},
+          "description":  {"type": ["string", "null"]}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

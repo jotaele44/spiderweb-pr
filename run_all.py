@@ -268,6 +268,61 @@ def print_status(db_path: str):
         print(f"  Database not found or uninitialized: {e}")
 
 
+def _run_schema_validation(db_path: str):
+    print("\n  SCHEMA VALIDATION")
+    print("  " + "─" * 50)
+    try:
+        from schema_validation import SchemaValidator
+        validator = SchemaValidator()
+        review_path = str(Path(db_path).parent / "review_queue.csv")
+        results = validator.run_db_validation(db_path, review_path)
+        for schema_name, summary in results.items():
+            if schema_name == "_error":
+                print(f"  Error: {summary.get('error')}")
+                continue
+            table = summary.get("table", schema_name)
+            total = summary.get("total", 0)
+            invalid = summary.get("invalid", 0)
+            print(f"  {table:<25} {total:>6} rows  {invalid:>4} invalid")
+        if any(s.get("invalid", 0) for k, s in results.items() if k != "_error"):
+            print(f"  Invalid records routed to: {review_path}")
+        print(f"\n  ✓ Validation complete")
+    except Exception as e:
+        print(f"  Validation error: {e}")
+
+
+def _run_export_pr_intel(db_path: str, output_dir: str):
+    print("\n  PR INTEL EXPORT")
+    print("  " + "─" * 50)
+    try:
+        from pr_intel_adapter import PRIntelAdapter
+        adapter = PRIntelAdapter(db_path, output_dir)
+        report = adapter.export_all()
+        status = report.get("overall_status", "UNKNOWN")
+        print(f"  Status: {status}")
+        for gate_name, gate in report.get("gates", {}).items():
+            marker = "✓" if gate["status"] == "PASS" else "✗"
+            print(f"  {marker} {gate_name}")
+        print(f"\n  ✓ PR Intel exported to: {output_dir}")
+    except Exception as e:
+        print(f"  Export error: {e}")
+        raise
+
+
+def _run_export_spiderweb(db_path: str, output_dir: str):
+    print("\n  SPIDERWEB BRIDGE EXPORT")
+    print("  " + "─" * 50)
+    try:
+        from ilap_airspace_bridge import ILAPAirspaceBridge
+        from aasb_airspace_bridge import AASBAirspaceBridge
+        ILAPAirspaceBridge(db_path, output_dir).export_all()
+        AASBAirspaceBridge(db_path, output_dir).export_all()
+        print(f"\n  ✓ Spiderweb exported to: {output_dir}")
+    except Exception as e:
+        print(f"  Export error: {e}")
+        raise
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Puerto Rico Airspace Intelligence System — Unified Pipeline",
@@ -302,6 +357,12 @@ Examples:
                         help="Show database status and exit")
     parser.add_argument("--export-json", metavar="PATH",
                         help="Export DB snapshot to JSON for dashboard.html")
+    parser.add_argument("--validate", action="store_true",
+                        help="Run schema validation after pipeline")
+    parser.add_argument("--export-pr-intel", metavar="DIR",
+                        help="Export PR Intel parquet/GeoJSON to DIR")
+    parser.add_argument("--export-spiderweb", metavar="DIR",
+                        help="Export Spiderweb bridge outputs to DIR")
 
     args = parser.parse_args()
 
@@ -328,31 +389,50 @@ Examples:
         run_aircraft_profile(args)
         return
 
-    start = datetime.utcnow()
+    # Determine whether to run the main pipeline phases.
+    # Skip phases when the user only supplied integration-export flags
+    # (standalone export mode against an existing DB).
+    new_flags_only = (
+        not args.images
+        and args.phase is None
+        and (args.validate or args.export_pr_intel or args.export_spiderweb)
+    )
 
-    if args.phase is None or args.phase == 0:
-        run_phase_0(args)
+    if not new_flags_only:
+        start = datetime.utcnow()
 
-    if args.phase is None or args.phase == 1:
-        run_phase_1(args)
+        if args.phase is None or args.phase == 0:
+            run_phase_0(args)
 
-    if args.phase is None or args.phase == 2:
-        run_phase_2(args)
+        if args.phase is None or args.phase == 1:
+            run_phase_1(args)
 
-    if args.phase is None or args.phase == 3:
-        run_phase_3(args)
+        if args.phase is None or args.phase == 2:
+            run_phase_2(args)
 
-    if args.phase is None or args.phase == 4:
-        run_phase_4(args)
+        if args.phase is None or args.phase == 3:
+            run_phase_3(args)
 
-    elapsed = (datetime.utcnow() - start).total_seconds()
+        if args.phase is None or args.phase == 4:
+            run_phase_4(args)
 
-    print("\n" + "═" * 70)
-    print(f"  PIPELINE COMPLETE")
-    print(f"  Elapsed: {elapsed:.0f}s ({elapsed/3600:.2f}h)")
-    print(f"  Database: {args.db}")
-    print("═" * 70)
-    print_status(args.db)
+        elapsed = (datetime.utcnow() - start).total_seconds()
+        print("\n" + "═" * 70)
+        print(f"  PIPELINE COMPLETE")
+        print(f"  Elapsed: {elapsed:.0f}s ({elapsed/3600:.2f}h)")
+        print(f"  Database: {args.db}")
+        print("═" * 70)
+        print_status(args.db)
+
+    # Integration hardening exports — run after pipeline (or standalone).
+    if args.validate:
+        _run_schema_validation(args.db)
+
+    if args.export_pr_intel:
+        _run_export_pr_intel(args.db, args.export_pr_intel)
+
+    if args.export_spiderweb:
+        _run_export_spiderweb(args.db, args.export_spiderweb)
 
 
 if __name__ == "__main__":
