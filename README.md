@@ -19,6 +19,7 @@ Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build
 | 3 | `mission_inference.py` | Multi-factor mission scoring, behavioral clustering, Markov prediction |
 | 4 | `operational_intelligence.py` | Alert engine, daily reports, aircraft profiles |
 | — | `run_all.py` | Unified CLI for all phases |
+| — | `dashboard.jsx` + `dashboard.html` | Browser dashboard — 4-tab operational review UI |
 
 ## Quick start
 
@@ -47,6 +48,13 @@ python run_all.py --aircraft N5854Z
 
 # Run specific phase only
 python run_all.py --phase 2
+
+# Export DB snapshot for the browser dashboard
+python run_all.py --export-json dashboard_data.json
+
+# Open the dashboard (serve from the repo directory)
+python -m http.server 8080
+# then open http://localhost:8080/dashboard.html
 ```
 
 ## Optional: Phase 1 hardening (higher OCR accuracy)
