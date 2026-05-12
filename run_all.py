@@ -180,35 +180,35 @@ def export_json(db_path: str, output_path: str):
 
     def rows(table, order=""):
         try:
-            conn.execute(f"SELECT * FROM {table} {order} LIMIT 5000")
             return [dict(r) for r in conn.execute(f"SELECT * FROM {table} {order} LIMIT 5000")]
         except Exception:
             return []
 
-    aircraft_profiles_raw = rows("aircraft_profiles")
-    if not aircraft_profiles_raw:
-        # Build lightweight profiles from flights table if aircraft_profiles doesn't exist
-        try:
-            cur = conn.execute(
-                "SELECT callsign, aircraft_type, operator, mission_type FROM flights GROUP BY callsign"
-            )
-            aircraft_profiles_raw = [
-                {"callsign": r[0], "aircraft_type": r[1], "operator": r[2],
-                 "primary_mission": r[3], "confidence_level": None}
-                for r in cur.fetchall()
-            ]
-        except Exception:
-            aircraft_profiles_raw = []
+    try:
+        aircraft_profiles_raw = rows("aircraft_profiles")
+        if not aircraft_profiles_raw:
+            try:
+                cur = conn.execute(
+                    "SELECT callsign, aircraft_type, operator, mission_type FROM flights GROUP BY callsign"
+                )
+                aircraft_profiles_raw = [
+                    {"callsign": r[0], "aircraft_type": r[1], "operator": r[2],
+                     "primary_mission": r[3], "confidence_level": None}
+                    for r in cur.fetchall()
+                ]
+            except Exception:
+                aircraft_profiles_raw = []
 
-    data = {
-        "exported_at": datetime.utcnow().isoformat() + "Z",
-        "db_path": db_path,
-        "flights": rows("flights", "ORDER BY takeoff_time DESC"),
-        "aircraft_profiles": aircraft_profiles_raw,
-        "alerts": rows("alerts", "ORDER BY triggered_at DESC"),
-        "anomalies": rows("gis_anomalies", "ORDER BY detected_at DESC"),
-    }
-    conn.close()
+        data = {
+            "exported_at": datetime.utcnow().isoformat() + "Z",
+            "db_path": db_path,
+            "flights": rows("flights", "ORDER BY takeoff_time DESC"),
+            "aircraft_profiles": aircraft_profiles_raw,
+            "alerts": rows("alerts", "ORDER BY triggered_at DESC"),
+            "anomalies": rows("gis_anomalies", "ORDER BY detected_at DESC"),
+        }
+    finally:
+        conn.close()
 
     with open(output_path, "w") as f:
         json.dump(data, f, default=str)
