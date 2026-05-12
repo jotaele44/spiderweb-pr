@@ -439,7 +439,7 @@ def intensity_to_color(intensity: float) -> str:
 # ============================================================================
 
 class Phase2Database:
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
         self.init_gis_tables()
 

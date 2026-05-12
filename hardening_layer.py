@@ -17,6 +17,7 @@ import math
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from collections import defaultdict
 
@@ -408,7 +409,7 @@ class ResumableJobQueue:
     On restart, only PENDING and ERROR jobs are re-processed.
     """
 
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
         self._init_tables()
 

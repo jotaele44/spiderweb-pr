@@ -13,6 +13,7 @@ Components:
 import sqlite3
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Dict, Optional
 from datetime import datetime
 from enum import Enum
@@ -74,7 +75,7 @@ class Alert:
 
 
 class AlertEngine:
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
         self._init_alert_tables()
 
@@ -333,7 +334,7 @@ class AlertEngine:
 # ============================================================================
 
 class ReportGenerator:
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
 
     def daily_report(self, date: datetime = None) -> str:
@@ -533,7 +534,7 @@ class ReportGenerator:
 # ============================================================================
 
 class Phase4Pipeline:
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
         self.alert_engine = AlertEngine(db_path)
         self.reporter = ReportGenerator(db_path)

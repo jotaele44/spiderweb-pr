@@ -17,7 +17,7 @@ Consensus rule:
 import re
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from hardening_layer import ExtractedField
 
@@ -329,10 +329,6 @@ class EnsembleOCR:
 
     def get_engine_status(self) -> Dict[str, bool]:
         return {e.name: e.available for e in self.engines}
-
-
-# Type alias for value — allow any type
-from typing import Any
 
 
 if __name__ == "__main__":

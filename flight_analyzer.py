@@ -344,7 +344,7 @@ class FlightDatabase:
     SQLite-backed storage for flights, track points, and screenshots.
     """
 
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
         self._init_tables()
 
@@ -627,7 +627,7 @@ class FlightAnalyzer:
     SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
 
     def __init__(self, image_dir: str = "/mnt/user-data/uploads",
-                 db_path: str = "/home/claude/flight_database.db"):
+                 db_path: str = str(Path.home() / "flight_database.db")):
         self.image_dir = Path(image_dir)
         self.db = FlightDatabase(db_path)
         self.ocr = FlightRadarOCR()

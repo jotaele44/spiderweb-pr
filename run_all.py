@@ -154,7 +154,7 @@ def run_aircraft_profile(args):
     from operational_intelligence import ReportGenerator
     from aircraft_intelligence import AircraftIntelligence
     print(f"\n  AIRCRAFT PROFILE: {args.aircraft}\n")
-    intel = AircraftIntelligence()
+    intel = AircraftIntelligence(args.db)
     reporter = ReportGenerator(args.db)
     print(intel.compile_intelligence_report(args.aircraft))
     print(reporter.aircraft_profile_report(args.aircraft))
@@ -169,6 +169,54 @@ def run_daily_report(args):
     with open(report_path, "w") as f:
         f.write(report)
     print(f"\n  Report saved: {report_path}")
+
+
+def export_json(db_path: str, output_path: str):
+    """Dump a DB snapshot to JSON for the dashboard.html viewer."""
+    import json
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+
+    def rows(table, order=""):
+        try:
+            conn.execute(f"SELECT * FROM {table} {order} LIMIT 5000")
+            return [dict(r) for r in conn.execute(f"SELECT * FROM {table} {order} LIMIT 5000")]
+        except Exception:
+            return []
+
+    aircraft_profiles_raw = rows("aircraft_profiles")
+    if not aircraft_profiles_raw:
+        # Build lightweight profiles from flights table if aircraft_profiles doesn't exist
+        try:
+            cur = conn.execute(
+                "SELECT callsign, aircraft_type, operator, mission_type FROM flights GROUP BY callsign"
+            )
+            aircraft_profiles_raw = [
+                {"callsign": r[0], "aircraft_type": r[1], "operator": r[2],
+                 "primary_mission": r[3], "confidence_level": None}
+                for r in cur.fetchall()
+            ]
+        except Exception:
+            aircraft_profiles_raw = []
+
+    data = {
+        "exported_at": datetime.utcnow().isoformat() + "Z",
+        "db_path": db_path,
+        "flights": rows("flights", "ORDER BY takeoff_time DESC"),
+        "aircraft_profiles": aircraft_profiles_raw,
+        "alerts": rows("alerts", "ORDER BY triggered_at DESC"),
+        "anomalies": rows("gis_anomalies", "ORDER BY detected_at DESC"),
+    }
+    conn.close()
+
+    with open(output_path, "w") as f:
+        json.dump(data, f, default=str)
+
+    counts = {k: len(v) for k, v in data.items() if isinstance(v, list)}
+    print(f"\n  Dashboard JSON exported: {output_path}")
+    for k, v in counts.items():
+        print(f"    {k:<22} {v:>6,} records")
 
 
 def print_status(db_path: str):
@@ -233,6 +281,7 @@ Examples:
   python run_all.py --report daily          Daily operational report
   python run_all.py --aircraft N5854Z       Aircraft intelligence profile
   python run_all.py --status                Show database status
+  python run_all.py --export-json data.json Export DB snapshot for dashboard
         """
     )
 
@@ -243,7 +292,7 @@ Examples:
     parser.add_argument("--image-dir", dest="image_dir",
                         default="/mnt/user-data/uploads",
                         help="Directory containing screenshots")
-    parser.add_argument("--db", default="/home/claude/flight_database.db",
+    parser.add_argument("--db", default=str(Path.home() / "flight_database.db"),
                         help="Database path")
     parser.add_argument("--report", choices=["daily", "infrastructure", "all"],
                         help="Generate report only")
@@ -251,6 +300,8 @@ Examples:
                         help="Generate intelligence profile for callsign")
     parser.add_argument("--status", action="store_true",
                         help="Show database status and exit")
+    parser.add_argument("--export-json", metavar="PATH",
+                        help="Export DB snapshot to JSON for dashboard.html")
 
     args = parser.parse_args()
 
@@ -262,6 +313,10 @@ Examples:
 
     if args.status:
         print_status(args.db)
+        return
+
+    if args.export_json:
+        export_json(args.db, args.export_json)
         return
 
     if args.report:

@@ -20,6 +20,7 @@ import sqlite3
 import json
 import math
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
 from datetime import datetime
@@ -186,7 +187,7 @@ class MultiFactorMissionScorer:
         "duration_profile":         0.03,
     }
 
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
 
     def score_flight(self, flight: Dict, track_points: List[Dict],
@@ -542,7 +543,7 @@ class FlightState:
 
 
 class MarkovChainPredictor:
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
         self.transition_counts: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self.transition_probs: Dict[str, Dict[str, float]] = {}
@@ -636,7 +637,7 @@ class MarkovChainPredictor:
 # ============================================================================
 
 class Phase3Pipeline:
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
         self.scorer = MultiFactorMissionScorer(db_path)
         self.clusterer = BehavioralClusterer(n_clusters=6)

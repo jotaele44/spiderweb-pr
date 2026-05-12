@@ -8,6 +8,7 @@ FlightMissionAnalyzer — Pattern-based mission deduction from flight records
 
 import sqlite3
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional
 from datetime import datetime
 
@@ -147,7 +148,7 @@ class AircraftIntelligence:
     then deduces from available signals if not found.
     """
 
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
 
     def lookup_aircraft(self, callsign: str) -> AircraftProfile:
@@ -330,7 +331,7 @@ class FlightMissionAnalyzer:
     Used when no direct operator match is available.
     """
 
-    def __init__(self, db_path: str = "/home/claude/flight_database.db"):
+    def __init__(self, db_path: str = str(Path.home() / "flight_database.db")):
         self.db_path = db_path
 
     def analyze_flight_pattern(self, flight_id: str) -> MissionAnalysis:
@@ -468,7 +469,7 @@ class FlightMissionAnalyzer:
 # CONVENIENCE FUNCTION
 # ============================================================================
 
-def analyze_all_aircraft(db_path: str = "/home/claude/flight_database.db"):
+def analyze_all_aircraft(db_path: str = str(Path.home() / "flight_database.db")):
     """Print intelligence reports for all known callsigns in database."""
     intel = AircraftIntelligence(db_path)
     intel.update_aircraft_profiles_table()

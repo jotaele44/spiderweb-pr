@@ -45,7 +45,7 @@ class HardenedFlightAnalyzer:
     CHECKPOINT_EVERY = 50  # Save progress after every N images
 
     def __init__(self, image_dir: str = "/mnt/user-data/uploads",
-                 db_path: str = "/home/claude/flight_database.db"):
+                 db_path: str = str(Path.home() / "flight_database.db")):
         self.image_dir = Path(image_dir)
         self.db_path = db_path
         self.job_queue = ResumableJobQueue(db_path)
@@ -290,7 +290,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Phase 1 Hardened Pipeline")
     parser.add_argument("--image-dir", default="/mnt/user-data/uploads")
-    parser.add_argument("--db", default="/home/claude/flight_database.db")
+    parser.add_argument("--db", default=str(Path.home() / "flight_database.db"))
     parser.add_argument("--images", type=int, default=None, help="Limit images to process")
     parser.add_argument("--batch-id", default=None)
     args = parser.parse_args()
