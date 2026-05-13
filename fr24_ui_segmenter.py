@@ -85,6 +85,19 @@ class FR24UISegmenter:
         """Segment using only known dimensions (no file I/O)."""
         return self._geometric_segments(width, height)
 
+    def segment_array(self, arr) -> FR24Segments:
+        """
+        Segment directly from a (H, W, 3) numpy/array-like.
+        Applies edge refinement when mode='edge' without any file I/O.
+        Useful for unit testing with synthetic images.
+        """
+        h, w = arr.shape[:2]
+        segs = self._geometric_segments(w, h)
+        if self.mode == "edge":
+            segs = self._refine_array(arr, segs)
+        segs.ui_mask = None
+        return segs
+
     def get_map_region(self, image_path: str):
         """Return a PIL Image cropped to the map area, or None on failure."""
         try:
@@ -170,6 +183,15 @@ class FR24UISegmenter:
             confidence=0.80,
         )
 
+    def _refine_array(self, arr, segs: FR24Segments) -> FR24Segments:
+        """Edge refinement operating directly on an array (no file I/O)."""
+        try:
+            import numpy as np
+            grey = np.mean(arr[:, :, :3].astype(np.float32), axis=2)
+            return self._apply_edge_refinement(grey, segs)
+        except Exception:
+            return segs
+
     def _refine_with_edges(self, path: Path, segs: FR24Segments) -> FR24Segments:
         """
         Attempt to refine map_bbox bottom boundary using horizontal edge
@@ -178,47 +200,43 @@ class FR24UISegmenter:
         try:
             import numpy as np
             from PIL import Image
-
             with Image.open(path) as img:
-                grey = img.convert("L")
-                arr = np.array(grey, dtype=np.float32)
+                grey_arr = np.array(img.convert("L"), dtype=np.float32)
+            return self._apply_edge_refinement(grey_arr, segs)
+        except Exception:
+            return segs
 
-            h, w = arr.shape
-
-            # Sobel-Y approximation: row-wise gradient magnitude
+    def _apply_edge_refinement(self, grey: "np.ndarray",
+                               segs: FR24Segments) -> FR24Segments:
+        """Core edge-refinement logic operating on a 2-D float32 greyscale array."""
+        try:
+            import numpy as np
+            h, w = grey.shape
             if h < 4:
                 return segs
 
-            gy = np.abs(arr[1:, :] - arr[:-1, :])   # (H-1, W)
+            gy = np.abs(grey[1:, :] - grey[:-1, :])
             row_energy = gy.mean(axis=1)
 
-            # Search for map/panel boundary between 60–85% of height
             lo = int(h * 0.60)
             hi = int(h * 0.85)
             search = row_energy[lo:hi]
             if search.size == 0:
                 return segs
 
-            boundary_rel = int(search.argmax())
-            boundary_y = lo + boundary_rel
-
-            # Accept only if it deviates meaningfully from geometric guess
+            boundary_y = lo + int(search.argmax())
             geometric_y = segs.map_bbox.y + segs.map_bbox.h
             if abs(boundary_y - geometric_y) > int(h * 0.12):
-                return segs  # too far off — keep geometric
+                return segs
 
-            # Update segments with edge-refined boundary
             new_map_h = boundary_y - segs.map_bbox.y
             segs.map_bbox = BBox(segs.map_bbox.x, segs.map_bbox.y,
                                  segs.map_bbox.w, max(new_map_h, 10))
-            new_panel_y = boundary_y
-            new_panel_h = h - new_panel_y
-            segs.panel_bbox = BBox(0, new_panel_y, w, max(new_panel_h, 10))
+            segs.panel_bbox = BBox(0, boundary_y, w, max(h - boundary_y, 10))
             segs.method = "edge_detected"
             segs.confidence = 0.88
         except Exception:
             pass
-
         return segs
 
     # ----------------------------------------------------------------- batch

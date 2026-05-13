@@ -124,12 +124,8 @@ def test_polyline_length_known():
     assert abs(_polyline_length(pts) - 5.0) < 1e-6
 
 
-@pytest.mark.skipif(
-    True,  # skip unless numpy available in CI
-    reason="numpy required for array-based extraction"
-)
 def test_extract_array_black_image_no_routes():
-    import numpy as np
+    np = pytest.importorskip("numpy")
     ext = RouteExtractor()
     black = np.zeros((200, 300, 3), dtype="uint8")
     result = ext.extract_array(black)
@@ -186,3 +182,58 @@ def test_batch_segment(tmp_path):
     assert len(results) == 2
     for r in results:
         assert isinstance(r, FR24Segments)
+
+
+# ------------------------------------------------------------------ segment_array
+
+def test_segment_array_returns_segments():
+    np = pytest.importorskip("numpy")
+    seg = FR24UISegmenter()
+    arr = np.zeros((768, 1024, 3), dtype="uint8")
+    result = seg.segment_array(arr)
+    assert isinstance(result, FR24Segments)
+    assert result.width == 1024
+    assert result.height == 768
+
+
+def test_segment_array_map_bbox_sensible():
+    np = pytest.importorskip("numpy")
+    seg = FR24UISegmenter()
+    arr = np.zeros((800, 1000, 3), dtype="uint8")
+    result = seg.segment_array(arr)
+    assert result.map_bbox.w > 0
+    assert result.map_bbox.h > 0
+    assert result.map_bbox.y + result.map_bbox.h <= 800
+
+
+def test_segment_array_edge_mode():
+    np = pytest.importorskip("numpy")
+    seg = FR24UISegmenter(mode="edge")
+    arr = np.zeros((600, 800, 3), dtype="uint8")
+    # Paint a horizontal bright band near the expected map/panel boundary
+    boundary = int(600 * 0.72)
+    arr[boundary - 2:boundary + 2, :] = 255
+    result = seg.segment_array(arr)
+    # Should return a valid FR24Segments regardless of mode
+    assert isinstance(result, FR24Segments)
+    assert result.map_bbox.h > 0
+
+
+def test_segment_array_vs_segment_from_size_consistent():
+    np = pytest.importorskip("numpy")
+    seg = FR24UISegmenter(mode="geometric")
+    w, h = 1024, 768
+    arr = np.zeros((h, w, 3), dtype="uint8")
+    from_array = seg.segment_array(arr)
+    from_size = seg.segment_from_size(w, h)
+    assert from_array.map_bbox.as_tuple() == from_size.map_bbox.as_tuple()
+    assert from_array.panel_bbox.as_tuple() == from_size.panel_bbox.as_tuple()
+
+
+def test_extract_array_with_extractor_and_segmenter():
+    np = pytest.importorskip("numpy")
+    seg = FR24UISegmenter()
+    ext = RouteExtractor(segmenter=seg)
+    arr = np.zeros((600, 800, 3), dtype="uint8")
+    result = ext.extract_array(arr)
+    assert isinstance(result, list)

@@ -35,6 +35,16 @@ Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build
 | `schemas/` | 10 JSON Schema files covering all exported record types |
 | `configs/georef_anchors.csv` | 5 PR airport anchor points for georeferencing calibration |
 
+### FR24 screenshot processor modules
+
+| File | Purpose |
+|------|---------|
+| `screenshot_inventory.py` | Directory scan with SHA-256 hashing, corrupt detection, duplicate grouping, CSV report |
+| `fr24_ui_segmenter.py` | Geometric + edge-detection segmentation of FR24 UI into map/panel/label regions |
+| `route_extractor.py` | HSV color-range masking + 4-connected BFS to extract route polylines from map region |
+| `manual_review_queue.py` | SQLite-backed idempotent queue for low-quality items needing human review |
+| `fr24_event_export.py` | Bridge: inventory → screenshots table; routes → track_points table |
+
 ## Quick start
 
 ```bash
@@ -69,6 +79,14 @@ python run_all.py --export-json dashboard_data.json
 # Open the dashboard (serve from the repo directory)
 python -m http.server 8080
 # then open http://localhost:8080/dashboard.html
+
+# ── FR24 screenshot processor ─────────────────────────────────────────────────
+
+# Scan a directory: SHA-256 hash, corrupt detection, duplicate grouping, CSV report
+python run_all.py --db flight_database.db --scan-inventory /path/to/screenshots
+
+# Export FR24 events: inventory → screenshots table + routes → track_points table
+python run_all.py --db flight_database.db --export-fr24-events /path/to/screenshots
 
 # ── Integration hardening (standalone, runs against existing DB) ──────────────
 
@@ -124,6 +142,19 @@ for gate, info in r['gates'].items():
 | `spiderweb_ingest_manifest.json` | Bridge file inventory |
 
 Every exported record includes provenance: `screenshot_id`, `source_path`, `sha256`, `ocr_confidence`, `coordinate_method`, `coordinate_confidence`, `review_status`. Low-confidence records are routed to `review_queue.csv`.
+
+### `--scan-inventory <DIR>` produces
+
+`screenshot_inventory.csv` (next to the DB) with columns: `path`, `filename`, `size_bytes`, `sha256`, `width`, `height`, `is_corrupt`, `is_duplicate`, `duplicate_of`, `scanned_at`. Summary printed to stdout. Corrupt and duplicate counts are reported; valid images are synced to the `screenshots` DB table.
+
+### `--export-fr24-events <DIR>` produces
+
+Runs the full FR24 event export pipeline over `<DIR>`:
+1. Scans and inventories all images (SHA-256, corrupt/dupe detection)
+2. Upserts non-corrupt, non-duplicate records into the `screenshots` table
+3. Extracts colored route polylines from each valid image
+4. Writes extracted route points as rows in the `track_points` table
+5. Routes small/low-quality images to the `manual_review_queue` SQLite DB
 
 ## Optional: Phase 1 hardening (higher OCR accuracy)
 
