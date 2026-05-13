@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gebco-bathymetry-pipeline"
+version = "0.1.0"
+description = "Regional subset extraction and terrain analysis for GEBCO 2023 bathymetry"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.4,<2.5",
+    "scipy>=1.17,<1.18",
+    "pandas>=3.0,<3.1",
+    "xarray>=2026.1,<2027",
+    "netCDF4>=1.7.4,<1.8",
+    "matplotlib>=3.10,<3.11",
+    "shapely>=2.1,<2.2",
+    "scikit-image>=0.26,<0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.2,<9.1",
+    "black>=26.3.0,<26.4",
+    "ruff>=0.15.5,<0.16",
+]
+
+[tool.setuptools.packages.find]
+include = ["gebco*"]
+
+# ---------------------------------------------------------------------------
+# Exact pins for fully reproducible environments (pip install -c constraints.txt)
+# ---------------------------------------------------------------------------
+# numpy==2.4.2          (2.4.0 was yanked — always use 2.4.2)
+# scipy==1.17.1
+# pandas==3.0.1
+# xarray==2026.2.0
+# netCDF4==1.7.4
+# matplotlib==3.10.8
+# shapely==2.1.2
+# scikit-image==0.26.0
+# pytest==9.0.2
+# black==26.3.0
+# ruff==0.15.5
+
+[tool.black]
+line-length = 88
+target-version = ["py311", "py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
