@@ -1,9 +1,40 @@
-# EarthGPT iOS — runtime outputs (not tracked)
-outputs/*.jsonl
-outputs/*.geojson
-tile_cache/*.png
+# ── Runtime artifact directories (never commit contents) ─────────────────────
+# outputs/ — all generated files (parquet, GeoJSON, JSON, JSONL, CSV, DB)
+outputs/*
+!outputs/.gitkeep
 
-# Byte-compiled / optimized / DLL files
+# data/ — input datasets (screenshots, GEBCO .nc, social CSV, etc.)
+data/*
+!data/.gitkeep
+
+# cache/ — intermediate results, model caches
+cache/*
+!cache/.gitkeep
+
+# tile_cache/ — EarthGPT XYZ tile PNGs
+tile_cache/*
+!tile_cache/.gitkeep
+
+# ── Credentials and environment ───────────────────────────────────────────────
+.env
+.envrc
+*.env
+HF_TOKEN
+
+# ── SQLite databases ──────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Common generated data formats ─────────────────────────────────────────────
+*.parquet
+*.jsonl
+*.nc          # NetCDF (GEBCO)
+
+# ── ChromaDB vector index ─────────────────────────────────────────────────────
+pruap_index/
+
+# ── Byte-compiled / optimized / DLL files ────────────────────────────────────
 __pycache__/
 *.py[codz]
 *$py.class

@@ -1,0 +1,15 @@
+# GEBCO 2023 Bathymetry Pipeline
+# Install: pip install -r requirements-gebco.txt
+# For exact reproducible pins: pip install -c constraints.txt -r requirements-gebco.txt
+
+numpy>=2.4,<2.5
+scipy>=1.17,<1.18
+xarray>=2026.1,<2027
+netCDF4>=1.7.4,<1.8
+pandas>=3.0,<3.1
+matplotlib>=3.10,<3.11
+shapely>=2.1,<2.2
+scikit-image>=0.26,<0.27
+
+# Test suite
+pytest>=9.0
