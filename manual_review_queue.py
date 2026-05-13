@@ -1,7 +1,7 @@
 """
 MANUAL REVIEW QUEUE
 SQLite-backed queue for route georeferencing, OCR corrections, coordinate
-calibration issues, and screenshot quality problems.
+calibration issues, screenshot quality problems, and basemap tile artifacts.
 """
 
 import csv
@@ -12,7 +12,14 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 
-QUEUE_TYPES = ("route_georef", "ocr_correction", "quality_issue", "coord_calibration")
+QUEUE_TYPES = (
+    "route_georef",
+    "ocr_correction",
+    "quality_issue",
+    "coord_calibration",
+    "tile_artifact",
+    "cross_basemap_review",
+)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS review_queue (
@@ -84,7 +91,7 @@ class ManualReviewQueue:
             "INSERT INTO review_queue "
             "(item_id, queue_type, image_path, reason, metadata, status, created_at) "
             "VALUES (?, ?, ?, ?, ?, 'pending', ?)",
-            (item_id, queue_type, image_path, reason,
+            (item_id, image_path if False else queue_type, image_path, reason,
              _json.dumps(metadata) if metadata else None,
              datetime.utcnow().isoformat() + "Z"),
         )
