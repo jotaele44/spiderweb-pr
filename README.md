@@ -4,6 +4,8 @@ Flight tracking, mission deduction, and operational intelligence from FlightRada
 
 > **Integration status**: integration-ready after validation gates pass. Run `--validate` and review `integration_report.json` before treating outputs as production data.
 
+**Extended docs**: [Architecture](docs/ARCHITECTURE.md) · [Execution Guide](docs/EXECUTION_GUIDE.md) · [Testing](docs/TESTING.md) · [Data Policy](docs/DATA_POLICY.md)
+
 ## What it does
 
 Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build a searchable flight database, then applies GIS correlation, mission inference, and anomaly detection to produce actionable airspace intelligence for Puerto Rico.

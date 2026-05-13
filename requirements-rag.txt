@@ -1,0 +1,20 @@
+# LLM Pipeline — RAG index + local LLM query over PRUAP social data
+# Install: pip install -r requirements-rag.txt
+#
+# Scripts: prepare_data.py  rag_pipeline.py  query_llm.py
+#
+# Models are downloaded from Hugging Face on first run (~5–14 GB).
+# Set HF_TOKEN env var for gated models (e.g. Llama):
+#   export HF_TOKEN=hf_...
+
+# Reddit data collection
+praw>=7.8.1
+
+# RAG vector index
+chromadb>=0.4.0
+sentence-transformers>=2.7.0
+
+# LLM inference
+transformers>=4.40.0
+torch>=2.2.0
+accelerate>=0.27.0
