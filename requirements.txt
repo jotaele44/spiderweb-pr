@@ -28,3 +28,13 @@ pytest>=7.4            # test suite
 # The React dashboard (dashboard.jsx) uses npm packages, not pip:
 #   npm install lucide-react
 #   Requires React 16.8+ and Tailwind CSS v3+
+
+# ── LLM PIPELINE (optional) ─────────────────────────────────────────────────
+# RAG index + local LLM query over PRUAP social data (prepare_data.py,
+# rag_pipeline.py, query_llm.py)
+praw>=7.8.1
+chromadb>=0.4.0
+sentence-transformers>=2.7.0
+transformers>=4.40.0
+torch>=2.2.0
+accelerate>=0.27.0
