@@ -13,9 +13,11 @@ from typing import Any, Dict, List, Optional
 try:
     import pyarrow as pa
     import pyarrow.parquet as pq
-    _PYARROW_AVAILABLE = True
-except ImportError:
-    _PYARROW_AVAILABLE = False
+except ImportError as _pyarrow_err:
+    raise ImportError(
+        "pyarrow is required for PR Intel export. "
+        "Install it with: pip install 'pyarrow>=14.0'"
+    ) from _pyarrow_err
 
 try:
     from schema_validation import SchemaValidator
@@ -25,13 +27,13 @@ except ImportError:
 
 
 PROVENANCE_COLS = [
-    ("screenshot_id", pa.string() if _PYARROW_AVAILABLE else None),
-    ("source_path", pa.string() if _PYARROW_AVAILABLE else None),
-    ("sha256", pa.string() if _PYARROW_AVAILABLE else None),
-    ("ocr_confidence", pa.float64() if _PYARROW_AVAILABLE else None),
-    ("coordinate_method", pa.string() if _PYARROW_AVAILABLE else None),
-    ("coordinate_confidence", pa.float64() if _PYARROW_AVAILABLE else None),
-    ("review_status", pa.string() if _PYARROW_AVAILABLE else None),
+    ("screenshot_id", pa.string()),
+    ("source_path", pa.string()),
+    ("sha256", pa.string()),
+    ("ocr_confidence", pa.float64()),
+    ("coordinate_method", pa.string()),
+    ("coordinate_confidence", pa.float64()),
+    ("review_status", pa.string()),
 ]
 
 
@@ -90,22 +92,13 @@ class PRIntelAdapter:
         # Temporal integrity
         temporal_violations = self._count_temporal_violations(track_pts)
 
-        # Export parquet files
-        if _PYARROW_AVAILABLE:
-            self._export_airspace_events(flights, ss_by_flight)
-            self._export_aircraft_profiles(aircraft_profiles, ss_by_flight)
-            self._export_track_points(track_pts, ss_by_flight)
-            self._export_screenshot_evidence(screenshots)
-            self._export_mission_inferences(mission_scores, ss_by_flight)
-            self._export_anomaly_index(alerts, ss_by_flight)
-        else:
-            # Write stub parquets as JSON so file-existence gates still pass
-            for fname in ["airspace_events.parquet", "aircraft_profiles.parquet",
-                          "track_points.parquet", "screenshot_evidence.parquet",
-                          "mission_inferences.parquet", "anomaly_index.parquet"]:
-                (self.output_dir / fname).write_text(
-                    json.dumps({"note": "pyarrow not installed", "rows": 0})
-                )
+        # Export parquet files (pyarrow required — checked at import time)
+        self._export_airspace_events(flights, ss_by_flight)
+        self._export_aircraft_profiles(aircraft_profiles, ss_by_flight)
+        self._export_track_points(track_pts, ss_by_flight)
+        self._export_screenshot_evidence(screenshots)
+        self._export_mission_inferences(mission_scores, ss_by_flight)
+        self._export_anomaly_index(alerts, ss_by_flight)
 
         # GeoJSON exports
         self._export_gis_features(flights)
@@ -137,41 +130,56 @@ class PRIntelAdapter:
         ]
         manifest_path.write_text(json.dumps(manifest, indent=2))
 
-        # Build coordinate coverage stats
+        # Gate thresholds
+        COORD_THRESHOLD = 0.70    # 70% of flights must have at least one coord pair
+        OCR_THRESHOLD = 0.50      # average OCR confidence must be ≥ 0.50
+        EVIDENCE_THRESHOLD = 0.50 # 50% of screenshots must be linked to a flight
+
+        # Coordinate coverage (skip gate when no flights)
         flights_with_coords = sum(
             1 for f in flights
             if (f.get("origin_lat") or f.get("dest_lat"))
         )
-        pct_coords = (flights_with_coords / len(flights)) if flights else 0.0
+        pct_coords = (flights_with_coords / len(flights)) if flights else 1.0
+        coord_status = "PASS" if (not flights or pct_coords >= COORD_THRESHOLD) else "FAIL"
 
-        # OCR confidence
-        confidences = [ss.get("ocr_confidence") or 0.0 for ss in screenshots if ss.get("ocr_confidence") is not None]
-        avg_conf = sum(confidences) / len(confidences) if confidences else 0.0
+        # OCR confidence gate (skip when no screenshots)
+        confidences = [
+            ss.get("ocr_confidence") or 0.0
+            for ss in screenshots
+            if ss.get("ocr_confidence") is not None
+        ]
+        avg_conf = sum(confidences) / len(confidences) if confidences else 1.0
+        ocr_status = "PASS" if (not screenshots or avg_conf >= OCR_THRESHOLD) else "FAIL"
 
-        # Evidence chain coverage
+        # Evidence chain coverage (skip when no screenshots)
         ss_with_flight = sum(1 for ss in screenshots if ss.get("flight_id"))
-        pct_ss = (ss_with_flight / len(screenshots)) if screenshots else 0.0
+        pct_ss = (ss_with_flight / len(screenshots)) if screenshots else 1.0
+        evidence_status = "PASS" if (not screenshots or pct_ss >= EVIDENCE_THRESHOLD) else "FAIL"
 
-        # Gates
+        # Schema validation gate (any invalid record fails)
+        schema_status = "PASS" if schema_invalid == 0 else "FAIL"
+
         gates = {
             "schema_validation": {
-                "status": "PASS",
+                "status": schema_status,
                 "records_validated": schema_validated,
                 "invalid": schema_invalid,
             },
             "coordinate_coverage": {
-                "status": "PASS",
+                "status": coord_status,
                 "pct_with_coords": round(pct_coords, 4),
-                "threshold": 0.0,
+                "threshold": COORD_THRESHOLD,
             },
             "ocr_confidence_gate": {
-                "status": "PASS",
+                "status": ocr_status,
                 "avg_confidence": round(avg_conf, 4),
-                "threshold": 0.0,
+                "threshold": OCR_THRESHOLD,
             },
             "evidence_chain_coverage": {
-                "status": "PASS",
+                "status": evidence_status,
                 "pct_with_screenshot": round(pct_ss, 4),
+                "threshold": EVIDENCE_THRESHOLD,
             },
             "export_completeness": {
                 "status": "PASS" if not missing else "FAIL",
@@ -388,9 +396,8 @@ class PRIntelAdapter:
         }
 
     def _write_parquet(self, filename: str, rows: List[dict]):
-        if not _PYARROW_AVAILABLE or not rows:
-            if not rows:
-                (self.output_dir / filename).write_text(json.dumps({"rows": 0}))
+        if not rows:
+            pq.write_table(pa.table({}), self.output_dir / filename)
             return
 
         keys = list(rows[0].keys())
@@ -433,7 +440,7 @@ class PRIntelAdapter:
         path = self.output_dir / filename
         if not path.exists():
             return 0
-        if filename.endswith(".parquet") and _PYARROW_AVAILABLE:
+        if filename.endswith(".parquet"):
             try:
                 return pq.read_table(path).num_rows
             except Exception:

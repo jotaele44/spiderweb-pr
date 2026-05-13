@@ -446,11 +446,15 @@ class FlightDatabase:
                         coordinate_method: str = "fixed_pr_bounds",
                         coordinate_confidence: float = 0.65,
                         estimated_error_m: float = 1500.0):
-        sha256_hex = None
-        try:
-            sha256_hex = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
-        except Exception:
-            pass
+        # When screenshot_id is the sha256 (content-addressed), reuse it directly.
+        # Fall back to computing from file when called with a non-hash id.
+        if len(screenshot_id) == 64 and all(c in "0123456789abcdef" for c in screenshot_id):
+            sha256_hex = screenshot_id
+        else:
+            try:
+                sha256_hex = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
+            except Exception:
+                sha256_hex = None
 
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -682,7 +686,11 @@ class FlightAnalyzer:
                 print(f"  Progress: {i}/{total} ({i*100//total}%)")
 
     def _process_single_image(self, image_path: Path):
-        screenshot_id = hashlib.md5(image_path.name.encode()).hexdigest()
+        # Content-addressed ID: sha256 of file bytes → deduplicates identical images
+        try:
+            screenshot_id = hashlib.sha256(image_path.read_bytes()).hexdigest()
+        except OSError:
+            screenshot_id = hashlib.sha256(image_path.name.encode()).hexdigest()
 
         # Skip already-processed
         conn = sqlite3.connect(self.db.db_path)

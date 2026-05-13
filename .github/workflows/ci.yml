@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install core test dependencies
+        run: pip install "jsonschema>=4.17" "pyarrow>=14.0" "pytest>=7.4"
+
+      - name: Syntax check all Python modules
+        run: python -m py_compile *.py
+
+      - name: Run test suite
+        run: python -m pytest tests/ -q --tb=short
+
+      - name: CLI smoke — status
+        run: python run_all.py --db /tmp/ci_smoke.db --status
+
+      - name: CLI smoke — validate (empty DB)
+        run: python run_all.py --db /tmp/ci_smoke.db --validate
+
+      - name: CLI smoke — export-pr-intel (empty DB)
+        run: |
+          python run_all.py --db /tmp/ci_smoke.db --export-pr-intel /tmp/ci_pr_intel
+          python -c "
+          import json, sys
+          r = json.load(open('/tmp/ci_pr_intel/integration_report.json'))
+          print('overall_status:', r['overall_status'])
+          gates = list(r['gates'])
+          assert len(gates) == 6, f'Expected 6 gates, got {gates}'
+          print('gates:', gates)
+          "
+
+      - name: CLI smoke — export-spiderweb (empty DB)
+        run: |
+          python run_all.py --db /tmp/ci_smoke.db --export-spiderweb /tmp/ci_spiderweb
+          test -f /tmp/ci_spiderweb/spiderweb_ingest_manifest.json
+          test -f /tmp/ci_spiderweb/aasb_airspace_edges.csv
