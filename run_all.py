@@ -323,20 +323,49 @@ def _run_export_spiderweb(db_path: str, output_dir: str):
         raise
 
 
+def _run_scan_inventory(images_dir: str, db_path: str):
+    print("\n  SCREENSHOT INVENTORY SCAN")
+    print("  " + "─" * 50)
+    from screenshot_inventory import ScreenshotInventory
+    from pathlib import Path as _Path
+    inv = ScreenshotInventory(images_dir, db_path=db_path)
+    manifest = inv.scan()
+    out = str(_Path(db_path).parent / "screenshot_inventory.csv")
+    summary = inv.build_report(out)
+    for k, v in summary.items():
+        if k != "output_path":
+            print(f"  {k:<20} {v:>8}")
+    print(f"\n  ✓ Inventory written to: {out}")
+
+
+def _run_export_fr24_events(images_dir: str, db_path: str):
+    print("\n  FR24 EVENT EXPORT")
+    print("  " + "─" * 50)
+    from fr24_event_export import FR24EventExporter
+    exp = FR24EventExporter(db_path)
+    report = exp.export_batch(images_dir)
+    print(f"  Screenshots upserted:  {report['screenshots_upserted']}")
+    print(f"  Track points inserted: {report['track_points_inserted']}")
+    print(f"  Review items added:    {report['review_items_added']}")
+    print(f"\n  ✓ FR24 events exported to DB: {db_path}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Puerto Rico Airspace Intelligence System — Unified Pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run_all.py                         Run complete pipeline
-  python run_all.py --phase 1               Hardening only
-  python run_all.py --phase 3               Mission inference only
-  python run_all.py --images 50             Test with 50 images
-  python run_all.py --report daily          Daily operational report
-  python run_all.py --aircraft N5854Z       Aircraft intelligence profile
-  python run_all.py --status                Show database status
-  python run_all.py --export-json data.json Export DB snapshot for dashboard
+  python run_all.py                              Run complete pipeline
+  python run_all.py --phase 1                    Hardening only
+  python run_all.py --phase 3                    Mission inference only
+  python run_all.py --images 50                  Test with 50 images
+  python run_all.py --report daily               Daily operational report
+  python run_all.py --aircraft N5854Z            Aircraft intelligence profile
+  python run_all.py --status                     Show database status
+  python run_all.py --export-json data.json      Export DB snapshot for dashboard
+  python run_all.py --scan-inventory /img/dir    Scan & inventory screenshots
+  python run_all.py --export-fr24-events /img    Export FR24 events to DB
         """
     )
 
@@ -363,6 +392,10 @@ Examples:
                         help="Export PR Intel parquet/GeoJSON to DIR")
     parser.add_argument("--export-spiderweb", metavar="DIR",
                         help="Export Spiderweb bridge outputs to DIR")
+    parser.add_argument("--scan-inventory", metavar="DIR",
+                        help="Scan screenshot directory and build inventory CSV")
+    parser.add_argument("--export-fr24-events", metavar="DIR",
+                        help="Export FR24 screenshot events from DIR into DB")
 
     args = parser.parse_args()
 
@@ -395,7 +428,8 @@ Examples:
     new_flags_only = (
         not args.images
         and args.phase is None
-        and (args.validate or args.export_pr_intel or args.export_spiderweb)
+        and (args.validate or args.export_pr_intel or args.export_spiderweb
+             or args.scan_inventory or args.export_fr24_events)
     )
 
     if not new_flags_only:
@@ -433,6 +467,12 @@ Examples:
 
     if args.export_spiderweb:
         _run_export_spiderweb(args.db, args.export_spiderweb)
+
+    if args.scan_inventory:
+        _run_scan_inventory(args.scan_inventory, args.db)
+
+    if args.export_fr24_events:
+        _run_export_fr24_events(args.export_fr24_events, args.db)
 
 
 if __name__ == "__main__":
