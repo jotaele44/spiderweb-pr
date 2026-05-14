@@ -91,7 +91,7 @@ class ManualReviewQueue:
             "INSERT INTO review_queue "
             "(item_id, queue_type, image_path, reason, metadata, status, created_at) "
             "VALUES (?, ?, ?, ?, ?, 'pending', ?)",
-            (item_id, image_path if False else queue_type, image_path, reason,
+            (item_id, queue_type, image_path, reason,
              _json.dumps(metadata) if metadata else None,
              datetime.utcnow().isoformat() + "Z"),
         )
