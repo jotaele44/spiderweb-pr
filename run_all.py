@@ -382,6 +382,38 @@ def _run_calibrate_scoring(calibrate_dir: str):
         raise
 
 
+def _run_assess_readiness(export_dir: str):
+    print("\n  PRII READINESS ASSESSMENT")
+    print("  " + "─" * 50)
+    d = Path(export_dir)
+    if not d.exists():
+        print(f"  Error: directory not found: {export_dir}")
+        print(f"  Hint: run --export-pr-intel and --calibrate-scoring first")
+        sys.exit(1)
+    try:
+        from prii_readiness_engine import PRIIReadinessEngine
+        report = PRIIReadinessEngine(export_dir).assess()
+        status = report.get("readiness_status", "UNKNOWN")
+        marker = "✓" if status == "READY" else ("~" if status == "DEGRADED" else "✗")
+        print(f"  {marker} Status: {status}")
+        for b in report.get("blockers", []):
+            src = b.get("source", "")
+            key = b.get("gate") or b.get("flag") or ""
+            print(f"  ✗ BLOCKER [{src}:{key}] {b.get('detail', '')}")
+        for w in report.get("warnings", []):
+            print(f"  ~ WARNING [{w.get('source')}] {w.get('detail', '')}")
+        if report.get("missing_inputs"):
+            print(f"  Missing inputs: {', '.join(report['missing_inputs'])}")
+        print(f"\n  ✓ Readiness report written to: {export_dir}/prii_readiness_report.json")
+        if status == "NOT_READY":
+            sys.exit(1)
+    except SystemExit:
+        raise
+    except Exception as e:
+        print(f"  Assessment error: {e}")
+        raise
+
+
 def _run_scan_inventory(images_dir: str, db_path: str):
     print("\n  SCREENSHOT INVENTORY SCAN")
     print("  " + "─" * 50)
@@ -459,6 +491,8 @@ Examples:
                         help="Normalize --export-spiderweb output into Spiderweb overlay candidates")
     parser.add_argument("--calibrate-scoring", metavar="DIR",
                         help="Audit spiderweb overlay candidates against operational baseline ranges")
+    parser.add_argument("--assess-readiness", metavar="DIR",
+                        help="Assess PRII readiness from integration_report + calibration_report in DIR")
 
     args = parser.parse_args()
 
@@ -493,7 +527,8 @@ Examples:
         and args.phase is None
         and (args.validate or args.export_pr_intel or args.export_spiderweb
              or args.scan_inventory or args.export_fr24_events
-             or args.spiderweb_intake or args.calibrate_scoring)
+             or args.spiderweb_intake or args.calibrate_scoring
+             or args.assess_readiness)
     )
 
     if not new_flags_only:
@@ -543,6 +578,9 @@ Examples:
 
     if args.calibrate_scoring:
         _run_calibrate_scoring(args.calibrate_scoring)
+
+    if args.assess_readiness:
+        _run_assess_readiness(args.assess_readiness)
 
 
 if __name__ == "__main__":
