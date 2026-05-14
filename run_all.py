@@ -323,6 +323,24 @@ def _run_export_spiderweb(db_path: str, output_dir: str):
         raise
 
 
+def _run_spiderweb_intake(intake_dir: str):
+    print("\n  SPIDERWEB INTAKE — OVERLAY + GAP AUDIT")
+    print("  " + "─" * 50)
+    try:
+        from spiderweb_intake import SpiderwebIntake
+        result = SpiderwebIntake(intake_dir, intake_dir).run()
+        audit = result["gap_audit"]["gaps"]
+        print(f"  Candidates normalized: {result['total_candidates']}")
+        print(f"  Duplicates removed:    {audit['dedup_gap']['duplicates_removed']}")
+        print(f"  Missing bridge files:  {audit['export_gap']['missing_files'] or 'none'}")
+        print(f"  Evidence gaps:         {audit['evidence_gap']['no_hydro_or_utility']}")
+        print(f"\n  ✓ Overlay written to: {intake_dir}/spiderweb_overlay_candidates.geojson")
+        print(f"  ✓ Gap audit written to: {intake_dir}/spiderweb_gap_audit.json")
+    except Exception as e:
+        print(f"  Intake error: {e}")
+        raise
+
+
 def _run_scan_inventory(images_dir: str, db_path: str):
     print("\n  SCREENSHOT INVENTORY SCAN")
     print("  " + "─" * 50)
@@ -396,6 +414,8 @@ Examples:
                         help="Scan screenshot directory and build inventory CSV")
     parser.add_argument("--export-fr24-events", metavar="DIR",
                         help="Export FR24 screenshot events from DIR into DB")
+    parser.add_argument("--spiderweb-intake", metavar="DIR",
+                        help="Normalize --export-spiderweb output into Spiderweb overlay candidates")
 
     args = parser.parse_args()
 
@@ -429,7 +449,8 @@ Examples:
         not args.images
         and args.phase is None
         and (args.validate or args.export_pr_intel or args.export_spiderweb
-             or args.scan_inventory or args.export_fr24_events)
+             or args.scan_inventory or args.export_fr24_events
+             or args.spiderweb_intake)
     )
 
     if not new_flags_only:
@@ -473,6 +494,9 @@ Examples:
 
     if args.export_fr24_events:
         _run_export_fr24_events(args.export_fr24_events, args.db)
+
+    if args.spiderweb_intake:
+        _run_spiderweb_intake(args.spiderweb_intake)
 
 
 if __name__ == "__main__":
