@@ -26,6 +26,14 @@ HF_TOKEN
 *.sqlite
 *.sqlite3
 
+# ── Spiderweb operational output files ───────────────────────────────────────
+# Written by --export-spiderweb, --spiderweb-intake, --calibrate-scoring.
+# Should be written to dedicated export dirs; guard against root-dir commits.
+spiderweb_overlay_candidates.geojson
+spiderweb_gap_audit.json
+calibration_report.json
+spiderweb_ingest_manifest.json
+
 # ── Common generated data formats ─────────────────────────────────────────────
 *.parquet
 *.jsonl

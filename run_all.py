@@ -326,6 +326,9 @@ def _run_export_spiderweb(db_path: str, output_dir: str):
 def _run_spiderweb_intake(intake_dir: str):
     print("\n  SPIDERWEB INTAKE — OVERLAY + GAP AUDIT")
     print("  " + "─" * 50)
+    if not Path(intake_dir).exists():
+        print(f"  Error: directory not found: {intake_dir}")
+        sys.exit(1)
     try:
         from spiderweb_intake import SpiderwebIntake
         result = SpiderwebIntake(intake_dir, intake_dir).run()
@@ -338,6 +341,36 @@ def _run_spiderweb_intake(intake_dir: str):
         print(f"  ✓ Gap audit written to: {intake_dir}/spiderweb_gap_audit.json")
     except Exception as e:
         print(f"  Intake error: {e}")
+        raise
+
+
+def _run_calibrate_scoring(calibrate_dir: str):
+    print("\n  SPIDERWEB SCORING CALIBRATION")
+    print("  " + "─" * 50)
+    d = Path(calibrate_dir)
+    if not d.exists():
+        print(f"  Error: directory not found: {calibrate_dir}")
+        sys.exit(1)
+    overlay = d / "spiderweb_overlay_candidates.geojson"
+    if not overlay.exists():
+        print(f"  Error: overlay not found in {calibrate_dir}")
+        print(f"  Hint: run --spiderweb-intake {calibrate_dir} first")
+        sys.exit(1)
+    try:
+        from calibrate_scoring import CalibrationDriver
+        report = CalibrationDriver(calibrate_dir).run()
+        flags = report.get("calibration_flags", [])
+        print(f"  Mode:                  {report.get('baseline_mode', '?')}")
+        print(f"  Status:                {report.get('status', '?')}")
+        print(f"  Candidates audited:    {report['candidate_count']}")
+        print(f"  Calibration flags:     {len(flags)}")
+        for f in flags:
+            bound = f.get("expected_max") or f.get("expected_min")
+            label = "max" if "expected_max" in f else "min"
+            print(f"    [{f['metric']}] value={f['value']} (expected_{label}={bound}) → {f['action']}")
+        print(f"\n  ✓ Calibration report written to: {calibrate_dir}/calibration_report.json")
+    except Exception as e:
+        print(f"  Calibration error: {e}")
         raise
 
 
@@ -416,6 +449,8 @@ Examples:
                         help="Export FR24 screenshot events from DIR into DB")
     parser.add_argument("--spiderweb-intake", metavar="DIR",
                         help="Normalize --export-spiderweb output into Spiderweb overlay candidates")
+    parser.add_argument("--calibrate-scoring", metavar="DIR",
+                        help="Audit spiderweb overlay candidates against operational baseline ranges")
 
     args = parser.parse_args()
 
@@ -450,7 +485,7 @@ Examples:
         and args.phase is None
         and (args.validate or args.export_pr_intel or args.export_spiderweb
              or args.scan_inventory or args.export_fr24_events
-             or args.spiderweb_intake)
+             or args.spiderweb_intake or args.calibrate_scoring)
     )
 
     if not new_flags_only:
@@ -497,6 +532,9 @@ Examples:
 
     if args.spiderweb_intake:
         _run_spiderweb_intake(args.spiderweb_intake)
+
+    if args.calibrate_scoring:
+        _run_calibrate_scoring(args.calibrate_scoring)
 
 
 if __name__ == "__main__":
