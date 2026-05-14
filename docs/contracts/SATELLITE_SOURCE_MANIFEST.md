@@ -1,149 +1,265 @@
 # Satellite Source Manifest Contract
 
+Schema ID: `satellite_source_manifest`  
+Schema version: `1.0`  
+JSON Schema dialect: Draft-07  
+File: `schemas/satellite_source_manifest.schema.json`
+
+---
+
 ## Purpose
 
-The Satellite Source Manifest defines the minimum source package contract for Puerto Rico-focused satellite and remote-sensing inputs consumed by PRII federation workflows.
+Every satellite or remote-sensing raster ingested by the Spiderweb pipeline
+must be accompanied by a **satellite source manifest** — a JSON document that
+declares the asset's origin, geometry, quality metrics, and processing lineage.
 
-This contract is fail-closed. A package that omits required source, asset, geometry, quality, or lineage fields must be rejected before runtime ingestion or downstream readiness scoring.
+The contract is **fail-closed**: any record that violates the schema is
+rejected before it can enter the pipeline. The fixture-mode rule additionally
+prevents real-data manifests from accidentally referencing fixture, test, or
+mock assets.
 
-## Scope
+Manifests are written by the ingestion stage and validated by `SchemaValidator`
+before any downstream consumer (EarthGPT tile fetch, GEBCO overlay, PRII
+readiness engine) reads the asset.
 
-This contract covers source metadata and provenance only. It does not define a downloader, STAC client, raster processor, adapter, UI, or producer repository implementation.
+## Scope and Non-Goals
 
-## Non-goals
+This contract covers source metadata and provenance only.
 
 - No live satellite download behavior.
 - No external API credential handling.
 - No STAC catalog client implementation.
 - No raster tiling or image processing pipeline.
-- No `run_all.py` wiring.
+- No `run_all.py` wiring or CI changes.
 - No producer repository alignment.
 - No Stage 3 runtime ingestion.
 
-## Required package identity
+---
 
-Each manifest must include:
+## Fixture-Mode Rule
 
-| Field | Requirement |
-|---|---|
-| `manifest_id` | Stable unique identifier for this source manifest. |
-| `schema_version` | Contract version, starting at `1.0`. |
-| `producer` | System or process that generated the manifest. |
-| `created_at` | Manifest creation timestamp in ISO-like string form. |
-| `synthetic` | Boolean indicating fixture/test/synthetic status. |
+The `synthetic` field is a first-class contract field.
 
-## Required source metadata
+| `synthetic` | Effect |
+|-------------|--------|
+| `true` | No URI/path restrictions — fixture URIs like `s3://fixture-bucket/…` are allowed. Use this in all tests and development environments. |
+| `false` | The strings `fixture`, `test`, and `mock` are **banned** (case-insensitive) in both `asset.source_uri` and `asset.local_path`. Validation fails if either value matches the pattern `(?i)(fixture\|test\|mock)`. |
 
-Each manifest must identify the remote-sensing source:
+This rule is implemented as a Draft-07 `if/then` constraint at the top level
+of the schema. It fires whenever `synthetic` is explicitly `false`; it is
+silently skipped when `synthetic` is `true`.
 
-| Field | Requirement |
-|---|---|
-| `source.provider` | Provider, for example `esa`, `copernicus`, `usgs`, `nasa`, or `noaa`. |
-| `source.collection` | Collection or product family, for example `sentinel-2-l2a`. |
-| `source.platform` | Platform or satellite, for example `Sentinel-2A`. |
-| `source.instrument` | Instrument, for example `MSI`, `SAR`, `OLI`, or `VIIRS`. |
+---
 
-## Required acquisition metadata
+## Top-Level Fields
 
-Each manifest must include:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `manifest_id` | string | yes | Unique identifier for this manifest (e.g. `SAT-PR-2024-001`). |
+| `schema_version` | string | yes | Contract version — must match pattern `^\d+\.\d+$` (e.g. `"1.0"`). |
+| `producer` | string | yes | System or process that created this manifest (e.g. `"spiderweb-sat-ingest-v1"`). |
+| `created_at` | string | yes | ISO 8601 timestamp of manifest creation. |
+| `synthetic` | boolean | yes | `true` for fixture/test data; `false` for production rasters. Drives the fixture-mode rule. |
+| `notes` | string\|null | no | Free-text annotation. |
+| `source` | object | yes | Data origin — see [`source` Object](#source-object). |
+| `acquisition` | object | yes | Acquisition metadata — see [`acquisition` Object](#acquisition-object). |
+| `asset` | object | yes | File reference — see [`asset` Object](#asset-object). |
+| `geometry` | object | yes | Spatial extent — see [`geometry` Object](#geometry-object). |
+| `puerto_rico` | object | yes | Puerto Rico region classification — see [`puerto_rico` Object](#puerto_rico-object). |
+| `quality` | object | yes | Quality metrics — see [`quality` Object](#quality-object). |
+| `lineage` | object | yes | Processing lineage — see [`lineage` Object](#lineage-object). |
 
-| Field | Requirement |
-|---|---|
-| `acquisition.acquired_at` | Source acquisition timestamp. |
-| `acquisition.processed_at` | Processing or product publication timestamp. |
-| `acquisition.license` | License or access-use statement. |
+`additionalProperties: true` — extra top-level fields are permitted and ignored.
 
-## Required asset metadata
+---
 
-Each manifest must identify at least one asset reference:
+## `source` Object
 
-| Field | Requirement |
-|---|---|
-| `asset.source_uri` | External URI, if the asset is externally referenced. |
-| `asset.local_path` | Local path, if the asset is packaged locally. |
-| `asset.checksum_sha256` | SHA-256 checksum for the referenced asset. |
-| `asset.media_type` | Asset media type, for example `image/tiff` or `application/geo+json`. |
+Required fields: `provider`, `collection`, `platform`, `instrument`.
 
-At least one of `asset.source_uri` or `asset.local_path` is required.
+| Field | Type | Description |
+|-------|------|-------------|
+| `provider` | string | Data provider organisation (e.g. `"ESA"`, `"NASA"`, `"NOAA"`). |
+| `collection` | string | Dataset collection name (e.g. `"sentinel-2-l2a"`, `"landsat-9-c2l2"`). |
+| `platform` | string | Satellite platform (e.g. `"Sentinel-2A"`, `"Landsat 9"`). |
+| `instrument` | string | Sensor/instrument name (e.g. `"MSI"`, `"OLI-TIRS"`). |
 
-## Required geometry metadata
+---
 
-Geometry is locked to EPSG:4326.
+## `acquisition` Object
 
-| Field | Requirement |
-|---|---|
-| `geometry.crs` | Must be `EPSG:4326`. |
-| `geometry.footprint` | GeoJSON Polygon footprint. |
-| `geometry.bbox` | `[west, south, east, north]` bounding box. |
+Required fields: `acquired_at`, `processed_at`, `license`.
 
-The default Puerto Rico validation envelope is:
+| Field | Type | Description |
+|-------|------|-------------|
+| `acquired_at` | string | ISO 8601 scene acquisition timestamp. |
+| `processed_at` | string | ISO 8601 timestamp of analysis-ready dataset processing. |
+| `license` | string | Data license or terms of use (e.g. `"Copernicus Sentinel Data Terms of Use"`). |
 
-```text
-west  = -68.2
-south = 17.8
-east  = -65.1
-north = 18.7
+---
+
+## `asset` Object
+
+Required fields: `checksum_sha256`, `media_type`, and **at least one of** `source_uri` or `local_path`.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `source_uri` | string | one-of | Remote URI of the raster asset (S3, GCS, HTTPS, etc.). |
+| `local_path` | string | one-of | Absolute path to a locally cached copy. |
+| `checksum_sha256` | string | yes | Lowercase hex SHA-256 of the asset file. Must match `^[0-9a-f]{64}$`. |
+| `media_type` | string | yes | MIME type (e.g. `"image/tiff"`, `"image/jp2"`, `"application/geo+json"`). |
+
+At least one of `source_uri` or `local_path` must be present (enforced via
+`anyOf`). Both may be present simultaneously.
+
+When `synthetic=false`, `source_uri` and `local_path` must not contain
+the substrings `fixture`, `test`, or `mock` (case-insensitive).
+
+---
+
+## `geometry` Object
+
+Required fields: `crs`, `footprint`, `bbox`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `crs` | string | Coordinate reference system. **Must be `"EPSG:4326"`** (enum, no other value accepted). |
+| `footprint` | object | GeoJSON Polygon — see below. |
+| `bbox` | array[4] | Bounding box `[west, south, east, north]` — must fall within the Puerto Rico operating envelope. |
+
+### `footprint` Sub-Object
+
+| Field | Type | Constraint |
+|-------|------|-----------|
+| `type` | string | **Must be `"Polygon"`** (enum). |
+| `coordinates` | array | GeoJSON ring array, minItems 1. Each coordinate pair is validated against PR bounds. |
+
+### Puerto Rico Operating Envelope
+
+All coordinates (footprint and bbox) are validated against the Puerto Rico
+archipelago bounding box:
+
+| Axis | Minimum | Maximum |
+|------|---------|---------|
+| Longitude (west/east) | -68.2° | -65.1° |
+| Latitude (south/north) | 17.8° | 18.7° |
+
+Source packages outside this envelope are rejected for Puerto Rico federation
+workflows.
+
+---
+
+## `puerto_rico` Object
+
+Required field: `region`.
+
+| Field | Type | Allowed values / Notes |
+|-------|------|------------------------|
+| `region` | string enum | `mainland`, `vieques`, `culebra`, `mona`, `isla_grande`, `full_island` |
+| `municipality` | string\|null | optional — municipality name if known |
+
+`mainland` covers the main island. `full_island` is used for whole-island mosaics.
+
+---
+
+## `quality` Object
+
+Required fields: `cloud_cover_pct`, `geometric_confidence`, `source_reliability`.
+
+| Field | Type | Range / Values | Description |
+|-------|------|----------------|-------------|
+| `cloud_cover_pct` | number | 0 – 100 | Estimated cloud cover as a percentage of scene area. |
+| `geometric_confidence` | number | 0 – 1 | Confidence in positional accuracy; 1.0 = highest. |
+| `source_reliability` | string enum | `high`, `medium`, `low`, `unverified` | Overall reliability assessment of the data source. |
+
+---
+
+## `lineage` Object
+
+Required field: `processing_pipeline`.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `processing_pipeline` | string | yes | Name of the pipeline that produced this manifest (e.g. `"spiderweb-sat-ingest-v1"`). |
+| `pipeline_version` | string\|null | no | Semantic version of the pipeline. |
+| `derived_from` | array of strings | no | Parent manifest IDs this asset was derived from. |
+
+---
+
+## Minimal Valid Example
+
+```json
+{
+  "manifest_id":    "SAT-PR-2024-001",
+  "schema_version": "1.0",
+  "producer":       "spiderweb-pipeline",
+  "created_at":     "2024-03-14T14:32:00Z",
+  "synthetic":      true,
+  "source": {
+    "provider":   "ESA",
+    "collection": "sentinel-2-l2a",
+    "platform":   "Sentinel-2A",
+    "instrument": "MSI"
+  },
+  "acquisition": {
+    "acquired_at":  "2024-03-14T14:32:00Z",
+    "processed_at": "2024-03-15T02:00:00Z",
+    "license":      "Copernicus Sentinel Data Terms of Use"
+  },
+  "asset": {
+    "source_uri":      "s3://fixture-bucket/pr/sentinel2/2024-03-14.tif",
+    "checksum_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "media_type":      "image/tiff"
+  },
+  "geometry": {
+    "crs": "EPSG:4326",
+    "footprint": {
+      "type": "Polygon",
+      "coordinates": [[
+        [-67.0, 18.0], [-66.0, 18.0],
+        [-66.0, 18.5], [-67.0, 18.5],
+        [-67.0, 18.0]
+      ]]
+    },
+    "bbox": [-67.0, 18.0, -66.0, 18.5]
+  },
+  "puerto_rico": {"region": "mainland"},
+  "quality": {
+    "cloud_cover_pct":      12.5,
+    "geometric_confidence": 0.92,
+    "source_reliability":   "high"
+  },
+  "lineage": {"processing_pipeline": "spiderweb-sat-ingest-v1"}
+}
 ```
 
-A source package outside this envelope must be rejected for Puerto Rico federation workflows unless a future contract explicitly defines an expanded Caribbean operating area.
+Note: `synthetic: true` allows `fixture-bucket` in the URI. Set
+`synthetic: false` for any real production manifest and ensure neither
+`source_uri` nor `local_path` contains `fixture`, `test`, or `mock`.
 
-## Required Puerto Rico context
+---
 
-Each manifest must include:
+## Validation
 
-| Field | Requirement |
-|---|---|
-| `puerto_rico.region` | Puerto Rico region label used for federation joins. |
-| `puerto_rico.municipality` | Optional municipality label if known. |
-| `puerto_rico.pr_bbox_intersection` | Boolean indicating intersection with the Puerto Rico operating envelope. |
+**Programmatic validation** — use `SchemaValidator` from `schema_validation.py`:
 
-`puerto_rico.pr_bbox_intersection` must be `true` for this contract version.
-
-## Required quality metadata
-
-| Field | Requirement |
-|---|---|
-| `quality.cloud_cover_pct` | Number from `0` to `100`. |
-| `quality.geometric_confidence` | Number from `0` to `1`. |
-| `quality.source_reliability` | Number from `0` to `1`. |
-
-These values describe source quality only. They do not assert anomaly confidence.
-
-## Required lineage metadata
-
-| Field | Requirement |
-|---|---|
-| `lineage.generated_by` | Process, tool, or analyst workflow that generated the manifest. |
-| `lineage.processing_level` | Product processing level, for example `L1C`, `L2A`, `GRD`, or `derived-fixture`. |
-| `lineage.parent_manifest_id` | Optional parent manifest identifier. |
-| `lineage.notes` | Optional free-text notes. |
-
-## Fixture-mode rule
-
-If `synthetic` is `false`, the manifest must not use fixture, mock, or test markers in `asset.source_uri` or `asset.local_path`.
-
-Rejected examples for `synthetic=false`:
-
-```text
-fixture://sentinel/example.tif
-mock://scene/example.tif
-tests/fixtures/sentinel/example.tif
-/tmp/mock_scene.tif
+```python
+from schema_validation import SchemaValidator
+v = SchemaValidator()
+result = v.validate(manifest_dict, "satellite_source_manifest")
+if not result["valid"]:
+    print(result["errors"])
 ```
 
-Synthetic manifests are allowed for tests and fixtures, but must remain explicitly labeled with `synthetic: true`.
+The schema is auto-loaded by `SchemaValidator._load_schemas()` from the
+`schemas/` directory — no registration step required.
 
-## Readiness behavior
+**Test coverage** — `tests/test_satellite_source_manifest_schema.py` contains
+17 tests that exercise the required fields, all enum/range constraints, the
+fixture-mode rule, and the Puerto Rico coordinate bounds.
 
-The contract is fail-closed:
+Run with:
 
-- Missing required fields fail validation.
-- Invalid CRS fails validation.
-- Invalid GeoJSON footprint shape fails validation.
-- Bounding boxes outside Puerto Rico fail validation.
-- Confidence values outside accepted ranges fail validation.
-- `synthetic=false` with fixture/mock/test asset markers fails validation.
-
-## Stage boundary
-
-This contract package does not implement satellite data wiring. Runtime ingestion must not begin until this contract and its enforcement artifacts pass review.
+```bash
+python -m pytest tests/test_satellite_source_manifest_schema.py -v
+```
