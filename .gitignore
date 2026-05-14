@@ -33,6 +33,7 @@ spiderweb_overlay_candidates.geojson
 spiderweb_gap_audit.json
 calibration_report.json
 spiderweb_ingest_manifest.json
+prii_readiness_report.json
 
 # ── Common generated data formats ─────────────────────────────────────────────
 *.parquet
