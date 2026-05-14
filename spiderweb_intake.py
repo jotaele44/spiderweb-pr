@@ -423,8 +423,17 @@ class SpiderwebIntake:
     def _write_outputs(
         self, candidates: List[Dict[str, Any]], gap_audit: Dict[str, Any]
     ) -> None:
+        candidates_sorted = sorted(
+            candidates,
+            key=lambda c: (
+                c.get("candidate_type", ""),
+                c.get("linked_aircraft") or "",
+                c.get("lat", 0.0),
+                c.get("lon", 0.0),
+            ),
+        )
         features = []
-        for c in candidates:
+        for c in candidates_sorted:
             props = {k: c[k] for k in REQUIRED_FIELDS}
             features.append({
                 "type": "Feature",

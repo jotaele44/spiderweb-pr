@@ -326,6 +326,9 @@ def _run_export_spiderweb(db_path: str, output_dir: str):
 def _run_spiderweb_intake(intake_dir: str):
     print("\n  SPIDERWEB INTAKE — OVERLAY + GAP AUDIT")
     print("  " + "─" * 50)
+    if not Path(intake_dir).exists():
+        print(f"  Error: directory not found: {intake_dir}")
+        sys.exit(1)
     try:
         from spiderweb_intake import SpiderwebIntake
         result = SpiderwebIntake(intake_dir, intake_dir).run()
@@ -344,10 +347,21 @@ def _run_spiderweb_intake(intake_dir: str):
 def _run_calibrate_scoring(calibrate_dir: str):
     print("\n  SPIDERWEB SCORING CALIBRATION")
     print("  " + "─" * 50)
+    d = Path(calibrate_dir)
+    if not d.exists():
+        print(f"  Error: directory not found: {calibrate_dir}")
+        sys.exit(1)
+    overlay = d / "spiderweb_overlay_candidates.geojson"
+    if not overlay.exists():
+        print(f"  Error: overlay not found in {calibrate_dir}")
+        print(f"  Hint: run --spiderweb-intake {calibrate_dir} first")
+        sys.exit(1)
     try:
         from calibrate_scoring import CalibrationDriver
         report = CalibrationDriver(calibrate_dir).run()
         flags = report.get("calibration_flags", [])
+        print(f"  Mode:                  {report.get('baseline_mode', '?')}")
+        print(f"  Status:                {report.get('status', '?')}")
         print(f"  Candidates audited:    {report['candidate_count']}")
         print(f"  Calibration flags:     {len(flags)}")
         for f in flags:

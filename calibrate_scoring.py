@@ -31,9 +31,14 @@ BASELINE: List[Dict[str, Any]] = [
      "action": "tighten dedup threshold"},
 ]
 
+# Below this count the sample is too small for tier-distribution checks
+MIN_OPERATIONAL_CANDIDATES = 50
+# Tier-skew metrics suppressed in fixture mode (meaningless on <50 candidates)
+FIXTURE_SKIP_METRICS = {"pct_T4", "pct_T1_or_T2"}
+
 REQUIRED_REPORT_KEYS = [
-    "generated_at", "export_dir", "candidate_count",
-    "tier_distribution", "mbil_distribution",
+    "generated_at", "export_dir", "baseline_mode", "status", "missing_inputs",
+    "candidate_count", "tier_distribution", "mbil_distribution",
     "signal_rates", "terrain_distribution",
     "dedup_rate", "calibration_flags",
 ]
@@ -45,42 +50,65 @@ class CalibrationDriver:
         self.output_dir = Path(output_dir) if output_dir else self.export_dir
 
     def run(self) -> Dict[str, Any]:
-        features = self._load_overlay()
+        features  = self._load_overlay()
         gap_audit = self._load_gap_audit()
+        missing   = self._missing_inputs()
 
-        n = len(features)
-        tier_dist = self._tier_distribution(features)
-        mbil_dist = self._mbil_distribution(features)
+        n    = len(features)
+        mode = "operational" if n >= MIN_OPERATIONAL_CANDIDATES else "fixture"
+
+        tier_dist    = self._tier_distribution(features)
+        mbil_dist    = self._mbil_distribution(features)
         signal_rates = self._signal_rates(features, n)
         terrain_dist = self._terrain_distribution(features)
-        dedup_rate = self._dedup_rate(gap_audit, n)
+        dedup_rate   = self._dedup_rate(gap_audit, n)
 
         stats = {
-            "pct_T4":          tier_dist.get("T4", 0) / n if n else 0.0,
-            "pct_T1_or_T2":    (tier_dist.get("T1", 0) + tier_dist.get("T2", 0)) / n if n else 0.0,
-            "pct_mbil_0":      mbil_dist.get("MBIL-0", 0) / n if n else 0.0,
-            "pct_hydro_yes":   signal_rates["hydro_yes_pct"],
-            "pct_utility_yes": signal_rates["utility_yes_pct"],
-            "pct_urban_terrain": terrain_dist.get("urban", 0) / n if n else 0.0,
-            "dedup_rate":      dedup_rate,
+            "pct_T4":           tier_dist.get("T4", 0) / n if n else 0.0,
+            "pct_T1_or_T2":     (tier_dist.get("T1", 0) + tier_dist.get("T2", 0)) / n if n else 0.0,
+            "pct_mbil_0":       mbil_dist.get("MBIL-0", 0) / n if n else 0.0,
+            "pct_hydro_yes":    signal_rates["hydro_yes_pct"],
+            "pct_utility_yes":  signal_rates["utility_yes_pct"],
+            "pct_urban_terrain":terrain_dist.get("urban", 0) / n if n else 0.0,
+            "dedup_rate":       dedup_rate,
         }
 
-        flags = self._compare_to_baseline(stats)
+        # With 0 candidates all stats are 0/0 — skip baseline checks entirely
+        flags = self._compare_to_baseline(stats, mode) if n > 0 else []
+        flags.sort(key=lambda f: f["metric"])
+
+        if not flags:
+            status = "PASS"
+        elif mode == "operational":
+            status = "FAIL"
+        else:
+            status = "WARN"
 
         report = {
-            "generated_at":       datetime.utcnow().isoformat() + "Z",
-            "export_dir":         str(self.export_dir),
-            "candidate_count":    n,
-            "tier_distribution":  dict(tier_dist),
-            "mbil_distribution":  dict(mbil_dist),
-            "signal_rates":       signal_rates,
-            "terrain_distribution": dict(terrain_dist),
-            "dedup_rate":         round(dedup_rate, 4),
-            "calibration_flags":  flags,
+            "generated_at":        datetime.utcnow().isoformat() + "Z",
+            "export_dir":          str(self.export_dir),
+            "baseline_mode":       mode,
+            "status":              status,
+            "missing_inputs":      missing,
+            "candidate_count":     n,
+            "tier_distribution":   dict(tier_dist),
+            "mbil_distribution":   dict(mbil_dist),
+            "signal_rates":        signal_rates,
+            "terrain_distribution":dict(terrain_dist),
+            "dedup_rate":          round(dedup_rate, 4),
+            "calibration_flags":   flags,
         }
 
         self._write_report(report)
         return report
+
+    def _missing_inputs(self) -> List[str]:
+        missing = []
+        if not (self.export_dir / "spiderweb_overlay_candidates.geojson").exists():
+            missing.append("spiderweb_overlay_candidates.geojson")
+        if not (self.export_dir / "spiderweb_gap_audit.json").exists():
+            missing.append("spiderweb_gap_audit.json")
+        return missing
 
     def _load_overlay(self) -> List[Dict[str, Any]]:
         path = self.export_dir / "spiderweb_overlay_candidates.geojson"
@@ -139,10 +167,13 @@ class CalibrationDriver:
         return round(removed / total_before, 4)
 
     def _compare_to_baseline(
-        self, stats: Dict[str, float]
+        self, stats: Dict[str, float], mode: str
     ) -> List[Dict[str, Any]]:
+        skip = FIXTURE_SKIP_METRICS if mode == "fixture" else set()
         flags = []
         for b in BASELINE:
+            if b["metric"] in skip:
+                continue
             val = stats.get(b["metric"])
             if val is None:
                 continue
