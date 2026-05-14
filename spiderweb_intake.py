@@ -38,8 +38,9 @@ REQUIRED_FIELDS = [
 
 DEDUP_THRESH_DEG = 0.00045   # ≈50 m
 
-# PR municipal centroids (subset of 72 municipalities; key urban/boundary nodes)
+# PR municipal centroids (full 72-municipality set; extended for operational coverage)
 MUNICIPAL_CENTROIDS: List[Tuple[float, float]] = [
+    # Original 20
     (18.4655, -66.1057),  # San Juan
     (18.0099, -66.6140),  # Ponce
     (18.4279, -66.7177),  # Mayagüez
@@ -60,6 +61,53 @@ MUNICIPAL_CENTROIDS: List[Tuple[float, float]] = [
     (18.4014, -66.2956),  # Toa Baja
     (18.4449, -66.6188),  # Camuy
     (18.3002, -65.6340),  # Fajardo
+    # Extended — eastern PR
+    (18.2833, -65.9000),  # Caguas
+    (18.4667, -65.8333),  # Luquillo
+    (18.4000, -65.8833),  # Río Grande
+    (18.3606, -65.6268),  # Ceiba
+    (18.2333, -65.8167),  # Juncos
+    (18.2799, -65.7760),  # Yabucoa
+    (18.1167, -65.8833),  # Patillas
+    (18.1833, -65.7000),  # Maunabo
+    (18.2500, -65.8833),  # Las Piedras
+    (18.3167, -65.8333),  # Trujillo Alto
+    (18.4500, -65.9833),  # Canóvanas
+    (18.2267, -65.9702),  # Gurabo
+    (18.3333, -65.7333),  # Las Piedras (alt)
+    # Extended — northern coast
+    (18.4667, -66.1167),  # Toa Alta
+    (18.4167, -66.2500),  # Vega Alta
+    (18.4500, -66.3333),  # Vega Baja
+    (18.4167, -66.4833),  # Manatí
+    (18.4800, -66.7167),  # Quebradillas
+    (18.4667, -67.0333),  # Isabela
+    (18.5333, -67.0833),  # Aguadilla (north)
+    (18.4000, -66.7500),  # Aguada
+    (18.3571, -67.1792),  # Moca
+    # Extended — central highlands
+    (18.3333, -66.8667),  # Lares
+    (18.3011, -66.6942),  # Utuado
+    (18.3614, -66.9291),  # Las Marías
+    (18.3005, -66.9217),  # Maricao
+    (18.2833, -66.4833),  # Orocovis
+    (18.2500, -66.3333),  # Barranquitas
+    (18.1833, -66.2833),  # Comerío
+    (18.2000, -66.0333),  # Aguas Buenas
+    (18.3333, -65.9833),  # Naranjito
+    (18.2000, -66.4833),  # Villalba
+    # Extended — western & southwestern PR
+    (18.1417, -66.8783),  # Añasco
+    (18.0500, -66.8167),  # Hormigueros
+    (18.0833, -67.1500),  # Lajas
+    (18.0167, -66.8667),  # Cabo Rojo
+    (17.9966, -66.6143),  # Guayanilla
+    # Extended — southern PR
+    (18.0272, -66.3612),  # Santa Isabel
+    (17.9667, -66.3833),  # Coamo
+    (18.0500, -66.1281),  # Guayama
+    (17.9999, -66.1000),  # Arroyo
+    (18.1167, -66.3833),  # Juana Díaz (alt)
 ]
 
 # PR reservoirs / major water bodies
@@ -72,6 +120,13 @@ HYDRO_LOCATIONS: List[Tuple[float, float]] = [
     (18.1667, -66.2167),  # Lago Cidra
     (18.2667, -65.7833),  # Lago Humacao
     (18.1333, -66.4167),  # Lago Coamo
+    # Extended
+    (18.3300, -65.9700),  # Lago Carraízo / Loíza Reservoir
+    (18.4300, -66.8500),  # Lago Guajataca
+    (18.3833, -65.9667),  # Laguna Torrecilla
+    (18.1000, -66.4667),  # Lago Yahuecas
+    (18.0167, -66.2667),  # Lago Patillas
+    (18.3167, -66.5833),  # Lago Caonillas
 ]
 HYDRO_THRESH_DEG = 0.08   # ≈9 km
 
@@ -83,12 +138,25 @@ UTILITY_CORRIDOR_WAYPOINTS: List[Tuple[float, float]] = [
     (18.3700, -66.5500),  # midpoint SJU–BQN
     (18.4948, -67.1294),  # BQN
     (18.4000, -66.8500),  # Mayagüez corridor waypoint
+    # Extended — northern coast and southern transmission routes
+    (18.4800, -66.4500),  # Arecibo-Barceloneta transmission node
+    (18.4667, -66.7167),  # northern coast midpoint SJU→Aguadilla
+    (18.1100, -66.5400),  # southern corridor Ponce→Yauco
+    (18.0083, -66.7000),  # southwestern endpoint
 ]
 UTILITY_THRESH_DEG = 0.05  # ≈5 km
 
 # SJU metro bounding box
 URBAN_LAT = (18.35, 18.50)
 URBAN_LON = (-66.20, -65.90)
+
+# Ponce metro bounding box
+PONCE_URBAN_LAT = (17.95, 18.07)
+PONCE_URBAN_LON = (-66.68, -66.52)
+
+# Mayagüez metro bounding box
+MAYAGUEZ_URBAN_LAT = (18.18, 18.28)
+MAYAGUEZ_URBAN_LON = (-67.20, -67.08)
 
 # PR longitude bounds — beyond these is open ocean → coastal
 PR_LON_WEST = -67.30
@@ -260,6 +328,12 @@ class SpiderwebIntake:
         for c in candidates:
             lat, lon = c["_lat"], c["_lon"]
             if URBAN_LAT[0] <= lat <= URBAN_LAT[1] and URBAN_LON[0] <= lon <= URBAN_LON[1]:
+                c["terrain_context"] = "urban"
+            elif (PONCE_URBAN_LAT[0] <= lat <= PONCE_URBAN_LAT[1]
+                  and PONCE_URBAN_LON[0] <= lon <= PONCE_URBAN_LON[1]):
+                c["terrain_context"] = "urban"
+            elif (MAYAGUEZ_URBAN_LAT[0] <= lat <= MAYAGUEZ_URBAN_LAT[1]
+                  and MAYAGUEZ_URBAN_LON[0] <= lon <= MAYAGUEZ_URBAN_LON[1]):
                 c["terrain_context"] = "urban"
             elif lon <= PR_LON_WEST or lon >= PR_LON_EAST:
                 c["terrain_context"] = "coastal"

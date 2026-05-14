@@ -330,3 +330,76 @@ def test_all_required_fields_present(tmp_path):
     for feat in data["features"]:
         for field in REQUIRED_FIELDS:
             assert field in feat["properties"], f"Missing field: {field}"
+
+
+# ── Operational calibration: expanded scoring constants ───────────────────────
+
+def test_ponce_metro_urban(tmp_path):
+    feats = [_poi_feature(18.01, -66.60)]
+    _write_poi(tmp_path, features=feats)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
+    assert data["features"][0]["properties"]["terrain_context"] == "urban"
+
+
+def test_mayaguez_metro_urban(tmp_path):
+    feats = [_poi_feature(18.22, -67.14)]
+    _write_poi(tmp_path, features=feats)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
+    assert data["features"][0]["properties"]["terrain_context"] == "urban"
+
+
+def test_lago_carraizo_hydro(tmp_path):
+    feats = [_poi_feature(18.33, -65.97)]
+    _write_poi(tmp_path, features=feats)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
+    assert data["features"][0]["properties"]["hydro_overlap"] == "yes"
+
+
+def test_lago_guajataca_hydro(tmp_path):
+    feats = [_poi_feature(18.43, -66.85)]
+    _write_poi(tmp_path, features=feats)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
+    assert data["features"][0]["properties"]["hydro_overlap"] == "yes"
+
+
+def test_aguadilla_mbil3(tmp_path):
+    feats = [_poi_feature(18.49, -67.14)]
+    _write_poi(tmp_path, features=feats)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
+    assert data["features"][0]["properties"]["mbil_class"] == "MBIL-3"
+
+
+def test_caguas_mbil3(tmp_path):
+    feats = [_poi_feature(18.28, -65.90)]
+    _write_poi(tmp_path, features=feats)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
+    assert data["features"][0]["properties"]["mbil_class"] == "MBIL-3"
+
+
+def test_ocean_still_mbil0(tmp_path):
+    feats = [_poi_feature(20.0, -66.0)]  # north Atlantic, no PR municipalities nearby
+    _write_poi(tmp_path, features=feats)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
+    assert data["features"][0]["properties"]["mbil_class"] == "MBIL-0"
+
+
+def test_calibration_driver_report_structure(tmp_path):
+    from calibrate_scoring import REQUIRED_REPORT_KEYS, CalibrationDriver
+
+    _write_all_five(tmp_path)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    report = CalibrationDriver(str(tmp_path)).run()
+
+    report_path = tmp_path / "calibration_report.json"
+    assert report_path.exists()
+    loaded = json.loads(report_path.read_text())
+    for key in REQUIRED_REPORT_KEYS:
+        assert key in loaded, f"Missing key in calibration report: {key}"
+    assert "calibration_flags" in loaded
