@@ -214,8 +214,10 @@ class TileArtifactSweeper:
         vertical_stretch = gx / max(gy, 1e-6)
         horizontal_stretch = gy / max(gx, 1e-6)
 
-        g_contrast = max(global_metrics.get("contrast", 1.0), 1e-6)
-        g_sharpness = max(global_metrics.get("sharpness", 1.0), 1e-6)
+        raw_g_contrast = float(global_metrics.get("contrast", 0.0))
+        raw_g_sharpness = float(global_metrics.get("sharpness", 0.0))
+        g_contrast = max(raw_g_contrast, 1e-6)
+        g_sharpness = max(raw_g_sharpness, 1e-6)
         contrast_ratio = contrast / g_contrast
         sharpness_ratio = sharpness / g_sharpness
 
@@ -235,7 +237,14 @@ class TileArtifactSweeper:
             scores.append(min(0.95, 0.45 + (horizontal_stretch - 1.0) / 2.5 + anisotropy * 0.35))
 
         # Blurred/smeared patch: weak local detail compared to surrounding map.
-        if sharpness_ratio <= 0.52 and contrast_ratio <= 0.92:
+        # Guard against false positives on uniform synthetic/blank regions by
+        # requiring meaningful global texture in the source map.
+        if (
+            raw_g_contrast >= 6.0
+            and raw_g_sharpness >= 5.0
+            and sharpness_ratio <= 0.52
+            and contrast_ratio <= 0.92
+        ):
             types.append(ARTIFACT_BLUR_PATCH)
             scores.append(min(0.90, 0.50 + (0.52 - sharpness_ratio) * 0.75))
 
