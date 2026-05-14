@@ -48,6 +48,16 @@ python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain
 | `test_io.py` | `open_gebco` (missing variable, ascending/descending lat), `subset_region` (bounds, dtype, empty guard, xarray issue #1613) |
 | `test_terrain.py` | `cell_size_meters`, `compute_slope` (flat, ramp, Horn kernel), `compute_curvatures` (Z&T 1987), `compute_roughness` (O(N) variance identity), `compute_rugosity` (area_ratio + VRM) |
 
+### LLM Pipeline — PRUAP Social Data (52 tests)
+
+Optional-dependency tests use `pytest.importorskip`; they skip cleanly without `chromadb` or `torch` installed.
+
+| Test file | What it covers |
+|-----------|---------------|
+| `test_prepare_data.py` | `load_csv`, `clean_rows` (dedup, length filter, numeric cast), `to_chunks` (JSONL structure, metadata keys), `to_finetune` (prompt/completion format) |
+| `test_rag_pipeline.py` | `format_context` (empty, single, multi, missing-key fallback), `get_collection` (name, idempotent), `build_index` (missing file → SystemExit, upsert called), `retrieve` (hits structure, score in [0,1]) |
+| `test_query_llm.py` | `build_prompt` (question included, context section, `### Answer` marker), `get_context` (missing DB → None, calls retrieve+format, empty hits → None), `generate` (new-token slicing, whitespace strip, max_new_tokens), constants |
+
 ### EarthGPT iOS (19 tests)
 
 | Test file | What it covers |
@@ -69,22 +79,31 @@ python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain
 
 ## CI matrix
 
-`.github/workflows/ci.yml` runs on every push and PR against `main`:
+`.github/workflows/ci.yml` has two independent jobs that run on every push and PR against `main`:
+
+### Job: `test` — Airspace Intel + LLM Pipeline + EarthGPT
+
+Python versions: **3.10**, **3.11**, **3.12**  
+Dependencies: `jsonschema>=4.17`, `pyarrow>=14.0`, `pytest>=7.4`, `Pillow>=10.0`, `numpy>=1.26`
 
 | Step | Command |
 |------|---------|
 | Syntax check | `python -m py_compile *.py` |
-| Test suite | `python -m pytest tests/ -q --tb=short` |
+| Test suite | `python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py` |
+| EarthGPT selftest | `run_selftest()` — asserts 7/7 gates pass |
 | CLI smoke — status | `python run_all.py --db /tmp/ci_smoke.db --status` |
 | CLI smoke — validate | `python run_all.py --db /tmp/ci_smoke.db --validate` |
-| CLI smoke — export-pr-intel | Full gate assertion on `integration_report.json` |
+| CLI smoke — export-pr-intel | Full gate assertion on `integration_report.json` (6 gates) |
 | CLI smoke — export-spiderweb | File existence checks |
 
-Python versions tested: **3.10**, **3.11**, **3.12**
+### Job: `test-gebco` — GEBCO Bathymetry
 
-Dependencies installed in CI: `jsonschema>=4.17`, `pyarrow>=14.0`, `pytest>=7.4`, `Pillow>=10.0`, `numpy>=1.26`
+Python versions: **3.11**, **3.12**  
+Dependencies: `requirements-gebco.txt` (numpy, scipy, xarray, netCDF4, pandas, …)
 
-GEBCO tests (`test_io.py`, `test_terrain.py`) are **not** skipped in CI but require `xarray`/`scipy` to be available. Add them to the CI install step if GEBCO tests should be gated in CI.
+| Step | Command |
+|------|---------|
+| GEBCO test suite | `python -m pytest tests/test_io.py tests/test_terrain.py -v --tb=short` |
 
 ---
 
