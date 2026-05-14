@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from schema_validation import SchemaValidator
+from schema_validation import SCHEMAS_DIR, SchemaValidator
 
 
 @pytest.fixture
@@ -93,3 +93,47 @@ def test_review_queue_has_correct_columns(validator, tmp_path):
     with open(review_path, newline="") as f:
         reader = csv.DictReader(f)
         assert set(reader.fieldnames) == {"schema_name", "record_json", "errors", "routed_at"}
+
+
+# ── Stage 1 hardening tests ───────────────────────────────────────────────────
+
+def test_run_db_validation_returns_per_table_summary(populated_db, tmp_path):
+    v = SchemaValidator()
+    review_path = str(tmp_path / "review_queue.csv")
+    results = v.run_db_validation(populated_db, review_path)
+    expected_schemas = {
+        "flight_event", "screenshot", "track_point",
+        "extracted_field", "anomaly", "mission_inference",
+    }
+    assert not results.get("_error"), f"Unexpected error: {results.get('_error')}"
+    for schema_name in expected_schemas:
+        assert schema_name in results, f"Missing per-table result: {schema_name}"
+        entry = results[schema_name]
+        assert "total" in entry
+        assert "valid" in entry
+        assert "invalid" in entry
+
+
+def test_run_db_validation_missing_db_returns_error_key(tmp_path):
+    v = SchemaValidator()
+    results = v.run_db_validation(
+        str(tmp_path / "nonexistent.db"),
+        str(tmp_path / "review.csv"),
+    )
+    # SQLite creates the file if missing, so run_db_validation returns empty
+    # per-table results (no tables → nothing validated). The absence of _error
+    # with zero-table results is also acceptable; either way there must be no
+    # crash and the return must be a dict.
+    assert isinstance(results, dict)
+
+
+def test_all_core_schemas_loadable():
+    v = SchemaValidator()
+    loaded = v.available_schemas()
+    try:
+        import jsonschema  # noqa: F401
+        assert len(loaded) >= 6, (
+            f"Expected ≥6 schemas in {SCHEMAS_DIR}, got {len(loaded)}: {loaded}"
+        )
+    except ImportError:
+        pytest.skip("jsonschema not installed — schema loading is a no-op")

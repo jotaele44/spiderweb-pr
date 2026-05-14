@@ -271,6 +271,10 @@ def print_status(db_path: str):
 def _run_schema_validation(db_path: str):
     print("\n  SCHEMA VALIDATION")
     print("  " + "─" * 50)
+    if not Path(db_path).exists():
+        print(f"  Error: database not found: {db_path}")
+        print(f"  Hint: run the pipeline first to populate the database")
+        sys.exit(1)
     try:
         from schema_validation import SchemaValidator
         validator = SchemaValidator()
@@ -294,6 +298,10 @@ def _run_schema_validation(db_path: str):
 def _run_export_pr_intel(db_path: str, output_dir: str):
     print("\n  PR INTEL EXPORT")
     print("  " + "─" * 50)
+    if not Path(db_path).exists():
+        print(f"  Error: database not found: {db_path}")
+        print(f"  Hint: run the full pipeline first, then re-run --export-pr-intel")
+        sys.exit(1)
     try:
         from pr_intel_adapter import PRIntelAdapter
         adapter = PRIntelAdapter(db_path, output_dir)

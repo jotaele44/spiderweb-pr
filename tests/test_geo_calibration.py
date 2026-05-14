@@ -74,3 +74,22 @@ def test_zero_pixel_returns_sensible_result():
     result = cal.pixel_to_coord(0, 0, 1024, 768)
     assert isinstance(result.lat, float)
     assert isinstance(result.lon, float)
+
+
+# ── Stage 1 hardening tests ───────────────────────────────────────────────────
+
+def test_manual_anchor_csv_interpolates_from_csv(tmp_path):
+    anchor_csv = tmp_path / "anchors.csv"
+    anchor_csv.write_text(
+        "anchor_id,name,pixel_x_fraction,pixel_y_fraction,lat,lon\n"
+        "SJU,San Juan Airport,0.70,0.30,18.4373,-66.0018\n"
+        "BQN,Rafael Hernandez Airport,0.15,0.28,18.4948,-67.1294\n"
+    )
+    cal = GeoCalibration(mode="manual_anchor_csv", anchors_csv=str(anchor_csv))
+    result = cal.pixel_to_coord(512, 300, 1024, 768)
+    assert isinstance(result, CoordResult)
+    assert result.coordinate_method == "manual_anchor_csv"
+    assert result.coordinate_confidence == 0.90
+    assert result.in_pr_bbox(), (
+        f"Interpolated coord {result.lat},{result.lon} should be within PR bbox"
+    )
