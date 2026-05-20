@@ -802,6 +802,88 @@ class Phase3Pipeline:
         conn.close()
 
 
+    def explain(self, flight_id: str) -> Dict:
+        """Return a human-readable score breakdown for a single flight.
+
+        Parameters
+        ----------
+        flight_id:
+            The flight to explain.
+
+        Returns
+        -------
+        dict with keys:
+            ``flight_id``, ``mission_type``, ``total_score``,
+            ``confidence_level``, ``signal_scores`` (per-signal breakdown),
+            ``explanation`` (natural language reasons)
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        rows = [dict(r) for r in conn.execute(
+            "SELECT * FROM mission_scores WHERE flight_id = ? ORDER BY total_score DESC LIMIT 1",
+            (flight_id,)
+        )]
+        conn.close()
+        if not rows:
+            return {"flight_id": flight_id, "mission_type": "Unknown",
+                    "total_score": 0.0, "confidence_level": "LOW",
+                    "signal_scores": {}, "explanation": "No scores recorded."}
+        row = rows[0]
+        signal_scores = json.loads(row.get("signal_scores") or "{}")
+        explanation = json.loads(row.get("explanation") or "[]")
+        return {
+            "flight_id":      flight_id,
+            "mission_type":   row["mission_type"],
+            "total_score":    row["total_score"],
+            "confidence_level": row["confidence_level"],
+            "signal_scores":  signal_scores,
+            "explanation":    explanation,
+        }
+
+    def enrich_unknown_with_rag(
+        self, flight_id: str, callsign: str, db_path: str = None, top_k: int = 3
+    ) -> Dict:
+        """Query RAG for social context when mission type is UNKNOWN.
+
+        Parameters
+        ----------
+        flight_id:
+            Flight whose mission is UNKNOWN.
+        callsign:
+            Aircraft callsign used as RAG query anchor.
+        db_path:
+            Path to ChromaDB index.  Defaults to ``./pruap_index``.
+        top_k:
+            Number of RAG hits to retrieve.
+
+        Returns
+        -------
+        dict with keys:
+            ``flight_id``, ``callsign``, ``rag_hits`` (list of dicts),
+            ``rag_context`` (formatted string)
+        """
+        try:
+            from rag_pipeline import safe_retrieve, format_context_with_limit
+            rag_db = db_path or "./pruap_index"
+            query = f"unidentified aircraft {callsign} Puerto Rico sighting"
+            hits = safe_retrieve(query, rag_db, top_k=top_k)
+            context = format_context_with_limit(hits)
+            return {
+                "flight_id":   flight_id,
+                "callsign":    callsign,
+                "rag_hits":    hits,
+                "rag_context": context,
+            }
+        except Exception as exc:
+            return {
+                "flight_id":   flight_id,
+                "callsign":    callsign,
+                "rag_hits":    [],
+                "rag_context": "",
+                "rag_error":   str(exc),
+            }
+
+
 if __name__ == "__main__":
     pipeline = Phase3Pipeline()
     pipeline.run()

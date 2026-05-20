@@ -287,3 +287,32 @@ class ILAPAirspaceBridge:
             return [dict(r) for r in conn.execute(sql)]
         except Exception:
             return []
+
+
+def poi_to_earthgpt_context(poi_feature: dict) -> dict:
+    """Convert an ILAP POI GeoJSON feature to an EarthGPT TileContext dict.
+
+    Parameters
+    ----------
+    poi_feature:
+        A GeoJSON Feature from ``airspace_poi_candidates.geojson``.
+
+    Returns
+    -------
+    dict compatible with ``TileContext.from_row()`` / ``ContextNormalizer.validate()``.
+    """
+    props = poi_feature.get("properties", {})
+    lat = props.get("lat", 0.0)
+    lon = props.get("lon", 0.0)
+    return {
+        "x":            0,
+        "y":            0,
+        "zoom":         15,
+        "tile_type":    "land",
+        "coast_weight": 1.0,
+        "water_weight": 1.0,
+        "poi_lat":      lat,
+        "poi_lon":      lon,
+        "overall_confidence": props.get("overall_confidence", 0.0),
+        "review_priority":    props.get("review_priority", "LOW"),
+    }
