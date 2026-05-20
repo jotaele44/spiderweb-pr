@@ -206,3 +206,10 @@ def test_get_export_report_has_expected_keys(populated_db, tmp_path):
     expected = {"generated_at", "db_path", "screenshots_upserted",
                 "track_points_inserted", "review_items_added", "errors"}
     assert expected.issubset(set(report.keys()))
+
+
+def test_export_route_events_malformed_path_returns_zero(populated_db, tmp_path):
+    from fr24_event_export import FR24EventExporter
+    exp = FR24EventExporter(populated_db, review_dir=str(tmp_path / "review"))
+    inserted = exp.export_route_events("/nonexistent/malformed.jpg", routes=[])
+    assert inserted == 0

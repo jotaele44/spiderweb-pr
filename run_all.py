@@ -493,6 +493,10 @@ Examples:
                         help="Audit spiderweb overlay candidates against operational baseline ranges")
     parser.add_argument("--assess-readiness", metavar="DIR",
                         help="Assess PRII readiness from integration_report + calibration_report in DIR")
+    parser.add_argument("--ingest-satellite", metavar="MANIFEST",
+                        help="Validate and ingest a satellite source manifest JSON file")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="With --ingest-satellite: validate only, do not write to disk")
 
     args = parser.parse_args()
 
@@ -528,7 +532,7 @@ Examples:
         and (args.validate or args.export_pr_intel or args.export_spiderweb
              or args.scan_inventory or args.export_fr24_events
              or args.spiderweb_intake or args.calibrate_scoring
-             or args.assess_readiness)
+             or args.assess_readiness or args.ingest_satellite)
     )
 
     if not new_flags_only:
@@ -581,6 +585,18 @@ Examples:
 
     if args.assess_readiness:
         _run_assess_readiness(args.assess_readiness)
+
+    if args.ingest_satellite:
+        _run_ingest_satellite(args.ingest_satellite, getattr(args, "dry_run", False))
+
+
+def _run_ingest_satellite(manifest_path: str, dry_run: bool = False):
+    print("\n  SATELLITE MANIFEST INGEST")
+    print("  " + "─" * 50)
+    from satellite_ingest import ingest_from_cli
+    rc = ingest_from_cli(manifest_path, dry_run=dry_run)
+    if rc != 0:
+        sys.exit(rc)
 
 
 if __name__ == "__main__":

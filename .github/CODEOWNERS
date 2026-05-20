@@ -1,0 +1,8 @@
+# Code ownership for spiderweb-pr
+# Changes to schemas and contracts require review
+
+schemas/                          @jotaele44
+docs/contracts/                   @jotaele44
+tests/test_satellite_*            @jotaele44
+tests/test_new_schemas.py         @jotaele44
+.github/workflows/                @jotaele44

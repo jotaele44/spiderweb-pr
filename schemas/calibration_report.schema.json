@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "calibration_report",
+  "title": "Calibration Report",
+  "type": "object",
+  "required": [
+    "generated_at", "export_dir", "baseline_mode", "status",
+    "missing_inputs", "candidate_count", "tier_distribution",
+    "mbil_distribution", "signal_rates", "terrain_distribution",
+    "dedup_rate", "calibration_flags"
+  ],
+  "properties": {
+    "generated_at":         {"type": "string", "minLength": 1},
+    "export_dir":           {"type": "string", "minLength": 1},
+    "baseline_mode":        {"type": "string", "enum": ["operational", "fixture"]},
+    "status":               {"type": "string", "enum": ["PASS", "WARN", "FAIL"]},
+    "missing_inputs":       {"type": "array", "items": {"type": "string"}},
+    "candidate_count":      {"type": "integer", "minimum": 0},
+    "tier_distribution":    {"type": "object"},
+    "mbil_distribution":    {"type": "object"},
+    "signal_rates": {
+      "type": "object",
+      "required": ["hydro_yes_pct", "utility_yes_pct"],
+      "properties": {
+        "hydro_yes_pct":   {"type": "number", "minimum": 0, "maximum": 1},
+        "utility_yes_pct": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "terrain_distribution": {"type": "object"},
+    "dedup_rate":           {"type": "number", "minimum": 0, "maximum": 1},
+    "calibration_flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["metric", "value", "action"],
+        "properties": {
+          "metric":       {"type": "string", "minLength": 1},
+          "value":        {"type": "number"},
+          "action":       {"type": "string", "minLength": 1},
+          "expected_min": {"type": "number"},
+          "expected_max": {"type": "number"}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

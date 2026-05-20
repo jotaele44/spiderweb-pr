@@ -132,8 +132,16 @@ def test_all_core_schemas_loadable():
     loaded = v.available_schemas()
     try:
         import jsonschema  # noqa: F401
-        assert len(loaded) >= 6, (
-            f"Expected ≥6 schemas in {SCHEMAS_DIR}, got {len(loaded)}: {loaded}"
+        assert len(loaded) >= 11, (
+            f"Expected ≥11 schemas in {SCHEMAS_DIR}, got {len(loaded)}: {loaded}"
         )
     except ImportError:
         pytest.skip("jsonschema not installed — schema loading is a no-op")
+
+
+def test_satellite_source_manifest_schema_loaded(validator):
+    try:
+        import jsonschema  # noqa: F401
+        assert "satellite_source_manifest" in validator.available_schemas()
+    except ImportError:
+        pytest.skip("jsonschema not installed")

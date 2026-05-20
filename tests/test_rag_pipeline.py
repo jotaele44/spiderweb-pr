@@ -180,3 +180,17 @@ def test_retrieve_score_in_range(tmp_path):
         hits = retrieve("lights", db, top_k=1)
 
     assert 0.0 <= hits[0]["score"] <= 1.0
+
+
+def test_retrieve_from_empty_corpus_returns_list(tmp_path):
+    chromadb = pytest.importorskip("chromadb")
+    from unittest.mock import MagicMock, patch
+
+    mock_model = MagicMock()
+    mock_model.encode.return_value = [[0.5] * 10]
+
+    with patch("rag_pipeline.SentenceTransformer", return_value=mock_model):
+        from rag_pipeline import retrieve
+        results = retrieve("any query", str(tmp_path / "empty_db"), top_k=5)
+
+    assert isinstance(results, list)

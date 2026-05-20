@@ -175,3 +175,16 @@ def test_default_top_k():
 
 def test_max_new_tokens():
     assert MAX_NEW_TOKENS == 512
+
+
+def test_build_prompt_with_none_context_returns_string():
+    from query_llm import build_prompt
+    prompt = build_prompt("What is a UAP?", context=None)
+    assert isinstance(prompt, str)
+    assert "UAP" in prompt
+
+
+def test_build_prompt_with_empty_context_returns_string():
+    from query_llm import build_prompt
+    prompt = build_prompt("test query", context="")
+    assert isinstance(prompt, str)

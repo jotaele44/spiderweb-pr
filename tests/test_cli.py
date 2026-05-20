@@ -24,3 +24,20 @@ def test_export_json_flag(populated_db, tmp_output):
     assert Path(out).exists()
     data = json.loads(Path(out).read_text())
     assert "flights" in data or "screenshots" in data or isinstance(data, (dict, list))
+
+
+def test_validate_missing_db_exits_nonzero(tmp_path):
+    result = subprocess.run(
+        [sys.executable, "run_all.py", "--validate", "--db", str(tmp_path / "no.db")],
+        capture_output=True, text=True, cwd=str(Path(__file__).parent.parent),
+    )
+    assert result.returncode != 0
+
+
+def test_export_pr_intel_missing_db_exits_nonzero(tmp_path):
+    result = subprocess.run(
+        [sys.executable, "run_all.py", "--export-pr-intel", str(tmp_path / "out"),
+         "--db", str(tmp_path / "no.db")],
+        capture_output=True, text=True, cwd=str(Path(__file__).parent.parent),
+    )
+    assert result.returncode != 0

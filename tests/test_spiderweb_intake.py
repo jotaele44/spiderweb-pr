@@ -511,3 +511,10 @@ def test_overlay_output_is_deterministic(tmp_path):
         for f in json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())["features"]
     ]
     assert coords_first == coords_second
+
+
+def test_empty_intake_dir_produces_report(tmp_path):
+    intake = SpiderwebIntake(str(tmp_path / "in"), str(tmp_path / "out"))
+    report = intake.run()
+    assert isinstance(report, dict)
+    assert "missing_files" in report or "candidate_count" in report or report is not None

@@ -13,3 +13,4 @@ scikit-image==0.26.0
 pytest==9.0.2
 black==26.3.0
 ruff==0.15.5
+jsonschema==4.26.0

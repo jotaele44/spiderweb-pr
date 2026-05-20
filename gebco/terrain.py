@@ -37,6 +37,59 @@ from scipy import ndimage
 # ---------------------------------------------------------------------------
 
 
+# Puerto Rico bounding envelope (WGS-84 degrees)
+PR_LON_MIN, PR_LON_MAX = -68.2, -65.1
+PR_LAT_MIN, PR_LAT_MAX = 17.8, 18.7
+
+
+def bbox_intersects_pr(west: float, south: float, east: float, north: float) -> bool:
+    """Return True if the given WGS-84 bbox overlaps the Puerto Rico envelope."""
+    return not (east < PR_LON_MIN or west > PR_LON_MAX or
+                north < PR_LAT_MIN or south > PR_LAT_MAX)
+
+
+def clip_to_bbox(
+    arr: np.ndarray,
+    arr_west: float,
+    arr_north: float,
+    cell_lon: float,
+    cell_lat: float,
+    west: float,
+    south: float,
+    east: float,
+    north: float,
+) -> np.ndarray:
+    """Clip a 2-D raster array to the given bounding box.
+
+    Parameters
+    ----------
+    arr:
+        2-D array with rows ordered north→south, columns ordered west→east.
+    arr_west, arr_north:
+        Coordinates of the top-left corner of the first cell centre.
+    cell_lon, cell_lat:
+        Cell size in degrees (positive values).
+    west, south, east, north:
+        Target clipping bbox in decimal degrees.
+
+    Returns
+    -------
+    np.ndarray
+        Sub-array covering the requested bbox (may be empty if no overlap).
+    """
+    rows, cols = arr.shape
+
+    col_start = max(0, int(np.floor((west - arr_west) / cell_lon)))
+    col_end   = min(cols, int(np.ceil((east - arr_west) / cell_lon)) + 1)
+    row_start = max(0, int(np.floor((arr_north - north) / cell_lat)))
+    row_end   = min(rows, int(np.ceil((arr_north - south) / cell_lat)) + 1)
+
+    if col_start >= col_end or row_start >= row_end:
+        return arr[0:0, 0:0]
+
+    return arr[row_start:row_end, col_start:col_end]
+
+
 def cell_size_meters(
     lat_deg: float | np.ndarray,
     res_arcsec: float = 15.0,
