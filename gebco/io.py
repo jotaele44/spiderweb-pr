@@ -12,10 +12,52 @@ Design notes
 
 from __future__ import annotations
 
-import xarray as xr
+try:
+    import xarray as xr
+    _HAS_XARRAY = True
+except ImportError:
+    _HAS_XARRAY = False
 
 
-def open_gebco(path: str, engine: str = "netcdf4") -> xr.Dataset:
+# Puerto Rico region bounds (WGS-84) — used by validate_bounds (no xarray needed)
+_PR_LON_MIN, _PR_LON_MAX = -67.30, -65.20
+_PR_LAT_MIN, _PR_LAT_MAX = 17.92, 18.65
+
+
+def validate_bounds(
+    lat_min: float, lat_max: float, lon_min: float, lon_max: float
+) -> None:
+    """Raise ValueError if bounds fall outside the Puerto Rico region envelope.
+
+    Parameters
+    ----------
+    lat_min, lat_max:
+        Latitude bounds (degrees north).
+    lon_min, lon_max:
+        Longitude bounds (degrees east, negative = west).
+
+    Raises
+    ------
+    ValueError
+        If any bound lies outside the PR envelope or min ≥ max.
+    """
+    if lat_min >= lat_max:
+        raise ValueError(f"lat_min ({lat_min}) must be less than lat_max ({lat_max})")
+    if lon_min >= lon_max:
+        raise ValueError(f"lon_min ({lon_min}) must be less than lon_max ({lon_max})")
+    if lat_min < _PR_LAT_MIN or lat_max > _PR_LAT_MAX:
+        raise ValueError(
+            f"Latitude bounds [{lat_min}, {lat_max}] outside PR envelope "
+            f"[{_PR_LAT_MIN}, {_PR_LAT_MAX}]"
+        )
+    if lon_min < _PR_LON_MIN or lon_max > _PR_LON_MAX:
+        raise ValueError(
+            f"Longitude bounds [{lon_min}, {lon_max}] outside PR envelope "
+            f"[{_PR_LON_MIN}, {_PR_LON_MAX}]"
+        )
+
+
+def open_gebco(path: str, engine: str = "netcdf4") -> "xr.Dataset":
     """Open a GEBCO 2023 NetCDF-4 file as a lazy xarray Dataset.
 
     Parameters
@@ -45,6 +87,8 @@ def open_gebco(path: str, engine: str = "netcdf4") -> xr.Dataset:
     triggers a fast HDF5 hyperslab read that is cheaper than Dask scheduling for
     regions up to ~100 MB.
     """
+    if not _HAS_XARRAY:
+        raise ImportError("xarray is required for open_gebco. Install xarray and netCDF4.")
     ds = xr.open_dataset(path, engine=engine)
 
     if "elevation" not in ds:

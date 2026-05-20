@@ -5,7 +5,7 @@ computation (``gebco.terrain``) for the GEBCO 2023 global 15 arc-second grid.
 """
 
 try:
-    from .io import open_gebco, subset_region
+    from .io import open_gebco, subset_region, validate_bounds
     _has_io = True
 except ImportError:
     _has_io = False
@@ -22,11 +22,14 @@ from .terrain import (
     compute_roughness,
     compute_rugosity,
     compute_slope,
+    mona_passage_profile,
+    underwater_ridges,
 )
 
 __all__ = [
     "open_gebco",
     "subset_region",
+    "validate_bounds",
     "PR_LON_MIN",
     "PR_LON_MAX",
     "PR_LAT_MIN",
@@ -38,4 +41,6 @@ __all__ = [
     "compute_curvatures",
     "compute_roughness",
     "compute_rugosity",
+    "mona_passage_profile",
+    "underwater_ridges",
 ]

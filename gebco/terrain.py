@@ -432,3 +432,84 @@ def compute_rugosity(
         return np.clip(vrm, 0.0, 1.0)
 
     raise ValueError(f"Unknown rugosity method '{method}'. Use 'area_ratio' or 'vrm'.")
+
+
+# ---------------------------------------------------------------------------
+# Named PR region helpers
+# ---------------------------------------------------------------------------
+
+
+def mona_passage_profile(
+    dem: np.ndarray,
+    lat_coords: np.ndarray,
+    lon_coords: np.ndarray,
+) -> dict:
+    """Return a depth cross-section dict for the Mona Passage area.
+
+    Selects the westernmost 15% of columns (longitude ≤ −67.0) as a proxy
+    for the Mona Passage, computes mean depth per latitude row, and returns
+    a compact summary dict.
+
+    Parameters
+    ----------
+    dem:
+        2-D elevation array (metres).  Negative = below sea level.
+    lat_coords, lon_coords:
+        1-D coordinate arrays corresponding to dem rows / columns.
+
+    Returns
+    -------
+    dict with keys:
+        ``lat_profile``   – list of float latitudes
+        ``mean_depth_m``  – list of float mean depths (negative = below MSL)
+        ``min_depth_m``   – shallowest point in the passage
+        ``max_depth_m``   – deepest point in the passage
+    """
+    dem = _to_float64(dem)
+    mona_lon_threshold = -67.0
+    col_mask = lon_coords <= mona_lon_threshold
+    if not np.any(col_mask):
+        col_mask = np.ones(len(lon_coords), dtype=bool)
+
+    passage_slice = dem[:, col_mask]
+    mean_depths = np.nanmean(passage_slice, axis=1).tolist()
+    return {
+        "lat_profile":  [float(la) for la in lat_coords],
+        "mean_depth_m": [float(d) for d in mean_depths],
+        "min_depth_m":  float(np.nanmin(passage_slice)),
+        "max_depth_m":  float(np.nanmax(passage_slice)),
+    }
+
+
+def underwater_ridges(
+    dem: np.ndarray, dx: float, dy: float, threshold_m: float = -100.0
+) -> list:
+    """Identify approximate underwater ridge crest coordinates.
+
+    A ridge crest is defined as a local maximum in the bathymetry that is
+    above *threshold_m* (less negative, i.e. shallower) but still below 0 m.
+
+    Parameters
+    ----------
+    dem:
+        2-D elevation array (metres).
+    dx, dy:
+        Cell sizes in metres.
+    threshold_m:
+        Maximum depth (metres, must be ≤ 0) to classify as a ridge.
+        Default: −100 m (features shallower than 100 m below MSL).
+
+    Returns
+    -------
+    list of (row, col) integer tuples marking ridge-crest cells.
+    """
+    dem_f = _to_float64(dem)
+    # Erode (local min) and dilate (local max) to find local maxima
+    from scipy.ndimage import maximum_filter, minimum_filter
+    local_max = maximum_filter(dem_f, size=3, mode="nearest")
+    is_local_max = (dem_f == local_max)
+    is_below_msl = dem_f < 0.0
+    is_above_threshold = dem_f >= threshold_m
+    ridge_mask = is_local_max & is_below_msl & is_above_threshold
+    ridges = list(zip(*np.where(ridge_mask)))
+    return [(int(r), int(c)) for r, c in ridges]
