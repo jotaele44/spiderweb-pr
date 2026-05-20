@@ -12,6 +12,40 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+try:
+    from gis_intelligence import PuertoRicoInfrastructure, haversine_nm
+    _INFRA = PuertoRicoInfrastructure()
+except Exception:
+    _INFRA = None
+
+
+def _infra_align_score(center_lat: float, center_lon: float) -> float:
+    """Return infrastructure alignment score in [0, 1] for a POI centroid.
+
+    Scores based on proximity to the nearest known PR infrastructure feature:
+      ≤2 nm  → 1.0 (directly over/adjacent to feature)
+      ≤5 nm  → 0.75
+      ≤10 nm → 0.50
+      ≤20 nm → 0.25
+      >20 nm → 0.10 (baseline; no known infrastructure nearby)
+    Falls back to 0.3 when gis_intelligence is unavailable.
+    """
+    if _INFRA is None:
+        return 0.3
+    min_dist = min(
+        (f.distance_to_point(center_lat, center_lon) for f in _INFRA.features.values()),
+        default=999.0,
+    )
+    if min_dist <= 2:
+        return 1.0
+    if min_dist <= 5:
+        return 0.75
+    if min_dist <= 10:
+        return 0.50
+    if min_dist <= 20:
+        return 0.25
+    return 0.10
+
 
 IDENTITY_NOTE = (
     "N/A or weak aircraft identity may increase review priority "
@@ -90,7 +124,7 @@ class ILAPAirspaceBridge:
 
             recurrence = min(1.0, len(flight_ids) / 10.0)
             loiter = self._loiter_score(points)
-            infra_align = 0.3  # placeholder; real impl would cross-ref infra layer
+            infra_align = _infra_align_score(center_lat, center_lon)
             hydro_utility = 0.2
             mbil_proximity = 0.1
 

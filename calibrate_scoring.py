@@ -9,6 +9,7 @@ operational DB export is available.
 """
 
 import json
+import warnings
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -56,6 +57,16 @@ class CalibrationDriver:
 
         n    = len(features)
         mode = "operational" if n >= MIN_OPERATIONAL_CANDIDATES else "fixture"
+
+        if n < MIN_OPERATIONAL_CANDIDATES:
+            warnings.warn(
+                f"CalibrationDriver: only {n} candidate(s) loaded — minimum "
+                f"{MIN_OPERATIONAL_CANDIDATES} required for operational mode. "
+                "Running in fixture mode; tier-skew metrics suppressed. "
+                "Ingest a real operational DB export before relying on these results.",
+                UserWarning,
+                stacklevel=2,
+            )
 
         tier_dist    = self._tier_distribution(features)
         mbil_dist    = self._mbil_distribution(features)
@@ -263,6 +274,11 @@ class CalibrationDriver:
             "pct_mbil_0":         md.get("MBIL-0", 0) / n if n else 0.0,
             "pct_urban_terrain":  te.get("urban", 0) / n if n else 0.0,
         }
+
+    def is_operational(self) -> bool:
+        """Return True when the export directory has enough candidates for operational calibration."""
+        features = self._load_overlay()
+        return len(features) >= MIN_OPERATIONAL_CANDIDATES
 
     def _write_report(self, report: Dict[str, Any]) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)

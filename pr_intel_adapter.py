@@ -10,6 +10,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+DEFAULT_GATE_CONFIG = {
+    "coord_coverage_threshold": 0.70,
+    "ocr_confidence_threshold": 0.50,
+    "evidence_chain_threshold": 0.50,
+}
+
 try:
     import pyarrow as pa
     import pyarrow.parquet as pq
@@ -51,10 +57,12 @@ class PRIntelAdapter:
         "integration_report.json",
     ]
 
-    def __init__(self, db_path: str, output_dir: str):
+    def __init__(self, db_path: str, output_dir: str,
+                 gate_config: Optional[Dict[str, float]] = None):
         self.db_path = db_path
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.gate_config = {**DEFAULT_GATE_CONFIG, **(gate_config or {})}
 
     def export_all(self) -> Dict[str, Any]:
         generated = []
@@ -130,10 +138,10 @@ class PRIntelAdapter:
         ]
         manifest_path.write_text(json.dumps(manifest, indent=2))
 
-        # Gate thresholds
-        COORD_THRESHOLD = 0.70    # 70% of flights must have at least one coord pair
-        OCR_THRESHOLD = 0.50      # average OCR confidence must be ≥ 0.50
-        EVIDENCE_THRESHOLD = 0.50 # 50% of screenshots must be linked to a flight
+        # Gate thresholds (configurable via gate_config kwarg)
+        COORD_THRESHOLD    = self.gate_config["coord_coverage_threshold"]
+        OCR_THRESHOLD      = self.gate_config["ocr_confidence_threshold"]
+        EVIDENCE_THRESHOLD = self.gate_config["evidence_chain_threshold"]
 
         # Coordinate coverage (skip gate when no flights)
         flights_with_coords = sum(
