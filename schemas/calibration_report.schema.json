@@ -28,6 +28,7 @@
     },
     "terrain_distribution": {"type": "object"},
     "dedup_rate":           {"type": "number", "minimum": 0, "maximum": 1},
+    "is_operational":       {"type": "boolean"},
     "calibration_flags": {
       "type": "array",
       "items": {

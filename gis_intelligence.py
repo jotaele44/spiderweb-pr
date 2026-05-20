@@ -49,6 +49,7 @@ class InfrastructureFeature:
     radius_nm: float
     operational_notes: str = ""
     operator: str = ""
+    sector: str = "air"  # one of: air, power, maritime, federal, restricted
 
     def distance_to_point(self, lat: float, lon: float) -> float:
         return haversine_nm(self.latitude, self.longitude, lat, lon)
@@ -69,7 +70,7 @@ class PuertoRicoInfrastructure:
             name="San Juan International (Luis Muñoz Marín)",
             type=InfrastructureType.AIRPORT,
             latitude=18.4386, longitude=-66.0010, radius_nm=5,
-            operator="FAA",
+            operator="FAA", sector="air",
             operational_notes="Primary commercial airport, Class B airspace"
         ))
         self.add_feature(InfrastructureFeature(
@@ -77,7 +78,7 @@ class PuertoRicoInfrastructure:
             name="San Juan (Isla Grande)",
             type=InfrastructureType.HELIPORT,
             latitude=18.4519, longitude=-66.1198, radius_nm=2,
-            operator="FAA",
+            operator="FAA", sector="air",
             operational_notes="Helicopter/small aircraft base"
         ))
         self.add_feature(InfrastructureFeature(
@@ -85,7 +86,7 @@ class PuertoRicoInfrastructure:
             name="Aguadilla (Ramey)",
             type=InfrastructureType.AIRPORT,
             latitude=18.5049, longitude=-67.1314, radius_nm=4,
-            operator="FAA",
+            operator="FAA", sector="air",
             operational_notes="Regional commercial airport"
         ))
         self.add_feature(InfrastructureFeature(
@@ -93,7 +94,7 @@ class PuertoRicoInfrastructure:
             name="Ponce",
             type=InfrastructureType.AIRPORT,
             latitude=18.0075, longitude=-66.5627, radius_nm=3,
-            operator="FAA",
+            operator="FAA", sector="air",
             operational_notes="Regional airport"
         ))
         self.add_feature(InfrastructureFeature(
@@ -101,7 +102,7 @@ class PuertoRicoInfrastructure:
             name="Ceiba (Roosevelt Roads)",
             type=InfrastructureType.AIRPORT,
             latitude=18.2536, longitude=-65.6362, radius_nm=4,
-            operator="US Navy",
+            operator="US Navy", sector="air",
             operational_notes="Naval air station, former US military base"
         ))
 
@@ -111,7 +112,7 @@ class PuertoRicoInfrastructure:
             name="South Coast Transmission Corridor",
             type=InfrastructureType.TRANSMISSION_LINE,
             latitude=18.0, longitude=-66.5, radius_nm=15,
-            operator="PREPA",
+            operator="PREPA", sector="power",
             operational_notes="Critical power transmission corridor, frequent inspection flights"
         ))
         self.add_feature(InfrastructureFeature(
@@ -119,7 +120,7 @@ class PuertoRicoInfrastructure:
             name="Central Interior Distribution",
             type=InfrastructureType.TRANSMISSION_LINE,
             latitude=18.2, longitude=-66.3, radius_nm=20,
-            operator="PREPA",
+            operator="PREPA", sector="power",
             operational_notes="Main distribution network, high inspection activity"
         ))
         self.add_feature(InfrastructureFeature(
@@ -127,7 +128,7 @@ class PuertoRicoInfrastructure:
             name="Palo Seco Power Plant Area",
             type=InfrastructureType.POWER_SUBSTATION,
             latitude=18.0523, longitude=-67.0258, radius_nm=3,
-            operator="PREPA",
+            operator="PREPA", sector="power",
             operational_notes="Major generation facility, critical infrastructure"
         ))
 
@@ -137,7 +138,7 @@ class PuertoRicoInfrastructure:
             name="USCG San Juan Sector",
             type=InfrastructureType.COAST_GUARD_SECTOR,
             latitude=18.4386, longitude=-66.0010, radius_nm=50,
-            operator="USCG",
+            operator="USCG", sector="maritime",
             operational_notes="Maritime jurisdiction, active SAR operations"
         ))
 
@@ -147,7 +148,7 @@ class PuertoRicoInfrastructure:
             name="Mona Passage",
             type=InfrastructureType.MARITIME_ROUTE,
             latitude=18.85, longitude=-67.5, radius_nm=25,
-            operator="USCG",
+            operator="USCG", sector="maritime",
             operational_notes="High maritime traffic, dangerous crossing, frequent SAR"
         ))
 
@@ -157,7 +158,7 @@ class PuertoRicoInfrastructure:
             name="Port of San Juan",
             type=InfrastructureType.PORT,
             latitude=18.4519, longitude=-66.1198, radius_nm=3,
-            operator="PSA",
+            operator="PSA", sector="maritime",
             operational_notes="Major container port, commercial shipping"
         ))
 
@@ -167,7 +168,7 @@ class PuertoRicoInfrastructure:
             name="Vieques Restricted Airspace",
             type=InfrastructureType.RESTRICTED_AIRSPACE,
             latitude=18.135, longitude=-65.435, radius_nm=10,
-            operator="US Navy",
+            operator="US Navy", sector="restricted",
             operational_notes="Former bombing range, still restricted"
         ))
 
@@ -177,7 +178,7 @@ class PuertoRicoInfrastructure:
             name="FURA (Fuerzas Unidas de Rápida Acción) Base",
             type=InfrastructureType.POLICE_BASE,
             latitude=18.45, longitude=-66.05, radius_nm=2,
-            operator="Puerto Rico Police",
+            operator="Puerto Rico Police", sector="federal",
             operational_notes="Tactical operations base, helicopter staging"
         ))
 
@@ -195,6 +196,10 @@ class PuertoRicoInfrastructure:
 
     def get_features_by_operator(self, operator: str) -> List[InfrastructureFeature]:
         return [f for f in self.features.values() if f.operator == operator]
+
+    def features_by_sector(self, sector: str) -> List[InfrastructureFeature]:
+        """Return all features belonging to the given sector."""
+        return [f for f in self.features.values() if f.sector == sector]
 
 
 # ============================================================================
@@ -254,16 +259,28 @@ class CorridorAnalyzer:
             ),
         ]
 
-    def find_corridors_for_flight(self, track_points: List[Dict]) -> List[FlightCorridor]:
-        matching = []
+    def find_corridors_for_flight(
+        self, track_points: List[Dict]
+    ) -> List[Dict]:
+        """Return list of dicts with corridor and point-density confidence score.
+
+        Each entry: {"corridor": FlightCorridor, "confidence": float 0–1}
+        Confidence = fraction of track points inside the corridor (capped at 1.0).
+        Only corridors with ≥30% point density are included.
+        """
+        result = []
+        n = len(track_points)
+        if not n:
+            return result
         for corridor in self.corridors:
             in_corridor = sum(
                 1 for p in track_points
                 if corridor.contains_point(p["latitude"], p["longitude"])
             )
-            if track_points and in_corridor > len(track_points) * 0.3:
-                matching.append(corridor)
-        return matching
+            density = in_corridor / n
+            if density > 0.3:
+                result.append({"corridor": corridor, "confidence": round(density, 4)})
+        return result
 
 
 # ============================================================================

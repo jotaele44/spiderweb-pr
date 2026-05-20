@@ -5,8 +5,9 @@
   "type": "object",
   "required": ["generated_at", "status", "gates"],
   "properties": {
-    "generated_at": {"type": "string", "minLength": 1},
-    "status":       {"type": "string", "enum": ["READY", "NOT_READY", "DEGRADED"]},
+    "generated_at":      {"type": "string", "minLength": 1},
+    "calibration_ready": {"type": "boolean"},
+    "status":            {"type": "string", "enum": ["READY", "NOT_READY", "DEGRADED"]},
     "gates": {
       "type": "object",
       "properties": {

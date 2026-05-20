@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "geo_calibration_config",
+  "title": "Geo Calibration Configuration",
+  "type": "object",
+  "properties": {
+    "map_top_fraction":    {"type": "number", "minimum": 0, "maximum": 1},
+    "map_bottom_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+    "mode": {
+      "type": "string",
+      "enum": ["fixed_pr_bounds", "airport_anchor", "manual_anchor_csv", "multi_anchor_weighted"]
+    },
+    "anchor_csv_path": {"type": ["string", "null"]},
+    "fixed_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "fixed_error_m":    {"type": "number", "minimum": 0}
+  },
+  "additionalProperties": true
+}
