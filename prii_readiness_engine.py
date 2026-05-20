@@ -392,6 +392,26 @@ class PRIIReadinessEngine:
             "checks":     checks,
         }
 
+    @property
+    def PRODUCTION_READY(self) -> bool:
+        """Return True when all PRII gates PASS, calibration is operational,
+        and the readiness status is READY.
+
+        This is the final completion criterion for Task 200: all 6+ integration
+        gates must pass on real data with ≥50 operational candidates
+        (calibration_ready=True), producing status=READY in the readiness report.
+        """
+        try:
+            report = self.assess()
+        except Exception:
+            return False
+        return (
+            report.get("readiness_status") == READINESS_STATUS_READY
+            and report.get("calibration_ready") is True
+            and not report.get("blockers")
+            and not report.get("warnings")
+        )
+
     def _write_report(self, report: Dict[str, Any]) -> None:
         self.export_dir.mkdir(parents=True, exist_ok=True)
         (self.export_dir / "prii_readiness_report.json").write_text(

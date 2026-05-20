@@ -358,3 +358,26 @@ def test_calibration_ready_false_when_calibration_fail(tmp_path):
     _write(tmp_path, "calibration_report.json", cal)
     report = PRIIReadinessEngine(str(tmp_path)).assess()
     assert report["calibration_ready"] is False
+
+
+# ── Task 200: PRODUCTION_READY property ───────────────────────────────────────
+
+def test_production_ready_true_when_all_pass(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assert engine.PRODUCTION_READY is True
+
+
+def test_production_ready_false_when_calibration_fixture(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    cal = _passing_calibration_report(tmp_path)
+    cal["baseline_mode"] = "fixture"
+    _write(tmp_path, "calibration_report.json", cal)
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assert engine.PRODUCTION_READY is False
+
+
+def test_production_ready_false_when_no_files(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assert engine.PRODUCTION_READY is False
