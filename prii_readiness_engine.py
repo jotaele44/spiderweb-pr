@@ -184,6 +184,208 @@ class PRIIReadinessEngine:
             return f"violations={gate.get('violations')}"
         return f"gate {gate_name} failed"
 
+    def assess_satellite_manifests(
+        self, manifest_dir: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Return a schema gateResult for satellite manifest presence."""
+        search_dir = Path(manifest_dir) if manifest_dir else self.export_dir
+        if not search_dir.exists():
+            return {"status": "MISSING", "message": f"directory not found: {search_dir}"}
+        manifests = list(search_dir.glob("*.json"))
+        manifests = [p for p in manifests if "manifest" in p.name.lower()]
+        if not manifests:
+            return {
+                "status": "WARN",
+                "message": f"no satellite manifests found in {search_dir}",
+            }
+        return {
+            "status": "PASS",
+            "message": f"{len(manifests)} satellite manifest(s) found",
+        }
+
+    def get_gate_status_text(self, gate_name: str, gate: Dict[str, Any]) -> str:
+        """Return a compact human-readable summary for a single gate."""
+        status = gate.get("status", "UNKNOWN")
+        if gate_name == "coordinate_coverage":
+            return (
+                f"{gate_name}: {status} "
+                f"(pct_with_coords={gate.get('pct_with_coords')}, "
+                f"threshold={gate.get('threshold')})"
+            )
+        if gate_name == "ocr_confidence_gate":
+            return (
+                f"{gate_name}: {status} "
+                f"(avg_confidence={gate.get('avg_confidence')}, "
+                f"threshold={gate.get('threshold')})"
+            )
+        if gate_name == "schema_validation":
+            return f"{gate_name}: {status} (invalid={gate.get('invalid', 0)})"
+        if gate_name == "export_completeness":
+            missing = gate.get("missing", [])
+            return f"{gate_name}: {status} (missing={missing})"
+        if gate_name == "temporal_integrity":
+            return f"{gate_name}: {status} (violations={gate.get('violations', 0)})"
+        return f"{gate_name}: {status}"
+
+    def to_schema_report(
+        self,
+        assess_result: Dict[str, Any],
+        manifest_dir: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Convert assess() output to prii_readiness_report schema format.
+
+        The schema uses flat gate objects with {status, message} instead of
+        the verbose gate_summary structure produced by assess().
+        """
+        gate_summary = assess_result.get("gate_summary", {})
+        prii_gates   = gate_summary.get("prii_gates", {})
+
+        # ── prii gate ─────────────────────────────────────────────────────────
+        prii_overall = gate_summary.get("prii_overall")
+        if prii_overall is None:
+            prii_gate = {"status": "MISSING", "message": "integration_report.json absent"}
+        elif prii_overall == "PASS":
+            prii_gate = {"status": "PASS", "message": "all PRII gates pass"}
+        else:
+            failing = [
+                self.get_gate_status_text(n, g)
+                for n, g in prii_gates.items()
+                if g.get("status") == "FAIL"
+            ]
+            prii_gate = {"status": "FAIL", "message": "; ".join(failing) or "gate failed"}
+
+        # ── calibration gate ──────────────────────────────────────────────────
+        cal_status = gate_summary.get("calibration_status")
+        if cal_status is None:
+            cal_gate = {"status": "MISSING", "message": "calibration_report.json absent"}
+        elif cal_status == "PASS":
+            cal_gate = {"status": "PASS", "message": "calibration within baseline ranges"}
+        elif cal_status == "WARN":
+            cal_gate = {
+                "status": "WARN",
+                "message": (
+                    f"fixture mode ({gate_summary.get('baseline_mode')}) — "
+                    "skipped tier checks"
+                ),
+            }
+        else:
+            flags = gate_summary.get("calibration_flags", [])
+            flag_names = ", ".join(f.get("metric", "?") for f in flags)
+            cal_gate = {"status": "FAIL", "message": f"flags: {flag_names}"}
+
+        # ── satellite_manifests gate ──────────────────────────────────────────
+        sat_gate = self.assess_satellite_manifests(manifest_dir)
+
+        # ── status mapping ────────────────────────────────────────────────────
+        rs = assess_result.get("readiness_status", READINESS_STATUS_NOT_READY)
+        schema_status_map = {
+            READINESS_STATUS_READY:     "READY",
+            READINESS_STATUS_DEGRADED:  "DEGRADED",
+            READINESS_STATUS_NOT_READY: "NOT_READY",
+        }
+        schema_status = schema_status_map.get(rs, rs)
+
+        warnings = [w.get("detail", str(w)) for w in assess_result.get("warnings", [])]
+        errors   = [b.get("detail", str(b)) for b in assess_result.get("blockers", [])]
+
+        return {
+            "generated_at": assess_result.get("generated_at", ""),
+            "status":        schema_status,
+            "gates": {
+                "prii":                prii_gate,
+                "calibration":         cal_gate,
+                "satellite_manifests": sat_gate,
+            },
+            "warnings": warnings,
+            "errors":   errors,
+            "notes":    None,
+        }
+
+    def format_readiness_text(self, report: Dict[str, Any]) -> str:
+        """Return a human-readable multi-line summary of a readiness report."""
+        lines = [
+            f"Readiness Status: {report.get('readiness_status', report.get('status', 'UNKNOWN'))}",
+            f"Generated:        {report.get('generated_at', '')}",
+        ]
+
+        blockers = report.get("blockers", [])
+        if blockers:
+            lines.append(f"Blockers ({len(blockers)}):")
+            for b in blockers:
+                lines.append(f"  [{b.get('source', '?')}] {b.get('detail', b)}")
+
+        warnings = report.get("warnings", [])
+        if warnings:
+            lines.append(f"Warnings ({len(warnings)}):")
+            for w in warnings:
+                if isinstance(w, dict):
+                    lines.append(f"  [{w.get('source', '?')}] {w.get('detail', w)}")
+                else:
+                    lines.append(f"  {w}")
+
+        missing = report.get("missing_inputs", [])
+        if missing:
+            lines.append(f"Missing inputs: {', '.join(missing)}")
+
+        gate_summary = report.get("gate_summary", {})
+        if gate_summary:
+            lines.append("Gate summary:")
+            prii_gates = gate_summary.get("prii_gates", {})
+            for gate_name, gate in prii_gates.items():
+                lines.append(f"  {self.get_gate_status_text(gate_name, gate)}")
+            lines.append(
+                f"  calibration: {gate_summary.get('calibration_status', 'N/A')} "
+                f"(mode={gate_summary.get('baseline_mode', 'N/A')}, "
+                f"candidates={gate_summary.get('candidate_count', 'N/A')})"
+            )
+
+        return "\n".join(lines)
+
+    def export_dashboard_json(
+        self,
+        assess_result: Dict[str, Any],
+        output_path: str,
+        manifest_dir: Optional[str] = None,
+    ) -> None:
+        """Write schema-compliant dashboard JSON to *output_path*."""
+        schema_report = self.to_schema_report(assess_result, manifest_dir=manifest_dir)
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(schema_report, indent=2), encoding="utf-8")
+
+    def health_check(self) -> Dict[str, Any]:
+        """Return a compact health-check dict for the export directory.
+
+        status is "healthy" if both input artifacts are present and readable,
+        "degraded" if one is missing, "unhealthy" if neither is readable.
+        """
+        checks: Dict[str, Any] = {}
+
+        for fname in ("integration_report.json", "calibration_report.json"):
+            path = self.export_dir / fname
+            if not path.exists():
+                checks[fname] = "missing"
+            else:
+                try:
+                    json.loads(path.read_text(encoding="utf-8"))
+                    checks[fname] = "ok"
+                except Exception:
+                    checks[fname] = "unreadable"
+
+        statuses = list(checks.values())
+        if all(s == "ok" for s in statuses):
+            overall = "healthy"
+        elif all(s != "ok" for s in statuses):
+            overall = "unhealthy"
+        else:
+            overall = "degraded"
+
+        return {
+            "export_dir": str(self.export_dir),
+            "status":     overall,
+            "checks":     checks,
+        }
+
     def _write_report(self, report: Dict[str, Any]) -> None:
         self.export_dir.mkdir(parents=True, exist_ok=True)
         (self.export_dir / "prii_readiness_report.json").write_text(

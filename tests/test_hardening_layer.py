@@ -211,3 +211,64 @@ def test_checkpoint_saved(tmp_path):
     q.save_checkpoint("b1", completed=0, failed=0)
     progress = q.get_progress("b1")
     assert isinstance(progress, dict)
+
+
+# ── Phase 9: Production Hardening ────────────────────────────────────────────
+
+def test_get_failed_jobs_empty_when_no_errors(tmp_path):
+    q = ResumableJobQueue(str(tmp_path / "jobs.db"))
+    q.enqueue_batch(["/img/a.jpg"], batch_id="b1")
+    assert q.get_failed_jobs() == []
+
+
+def test_get_failed_jobs_returns_errored(tmp_path):
+    q = ResumableJobQueue(str(tmp_path / "jobs.db"))
+    q.enqueue_batch(["/img/a.jpg", "/img/b.jpg"], batch_id="b1")
+    jobs = q.get_pending_jobs()
+    q.mark_error(jobs[0]["job_id"], "network timeout")
+    failed = q.get_failed_jobs()
+    assert len(failed) == 1
+    assert failed[0]["job_id"] == jobs[0]["job_id"]
+
+
+def test_retry_failed_jobs_resets_to_pending(tmp_path):
+    q = ResumableJobQueue(str(tmp_path / "jobs.db"))
+    q.enqueue_batch(["/img/a.jpg", "/img/b.jpg"], batch_id="b1")
+    jobs = q.get_pending_jobs()
+    q.mark_error(jobs[0]["job_id"], "timeout")
+    q.mark_error(jobs[1]["job_id"], "timeout")
+    count = q.retry_failed_jobs()
+    assert count == 2
+    assert q.get_failed_jobs() == []
+
+
+def test_retry_failed_jobs_filtered_by_batch(tmp_path):
+    q = ResumableJobQueue(str(tmp_path / "jobs.db"))
+    q.enqueue_batch(["/img/a.jpg"], batch_id="b1")
+    q.enqueue_batch(["/img/b.jpg"], batch_id="b2")
+    jobs = q.get_pending_jobs()
+    for j in jobs:
+        q.mark_error(j["job_id"], "err")
+    count = q.retry_failed_jobs(batch_id="b1")
+    assert count == 1
+    assert len(q.get_failed_jobs(batch_id="b1")) == 0
+    assert len(q.get_failed_jobs(batch_id="b2")) == 1
+
+
+def test_get_batch_stats_returns_dict(tmp_path):
+    q = ResumableJobQueue(str(tmp_path / "jobs.db"))
+    q.enqueue_batch(["/img/a.jpg", "/img/b.jpg"], batch_id="b1")
+    stats = q.get_batch_stats("b1")
+    assert isinstance(stats, dict)
+    assert stats["total"] == 2
+    assert stats["pending"] == 2
+
+
+def test_get_batch_stats_after_complete(tmp_path):
+    q = ResumableJobQueue(str(tmp_path / "jobs.db"))
+    q.enqueue_batch(["/img/a.jpg"], batch_id="b1")
+    job = q.get_pending_jobs()[0]
+    q.mark_complete(job["job_id"])
+    stats = q.get_batch_stats("b1")
+    assert stats["complete"] == 1
+    assert stats["pending"] == 0

@@ -580,3 +580,46 @@ def test_validate_candidate_fields_none_lat():
     candidate = {"_lat": None, "_lon": -66.0, "_candidate_type": "poi"}
     errors = intake.validate_candidate_fields(candidate)
     assert any("_lat" in e for e in errors)
+
+
+# ── Phase 10: Observability ───────────────────────────────────────────────────
+
+def test_get_coverage_stats_returns_bbox():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidates = [
+        {"_lat": 18.1, "_lon": -66.5, "_candidate_type": "A"},
+        {"_lat": 18.3, "_lon": -66.2, "_candidate_type": "A"},
+        {"_lat": 18.0, "_lon": -66.8, "_candidate_type": "B"},
+    ]
+    stats = intake.get_coverage_stats(candidates)
+    assert stats["total_with_coords"] == 3
+    assert abs(stats["bbox"][1] - 18.0) < 1e-5
+    assert abs(stats["bbox"][3] - 18.3) < 1e-5
+
+
+def test_get_coverage_stats_empty_returns_nones():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    stats = intake.get_coverage_stats([])
+    assert stats["total_with_coords"] == 0
+    assert stats["bbox"] == [None, None, None, None]
+
+
+def test_get_coverage_stats_skips_none_coords():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidates = [
+        {"_lat": None, "_lon": -66.5, "_candidate_type": "A"},
+        {"_lat": 18.2, "_lon": -66.3, "_candidate_type": "B"},
+    ]
+    stats = intake.get_coverage_stats(candidates)
+    assert stats["total_with_coords"] == 1
+
+
+def test_get_coverage_stats_lon_range():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidates = [
+        {"_lat": 18.0, "_lon": -67.0, "_candidate_type": "A"},
+        {"_lat": 18.0, "_lon": -65.5, "_candidate_type": "A"},
+    ]
+    stats = intake.get_coverage_stats(candidates)
+    assert abs(stats["lon_range"][0] - (-67.0)) < 1e-5
+    assert abs(stats["lon_range"][1] - (-65.5)) < 1e-5

@@ -93,6 +93,30 @@ class SchemaValidator:
     def available_schemas(self) -> List[str]:
         return list(self._validators.keys())
 
+    def reload_schemas(self) -> int:
+        """Discard cached validators and reload from disk. Returns count loaded."""
+        self._validators = {}
+        if _JSONSCHEMA_AVAILABLE:
+            self._load_schemas()
+        return len(self._validators)
+
+    def schema_count(self) -> int:
+        """Return the number of currently loaded schemas."""
+        return len(self._validators)
+
+    def validate_with_context(
+        self, record: dict, schema_name: str, context: str
+    ) -> Dict[str, Any]:
+        """Validate *record* and prefix each error message with *context*."""
+        result = self.validate(record, schema_name)
+        if not result["valid"]:
+            result["errors"] = [f"[{context}] {e}" for e in result["errors"]]
+        return result
+
+    def get_schema_names(self) -> List[str]:
+        """Return a sorted list of loaded schema names."""
+        return sorted(self._validators.keys())
+
     def _write_review_item(self, path: str, schema_name: str,
                            record: dict, errors: List[str]):
         file_exists = Path(path).exists()

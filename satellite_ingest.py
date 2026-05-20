@@ -191,6 +191,23 @@ class SatelliteIngest:
         except Exception:
             pass
 
+    def ingest_batch(self, manifest_paths) -> list:
+        """Ingest multiple manifests; return list of per-manifest result dicts."""
+        return [self.ingest(str(p)) for p in manifest_paths]
+
+    @staticmethod
+    def get_ingest_summary(results: list) -> Dict[str, Any]:
+        """Compute acceptance stats from a list of ingest() result dicts."""
+        total    = len(results)
+        accepted = sum(1 for r in results if r.get("status") == "accepted")
+        rejected = total - accepted
+        return {
+            "total":           total,
+            "accepted":        accepted,
+            "rejected":        rejected,
+            "acceptance_rate": round(accepted / total, 4) if total else 0.0,
+        }
+
     def _load_validator(self):
         try:
             from schema_validation import SchemaValidator

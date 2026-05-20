@@ -185,3 +185,37 @@ def test_non_dry_run_writes_manifest(tmp_path):
     assert result["status"] == "accepted"
     assert result["output_path"] is not None
     assert Path(result["output_path"]).exists()
+
+
+# ── Phase 9: Production Hardening ────────────────────────────────────────────
+
+def test_ingest_batch_returns_list(tmp_path):
+    paths = [_write_manifest(tmp_path, _valid_manifest(), name=f"m{i}.json") for i in range(3)]
+    ingester = SatelliteIngest(dry_run=True)
+    results = ingester.ingest_batch(paths)
+    assert isinstance(results, list)
+    assert len(results) == 3
+
+
+def test_ingest_batch_all_accepted(tmp_path):
+    paths = [_write_manifest(tmp_path, _valid_manifest(), name=f"m{i}.json") for i in range(2)]
+    ingester = SatelliteIngest(dry_run=True)
+    results = ingester.ingest_batch(paths)
+    assert all(r["status"] == "accepted" for r in results)
+
+
+def test_get_ingest_summary_counts(tmp_path):
+    paths = [_write_manifest(tmp_path, _valid_manifest(), name=f"m{i}.json") for i in range(4)]
+    ingester = SatelliteIngest(dry_run=True)
+    results = ingester.ingest_batch(paths)
+    summary = SatelliteIngest.get_ingest_summary(results)
+    assert summary["total"] == 4
+    assert summary["accepted"] == 4
+    assert summary["rejected"] == 0
+    assert summary["acceptance_rate"] == 1.0
+
+
+def test_get_ingest_summary_empty():
+    summary = SatelliteIngest.get_ingest_summary([])
+    assert summary["total"] == 0
+    assert summary["acceptance_rate"] == 0.0

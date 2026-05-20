@@ -160,3 +160,63 @@ def test_explain_flags_empty_report_returns_pass(tmp_path):
     driver = CalibrationDriver(str(tmp_path))
     result = driver.explain_flags({"calibration_flags": []})
     assert "PASS" in result
+
+
+# ── Phase 10: Observability ───────────────────────────────────────────────────
+
+def _run_report(tmp_path, n_features, tier="T4", hydro="no", utility="yes"):
+    features = [_feature(tier=tier, hydro=hydro, utility=utility)] * n_features
+    _write_geojson(tmp_path / "spiderweb_overlay_candidates.geojson", features)
+    _write_gap_audit(tmp_path / "spiderweb_gap_audit.json")
+    return CalibrationDriver(str(tmp_path)).run()
+
+
+def test_compare_runs_returns_dict(tmp_path):
+    dir_a = tmp_path / "run_a"
+    dir_b = tmp_path / "run_b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    report_a = _run_report(dir_a, 5)
+    report_b = _run_report(dir_b, 10)
+    delta = CalibrationDriver.compare_runs(report_a, report_b)
+    assert isinstance(delta, dict)
+    assert "metric_deltas" in delta
+    assert "candidate_count_a" in delta
+    assert "candidate_count_b" in delta
+
+
+def test_compare_runs_candidate_counts(tmp_path):
+    dir_a = tmp_path / "run_a"
+    dir_b = tmp_path / "run_b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    report_a = _run_report(dir_a, 3)
+    report_b = _run_report(dir_b, 7)
+    delta = CalibrationDriver.compare_runs(report_a, report_b)
+    assert delta["candidate_count_a"] == 3
+    assert delta["candidate_count_b"] == 7
+
+
+def test_compare_runs_zero_delta_identical(tmp_path):
+    dir_a = tmp_path / "run_a"
+    dir_b = tmp_path / "run_b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    report_a = _run_report(dir_a, 5)
+    report_b = _run_report(dir_b, 5)
+    delta = CalibrationDriver.compare_runs(report_a, report_b)
+    for key, val in delta["metric_deltas"].items():
+        if val is not None:
+            assert abs(val) < 1e-4, f"Expected zero delta for {key}, got {val}"
+
+
+def test_compare_runs_status_keys(tmp_path):
+    dir_a = tmp_path / "run_a"
+    dir_b = tmp_path / "run_b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    report_a = _run_report(dir_a, 5)
+    report_b = _run_report(dir_b, 5)
+    delta = CalibrationDriver.compare_runs(report_a, report_b)
+    assert "status_a" in delta
+    assert "status_b" in delta

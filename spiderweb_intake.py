@@ -482,6 +482,39 @@ class SpiderwebIntake:
                 errors.append(f"None value for: {field}")
         return errors
 
+    def get_coverage_stats(self, candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Return geographic bounding box and coordinate stats for *candidates*.
+
+        Only candidates with valid numeric _lat/_lon are included in the stats.
+        Returns an empty-range bbox when no valid coordinates are present.
+        """
+        lats = [c["_lat"] for c in candidates
+                if c.get("_lat") is not None and c.get("_lon") is not None
+                and isinstance(c["_lat"], (int, float))
+                and isinstance(c["_lon"], (int, float))]
+        lons = [c["_lon"] for c in candidates
+                if c.get("_lat") is not None and c.get("_lon") is not None
+                and isinstance(c["_lat"], (int, float))
+                and isinstance(c["_lon"], (int, float))]
+        if not lats:
+            return {
+                "total_with_coords": 0,
+                "lat_range": [None, None],
+                "lon_range": [None, None],
+                "bbox": [None, None, None, None],
+            }
+        return {
+            "total_with_coords": len(lats),
+            "lat_range": [round(min(lats), 6), round(max(lats), 6)],
+            "lon_range": [round(min(lons), 6), round(max(lons), 6)],
+            "bbox": [
+                round(min(lons), 6),
+                round(min(lats), 6),
+                round(max(lons), 6),
+                round(max(lats), 6),
+            ],
+        }
+
     # ── Helpers ───────────────────────────────────────────────────────────────
 
     def _missing_bridge_files(self) -> List[str]:

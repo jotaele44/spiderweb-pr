@@ -371,3 +371,46 @@ def test_weekly_report_returns_string(tmp_path):
     report = rg.weekly_report()
     assert isinstance(report, str)
     assert "WEEKLY" in report
+
+
+# ── Phase 10: Observability ───────────────────────────────────────────────────
+
+def test_get_alert_stats_returns_dict(tmp_path):
+    engine = AlertEngine(_make_db(tmp_path))
+    stats = engine.get_alert_stats()
+    assert isinstance(stats, dict)
+    assert "total" in stats
+    assert "by_severity" in stats
+    assert "by_category" in stats
+
+
+def test_get_alert_stats_counts_saved_alerts(tmp_path):
+    db = _make_db(tmp_path)
+    engine = AlertEngine(db)
+    now = datetime.utcnow().isoformat()
+    engine.save_alerts([
+        _alert(alert_id="A1", severity=AlertSeverity.MEDIUM,
+               category=AlertCategory.UNUSUAL_BEHAVIOR, timestamp=now),
+        _alert(alert_id="A2", severity=AlertSeverity.HIGH,
+               category=AlertCategory.RESTRICTED_AIRSPACE, timestamp=now),
+    ])
+    stats = engine.get_alert_stats()
+    assert stats["total"] == 2
+
+
+def test_get_alert_stats_acknowledged_count(tmp_path):
+    db = _make_db(tmp_path)
+    engine = AlertEngine(db)
+    now = datetime.utcnow().isoformat()
+    engine.save_alerts([_alert(alert_id="B1", timestamp=now)])
+    alerts = engine.get_active_alerts()
+    engine.acknowledge_alert(alerts[0]["alert_id"])
+    stats = engine.get_alert_stats()
+    assert stats["acknowledged"] == 1
+
+
+def test_get_alert_stats_zero_when_empty(tmp_path):
+    engine = AlertEngine(_make_db(tmp_path))
+    stats = engine.get_alert_stats()
+    assert stats["total"] == 0
+    assert stats["acknowledged"] == 0

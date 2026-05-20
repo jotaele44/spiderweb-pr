@@ -145,3 +145,49 @@ def test_satellite_source_manifest_schema_loaded(validator):
         assert "satellite_source_manifest" in validator.available_schemas()
     except ImportError:
         pytest.skip("jsonschema not installed")
+
+
+# ── Phase 9: Production Hardening ────────────────────────────────────────────
+
+def test_reload_schemas_returns_count(validator):
+    count = validator.reload_schemas()
+    assert isinstance(count, int)
+    assert count >= 0
+
+
+def test_reload_schemas_idempotent(validator):
+    count1 = validator.reload_schemas()
+    count2 = validator.reload_schemas()
+    assert count1 == count2
+
+
+def test_schema_count_matches_available(validator):
+    assert validator.schema_count() == len(validator.available_schemas())
+
+
+def test_get_schema_names_sorted(validator):
+    names = validator.get_schema_names()
+    assert names == sorted(names)
+
+
+def test_validate_with_context_valid_record(validator):
+    record = {
+        "screenshot_id": "s1", "flight_id": "f1", "image_path": "/a/b.png",
+        "captured_at": "2024-01-01T00:00:00Z",
+        "processed_at": "2024-01-01T00:01:00Z",
+        "ocr_confidence": 0.9,
+        "has_callsign": True, "has_coordinates": True,
+    }
+    result = validator.validate_with_context(record, "screenshot", "test-run")
+    assert result["valid"] is True
+    assert result["errors"] == []
+
+
+def test_validate_with_context_prefixes_errors(validator):
+    try:
+        import jsonschema  # noqa: F401
+    except ImportError:
+        pytest.skip("jsonschema not installed")
+    result = validator.validate_with_context({}, "screenshot", "batch-42")
+    if not result["valid"]:
+        assert all("[batch-42]" in e for e in result["errors"])

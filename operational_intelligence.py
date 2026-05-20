@@ -14,7 +14,7 @@ import sqlite3
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 from enum import Enum
 
@@ -436,6 +436,48 @@ class AlertEngine:
             encoding="utf-8",
         )
         return len(alerts)
+
+    def get_alert_stats(self, days: int = 30) -> Dict[str, Any]:
+        """Return summary statistics for alerts in the last *days* days."""
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                "SELECT severity, category, acknowledged, auto_resolved "
+                "FROM alerts WHERE timestamp >= ?",
+                (cutoff,),
+            ).fetchall()
+        except Exception:
+            rows = []
+        finally:
+            conn.close()
+
+        total = len(rows)
+        by_severity: Dict[str, int] = {}
+        by_category: Dict[str, int] = {}
+        acknowledged = 0
+        auto_resolved = 0
+
+        for r in rows:
+            sev = r["severity"] or "unknown"
+            cat = r["category"] or "unknown"
+            by_severity[sev] = by_severity.get(sev, 0) + 1
+            by_category[cat] = by_category.get(cat, 0) + 1
+            if r["acknowledged"]:
+                acknowledged += 1
+            if r["auto_resolved"]:
+                auto_resolved += 1
+
+        return {
+            "total":        total,
+            "by_severity":  by_severity,
+            "by_category":  by_category,
+            "acknowledged": acknowledged,
+            "auto_resolved": auto_resolved,
+            "days":         days,
+        }
 
 
 # ============================================================================
