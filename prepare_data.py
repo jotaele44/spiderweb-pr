@@ -8,12 +8,117 @@ Usage:
 """
 
 import csv
+import hashlib
 import json
 import argparse
 import os
+from collections import Counter
+from typing import Dict, List
 
 
 MIN_TEXT_LENGTH = 30  # characters; posts shorter than this are skipped
+
+REQUIRED_CSV_COLUMNS = {"id", "title", "subreddit"}
+
+
+def validate_source(csv_path: str) -> None:
+    """Raise ValueError if *csv_path* is missing required columns.
+
+    Parameters
+    ----------
+    csv_path:
+        Path to the PRUAP_MASTER_SOCIAL.csv (or equivalent) file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file does not exist.
+    ValueError
+        If required columns are absent.
+    """
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"CSV source not found: {csv_path}")
+    with open(csv_path, encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        cols = set(reader.fieldnames or [])
+    missing = REQUIRED_CSV_COLUMNS - cols
+    if missing:
+        raise ValueError(
+            f"CSV source missing required columns: {sorted(missing)}. "
+            f"Found: {sorted(cols)}"
+        )
+
+
+def deduplicate(rows: List[dict], strategy: str = "id") -> List[dict]:
+    """Remove duplicate rows using the specified strategy.
+
+    Parameters
+    ----------
+    rows:
+        List of cleaned row dicts (as returned by ``clean_rows``).
+    strategy:
+        ``"id"``   — deduplicate by ``id`` field (default).
+        ``"hash"`` — deduplicate by SHA-256 of ``title + text`` content.
+        ``"both"`` — deduplicate by id first, then content hash.
+
+    Returns
+    -------
+    List of deduplicated rows (order preserved; first occurrence kept).
+    """
+    if strategy not in ("id", "hash", "both"):
+        raise ValueError(f"Unknown dedup strategy '{strategy}'. Use 'id', 'hash', or 'both'.")
+
+    seen_ids: set = set()
+    seen_hashes: set = set()
+    out = []
+    for row in rows:
+        if strategy in ("id", "both"):
+            rid = row.get("id", "")
+            if rid in seen_ids:
+                continue
+            seen_ids.add(rid)
+        if strategy in ("hash", "both"):
+            content = (row.get("title", "") + row.get("text", "")).encode()
+            h = hashlib.sha256(content).hexdigest()
+            if h in seen_hashes:
+                continue
+            seen_hashes.add(h)
+        out.append(row)
+    return out
+
+
+def export_stats(rows: List[dict]) -> Dict[str, object]:
+    """Return per-subreddit document counts and basic token distribution.
+
+    Parameters
+    ----------
+    rows:
+        List of row dicts (as returned by ``clean_rows``).
+
+    Returns
+    -------
+    dict with keys:
+        ``total``          – total row count
+        ``by_subreddit``   – {subreddit: count}
+        ``avg_tokens``     – mean token count (whitespace split)
+        ``min_tokens``     – minimum token count
+        ``max_tokens``     – maximum token count
+    """
+    if not rows:
+        return {"total": 0, "by_subreddit": {}, "avg_tokens": 0,
+                "min_tokens": 0, "max_tokens": 0}
+    by_sub: Counter = Counter(r.get("subreddit", "") for r in rows)
+    token_counts = [
+        len((r.get("title", "") + " " + r.get("text", "")).split())
+        for r in rows
+    ]
+    return {
+        "total":        len(rows),
+        "by_subreddit": dict(by_sub.most_common()),
+        "avg_tokens":   round(sum(token_counts) / len(token_counts), 1),
+        "min_tokens":   min(token_counts),
+        "max_tokens":   max(token_counts),
+    }
 
 
 def load_csv(path):

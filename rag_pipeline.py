@@ -154,6 +154,74 @@ def format_context_with_limit(hits: list, max_chars: int = 4000) -> str:
     return ctx
 
 
+def incremental_update(new_chunks_path: str, db_path: str = DEFAULT_DB) -> int:
+    """Append new documents to an existing Chroma index without full rebuild.
+
+    Parameters
+    ----------
+    new_chunks_path:
+        Path to a JSONL file of new chunks (same format as produced by
+        ``prepare_data.py``).
+    db_path:
+        Path to the persistent Chroma directory.
+
+    Returns
+    -------
+    int
+        Number of new documents added.
+    """
+    from sentence_transformers import SentenceTransformer
+
+    collection = get_collection(db_path)
+    model = SentenceTransformer(EMBED_MODEL)
+
+    new_docs = []
+    with open(new_chunks_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                new_docs.append(json.loads(line))
+
+    if not new_docs:
+        return 0
+
+    existing_ids = set(collection.get(include=[])["ids"])
+    to_add = [d for d in new_docs if d["id"] not in existing_ids]
+    if not to_add:
+        return 0
+
+    texts = [d["text"] for d in to_add]
+    embeddings = model.encode(texts, show_progress_bar=False).tolist()
+    collection.add(
+        ids=[d["id"] for d in to_add],
+        documents=texts,
+        embeddings=embeddings,
+        metadatas=[d.get("metadata", {}) for d in to_add],
+    )
+    return len(to_add)
+
+
+def index_stats(db_path: str = DEFAULT_DB) -> dict:
+    """Return basic statistics about the current Chroma index.
+
+    Returns
+    -------
+    dict with keys:
+        ``embedding_count`` – total number of documents in the collection
+        ``collection_name`` – name of the Chroma collection
+        ``embed_model``     – embedding model name used at build time
+        ``db_path``         – path to the persistent index directory
+    """
+    collection = get_collection(db_path)
+    count = collection.count()
+    return {
+        "embedding_count": count,
+        "collection_name": COLLECTION_NAME,
+        "embed_model":     EMBED_MODEL,
+        "db_path":         db_path,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="RAG pipeline for PRUAP social data.")
     parser.add_argument("--build", action="store_true", help="Build the vector index")

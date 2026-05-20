@@ -137,6 +137,62 @@ def get_context(query, db_path, top_k):
     return format_context(hits)
 
 
+def with_citations(
+    query: str,
+    db_path: str = None,
+    top_k: int = None,
+    model_id: str = None,
+) -> dict:
+    """Answer a query and return the answer with source post citations.
+
+    Parameters
+    ----------
+    query:
+        Natural-language question about PR UAP/airspace activity.
+    db_path:
+        Path to ChromaDB index.  Defaults to ``DEFAULT_DB``.
+    top_k:
+        Number of RAG hits to retrieve.  Defaults to ``DEFAULT_TOP_K``.
+    model_id:
+        Hugging Face model ID.  Defaults to ``DEFAULT_MODEL``.
+
+    Returns
+    -------
+    dict with keys:
+        ``answer``   – generated text string
+        ``citations`` – list of dicts with keys ``url``, ``subreddit``,
+                       ``score``, and a ``text`` preview (first 200 chars)
+    """
+    if db_path is None:
+        db_path = DEFAULT_DB
+    if top_k is None:
+        top_k = DEFAULT_TOP_K
+    if model_id is None:
+        model_id = DEFAULT_MODEL
+
+    from rag_pipeline import retrieve
+
+    query = sanitize_query(query)
+    hits = retrieve(query, db_path, top_k)
+    context = truncate_context(
+        "\n\n".join(h["text"] for h in hits) if hits else ""
+    )
+    prompt = build_prompt(query, context or None)
+    tokenizer, model = load_model(model_id)
+    answer = generate(tokenizer, model, prompt)
+
+    citations = [
+        {
+            "url":       h["metadata"].get("url", ""),
+            "subreddit": h["metadata"].get("subreddit", ""),
+            "score":     round(h["score"], 4) if isinstance(h.get("score"), float) else h.get("score"),
+            "text":      h["text"][:200],
+        }
+        for h in hits
+    ]
+    return {"answer": answer, "citations": citations}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Query your PRUAP data with a local LLM.")
     parser.add_argument("query", help="Your question about UAP/UFO sightings in Puerto Rico")

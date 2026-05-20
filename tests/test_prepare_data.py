@@ -8,10 +8,14 @@ import pytest
 
 from prepare_data import (
     MIN_TEXT_LENGTH,
+    REQUIRED_CSV_COLUMNS,
     clean_rows,
+    deduplicate,
+    export_stats,
     load_csv,
     to_chunks,
     to_finetune,
+    validate_source,
 )
 
 
@@ -193,3 +197,91 @@ def test_to_finetune_completion_contains_title(tmp_path):
     to_finetune([row], out)
     obj = json.loads(Path(out).read_text())
     assert "Lights near Arecibo observatory" in obj["completion"]
+
+
+# ── Task 137: validate_source ─────────────────────────────────────────────────
+
+def test_validate_source_valid_csv(tmp_path):
+    csv_path = _make_csv(tmp_path, [_make_row()])
+    validate_source(str(csv_path))  # should not raise
+
+
+def test_validate_source_missing_file():
+    with pytest.raises(FileNotFoundError):
+        validate_source("/nonexistent/path/PRUAP.csv")
+
+
+def test_validate_source_missing_required_column(tmp_path):
+    bad = tmp_path / "bad.csv"
+    bad.write_text("title,text\nfoo,bar\n")
+    with pytest.raises(ValueError, match="missing required columns"):
+        validate_source(str(bad))
+
+
+def test_validate_source_all_required_cols_defined():
+    assert REQUIRED_CSV_COLUMNS == {"id", "title", "subreddit"}
+
+
+# ── Task 138: deduplicate ─────────────────────────────────────────────────────
+
+def test_deduplicate_by_id_removes_duplicates():
+    rows = clean_rows([_make_row(id="x"), _make_row(id="x"), _make_row(id="y")])
+    result = deduplicate(rows, strategy="id")
+    assert len(result) == 2
+
+
+def test_deduplicate_by_id_keeps_order():
+    r1 = clean_rows([_make_row(id="a")])[0]
+    r2 = clean_rows([_make_row(id="b")])[0]
+    result = deduplicate([r1, r2], strategy="id")
+    assert [r["id"] for r in result] == ["a", "b"]
+
+
+def test_deduplicate_by_hash_removes_same_content():
+    rows = clean_rows([
+        _make_row(id="p1", title="Same title", text="Same text same text same text."),
+        _make_row(id="p2", title="Same title", text="Same text same text same text."),
+    ])
+    result = deduplicate(rows, strategy="hash")
+    assert len(result) == 1
+
+
+def test_deduplicate_by_both():
+    rows = clean_rows([_make_row(id="z"), _make_row(id="z")])
+    result = deduplicate(rows, strategy="both")
+    assert len(result) == 1
+
+
+def test_deduplicate_invalid_strategy():
+    with pytest.raises(ValueError, match="Unknown dedup strategy"):
+        deduplicate([], strategy="bogus")
+
+
+# ── export_stats ──────────────────────────────────────────────────────────────
+
+def test_export_stats_structure():
+    rows = clean_rows([_make_row(subreddit="UFOs"), _make_row(id="p2", subreddit="NUFORC")])
+    stats = export_stats(rows)
+    assert set(stats.keys()) == {"total", "by_subreddit", "avg_tokens", "min_tokens", "max_tokens"}
+
+
+def test_export_stats_total():
+    rows = clean_rows([_make_row(), _make_row(id="p2")])
+    assert export_stats(rows)["total"] == 2
+
+
+def test_export_stats_by_subreddit():
+    rows = clean_rows([
+        _make_row(subreddit="UFOs"),
+        _make_row(id="p2", subreddit="UFOs"),
+        _make_row(id="p3", subreddit="NUFORC"),
+    ])
+    stats = export_stats(rows)
+    assert stats["by_subreddit"]["UFOs"] == 2
+    assert stats["by_subreddit"]["NUFORC"] == 1
+
+
+def test_export_stats_empty():
+    stats = export_stats([])
+    assert stats["total"] == 0
+    assert stats["avg_tokens"] == 0
