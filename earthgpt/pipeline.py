@@ -6,7 +6,7 @@ Always returns a valid dict even on failure.
 """
 
 import time
-from typing import Optional
+from typing import Dict, List, Optional
 
 from .tiles import fetch_tile_rgb_xy
 from .metrics import compute_single_metrics
@@ -25,6 +25,63 @@ _FALLBACK_RESULT = {
     "banding": 0.0,
     "axis_coherence": 0.0,
 }
+
+
+def dry_run(nodes: List[Dict]) -> Dict:
+    """Validate a list of node descriptors without making any network calls.
+
+    Parameters
+    ----------
+    nodes:
+        List of dicts, each with keys ``x``, ``y``, ``zoom``.
+
+    Returns
+    -------
+    dict with keys:
+        ``valid_count``   – number of structurally valid node descriptors
+        ``invalid``       – list of (index, reason) for invalid nodes
+        ``ready``         – True when all nodes are valid
+    """
+    invalid = []
+    for i, node in enumerate(nodes):
+        if not isinstance(node, dict):
+            invalid.append((i, "not a dict"))
+            continue
+        for key in ("x", "y", "zoom"):
+            if key not in node:
+                invalid.append((i, f"missing key '{key}'"))
+                break
+            if not isinstance(node[key], int):
+                invalid.append((i, f"'{key}' must be int, got {type(node[key]).__name__}"))
+                break
+    valid_count = len(nodes) - len(invalid)
+    return {
+        "valid_count": valid_count,
+        "invalid":     invalid,
+        "ready":       len(invalid) == 0,
+    }
+
+
+def profile_node(x: int, y: int, zoom: int, lat: Optional[float] = None,
+                 lon: Optional[float] = None) -> Dict:
+    """Run analyze_node and return result augmented with ``elapsed_ms`` timing.
+
+    Parameters
+    ----------
+    x, y, zoom:
+        Tile coordinates.
+    lat, lon:
+        Optional pre-computed tile center.
+
+    Returns
+    -------
+    dict
+        All fields from :func:`analyze_node` plus ``elapsed_ms`` (float).
+    """
+    t0 = time.time()
+    result = analyze_node(x, y, zoom, lat=lat, lon=lon)
+    result["elapsed_ms"] = round((time.time() - t0) * 1000, 2)
+    return result
 
 
 def analyze_node(

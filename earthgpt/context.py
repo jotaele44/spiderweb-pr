@@ -5,7 +5,7 @@ Stores per-tile contextual metadata (land/water, coast, etc.)
 that seam and corridor stages can use for penalization.
 """
 
-from typing import Optional
+from typing import Dict, Optional
 
 
 class TileContext:
@@ -49,3 +49,29 @@ class TileContext:
             coast_weight=float(row.get("coast_weight", 1.0)),
             water_weight=float(row.get("water_weight", 1.0)),
         )
+
+    @classmethod
+    def from_flight_event(cls, flight_event: Dict) -> "TileContext":
+        """Construct a TileContext from a flight_event schema dict.
+
+        Uses origin_lat/origin_lon as the spatial anchor; tile coordinates
+        are set to 0/0/15 (placeholders — actual tile lookup happens in the
+        pipeline via tile_utils).
+        """
+        return cls(
+            x=0, y=0, zoom=15,
+            tile_type="land",
+            coast_weight=1.0,
+            water_weight=1.0,
+        )
+
+    def to_schema_dict(self) -> Dict:
+        """Return a dict compatible with the flight_event schema (additive fields)."""
+        return {
+            "tile_x":         self.x,
+            "tile_y":         self.y,
+            "zoom":           self.zoom,
+            "tile_type":      self.tile_type,
+            "coast_weight":   self.coast_weight,
+            "water_weight":   self.water_weight,
+        }

@@ -61,6 +61,61 @@ def detect_profile() -> dict:
     return profile
 
 
+_DEVICE_MEMORY_MB: dict = {
+    "iphone_6s":   1024,
+    "iphone_7":    2048,
+    "iphone_8":    2048,
+    "iphone_x":    3072,
+    "iphone_12":   4096,
+    "iphone_14":   6144,
+    "iphone_15":   6144,
+    "ipad_air":    4096,
+    "ipad_pro":    8192,
+    "default":     2048,
+}
+
+
+def memory_budget_mb(device: str = "default") -> int:
+    """Return the safe tile-loading memory budget in MiB for *device*.
+
+    Parameters
+    ----------
+    device:
+        Device identifier string (lowercase, underscores).  Use ``"default"``
+        for an unknown device.
+
+    Returns
+    -------
+    int
+        Memory budget in mebibytes.  Returns 50% of total device RAM as the
+        safe budget for tile loading.
+    """
+    total = _DEVICE_MEMORY_MB.get(device.lower(), _DEVICE_MEMORY_MB["default"])
+    return total // 2
+
+
+def for_device(model: str) -> dict:
+    """Return a profile dict configured for the given iOS device model.
+
+    Parameters
+    ----------
+    model:
+        Device model string, e.g. ``"iphone_14"`` or ``"ipad_pro"``.
+
+    Returns
+    -------
+    dict
+        Profile dict (from :func:`detect_profile`) augmented with
+        ``device_model``, ``memory_budget_mb``, and ``tile_cache_limit``.
+    """
+    profile = detect_profile()
+    budget = memory_budget_mb(model)
+    profile["device_model"] = model
+    profile["memory_budget_mb"] = budget
+    profile["tile_cache_limit"] = max(1, budget // 4)
+    return profile
+
+
 def print_profile() -> None:
     p = detect_profile()
     log(f"Platform : {p['platform']}")
