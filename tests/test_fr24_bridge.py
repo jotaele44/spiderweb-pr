@@ -213,3 +213,29 @@ def test_export_route_events_malformed_path_returns_zero(populated_db, tmp_path)
     exp = FR24EventExporter(populated_db, review_dir=str(tmp_path / "review"))
     inserted = exp.export_route_events("/nonexistent/malformed.jpg", routes=[])
     assert inserted == 0
+
+
+# ── Task 2: infra_align real computation ─────────────────────────────────────
+
+def test_infra_align_near_sju_exceeds_placeholder():
+    """A POI centroid at SJU coordinates must score above the old 0.3 placeholder."""
+    from ilap_airspace_bridge import _infra_align_score
+    # SJU is at 18.4386, -66.0010 — within 2 nm of itself → score = 1.0
+    score = _infra_align_score(18.4386, -66.0010)
+    assert score > 0.3, f"Expected > 0.3 near SJU, got {score}"
+    assert 0.0 <= score <= 1.0
+
+
+def test_infra_align_remote_location_is_low():
+    """A centroid far from all PR infrastructure should score at the baseline 0.10."""
+    from ilap_airspace_bridge import _infra_align_score
+    # Mid-Atlantic, no PR infrastructure within 20 nm
+    score = _infra_align_score(30.0, -50.0)
+    assert score <= 0.25, f"Expected low score far from PR, got {score}"
+
+
+def test_infra_align_returns_float_in_range():
+    from ilap_airspace_bridge import _infra_align_score
+    for lat, lon in [(18.2, -66.5), (18.5, -67.1), (18.0, -65.8)]:
+        s = _infra_align_score(lat, lon)
+        assert 0.0 <= s <= 1.0, f"Score out of range at ({lat},{lon}): {s}"

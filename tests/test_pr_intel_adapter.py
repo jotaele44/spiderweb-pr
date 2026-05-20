@@ -9,7 +9,7 @@ from pathlib import Path
 import pyarrow.parquet as pq
 import pytest
 
-from pr_intel_adapter import PROVENANCE_COLS, PRIntelAdapter
+from pr_intel_adapter import PROVENANCE_COLS, PRIntelAdapter, DEFAULT_GATE_CONFIG
 
 
 def test_export_all_creates_required_files(populated_db, tmp_output):
@@ -244,3 +244,32 @@ def test_integration_report_coordinate_coverage_pct_gt_zero(populated_db, tmp_ou
     report = PRIntelAdapter(populated_db, str(tmp_output)).export_all()
     pct = report["gates"]["coordinate_coverage"]["pct_with_coords"]
     assert pct > 0.0, "Fixture flights all have coords — pct should be > 0"
+
+
+# ── Task 20: gate_config kwarg ────────────────────────────────────────────────
+
+def test_gate_config_defaults_match_constant(populated_db, tmp_output):
+    adapter = PRIntelAdapter(populated_db, str(tmp_output))
+    assert adapter.gate_config == DEFAULT_GATE_CONFIG
+
+
+def test_gate_config_override_coord_threshold(populated_db, tmp_output):
+    # Lower the threshold to 0.0 — coord gate must PASS even with no coords.
+    adapter = PRIntelAdapter(
+        populated_db, str(tmp_output),
+        gate_config={"coord_coverage_threshold": 0.0},
+    )
+    report = adapter.export_all()
+    assert report["gates"]["coordinate_coverage"]["status"] == "PASS"
+    assert report["gates"]["coordinate_coverage"]["threshold"] == 0.0
+
+
+def test_gate_config_override_ocr_threshold_forces_fail(populated_db, tmp_output):
+    # Raise threshold above any realistic fixture value → OCR gate must FAIL.
+    adapter = PRIntelAdapter(
+        populated_db, str(tmp_output),
+        gate_config={"ocr_confidence_threshold": 0.99},
+    )
+    report = adapter.export_all()
+    assert report["gates"]["ocr_confidence_gate"]["status"] == "FAIL"
+    assert report["gates"]["ocr_confidence_gate"]["threshold"] == 0.99

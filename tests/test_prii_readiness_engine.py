@@ -325,3 +325,36 @@ def test_health_check_has_export_dir(tmp_path):
     engine = PRIIReadinessEngine(str(tmp_path))
     hc = engine.health_check()
     assert "export_dir" in hc
+
+
+# ── Task 34: calibration_ready field ─────────────────────────────────────────
+
+def test_calibration_ready_true_when_operational_pass(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    report = PRIIReadinessEngine(str(tmp_path)).assess()
+    assert report["calibration_ready"] is True
+
+
+def test_calibration_ready_false_when_fixture_mode(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    cal = _passing_calibration_report(tmp_path)
+    cal["baseline_mode"] = "fixture"
+    _write(tmp_path, "calibration_report.json", cal)
+    report = PRIIReadinessEngine(str(tmp_path)).assess()
+    assert report["calibration_ready"] is False
+
+
+def test_calibration_ready_false_when_no_calibration_report(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    report = PRIIReadinessEngine(str(tmp_path)).assess()
+    assert report["calibration_ready"] is False
+
+
+def test_calibration_ready_false_when_calibration_fail(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    cal = _passing_calibration_report(tmp_path)
+    cal["status"] = "FAIL"
+    _write(tmp_path, "calibration_report.json", cal)
+    report = PRIIReadinessEngine(str(tmp_path)).assess()
+    assert report["calibration_ready"] is False

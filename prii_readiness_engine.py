@@ -128,10 +128,16 @@ class PRIIReadinessEngine:
         else:
             readiness_status = READINESS_STATUS_READY
 
+        # calibration_ready: True only when mode=operational and status not FAIL
+        calibration_ready = (
+            cal_mode == "operational" and cal_status in ("PASS", "WARN")
+        )
+
         report = {
             "generated_at":    datetime.utcnow().isoformat() + "Z",
             "export_dir":      str(self.export_dir),
             "readiness_status": readiness_status,
+            "calibration_ready": calibration_ready,
             "blockers":        blockers,
             "warnings":        warnings,
             "missing_inputs":  missing_inputs,

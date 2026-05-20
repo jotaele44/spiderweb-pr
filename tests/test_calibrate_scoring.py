@@ -9,7 +9,9 @@ from calibrate_scoring import (
     REQUIRED_REPORT_KEYS,
     CalibrationDriver,
     MIN_OPERATIONAL_CANDIDATES,
+    FIXTURE_SKIP_METRICS,
 )
+from ilap_airspace_bridge import CONFIDENCE_WEIGHTS
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -220,3 +222,28 @@ def test_compare_runs_status_keys(tmp_path):
     delta = CalibrationDriver.compare_runs(report_a, report_b)
     assert "status_a" in delta
     assert "status_b" in delta
+
+
+# ── Task 31: is_operational() ─────────────────────────────────────────────────
+
+def test_is_operational_false_below_threshold(tmp_path):
+    _write_geojson(tmp_path / "spiderweb_overlay_candidates.geojson",
+                   [_feature()] * (MIN_OPERATIONAL_CANDIDATES - 1))
+    assert CalibrationDriver(str(tmp_path)).is_operational() is False
+
+
+def test_is_operational_true_at_threshold(tmp_path):
+    _write_geojson(tmp_path / "spiderweb_overlay_candidates.geojson",
+                   [_feature()] * MIN_OPERATIONAL_CANDIDATES)
+    assert CalibrationDriver(str(tmp_path)).is_operational() is True
+
+
+def test_is_operational_false_empty(tmp_path):
+    assert CalibrationDriver(str(tmp_path)).is_operational() is False
+
+
+# ── Task 3: CONFIDENCE_WEIGHTS integrity ──────────────────────────────────────
+
+def test_confidence_weights_sum_to_one():
+    total = sum(CONFIDENCE_WEIGHTS.values())
+    assert abs(total - 1.0) < 1e-9, f"CONFIDENCE_WEIGHTS sum={total} != 1.0"
