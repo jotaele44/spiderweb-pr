@@ -194,3 +194,66 @@ def test_retrieve_from_empty_corpus_returns_list(tmp_path):
         results = retrieve("any query", str(tmp_path / "empty_db"), top_k=5)
 
     assert isinstance(results, list)
+
+
+# ── Phase 6: RAG hardening ────────────────────────────────────────────────────
+
+def test_safe_retrieve_returns_list_on_import_error():
+    from rag_pipeline import safe_retrieve
+    results = safe_retrieve("query", "/nonexistent/path", top_k=3)
+    assert isinstance(results, list)
+
+
+def test_validate_hits_filters_incomplete():
+    from rag_pipeline import validate_hits
+    good = {"text": "t", "metadata": {}, "score": 0.9}
+    bad = {"text": "t", "score": 0.5}  # missing metadata
+    result = validate_hits([good, bad])
+    assert len(result) == 1
+    assert result[0] is good
+
+
+def test_validate_hits_empty_input():
+    from rag_pipeline import validate_hits
+    assert validate_hits([]) == []
+
+
+def test_chunk_text_basic():
+    from rag_pipeline import chunk_text
+    text = "A" * 1000
+    chunks = chunk_text(text, max_chars=100, overlap=10)
+    assert len(chunks) > 1
+    for c in chunks:
+        assert len(c) <= 100
+
+
+def test_chunk_text_empty_returns_empty():
+    from rag_pipeline import chunk_text
+    assert chunk_text("") == []
+
+
+def test_chunk_text_short_text_single_chunk():
+    from rag_pipeline import chunk_text
+    assert chunk_text("hello world", max_chars=512) == ["hello world"]
+
+
+def test_chunk_text_invalid_max_chars_raises():
+    from rag_pipeline import chunk_text
+    import pytest
+    with pytest.raises(ValueError):
+        chunk_text("text", max_chars=0)
+
+
+def test_format_context_with_limit_truncates():
+    from rag_pipeline import format_context_with_limit
+    long_hit = _make_hit(text="X" * 5000)
+    result = format_context_with_limit([long_hit], max_chars=100)
+    assert len(result) <= 120  # max_chars + truncation marker
+    assert "truncated" in result
+
+
+def test_format_context_with_limit_no_truncation_for_short():
+    from rag_pipeline import format_context_with_limit
+    hit = _make_hit(text="short text")
+    result = format_context_with_limit([hit], max_chars=10000)
+    assert "truncated" not in result

@@ -86,6 +86,34 @@ def generate(tokenizer, model, prompt):
     return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
 
+def sanitize_query(query: str, max_length: int = 1000) -> str:
+    """Strip leading/trailing whitespace and truncate to *max_length* chars.
+
+    Removes ASCII control characters (0x00-0x1F except tab/newline) that could
+    confuse downstream tokenizers.
+    """
+    cleaned = "".join(c for c in query if c == "\t" or c == "\n" or ord(c) >= 0x20)
+    return cleaned.strip()[:max_length]
+
+
+def truncate_context(context: str, max_chars: int = 4000) -> str:
+    """Truncate *context* to *max_chars* characters, appending a marker if cut."""
+    if not context or len(context) <= max_chars:
+        return context
+    return context[:max_chars] + "\n... [context truncated]"
+
+
+def estimate_tokens(text: str) -> int:
+    """Rough token-count estimate: ~4 characters per token (BPE heuristic).
+
+    Returns an integer ≥ 0. This is intentionally approximate — use only for
+    guard-rail checks, not billing or exact context-window management.
+    """
+    if not text:
+        return 0
+    return max(1, len(text) // 4)
+
+
 def get_context(query, db_path, top_k):
     """Retrieve RAG context from the vector index."""
     try:

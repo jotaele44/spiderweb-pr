@@ -518,3 +518,65 @@ def test_empty_intake_dir_produces_report(tmp_path):
     report = intake.run()
     assert isinstance(report, dict)
     assert "missing_files" in report or "candidate_count" in report or report is not None
+
+
+# ── Phase 7: SpiderwebIntake hardening methods ────────────────────────────────
+
+def test_get_candidate_summary_empty():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    summary = intake.get_candidate_summary([])
+    assert summary["total"] == 0
+    assert summary["by_type"] == {}
+    assert summary["by_tier"] == {}
+
+
+def test_get_candidate_summary_counts_types():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidates = [
+        {"_candidate_type": "poi", "_lat": 18.0, "_lon": -66.0},
+        {"_candidate_type": "poi", "_lat": 18.1, "_lon": -66.1},
+        {"_candidate_type": "ilap", "_lat": 18.2, "_lon": -66.2},
+    ]
+    summary = intake.get_candidate_summary(candidates)
+    assert summary["total"] == 3
+    assert summary["by_type"]["poi"] == 2
+    assert summary["by_type"]["ilap"] == 1
+
+
+def test_filter_by_tier_returns_matching():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidates = [
+        {"_candidate_type": "poi", "evidence_tier": "TIER-1"},
+        {"_candidate_type": "poi", "evidence_tier": "TIER-2"},
+        {"_candidate_type": "ilap", "evidence_tier": "TIER-1"},
+    ]
+    t1 = intake.filter_by_tier(candidates, "TIER-1")
+    assert len(t1) == 2
+    assert all(c["evidence_tier"] == "TIER-1" for c in t1)
+
+
+def test_filter_by_tier_empty_on_no_match():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidates = [{"evidence_tier": "TIER-2"}]
+    assert intake.filter_by_tier(candidates, "TIER-1") == []
+
+
+def test_validate_candidate_fields_valid():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidate = {"_lat": 18.0, "_lon": -66.0, "_candidate_type": "poi"}
+    assert intake.validate_candidate_fields(candidate) == []
+
+
+def test_validate_candidate_fields_missing_field():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidate = {"_lat": 18.0, "_lon": -66.0}  # missing _candidate_type
+    errors = intake.validate_candidate_fields(candidate)
+    assert len(errors) >= 1
+    assert any("_candidate_type" in e for e in errors)
+
+
+def test_validate_candidate_fields_none_lat():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    candidate = {"_lat": None, "_lon": -66.0, "_candidate_type": "poi"}
+    errors = intake.validate_candidate_fields(candidate)
+    assert any("_lat" in e for e in errors)

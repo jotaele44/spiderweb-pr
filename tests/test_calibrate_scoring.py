@@ -123,3 +123,40 @@ def test_custom_output_dir(tmp_path):
     out_dir = tmp_path / "out"
     CalibrationDriver(str(export_dir), output_dir=str(out_dir)).run()
     assert (out_dir / "calibration_report.json").exists()
+
+
+# ── Phase 7: explain_flags ────────────────────────────────────────────────────
+
+def test_explain_flags_no_flags_returns_pass(tmp_path):
+    export_dir = tmp_path / "export"
+    export_dir.mkdir()
+    _write_geojson(export_dir / "spiderweb_overlay_candidates.geojson", [_feature()] * 60)
+    _write_gap_audit(export_dir / "spiderweb_gap_audit.json")
+    report = CalibrationDriver(str(export_dir)).run()
+    explanation = CalibrationDriver(str(export_dir)).explain_flags(report)
+    assert isinstance(explanation, str)
+    if not report["calibration_flags"]:
+        assert "PASS" in explanation
+
+
+def test_explain_flags_with_flags_contains_metric(tmp_path):
+    export_dir = tmp_path / "export"
+    export_dir.mkdir()
+    report_with_flags = {
+        "status": "FAIL",
+        "baseline_mode": "operational",
+        "calibration_flags": [
+            {"metric": "pct_T4", "value": 0.01, "expected_min": 0.05,
+             "action": "Investigate tier scoring"},
+        ],
+    }
+    driver = CalibrationDriver(str(export_dir))
+    explanation = driver.explain_flags(report_with_flags)
+    assert "pct_T4" in explanation
+    assert "FAIL" in explanation
+
+
+def test_explain_flags_empty_report_returns_pass(tmp_path):
+    driver = CalibrationDriver(str(tmp_path))
+    result = driver.explain_flags({"calibration_flags": []})
+    assert "PASS" in result

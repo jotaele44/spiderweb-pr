@@ -113,6 +113,47 @@ def format_context(hits):
     return "\n---\n".join(lines)
 
 
+def safe_retrieve(query: str, db_path: str, top_k: int = 5) -> list:
+    """Like :func:`retrieve` but catches all exceptions and returns [] on failure."""
+    try:
+        return retrieve(query, db_path, top_k)
+    except Exception:
+        return []
+
+
+def validate_hits(hits: list) -> list:
+    """Filter out hits that are missing required keys (text, metadata, score)."""
+    required = {"text", "metadata", "score"}
+    return [h for h in hits if isinstance(h, dict) and required.issubset(h)]
+
+
+def chunk_text(text: str, max_chars: int = 512, overlap: int = 64) -> list:
+    """Split *text* into overlapping chunks of at most *max_chars* characters.
+
+    Each chunk is a plain string. The last chunk may be shorter than *max_chars*.
+    """
+    if not text:
+        return []
+    if max_chars <= 0:
+        raise ValueError(f"max_chars must be > 0, got {max_chars}")
+    overlap = min(overlap, max_chars - 1)
+    step = max_chars - overlap
+    chunks = []
+    start = 0
+    while start < len(text):
+        chunks.append(text[start : start + max_chars])
+        start += step
+    return chunks
+
+
+def format_context_with_limit(hits: list, max_chars: int = 4000) -> str:
+    """Like :func:`format_context` but truncates the result to *max_chars*."""
+    ctx = format_context(hits)
+    if len(ctx) > max_chars:
+        ctx = ctx[:max_chars] + "\n... [truncated]"
+    return ctx
+
+
 def main():
     parser = argparse.ArgumentParser(description="RAG pipeline for PRUAP social data.")
     parser.add_argument("--build", action="store_true", help="Build the vector index")

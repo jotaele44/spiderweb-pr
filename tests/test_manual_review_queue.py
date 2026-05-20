@@ -154,3 +154,74 @@ def test_get_all_returns_items_across_statuses(tmp_path):
 
 # ── Path import for export_csv test ──────────────────────────────────────────
 from pathlib import Path
+
+
+# ── Phase 5: new ManualReviewQueue methods ────────────────────────────────────
+
+def test_get_pending_count_returns_int(tmp_path):
+    q = ManualReviewQueue(str(tmp_path))
+    assert q.get_pending_count() == 0
+
+
+def test_get_pending_count_increments_on_add(tmp_path):
+    q = ManualReviewQueue(str(tmp_path))
+    q.add_item("quality_issue", "/img/a.jpg", "test")
+    q.add_item("quality_issue", "/img/b.jpg", "test")
+    assert q.get_pending_count() == 2
+
+
+def test_get_pending_count_filtered_by_type(tmp_path):
+    q = ManualReviewQueue(str(tmp_path))
+    q.add_item("quality_issue", "/img/a.jpg", "r")
+    q.add_item("ocr_correction", "/img/b.jpg", "r")
+    assert q.get_pending_count("quality_issue") == 1
+    assert q.get_pending_count("ocr_correction") == 1
+
+
+def test_get_pending_count_decrements_after_review(tmp_path):
+    q = ManualReviewQueue(str(tmp_path))
+    item_id = q.add_item("quality_issue", "/img/c.jpg", "r")
+    assert q.get_pending_count() == 1
+    q.mark_reviewed(item_id, "ok")
+    assert q.get_pending_count() == 0
+
+
+def test_bulk_approve_updates_all(tmp_path):
+    q = ManualReviewQueue(str(tmp_path))
+    ids = [q.add_item("quality_issue", f"/img/{i}.jpg", "r") for i in range(5)]
+    updated = q.bulk_approve(ids)
+    assert updated == 5
+    assert q.get_pending_count() == 0
+
+
+def test_bulk_approve_returns_zero_on_empty(tmp_path):
+    q = ManualReviewQueue(str(tmp_path))
+    assert q.bulk_approve([]) == 0
+
+
+def test_bulk_approve_skips_unknown_ids(tmp_path):
+    q = ManualReviewQueue(str(tmp_path))
+    updated = q.bulk_approve(["nonexistent-id"])
+    assert updated == 0
+
+
+def test_export_to_json_creates_file(tmp_path):
+    import json
+    q = ManualReviewQueue(str(tmp_path))
+    q.add_item("quality_issue", "/img/e.jpg", "r")
+    out = q.export_to_json()
+    assert Path(out).exists()
+    data = json.loads(Path(out).read_text())
+    assert "items" in data
+    assert "exported_at" in data
+    assert len(data["items"]) == 1
+
+
+def test_export_to_json_custom_path(tmp_path):
+    import json
+    q = ManualReviewQueue(str(tmp_path))
+    q.add_item("ocr_correction", "/img/f.jpg", "r")
+    out = str(tmp_path / "custom_export.json")
+    result = q.export_to_json(out)
+    assert result == out
+    assert Path(out).exists()

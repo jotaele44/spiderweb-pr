@@ -193,6 +193,33 @@ class CalibrationDriver:
                 })
         return flags
 
+    def explain_flags(self, report: Dict[str, Any]) -> str:
+        """Return a human-readable summary of calibration flags in *report*.
+
+        Returns "No calibration flags — PASS" when the flags list is empty.
+        """
+        flags = report.get("calibration_flags", [])
+        if not flags:
+            return "No calibration flags — PASS"
+        lines = [f"Calibration status: {report.get('status', 'UNKNOWN')}",
+                 f"Mode: {report.get('baseline_mode', 'unknown')}",
+                 f"{len(flags)} flag(s) raised:"]
+        for f in flags:
+            metric = f.get("metric", "?")
+            value  = f.get("value", "?")
+            action = f.get("action", "")
+            if "expected_min" in f:
+                lines.append(
+                    f"  [{metric}] value={value} < min={f['expected_min']} → {action}"
+                )
+            elif "expected_max" in f:
+                lines.append(
+                    f"  [{metric}] value={value} > max={f['expected_max']} → {action}"
+                )
+            else:
+                lines.append(f"  [{metric}] value={value} → {action}")
+        return "\n".join(lines)
+
     def _write_report(self, report: Dict[str, Any]) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         (self.output_dir / "calibration_report.json").write_text(
