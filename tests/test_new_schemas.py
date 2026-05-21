@@ -209,3 +209,62 @@ class TestOperationalAlert:
         doc = self._valid()
         doc["escalation_count"] = -1
         assert len(_validate(self.SCHEMA, doc)) >= 1
+
+
+# ── Task 33: pr_intel_gate_config and geo_calibration_config ─────────────────
+
+class TestPRIntelGateConfig:
+    SCHEMA = _load("pr_intel_gate_config")
+
+    def _valid(self):
+        return {
+            "coord_coverage_threshold": 0.70,
+            "ocr_confidence_threshold": 0.50,
+            "evidence_chain_threshold": 0.50,
+        }
+
+    def test_valid_config_passes(self):
+        assert _validate(self.SCHEMA, self._valid()) == []
+
+    def test_rejects_threshold_above_one(self):
+        doc = self._valid()
+        doc["coord_coverage_threshold"] = 1.5
+        assert len(_validate(self.SCHEMA, doc)) >= 1
+
+    def test_rejects_threshold_below_zero(self):
+        doc = self._valid()
+        doc["ocr_confidence_threshold"] = -0.1
+        assert len(_validate(self.SCHEMA, doc)) >= 1
+
+    def test_minimal_empty_config_passes(self):
+        # All fields are optional — empty config should be valid
+        assert _validate(self.SCHEMA, {}) == []
+
+
+class TestGeoCalibrationConfig:
+    SCHEMA = _load("geo_calibration_config")
+
+    def _valid(self):
+        return {
+            "map_top_fraction": 0.15,
+            "map_bottom_fraction": 0.75,
+            "mode": "fixed_pr_bounds",
+        }
+
+    def test_valid_config_passes(self):
+        assert _validate(self.SCHEMA, self._valid()) == []
+
+    def test_rejects_fraction_above_one(self):
+        doc = self._valid()
+        doc["map_top_fraction"] = 1.2
+        assert len(_validate(self.SCHEMA, doc)) >= 1
+
+    def test_rejects_invalid_mode(self):
+        doc = self._valid()
+        doc["mode"] = "unknown_mode"
+        assert len(_validate(self.SCHEMA, doc)) >= 1
+
+    def test_valid_multi_anchor_mode(self):
+        doc = self._valid()
+        doc["mode"] = "multi_anchor_weighted"
+        assert _validate(self.SCHEMA, doc) == []
