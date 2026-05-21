@@ -138,3 +138,32 @@ pip install -r requirements-gebco.txt       # GEBCO only
 pip install -r requirements-rag.txt         # LLM pipeline only
 pip install -r requirements-earthgpt.txt    # EarthGPT only
 ```
+
+---
+
+## Phase 9 — Cross-Module Integration Bridges
+
+These bridges connect the four modules at runtime without creating import-time coupling. All bridges are opt-in; modules remain independently runnable.
+
+### Bridge Map
+
+| Bridge | From | To | Mechanism |
+|--------|------|----|-----------|
+| ILAP → EarthGPT | `ilap_airspace_bridge.py` | `earthgpt/context.py` | `TileContext.from_flight_event()` converts ILAP corridor → tile context |
+| PRIntelAdapter 7th gate | `pr_intel_adapter.py` | `earthgpt/pipeline.py` | `earthgpt_dry_run_pass` gate calls `dry_run(nodes)` |
+| GIS + GEBCO depth | `gis_intelligence.py` | `gebco/terrain.py` | `mona_passage_profile()` annotates maritime chokepoints with depth |
+| Mission → RAG | `mission_inference.py` | `rag_pipeline.py` | UNKNOWN missions trigger `RAGPipeline` query appended as `rag_context` |
+| Alerts + Corridor | `operational_intelligence.py` | `earthgpt/corridor_graph.py` | `Critical Infrastructure Proximity` alert fires when corridor overlaps PREPA |
+| Calibration + Metrics | `calibrate_scoring.py` | `earthgpt/metrics.py` | EarthGPT pipeline latency feeds calibration signal |
+
+### Selective Module Execution
+
+Use `run_all.py --module <list>` to run only specific modules:
+
+```bash
+python run_all.py --db data.db --module airspace          # Airspace Intel only
+python run_all.py --db data.db --module airspace,gebco    # Airspace + GEBCO
+python run_all.py --db data.db --module airspace,gebco,rag,earthgpt  # all
+```
+
+Accepted names: `airspace`, `gebco`, `rag`, `earthgpt`

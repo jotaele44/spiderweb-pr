@@ -236,3 +236,78 @@ python -m pytest tests/test_aircraft_intelligence.py tests/test_cli.py tests/tes
 python -m pytest tests/test_io.py tests/test_terrain.py -q  # GEBCO: 39 tests
 python -m pytest tests/test_metrics.py tests/test_seams.py tests/test_pipeline.py -q  # EarthGPT: 19 tests
 ```
+
+---
+
+## New CLI Flags (Phase 9+)
+
+### `--module` — selective module execution
+
+Run only specific modules instead of all four:
+
+```bash
+python run_all.py --db /tmp/smoke.db --module airspace
+python run_all.py --db /tmp/smoke.db --module airspace,gebco
+python run_all.py --db /tmp/smoke.db --module airspace,gebco,rag,earthgpt  # all four
+```
+
+Accepted module names: `airspace`, `gebco`, `rag`, `earthgpt`
+
+### `--gate-config` — configurable gate thresholds
+
+Override PRIntelAdapter gate thresholds via JSON file:
+
+```bash
+# Create a custom gate config
+cat > /tmp/gate_config.json << 'JSON'
+{
+  "coord_coverage_threshold": 0.80,
+  "ocr_confidence_threshold": 0.60,
+  "evidence_chain_threshold": 0.55
+}
+JSON
+
+python run_all.py --db /tmp/smoke.db --gate-config /tmp/gate_config.json --export-pr-intel /tmp/pr_intel
+```
+
+### `--calibration-mode` — geo-calibration mode
+
+Select the pixel→lat/lon calibration method:
+
+```bash
+python run_all.py --db /tmp/smoke.db --calibration-mode fixed_pr_bounds   # fast, ~1500m accuracy
+python run_all.py --db /tmp/smoke.db --calibration-mode airport_anchor     # bilinear, ~500m accuracy
+python run_all.py --db /tmp/smoke.db --calibration-mode manual_anchor_csv --anchors /tmp/anchors.csv  # user CSV, ~200m
+python run_all.py --db /tmp/smoke.db --calibration-mode multi_anchor_weighted --anchors /tmp/anchors.csv  # IDW, ~150m
+```
+
+---
+
+## Environment Variables
+
+| Variable | Module | Description |
+|----------|--------|-------------|
+| `HF_TOKEN` | RAG | Hugging Face API token for embedding model downloads |
+| `GEBCO_DATA_DIR` | GEBCO | Directory containing .nc bathymetry rasters |
+| `EARTHGPT_IOS_MODE` | EarthGPT | Set to `1` to enable iOS/a-Shell memory constraints |
+| `OPENAI_API_KEY` | RAG | OpenAI key if using GPT-based LLM backend |
+
+```bash
+export HF_TOKEN="hf_..."
+export GEBCO_DATA_DIR="/data/gebco"
+python run_all.py --db /tmp/smoke.db --module rag
+```
+
+---
+
+## Geo-Calibration Benchmark
+
+Compare all calibration modes on the same pixel:
+
+```python
+from geo_calibration import GeoCalibration
+cal = GeoCalibration()
+results = cal.benchmark(px=640, py=480, img_w=1280, img_h=960)
+for mode, r in results.items():
+    print(f"{mode:30s}  lat={r['lat']:.4f}  lon={r['lon']:.4f}  conf={r['confidence']}")
+```
