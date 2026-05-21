@@ -142,9 +142,9 @@ def _stac_item_to_scene(item: dict) -> dict:
         },
         "puerto_rico": {"region": props.get("pr:region") or "full_island"},
         "quality": {
-            "cloud_cover_pct": float(props.get("eo:cloud_cover", 0.0)),
-            "geometric_confidence": float(props.get("geometric_confidence", 0.8)),
-            "source_reliability": props.get("source_reliability", "unverified"),
+            "cloud_cover_pct": float(props.get("eo:cloud_cover") or 0.0),
+            "geometric_confidence": float(props.get("geometric_confidence") or 0.8),
+            "source_reliability": props.get("source_reliability") or "unverified",
         },
     }
 

@@ -100,6 +100,23 @@ def test_stac_catalog_parsed_and_ingested(tmp_path):
     assert summary["rejected"] == 0
 
 
+def test_stac_item_with_null_numeric_props_does_not_crash():
+    # STAC items legitimately carry null cloud cover; mapping must not raise.
+    from satellite_ingest import _stac_item_to_scene
+
+    item = {
+        "id": "S2_NULLS",
+        "collection": "sentinel-2-l2a",
+        "bbox": [-67.0, 18.0, -66.0, 18.5],
+        "geometry": {"type": "Polygon", "coordinates": [[[-67.0, 18.0]]]},
+        "properties": {"datetime": "2024-07-01T00:00:00Z", "eo:cloud_cover": None},
+        "assets": {"data": {"href": "https://example.com/x.tif", "type": "image/tiff"}},
+    }
+    scene = _stac_item_to_scene(item)
+    assert isinstance(scene["quality"]["cloud_cover_pct"], float)
+    assert isinstance(scene["quality"]["geometric_confidence"], float)
+
+
 # ── Error handling ────────────────────────────────────────────────────────────
 
 def test_missing_catalog_raises(tmp_path):
