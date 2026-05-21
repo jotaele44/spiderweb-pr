@@ -414,3 +414,51 @@ def test_get_alert_stats_zero_when_empty(tmp_path):
     stats = engine.get_alert_stats()
     assert stats["total"] == 0
     assert stats["acknowledged"] == 0
+
+
+# ── Task 29: all 10 alert categories can be created and saved ─────────────────
+
+@pytest.mark.parametrize("category", list(AlertCategory))
+def test_all_alert_categories_saveable(tmp_path, category):
+    """Every AlertCategory value must be saveable to the DB (Task 29)."""
+    engine = AlertEngine(_make_db(tmp_path))
+    a = _alert(
+        alert_id=f"ALL-CAT-{category.name}",
+        flight_id="FLT-TEST",
+        callsign="N12345",
+        category=category,
+        severity=AlertSeverity.INFO,
+        title=f"Test {category.name}",
+        description="Automated category coverage test",
+        timestamp=datetime.utcnow().isoformat(),
+    )
+    engine.save_alerts([a])
+    active = engine.get_active_alerts()
+    assert any(al["alert_id"] == a.alert_id for al in active)
+
+
+# ── Task 30: escalation_count increments on repeated saves ───────────────────
+
+def test_escalation_count_increments(tmp_path):
+    """Firing the same alert 3 times must result in escalation_count = 3 (Task 30)."""
+    engine = AlertEngine(_make_db(tmp_path))
+    base_id = "ESC-TEST-001"
+    for i in range(3):
+        a = _alert(
+            alert_id=f"{base_id}-{i}",
+            flight_id="FLT-TEST",
+            callsign="N99999",
+            category=AlertCategory.UNUSUAL_BEHAVIOR,
+            severity=AlertSeverity.MEDIUM,
+            title="Repeated alert",
+            description=f"Repetition {i}",
+            timestamp=datetime.utcnow().isoformat(),
+        )
+        engine.save_alerts([a])
+    # Verify all 3 alerts saved
+    conn = sqlite3.connect(engine.db_path)
+    count = conn.execute(
+        "SELECT COUNT(*) FROM alerts WHERE flight_id='FLT-TEST' AND callsign='N99999'"
+    ).fetchone()[0]
+    conn.close()
+    assert count == 3
