@@ -39,3 +39,39 @@ def test_lookup_callsign_with_no_operator_returns_profile(populated_db):
     assert result is not None
     assert isinstance(result, AircraftProfile)
     assert result.callsign == "XUNKNOWN99"
+
+
+# ── Task 38: profile_completeness metric ─────────────────────────────────────
+
+def test_profile_completeness_returns_float(populated_db):
+    """AircraftIntelligence.profile_completeness must return float in [0,1] (Task 38)."""
+    ai = AircraftIntelligence(populated_db)
+    completeness = ai.profile_completeness
+    assert isinstance(completeness, float)
+    assert 0.0 <= completeness <= 1.0
+
+
+def test_profile_completeness_full_profiles():
+    """All 14 KNOWN_OPERATORS entries are complete — completeness should equal 1.0."""
+    from aircraft_intelligence import AircraftIntelligence
+    # AircraftIntelligence can be instantiated with a non-existent path
+    # (profile_completeness doesn't query the DB)
+    ai = AircraftIntelligence(":memory:")
+    assert ai.profile_completeness == 1.0
+
+
+# ── Task 53: find_unknown() ───────────────────────────────────────────────────
+
+def test_find_unknown_known_callsign(populated_db):
+    """Known callsigns must not appear in find_unknown() results."""
+    ai = AircraftIntelligence(populated_db)
+    unknown = ai.find_unknown(["N5854Z", "N767PD"])
+    assert "N5854Z" not in unknown
+    assert "N767PD" not in unknown
+
+
+def test_find_unknown_unknown_callsign(populated_db):
+    """Callsigns with no profile match must appear in find_unknown() results."""
+    ai = AircraftIntelligence(populated_db)
+    unknown = ai.find_unknown(["N5854Z", "XUNKNOWN_ZZZZ"])
+    assert "XUNKNOWN_ZZZZ" in unknown

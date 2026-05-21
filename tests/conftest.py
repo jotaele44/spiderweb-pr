@@ -325,3 +325,14 @@ def pr_fixture_db(tmp_path):
     conn.commit()
     conn.close()
     return db_path
+
+
+# ── Task 3: CONFIDENCE_WEIGHTS integrity assertion ────────────────────────────
+
+def test_confidence_weights_sum_to_one():
+    """CONFIDENCE_WEIGHTS in ilap_airspace_bridge must sum to exactly 1.0 (Task 3)."""
+    from ilap_airspace_bridge import CONFIDENCE_WEIGHTS
+    total = sum(CONFIDENCE_WEIGHTS.values())
+    assert abs(total - 1.0) < 1e-9, (
+        f"CONFIDENCE_WEIGHTS sum to {total}, expected 1.0. Weights: {CONFIDENCE_WEIGHTS}"
+    )
