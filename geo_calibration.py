@@ -66,9 +66,10 @@ class GeoCalibration:
     """
 
     MODE_META = {
-        "fixed_pr_bounds":   {"confidence": 0.65, "error_m": 1500.0},
-        "airport_anchor":    {"confidence": 0.82, "error_m":  500.0},
-        "manual_anchor_csv": {"confidence": 0.90, "error_m":  200.0},
+        "fixed_pr_bounds":        {"confidence": 0.65, "error_m": 1500.0},
+        "airport_anchor":         {"confidence": 0.82, "error_m":  500.0},
+        "manual_anchor_csv":      {"confidence": 0.90, "error_m":  200.0},
+        "multi_anchor_weighted":  {"confidence": 0.92, "error_m":  150.0},
     }
 
     def __init__(self, mode: str = "fixed_pr_bounds",
@@ -77,7 +78,7 @@ class GeoCalibration:
             raise ValueError(f"mode must be one of {list(self.MODE_META)}")
         self.mode = mode
         self._anchors: List[_Anchor] = []
-        if mode in ("airport_anchor", "manual_anchor_csv"):
+        if mode in ("airport_anchor", "manual_anchor_csv", "multi_anchor_weighted"):
             csv_path = anchors_csv or (None if mode == "manual_anchor_csv" else str(DEFAULT_ANCHORS_CSV))
             if csv_path is None and mode == "manual_anchor_csv":
                 raise ValueError("manual_anchor_csv mode requires anchors_csv path")
@@ -89,8 +90,8 @@ class GeoCalibration:
                        img_w: int, img_h: int) -> CoordResult:
         if self.mode == "fixed_pr_bounds":
             lat, lon = self._fixed_pr_bounds(px, py, img_w, img_h)
-        elif self.mode == "airport_anchor":
-            lat, lon = self._anchor_interpolate(px, py, img_w, img_h)
+        elif self.mode == "multi_anchor_weighted":
+            lat, lon = self._multi_anchor_weighted(px, py, img_w, img_h)
         else:
             lat, lon = self._anchor_interpolate(px, py, img_w, img_h)
 
@@ -103,6 +104,32 @@ class GeoCalibration:
             coordinate_confidence=meta["confidence"],
             estimated_error_m=meta["error_m"],
         )
+
+    def benchmark(self, px: float, py: float,
+                  img_w: int, img_h: int,
+                  anchors_csv: Optional[str] = None) -> dict:
+        """
+        Run all calibration modes on the same pixel input and return a
+        comparison dict keyed by mode name.  Each value contains lat, lon,
+        and confidence from that mode's CoordResult.
+        """
+        results = {}
+        for mode in self.MODE_META:
+            try:
+                cal = GeoCalibration(mode=mode, anchors_csv=anchors_csv)
+                cr = cal.pixel_to_coord(px, py, img_w, img_h)
+                results[mode] = {
+                    "lat":        cr.lat,
+                    "lon":        cr.lon,
+                    "confidence": cr.coordinate_confidence,
+                }
+            except Exception:
+                results[mode] = {
+                    "lat":        None,
+                    "lon":        None,
+                    "confidence": None,
+                }
+        return results
 
     def generate_quality_report(self, rows: List[dict], output_path: str) -> int:
         """
@@ -160,6 +187,32 @@ class GeoCalibration:
             dy = rel_y - a.pixel_y_fraction
             dist = math.sqrt(dx * dx + dy * dy)
             weights.append(1.0 / (dist + 1e-9))
+
+        total = sum(weights)
+        lat = sum(w * a.lat for w, a in zip(weights, self._anchors)) / total
+        lon = sum(w * a.lon for w, a in zip(weights, self._anchors)) / total
+        return lat, lon
+
+    def _multi_anchor_weighted(self, px: float, py: float,
+                               img_w: int, img_h: int):
+        """
+        Inverse-distance weighting from ALL CSV anchors simultaneously.
+        Distance is computed in pixel space (absolute pixels) so that the
+        epsilon is meaningful regardless of image size.  Falls back to
+        fixed_pr_bounds when no anchors are available.
+        """
+        if not self._anchors:
+            return self._fixed_pr_bounds(px, py, img_w, img_h)
+
+        epsilon = 1e-6
+        weights = []
+        for a in self._anchors:
+            anchor_px = a.pixel_x_fraction * img_w
+            anchor_py = a.pixel_y_fraction * img_h
+            dx = px - anchor_px
+            dy = py - anchor_py
+            dist = math.sqrt(dx * dx + dy * dy)
+            weights.append(1.0 / (dist + epsilon))
 
         total = sum(weights)
         lat = sum(w * a.lat for w, a in zip(weights, self._anchors)) / total

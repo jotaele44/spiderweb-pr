@@ -79,6 +79,157 @@ KNOWN_OPERATORS = {
             "typical_duration_hours": "0.5-2",
         },
     },
+    # --- Additional known profiles ---
+    "N911PR": {
+        "owner": "Puerto Rico Department of Health",
+        "operator": "Puerto Rico Emergency Medical Services",
+        "aircraft_type": "Airbus H145",
+        "primary_mission": "Medical/Emergency Transport",
+        "secondary_missions": ["Emergency Response", "Disaster Response / Damage Assessment"],
+        "confidence_level": 0.95,
+        "operational_patterns": {
+            "typical_altitude": "500-6000 ft AGL",
+            "typical_airspeed": "80-170 mph",
+            "operating_hours": "24/7",
+            "high_activity_regions": ["San Juan", "Ponce", "Mayaguez", "Arecibo"],
+            "typical_duration_hours": "0.5-3",
+        },
+    },
+    "N304NG": {
+        "owner": "National Guard Bureau",
+        "operator": "Puerto Rico Army National Guard",
+        "aircraft_type": "Sikorsky UH-60 Black Hawk",
+        "primary_mission": "Military / National Guard Operations",
+        "secondary_missions": ["Disaster Response / Damage Assessment", "Search & Rescue", "Emergency Response"],
+        "confidence_level": 0.93,
+        "operational_patterns": {
+            "typical_altitude": "500-10000 ft AGL",
+            "typical_airspeed": "100-180 mph",
+            "operating_hours": "Daytime (06:00-22:00 local)",
+            "high_activity_regions": ["Salinas Army Base", "Muñiz Air Base", "Aguadilla"],
+            "typical_duration_hours": "1-5",
+        },
+    },
+    "N448CB": {
+        "owner": "U.S. Customs and Border Protection",
+        "operator": "CBP Air and Marine Operations",
+        "aircraft_type": "Sikorsky UH-60 Black Hawk",
+        "primary_mission": "Anti-Smuggling / Interdiction",
+        "secondary_missions": ["Maritime Patrol", "Law Enforcement"],
+        "confidence_level": 0.94,
+        "operational_patterns": {
+            "typical_altitude": "200-8000 ft AGL",
+            "typical_airspeed": "100-180 mph",
+            "operating_hours": "24/7",
+            "high_activity_regions": ["Mona Passage", "Vieques", "Culebra", "North Coast"],
+            "typical_duration_hours": "2-6",
+        },
+    },
+    "N229AE": {
+        "owner": "AeroMed Puerto Rico LLC",
+        "operator": "AeroMed",
+        "aircraft_type": "Bell 429 GlobalRanger",
+        "primary_mission": "Medical/Emergency Transport",
+        "secondary_missions": ["Emergency Response"],
+        "confidence_level": 0.91,
+        "operational_patterns": {
+            "typical_altitude": "1000-7000 ft AGL",
+            "typical_airspeed": "100-160 mph",
+            "operating_hours": "24/7",
+            "high_activity_regions": ["San Juan Metro", "Ponce", "Arecibo", "Mayaguez"],
+            "typical_duration_hours": "0.3-2",
+        },
+    },
+    "N87TV": {
+        "owner": "Telemundo Puerto Rico",
+        "operator": "Telemundo / WKAQ-TV",
+        "aircraft_type": "Robinson R44",
+        "primary_mission": "News / Media Aerial Coverage",
+        "secondary_missions": ["Traffic Monitoring"],
+        "confidence_level": 0.89,
+        "operational_patterns": {
+            "typical_altitude": "1000-4000 ft AGL",
+            "typical_airspeed": "80-130 mph",
+            "operating_hours": "Daytime (06:00-21:00 local)",
+            "high_activity_regions": ["San Juan Metro", "Bayamon", "Carolina", "Guaynabo"],
+            "typical_duration_hours": "0.5-3",
+        },
+    },
+    "N521PR": {
+        "owner": "Puerto Rico Port Authority",
+        "operator": "PRPA / Port Security",
+        "aircraft_type": "Airbus H125",
+        "primary_mission": "Port and Maritime Surveillance",
+        "secondary_missions": ["Anti-Smuggling / Interdiction", "Emergency Response"],
+        "confidence_level": 0.87,
+        "operational_patterns": {
+            "typical_altitude": "200-3000 ft AGL",
+            "typical_airspeed": "40-120 mph",
+            "operating_hours": "Daytime (06:00-20:00 local)",
+            "high_activity_regions": ["San Juan Bay", "Ponce Harbor", "Mayaguez Port"],
+            "typical_duration_hours": "1-4",
+        },
+    },
+    "N172FA": {
+        "owner": "Federal Aviation Administration",
+        "operator": "FAA Flight Standards District Office",
+        "aircraft_type": "Cessna 172",
+        "primary_mission": "Aviation Regulatory / Inspection",
+        "secondary_missions": ["Training Flight"],
+        "confidence_level": 0.85,
+        "operational_patterns": {
+            "typical_altitude": "2000-9000 ft AGL",
+            "typical_airspeed": "100-140 mph",
+            "operating_hours": "Daytime (08:00-17:00 local)",
+            "high_activity_regions": ["Luis Munoz Marin Intl", "Rafael Hernandez Airport", "Mercedita Airport"],
+            "typical_duration_hours": "1-4",
+        },
+    },
+    "N388DR": {
+        "owner": "DroneUp LLC",
+        "operator": "DroneUp / Commercial UAS Operations",
+        "aircraft_type": "DJI Matrice 300 RTK",
+        "primary_mission": "Commercial UAS / Survey",
+        "secondary_missions": ["Disaster Response / Damage Assessment", "Power Line Inspection"],
+        "confidence_level": 0.82,
+        "operational_patterns": {
+            "typical_altitude": "100-400 ft AGL",
+            "typical_airspeed": "10-50 mph",
+            "operating_hours": "Daytime (07:00-19:00 local)",
+            "high_activity_regions": ["Humacao", "Caguas", "San Juan Industrial Zones"],
+            "typical_duration_hours": "0.5-2",
+        },
+    },
+    "N960PR": {
+        "owner": "Puerto Rico Forestry Service",
+        "operator": "DRNA Recursos Naturales",
+        "aircraft_type": "Airbus AS350 B3",
+        "primary_mission": "Environmental / Forestry Patrol",
+        "secondary_missions": ["Disaster Response / Damage Assessment", "Search & Rescue"],
+        "confidence_level": 0.86,
+        "operational_patterns": {
+            "typical_altitude": "300-5000 ft AGL",
+            "typical_airspeed": "60-140 mph",
+            "operating_hours": "Daytime (07:00-17:00 local)",
+            "high_activity_regions": ["El Yunque", "Toro Negro Forest", "Maricao"],
+            "typical_duration_hours": "1-5",
+        },
+    },
+    "N741LE": {
+        "owner": "Puerto Rico Department of Justice",
+        "operator": "PR DOJ / Criminal Investigations Bureau",
+        "aircraft_type": "Bell 407",
+        "primary_mission": "Law Enforcement",
+        "secondary_missions": ["Anti-Smuggling / Interdiction", "Emergency Response"],
+        "confidence_level": 0.90,
+        "operational_patterns": {
+            "typical_altitude": "500-5000 ft AGL",
+            "typical_airspeed": "80-160 mph",
+            "operating_hours": "24/7",
+            "high_activity_regions": ["San Juan", "Bayamon", "Ponce", "Caguas"],
+            "typical_duration_hours": "1-4",
+        },
+    },
 }
 
 # Prefix-based operator inference when exact match is not found
@@ -123,6 +274,17 @@ class AircraftProfile:
     first_seen: str = ""
     last_seen: str = ""
     data_source: str = "deduced"  # "known_db", "deduced", "unknown"
+
+    def is_stale(self, threshold_days: int = 30) -> bool:
+        """Return True if last_seen is older than threshold_days (default 30)."""
+        if not self.last_seen:
+            return True
+        try:
+            last = datetime.fromisoformat(self.last_seen)
+            delta = datetime.utcnow() - last
+            return delta.days > threshold_days
+        except (ValueError, TypeError):
+            return True
 
 
 @dataclass
@@ -319,6 +481,47 @@ class AircraftIntelligence:
                 conn.close()
             except Exception:
                 pass
+
+    def find_unknown(self, callsigns: List[str]) -> List[str]:
+        """Return the subset of callsigns that have no profile match in KNOWN_OPERATORS.
+
+        A callsign is considered 'unknown' when neither a substring match nor a
+        prefix match resolves it to a known entry — i.e. it would fall through to
+        the 'deduced' path with data_source == 'deduced'.
+        """
+        unknown: List[str] = []
+        for cs in callsigns:
+            matched = False
+            for key in KNOWN_OPERATORS:
+                if key in cs or cs in key:
+                    matched = True
+                    break
+            if not matched:
+                unknown.append(cs)
+        return unknown
+
+    @property
+    def profile_completeness(self) -> float:
+        """Fraction of known profiles that have all core fields filled (0.0–1.0).
+
+        Core fields checked: aircraft_type, owner, operator, primary_mission,
+        confidence_level > 0, and at least one operational_patterns entry.
+        """
+        if not KNOWN_OPERATORS:
+            return 0.0
+
+        complete_count = 0
+        for data in KNOWN_OPERATORS.values():
+            if (
+                data.get("aircraft_type", "").strip()
+                and data.get("owner", "").strip()
+                and data.get("operator", "").strip()
+                and data.get("primary_mission", "").strip()
+                and data.get("confidence_level", 0.0) > 0.0
+                and data.get("operational_patterns")
+            ):
+                complete_count += 1
+        return complete_count / len(KNOWN_OPERATORS)
 
 
 # ============================================================================

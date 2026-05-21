@@ -828,6 +828,71 @@ class Phase3Pipeline:
         conn.commit()
         conn.close()
 
+    def explain(self, flight_id: str) -> Dict:
+        """Return a human-readable score breakdown per signal for a given flight.
+
+        Looks up the highest-scoring mission type for the flight from the
+        mission_scores table and returns a structured summary of which signals
+        contributed to that score.
+
+        Returns:
+            {
+                "flight_id": str,
+                "top_mission": str | None,
+                "score": float | None,
+                "signals": {"signal_name": score, ...}
+            }
+
+        If the flight has not been scored yet, ``top_mission`` and ``score``
+        are ``None`` and ``signals`` is an empty dict.  If the flight_id does
+        not exist in the flights table at all, a ``ValueError`` is raised.
+        """
+        # Verify the flight exists
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT flight_id FROM flights WHERE flight_id = ?", (flight_id,))
+        row = cursor.fetchone()
+        if row is None:
+            conn.close()
+            raise ValueError(f"Flight '{flight_id}' not found in the database.")
+
+        # Fetch the best-scoring mission for this flight
+        cursor.execute(
+            """
+            SELECT mission_type, total_score, signal_scores
+            FROM mission_scores
+            WHERE flight_id = ?
+            ORDER BY total_score DESC
+            LIMIT 1
+            """,
+            (flight_id,),
+        )
+        score_row = cursor.fetchone()
+        conn.close()
+
+        if score_row is None:
+            return {
+                "flight_id": flight_id,
+                "top_mission": None,
+                "score": None,
+                "signals": {},
+            }
+
+        raw_signals = score_row["signal_scores"]
+        try:
+            signals: Dict[str, float] = json.loads(raw_signals) if raw_signals else {}
+        except (json.JSONDecodeError, TypeError):
+            signals = {}
+
+        return {
+            "flight_id": flight_id,
+            "top_mission": score_row["mission_type"],
+            "score": score_row["total_score"],
+            "signals": signals,
+        }
+
 
 if __name__ == "__main__":
     pipeline = Phase3Pipeline()
