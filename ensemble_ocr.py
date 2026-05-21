@@ -327,6 +327,10 @@ class EnsembleOCR:
             field_name=field_name,
         )
 
+    def _get_fallback_engine(self) -> "TesseractEngine":
+        """Return Tesseract engine for low-confidence fallback."""
+        return TesseractEngine()
+
     def get_engine_status(self) -> Dict[str, bool]:
         return {e.name: e.available for e in self.engines}
 

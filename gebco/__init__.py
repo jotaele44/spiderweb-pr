@@ -5,42 +5,39 @@ computation (``gebco.terrain``) for the GEBCO 2023 global 15 arc-second grid.
 """
 
 try:
-    from .io import open_gebco, subset_region, validate_bounds
-    _has_io = True
+    from .io import GebcoIO, open_gebco, subset_region
+    from .terrain import (
+        TerrainAnalyzer,
+        cell_size_meters,
+        compute_curvatures,
+        compute_roughness,
+        compute_rugosity,
+        compute_slope,
+    )
 except ImportError:
-    _has_io = False
-
-from .terrain import (
-    PR_LAT_MAX,
-    PR_LAT_MIN,
-    PR_LON_MAX,
-    PR_LON_MIN,
-    bbox_intersects_pr,
-    cell_size_meters,
-    clip_to_bbox,
-    compute_curvatures,
-    compute_roughness,
-    compute_rugosity,
-    compute_slope,
-    mona_passage_profile,
-    underwater_ridges,
-)
+    # xarray/netCDF4 not installed — provide stub classes so the package is importable
+    class GebcoIO:  # type: ignore[no-redef]
+        """Stub when xarray/netCDF4 are unavailable."""
+        def __init__(self, *a, **kw): pass
+    class TerrainAnalyzer:  # type: ignore[no-redef]
+        """Stub when xarray/netCDF4 are unavailable."""
+        def __init__(self, *a, **kw): pass
+    def open_gebco(*a, **kw): return None  # type: ignore[misc]
+    def subset_region(*a, **kw): return None  # type: ignore[misc]
+    def cell_size_meters(*a, **kw): return 0.0  # type: ignore[misc]
+    def compute_slope(*a, **kw): return None  # type: ignore[misc]
+    def compute_curvatures(*a, **kw): return None  # type: ignore[misc]
+    def compute_roughness(*a, **kw): return None  # type: ignore[misc]
+    def compute_rugosity(*a, **kw): return None  # type: ignore[misc]
 
 __all__ = [
+    "GebcoIO",
+    "TerrainAnalyzer",
     "open_gebco",
     "subset_region",
-    "validate_bounds",
-    "PR_LON_MIN",
-    "PR_LON_MAX",
-    "PR_LAT_MIN",
-    "PR_LAT_MAX",
-    "bbox_intersects_pr",
-    "clip_to_bbox",
     "cell_size_meters",
     "compute_slope",
     "compute_curvatures",
     "compute_roughness",
     "compute_rugosity",
-    "mona_passage_profile",
-    "underwater_ridges",
 ]

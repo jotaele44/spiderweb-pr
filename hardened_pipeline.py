@@ -110,9 +110,32 @@ class HardenedFlightAnalyzer:
 
     # ── PUBLIC API ─────────────────────────────────────────────────────────
 
+    def resume_from_checkpoint(self, batch_id: str) -> Dict:
+        """Resume a previously started batch from its last checkpoint.
+
+        Returns a dict with: batch_id, processed_count, status.
+        """
+        conn = sqlite3.connect(self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM processing_jobs WHERE batch_id=? AND status='complete'",
+                (batch_id,),
+            ).fetchone()
+            processed = row[0] if row else 0
+        except Exception:
+            processed = 0
+        finally:
+            conn.close()
+        return {
+            "batch_id": batch_id,
+            "processed_count": processed,
+            "status": "resumed" if processed > 0 else "not_found",
+        }
+
     def process_with_hardening(self, batch_id: str = None,
                                max_images: Optional[int] = None,
-                               checkpoint_interval: int = 50):
+                               checkpoint_interval: int = 50,
+                               on_batch_complete: "Optional[object]" = None):
         """
         Main entry point. Queues images, processes them with EnsembleOCR,
         validates with StatefulTrackHypothesis, stores provenance, checkpoints.
@@ -185,6 +208,12 @@ class HardenedFlightAnalyzer:
         self._validate_all_tracks()
 
         print(f"\n  ✓ Hardened processing complete: {completed} OK, {failed} errors")
+
+        if on_batch_complete is not None:
+            try:
+                on_batch_complete(batch_id, {"processed": completed, "failed": failed})
+            except Exception:
+                pass
 
     # ── INTERNAL ───────────────────────────────────────────────────────────
 

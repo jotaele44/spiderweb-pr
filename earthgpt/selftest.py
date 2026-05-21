@@ -155,6 +155,28 @@ def test_io_utils() -> bool:
         return False
 
 
+SUBMODULES = [
+    "pipeline", "tiles", "ranking", "seam_graph", "seam_chain",
+    "corridor_graph", "context", "context_normalizer", "propagation",
+    "async_fetch", "cache_index", "ios_profile", "metrics", "log_utils",
+    "terrain_path_filter", "target_ranker", "temporal_epoch_compare", "features_lite"
+]
+
+
+def test_submodule_imports() -> bool:
+    """Test that all 18 submodules can be imported."""
+    all_ok = True
+    for submod in SUBMODULES:
+        try:
+            import importlib
+            importlib.import_module(f".{submod}", package="earthgpt")
+            _pass(f"import earthgpt.{submod}")
+        except Exception as exc:
+            _fail(f"import earthgpt.{submod}", str(exc))
+            all_ok = False
+    return all_ok
+
+
 def run_all() -> bool:
     log("EarthGPT iOS selftest starting ...", prefix="SELF")
     results = [
@@ -165,6 +187,7 @@ def run_all() -> bool:
         test_pipeline_analyze_node(),
         test_seam_graph(),
         test_io_utils(),
+        test_submodule_imports(),
     ]
     passed = sum(1 for r in results if r)
     total = len(results)

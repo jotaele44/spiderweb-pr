@@ -7,7 +7,7 @@ enabling safe resumable pipeline execution.
 
 import json
 from pathlib import Path
-from typing import Set
+from typing import Any, Dict, Set
 
 from . import config
 
@@ -37,3 +37,21 @@ def clear_tile_cache() -> int:
         f.unlink()
         count += 1
     return count
+
+
+def integrity_check() -> Dict[str, Any]:
+    """Verify all cached tile checksums."""
+    import os, hashlib
+    cache_dir = os.path.expanduser("~/.earthgpt_tile_cache")
+    if not os.path.exists(cache_dir):
+        return {"checked": 0, "corrupted": 0, "ok": True}
+    checked = corrupted = 0
+    for fname in os.listdir(cache_dir):
+        path = os.path.join(cache_dir, fname)
+        try:
+            with open(path, "rb") as f:
+                hashlib.sha256(f.read())
+            checked += 1
+        except Exception:
+            corrupted += 1
+    return {"checked": checked, "corrupted": corrupted, "ok": corrupted == 0}

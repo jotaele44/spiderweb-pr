@@ -201,6 +201,17 @@ class FR24EventExporter:
             route_files_processed=route_files_processed,
         )
 
+    # ----------------------------------------------------------------- dashboard
+
+    def to_dashboard_json(self) -> Dict:
+        """Return a serialized dict suitable for direct dashboard consumption."""
+        events = self.get_recent_events() if hasattr(self, "get_recent_events") else []
+        return {
+            "event_count": len(events),
+            "events": events[:50],  # cap at 50 for dashboard
+            "generated_at": __import__("datetime").datetime.utcnow().isoformat(),
+        }
+
     # ----------------------------------------------------------------- report
 
     def get_export_report(self, **extra) -> Dict[str, Any]:

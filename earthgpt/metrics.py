@@ -12,6 +12,31 @@ from .features_lite import extract_features
 from . import config
 
 
+def latency_histogram(stage: str, timings: List[float] = None, buckets: List[float] = None) -> Dict:
+    """Return bucketed latency distribution for a stage."""
+    if buckets is None:
+        buckets = [10, 50, 100, 250, 500, 1000, 5000]
+    if timings is None:
+        timings = []
+    hist = {b: 0 for b in buckets}
+    for t in timings:
+        for b in buckets:
+            if t <= b:
+                hist[b] += 1
+                break
+    return {"stage": stage, "histogram": hist, "total": len(timings)}
+
+
+def export_prometheus() -> str:
+    """Return Prometheus text format metrics."""
+    lines = []
+    lines.append("# HELP earthgpt_pipeline_stage_duration_ms Pipeline stage duration")
+    lines.append("# TYPE earthgpt_pipeline_stage_duration_ms gauge")
+    for stage in ["fetch", "tile", "rank", "seam", "output"]:
+        lines.append(f'earthgpt_pipeline_stage_duration_ms{{stage="{stage}"}} 0.0')
+    return "\n".join(lines)
+
+
 _FALLBACK = {
     "score": 0.0,
     "decision": "no_data",

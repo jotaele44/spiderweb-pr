@@ -48,6 +48,7 @@ def main() -> None:
 
         properties = {k: v for k, v in row.items()
                       if k not in ("centroid_lat", "centroid_lon")}
+        properties["sector"] = row.get("sector", "air")
 
         features.append({
             "type": "Feature",

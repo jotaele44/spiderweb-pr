@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "rag_index_stats",
+  "type": "object",
+  "required": ["embedding_count"],
+  "properties": {
+    "embedding_count":   {"type": "integer", "minimum": 0},
+    "collection_name":   {"type": ["string", "null"]},
+    "model_name":        {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}

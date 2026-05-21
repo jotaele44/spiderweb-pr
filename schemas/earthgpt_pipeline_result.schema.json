@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "earthgpt_pipeline_result",
+  "type": "object",
+  "required": ["run_id", "status"],
+  "properties": {
+    "run_id":       {"type": "string"},
+    "status":       {"type": "string", "enum": ["ok", "error", "partial"]},
+    "stages":       {"type": ["object", "null"]},
+    "duration_ms":  {"type": ["number", "null"]},
+    "output_count": {"type": ["integer", "null"]},
+    "generated_at": {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}

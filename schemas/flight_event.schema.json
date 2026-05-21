@@ -20,7 +20,8 @@
     "max_altitude_ft":           {"type": ["integer", "null"], "minimum": 0},
     "avg_speed_mph":             {"type": ["number", "null"], "minimum": 0},
     "mission_type":              {"type": ["string", "null"]},
-    "num_screenshots":           {"type": ["integer", "null"], "minimum": 0}
+    "num_screenshots":           {"type": ["integer", "null"], "minimum": 0},
+    "aircraft_category":         {"type": ["string", "null"], "enum": ["A1","A2","A3","A4","A5","B1","B2","C0","C1","C2","C3", null]}
   },
   "additionalProperties": true
 }

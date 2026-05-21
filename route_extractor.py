@@ -19,6 +19,8 @@ COLOR_RANGES: Dict[str, Dict[str, Tuple[int, int]]] = {
     "blue":   {"r": (0,   120), "g": (100, 200), "b": (140, 255)},
     "red":    {"r": (190, 255), "g": (0,    80), "b": (0,   80)},
     "white":  {"r": (220, 255), "g": (220, 255), "b": (220, 255)},
+    "grey":   {"r": (100, 200), "g": (100, 200), "b": (100, 200)},
+    "silver": {"r": (180, 240), "g": (180, 240), "b": (180, 240)},
 }
 
 MIN_ROUTE_PIXELS = 8    # minimum connected pixels to count as a route segment
@@ -88,6 +90,33 @@ class RouteExtractor:
             return self._extract_from_array(arr)
         except Exception:
             return []
+
+    def to_geojson(self, candidates: List, calibration=None) -> Dict:
+        """Convert route candidates to GeoJSON FeatureCollection.
+
+        If calibration is a GeoCalibration instance, converts pixel centroids to lat/lon.
+        Otherwise emits raw pixel coordinates as lon/lat (x/y).
+        """
+        features = []
+        for i, c in enumerate(candidates):
+            cx, cy = c.centroid()
+            if calibration is not None:
+                try:
+                    lon, lat = calibration.pixel_to_coord(cx, cy)
+                except Exception:
+                    lon, lat = cx, cy
+            else:
+                lon, lat = float(cx), float(cy)
+            features.append({
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                "properties": {
+                    "color": getattr(c, "color", "unknown"),
+                    "pixel_count": getattr(c, "pixel_count", 0),
+                    "confidence": getattr(c, "confidence", None),
+                },
+            })
+        return {"type": "FeatureCollection", "features": features}
 
     def get_color_mask(self, arr, color: str):
         """

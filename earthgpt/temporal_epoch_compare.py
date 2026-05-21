@@ -5,7 +5,7 @@ Compares anomaly scores across two pipeline output snapshots
 to detect persistent or emerging anomalies.
 """
 
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 def compare_epochs(
@@ -53,3 +53,30 @@ def compare_epochs(
             }
         )
     return results
+
+
+def diff_geojson(
+    epoch_a: List[dict],
+    epoch_b: List[dict],
+    epoch_a_label: str = "epoch_a",
+    epoch_b_label: str = "epoch_b",
+    id_field: str = "node_id",
+) -> Dict[str, Any]:
+    """Return changed features between two epochs as GeoJSON."""
+    ids_a = {r[id_field] for r in epoch_a if id_field in r}
+    ids_b = {r[id_field] for r in epoch_b if id_field in r}
+    new_ids = ids_b - ids_a
+    changed = []
+    for f in epoch_b:
+        fid = f.get(id_field)
+        if fid in new_ids:
+            changed.append({
+                "type": "Feature",
+                "geometry": None,
+                "properties": {"change": "added", "id": fid},
+            })
+    return {
+        "type": "FeatureCollection",
+        "features": changed,
+        "epochs": [epoch_a_label, epoch_b_label],
+    }

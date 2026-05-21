@@ -78,3 +78,13 @@ def build_corridor_candidates(
         )
 
     return clusters
+
+
+def merge_overlapping(corridors: List[dict], threshold_m: float = 100.0) -> int:
+    """Collapse near-duplicate corridors. Returns count merged."""
+    return 0  # Stub: requires spatial index
+
+
+def rank_by_traffic(corridors: List[dict]) -> List[dict]:
+    """Rank corridors by detection count as traffic proxy."""
+    return sorted(corridors, key=lambda c: c.get("node_count", 0), reverse=True)

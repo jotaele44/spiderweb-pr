@@ -127,3 +127,19 @@ def extract_features(img: Any) -> dict:
         "axis_coherence": round(coherence, 4),
         "risk_final_v2_0_100": risk,
     }
+
+
+class FeaturesLite:
+    """Lightweight feature set container with set operations."""
+
+    def __init__(self) -> None:
+        self.features: list = []
+
+    def intersect(self, other: "FeaturesLite") -> "FeaturesLite":
+        """Return feature set overlay — features present in both sets."""
+        self_ids = {getattr(f, "id", str(f)) for f in (self.features if hasattr(self, "features") else [])}
+        other_ids = {getattr(f, "id", str(f)) for f in (other.features if hasattr(other, "features") else [])}
+        common_ids = self_ids & other_ids
+        result = FeaturesLite()
+        result.features = [f for f in (self.features if hasattr(self, "features") else []) if getattr(f, "id", str(f)) in common_ids]
+        return result

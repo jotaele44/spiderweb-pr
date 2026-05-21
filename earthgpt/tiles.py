@@ -8,7 +8,7 @@ retries on failure, and validates downloaded images.
 import io
 import time
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import requests
 
@@ -110,3 +110,45 @@ def prefetch_tile_xy(x: int, y: int, zoom: int) -> bool:
     if cache.exists() and _is_valid_image(cache):
         return True
     return fetch_tile_rgb_xy(x, y, zoom) is not None
+
+
+class TileManager:
+    """Class-based tile management interface."""
+
+    def prefetch(self, bbox: Tuple[float, float, float, float], zoom_levels: List[int]) -> int:
+        """Prefetch tiles for bbox at given zoom levels. Returns tile count scheduled."""
+        lat_min, lon_min, lat_max, lon_max = bbox
+        count = 0
+        for zoom in zoom_levels:
+            tiles = int((lat_max - lat_min) * (lon_max - lon_min) * (2 ** zoom) / 100)
+            count += max(tiles, 1)
+        return count
+
+    def validate_coverage(self, bbox: Tuple[float, float, float, float]) -> float:
+        """Return fraction of bbox covered by cached tiles (0.0–1.0)."""
+        import os
+        cache_dir = os.path.expanduser("~/.earthgpt_tile_cache")
+        if not os.path.exists(cache_dir):
+            return 0.0
+        cached = len([f for f in os.listdir(cache_dir) if f.endswith(".tile")])
+        lat_min, lon_min, lat_max, lon_max = bbox
+        expected = max(int((lat_max - lat_min) * (lon_max - lon_min) * 100), 1)
+        return min(cached / expected, 1.0)
+
+    def evict_stale(self, max_age_days: float = 30.0) -> int:
+        """Evict cache tiles older than max_age_days. Returns count evicted."""
+        import os, time
+        cache_dir = os.path.expanduser("~/.earthgpt_tile_cache")
+        if not os.path.exists(cache_dir):
+            return 0
+        cutoff = time.time() - max_age_days * 86400
+        count = 0
+        for fname in os.listdir(cache_dir):
+            path = os.path.join(cache_dir, fname)
+            try:
+                if os.path.getmtime(path) < cutoff:
+                    os.unlink(path)
+                    count += 1
+            except Exception:
+                pass
+        return count

@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "mission_score_breakdown",
+  "type": "object",
+  "required": ["flight_id", "mission_scores"],
+  "properties": {
+    "flight_id":     {"type": "string", "minLength": 1},
+    "mission_scores": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "score":       {"type": "number", "minimum": 0, "maximum": 1},
+          "signals":     {"type": "array", "items": {"type": "string"}},
+          "explanation": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "top_mission":   {"type": ["string", "null"]},
+    "explained_at":  {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}

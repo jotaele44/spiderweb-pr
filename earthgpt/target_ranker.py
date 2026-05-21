@@ -4,7 +4,7 @@ EarthGPT iOS — Target ranker.
 Applies quality filters and produces the final ranked target list.
 """
 
-from typing import List
+from typing import Dict, List
 
 from .ranking import rank_candidates
 
@@ -36,3 +36,13 @@ def run_target_ranker(
     if not filtered:
         return []
     return rank_candidates(filtered)
+
+
+def batch_rank(targets_list: List[Dict]) -> List[Dict]:
+    """Rank multiple targets in bulk for offline evaluation."""
+    ranked = []
+    for t in targets_list:
+        score = float(t.get("max_score", 0.0)) * 0.5 + float(t.get("mean_risk", 0.0)) / 100.0 * 0.3
+        ranked.append({**t, "score": score})
+    ranked.sort(key=lambda x: x.get("score", 0), reverse=True)
+    return ranked

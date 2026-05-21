@@ -65,3 +65,10 @@ def build_seam_chains(seams: List[dict]) -> List[dict]:
         chain_id += 1
 
     return chains
+
+
+def confidence_weighted_path(chains: List[dict]) -> List[dict]:
+    """Return path prioritizing high-confidence links."""
+    if not chains:
+        return []
+    return sorted(chains, key=lambda c: c.get("mean_seam_score", 0), reverse=True)

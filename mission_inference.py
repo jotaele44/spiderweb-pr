@@ -42,8 +42,9 @@ class MissionType(Enum):
     PRIVATE_CHARTER    = "Private Charter"
     TRAINING           = "Training Flight"
     UTILITY_WORK       = "Utility / Infrastructure Work"
-    ANTI_SMUGGLING     = "Anti-Smuggling / Interdiction"
-    UNKNOWN            = "Unknown"
+    ANTI_SMUGGLING         = "Anti-Smuggling / Interdiction"
+    SIGNALS_INTELLIGENCE   = "Signals Intelligence"
+    UNKNOWN                = "Unknown"
 
 
 @dataclass
@@ -131,6 +132,19 @@ MISSION_PROFILES: Dict[MissionType, MissionProfile] = {
         operating_hours="24/7",
         typical_operators=["USCG", "C6062"],
         typical_altitude_variance=0.5, typical_terrain="coastal",
+    ),
+
+    MissionType.SIGNALS_INTELLIGENCE: MissionProfile(
+        mission_type=MissionType.SIGNALS_INTELLIGENCE,
+        typical_altitude_min=10000, typical_altitude_max=20000,
+        typical_speed_min=100, typical_speed_max=180,
+        typical_duration_min=180, typical_duration_max=480,
+        hover_behavior=0.1, repetitive_route=0.6,
+        linear_corridor=0.7, search_pattern=0.4,
+        infrastructure_types=["airport", "military_base"],
+        operating_hours="24/7",
+        typical_operators=[],
+        typical_altitude_variance=0.3, typical_terrain="all",
     ),
 
     MissionType.PRIVATE_CHARTER: MissionProfile(
@@ -617,6 +631,19 @@ class MarkovChainPredictor:
             }
         return {MissionType.UNKNOWN.value: 1.0}
 
+    def to_dict(self) -> Dict:
+        """Return the predictor's transition matrix as a JSON-serializable dict."""
+        return {
+            "transitions": {
+                from_state: {to_state: count for to_state, count in to_counts.items()}
+                for from_state, to_counts in self.transition_counts.items()
+            },
+            "total_sequences": sum(
+                sum(to_counts.values())
+                for to_counts in self.transition_counts.values()
+            ),
+        }
+
     def get_prediction_report(self, callsign: str, hour: int,
                               day_of_week: int, last_mission: str) -> str:
         days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -800,88 +827,6 @@ class Phase3Pipeline:
                 ''', (state_key, mission, prob, count))
         conn.commit()
         conn.close()
-
-
-    def explain(self, flight_id: str) -> Dict:
-        """Return a human-readable score breakdown for a single flight.
-
-        Parameters
-        ----------
-        flight_id:
-            The flight to explain.
-
-        Returns
-        -------
-        dict with keys:
-            ``flight_id``, ``mission_type``, ``total_score``,
-            ``confidence_level``, ``signal_scores`` (per-signal breakdown),
-            ``explanation`` (natural language reasons)
-        """
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        rows = [dict(r) for r in conn.execute(
-            "SELECT * FROM mission_scores WHERE flight_id = ? ORDER BY total_score DESC LIMIT 1",
-            (flight_id,)
-        )]
-        conn.close()
-        if not rows:
-            return {"flight_id": flight_id, "mission_type": "Unknown",
-                    "total_score": 0.0, "confidence_level": "LOW",
-                    "signal_scores": {}, "explanation": "No scores recorded."}
-        row = rows[0]
-        signal_scores = json.loads(row.get("signal_scores") or "{}")
-        explanation = json.loads(row.get("explanation") or "[]")
-        return {
-            "flight_id":      flight_id,
-            "mission_type":   row["mission_type"],
-            "total_score":    row["total_score"],
-            "confidence_level": row["confidence_level"],
-            "signal_scores":  signal_scores,
-            "explanation":    explanation,
-        }
-
-    def enrich_unknown_with_rag(
-        self, flight_id: str, callsign: str, db_path: str = None, top_k: int = 3
-    ) -> Dict:
-        """Query RAG for social context when mission type is UNKNOWN.
-
-        Parameters
-        ----------
-        flight_id:
-            Flight whose mission is UNKNOWN.
-        callsign:
-            Aircraft callsign used as RAG query anchor.
-        db_path:
-            Path to ChromaDB index.  Defaults to ``./pruap_index``.
-        top_k:
-            Number of RAG hits to retrieve.
-
-        Returns
-        -------
-        dict with keys:
-            ``flight_id``, ``callsign``, ``rag_hits`` (list of dicts),
-            ``rag_context`` (formatted string)
-        """
-        try:
-            from rag_pipeline import safe_retrieve, format_context_with_limit
-            rag_db = db_path or "./pruap_index"
-            query = f"unidentified aircraft {callsign} Puerto Rico sighting"
-            hits = safe_retrieve(query, rag_db, top_k=top_k)
-            context = format_context_with_limit(hits)
-            return {
-                "flight_id":   flight_id,
-                "callsign":    callsign,
-                "rag_hits":    hits,
-                "rag_context": context,
-            }
-        except Exception as exc:
-            return {
-                "flight_id":   flight_id,
-                "callsign":    callsign,
-                "rag_hits":    [],
-                "rag_context": "",
-                "rag_error":   str(exc),
-            }
 
 
 if __name__ == "__main__":

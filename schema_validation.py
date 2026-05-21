@@ -117,6 +117,47 @@ class SchemaValidator:
         """Return a sorted list of loaded schema names."""
         return sorted(self._validators.keys())
 
+    def validate_all_in_dir(self, directory: str) -> Dict[str, List[str]]:
+        """Validate all JSON files in directory against any matching schema.
+
+        Returns dict of filename -> list of error messages (empty = valid).
+        """
+        import os
+        results: Dict[str, List[str]] = {}
+        for fname in os.listdir(directory):
+            if not fname.endswith(".json"):
+                continue
+            fpath = os.path.join(directory, fname)
+            try:
+                with open(fpath) as f:
+                    doc = json.load(f)
+                schema_id = fname.replace(".schema.json", "").replace(".json", "")
+                validated = self.validate(doc, schema_id)
+                results[fname] = validated.get("errors", [])
+            except Exception as e:
+                results[fname] = [str(e)]
+        return results
+
+    def diff_schemas(self, id_a: str, id_b: str) -> Dict:
+        """Return field-level diff between two schemas.
+
+        Returns dict with: only_in_a, only_in_b, common.
+        """
+        def _fields(schema_id: str):
+            validator = self._validators.get(schema_id)
+            if validator is None:
+                return set()
+            schema = getattr(validator, "schema", {})
+            return set(schema.get("properties", {}).keys())
+
+        fields_a = _fields(id_a)
+        fields_b = _fields(id_b)
+        return {
+            "only_in_a": sorted(fields_a - fields_b),
+            "only_in_b": sorted(fields_b - fields_a),
+            "common": sorted(fields_a & fields_b),
+        }
+
     def _write_review_item(self, path: str, schema_name: str,
                            record: dict, errors: List[str]):
         file_exists = Path(path).exists()

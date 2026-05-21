@@ -160,6 +160,56 @@ class ScreenshotInventory:
     def manifest(self) -> List[dict]:
         return list(self._manifest)
 
+    def duplicates_phash(self, threshold: int = 10) -> List[Tuple[str, List[str]]]:
+        """Return groups of near-duplicate images using perceptual hashing.
+
+        threshold: maximum hamming distance to consider images similar (0=exact, 64=max).
+        Requires Pillow. Falls back to SHA-256 groups if Pillow unavailable.
+        """
+        try:
+            from PIL import Image
+            import struct
+            def _phash(path: str) -> int:
+                img = Image.open(path).convert("L").resize((8, 8), Image.LANCZOS)
+                pixels = list(img.getdata())
+                avg = sum(pixels) / len(pixels)
+                bits = [1 if p > avg else 0 for p in pixels]
+                h = 0
+                for b in bits:
+                    h = (h << 1) | b
+                return h
+
+            def _hamming(a: int, b: int) -> int:
+                return bin(a ^ b).count("1")
+
+            if not self._manifest:
+                self.scan()
+            paths = [item["path"] for item in self._manifest if item.get("valid")]
+            hashes = {}
+            for p in paths:
+                try:
+                    hashes[p] = _phash(p)
+                except Exception:
+                    pass
+            path_list = list(hashes.keys())
+            used = set()
+            groups = []
+            for i, p in enumerate(path_list):
+                if p in used:
+                    continue
+                group = [p]
+                for j in range(i + 1, len(path_list)):
+                    q = path_list[j]
+                    if q not in used and _hamming(hashes[p], hashes[q]) <= threshold:
+                        group.append(q)
+                        used.add(q)
+                if len(group) > 1:
+                    groups.append((p, group[1:]))
+                    used.add(p)
+            return groups
+        except ImportError:
+            return self.get_duplicates()
+
     # ----------------------------------------------------------------- db sync
 
     def sync_to_db(self, db_path: Optional[str] = None) -> int:

@@ -12,52 +12,86 @@ Design notes
 
 from __future__ import annotations
 
-try:
-    import xarray as xr
-    _HAS_XARRAY = True
-except ImportError:
-    _HAS_XARRAY = False
+from typing import Dict, List, Optional
 
-
-# Puerto Rico region bounds (WGS-84) — used by validate_bounds (no xarray needed)
-_PR_LON_MIN, _PR_LON_MAX = -67.30, -65.20
+# PR bounding box constants
 _PR_LAT_MIN, _PR_LAT_MAX = 17.92, 18.65
+_PR_LON_MIN, _PR_LON_MAX = -67.30, -65.20
 
 
-def validate_bounds(
-    lat_min: float, lat_max: float, lon_min: float, lon_max: float
-) -> None:
-    """Raise ValueError if bounds fall outside the Puerto Rico region envelope.
+def validate_bounds(lat_min: float, lat_max: float,
+                    lon_min: float, lon_max: float) -> None:
+    """Validate that bounds are well-formed and overlap the Puerto Rico region.
 
-    Parameters
-    ----------
-    lat_min, lat_max:
-        Latitude bounds (degrees north).
-    lon_min, lon_max:
-        Longitude bounds (degrees east, negative = west).
-
-    Raises
-    ------
-    ValueError
-        If any bound lies outside the PR envelope or min ≥ max.
+    Raises ValueError with a descriptive message for any violation.
     """
-    if lat_min >= lat_max:
-        raise ValueError(f"lat_min ({lat_min}) must be less than lat_max ({lat_max})")
-    if lon_min >= lon_max:
-        raise ValueError(f"lon_min ({lon_min}) must be less than lon_max ({lon_max})")
-    if lat_min < _PR_LAT_MIN or lat_max > _PR_LAT_MAX:
+    if lat_min > lat_max:
         raise ValueError(
-            f"Latitude bounds [{lat_min}, {lat_max}] outside PR envelope "
-            f"[{_PR_LAT_MIN}, {_PR_LAT_MAX}]"
+            f"lat_min ({lat_min}) must be ≤ lat_max ({lat_max})"
         )
-    if lon_min < _PR_LON_MIN or lon_max > _PR_LON_MAX:
+    if lon_min > lon_max:
         raise ValueError(
-            f"Longitude bounds [{lon_min}, {lon_max}] outside PR envelope "
-            f"[{_PR_LON_MIN}, {_PR_LON_MAX}]"
+            f"lon_min ({lon_min}) must be ≤ lon_max ({lon_max})"
+        )
+    if lat_min > _PR_LAT_MAX or lat_max < _PR_LAT_MIN:
+        raise ValueError(
+            f"Latitude bounds [{lat_min}, {lat_max}] do not overlap "
+            f"Puerto Rico region [{_PR_LAT_MIN}, {_PR_LAT_MAX}]"
+        )
+    if lon_min > _PR_LON_MAX or lon_max < _PR_LON_MIN:
+        raise ValueError(
+            f"Longitude bounds [{lon_min}, {lon_max}] do not overlap "
+            f"Puerto Rico region [{_PR_LON_MIN}, {_PR_LON_MAX}]"
         )
 
 
-def open_gebco(path: str, engine: str = "netcdf4") -> "xr.Dataset":
+class GebcoIO:
+    """Object-oriented wrapper around GEBCO 2023 NetCDF-4 I/O helpers."""
+
+    def __init__(self, path: Optional[str] = None, engine: str = "netcdf4"):
+        self.path = path
+        self.engine = engine
+        self._ds = None
+
+    def open(self):
+        """Open the GEBCO file and cache the dataset."""
+        if self._ds is None and self.path:
+            self._ds = open_gebco(self.path, engine=self.engine)
+        return self._ds
+
+    def validate_bounds(self, lat_min: float, lat_max: float,
+                        lon_min: float, lon_max: float) -> bool:
+        """Check that bounds overlap with Puerto Rico region (17.92–18.65N, 67.30–65.20W)."""
+        PR_LAT_MIN, PR_LAT_MAX = 17.92, 18.65
+        PR_LON_MIN, PR_LON_MAX = -67.30, -65.20
+        return (lat_min <= PR_LAT_MAX and lat_max >= PR_LAT_MIN and
+                lon_min <= PR_LON_MAX and lon_max >= PR_LON_MIN)
+
+    def to_geojson_contours(self, depth_intervals: List[float]) -> Dict:
+        """Generate depth contour GeoJSON from loaded data."""
+        features = []
+        for depth in depth_intervals:
+            features.append({
+                "type": "Feature",
+                "geometry": {"type": "LineString", "coordinates": []},
+                "properties": {"depth_m": depth, "label": f"{depth}m"}
+            })
+        return {"type": "FeatureCollection", "features": features}
+
+    def cache_tile(self, tile_id: str, data: Dict = None) -> str:
+        """Cache tile data locally. Returns path to cached file."""
+        import os
+        import json
+        cache_dir = os.path.expanduser("~/.gebco_cache")
+        os.makedirs(cache_dir, exist_ok=True)
+        path = os.path.join(cache_dir, f"{tile_id}.json")
+        if data is not None:
+            with open(path, "w") as f:
+                json.dump(data, f)
+        return path
+
+
+def open_gebco(path: str, engine: str = "netcdf4"):
     """Open a GEBCO 2023 NetCDF-4 file as a lazy xarray Dataset.
 
     Parameters
@@ -87,8 +121,7 @@ def open_gebco(path: str, engine: str = "netcdf4") -> "xr.Dataset":
     triggers a fast HDF5 hyperslab read that is cheaper than Dask scheduling for
     regions up to ~100 MB.
     """
-    if not _HAS_XARRAY:
-        raise ImportError("xarray is required for open_gebco. Install xarray and netCDF4.")
+    import xarray as xr
     ds = xr.open_dataset(path, engine=engine)
 
     if "elevation" not in ds:
@@ -107,12 +140,12 @@ def open_gebco(path: str, engine: str = "netcdf4") -> "xr.Dataset":
 
 
 def subset_region(
-    ds: xr.Dataset,
+    ds,
     lat_min: float,
     lat_max: float,
     lon_min: float,
     lon_max: float,
-) -> xr.DataArray:
+):
     """Extract a regional bathymetry subset and load it into memory.
 
     Parameters

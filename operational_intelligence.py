@@ -479,6 +479,46 @@ class AlertEngine:
             "days":         days,
         }
 
+    def suppress(self, alert_id: str, reason: str, duration_hours: float) -> bool:
+        """Temporarily suppress an alert for duration_hours. Returns True if updated."""
+        from datetime import timedelta
+        until = (datetime.utcnow() + timedelta(hours=duration_hours)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        try:
+            try:
+                conn.execute("ALTER TABLE alerts ADD COLUMN suppressed_until TEXT")
+                conn.execute("ALTER TABLE alerts ADD COLUMN suppression_reason TEXT")
+                conn.commit()
+            except Exception:
+                pass
+            affected = conn.execute(
+                "UPDATE alerts SET suppressed_until=?, suppression_reason=? WHERE alert_id=?",
+                (until, reason, alert_id),
+            ).rowcount
+            conn.commit()
+        except Exception:
+            affected = 0
+        finally:
+            conn.close()
+        return affected > 0
+
+    def digest(self, since_hours: float = 24.0) -> Dict[str, int]:
+        """Return alert frequency table by category for the last since_hours hours."""
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(hours=since_hours)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        try:
+            rows = conn.execute(
+                "SELECT category, COUNT(*) as cnt FROM alerts "
+                "WHERE timestamp >= ? GROUP BY category ORDER BY cnt DESC",
+                (cutoff,),
+            ).fetchall()
+        except Exception:
+            rows = []
+        finally:
+            conn.close()
+        return {row[0]: row[1] for row in rows}
+
 
 # ============================================================================
 # REPORT GENERATOR

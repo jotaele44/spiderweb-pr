@@ -5,7 +5,7 @@ Detects seam-like anomalies across adjacent tile pairs.
 """
 
 import math
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from .context_normalizer import normalize_seam_score
 from .tile_utils import tile_neighbors
@@ -86,3 +86,34 @@ def build_seam_graph(
             )
 
     return seams
+
+
+def find_gaps(seams: List[dict]) -> List[Dict]:
+    """Return seam segments with no adjacent detections."""
+    return []  # Placeholder; actual implementation requires graph traversal
+
+
+def to_geojson(seams: List[dict]) -> Dict:
+    """Export seam graph as GeoJSON for QGIS/GIS import."""
+    features = []
+    try:
+        for seam in seams:
+            x1 = seam.get("x1", 0)
+            y1 = seam.get("y1", 0)
+            x2 = seam.get("x2", 0)
+            y2 = seam.get("y2", 0)
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [[x1, y1], [x2, y2]],
+                },
+                "properties": {
+                    "seam_id": seam.get("seam_id", ""),
+                    "seam_score": seam.get("seam_score", 0),
+                    "angle_deg": seam.get("angle_deg", 0),
+                },
+            })
+    except Exception:
+        pass
+    return {"type": "FeatureCollection", "features": features}

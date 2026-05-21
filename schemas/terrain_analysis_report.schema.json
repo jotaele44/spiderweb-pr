@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terrain_analysis_report",
+  "type": "object",
+  "required": ["analyzed_at"],
+  "properties": {
+    "analyzed_at":   {"type": "string"},
+    "ridge_count":   {"type": ["integer", "null"], "minimum": 0},
+    "landing_zones": {"type": ["integer", "null"], "minimum": 0},
+    "depth_min_m":   {"type": ["number", "null"]},
+    "depth_max_m":   {"type": ["number", "null"]},
+    "profile_points":{"type": ["integer", "null"], "minimum": 0},
+    "is_operational":{"type": ["boolean", "null"]}
+  },
+  "additionalProperties": true
+}

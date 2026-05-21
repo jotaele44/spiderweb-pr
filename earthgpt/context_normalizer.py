@@ -5,33 +5,7 @@ Adjusts raw anomaly scores based on tile context (coast, water, land)
 to reduce false positives near water or coast boundaries.
 """
 
-
-_REQUIRED_CONTEXT_FIELDS = {"x", "y", "zoom", "tile_type"}
-
-
-def validate(context: dict) -> None:
-    """Raise ValueError if *context* dict is missing required fields.
-
-    Parameters
-    ----------
-    context:
-        Dict produced by ``TileContext.to_dict()`` or equivalent.
-
-    Raises
-    ------
-    ValueError
-        With a message listing all missing fields.
-    """
-    missing = _REQUIRED_CONTEXT_FIELDS - set(context.keys())
-    if missing:
-        raise ValueError(
-            f"TileContext dict missing required fields: {sorted(missing)}"
-        )
-    tile_type = context.get("tile_type")
-    if tile_type not in ("land", "water", "coast"):
-        raise ValueError(
-            f"tile_type must be one of 'land', 'water', 'coast'; got '{tile_type}'"
-        )
+from typing import Any, Dict
 
 
 def normalize_score(
@@ -70,3 +44,27 @@ def normalize_seam_score(
     if edge_of_grid:
         score *= 0.5
     return score
+
+
+_REQUIRED_TILE_FIELDS = ("x", "y", "zoom", "tile_type")
+_VALID_TILE_TYPES = ("land", "water", "coast")
+
+
+def validate(context: Dict) -> None:
+    """Check all required tile context fields before pipeline entry.
+
+    Accepts a dict with keys: x, y, zoom, tile_type.
+
+    Raises
+    ------
+    ValueError
+        If required fields are missing or tile_type is not in the allowed set.
+    """
+    missing = [f for f in _REQUIRED_TILE_FIELDS if f not in context]
+    if missing:
+        raise ValueError(f"missing required fields: {missing}")
+    tile_type = context.get("tile_type")
+    if tile_type not in _VALID_TILE_TYPES:
+        raise ValueError(
+            f"tile_type must be one of {_VALID_TILE_TYPES}, got {tile_type!r}"
+        )

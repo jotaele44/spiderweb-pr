@@ -10,12 +10,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-DEFAULT_GATE_CONFIG = {
-    "coord_coverage_threshold": 0.70,
-    "ocr_confidence_threshold": 0.50,
-    "evidence_chain_threshold": 0.50,
-}
-
 try:
     import pyarrow as pa
     import pyarrow.parquet as pq
@@ -31,6 +25,12 @@ try:
 except ImportError:
     _SCHEMA_VALIDATION_AVAILABLE = False
 
+
+DEFAULT_GATE_CONFIG = {
+    "coord_coverage_threshold": 0.70,
+    "ocr_confidence_threshold": 0.50,
+    "evidence_chain_threshold": 0.50,
+}
 
 PROVENANCE_COLS = [
     ("screenshot_id", pa.string()),
@@ -57,12 +57,29 @@ class PRIntelAdapter:
         "integration_report.json",
     ]
 
-    def __init__(self, db_path: str, output_dir: str,
-                 gate_config: Optional[Dict[str, float]] = None):
+    def __init__(self, db_path: str, output_dir: str, gate_config: Optional[Dict] = None):
         self.db_path = db_path
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.gate_config = {**DEFAULT_GATE_CONFIG, **(gate_config or {})}
+
+    def generate_summary_card(self) -> Dict:
+        """Return a single-dict payload for dashboard card display."""
+        try:
+            report = self.run()
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+        gates = report.get("gates", {})
+        passed = sum(1 for v in gates.values() if v)
+        total = len(gates)
+        return {
+            "title": "PR Intel Gate Status",
+            "gates_passed": passed,
+            "gates_total": total,
+            "pass_rate": round(passed / total, 2) if total else 0.0,
+            "gates": gates,
+            "generated_at": __import__("datetime").datetime.utcnow().isoformat(),
+        }
 
     def export_all(self) -> Dict[str, Any]:
         generated = []
@@ -138,10 +155,10 @@ class PRIntelAdapter:
         ]
         manifest_path.write_text(json.dumps(manifest, indent=2))
 
-        # Gate thresholds (configurable via gate_config kwarg)
-        COORD_THRESHOLD    = self.gate_config["coord_coverage_threshold"]
-        OCR_THRESHOLD      = self.gate_config["ocr_confidence_threshold"]
-        EVIDENCE_THRESHOLD = self.gate_config["evidence_chain_threshold"]
+        # Gate thresholds (configurable via gate_config)
+        COORD_THRESHOLD = self.gate_config.get("coord_coverage_threshold", 0.70)
+        OCR_THRESHOLD = self.gate_config.get("ocr_confidence_threshold", 0.50)
+        EVIDENCE_THRESHOLD = self.gate_config.get("evidence_chain_threshold", 0.50)
 
         # Coordinate coverage (skip gate when no flights)
         flights_with_coords = sum(

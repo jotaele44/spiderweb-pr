@@ -13,6 +13,22 @@ import requests
 from .log_utils import warn
 
 
+ALLOWED_DOMAINS = {
+    "tiles.mapbox.com", "api.mapbox.com", "maps.googleapis.com",
+    "earthengine.googleapis.com", "sentinel-hub.com", "copernicus.eu",
+}
+
+
+def validate_url(url: str) -> bool:
+    """Reject non-HTTPS and non-whitelisted domain URLs."""
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        return False
+    domain = parsed.netloc.lstrip("www.")
+    return any(domain.endswith(d) for d in ALLOWED_DOMAINS)
+
+
 def fetch_nominatim_context(lat: float, lon: float, timeout: int = 8) -> dict:
     """
     Reverse-geocode a lat/lon using Nominatim (OSM).

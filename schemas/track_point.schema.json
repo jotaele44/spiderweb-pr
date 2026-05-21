@@ -10,7 +10,8 @@
     "latitude":         {"type": "number", "minimum": -90, "maximum": 90},
     "longitude":        {"type": "number", "minimum": -180, "maximum": 180},
     "altitude_ft":      {"type": ["integer", "null"], "minimum": 0},
-    "ground_speed_mph": {"type": ["integer", "null"], "minimum": 0}
+    "ground_speed_mph": {"type": ["integer", "null"], "minimum": 0},
+    "source_confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
   },
   "additionalProperties": true
 }

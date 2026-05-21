@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "route_candidate",
+  "type": "object",
+  "required": ["color", "pixel_count"],
+  "properties": {
+    "color":       {"type": "string", "minLength": 1},
+    "pixel_count": {"type": "integer", "minimum": 0},
+    "centroid_x":  {"type": ["number", "null"]},
+    "centroid_y":  {"type": ["number", "null"]},
+    "confidence":  {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "bbox":        {"type": ["array", "null"], "items": {"type": "number"}}
+  },
+  "additionalProperties": true
+}

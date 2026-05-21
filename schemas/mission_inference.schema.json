@@ -10,7 +10,8 @@
     "confidence_level": {"type": ["string", "null"], "enum": ["HIGH", "MEDIUM", "LOW", null]},
     "signal_scores":    {"type": ["string", "null"]},
     "explanation":      {"type": ["string", "null"]},
-    "scored_at":        {"type": ["string", "null"]}
+    "scored_at":        {"type": ["string", "null"]},
+    "markov_next_mission": {"type": ["string", "null"]}
   },
   "additionalProperties": true
 }

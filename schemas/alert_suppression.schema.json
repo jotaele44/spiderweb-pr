@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "alert_suppression",
+  "type": "object",
+  "required": ["alert_id", "suppressed_until", "suppression_reason"],
+  "properties": {
+    "alert_id":           {"type": "string", "minLength": 1},
+    "suppressed_until":   {"type": "string", "minLength": 1},
+    "suppression_reason": {"type": "string", "minLength": 1},
+    "suppressed_by":      {"type": ["string", "null"]},
+    "created_at":         {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}

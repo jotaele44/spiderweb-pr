@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "batch_completion_event",
+  "type": "object",
+  "required": ["batch_id", "processed", "failed"],
+  "properties": {
+    "batch_id":    {"type": "string", "minLength": 1},
+    "processed":   {"type": "integer", "minimum": 0},
+    "failed":      {"type": "integer", "minimum": 0},
+    "completed_at": {"type": ["string", "null"]},
+    "duration_s":  {"type": ["number", "null"]}
+  },
+  "additionalProperties": true
+}

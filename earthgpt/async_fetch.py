@@ -24,3 +24,22 @@ def prefetch_tiles(tile_list: List[Tuple[int, int, int]], interval: int = 20) ->
             ok += 1
         log_progress(i, total, interval=interval, label="tiles prefetched")
     return ok
+
+
+class AsyncFetcher:
+    """Class-based async fetcher with retry policy support."""
+
+    def __init__(self) -> None:
+        self.max_retries: int = 3
+        self.backoff_factor: float = 2.0
+
+    def retry_policy(self, max_retries: int = 3, backoff_factor: float = 2.0) -> "AsyncFetcher":
+        """Configure retry policy for tile fetches."""
+        self.max_retries = max_retries
+        self.backoff_factor = backoff_factor
+        return self
+
+    def _handle_rate_limit(self) -> None:
+        """Back off 60s when 429 received."""
+        import time
+        time.sleep(60)

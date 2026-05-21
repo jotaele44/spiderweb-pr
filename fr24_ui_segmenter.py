@@ -239,6 +239,75 @@ class FR24UISegmenter:
             pass
         return segs
 
+    def segment_with_adaptive_fallback(self, image_path: str, min_candidates: int = 3):
+        """Run segment(); if < min_candidates routes found, fall back to edge-only mode."""
+        primary = self.segment(image_path)
+        # Count estimated route candidates from map region color variance
+        try:
+            import numpy as np
+            from PIL import Image
+            img = Image.open(image_path).convert("RGB")
+            bb = primary.map_bbox.crop_coords()
+            crop = img.crop((bb[0], bb[1], bb[2], bb[3]))
+            arr = np.array(crop)
+            # Estimate candidate count by color channel variance per 50px block
+            h, w = arr.shape[:2]
+            block = 50
+            n_candidates = 0
+            for y in range(0, h - block, block):
+                for x in range(0, w - block, block):
+                    patch = arr[y:y+block, x:x+block]
+                    if patch.std() > 30:
+                        n_candidates += 1
+            n_candidates = max(n_candidates // 4, 0)
+        except Exception:
+            n_candidates = min_candidates  # assume OK if PIL unavailable
+
+        if n_candidates >= min_candidates:
+            return primary, n_candidates
+
+        # Fallback: use edge-only mode (switch to geometric)
+        fallback_segmenter = FR24UISegmenter(mode="geometric")
+        fallback_segs = fallback_segmenter.segment(image_path)
+        return fallback_segs, n_candidates
+
+    def segment_quality_score(self, image_path: str) -> float:
+        """Estimate extraction reliability as a 0–1 score.
+
+        Score is based on: image file size, detectable map region, color diversity.
+        """
+        try:
+            import os
+            from PIL import Image
+            import numpy as np
+            score = 0.0
+            # File size heuristic: ≥50KB is a good screenshot
+            file_size = os.path.getsize(image_path)
+            if file_size >= 50_000:
+                score += 0.3
+            elif file_size >= 10_000:
+                score += 0.15
+            # Image dimensions: ≥800x600 is usable
+            img = Image.open(image_path)
+            w, h = img.size
+            if w >= 800 and h >= 600:
+                score += 0.3
+            elif w >= 400 and h >= 300:
+                score += 0.15
+            # Color diversity in map region
+            arr = np.array(img.convert("RGB"))
+            segs = self.segment_from_size(w, h)
+            bb = segs.map_bbox
+            crop = arr[bb.y:bb.y + bb.h, bb.x:bb.x + bb.w]
+            unique_colors = len(set(map(tuple, crop.reshape(-1, 3).tolist()[::10])))
+            if unique_colors > 500:
+                score += 0.4
+            elif unique_colors > 100:
+                score += 0.2
+            return min(round(score, 3), 1.0)
+        except Exception:
+            return 0.0
+
     # ----------------------------------------------------------------- batch
 
     def batch_segment(self, image_paths: List[str]) -> List[FR24Segments]:

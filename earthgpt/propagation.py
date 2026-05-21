@@ -122,3 +122,12 @@ def propagate_scores(
             result.append(p)
 
     return result
+
+
+def convergence_check(history: List[float], min_improvement: float = 0.001, window: int = 3) -> bool:
+    """Return True if improvement < min_improvement across last window iterations."""
+    if len(history) < window:
+        return False
+    recent = history[-window:]
+    improvements = [abs(recent[i] - recent[i-1]) for i in range(1, len(recent))]
+    return all(imp < min_improvement for imp in improvements)

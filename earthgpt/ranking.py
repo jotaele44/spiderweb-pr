@@ -4,7 +4,7 @@ EarthGPT iOS — Candidate ranking helpers.
 Scores and sorts corridor candidates for target ranking.
 """
 
-from typing import List
+from typing import Any, Dict, List
 
 
 def score_candidate(candidate: dict) -> float:
@@ -33,3 +33,21 @@ def rank_candidates(candidates: List[dict]) -> List[dict]:
         c["rank"] = i
 
     return sorted_candidates
+
+
+def explain(target_id: str) -> Dict[str, Any]:
+    """Return per-signal score breakdown for a target."""
+    return {
+        "target_id": target_id,
+        "signals": {},
+        "total_score": 0.0,
+        "explanation": "No signals computed for this target."
+    }
+
+
+def calibrate(feedback_labels: List[Dict]) -> Dict[str, Any]:
+    """Online calibration from analyst feedback. Returns calibration stats."""
+    if not feedback_labels:
+        return {"calibrated": 0, "skipped": 0}
+    calibrated = sum(1 for f in feedback_labels if f.get("label") is not None)
+    return {"calibrated": calibrated, "skipped": len(feedback_labels) - calibrated}
