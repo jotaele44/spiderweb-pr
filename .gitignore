@@ -1,3 +1,6 @@
+# ── Claude Code session data (worktrees, plans, session logs) ────────────────
+.claude/
+
 # ── Runtime artifact directories (never commit contents) ─────────────────────
 # outputs/ — all generated files (parquet, GeoJSON, JSON, JSONL, CSV, DB)
 outputs/*
