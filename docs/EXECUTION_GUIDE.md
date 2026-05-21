@@ -82,6 +82,35 @@ python run_all.py --db outputs/flights.db --scan-inventory data/screenshots
 python run_all.py --db outputs/flights.db --export-fr24-events data/screenshots
 ```
 
+### Satellite source ingestion (PRII Stage 3)
+
+Generates and validates `satellite_source_manifest` documents from a scene
+catalog (see `docs/contracts/SATELLITE_SOURCE_MANIFEST.md`). Validated
+manifests land in `manifests/`; scenes that fail the schema, the Puerto Rico
+envelope, or the fixture-mode rule land in `rejected/`.
+
+```bash
+# Synthetic catalog (offline) — the default source
+python run_all.py --ingest-satellite outputs/sat \
+  --sat-source synthetic --sat-catalog tests/fixtures/satellite_catalog.json
+
+# STAC ItemCollection from a local file
+python run_all.py --ingest-satellite outputs/sat \
+  --sat-source stac --sat-catalog path/to/stac_items.json
+
+# STAC API endpoint (bearer token via SAT_STAC_TOKEN, if required)
+export SAT_STAC_TOKEN=...    # optional
+python run_all.py --ingest-satellite outputs/sat \
+  --sat-source stac --sat-catalog https://stac.example.com/search?collections=sentinel-2-l2a
+
+# Inspect the ingest summary
+python -c "
+import json
+s = json.load(open('outputs/sat/ingest_summary.json'))
+print('validated:', s['validated'], ' rejected:', s['rejected'])
+"
+```
+
 ### Reports and profiles
 
 ```bash

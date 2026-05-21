@@ -158,6 +158,36 @@ Runs the full FR24 event export pipeline over `<DIR>`:
 4. Writes extracted route points as rows in the `track_points` table
 5. Routes small/low-quality images to the `manual_review_queue` SQLite DB
 
+### `--ingest-satellite <DIR>` produces
+
+PRII Stage 3 satellite source ingestion. Builds and schema-validates
+`satellite_source_manifest` documents from a synthetic catalog or a STAC
+ItemCollection (`--sat-source synthetic|stac`, `--sat-catalog <path|URL>`).
+
+| Path | Description |
+|------|-------------|
+| `manifests/<id>.json` | One validated manifest per accepted scene |
+| `rejected/<scene>.json` | Scenes that failed schema, Puerto Rico envelope, or fixture-mode rules — with errors |
+| `ingest_summary.json` | Catalogued / validated / rejected counts |
+
+See [docs/contracts/SATELLITE_SOURCE_MANIFEST.md](docs/contracts/SATELLITE_SOURCE_MANIFEST.md).
+
+## Remaining operational steps
+
+Two parts of the pipeline are intentionally frozen until real input data is
+available — these are data gates, not code gaps:
+
+- **FR24 OCR / DB build** is frozen until the raw screenshot corpus passes the
+  pre-ingest audit. Run `python fr24_manifest_audit.py --root <FR24 folder>`
+  and confirm `audit_pass=true` (see
+  [docs/FR24_MANIFEST_AUDIT.md](docs/FR24_MANIFEST_AUDIT.md)) before starting
+  `--export-fr24-events`.
+- **Spiderweb scoring calibration** is frozen until an operational database
+  (≥15,000 screenshots) exists. Once it does, follow
+  [docs/SPIDERWEB_OPERATIONAL_CALIBRATION.md](docs/SPIDERWEB_OPERATIONAL_CALIBRATION.md)
+  to run `--spiderweb-intake` and `--calibrate-scoring` and resolve any
+  calibration flags.
+
 ## Optional: Phase 1 hardening (higher OCR accuracy)
 
 ```bash

@@ -24,15 +24,21 @@ readiness engine) reads the asset.
 
 ## Scope and Non-Goals
 
-This contract covers source metadata and provenance only.
+This contract covers source metadata and provenance. A Stage 3 producer —
+`satellite_ingest.py`, wired into `run_all.py --ingest-satellite` — now
+generates and validates these manifests from a synthetic catalog or a STAC
+ItemCollection. The fixture-mode rule and the Puerto Rico envelope are
+enforced at validation time; rejected scenes are routed to a `rejected/`
+directory rather than entering the pipeline.
 
-- No live satellite download behavior.
-- No external API credential handling.
-- No STAC catalog client implementation.
-- No raster tiling or image processing pipeline.
-- No `run_all.py` wiring or CI changes.
+Still out of scope:
+
+- No raster tiling, download, or image-processing pipeline — manifests
+  reference assets; they do not fetch or decode them.
 - No producer repository alignment.
-- No Stage 3 runtime ingestion.
+- Live STAC API querying is supported structurally (`--sat-source stac`
+  with an HTTP(S) URL and an optional `SAT_STAC_TOKEN` bearer token) but is
+  exercised only against local fixtures in CI.
 
 ---
 

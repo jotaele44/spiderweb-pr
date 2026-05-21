@@ -29,6 +29,7 @@ spiderweb-pr/
 │   route_extractor.py          HSV masking + BFS → route polylines
 │   manual_review_queue.py      SQLite-backed low-quality item queue
 │   fr24_event_export.py        Inventory + routes → airspace DB
+│   satellite_ingest.py         PRII Stage 3 satellite source manifest producer
 │   dashboard.jsx / .html       4-tab browser dashboard
 │   schemas/                    10 JSON Schema files
 │   configs/georef_anchors.csv  5 PR airport anchor points
@@ -100,6 +101,7 @@ spiderweb-pr/
 | `route_extractor.py` | Airspace Intel | FR24 processor |
 | `manual_review_queue.py` | Airspace Intel | FR24 processor |
 | `fr24_event_export.py` | Airspace Intel | FR24 processor |
+| `satellite_ingest.py` | Airspace Intel | PRII Stage 3 |
 | `dashboard.jsx` / `dashboard.html` | Airspace Intel | |
 | `schemas/` | Airspace Intel | |
 | `configs/` | Airspace Intel | |

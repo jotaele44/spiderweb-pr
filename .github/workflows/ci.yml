@@ -65,6 +65,17 @@ jobs:
           test -f /tmp/ci_spiderweb/spiderweb_ingest_manifest.json
           test -f /tmp/ci_spiderweb/aasb_airspace_edges.csv
 
+      - name: CLI smoke — ingest-satellite (synthetic catalog)
+        run: |
+          python run_all.py --db /tmp/ci_smoke.db --ingest-satellite /tmp/ci_sat \
+            --sat-source synthetic --sat-catalog tests/fixtures/satellite_catalog.json
+          python -c "
+          import json
+          s = json.load(open('/tmp/ci_sat/ingest_summary.json'))
+          print('validated:', s['validated'], 'rejected:', s['rejected'])
+          assert s['validated'] >= 1, s
+          "
+
   # ── GEBCO bathymetry (synthetic fixtures, no real .nc file needed) ───────────
   test-gebco:
     runs-on: ubuntu-latest
