@@ -95,6 +95,8 @@ class CalibrationDriver:
         else:
             status = "WARN"
 
+        pipeline_latency_ms = self._earthgpt_pipeline_latency()
+
         report = {
             "generated_at":        datetime.utcnow().isoformat() + "Z",
             "export_dir":          str(self.export_dir),
@@ -108,6 +110,7 @@ class CalibrationDriver:
             "terrain_distribution":dict(terrain_dist),
             "dedup_rate":          round(dedup_rate, 4),
             "calibration_flags":   flags,
+            "pipeline_latency_ms": pipeline_latency_ms,
         }
 
         self._write_report(report)
@@ -279,6 +282,18 @@ class CalibrationDriver:
         """Return True when the export directory has enough candidates for operational calibration."""
         features = self._load_overlay()
         return len(features) >= MIN_OPERATIONAL_CANDIDATES
+
+    def _earthgpt_pipeline_latency(self) -> float | None:
+        """Return EarthGPT full-pipeline latency in ms from metrics, or None."""
+        try:
+            from earthgpt.metrics import latency_histogram
+            hist = latency_histogram("full_pipeline")
+            if hist and hist.get("samples"):
+                samples = hist["samples"]
+                return round(sum(samples) / len(samples), 2)
+            return None
+        except Exception:
+            return None
 
     def _write_report(self, report: Dict[str, Any]) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)

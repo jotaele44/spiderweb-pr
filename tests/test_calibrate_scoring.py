@@ -247,3 +247,20 @@ def test_is_operational_false_empty(tmp_path):
 def test_confidence_weights_sum_to_one():
     total = sum(CONFIDENCE_WEIGHTS.values())
     assert abs(total - 1.0) < 1e-9, f"CONFIDENCE_WEIGHTS sum={total} != 1.0"
+
+
+# ── Task 186: EarthGPT latency as calibration signal ─────────────────────────
+
+def test_calibration_report_has_pipeline_latency_key(tmp_path):
+    report = CalibrationDriver(str(tmp_path)).run()
+    assert "pipeline_latency_ms" in report, (
+        "Calibration report must include pipeline_latency_ms (Task 186)"
+    )
+
+
+def test_pipeline_latency_is_none_or_float(tmp_path):
+    report = CalibrationDriver(str(tmp_path)).run()
+    lat = report["pipeline_latency_ms"]
+    assert lat is None or isinstance(lat, float), (
+        f"pipeline_latency_ms must be float or None, got {type(lat)}"
+    )

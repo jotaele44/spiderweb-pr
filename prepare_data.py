@@ -13,7 +13,7 @@ import json
 import argparse
 import os
 from collections import Counter
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 
 MIN_TEXT_LENGTH = 30  # characters; posts shorter than this are skipped
@@ -119,6 +119,57 @@ def export_stats(rows: List[dict]) -> Dict[str, object]:
         "min_tokens":   min(token_counts),
         "max_tokens":   max(token_counts),
     }
+
+
+def split(rows: List[dict],
+          train_ratio: float = 0.8,
+          val_ratio: float = 0.1) -> Tuple[List[dict], List[dict], List[dict]]:
+    """Split *rows* into (train, val, test) partitions.
+
+    Rows are stratified by subreddit so each partition preserves the overall
+    subreddit distribution.  The test set receives the remainder after train
+    and val are allocated.
+
+    Parameters
+    ----------
+    rows:
+        Cleaned row dicts (output of ``deduplicate`` or ``clean_rows``).
+    train_ratio:
+        Fraction allocated to training. Default 0.8.
+    val_ratio:
+        Fraction allocated to validation. Default 0.1. Test gets the rest.
+
+    Returns
+    -------
+    (train, val, test) as three separate lists.
+    """
+    if not 0 < train_ratio < 1 or not 0 <= val_ratio < 1:
+        raise ValueError("train_ratio must be in (0,1) and val_ratio in [0,1)")
+    if train_ratio + val_ratio >= 1.0:
+        raise ValueError("train_ratio + val_ratio must be < 1.0")
+
+    # Group by subreddit for stratification
+    by_sub: Dict[str, List[dict]] = {}
+    for row in rows:
+        sub = row.get("subreddit", "__unknown__")
+        by_sub.setdefault(sub, []).append(row)
+
+    train: List[dict] = []
+    val: List[dict] = []
+    test: List[dict] = []
+
+    for group in by_sub.values():
+        n = len(group)
+        n_train = max(1, round(n * train_ratio)) if n > 1 else 1
+        n_val = max(0, round(n * val_ratio))
+        # Guard: ensure splits don't exceed group size
+        if n_train + n_val >= n and n > 1:
+            n_val = max(0, n - n_train - 1)
+        train.extend(group[:n_train])
+        val.extend(group[n_train:n_train + n_val])
+        test.extend(group[n_train + n_val:])
+
+    return train, val, test
 
 
 def load_csv(path):

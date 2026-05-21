@@ -11,6 +11,7 @@ from operational_intelligence import (
     AlertEngine,
     AlertSeverity,
     ReportGenerator,
+    check_earthgpt_corridor_overlap,
 )
 
 
@@ -462,3 +463,45 @@ def test_escalation_count_increments(tmp_path):
     ).fetchone()[0]
     conn.close()
     assert count == 3
+
+
+# ── Task 185: EarthGPT corridor-PREPA alert bridge ────────────────────────────
+
+class _MockCorridor:
+    def __init__(self, corridor_id, lat, lon):
+        self.corridor_id = corridor_id
+        self.center_lat = lat
+        self.center_lon = lon
+
+
+class _MockCorridorGraph:
+    def __init__(self, corridors):
+        self.corridors = corridors
+
+
+def test_earthgpt_corridor_overlap_fires_alert_in_prepa_south(tmp_path):
+    db = _make_db(tmp_path)
+    engine = AlertEngine(db)
+    # Corridor centred in PREPA_SOUTH bounds (18.0N, -66.5W)
+    graph = _MockCorridorGraph([_MockCorridor("TEST_CORR", 18.05, -66.5)])
+    alerts = check_earthgpt_corridor_overlap(engine, corridor_graph=graph)
+    assert len(alerts) >= 1
+    assert any("PREPA_SOUTH" in a.alert_id for a in alerts)
+    assert all(a.category == AlertCategory.INFRASTRUCTURE_PROX.value for a in alerts)
+
+
+def test_earthgpt_corridor_no_overlap_fires_no_alert(tmp_path):
+    db = _make_db(tmp_path)
+    engine = AlertEngine(db)
+    # Corridor centred in mid-Atlantic — no PREPA overlap
+    graph = _MockCorridorGraph([_MockCorridor("OCEAN_CORR", 25.0, -45.0)])
+    alerts = check_earthgpt_corridor_overlap(engine, corridor_graph=graph)
+    assert alerts == []
+
+
+def test_earthgpt_corridor_overlap_none_graph_returns_empty(tmp_path):
+    db = _make_db(tmp_path)
+    engine = AlertEngine(db)
+    # No earthgpt module in test env — must not raise
+    alerts = check_earthgpt_corridor_overlap(engine, corridor_graph=None)
+    assert isinstance(alerts, list)

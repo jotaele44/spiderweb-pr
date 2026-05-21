@@ -13,6 +13,7 @@ from prepare_data import (
     deduplicate,
     export_stats,
     load_csv,
+    split,
     to_chunks,
     to_finetune,
     validate_source,
@@ -285,3 +286,45 @@ def test_export_stats_empty():
     stats = export_stats([])
     assert stats["total"] == 0
     assert stats["avg_tokens"] == 0
+
+
+# ── Task 123: split() ─────────────────────────────────────────────────────────
+
+def _make_rows(n=20):
+    rows = []
+    subs = ["UFOs", "NUFORC", "conspiracy"]
+    for i in range(n):
+        rows.append(_make_row(
+            id=f"p{i}",
+            subreddit=subs[i % len(subs)],
+        ))
+    return rows
+
+
+def test_split_sizes_sum_to_total():
+    rows = _make_rows(20)
+    train, val, test = split(rows, train_ratio=0.8, val_ratio=0.1)
+    assert len(train) + len(val) + len(test) == len(rows)
+
+
+def test_split_train_is_largest():
+    rows = _make_rows(20)
+    train, val, test = split(rows)
+    assert len(train) >= len(val)
+    assert len(train) >= len(test)
+
+
+def test_split_no_overlap():
+    rows = _make_rows(30)
+    train, val, test = split(rows)
+    all_ids = [r["id"] for r in train + val + test]
+    assert len(all_ids) == len(set(all_ids)), "No row should appear in multiple splits"
+
+
+def test_split_rejects_bad_ratios():
+    import pytest
+    rows = _make_rows(10)
+    with pytest.raises(ValueError):
+        split(rows, train_ratio=0.9, val_ratio=0.15)  # sum > 1.0
+    with pytest.raises(ValueError):
+        split(rows, train_ratio=0.0, val_ratio=0.5)   # train_ratio = 0

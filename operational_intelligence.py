@@ -547,6 +547,71 @@ class AlertEngine:
         return {row[0]: row[1] for row in rows}
 
 
+def check_earthgpt_corridor_overlap(alert_engine: AlertEngine,
+                                    corridor_graph=None) -> List[Alert]:
+    """Fire INFRASTRUCTURE_PROXIMITY alerts when EarthGPT CorridorGraph overlaps PREPA corridors.
+
+    Attempts to import and query earthgpt.corridor_graph for corridors whose
+    bounding polygons overlap the PREPA South or Central Grid inspection
+    corridors.  Falls back silently when earthgpt is unavailable.
+
+    Parameters
+    ----------
+    alert_engine:
+        Active AlertEngine instance used to persist generated alerts.
+    corridor_graph:
+        Optional pre-built CorridorGraph instance. When None, a new instance
+        is instantiated from the earthgpt module.
+
+    Returns
+    -------
+    List of Alert objects created (empty list on no overlaps or module error).
+    """
+    PREPA_CORRIDORS = {
+        "PREPA_SOUTH":   {"lat_min": 17.9, "lat_max": 18.1, "lon_min": -67.2, "lon_max": -65.3},
+        "PREPA_CENTRAL": {"lat_min": 18.0, "lat_max": 18.6, "lon_min": -66.6, "lon_max": -65.9},
+    }
+
+    fired: List[Alert] = []
+    try:
+        if corridor_graph is None:
+            from earthgpt.corridor_graph import CorridorGraph
+            corridor_graph = CorridorGraph()
+
+        overlapping = getattr(corridor_graph, "corridors", [])
+        for corr in overlapping:
+            lat = getattr(corr, "center_lat", None)
+            lon = getattr(corr, "center_lon", None)
+            if lat is None or lon is None:
+                continue
+            for name, bounds in PREPA_CORRIDORS.items():
+                if (bounds["lat_min"] <= lat <= bounds["lat_max"] and
+                        bounds["lon_min"] <= lon <= bounds["lon_max"]):
+                    corr_id = getattr(corr, "corridor_id", "UNKNOWN")
+                    alert = Alert(
+                        alert_id=f"EARTHGPT_PREPA_{corr_id}_{name}",
+                        flight_id="",
+                        callsign="",
+                        category=AlertCategory.INFRASTRUCTURE_PROX.value,
+                        severity=AlertSeverity.HIGH.value,
+                        title=f"EarthGPT corridor overlaps {name}",
+                        description=(
+                            f"EarthGPT CorridorGraph detected activity corridor "
+                            f"'{corr_id}' intersecting {name} PREPA infrastructure zone."
+                        ),
+                        evidence=[f"Corridor center: ({lat:.4f}, {lon:.4f})"],
+                        timestamp=datetime.utcnow().isoformat(),
+                        recommended_action="Review EarthGPT corridor candidates for PREPA grid proximity",
+                    )
+                    fired.append(alert)
+
+        if fired:
+            alert_engine.save_alerts(fired)
+    except Exception:
+        pass
+    return fired
+
+
 # ============================================================================
 # REPORT GENERATOR
 # ============================================================================

@@ -90,6 +90,36 @@ class GebcoIO:
                 json.dump(data, f)
         return path
 
+    def depth_at(self, lat: float, lon: float) -> Optional[float]:
+        """Return the GEBCO bathymetric depth (metres, negative = below sea level) at a point.
+
+        Returns ``None`` when the dataset is not loaded or the requested point
+        falls outside the available grid.  The caller must treat ``None`` as
+        "data unavailable" and apply an appropriate fallback.
+        """
+        ds = self._ds
+        if ds is None and self.path:
+            try:
+                ds = self.open()
+            except Exception:
+                return None
+        if ds is None:
+            return None
+        try:
+            # xarray Dataset — select nearest grid cell
+            import numpy as np
+            depth_da = ds["elevation"] if "elevation" in ds else next(iter(ds.data_vars.values()))
+            lat_name = "lat" if "lat" in ds.coords else "latitude"
+            lon_name = "lon" if "lon" in ds.coords else "longitude"
+            val = depth_da.sel(
+                {lat_name: lat, lon_name: lon},
+                method="nearest",
+            ).values
+            v = float(np.asarray(val).flat[0])
+            return v if not np.isnan(v) else None
+        except Exception:
+            return None
+
 
 def open_gebco(path: str, engine: str = "netcdf4"):
     """Open a GEBCO 2023 NetCDF-4 file as a lazy xarray Dataset.

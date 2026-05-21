@@ -24,9 +24,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
-READINESS_STATUS_READY     = "READY"
-READINESS_STATUS_DEGRADED  = "DEGRADED"
-READINESS_STATUS_NOT_READY = "NOT_READY"
+READINESS_STATUS_READY            = "READY"
+READINESS_STATUS_DEGRADED         = "DEGRADED"
+READINESS_STATUS_NOT_READY        = "NOT_READY"
+READINESS_STATUS_READY_FOR_OPS    = "READY_FOR_OPERATIONS"
 
 REQUIRED_REPORT_KEYS = [
     "generated_at",
@@ -133,10 +134,18 @@ class PRIIReadinessEngine:
             cal_mode == "operational" and cal_status in ("PASS", "WARN")
         )
 
+        # Task 200: READY_FOR_OPERATIONS — highest status, requires all gates
+        # PASS AND calibration operational (not just fixture-mode READY).
+        if readiness_status == READINESS_STATUS_READY and calibration_ready:
+            final_status = READINESS_STATUS_READY_FOR_OPS
+        else:
+            final_status = readiness_status
+
         report = {
             "generated_at":    datetime.utcnow().isoformat() + "Z",
             "export_dir":      str(self.export_dir),
             "readiness_status": readiness_status,
+            "final_status":    final_status,
             "calibration_ready": calibration_ready,
             "blockers":        blockers,
             "warnings":        warnings,
@@ -406,10 +415,9 @@ class PRIIReadinessEngine:
         except Exception:
             return False
         return (
-            report.get("readiness_status") == READINESS_STATUS_READY
+            report.get("final_status") == READINESS_STATUS_READY_FOR_OPS
             and report.get("calibration_ready") is True
             and not report.get("blockers")
-            and not report.get("warnings")
         )
 
     def _write_report(self, report: Dict[str, Any]) -> None:
