@@ -219,3 +219,41 @@ def test_get_ingest_summary_empty():
     summary = SatelliteIngest.get_ingest_summary([])
     assert summary["total"] == 0
     assert summary["acceptance_rate"] == 0.0
+
+
+# ── Task 35: PR boundary edge cases ──────────────────────────────────────────
+
+def test_bbox_exactly_on_west_boundary(tmp_path):
+    """A bbox touching the western PR edge (-67.30) is accepted (Task 35)."""
+    m = _valid_manifest()
+    m["geometry"]["bbox"] = [-67.30, 18.0, -66.0, 18.5]
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "accepted"
+
+
+def test_bbox_exactly_on_east_boundary(tmp_path):
+    """A bbox touching the eastern PR edge (-65.20) is accepted (Task 35)."""
+    m = _valid_manifest()
+    m["geometry"]["bbox"] = [-66.0, 18.0, -65.20, 18.5]
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "accepted"
+
+
+def test_bbox_exactly_on_north_boundary(tmp_path):
+    """A bbox touching the northern PR edge (18.65) is accepted (Task 35)."""
+    m = _valid_manifest()
+    m["geometry"]["bbox"] = [-67.0, 18.0, -66.0, 18.65]
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "accepted"
+
+
+def test_bbox_exactly_on_south_boundary(tmp_path):
+    """A bbox touching the southern PR edge (17.92) is accepted (Task 35)."""
+    m = _valid_manifest()
+    m["geometry"]["bbox"] = [-67.0, 17.92, -66.0, 18.5]
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "accepted"

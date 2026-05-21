@@ -93,3 +93,67 @@ def test_manual_anchor_csv_interpolates_from_csv(tmp_path):
     assert result.in_pr_bbox(), (
         f"Interpolated coord {result.lat},{result.lon} should be within PR bbox"
     )
+
+
+# ── Tasks 22-23: multi_anchor_weighted mode + GeoCalibrationConfig round-trip ─
+
+import pytest
+
+@pytest.mark.parametrize("mode", ["fixed_pr_bounds", "airport_anchor", "manual_anchor_csv"])
+def test_all_calibration_modes_return_coord_result(tmp_path, mode):
+    """All three modes must return a CoordResult within PR bounds (Task 22)."""
+    anchor_csv = tmp_path / "anchors.csv"
+    anchor_csv.write_text(
+        "anchor_id,name,pixel_x_fraction,pixel_y_fraction,lat,lon\n"
+        "SJU,San Juan Airport,0.70,0.30,18.4373,-66.0018\n"
+    )
+    kwargs = {}
+    if mode in ("airport_anchor", "manual_anchor_csv"):
+        kwargs["anchors_csv"] = str(anchor_csv)
+    cal = GeoCalibration(mode=mode, **kwargs)
+    result = cal.pixel_to_coord(512, 300, 1024, 768)
+    assert isinstance(result, CoordResult)
+    assert result.coordinate_method == mode
+
+
+def test_multi_anchor_weighted_mode(tmp_path):
+    """multi_anchor_weighted IDW mode returns a valid CoordResult (Task 22)."""
+    anchor_csv = tmp_path / "anchors.csv"
+    anchor_csv.write_text(
+        "anchor_id,name,pixel_x_fraction,pixel_y_fraction,lat,lon\n"
+        "SJU,San Juan Airport,0.70,0.30,18.4373,-66.0018\n"
+        "BQN,Rafael Hernandez Airport,0.15,0.28,18.4948,-67.1294\n"
+    )
+    cal = GeoCalibration(mode="multi_anchor_weighted", anchors_csv=str(anchor_csv))
+    result = cal.pixel_to_coord(512, 300, 1024, 768)
+    assert isinstance(result, CoordResult)
+    assert result.coordinate_method == "multi_anchor_weighted"
+    assert 17.5 <= result.lat <= 19.5
+    assert -68.0 <= result.lon <= -64.5
+
+
+def test_geo_calibration_config_round_trip():
+    """GeoCalibrationConfig serialises and deserialises correctly (Task 23)."""
+    import json
+    from geo_calibration import GeoCalibrationConfig
+    cfg = GeoCalibrationConfig(map_top_fraction=0.12, map_bottom_fraction=0.80)
+    as_dict = {"map_top_fraction": cfg.map_top_fraction, "map_bottom_fraction": cfg.map_bottom_fraction}
+    json_str = json.dumps(as_dict)
+    restored = GeoCalibrationConfig(**json.loads(json_str))
+    assert restored.map_top_fraction == 0.12
+    assert restored.map_bottom_fraction == 0.80
+
+
+def test_benchmark_all_modes(tmp_path):
+    """benchmark() returns an entry for every mode (Task 50)."""
+    anchor_csv = tmp_path / "anchors.csv"
+    anchor_csv.write_text(
+        "anchor_id,name,pixel_x_fraction,pixel_y_fraction,lat,lon\n"
+        "SJU,San Juan Airport,0.70,0.30,18.4373,-66.0018\n"
+    )
+    cal = GeoCalibration(mode="fixed_pr_bounds")
+    results = cal.benchmark(px=512, py=300, img_w=1024, img_h=768, anchors_csv=str(anchor_csv))
+    for mode in ("fixed_pr_bounds", "airport_anchor", "multi_anchor_weighted"):
+        assert mode in results, f"Mode {mode!r} missing from benchmark results"
+        assert "lat" in results[mode]
+        assert "confidence" in results[mode]

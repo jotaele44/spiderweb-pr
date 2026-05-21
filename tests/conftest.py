@@ -284,3 +284,44 @@ def _insert_data(conn: sqlite3.Connection):
                 f["takeoff_time"], f["landing_time"], "[]",
             ),
         )
+
+
+# ── Task 39: shared pr_fixture_db fixture ────────────────────────────────────
+
+@pytest.fixture
+def pr_fixture_db(tmp_path):
+    """Minimal in-memory SQLite DB with 5 synthetic flights (Task 39).
+
+    Reusable across test files via conftest.
+    """
+    import sqlite3, json
+    db_path = str(tmp_path / "pr_fixture.db")
+    conn = sqlite3.connect(db_path)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS flights (
+            flight_id TEXT PRIMARY KEY, callsign TEXT, aircraft_type TEXT,
+            operator TEXT, takeoff_time TEXT, landing_time TEXT,
+            origin_lat REAL, origin_lon REAL, dest_lat REAL, dest_lon REAL
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS track_points (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            flight_id TEXT, lat REAL, lon REAL, altitude_ft INTEGER,
+            speed_kts INTEGER, timestamp TEXT
+        )
+    """)
+    synthetic_flights = [
+        ("FLT-PR-001", "N5854Z",  "Cessna 172",    "Private",    "2024-03-14T10:00:00Z", "2024-03-14T11:30:00Z", 18.44, -66.00, 18.25, -65.90),
+        ("FLT-PR-002", "N767PD",  "Bell 407",      "PR Police",  "2024-03-14T08:00:00Z", "2024-03-14T09:00:00Z", 18.50, -67.10, 18.48, -67.05),
+        ("FLT-PR-003", "N684JB",  "Beech King Air","Charter",    "2024-03-14T14:00:00Z", "2024-03-14T15:00:00Z", 18.43, -66.00, 17.99, -66.56),
+        ("FLT-PR-004", "N911PR",  "H145",          "EMS",        "2024-03-14T12:00:00Z", "2024-03-14T12:45:00Z", 18.44, -66.07, 18.40, -66.02),
+        ("FLT-PR-005", "C6062",   "Unknown",       "Unknown",    "2024-03-14T22:00:00Z", "2024-03-14T23:30:00Z", 18.30, -65.80, 18.45, -65.70),
+    ]
+    conn.executemany(
+        "INSERT OR IGNORE INTO flights VALUES (?,?,?,?,?,?,?,?,?,?)",
+        synthetic_flights,
+    )
+    conn.commit()
+    conn.close()
+    return db_path

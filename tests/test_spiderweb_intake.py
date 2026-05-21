@@ -623,3 +623,21 @@ def test_get_coverage_stats_lon_range():
     stats = intake.get_coverage_stats(candidates)
     assert abs(stats["lon_range"][0] - (-67.0)) < 1e-5
     assert abs(stats["lon_range"][1] - (-65.5)) < 1e-5
+
+
+# ── Task 37: zero-images negative test ───────────────────────────────────────
+
+def test_intake_zero_images_returns_zero_candidates(tmp_path):
+    """SpiderwebIntake on a dir with no image-derived candidates returns 0 (Task 37)."""
+    # Write only the manifest file with zero screenshot entries
+    manifest = {
+        "generated_at": "2024-03-14T00:00:00Z",
+        "total_screenshots": 0,
+        "processed_screenshots": 0,
+        "screenshots": [],
+    }
+    import json as _json
+    (tmp_path / "spiderweb_ingest_manifest.json").write_text(_json.dumps(manifest))
+    result = SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    # Should not crash; candidates derived from manifest = 0
+    assert result["total_candidates"] == 0
