@@ -126,6 +126,26 @@ def test_degraded_when_integration_report_missing(tmp_path):
     assert "integration_report.json" in report["missing_inputs"]
 
 
+def test_degraded_when_prii_reports_no_data(tmp_path):
+    # An empty-DB export reports NO_DATA — no hard failure, but it must not
+    # resolve to READY.
+    integration = _passing_integration_report()
+    integration["overall_status"] = "NO_DATA"
+    for gate in integration["gates"].values():
+        if gate["status"] == "PASS":
+            gate["status"] = "NO_DATA"
+    integration["gates"]["export_completeness"]["status"] = "PASS"
+    _write(tmp_path, "integration_report.json", integration)
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+
+    report = PRIIReadinessEngine(str(tmp_path)).assess()
+    assert report["readiness_status"] == READINESS_STATUS_DEGRADED
+    assert report["blockers"] == []
+    prii_warnings = [w for w in report["warnings"] if w["source"] == "prii_report"]
+    assert len(prii_warnings) == 1
+    assert "NO_DATA" in prii_warnings[0]["detail"]
+
+
 def test_report_written_to_disk(tmp_path):
     _write(tmp_path, "integration_report.json", _passing_integration_report())
     _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))

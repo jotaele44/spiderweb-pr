@@ -158,3 +158,19 @@ def test_sha256_matches_file_content(image_dir):
         if rec["sha256"] and not rec["is_corrupt"]:
             expected = hashlib.sha256(Path(rec["path"]).read_bytes()).hexdigest()
             assert rec["sha256"] == expected
+
+
+def test_heic_image_decoded_not_corrupt(tmp_path):
+    pytest.importorskip("pillow_heif")
+    from PIL import Image
+
+    d = tmp_path / "heic_images"
+    d.mkdir()
+    Image.new("RGB", (120, 90), color=(40, 120, 200)).save(str(d / "shot.heic"))
+
+    manifest = ScreenshotInventory(str(d)).scan()
+    assert len(manifest) == 1
+    rec = manifest[0]
+    assert rec["filename"] == "shot.heic"
+    assert not rec["is_corrupt"], "HEIC should decode, not be flagged corrupt"
+    assert rec["width"] == 120 and rec["height"] == 90

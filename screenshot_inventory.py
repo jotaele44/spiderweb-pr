@@ -12,6 +12,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+
+def _register_heif_opener() -> None:
+    """Register the HEIF/HEIC opener with Pillow when pillow-heif is installed.
+
+    Plain Pillow cannot decode .heic; without this the files would be flagged
+    corrupt on dimension probe. No-op when pillow-heif is absent.
+    """
+    try:
+        from pillow_heif import register_heif_opener
+    except ImportError:
+        return
+    register_heif_opener()
+
+
+_register_heif_opener()
+
 SUPPORTED_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".tif", ".heic"}
 
 MANIFEST_FIELDS = [

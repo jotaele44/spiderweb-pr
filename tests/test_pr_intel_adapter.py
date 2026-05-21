@@ -38,14 +38,14 @@ def test_integration_report_has_all_gates(populated_db, tmp_output):
 def test_integration_report_overall_status_present(populated_db, tmp_output):
     adapter = PRIntelAdapter(populated_db, str(tmp_output))
     report = adapter.export_all()
-    assert report["overall_status"] in ("PASS", "FAIL")
+    assert report["overall_status"] in ("PASS", "FAIL", "NO_DATA")
 
 
 def test_integration_report_gate_status_values(populated_db, tmp_output):
     adapter = PRIntelAdapter(populated_db, str(tmp_output))
     report = adapter.export_all()
     for gate_name, gate in report["gates"].items():
-        assert gate["status"] in ("PASS", "FAIL"), f"Gate {gate_name}: invalid status"
+        assert gate["status"] in ("PASS", "FAIL", "NO_DATA"), f"Gate {gate_name}: invalid status"
 
 
 def test_source_manifest_valid_json(populated_db, tmp_output):
@@ -195,13 +195,24 @@ def _make_low_ocr_db(tmp_path: Path) -> str:
     return db
 
 
-def test_export_all_empty_db_overall_status_pass(tmp_path):
-    # All gate skip-when-empty conditions fire → PASS.
-    # TODO: a future stage should distinguish NO_DATA from genuine PASS so that
-    #       an empty DB export cannot satisfy a readiness gate.
+def test_export_all_empty_db_overall_status_no_data(tmp_path):
+    # An empty DB has no records to assess: data-dependent gates report
+    # NO_DATA and the overall verdict is NO_DATA, not a genuine PASS.
     db = _make_empty_db(tmp_path)
     report = PRIntelAdapter(db, str(tmp_path / "out")).export_all()
-    assert report["overall_status"] == "PASS"
+    assert report["overall_status"] == "NO_DATA"
+
+
+def test_export_all_empty_db_data_gates_report_no_data(tmp_path):
+    db = _make_empty_db(tmp_path)
+    report = PRIntelAdapter(db, str(tmp_path / "out")).export_all()
+    gates = report["gates"]
+    for name in ("coordinate_coverage", "ocr_confidence_gate",
+                 "evidence_chain_coverage", "schema_validation",
+                 "temporal_integrity"):
+        assert gates[name]["status"] == "NO_DATA", name
+    # Files are still written, so export completeness is a genuine PASS.
+    assert gates["export_completeness"]["status"] == "PASS"
 
 
 def test_coordinate_coverage_gate_fails_when_no_coords(tmp_path):

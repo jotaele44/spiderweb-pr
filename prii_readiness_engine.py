@@ -10,7 +10,8 @@ Reads from an export directory that contains artifacts produced by:
 Readiness contract:
   READY      All PRII gates PASS + calibration PASS (or absent)
   DEGRADED   No hard failures but at least one warning
-             (calibration WARN, missing integration_report, etc.)
+             (calibration WARN, missing integration_report,
+             PRII NO_DATA export, etc.)
   NOT_READY  Any PRII gate FAIL  OR  calibration FAIL
 
 This module is a pure assessment layer: it reads existing artifacts and
@@ -80,6 +81,16 @@ class PRIIReadinessEngine:
                         "gate":    gate_name,
                         "detail":  self._gate_detail(gate_name, gate),
                     })
+            # A NO_DATA export means the PRII gates had no records to assess
+            # (e.g. run against an empty database). That is not a hard failure,
+            # but it cannot count as a genuine PASS — flag it as a warning so
+            # an empty-DB export resolves to DEGRADED rather than READY.
+            if prii_overall == "NO_DATA":
+                warnings.append({
+                    "source": "prii_report",
+                    "detail": "PRII export reported NO_DATA — gates had no records "
+                              "to assess (empty database); readiness unverified",
+                })
 
         # ── Calibration assessment ────────────────────────────────────────────
         cal_status:  Optional[str] = None

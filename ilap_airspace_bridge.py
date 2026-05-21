@@ -28,12 +28,18 @@ CONFIDENCE_WEIGHTS = {
 
 GRID_DEG = 0.05  # ~5 km grid cell size
 
+# Distance (nautical miles) at which the infrastructure-alignment score
+# decays to 0. A POI cluster sitting on a feature scores ~1.0.
+INFRA_ALIGN_SCALE_NM = 8.0
+
 
 class ILAPAirspaceBridge:
     def __init__(self, db_path: str, output_dir: str):
         self.db_path = db_path
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self._infra_graph = None
+        self._infra_loaded = False
 
     def export_all(self) -> Dict[str, Any]:
         conn = sqlite3.connect(self.db_path)
@@ -90,7 +96,7 @@ class ILAPAirspaceBridge:
 
             recurrence = min(1.0, len(flight_ids) / 10.0)
             loiter = self._loiter_score(points)
-            infra_align = 0.3  # placeholder; real impl would cross-ref infra layer
+            infra_align = self._infra_alignment_score(center_lat, center_lon)
             hydro_utility = 0.2
             mbil_proximity = 0.1
 
@@ -134,6 +140,27 @@ class ILAPAirspaceBridge:
         speeds = [tp.get("ground_speed_mph") or 0 for tp in points]
         low_speed = sum(1 for s in speeds if s < 50)
         return min(1.0, low_speed / len(points))
+
+    def _infrastructure(self):
+        """Lazily load the PR infrastructure graph; None if unavailable."""
+        if not self._infra_loaded:
+            self._infra_loaded = True
+            try:
+                from gis_intelligence import PuertoRicoInfrastructure
+                self._infra_graph = PuertoRicoInfrastructure()
+            except Exception:
+                self._infra_graph = None
+        return self._infra_graph
+
+    def _infra_alignment_score(self, lat: float, lon: float) -> float:
+        """Proximity of a POI cell centroid to known PR infrastructure (0-1)."""
+        infra = self._infrastructure()
+        if infra is None or not infra.features:
+            return 0.0
+        nearest_nm = min(
+            f.distance_to_point(lat, lon) for f in infra.features.values()
+        )
+        return round(max(0.0, 1.0 - nearest_nm / INFRA_ALIGN_SCALE_NM), 4)
 
     # ----------------------------------------------------------------- ILAP
 

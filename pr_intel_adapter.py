@@ -135,30 +135,42 @@ class PRIntelAdapter:
         OCR_THRESHOLD = 0.50      # average OCR confidence must be ≥ 0.50
         EVIDENCE_THRESHOLD = 0.50 # 50% of screenshots must be linked to a flight
 
-        # Coordinate coverage (skip gate when no flights)
+        # Coordinate coverage (NO_DATA when no flights to assess)
         flights_with_coords = sum(
             1 for f in flights
             if (f.get("origin_lat") or f.get("dest_lat"))
         )
-        pct_coords = (flights_with_coords / len(flights)) if flights else 1.0
-        coord_status = "PASS" if (not flights or pct_coords >= COORD_THRESHOLD) else "FAIL"
+        pct_coords = (flights_with_coords / len(flights)) if flights else 0.0
+        if not flights:
+            coord_status = "NO_DATA"
+        else:
+            coord_status = "PASS" if pct_coords >= COORD_THRESHOLD else "FAIL"
 
-        # OCR confidence gate (skip when no screenshots)
+        # OCR confidence gate (NO_DATA when no screenshots to assess)
         confidences = [
             ss.get("ocr_confidence") or 0.0
             for ss in screenshots
             if ss.get("ocr_confidence") is not None
         ]
         avg_conf = sum(confidences) / len(confidences) if confidences else 1.0
-        ocr_status = "PASS" if (not screenshots or avg_conf >= OCR_THRESHOLD) else "FAIL"
+        if not screenshots:
+            ocr_status = "NO_DATA"
+        else:
+            ocr_status = "PASS" if avg_conf >= OCR_THRESHOLD else "FAIL"
 
-        # Evidence chain coverage (skip when no screenshots)
+        # Evidence chain coverage (NO_DATA when no screenshots to assess)
         ss_with_flight = sum(1 for ss in screenshots if ss.get("flight_id"))
-        pct_ss = (ss_with_flight / len(screenshots)) if screenshots else 1.0
-        evidence_status = "PASS" if (not screenshots or pct_ss >= EVIDENCE_THRESHOLD) else "FAIL"
+        pct_ss = (ss_with_flight / len(screenshots)) if screenshots else 0.0
+        if not screenshots:
+            evidence_status = "NO_DATA"
+        else:
+            evidence_status = "PASS" if pct_ss >= EVIDENCE_THRESHOLD else "FAIL"
 
-        # Schema validation gate (any invalid record fails)
-        schema_status = "PASS" if schema_invalid == 0 else "FAIL"
+        # Schema validation gate (NO_DATA when no records were validated)
+        if schema_validated == 0:
+            schema_status = "NO_DATA"
+        else:
+            schema_status = "PASS" if schema_invalid == 0 else "FAIL"
 
         gates = {
             "schema_validation": {
@@ -187,12 +199,24 @@ class PRIntelAdapter:
                 "missing": missing,
             },
             "temporal_integrity": {
-                "status": "PASS" if (temporal_violations == 0 or not track_pts) else "FAIL",
+                "status": (
+                    "NO_DATA" if not track_pts
+                    else ("PASS" if temporal_violations == 0 else "FAIL")
+                ),
                 "violations": temporal_violations,
             },
         }
 
-        overall_status = "PASS" if all(g["status"] == "PASS" for g in gates.values()) else "FAIL"
+        # A FAIL anywhere fails the export; otherwise a NO_DATA gate (a gate
+        # that had no records to assess) downgrades the overall verdict so an
+        # empty-DB export cannot masquerade as a genuine PASS.
+        gate_statuses = [g["status"] for g in gates.values()]
+        if any(s == "FAIL" for s in gate_statuses):
+            overall_status = "FAIL"
+        elif any(s == "NO_DATA" for s in gate_statuses):
+            overall_status = "NO_DATA"
+        else:
+            overall_status = "PASS"
 
         report = {
             "generated_at": datetime.utcnow().isoformat() + "Z",

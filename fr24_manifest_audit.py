@@ -34,6 +34,18 @@ AUDIT_CSV = "fr24_manifest_audit.csv"
 AUDIT_JSON = "fr24_manifest_audit_report.json"
 
 
+def _register_heif_opener() -> None:
+    """Enable Pillow to decode .heic when pillow-heif is installed (no-op otherwise)."""
+    try:
+        from pillow_heif import register_heif_opener
+    except ImportError:
+        return
+    register_heif_opener()
+
+
+_register_heif_opener()
+
+
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
