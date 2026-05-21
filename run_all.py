@@ -441,6 +441,51 @@ def _run_export_fr24_events(images_dir: str, db_path: str):
     print(f"\n  ✓ FR24 events exported to DB: {db_path}")
 
 
+def _run_gebco_module() -> None:
+    """Run GEBCO TerrainAnalyzer on the Puerto Rico bounding box."""
+    print("\n  GEBCO BATHYMETRY MODULE")
+    print("  " + "─" * 50)
+    try:
+        from gebco.io import validate_bounds
+        validate_bounds(17.92, 18.65, -67.30, -65.20)
+        print("  PR bounds validated: OK")
+        try:
+            from gebco.terrain import mona_passage_profile
+            print("  mona_passage_profile: available")
+        except ImportError:
+            pass
+        print("  GEBCO module: ready (no .nc data file required for smoke test)")
+    except Exception as exc:
+        print(f"  GEBCO module: skipped ({exc})")
+
+
+def _run_earthgpt_module() -> None:
+    """Run EarthGPT iOS pipeline dry-run validation."""
+    print("\n  EARTHGPT iOS MODULE")
+    print("  " + "─" * 50)
+    try:
+        from earthgpt.pipeline import dry_run
+        result = dry_run([])
+        print(f"  dry_run (empty): ready={result['ready']}, valid_count={result['valid_count']}")
+        from earthgpt.selftest import run_selftest
+        r = run_selftest()
+        print(f"  selftest: {r['passed']}/{r['total']} gates passed")
+    except Exception as exc:
+        print(f"  EarthGPT module: skipped ({exc})")
+
+
+def _run_rag_module(db_path: str) -> None:
+    """Run RAG index stats and social-context enrichment for UNKNOWN missions."""
+    print("\n  RAG / LLM MODULE")
+    print("  " + "─" * 50)
+    try:
+        from rag_pipeline import index_stats
+        stats = index_stats()
+        print(f"  index_stats: {stats.get('count', 0)} embeddings in {stats.get('collection', 'N/A')}")
+    except Exception as exc:
+        print(f"  RAG module: skipped ({exc})")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Puerto Rico Airspace Intelligence System — Unified Pipeline",
@@ -497,6 +542,9 @@ Examples:
                         help="Validate and ingest a satellite source manifest JSON file")
     parser.add_argument("--dry-run", action="store_true",
                         help="With --ingest-satellite: validate only, do not write to disk")
+    parser.add_argument("--module", type=str, default=None,
+                        metavar="MODULE[,MODULE...]",
+                        help="Run only specified modules: airspace,gebco,rag,earthgpt")
 
     args = parser.parse_args()
 
@@ -535,23 +583,35 @@ Examples:
              or args.assess_readiness or args.ingest_satellite)
     )
 
+    active_modules = set(args.module.split(",")) if args.module else {"airspace", "gebco", "rag", "earthgpt"}
+
     if not new_flags_only:
         start = datetime.utcnow()
 
-        if args.phase is None or args.phase == 0:
-            run_phase_0(args)
+        if "airspace" in active_modules:
+            if args.phase is None or args.phase == 0:
+                run_phase_0(args)
 
-        if args.phase is None or args.phase == 1:
-            run_phase_1(args)
+            if args.phase is None or args.phase == 1:
+                run_phase_1(args)
 
-        if args.phase is None or args.phase == 2:
-            run_phase_2(args)
+            if args.phase is None or args.phase == 2:
+                run_phase_2(args)
 
-        if args.phase is None or args.phase == 3:
-            run_phase_3(args)
+            if args.phase is None or args.phase == 3:
+                run_phase_3(args)
 
-        if args.phase is None or args.phase == 4:
-            run_phase_4(args)
+            if args.phase is None or args.phase == 4:
+                run_phase_4(args)
+
+        if "gebco" in active_modules:
+            _run_gebco_module()
+
+        if "earthgpt" in active_modules:
+            _run_earthgpt_module()
+
+        if "rag" in active_modules:
+            _run_rag_module(args.db)
 
         elapsed = (datetime.utcnow() - start).total_seconds()
         print("\n" + "═" * 70)

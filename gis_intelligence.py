@@ -291,6 +291,10 @@ class PuertoRicoInfrastructure:
     def get_features_by_operator(self, operator: str) -> List[InfrastructureFeature]:
         return [f for f in self.features.values() if f.operator == operator]
 
+    def features_by_sector(self, sector: str) -> List[InfrastructureFeature]:
+        """Return all features belonging to the named sector."""
+        return [f for f in self.features.values() if getattr(f, "sector", "") == sector]
+
 
 # ============================================================================
 # CORRIDOR ANALYSIS

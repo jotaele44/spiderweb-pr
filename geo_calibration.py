@@ -17,8 +17,20 @@ from typing import List, Optional
 
 PR_BOUNDS = {"north": 18.65, "south": 17.92, "east": -65.20, "west": -67.30}
 
-MAP_TOP_FRACTION    = 0.15
-MAP_BOTTOM_FRACTION = 0.75
+
+@dataclass
+class GeoCalibrationConfig:
+    """Named config for geo-calibration map fractions.
+
+    Replaces the former module-level magic constants MAP_TOP_FRACTION and
+    MAP_BOTTOM_FRACTION so callers can override them without monkey-patching.
+    """
+    map_top_fraction: float = 0.15
+    map_bottom_fraction: float = 0.75
+
+
+MAP_TOP_FRACTION    = GeoCalibrationConfig().map_top_fraction
+MAP_BOTTOM_FRACTION = GeoCalibrationConfig().map_bottom_fraction
 
 DEFAULT_ANCHORS_CSV = Path(__file__).parent / "configs" / "georef_anchors.csv"
 

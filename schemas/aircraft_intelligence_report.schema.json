@@ -17,7 +17,8 @@
     "first_seen":        {"type": ["string", "null"]},
     "last_seen":         {"type": ["string", "null"]},
     "operational_patterns": {"type": ["object", "null"]},
-    "generated_at":      {"type": ["string", "null"]}
+    "generated_at":      {"type": ["string", "null"]},
+    "profile_completeness": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
   },
   "additionalProperties": true
 }

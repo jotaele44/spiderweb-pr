@@ -167,3 +167,52 @@ python run_all.py --db data.db --module airspace,gebco,rag,earthgpt  # all
 ```
 
 Accepted names: `airspace`, `gebco`, `rag`, `earthgpt`
+
+---
+
+## Inter-module bridges (Tasks 181–189)
+
+Tasks 181–189 added a second layer of cross-module bridges, refining how modules exchange context through the file system and conditional imports.
+
+### ILAP → EarthGPT context bridge
+
+`ilap_airspace_bridge.py` exports POI, ILAP, and corridor candidate GeoJSON files to `outputs/spiderweb/`. The new `earthgpt/context` sub-module reads these files at pipeline startup and injects airspace-awareness context (restricted zones, active corridors, POI proximity) into EarthGPT tile-analysis stages.
+
+```
+ilap_airspace_bridge.py
+  └─ outputs/spiderweb/ilap_pois.geojson
+  └─ outputs/spiderweb/corridors.geojson
+        ↓  (file system)
+earthgpt/context/
+  └─ reads GeoJSON → adds airspace context to tile annotations
+```
+
+### PRIntelAdapter 7th gate: `earthgpt_dry_run_pass`
+
+`pr_intel_adapter.py` runs a self-test suite (the "gate" checks) before finalizing its integration report. Task 185 added a 7th gate named `earthgpt_dry_run_pass` that verifies EarthGPT can successfully import and instantiate its pipeline with the current configuration before `PRIntelAdapter.export_all()` marks the run as fully validated.
+
+Gate status is recorded in `outputs/integration_report.json` under the key `gates.earthgpt_dry_run_pass`.
+
+### GIS + GEBCO depth annotation
+
+`gis_intelligence.py` (Phase 2) can now annotate its infrastructure-graph nodes with GEBCO-derived depth values when the GEBCO index is available. The bridge is opt-in: if `GEBCO_DATA_DIR` is set and the `gebco` package is installed, `gis_intelligence.py` calls `gebco.open_gebco()` and `gebco.subset_region()` to attach a `depth_m` attribute to offshore nodes (platforms, buoys, coastal waypoints). Nodes on land receive `depth_m=None`.
+
+### Mission Inference + RAG for UNKNOWN missions
+
+`mission_inference.py` (Phase 3) integrates with the RAG pipeline to resolve `UNKNOWN` mission classifications. When a flight record scores below the mission-inference confidence threshold, the bridge queries `pruap_index` via `rag_pipeline.retrieve()` for contextually similar historical reports. Retrieved posts are scored against the candidate mission categories; if any post produces a similarity above 0.75 the mission label is updated from `UNKNOWN` to the matched category with source provenance attached.
+
+The integration is conditional on `./pruap_index/` existing; if the index is absent the mission-inference output is unchanged.
+
+### `run_all.py` — `--module` flag for selective execution
+
+`run_all.py` gained a `--module` flag (Task 189) that lets operators run a single module's pipeline without executing all four:
+
+```bash
+python run_all.py --module airspace     # Airspace Intel phases 0–4 only
+python run_all.py --module gebco        # GEBCO terrain analysis only
+python run_all.py --module rag          # prepare_data + rag_pipeline only
+python run_all.py --module earthgpt     # EarthGPT iOS pipeline only
+python run_all.py                       # all modules (original behaviour)
+```
+
+When `--module` is specified, cross-module bridges (ILAP→EarthGPT, GIS+GEBCO, Mission+RAG) that involve the excluded module are silently skipped rather than raising an import error.

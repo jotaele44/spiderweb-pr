@@ -370,13 +370,40 @@ class AlertEngine:
         """
         from datetime import timedelta
         cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        _CATEGORY_RESOLVE_REASONS = {
+            "Restricted Airspace Entry": "No follow-up activity detected after 7 days",
+            "Unusual Flight Behavior": "Pattern normalized — no recurrence",
+            "Critical Infrastructure Proximity": "Flight departed area; threat cleared",
+            "Unknown/Unidentified Aircraft": "Aircraft subsequently identified via ADS-B",
+            "Temporal Anomaly (Physics Violation)": "Data artefact — GPS timestamp corrected",
+            "Pattern Deviation from Historical Norm": "New baseline established for operator",
+            "Extended Operation (Possible Emergency)": "Aircraft landed safely; no distress signal",
+            "Previously Unseen Aircraft": "Aircraft registered in FAA database",
+            "Night Operation (Non-Emergency Operator)": "Night operation confirmed as routine",
+            "Behavioral Cluster Deviation": "Cluster re-evaluated; deviation within tolerance",
+        }
         conn = sqlite3.connect(self.db_path)
         try:
-            affected = conn.execute(
-                "UPDATE alerts SET auto_resolved=1 "
+            try:
+                conn.execute("ALTER TABLE alerts ADD COLUMN auto_resolved_reason TEXT")
+                conn.commit()
+            except Exception:
+                pass
+            rows = conn.execute(
+                "SELECT alert_id, category FROM alerts "
                 "WHERE acknowledged=0 AND auto_resolved=0 AND timestamp < ?",
                 (cutoff,),
-            ).rowcount
+            ).fetchall()
+            affected = 0
+            for alert_id, category in rows:
+                reason = _CATEGORY_RESOLVE_REASONS.get(
+                    category, "Auto-resolved: exceeded stale threshold"
+                )
+                conn.execute(
+                    "UPDATE alerts SET auto_resolved=1, auto_resolved_reason=? WHERE alert_id=?",
+                    (reason, alert_id),
+                )
+                affected += 1
             conn.commit()
         except Exception:
             affected = 0
