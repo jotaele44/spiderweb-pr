@@ -230,6 +230,7 @@ class MissionScore:
     signal_scores: Dict[str, float]
     confidence_level: str
     explanation: List[str]
+    rag_context: Optional[str] = None
 
 
 class MultiFactorMissionScorer:
@@ -871,6 +872,37 @@ class Phase3Pipeline:
                 ''', (state_key, mission, prob, count))
         conn.commit()
         conn.close()
+
+    def enrich_unknown_with_rag(self, score: "MissionScore") -> "MissionScore":
+        """Attempt RAG enrichment for UNKNOWN mission scores.
+
+        Queries the RAG pipeline for social-context clues when the top mission
+        type is UNKNOWN and attaches the result as ``rag_context`` on the
+        returned ``MissionScore``.  Falls back gracefully when the RAG module
+        is unavailable or raises any exception.
+        """
+        if score.mission_type != MissionType.UNKNOWN:
+            return score
+        try:
+            from rag_pipeline import RAGPipeline
+            rag = RAGPipeline()
+            query = f"Unusual unidentified aircraft activity Puerto Rico"
+            results = rag.query(query, n_results=3)
+            if results:
+                rag_text = " | ".join(
+                    r.get("document", "") for r in results if r.get("document")
+                )
+                return MissionScore(
+                    mission_type=score.mission_type,
+                    total_score=score.total_score,
+                    signal_scores=score.signal_scores,
+                    confidence_level=score.confidence_level,
+                    explanation=score.explanation,
+                    rag_context=rag_text[:500] if rag_text else None,
+                )
+        except Exception:
+            pass
+        return score
 
     def explain(self, flight_id: str) -> Dict:
         """Return a human-readable score breakdown per signal for a given flight.

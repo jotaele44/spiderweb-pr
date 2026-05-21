@@ -61,6 +61,7 @@ def test_integration_report_all_gates_present(populated_db, tmp_output):
     expected_gates = {
         "schema_validation", "coordinate_coverage", "ocr_confidence_gate",
         "evidence_chain_coverage", "export_completeness", "temporal_integrity",
+        "earthgpt_dry_run_pass",
     }
     assert set(report["gates"].keys()) == expected_gates
 

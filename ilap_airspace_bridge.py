@@ -63,6 +63,34 @@ CONFIDENCE_WEIGHTS = {
 GRID_DEG = 0.05  # ~5 km grid cell size
 
 
+def _hydro_utility_score(center_lat: float, center_lon: float) -> float:
+    """Return hydro-utility score for a POI centroid using GEBCO depth data.
+
+    Attempts to use GEBCO bathymetry at the track centroid.  Falls back to the
+    historical baseline (0.2) when the GEBCO module is unavailable or has no
+    data covering the requested point.
+    """
+    try:
+        from gebco.io import GebcoIO
+        gio = GebcoIO()
+        if not gio.validate_bounds(center_lat - 0.01, center_lat + 0.01,
+                                   center_lon - 0.01, center_lon + 0.01):
+            return 0.2
+        depth_m = gio.depth_at(center_lat, center_lon)
+        if depth_m is None:
+            return 0.2
+        # Shallow coastal water (< 200 m) → higher utility; deep ocean → lower
+        if abs(depth_m) < 50:
+            return 0.9
+        if abs(depth_m) < 200:
+            return 0.6
+        if abs(depth_m) < 1000:
+            return 0.4
+        return 0.2
+    except Exception:
+        return 0.2
+
+
 class ILAPAirspaceBridge:
     def __init__(self, db_path: str, output_dir: str):
         self.db_path = db_path
@@ -125,7 +153,7 @@ class ILAPAirspaceBridge:
             recurrence = min(1.0, len(flight_ids) / 10.0)
             loiter = self._loiter_score(points)
             infra_align = _infra_align_score(center_lat, center_lon)
-            hydro_utility = 0.2
+            hydro_utility = _hydro_utility_score(center_lat, center_lon)
             mbil_proximity = 0.1
 
             overall = (

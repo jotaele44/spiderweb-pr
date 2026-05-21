@@ -132,8 +132,8 @@ def test_all_core_schemas_loadable():
     loaded = v.available_schemas()
     try:
         import jsonschema  # noqa: F401
-        assert len(loaded) >= 11, (
-            f"Expected ≥11 schemas in {SCHEMAS_DIR}, got {len(loaded)}: {loaded}"
+        assert len(loaded) >= 19, (
+            f"Expected ≥19 schemas in {SCHEMAS_DIR}, got {len(loaded)}: {loaded}"
         )
     except ImportError:
         pytest.skip("jsonschema not installed — schema loading is a no-op")

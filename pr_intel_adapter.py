@@ -215,6 +215,7 @@ class PRIntelAdapter:
                 "status": "PASS" if (temporal_violations == 0 or not track_pts) else "FAIL",
                 "violations": temporal_violations,
             },
+            "earthgpt_dry_run_pass": self._gate_earthgpt_dry_run(),
         }
 
         overall_status = "PASS" if all(g["status"] == "PASS" for g in gates.values()) else "FAIL"
@@ -408,6 +409,16 @@ class PRIntelAdapter:
         (self.output_dir / "route_lines.geojson").write_text(json.dumps(geojson, indent=2))
 
     # ----------------------------------------------------------------- helpers
+
+    def _gate_earthgpt_dry_run(self) -> Dict[str, Any]:
+        try:
+            from earthgpt.pipeline import dry_run
+            result = dry_run([])
+            if result.get("ready"):
+                return {"status": "PASS", "valid_count": result.get("valid_count", 0)}
+            return {"status": "FAIL", "reason": "dry_run returned ready=False"}
+        except Exception as exc:
+            return {"status": "FAIL", "reason": str(exc)}
 
     def _provenance(self, ss: dict) -> dict:
         return {

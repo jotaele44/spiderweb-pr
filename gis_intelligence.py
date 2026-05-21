@@ -311,6 +311,7 @@ class FlightCorridor:
     typical_operator: str
     activity_level: str
     associated_infrastructure: List[str] = field(default_factory=list)
+    confidence: float = 0.0
 
     def contains_point(self, lat: float, lon: float,
                        tolerance_nm: float = 1.0) -> bool:
@@ -361,6 +362,9 @@ class CorridorAnalyzer:
                 if corridor.contains_point(p["latitude"], p["longitude"])
             )
             if track_points and in_corridor > len(track_points) * 0.3:
+                confidence = in_corridor / len(track_points)
+                import dataclasses
+                corridor = dataclasses.replace(corridor, confidence=round(confidence, 4))
                 matching.append(corridor)
         return matching
 

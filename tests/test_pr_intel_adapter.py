@@ -31,6 +31,7 @@ def test_integration_report_has_all_gates(populated_db, tmp_output):
         "evidence_chain_coverage",
         "export_completeness",
         "temporal_integrity",
+        "earthgpt_dry_run_pass",
     }
     assert set(report["gates"].keys()) == expected_gates
 
@@ -273,3 +274,97 @@ def test_gate_config_override_ocr_threshold_forces_fail(populated_db, tmp_output
     report = adapter.export_all()
     assert report["gates"]["ocr_confidence_gate"]["status"] == "FAIL"
     assert report["gates"]["ocr_confidence_gate"]["threshold"] == 0.99
+
+
+# ── Task 19: individual gate failure tests ─────────────────────────────────────
+
+def _make_schema_fail_db(tmp_path: Path) -> str:
+    """DB with one flight so schema validation can run and be patched to fail."""
+    db = str(tmp_path / "schema_fail.db")
+    conn = sqlite3.connect(db)
+    _create_minimal_schema(conn)
+    conn.execute(
+        "INSERT INTO flights VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        ("FLT_SCHEMA_FAIL", "N1234", "H125", "PREPA", "SJU", "PSE",
+         18.44, -66.0, 18.0, -66.5,
+         "2024-03-15T08:00:00", "2024-03-15T09:00:00",
+         60, 3000, 100.0, "SURVEY", 0),
+    )
+    conn.commit()
+    conn.close()
+    return db
+
+
+def test_schema_validation_gate_fails_when_invalid_records(tmp_path):
+    from unittest.mock import patch, MagicMock
+    db = _make_schema_fail_db(tmp_path)
+    mock_validator = MagicMock()
+    mock_validator.validate_batch.return_value = ([], 2)
+    with patch("pr_intel_adapter._SCHEMA_VALIDATION_AVAILABLE", True), \
+         patch("pr_intel_adapter.SchemaValidator", return_value=mock_validator):
+        report = PRIntelAdapter(db, str(tmp_path / "out")).export_all()
+    gate = report["gates"]["schema_validation"]
+    assert gate["status"] == "FAIL"
+    assert gate["invalid"] > 0
+
+
+def _make_no_flight_id_screenshots_db(tmp_path: Path) -> str:
+    """DB with a screenshot that has no flight_id — evidence_chain gate fails."""
+    db = str(tmp_path / "no_evidence.db")
+    conn = sqlite3.connect(db)
+    _create_minimal_schema(conn)
+    conn.execute(
+        "INSERT INTO flights VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        ("FLT_001", "N1234", "H125", "PREPA", "SJU", "PSE",
+         18.44, -66.0, 18.0, -66.5,
+         "2024-03-15T08:00:00", "2024-03-15T09:00:00",
+         60, 3000, 100.0, "SURVEY", 1),
+    )
+    # Screenshot with NULL flight_id → breaks evidence chain
+    conn.execute(
+        "INSERT INTO screenshots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        ("SS_NOLINK", "/tmp/img.jpg", None, "2024-03-15T08:00:00",
+         "N1234", 3000, 100, 18.44, -66.0, "2024-03-15T08:00:00",
+         "OCR text", 0.9, None, "fixed_pr_bounds", 0.90, 50.0, "pending"),
+    )
+    conn.commit()
+    conn.close()
+    return db
+
+
+def test_evidence_chain_coverage_gate_fails_when_no_flight_links(tmp_path):
+    db = _make_no_flight_id_screenshots_db(tmp_path)
+    report = PRIntelAdapter(db, str(tmp_path / "out")).export_all()
+    gate = report["gates"]["evidence_chain_coverage"]
+    assert gate["status"] == "FAIL"
+    assert gate["pct_with_screenshot"] < gate["threshold"]
+
+
+def test_export_completeness_gate_fails_when_file_missing(tmp_path):
+    from unittest.mock import patch
+    db = _make_empty_db(tmp_path)
+    extra_outputs = list(PRIntelAdapter.REQUIRED_OUTPUTS) + ["nonexistent_required_file.parquet"]
+    with patch.object(PRIntelAdapter, "REQUIRED_OUTPUTS", extra_outputs):
+        report = PRIntelAdapter(db, str(tmp_path / "out")).export_all()
+    gate = report["gates"]["export_completeness"]
+    assert gate["status"] == "FAIL"
+    assert "nonexistent_required_file.parquet" in gate["missing"]
+
+
+def test_temporal_integrity_gate_fails_when_violations_detected(tmp_path):
+    from unittest.mock import patch
+    db = _make_empty_db(tmp_path)
+    # Inject a track point so track_pts is non-empty, then patch violation count
+    conn = sqlite3.connect(db)
+    conn.execute(
+        "INSERT INTO track_points (flight_id, timestamp, latitude, longitude, altitude_ft, ground_speed_mph) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        ("FLT_001", "2024-03-15T08:00:00", 18.44, -66.0, 3000, 100),
+    )
+    conn.commit()
+    conn.close()
+    with patch.object(PRIntelAdapter, "_count_temporal_violations", return_value=3):
+        report = PRIntelAdapter(db, str(tmp_path / "out")).export_all()
+    gate = report["gates"]["temporal_integrity"]
+    assert gate["status"] == "FAIL"
+    assert gate["violations"] == 3
