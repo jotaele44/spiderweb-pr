@@ -155,21 +155,26 @@ def test_io_utils() -> bool:
         return False
 
 
-def run_all() -> bool:
+def run_selftest() -> dict:
     log("EarthGPT iOS selftest starting ...", prefix="SELF")
-    results = [
-        test_config(),
-        test_tile_utils(),
-        test_features_lite(),
-        test_metrics(),
-        test_pipeline_analyze_node(),
-        test_seam_graph(),
-        test_io_utils(),
-    ]
-    passed = sum(1 for r in results if r)
-    total = len(results)
+    gates = {
+        "config": test_config(),
+        "tile_utils": test_tile_utils(),
+        "features_lite": test_features_lite(),
+        "metrics": test_metrics(),
+        "pipeline_analyze_node": test_pipeline_analyze_node(),
+        "seam_graph": test_seam_graph(),
+        "io_utils": test_io_utils(),
+    }
+    passed = sum(1 for ok in gates.values() if ok)
+    total = len(gates)
     log(f"Selftest complete: {passed}/{total} passed", prefix="SELF")
-    return passed == total
+    return {"passed": passed, "total": total, "gates": gates}
+
+
+def run_all() -> bool:
+    result = run_selftest()
+    return result["passed"] == result["total"]
 
 
 if __name__ == "__main__":
