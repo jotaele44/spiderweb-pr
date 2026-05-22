@@ -18,10 +18,11 @@ Outputs:
 from __future__ import annotations
 
 import argparse
+import bisect
 import csv
 import json
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -91,60 +92,138 @@ def iter_sidecars(root: Path) -> List[Path]:
     return sorted(p for p in root.rglob("*.json") if p.is_file())
 
 
+def _kind_priority(kind: str) -> int:
+    return 0 if kind == "photo_dt" else 1
+
+
+def _image_duplicate_priority(name: str) -> int:
+    return 1 if "_1." in name else 0
+
+
+def _pair_sort_key(pair: dict) -> tuple:
+    image = pair["image"]
+    return (
+        pair["delta_seconds"],
+        _kind_priority(pair["sidecar_time_kind"]),
+        _image_duplicate_priority(image["name"]),
+        image["name"],
+        pair["sidecar_path"],
+    )
+
+
+def _best_pair_for_sidecar(existing: Optional[dict], candidate: dict) -> dict:
+    if existing is None:
+        return candidate
+    return candidate if _pair_sort_key(candidate) < _pair_sort_key(existing) else existing
+
+
 def build_candidate_rows(root: Path, max_delta_seconds: int = 300, tz_name: str = DEFAULT_TZ) -> Tuple[List[dict], dict]:
+    """Build sidecar candidate rows with global one-to-one assignment.
+
+    A naive nearest-neighbor pass can collapse many screenshots onto the first
+    sidecar that shares the same timestamp. This function instead creates all
+    candidate image/sidecar pairs inside the time window, sorts them by match
+    quality, and greedily assigns one sidecar to one image. Images that had a
+    plausible candidate but lost the one-to-one assignment are routed to review
+    as sidecar conflicts.
+    """
+
     images = [
         {"path": p, "name": p.name, "dt_name": image_dt_from_name(p, tz_name), "suffix": p.suffix.lower()}
         for p in iter_images(root)
     ]
     sidecars = [load_sidecar(p, tz_name) for p in iter_sidecars(root)]
 
-    sidecar_times: List[Tuple[datetime, str, dict]] = []
+    sidecar_times: List[Tuple[float, str, dict, str]] = []
     for sidecar in sidecars:
         for kind in ("photo_dt", "creation_dt"):
             dt = sidecar.get(kind)
             if dt:
-                sidecar_times.append((dt, kind, sidecar))
+                sidecar_times.append((dt.timestamp(), kind, sidecar, dt.isoformat()))
+    sidecar_times.sort(key=lambda x: (x[0], _kind_priority(x[1]), str(x[2].get("path", ""))))
+    time_values = [x[0] for x in sidecar_times]
+
+    all_pairs: List[dict] = []
+    best_rejected_by_image: Dict[int, dict] = {}
+
+    for image_index, image in enumerate(images):
+        img_dt = image["dt_name"]
+        if not img_dt:
+            continue
+        img_ts = img_dt.timestamp()
+        lo = bisect.bisect_left(time_values, img_ts - max_delta_seconds)
+        hi = bisect.bisect_right(time_values, img_ts + max_delta_seconds)
+
+        # Keep only the best time-kind candidate per sidecar for this image.
+        best_by_sidecar: Dict[str, dict] = {}
+        for side_ts, kind, sidecar, side_iso in sidecar_times[lo:hi]:
+            sidecar_path = str(sidecar["path"])
+            pair = {
+                "image_index": image_index,
+                "image": image,
+                "delta_seconds": round(abs(img_ts - side_ts), 3),
+                "sidecar_time_kind": kind,
+                "sidecar_path": sidecar_path,
+                "sidecar_title": sidecar.get("title") or "",
+                "sidecar_time_pr": side_iso,
+            }
+            best_by_sidecar[sidecar_path] = _best_pair_for_sidecar(best_by_sidecar.get(sidecar_path), pair)
+
+        for pair in best_by_sidecar.values():
+            all_pairs.append(pair)
+            existing = best_rejected_by_image.get(image_index)
+            if existing is None or _pair_sort_key(pair) < _pair_sort_key(existing):
+                best_rejected_by_image[image_index] = pair
+
+    selected_by_image: Dict[int, dict] = {}
+    used_sidecars = set()
+    for pair in sorted(all_pairs, key=_pair_sort_key):
+        image_index = pair["image_index"]
+        sidecar_path = pair["sidecar_path"]
+        if image_index in selected_by_image or sidecar_path in used_sidecars:
+            continue
+        selected_by_image[image_index] = pair
+        used_sidecars.add(sidecar_path)
 
     rows: List[dict] = []
-    matched = 0
-    for image in images:
+    for image_index, image in enumerate(images):
         img_dt = image["dt_name"]
-        best: Optional[dict] = None
-        if img_dt:
-            for side_dt, kind, sidecar in sidecar_times:
-                delta = abs((img_dt - side_dt).total_seconds())
-                if best is None or delta < best["delta_seconds"]:
-                    best = {
-                        "delta_seconds": delta,
-                        "sidecar_time_kind": kind,
-                        "sidecar_path": sidecar["path"],
-                        "sidecar_title": sidecar.get("title"),
-                        "sidecar_time_pr": side_dt.isoformat(),
-                    }
-        if best and best["delta_seconds"] <= max_delta_seconds:
-            matched += 1
+        pair = selected_by_image.get(image_index)
+        rejected_pair = best_rejected_by_image.get(image_index)
+        if pair:
             status = "candidate_match"
+            source_pair = pair
+        elif rejected_pair:
+            status = "candidate_conflict"
+            source_pair = rejected_pair
         else:
             status = "unmatched"
+            source_pair = None
         rows.append(
             {
                 "image_path": str(image["path"]),
                 "image_name": image["name"],
                 "image_dt_from_name_pr": img_dt.isoformat() if img_dt else "",
                 "match_status": status,
-                "delta_seconds": "" if best is None else round(best["delta_seconds"], 3),
-                "sidecar_time_kind": "" if best is None else best["sidecar_time_kind"],
-                "sidecar_path": "" if best is None else str(best["sidecar_path"]),
-                "sidecar_title": "" if best is None else best.get("sidecar_title") or "",
-                "sidecar_time_pr": "" if best is None else best["sidecar_time_pr"],
+                "delta_seconds": "" if source_pair is None else source_pair["delta_seconds"],
+                "sidecar_time_kind": "" if source_pair is None else source_pair["sidecar_time_kind"],
+                "sidecar_path": "" if source_pair is None else source_pair["sidecar_path"],
+                "sidecar_title": "" if source_pair is None else source_pair["sidecar_title"],
+                "sidecar_time_pr": "" if source_pair is None else source_pair["sidecar_time_pr"],
             }
         )
+
+    status_counts = Counter(r["match_status"] for r in rows)
     summary = {
         "images": len(images),
         "sidecars": len(sidecars),
         "sidecar_times": len(sidecar_times),
-        "candidate_matches_5min": matched,
-        "unmatched": len(images) - matched,
+        "candidate_matches_5min": status_counts.get("candidate_match", 0) + status_counts.get("candidate_conflict", 0),
+        "primary_candidate_matches": status_counts.get("candidate_match", 0),
+        "candidate_conflicts": status_counts.get("candidate_conflict", 0),
+        "unmatched": status_counts.get("unmatched", 0),
+        "candidate_pair_count": len(all_pairs),
+        "unique_sidecars_assigned": len(used_sidecars),
     }
     return rows, summary
 
@@ -166,48 +245,20 @@ def match_band(delta: float) -> str:
     return "unmatched"
 
 
-def _image_preference(row: dict) -> tuple:
-    name = row.get("image_name", "")
-    has_duplicate_suffix = "_1." in name
-    return (_safe_delta(row), 1 if has_duplicate_suffix else 0, len(name), name)
-
-
 def resolve_one_to_one(rows: List[dict]) -> Tuple[List[dict], dict]:
-    candidate_rows = [
-        r
-        for r in rows
-        if r.get("match_status") == "candidate_match" and r.get("sidecar_path") and _safe_delta(r) <= 300
-    ]
-    by_sidecar: Dict[str, List[dict]] = defaultdict(list)
-    for row in candidate_rows:
-        by_sidecar[row["sidecar_path"]].append(row)
-
-    chosen_by_image: Dict[str, dict] = {}
-    for _sidecar_path, hits in by_sidecar.items():
-        hits_sorted = sorted(hits, key=_image_preference)
-        winner = dict(hits_sorted[0])
-        winner["resolved_status"] = "matched_primary"
-        winner["match_band"] = match_band(_safe_delta(winner))
-        winner["sidecar_conflict_count"] = str(len(hits_sorted) - 1)
-        chosen_by_image[winner["image_path"]] = winner
-
     resolved_rows: List[dict] = []
     for row in rows:
-        image_path = row["image_path"]
-        if image_path in chosen_by_image:
-            out = dict(chosen_by_image[image_path])
-        elif row.get("match_status") == "candidate_match" and row.get("sidecar_path"):
-            out = dict(row)
+        out = dict(row)
+        if row.get("match_status") == "candidate_match" and row.get("sidecar_path"):
+            out["resolved_status"] = "matched_primary"
+        elif row.get("match_status") == "candidate_conflict" and row.get("sidecar_path"):
             out["resolved_status"] = "sidecar_duplicate_conflict"
-            out["match_band"] = match_band(_safe_delta(out))
-            out["sidecar_conflict_count"] = ""
         else:
-            out = dict(row)
             out["resolved_status"] = "unmatched_metadata_gap"
-            out["match_band"] = "unmatched"
-            out["sidecar_conflict_count"] = ""
-
+        out["match_band"] = match_band(_safe_delta(out))
+        out["sidecar_conflict_count"] = ""
         out["ocr_status"] = "eligible"
+
         if out["resolved_status"] == "unmatched_metadata_gap":
             out["review_status"] = "metadata_gap"
         elif out["match_band"] == "weak":
