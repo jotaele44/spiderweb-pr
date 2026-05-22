@@ -175,7 +175,9 @@ See [docs/contracts/SATELLITE_SOURCE_MANIFEST.md](docs/contracts/SATELLITE_SOURC
 ## Remaining operational steps
 
 Two parts of the pipeline are intentionally frozen until real input data is
-available — these are data gates, not code gaps:
+available — these are data gates, not code gaps. The full step-by-step
+procedure is in
+[docs/RUNBOOK_FR24_DATA_LOAD.md](docs/RUNBOOK_FR24_DATA_LOAD.md):
 
 - **FR24 OCR / DB build** is frozen until the raw screenshot corpus passes the
   pre-ingest audit. Run `python fr24_manifest_audit.py --root <FR24 folder>`
