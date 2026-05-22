@@ -229,8 +229,11 @@ def build_candidate_rows(root: Path, max_delta_seconds: int = 300, tz_name: str 
 
 
 def _safe_delta(row: dict) -> float:
+    value = row.get("delta_seconds")
+    if value is None or value == "":
+        return 999999999
     try:
-        return float(row.get("delta_seconds") or 999999999)
+        return float(value)
     except Exception:
         return 999999999
 
