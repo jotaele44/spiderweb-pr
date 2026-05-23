@@ -1,0 +1,23 @@
+{
+  "site_id": "SITE_RI_20260522_001",
+  "name": "Royal Isabela vegetated structure",
+  "latitude": 18.4878021,
+  "longitude": -66.9896910,
+  "municipality": "Isabela",
+  "region": "Northwest Puerto Rico",
+  "source_platform": "Flightradar24 / Apple Maps basemap",
+  "visible_timestamp": "2026-05-22T19:47:00-04:00",
+  "feature_type": "partially canopy-obscured rectilinear roofed structure",
+  "initial_classification": "probable golf-course utility or maintenance structure",
+  "current_confidence_ceiling": "low-to-moderate",
+  "status": "provisional",
+  "evidence_status": "visual_only",
+  "notes": "Structure located near Royal Isabela golf course edge adjacent to vegetation, agricultural plots, and service access path. No verified LiDAR, parcel, utility, or subsurface evidence yet.",
+  "source_lineage": {
+    "capture_type": "user_screenshot",
+    "platform": "Flightradar24",
+    "basemap": "Apple Maps",
+    "coordinate_source": "user_provided",
+    "coordinate_confidence": "high"
+  }
+}
