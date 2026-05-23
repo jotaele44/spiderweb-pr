@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
-DASHBOARD_QUEUE_VERSION = "fr24_dashboard_queue_v0.1.0"
+DASHBOARD_QUEUE_VERSION = "fr24_dashboard_queue_v0.1.1"
 
 TIER_FIELD_DISAGREEMENT = 1
 TIER_FUSION_CONFLICT = 2
@@ -126,8 +126,26 @@ def enrich_row(row: dict, tier: int, source: str) -> dict:
     return out
 
 
+def row_identity(row: dict) -> str:
+    """Return the strongest available row identity without collapsing blanks."""
+    for field in ("image_path", "image_name", "candidate_id"):
+        value = (row.get(field) or "").strip()
+        if value:
+            return f"{field}::{value}"
+    # Last-resort fallback uses stable review metadata to avoid one giant empty-key bucket.
+    return "unidentified::" + "::".join(
+        [
+            (row.get("queue_source") or "").strip(),
+            (row.get("review_status") or "").strip(),
+            (row.get("selection_status") or "").strip(),
+            (row.get("dedup_group_id") or "").strip(),
+            (row.get("_source_csv") or "").strip(),
+        ]
+    )
+
+
 def queue_dedup_key(row: dict) -> tuple:
-    return ((row.get("image_path") or "").strip(), row.get("queue_source", ""))
+    return (row_identity(row), row.get("queue_source", ""))
 
 
 def collect_queue(
@@ -144,7 +162,9 @@ def collect_queue(
             continue
         tier = classify_field_review(row)
         queue.append(enrich_row(row, tier, "field_selection_review"))
-        captured_images.add((row.get("image_path") or "").strip())
+        identity = row_identity(row)
+        if identity:
+            captured_images.add(identity)
 
     for row in duplicate_review_rows:
         if has_prohibited_label(row):
@@ -154,8 +174,7 @@ def collect_queue(
     for row in selected_rows:
         if has_prohibited_label(row):
             continue
-        image_path = (row.get("image_path") or "").strip()
-        if image_path in captured_images:
+        if row_identity(row) in captured_images:
             continue
         tier = classify_selected_row(row)
         if tier is None:
