@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FR24 Event Candidate",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "candidate_id": {"type": "string"},
+    "image_path": {"type": "string"},
+    "image_name": {"type": "string"},
+    "review_status": {
+      "type": "string",
+      "not": {"enum": ["confirmed", "confirmed_aircraft_event", "confirmed_anomaly", "confirmed_route"]}
+    },
+    "confirmation_status": {
+      "type": "string",
+      "not": {"enum": ["confirmed", "confirmed_aircraft_event", "confirmed_anomaly", "confirmed_route"]}
+    },
+    "fusion_status": {"type": "string"},
+    "field_conflicts": {"type": "string"},
+    "conflict_count": {"type": ["integer", "string"]},
+    "fusion_version": {"type": "string"}
+  },
+  "required": ["candidate_id", "image_path", "review_status"]
+}
