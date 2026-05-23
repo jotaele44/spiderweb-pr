@@ -16,7 +16,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterable, List
 
-PARSER_VERSION = "fr24_region_parse_v0.1.0"
+PARSER_VERSION = "fr24_region_parse_v0.1.1"
 
 
 def clean(text: str) -> str:
@@ -29,6 +29,15 @@ def find_first(patterns: Iterable[str], text: str) -> str:
         if match:
             return match.group(1).strip()
     return ""
+
+
+def extract_status(record: dict) -> str:
+    """Normalize region OCR status from probe JSONL or batch-run JSONL.
+
+    fr24_region_ocr.py writes extract_status, while fr24_batch_run.py writes
+    status. Both represent the same candidate extraction state for this parser.
+    """
+    return record.get("extract_status") or record.get("status") or ""
 
 
 def extract_airport_codes(text: str) -> tuple[str, str]:
@@ -66,6 +75,7 @@ def confidence_score(row: dict) -> float:
 def parse_region_record(record: dict) -> dict:
     text = clean(record.get("text", ""))
     region_name = record.get("region_name", "")
+    status = extract_status(record)
     try:
         char_count = int(record.get("char_count") or 0)
     except Exception:
@@ -80,7 +90,7 @@ def parse_region_record(record: dict) -> dict:
         "source_review_status": record.get("source_review_status", ""),
         "region_name": region_name,
         "region_box": record.get("region_box", ""),
-        "extract_status": record.get("extract_status", ""),
+        "extract_status": status,
         "char_count": char_count,
         "fr24_detected": "true" if re.search(r"flight\s*radar|flightradar24|flighttadar|flightiadar|glightradar", text, re.I) else "false",
         "callsign_or_label": "",
