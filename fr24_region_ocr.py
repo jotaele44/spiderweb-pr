@@ -46,12 +46,17 @@ def load_manifest(path: Path) -> List[dict]:
     return list(csv.DictReader(path.open(encoding="utf-8")))
 
 
+def is_ocr_eligible(row: dict) -> bool:
+    return row.get("ocr_status", "eligible") == "eligible"
+
+
 def select_manifest_rows(rows: List[dict], limit: int, include_reviewable: bool = False) -> List[dict]:
     if limit <= 0:
         return []
     preferred = [
         r for r in rows
-        if r.get("resolved_status") == "matched_primary"
+        if is_ocr_eligible(r)
+        and r.get("resolved_status") == "matched_primary"
         and r.get("match_band") == "strong"
         and r.get("review_status") == "sidecar_linked"
     ]
@@ -59,8 +64,11 @@ def select_manifest_rows(rows: List[dict], limit: int, include_reviewable: bool 
         extras = [
             r for r in rows
             if r not in preferred
-            and r.get("ocr_status") == "eligible"
-            and r.get("review_status") in {"weak_sidecar_match_review", "metadata_gap", "sidecar_conflict_review"}
+            and is_ocr_eligible(r)
+            and (
+                r.get("match_band") == "reviewable"
+                or r.get("review_status") in {"weak_sidecar_match_review", "metadata_gap", "sidecar_conflict_review"}
+            )
         ]
         preferred.extend(extras)
     return preferred[:limit]
