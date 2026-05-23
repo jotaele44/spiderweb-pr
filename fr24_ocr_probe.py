@@ -35,8 +35,46 @@ except ImportError:  # pragma: no cover
     pytesseract = None  # type: ignore
 
 
+def _append_bucket(selected: List[dict], seen: set, bucket: List[dict], remaining: int) -> int:
+    if remaining <= 0:
+        return 0
+    added = 0
+    for row in bucket:
+        if added >= remaining:
+            break
+        image_path = row.get("image_path")
+        if image_path in seen:
+            continue
+        selected.append(row)
+        seen.add(image_path)
+        added += 1
+    return added
+
+
+def _write_probe_csv(output_csv: Path, rows: List[dict], selected: List[dict]) -> None:
+    output_csv.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = list(rows[0].keys()) if rows else [
+        "image_path",
+        "image_name",
+        "sidecar_path",
+        "sidecar_title",
+        "match_band",
+        "resolved_status",
+        "review_status",
+    ]
+    with output_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in selected:
+            writer.writerow({k: row.get(k, "") for k in fieldnames})
+
+
 def select_probe(manifest_csv: Path, output_csv: Path, limit: int = 50, png_count: int = 30, heic_count: int = 15) -> List[dict]:
     rows = list(csv.DictReader(manifest_csv.open(encoding="utf-8")))
+    if limit <= 0:
+        _write_probe_csv(output_csv, rows, [])
+        return []
+
     strong = [
         r
         for r in rows
@@ -49,24 +87,20 @@ def select_probe(manifest_csv: Path, output_csv: Path, limit: int = 50, png_coun
     other = [r for r in strong if not r.get("image_name", "").lower().endswith((".heic", ".png"))]
 
     selected: List[dict] = []
-    selected.extend(heic[:heic_count])
-    selected.extend(png[:png_count])
-    selected.extend(other[: max(0, limit - len(selected))])
+    seen = set()
 
-    seen = {r["image_path"] for r in selected}
-    for row in strong:
-        if len(selected) >= limit:
-            break
-        if row["image_path"] not in seen:
-            selected.append(row)
-            seen.add(row["image_path"])
+    remaining = limit - len(selected)
+    _append_bucket(selected, seen, heic, min(heic_count, remaining))
+    remaining = limit - len(selected)
+    _append_bucket(selected, seen, png, min(png_count, remaining))
+    remaining = limit - len(selected)
+    _append_bucket(selected, seen, other, remaining)
 
-    output_csv.parent.mkdir(parents=True, exist_ok=True)
-    if selected:
-        with output_csv.open("w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-            writer.writeheader()
-            writer.writerows(selected)
+    # Fill any remaining slots from the full strong pool while preserving the limit.
+    remaining = limit - len(selected)
+    _append_bucket(selected, seen, strong, remaining)
+
+    _write_probe_csv(output_csv, rows, selected)
     return selected
 
 
@@ -82,8 +116,50 @@ def _ocr_image(path: Path) -> str:
         return pytesseract.image_to_string(img)
 
 
+def _write_empty_probe_outputs(input_csv: Path, output_dir: Path) -> dict:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    out_jsonl = output_dir / "fr24_ocr_probe_50.jsonl"
+    out_csv = output_dir / "fr24_ocr_probe_50_results.csv"
+    summary_path = output_dir / "fr24_ocr_probe_50_summary.json"
+    out_jsonl.write_text("", encoding="utf-8")
+    csv_fields = [
+        "index",
+        "image_path",
+        "image_name",
+        "sidecar_title",
+        "match_band",
+        "resolved_status",
+        "review_status",
+        "ocr_status",
+        "ocr_char_count",
+        "error",
+    ]
+    with out_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=csv_fields)
+        writer.writeheader()
+    summary = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "input_csv": str(input_csv),
+        "total": 0,
+        "complete": 0,
+        "failed": 0,
+        "zero_or_low_text_under_20_chars": 0,
+        "extension_mix": {},
+        "jsonl": str(out_jsonl),
+        "csv": str(out_csv),
+        "status": "no_eligible_probe_rows",
+    }
+    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    return summary
+
+
 def run_ocr_probe(input_csv: Path, output_dir: Path) -> dict:
+    if not input_csv.exists():
+        return _write_empty_probe_outputs(input_csv, output_dir)
     rows = list(csv.DictReader(input_csv.open(encoding="utf-8")))
+    if not rows:
+        return _write_empty_probe_outputs(input_csv, output_dir)
+
     output_dir.mkdir(parents=True, exist_ok=True)
     out_jsonl = output_dir / "fr24_ocr_probe_50.jsonl"
     out_csv = output_dir / "fr24_ocr_probe_50_results.csv"
