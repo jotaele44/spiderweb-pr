@@ -38,6 +38,11 @@ def test_empty_inputs_produce_valid_payload(tmp_paths):
     assert payload["policy"] == "candidate_only_no_auto_confirmation"
     assert payload["dashboard_data_version"] == mod.DASHBOARD_DATA_VERSION
     assert list(payload["allowed_queue_statuses"]) == list(mod.ALLOWED_QUEUE_STATUSES)
+    assert payload["local_state_schema_version"] == mod.LOCAL_STATE_SCHEMA_VERSION
+    assert payload["local_state_policy"] == mod.LOCAL_STATE_POLICY
+    assert summary["allowed_queue_statuses"] == list(mod.ALLOWED_QUEUE_STATUSES)
+    assert summary["local_state_schema_version"] == mod.LOCAL_STATE_SCHEMA_VERSION
+    assert summary["local_state_policy"] == mod.LOCAL_STATE_POLICY
     assert payload["prohibited_label_dropped"] == 0
 
 
@@ -130,6 +135,14 @@ def test_payload_never_emits_prohibited_label_in_status_fields(tmp_paths):
     for row in payload["rows"]:
         for field in status_fields:
             assert row.get(field, "") not in mod.PROHIBITED_LABELS
+
+
+def test_allowed_queue_statuses_exclude_prohibited_labels():
+    allowed = set(mod.ALLOWED_QUEUE_STATUSES)
+    assert allowed
+    assert allowed.isdisjoint(mod.PROHIBITED_LABELS)
+    assert "dashboard_review_open" in allowed
+    assert "dashboard_review_accepted_after_manual_review" in allowed
 
 
 def test_missing_summary_file_does_not_break_export(tmp_paths):
