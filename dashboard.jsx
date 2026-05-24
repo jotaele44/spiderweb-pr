@@ -421,6 +421,247 @@ const IntelligenceTab = ({ data }) => {
 };
 
 // ════════════════════════════════════════════════════════════════════════════
+// TAB 5 — FR24 REVIEW QUEUE
+// ════════════════════════════════════════════════════════════════════════════
+const FR24_QUEUE_LOCALSTORAGE_KEY = "fr24_dashboard_queue_state_v1";
+
+const FR24_ALLOWED_QUEUE_STATUSES = [
+  "dashboard_review_open",
+  "dashboard_review_deferred",
+  "dashboard_review_rejected",
+  "dashboard_review_accepted_after_manual_review",
+];
+
+const FR24_TIER_LABEL = {
+  1: "Field disagreement",
+  2: "Fusion conflict",
+  3: "Manual review",
+  4: "Duplicate review",
+  5: "Metadata gap",
+  6: "OCR failure",
+};
+
+const FR24_TIER_STYLE = {
+  1: "bg-red-600 text-white",
+  2: "bg-red-400 text-white",
+  3: "bg-yellow-400 text-gray-900",
+  4: "bg-blue-400 text-white",
+  5: "bg-purple-400 text-white",
+  6: "bg-gray-400 text-white",
+};
+
+const FR24_QUEUE_STATUS_LABEL = {
+  dashboard_review_open: "Open",
+  dashboard_review_deferred: "Deferred",
+  dashboard_review_rejected: "Rejected",
+  dashboard_review_accepted_after_manual_review: "Accepted after manual review",
+};
+
+const FR24_QUEUE_STATUS_STYLE = {
+  dashboard_review_open: "bg-blue-100 text-blue-800 border-blue-200",
+  dashboard_review_deferred: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  dashboard_review_rejected: "bg-red-100 text-red-800 border-red-200",
+  dashboard_review_accepted_after_manual_review: "bg-green-100 text-green-800 border-green-200",
+};
+
+const fr24RowIdentity = (row) =>
+  row.candidate_id || row.image_path || row.image_name || "";
+
+const fr24LoadLocalState = () => {
+  try {
+    const raw = window.localStorage.getItem(FR24_QUEUE_LOCALSTORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+};
+
+const fr24SaveLocalState = (state) => {
+  try {
+    window.localStorage.setItem(FR24_QUEUE_LOCALSTORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    // localStorage may be unavailable (private mode, quota) — fall back to in-memory only.
+  }
+};
+
+const FR24EmptyState = ({ children }) => (
+  <div className="bg-white rounded-lg shadow p-6 text-center text-sm text-gray-500">
+    {children}
+  </div>
+);
+
+const ReviewQueueTab = ({ fr24 }) => {
+  if (!fr24 || !Array.isArray(fr24.rows)) {
+    return (
+      <FR24EmptyState>
+        <p className="font-semibold text-gray-700 mb-2">FR24 review queue not loaded</p>
+        <p>Generate it with:</p>
+        <code className="block mt-2 bg-gray-100 px-3 py-2 rounded text-xs">
+          python fr24_dashboard_data.py
+        </code>
+        <p className="mt-2 text-xs">Then refresh this page.</p>
+      </FR24EmptyState>
+    );
+  }
+
+  const rows = fr24.rows;
+  const [tierFilter, setTierFilter] = useState("ALL");
+  const [sourceFilter, setSourceFilter] = useState("ALL");
+  const [localState, setLocalState] = useState(fr24LoadLocalState);
+
+  const setRowStatus = (identity, status) => {
+    if (!identity) return;
+    setLocalState(prev => {
+      const next = { ...prev };
+      if (!status || status === "dashboard_review_open") {
+        delete next[identity];
+      } else {
+        next[identity] = status;
+      }
+      fr24SaveLocalState(next);
+      return next;
+    });
+  };
+
+  const resetAll = () => {
+    if (Object.keys(localState).length === 0) return;
+    setLocalState({});
+    fr24SaveLocalState({});
+  };
+
+  const tierValues = useMemo(() => {
+    const seen = new Set();
+    rows.forEach(r => seen.add(String(r.priority_tier ?? "")));
+    return ["ALL", ...[...seen].filter(Boolean).sort()];
+  }, [rows]);
+
+  const sourceValues = useMemo(() => {
+    const seen = new Set();
+    rows.forEach(r => seen.add(r.queue_source || ""));
+    return ["ALL", ...[...seen].filter(Boolean).sort()];
+  }, [rows]);
+
+  const filtered = useMemo(() => {
+    return rows.filter(r => {
+      if (tierFilter !== "ALL" && String(r.priority_tier ?? "") !== tierFilter) return false;
+      if (sourceFilter !== "ALL" && (r.queue_source || "") !== sourceFilter) return false;
+      return true;
+    });
+  }, [rows, tierFilter, sourceFilter]);
+
+  const generatedAt = fr24.generated_at
+    ? new Date(fr24.generated_at).toLocaleString()
+    : "—";
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border-l-4 border-amber-400 px-4 py-3 rounded">
+        <p className="text-sm font-semibold text-amber-900">Candidates only — no events are confirmed.</p>
+        <p className="text-xs text-amber-800 mt-1">
+          State transitions live in this browser only and never write a <code>confirmed*</code>,
+          <code> verified_event</code>, or <code> validated_aircraft_event</code> label.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Queue rows"           value={rows.length}                       icon="alert" />
+        <StatCard label="Visible"              value={filtered.length}                   icon="search" sub={`tier ${tierFilter} · source ${sourceFilter}`} />
+        <StatCard label="Local state entries"  value={Object.keys(localState).length}    icon="shield" sub="(browser-only)" />
+        <StatCard label="Generated"            value={fr24.row_count ?? rows.length}     icon="clock" sub={generatedAt} />
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-4 space-y-3">
+        <div>
+          <p className="text-xs font-semibold text-gray-600 mb-2">Tier</p>
+          <div className="flex flex-wrap gap-2">
+            {tierValues.map(t => (
+              <button key={`tier-${t}`} onClick={() => setTierFilter(t)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  tierFilter === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}>
+                {t === "ALL" ? "ALL" : `T${t} · ${FR24_TIER_LABEL[Number(t)] || t}`}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-gray-600 mb-2">Source</p>
+          <div className="flex flex-wrap gap-2">
+            {sourceValues.map(s => (
+              <button key={`src-${s}`} onClick={() => setSourceFilter(s)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  sourceFilter === s ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+        {Object.keys(localState).length > 0 && (
+          <div className="flex justify-end">
+            <button onClick={resetAll} className="text-xs text-blue-600 hover:underline">
+              Reset all local transitions
+            </button>
+          </div>
+        )}
+      </div>
+
+      {filtered.length === 0 ? (
+        <FR24EmptyState>No rows match the current filters.</FR24EmptyState>
+      ) : (
+        <div className="space-y-2">
+          {filtered.slice(0, PAGE_SIZE).map((r, i) => {
+            const identity = fr24RowIdentity(r);
+            const baseStatus = r.queue_status || "dashboard_review_open";
+            const status = localState[identity] || baseStatus;
+            const tier = Number(r.priority_tier);
+            const tierBadge = FR24_TIER_STYLE[tier] || "bg-gray-300 text-gray-800";
+            const statusBadge = FR24_QUEUE_STATUS_STYLE[status] || "bg-gray-100 text-gray-700 border-gray-200";
+            return (
+              <div key={identity || i} className="bg-white rounded-lg shadow p-3 border-l-4 border-gray-200">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${tierBadge}`}>
+                    T{r.priority_tier} · {FR24_TIER_LABEL[tier] || "—"}
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700">
+                    score {r.priority_score ?? "—"}
+                  </span>
+                  <span className="text-xs font-mono text-blue-700 truncate max-w-md">
+                    {r.image_name || r.image_path || identity}
+                  </span>
+                  <span className="ml-auto text-xs text-gray-400">{r.queue_source || "—"}</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-1 text-xs text-gray-600 mb-2">
+                  <div><span className="text-gray-400">review:</span> {r.review_status || "—"}</div>
+                  <div><span className="text-gray-400">selection:</span> {r.selection_status || "—"}</div>
+                  <div><span className="text-gray-400">dedup:</span> {r.dedup_status || "—"}</div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${statusBadge}`}>
+                    {FR24_QUEUE_STATUS_LABEL[status] || status}
+                  </span>
+                  {FR24_ALLOWED_QUEUE_STATUSES.filter(s => s !== status).map(s => (
+                    <button key={`btn-${identity}-${s}`} onClick={() => setRowStatus(identity, s)}
+                      className="px-2 py-0.5 text-xs rounded border border-gray-200 text-gray-600 hover:bg-gray-50">
+                      → {FR24_QUEUE_STATUS_LABEL[s] || s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {filtered.length > PAGE_SIZE && (
+            <p className="text-xs text-gray-400 text-center py-2">
+              Showing first {PAGE_SIZE} of {filtered.length} rows
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ════════════════════════════════════════════════════════════════════════════
 // ROOT APP
 // ════════════════════════════════════════════════════════════════════════════
 const TABS = [
@@ -428,9 +669,10 @@ const TABS = [
   { id: "catalog",   label: "Aircraft Catalog",       Component: AircraftCatalogTab },
   { id: "flightlog", label: "Flight Log",             Component: FlightLogTab },
   { id: "intel",     label: "Intelligence Analysis",  Component: IntelligenceTab },
+  { id: "fr24queue", label: "FR24 Review Queue",      Component: ReviewQueueTab },
 ];
 
-const App = ({ data = window.flightData || {} }) => {
+const App = ({ data = window.flightData || {}, fr24 = window.fr24DashboardData || null }) => {
   const [tab, setTab] = useState("overview");
 
   const exportedAt = data.exported_at
@@ -459,7 +701,7 @@ const App = ({ data = window.flightData || {} }) => {
       </div>
 
       <main className="max-w-7xl mx-auto px-6 py-6">
-        <ActiveTab data={data} />
+        <ActiveTab data={data} fr24={fr24} />
       </main>
     </div>
   );
