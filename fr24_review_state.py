@@ -24,6 +24,9 @@ def build_local_state_payload(entries: Mapping[str, str], *, generated_at: str |
     ``entries`` maps stable queue row identity -> allowed queue status. Open rows
     may be omitted by callers; if included, they remain valid.
     """
+    for identity in entries.keys():
+        if not isinstance(identity, str) or not identity:
+            raise ValueError("Local-state entry identity must be a non-empty string")
     invalid = sorted({status for status in entries.values() if status not in ALLOWED_QUEUE_STATUSES})
     if invalid:
         raise ValueError(f"Unsupported FR24 review queue statuses: {invalid}")
