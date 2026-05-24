@@ -13,7 +13,7 @@ import { AnomalyWorkbench } from "./modules/AnomalyWorkbench";
 import { InvestigationGraph } from "./modules/InvestigationGraph";
 import { QueryLayer } from "./modules/QueryLayer";
 
-const tabs: Array<{ id: ModuleId; label: string }> = [
+const tabs: { id: ModuleId; label: string }[] = [
   { id: "command", label: "Command" },
   { id: "finance", label: "Finance" },
   { id: "spatial", label: "Spatial" },
@@ -47,7 +47,7 @@ export default function App() {
 
   // Load real data on mount; fall back to mock if API is down
   useEffect(() => {
-    fetchPriisDataWithFallback().then(({ data: d, live: l }) => {
+    void fetchPriisDataWithFallback().then(({ data: d, live: l }) => {
       setData(d);
       setLive(l);
       setLoading(false);
@@ -117,7 +117,7 @@ export default function App() {
           removeFilter={(key) => setFilters((current) => current.filter((item) => item.key !== key))}
           onSubmit={() => setModule("query")}
           runState={runState}
-          onRunPipeline={handlePipelineRun}
+          onRunPipeline={() => { void handlePipelineRun(); }}
           live={live}
         />
         <LeftRail

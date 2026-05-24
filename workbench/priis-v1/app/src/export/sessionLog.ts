@@ -1,4 +1,6 @@
-import type { PriisData, Selection, FilterItem, ModuleId } from "../types/priis";
+import type { PriisData, Selection, ModuleId } from "../types/priis";
+
+interface FilterItem { key: string; label: string; color?: string }
 
 export interface SessionSnapshot {
   timestamp: string;

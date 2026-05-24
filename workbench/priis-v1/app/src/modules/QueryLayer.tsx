@@ -39,7 +39,7 @@ export function QueryLayer({
       cancelRef.current = cancel;
     } else {
       // Use the typed adapter stub (local, fast)
-      runPriisQuery(query, data).then((r) => {
+      void runPriisQuery(query, data).then((r) => {
         setResult(r);
         setPending(false);
       });

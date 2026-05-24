@@ -200,7 +200,7 @@ export function SpatialIntelligence({
         .reduce((sum, c) => sum + c.amount, 0);
       const anomaly = data.anomalies.find((a) => a.siteId === site.id);
       const visible =
-        (layers.sensitive && site.sensitive) ||
+        (layers.sensitive && (site.sensitive ?? false)) ||
         (layers.infrastructure && !!site.infrastructure_class) ||
         (layers.contracts && contractTotal > 0) ||
         (layers.anomaly && !!anomaly);
@@ -268,7 +268,7 @@ export function SpatialIntelligence({
     if (map.isStyleLoaded()) {
       addFlightLayer();
     } else {
-      map.once("load", addFlightLayer);
+      void map.once("load", addFlightLayer);
     }
 
     return () => {

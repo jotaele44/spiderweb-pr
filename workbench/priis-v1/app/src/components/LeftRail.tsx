@@ -1,7 +1,7 @@
 import type { ModuleId, PriisData, Selection } from "../types/priis";
 import { TierBadge, Pill } from "./Badges";
 
-const modules: Array<{ id: ModuleId; label: string; code: string }> = [
+const modules: { id: ModuleId; label: string; code: string }[] = [
   { id: "command", label: "Command", code: "00" },
   { id: "finance", label: "Finance", code: "01" },
   { id: "spatial", label: "Spatial", code: "02" },

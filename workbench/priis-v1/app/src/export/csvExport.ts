@@ -1,7 +1,7 @@
 import type { Contract, PriisData } from "../types/priis";
 
-function escapeCell(value: unknown): string {
-  const s = String(value ?? "");
+function escapeCell(value: string | number | boolean | null | undefined): string {
+  const s = value == null ? "" : String(value);
   if (s.includes(",") || s.includes('"') || s.includes("\n")) {
     return `"${s.replace(/"/g, '""')}"`;
   }

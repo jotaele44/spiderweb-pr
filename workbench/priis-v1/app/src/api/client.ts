@@ -72,7 +72,8 @@ export async function startPipeline(phase?: number): Promise<PipelineJob> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phase: phase ?? null }),
   });
-  return res.json();
+  const json: unknown = await res.json();
+  return json as PipelineJob;
 }
 
 export async function stopPipeline(jobId: string): Promise<void> {
@@ -91,7 +92,8 @@ export function streamPipeline(
   const es = new EventSource(`${BASE}/pipeline/events/${jobId}`);
   es.onmessage = (ev) => onLine(ev.data as string);
   es.addEventListener("done", (ev) => {
-    const payload = JSON.parse((ev as MessageEvent).data) as { returncode: number };
+    const msgEv = ev as MessageEvent<string>;
+    const payload = JSON.parse(msgEv.data) as { returncode: number };
     onDone(payload.returncode);
     es.close();
   });
@@ -111,7 +113,7 @@ export function streamRagQuery(
 ): () => void {
   let cancelled = false;
 
-  (async () => {
+  void (async () => {
     try {
       const res = await fetch(`${BASE}/rag/query`, {
         method: "POST",

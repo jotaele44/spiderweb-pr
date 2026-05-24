@@ -255,14 +255,57 @@ def _find_geojson(layer: str) -> Optional[Path]:
     return next((p for p in candidates if p.exists()), None)
 
 
+async def _sites_from_db() -> dict:
+    rows = await _rows(
+        "SELECT id, name, kind, lat, lng, sensitive, infrastructure_class FROM sites"
+    )
+    features = [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [r["lng"], r["lat"]]},
+            "properties": {
+                "id": r["id"],
+                "name": r["name"],
+                "kind": r["kind"],
+                "sensitive": bool(r["sensitive"]),
+                "infrastructure_class": r.get("infrastructure_class"),
+            },
+        }
+        for r in rows
+        if r.get("lat") is not None and r.get("lng") is not None
+    ]
+    return {"type": "FeatureCollection", "features": features}
+
+
+async def _anomalies_from_db() -> dict:
+    rows = await _rows(
+        "SELECT a.id, a.title, a.score, a.band, a.category, "
+        "s.lat, s.lng FROM anomalies a LEFT JOIN sites s ON a.site_id = s.id"
+    )
+    features = [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [r["lng"], r["lat"]]},
+            "properties": {"id": r["id"], "title": r["title"], "score": r["score"], "band": r["band"]},
+        }
+        for r in rows
+        if r.get("lat") is not None and r.get("lng") is not None
+    ]
+    return {"type": "FeatureCollection", "features": features}
+
+
 @app.get("/geo/{layer}.geojson")
 async def geo_layer(layer: str):
     if layer not in _ALLOWED_LAYERS:
         raise HTTPException(400, f"unknown layer '{layer}'")
     path = _find_geojson(layer)
-    if path is None:
-        return JSONResponse(_EMPTY_FC, media_type="application/geo+json")
-    return FileResponse(str(path), media_type="application/geo+json")
+    if path is not None:
+        return FileResponse(str(path), media_type="application/geo+json")
+    if layer == "sites":
+        return JSONResponse(await _sites_from_db(), media_type="application/geo+json")
+    if layer == "anomalies":
+        return JSONResponse(await _anomalies_from_db(), media_type="application/geo+json")
+    return JSONResponse(_EMPTY_FC, media_type="application/geo+json")
 
 # ─── RAG / Query ───────────────────────────────────────────────────────────────
 

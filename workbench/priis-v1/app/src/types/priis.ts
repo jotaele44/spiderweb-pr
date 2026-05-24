@@ -117,7 +117,7 @@ export interface PriisData {
 
 export interface QueryResponse {
   finding: string;
-  evidence: Array<{ tier: EvidenceTier; label: string; detail: string; entity?: Selection }>;
+  evidence: { tier: EvidenceTier; label: string; detail: string; entity?: Selection }[];
   sourceTierBreakdown: Record<EvidenceTier, number>;
   confidence: Confidence;
   contradictions: string[];

@@ -1,7 +1,8 @@
 import type { PriisData, QueryResponse } from "../types/priis";
 
-export async function runPriisQuery(query: string, data: PriisData): Promise<QueryResponse> {
+export function runPriisQuery(query: string, data: PriisData): Promise<QueryResponse> {
   const normalized = query.toLowerCase();
+  // Promise.resolve() wraps synchronous computation for uniform async interface
   const relevant = normalized.includes("vieques") ? data.anomalies.find((a) => a.id === "A-021") : data.anomalies[0];
   const events = relevant ? data.events.filter((event) => relevant.events.includes(event.id)) : [];
   const breakdown = { T1: 0, T2: 0, T3: 0, T4: 0 };
@@ -10,7 +11,7 @@ export async function runPriisQuery(query: string, data: PriisData): Promise<Que
   });
   if (relevant) breakdown.T2 += relevant.contracts.length;
 
-  return {
+  return Promise.resolve({
     finding: relevant
       ? `${relevant.id} is the strongest matching pattern-convergence result for: “${query}”. The output remains an analytical lead unless source records are attached and contradictions are resolved.`
       : `No matching anomaly was found for: “${query}”.`,
@@ -29,5 +30,5 @@ export async function runPriisQuery(query: string, data: PriisData): Promise<Que
       "Validate geocoding against parcel or facility boundaries."
     ],
     recommendedAction: "Open the anomaly, inspect linked contracts and events, then export a source-ledger brief."
-  };
+  });
 }
