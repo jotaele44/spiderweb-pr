@@ -5,6 +5,8 @@ All pipeline stages consume and produce JSONL files.
 These helpers ensure safe, resumable, and tolerant I/O.
 """
 
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path

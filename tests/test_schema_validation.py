@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("jsonschema")
+
 from schema_validation import SCHEMAS_DIR, SchemaValidator
 
 
