@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/common.defs.schema.json",
+  "title": "PRIIS Common Definitions",
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Z]+-[0-9A-Z-]+$" },
+    "tier": { "type": "string", "enum": ["T1", "T2", "T3", "T4"] },
+    "confidence": { "type": "integer", "minimum": 1, "maximum": 3 },
+    "isoDate": { "type": "string", "format": "date" },
+    "isoDateTime": { "type": "string", "format": "date-time" },
+    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+    "lng": { "type": "number", "minimum": -180, "maximum": 180 },
+    "money": { "type": "number", "minimum": 0 },
+    "score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "sourceRef": { "type": "string", "pattern": "^SRC-[0-9A-Z-]+$" }
+  }
+}

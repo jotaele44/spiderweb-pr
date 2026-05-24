@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "system": "PRIIS V1",
+  "entities": {
+    "Agency": {
+      "description": "Government department, municipality, authority, public corporation, or other public-sector sponsor.",
+      "primary_key": "id",
+      "relationships": ["awards Contract", "owns or regulates Site"]
+    },
+    "Vendor": {
+      "description": "Contractor, subcontractor, service provider, logistics provider, infrastructure firm, or recurring award recipient.",
+      "primary_key": "id",
+      "relationships": ["receives Contract", "links to Finding through concentration or risk factor"]
+    },
+    "Contract": {
+      "description": "Procurement award, grant, payment, invoice, amendment, or emergency allocation.",
+      "primary_key": "id",
+      "relationships": ["awarded by Agency", "awarded to Vendor", "located at Site", "supports Event or Finding"]
+    },
+    "Site": {
+      "description": "Geocoded location, parcel, facility, infrastructure asset, municipality feature, or sensitive location.",
+      "primary_key": "id",
+      "relationships": ["hosts Contract", "hosts Event", "anchors Anomaly"]
+    },
+    "Event": {
+      "description": "Time-bound observation: contract action, imagery change, flight record, outage, report, permit, or field note.",
+      "primary_key": "id",
+      "relationships": ["occurs at Site", "may reference Contract", "supports Anomaly"]
+    },
+    "Source": {
+      "description": "Original record, dataset, imagery product, report, witness record, or secondary item used as evidence.",
+      "primary_key": "id",
+      "relationships": ["supports Claim", "supports Finding", "has EvidenceTier"]
+    },
+    "Anomaly": {
+      "description": "Pattern deviation requiring investigation; never an extraordinary conclusion by itself.",
+      "primary_key": "id",
+      "relationships": ["aggregates Event", "references Contract", "anchored at Site", "supports Finding"]
+    },
+    "Finding": {
+      "description": "Traceable analytical output with evidence, confidence, contradictions, and missing data.",
+      "primary_key": "id",
+      "relationships": ["derived from Source", "may summarize Anomaly", "belongs to Investigation"]
+    },
+    "Investigation": {
+      "description": "Persistent analytical workspace with active vector, lead queue, findings, and status.",
+      "primary_key": "id",
+      "relationships": ["contains Finding", "tracks Anomaly", "references Source"]
+    }
+  },
+  "analysis_vectors": ["government", "infrastructure", "subsurface", "uap_pattern_convergence", "finance", "spatial", "timeline", "evidence"],
+  "confidence_scale": {
+    "1": "low",
+    "2": "medium",
+    "3": "high"
+  }
+}

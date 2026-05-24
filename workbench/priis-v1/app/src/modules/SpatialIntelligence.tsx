@@ -1,0 +1,208 @@
+import { useEffect, useRef, useState } from "react";
+import maplibregl from "maplibre-gl";
+import { byId, fmtMoney } from "../data/mockData";
+import type { PriisData, Selection } from "../types/priis";
+import { AnomalyScore, Pill } from "../components/Badges";
+
+const BASE = "http://localhost:8000";
+
+const rasterStyle: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    osm: {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+    },
+  },
+  layers: [{ id: "osm", type: "raster", source: "osm" }],
+};
+
+type LayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly" | "flights";
+
+export function SpatialIntelligence({
+  data,
+  selection,
+  setSelection,
+}: {
+  data: PriisData;
+  selection: Selection | null;
+  setSelection: (selection: Selection) => void;
+}) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
+    contracts: true,
+    infrastructure: true,
+    sensitive: true,
+    anomaly: true,
+    flights: false,
+  });
+
+  // Initialize map
+  useEffect(() => {
+    if (!hostRef.current || mapRef.current) return;
+    const map = new maplibregl.Map({
+      container: hostRef.current,
+      style: rasterStyle,
+      center: [-66.35, 18.22],
+      zoom: 8.4,
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    mapRef.current = map;
+    return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // Site markers — rerender when data or layer toggles change
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+    data.sites.forEach((site) => {
+      const contractTotal = data.contracts
+        .filter((c) => c.site === site.id)
+        .reduce((sum, c) => sum + c.amount, 0);
+      const anomaly = data.anomalies.find((a) => a.siteId === site.id);
+      const visible =
+        (layers.sensitive && site.sensitive) ||
+        (layers.infrastructure && !!site.infrastructure_class) ||
+        (layers.contracts && contractTotal > 0) ||
+        (layers.anomaly && !!anomaly);
+      if (!visible) return;
+      const el = document.createElement("button");
+      el.className = "map-marker";
+      const size = `${Math.max(14, Math.sqrt(contractTotal / 1_000_000) * 5)}px`;
+      Object.assign(el.style, {
+        width: size,
+        height: size,
+        borderRadius: "999px",
+        border: "2px solid var(--surface-2)",
+        background: anomaly ? "var(--alert)" : site.sensitive ? "var(--warn)" : "var(--t1)",
+        boxShadow: "0 0 0 1px var(--ink)",
+      });
+      el.title = `${site.name} · ${fmtMoney(contractTotal)} · ${anomaly?.id ?? "no anomaly"}`;
+      el.onclick = () =>
+        setSelection({
+          kind: anomaly && layers.anomaly ? "anomaly" : "site",
+          id: anomaly && layers.anomaly ? anomaly.id : site.id,
+        });
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([site.lng, site.lat])
+        .addTo(map);
+      markersRef.current.push(marker);
+    });
+  }, [data, layers, setSelection]);
+
+  // Flight GeoJSON layer — added/removed when toggle changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const SOURCE_ID = "flights-source";
+    const LAYER_ID = "flights-layer";
+
+    function removeFlight() {
+      if (map!.getLayer(LAYER_ID)) map!.removeLayer(LAYER_ID);
+      if (map!.getSource(SOURCE_ID)) map!.removeSource(SOURCE_ID);
+    }
+
+    if (!layers.flights) {
+      if (map.isStyleLoaded()) removeFlight();
+      return;
+    }
+
+    function addFlightLayer() {
+      if (map!.getSource(SOURCE_ID)) return;
+      map!.addSource(SOURCE_ID, {
+        type: "geojson",
+        data: `${BASE}/geo/flights.geojson`,
+      });
+      map!.addLayer({
+        id: LAYER_ID,
+        type: "line",
+        source: SOURCE_ID,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": "var(--t1, #4dc4d6)",
+          "line-width": 1.5,
+          "line-opacity": 0.7,
+        },
+      });
+    }
+
+    if (map.isStyleLoaded()) {
+      addFlightLayer();
+    } else {
+      map.once("load", addFlightLayer);
+    }
+
+    return () => {
+      if (mapRef.current?.isStyleLoaded()) removeFlight();
+    };
+  }, [layers.flights]);
+
+  // Fly to selection
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || selection?.kind !== "site") return;
+    const site = byId(data.sites, selection.id);
+    if (site) map.flyTo({ center: [site.lng, site.lat], zoom: 11, speed: 0.8 });
+  }, [data.sites, selection]);
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div>
+          <h1>Spatial Intelligence</h1>
+          <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence</span>
+        </div>
+        <Pill tone="info">MapLibre GL JS</Pill>
+      </div>
+      <div className="map-shell">
+        <div ref={hostRef} className="map-host" />
+        <aside className="layer-panel">
+          <h3>Layer control</h3>
+          {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => (
+            <button
+              key={key}
+              className="navbtn"
+              data-active={value}
+              onClick={() => setLayers((cur) => ({ ...cur, [key]: !cur[key] }))}
+            >
+              <span>{key}</span>
+              <span>{value ? "on" : "off"}</span>
+            </button>
+          ))}
+          <div className="hr" />
+          <h3>Top spatial anomalies</h3>
+          <div className="col">
+            {data.anomalies.map((anomaly) => {
+              const site = byId(data.sites, anomaly.siteId);
+              return (
+                <button
+                  key={anomaly.id}
+                  className="anom-card"
+                  data-band={anomaly.band}
+                  onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}
+                >
+                  <div className="row" style={{ justifyContent: "space-between" }}>
+                    <b>{anomaly.id}</b>
+                    <AnomalyScore score={anomaly.score} />
+                  </div>
+                  <p className="desc">{site?.name}</p>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}

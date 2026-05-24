@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "tiers": [
+    {
+      "tier": "T1",
+      "label": "Technical",
+      "examples": ["satellite imagery", "sensor return", "ADS-B/flight logs", "official geospatial dataset"],
+      "weight": 4,
+      "conclusion_rule": "Can support high-confidence findings when internally consistent and corroborated."
+    },
+    {
+      "tier": "T2",
+      "label": "Operational",
+      "examples": ["contract record", "permit", "agency record", "procurement log", "infrastructure document"],
+      "weight": 3,
+      "conclusion_rule": "Strong institutional signal; can support findings with corroboration."
+    },
+    {
+      "tier": "T3",
+      "label": "Eyewitness",
+      "examples": ["field report", "local testimony", "sighting narrative"],
+      "weight": 2,
+      "conclusion_rule": "Lead only unless corroborated by T1/T2 evidence."
+    },
+    {
+      "tier": "T4",
+      "label": "Secondary",
+      "examples": ["news item", "blog", "social media post", "summary"],
+      "weight": 1,
+      "conclusion_rule": "Lowest weight; cannot confirm findings alone."
+    }
+  ],
+  "global_rules": [
+    "Every finding must expose source-tier composition.",
+    "T3/T4 evidence cannot produce a high-confidence conclusion without T1/T2 corroboration.",
+    "Blocking contradictions cap confidence at medium until resolved.",
+    "Missing provenance prevents promotion above low confidence."
+  ]
+}

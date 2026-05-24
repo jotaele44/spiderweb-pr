@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/source.schema.json",
+  "title": "Source",
+  "type": "object",
+  "required": ["id", "name", "tier", "kind"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/sourceRef" },
+    "name": { "type": "string", "minLength": 2 },
+    "tier": { "$ref": "common.defs.schema.json#/$defs/tier" },
+    "kind": { "type": "string", "enum": ["technical", "operational", "eyewitness", "secondary", "derived"] },
+    "publisher": { "type": "string" },
+    "url": { "type": "string", "format": "uri" },
+    "captured_at": { "$ref": "common.defs.schema.json#/$defs/isoDateTime" },
+    "hash": { "type": "string" },
+    "provenance_note": { "type": "string" }
+  },
+  "additionalProperties": false
+}

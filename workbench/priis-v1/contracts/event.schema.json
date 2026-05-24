@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/event.schema.json",
+  "title": "Event",
+  "type": "object",
+  "required": ["id", "kind", "at", "siteId", "label"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "kind": { "type": "string", "enum": ["contract", "imagery", "flight", "report", "outage", "permit", "field", "other"] },
+    "at": { "$ref": "common.defs.schema.json#/$defs/isoDate" },
+    "siteId": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "refId": { "type": "string" },
+    "label": { "type": "string" },
+    "tier": { "$ref": "common.defs.schema.json#/$defs/tier" },
+    "source_ids": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/sourceRef" } }
+  },
+  "additionalProperties": false
+}

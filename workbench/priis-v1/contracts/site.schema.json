@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/site.schema.json",
+  "title": "Site",
+  "type": "object",
+  "required": ["id", "name", "kind", "lat", "lng"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 2 },
+    "kind": { "type": "string" },
+    "municipality": { "type": "string" },
+    "lat": { "$ref": "common.defs.schema.json#/$defs/lat" },
+    "lng": { "$ref": "common.defs.schema.json#/$defs/lng" },
+    "sensitive": { "type": "boolean", "default": false },
+    "infrastructure_class": { "type": "string", "enum": ["water", "power", "transport", "telecom", "port", "airport", "military_adjacent", "environmental", "other"] },
+    "source_ids": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/sourceRef" } }
+  },
+  "additionalProperties": false
+}

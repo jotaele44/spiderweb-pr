@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/investigation.schema.json",
+  "title": "Investigation",
+  "type": "object",
+  "required": ["id", "title", "active_vector", "status"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "title": { "type": "string" },
+    "active_vector": { "type": "string" },
+    "status": { "type": "string", "enum": ["active", "paused", "closed", "needs_review"] },
+    "lead_queue": { "type": "array", "items": { "type": "string" } },
+    "closed_vectors": { "type": "array", "items": { "type": "string" } },
+    "blind_spots": { "type": "array", "items": { "type": "string" } },
+    "finding_ids": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/id" } },
+    "source_ids": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/sourceRef" } }
+  },
+  "additionalProperties": false
+}

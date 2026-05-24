@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/anomaly.schema.json",
+  "title": "Anomaly",
+  "type": "object",
+  "required": ["id", "title", "category", "score", "band", "siteId", "summary", "factors", "confidence"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "title": { "type": "string" },
+    "category": { "type": "string", "enum": ["financial", "spatial", "temporal", "infrastructure", "flight", "imagery", "report", "cross-domain"] },
+    "score": { "$ref": "common.defs.schema.json#/$defs/score" },
+    "band": { "type": "string", "enum": ["lo", "md", "hi"] },
+    "siteId": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "summary": { "type": "string" },
+    "factors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tag", "note"],
+        "properties": {
+          "tag": { "type": "string", "enum": ["finance", "spatial", "temporal", "infra", "report", "imagery", "flight", "source"] },
+          "note": { "type": "string" },
+          "source_ids": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/sourceRef" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "contracts": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/id" } },
+    "events": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/id" } },
+    "confidence": { "$ref": "common.defs.schema.json#/$defs/confidence" },
+    "contradictions": { "type": "array", "items": { "type": "string" } },
+    "source_ids": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/sourceRef" } }
+  },
+  "additionalProperties": false
+}

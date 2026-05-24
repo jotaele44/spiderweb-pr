@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/contract.schema.json",
+  "title": "Contract",
+  "type": "object",
+  "required": ["id", "agency", "vendor", "site", "amount", "signed", "status", "tier"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "agency": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "vendor": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "site": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "amount": { "$ref": "common.defs.schema.json#/$defs/money" },
+    "signed": { "$ref": "common.defs.schema.json#/$defs/isoDate" },
+    "status": { "type": "string", "enum": ["planned", "executed", "amended", "flagged", "closed", "unknown"] },
+    "tier": { "$ref": "common.defs.schema.json#/$defs/tier" },
+    "note": { "type": "string" },
+    "procurement_method": { "type": "string", "enum": ["competitive", "sole_source", "emergency", "amendment", "unknown"] },
+    "source_ids": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/sourceRef" } }
+  },
+  "additionalProperties": false
+}

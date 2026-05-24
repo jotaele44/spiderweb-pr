@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/agency.schema.json",
+  "title": "Agency",
+  "type": "object",
+  "required": ["id", "code", "name"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "code": { "type": "string", "minLength": 2 },
+    "name": { "type": "string", "minLength": 2 },
+    "jurisdiction": { "type": "string", "default": "Puerto Rico" },
+    "authority_type": { "type": "string", "enum": ["department", "authority", "municipality", "public_corporation", "federal", "other"] },
+    "source_ids": { "type": "array", "items": { "$ref": "common.defs.schema.json#/$defs/sourceRef" } }
+  },
+  "additionalProperties": false
+}

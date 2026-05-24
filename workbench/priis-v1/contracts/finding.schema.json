@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://priis.local/schemas/finding.schema.json",
+  "title": "Finding",
+  "type": "object",
+  "required": ["id", "investigation_id", "finding", "evidence", "confidence", "contradictions", "missing_data", "recommended_action"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "investigation_id": { "$ref": "common.defs.schema.json#/$defs/id" },
+    "finding": { "type": "string" },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "tier", "claim"],
+        "properties": {
+          "source_id": { "$ref": "common.defs.schema.json#/$defs/sourceRef" },
+          "tier": { "$ref": "common.defs.schema.json#/$defs/tier" },
+          "claim": { "type": "string" },
+          "entity_refs": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "source_tier_breakdown": {
+      "type": "object",
+      "properties": {
+        "T1": { "type": "integer", "minimum": 0 },
+        "T2": { "type": "integer", "minimum": 0 },
+        "T3": { "type": "integer", "minimum": 0 },
+        "T4": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "confidence": { "$ref": "common.defs.schema.json#/$defs/confidence" },
+    "contradictions": { "type": "array", "items": { "type": "string" } },
+    "missing_data": { "type": "array", "items": { "type": "string" } },
+    "recommended_action": { "type": "string" },
+    "status": { "type": "string", "enum": ["lead", "provisional", "validated", "rejected", "needs_review"], "default": "provisional" }
+  },
+  "additionalProperties": false
+}
