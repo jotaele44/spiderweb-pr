@@ -1,0 +1,39 @@
+{
+  "type": "FeatureCollection",
+  "stac_version": "1.0.0",
+  "features": [
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "S2B_PR_20240601",
+      "collection": "sentinel-2-l2a",
+      "bbox": [-67.0, 18.0, -66.0, 18.5],
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-67.0, 18.0], [-66.0, 18.0],
+          [-66.0, 18.5], [-67.0, 18.5],
+          [-67.0, 18.0]
+        ]]
+      },
+      "properties": {
+        "datetime": "2024-06-01T14:00:00Z",
+        "updated": "2024-06-02T00:00:00Z",
+        "platform": "Sentinel-2B",
+        "instruments": ["MSI"],
+        "provider": "ESA",
+        "license": "Copernicus Sentinel Data Terms of Use",
+        "eo:cloud_cover": 8.0,
+        "source_reliability": "high",
+        "pr:region": "mainland"
+      },
+      "assets": {
+        "data": {
+          "href": "https://example.com/pr/sentinel2b/20240601.tif",
+          "type": "image/tiff",
+          "file:checksum_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        }
+      }
+    }
+  ]
+}
