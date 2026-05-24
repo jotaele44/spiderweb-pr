@@ -1,0 +1,20 @@
+version: "1.0"
+
+widl_nodes:
+  water_treatment_plant: WTP
+  wastewater_plant: WWTP
+  pumping_station: PF
+  water_reservoir: RES
+  water_tower_point: ETK
+  water_tower_polygon: ETK
+  water_well_point: WELL
+  water_well_polygon: WELL
+
+icg_edges:
+  pipeline: PIPELINE
+  power_line: POWER_LINE
+
+utility_nodes:
+  power_substation_point: SUBSTATION
+  power_substation_polygon: SUBSTATION
+  mast: MAST
