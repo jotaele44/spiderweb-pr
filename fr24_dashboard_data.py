@@ -18,6 +18,8 @@ from pathlib import Path
 from typing import List
 
 DASHBOARD_DATA_VERSION = "fr24_dashboard_data_v0.1.0"
+LOCAL_STATE_SCHEMA_VERSION = "fr24_review_queue_local_state_v1"
+LOCAL_STATE_POLICY = "local_overlay_only_candidate_rows_immutable"
 
 PROHIBITED_LABELS = {
     "confirmed",
@@ -87,6 +89,8 @@ def run(queue_csv: Path, summary_json: Path, output_json: Path) -> dict:
         "dashboard_data_version": DASHBOARD_DATA_VERSION,
         "policy": "candidate_only_no_auto_confirmation",
         "allowed_queue_statuses": list(ALLOWED_QUEUE_STATUSES),
+        "local_state_schema_version": LOCAL_STATE_SCHEMA_VERSION,
+        "local_state_policy": LOCAL_STATE_POLICY,
         "row_count": len(kept),
         "prohibited_label_dropped": dropped,
         "tier_counts": dict(Counter(r.get("priority_tier") for r in kept)),
@@ -106,6 +110,9 @@ def run(queue_csv: Path, summary_json: Path, output_json: Path) -> dict:
         "source_counts": dict(Counter(r.get("queue_source", "") for r in kept)),
         "dashboard_data_version": DASHBOARD_DATA_VERSION,
         "policy": "candidate_only_no_auto_confirmation",
+        "allowed_queue_statuses": list(ALLOWED_QUEUE_STATUSES),
+        "local_state_schema_version": LOCAL_STATE_SCHEMA_VERSION,
+        "local_state_policy": LOCAL_STATE_POLICY,
     }
 
 
