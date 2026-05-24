@@ -1,0 +1,60 @@
+ilap_type:
+  - hydro
+  - ridge
+  - industrial
+  - utility
+  - quarry
+  - urban_masking
+  - coastal_outlet
+  - residential_cover
+  - cave_karst
+  - dam_conduit
+  - tunnel_cut
+  - transport_access
+  - telecom_utility
+  - energy_corridor
+  - subsurface_drainage
+  - offshore_expression
+  - other
+
+ilap_subtype:
+  geometry:
+    - dip
+    - depression
+    - trench
+    - shaft
+    - hatch
+    - grate
+    - vent
+    - portal
+    - culvert
+    - conduit
+    - pad
+    - retaining_wall_cut
+
+  behavior:
+    - grid
+    - loiter
+    - transit
+    - mask
+    - bypass
+    - choke_point
+    - terminal
+    - junction
+
+  context:
+    - road_hidden
+    - utility_adjacent
+    - water_adjacent
+    - ridge_adjacent
+    - industrial_masked
+    - residential_masked
+    - coastal_expression
+    - karst_expression
+
+  status:
+    - confirmed_surface_feature
+    - probable_ilap
+    - possible_ilap
+    - weak_candidate
+    - rejected_false_positive
