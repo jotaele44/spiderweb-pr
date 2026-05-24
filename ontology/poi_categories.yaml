@@ -1,0 +1,95 @@
+poi_category:
+  hydro_water:
+    - dam_reservoir
+    - reservoir
+    - intake
+    - outfall
+    - canal
+    - aqueduct
+    - trunk_sewer
+    - wastewater_treatment
+    - water_treatment
+    - pump_station
+    - valve_station
+    - pressure_station
+    - well_field
+    - spring
+    - drainage_confluence
+
+  energy_utility:
+    - electrical_substation
+    - transmission_corridor
+    - generation_station
+    - hydroelectric_plant
+    - fuel_terminal
+    - pipeline_station
+    - telecom_site
+    - fiber_hut
+    - microwave_tower
+    - emergency_power_site
+
+  industrial:
+    - industrial_park
+    - manufacturing_site
+    - pharmaceutical_site
+    - aerospace_site
+    - quarry
+    - cement_plant
+    - aggregate_yard
+    - warehouse_logistics
+    - port_industrial
+    - rail_legacy
+
+  transport_access:
+    - road_cut
+    - bridge
+    - tunnel
+    - service_road
+    - dead_end_access
+    - airport_airfield
+    - heliport
+    - port_maritime
+    - marina
+    - ferry_terminal
+
+  karst_geology:
+    - cave
+    - sinkhole
+    - depression
+    - karst_window
+    - disappearing_stream
+    - spring_resurgence
+    - ridge_saddle
+    - fault_lineament
+    - escarpment
+    - coastal_cliff
+
+  civic_security:
+    - government_facility
+    - emergency_management
+    - police_fire_rescue
+    - military_surveillance
+    - radar_site
+    - communications_facility
+    - correctional_facility
+    - hospital
+    - university_research
+
+  historical_cultural:
+    - sugar_mill
+    - hacienda
+    - railroad_remnant
+    - colonial_fortification
+    - religious_site
+    - cemetery
+    - archeological_site
+    - taino_symbolic_site
+
+  cover_candidate:
+    - residential_cover_candidate
+    - religious_front_candidate
+    - commercial_cover_candidate
+    - agricultural_cover_candidate
+    - resort_cover_candidate
+    - abandoned_structure_candidate
+    - unlabeled_compound
