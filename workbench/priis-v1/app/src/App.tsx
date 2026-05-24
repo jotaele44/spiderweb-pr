@@ -54,8 +54,16 @@ export default function App() {
     });
   }, []);
 
-  // Persist active investigation and cursor across sessions
+  // Versioned localStorage — bump STORAGE_VERSION to wipe stale state on schema change
+  const STORAGE_VERSION = "1";
+
   useEffect(() => {
+    if (localStorage.getItem("priis_storage_version") !== STORAGE_VERSION) {
+      localStorage.removeItem("priis_investigation");
+      localStorage.removeItem("priis_cursor");
+      localStorage.setItem("priis_storage_version", STORAGE_VERSION);
+      return;
+    }
     const stored = localStorage.getItem("priis_investigation");
     if (stored) setActiveInvestigation(stored);
     const storedCursor = localStorage.getItem("priis_cursor");
