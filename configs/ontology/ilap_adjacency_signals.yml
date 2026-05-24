@@ -1,0 +1,112 @@
+version: "1.0"
+
+signal_classes:
+  Hydro:
+    reservoir_adjacency:
+      weight: 20
+      source_layers: ["water_reservoir"]
+    canal_proximity:
+      weight: 15
+      source_layers: ["canal", "pipeline"]
+    drainage_convergence:
+      weight: 15
+      source_layers: []
+    coastal_sgd_or_outlet:
+      weight: 30
+      source_layers: []
+
+  WIDL:
+    water_treatment_plant:
+      weight: 25
+      source_layers: ["water_treatment_plant"]
+    pumping_station:
+      weight: 30
+      source_layers: ["pumping_station"]
+    wastewater_plant:
+      weight: 20
+      source_layers: ["wastewater_plant"]
+    water_well:
+      weight: 15
+      source_layers: ["water_well_point", "water_well_polygon"]
+    water_tower:
+      weight: 15
+      source_layers: ["water_tower_point", "water_tower_polygon"]
+    pipeline_crossing:
+      weight: 20
+      source_layers: ["pipeline"]
+
+  Terrain:
+    ridge_crossing:
+      weight: 25
+      source_layers: []
+    saddle_transition:
+      weight: 20
+      source_layers: []
+    depression_or_cut_fill:
+      weight: 15
+      source_layers: []
+
+  Karst:
+    sinkhole_cluster:
+      weight: 30
+      source_layers: []
+    cave_adjacency:
+      weight: 30
+      source_layers: []
+    spring_sink_alignment:
+      weight: 25
+      source_layers: []
+
+  Utility:
+    power_line:
+      weight: 15
+      source_layers: ["power_line"]
+    substation:
+      weight: 15
+      source_layers: ["power_substation_point", "power_substation_polygon"]
+    telecom_mast:
+      weight: 10
+      source_layers: ["mast"]
+
+  Access:
+    dead_end_service_road:
+      weight: 20
+      source_layers: []
+    isolated_paved_spur:
+      weight: 15
+      source_layers: []
+    culvert_transition:
+      weight: 15
+      source_layers: []
+
+  MBIL:
+    mbil_0:
+      weight: 20
+      requires_pairing: true
+    mbil_1:
+      weight: 15
+      requires_pairing: true
+    boundary_following_corridor:
+      weight: 25
+      requires_pairing: true
+
+  Vegetation:
+    inland_palm:
+      weight: 10
+      passive_detection: true
+      source_layers: []
+    palm_cluster:
+      weight: 15
+      passive_detection: true
+      source_layers: []
+
+  Temporal:
+    new_clearing:
+      weight: 20
+      source_layers: []
+    terrain_alteration:
+      weight: 25
+      source_layers: []
+    feature_disappearance:
+      weight: 15
+      source_layers: []
