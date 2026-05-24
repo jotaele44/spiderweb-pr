@@ -46,22 +46,24 @@
   <div id="root" style="display:none"></div>
 
   <script>
-    // Fetch the JSON export, inject into window.flightData, then mount the app
-    fetch("dashboard_data.json")
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    // Fetch the JSON export(s), inject into window.flightData, then mount the app.
+    // The FR24 review queue is loaded in parallel and degrades gracefully.
+    const fetchJson = (url) =>
+      fetch(url).then(r => {
+        if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
         return r.json();
-      })
-      .then(data => {
-        window.flightData = data;
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("root").style.display = "";
-      })
-      .catch(err => {
+      });
+
+    Promise.allSettled([
+      fetchJson("dashboard_data.json"),
+      fetchJson("fr24_dashboard_review_queue.json"),
+    ]).then(([flight, fr24]) => {
+      if (flight.status === "rejected") {
+        const err = flight.reason && flight.reason.message ? flight.reason.message : String(flight.reason);
         document.getElementById("loading").innerHTML =
           `<div style="text-align:center">
             <p style="color:#dc2626;font-weight:600">Could not load dashboard_data.json</p>
-            <p style="margin-top:8px;font-size:12px">${err.message}</p>
+            <p style="margin-top:8px;font-size:12px">${err}</p>
             <p style="margin-top:4px;font-size:12px">
               Generate it with:<br/>
               <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">
@@ -72,7 +74,13 @@
               <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">python -m http.server 8080</code>
             </p>
           </div>`;
-      });
+        return;
+      }
+      window.flightData = flight.value;
+      window.fr24DashboardData = fr24.status === "fulfilled" ? fr24.value : null;
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("root").style.display = "";
+    });
   </script>
 
   <!-- Load dashboard.jsx via Babel (transpiled at runtime) -->
