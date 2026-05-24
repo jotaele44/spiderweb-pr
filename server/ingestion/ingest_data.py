@@ -1,55 +1,230 @@
 """
-Data ingestion scripts for PRIIS.
+Real-pipeline ingestion for PRIIS.
 
-This module contains a CLI for inserting contract records from a CSV
-file into the database. The database connection is configured via
-SQLAlchemy and reads the connection string from the environment by
-default. Use `python ingest_data.py --help` to see usage.
+Maps outputs from the four spiderweb-pr CLI backends into priis.db:
+  - FR24 Parquet/CSV    → contracts + events tables
+  - gis_intelligence.py GeoJSON → sites table
+  - earthgpt/ anomaly JSON → anomalies table
+  - Finance CSV         → contracts + vendors tables
+
+Usage (from repo root):
+    python3 server/ingestion/ingest_data.py [--db server/priis.db]
 """
 
 import csv
+import json
+import sqlite3
 import argparse
 import os
-from sqlalchemy import create_engine, MetaData, Table
-from sqlalchemy.dialects.postgresql import insert
+from pathlib import Path
 
 
-def ingest_contracts(csv_path: str, db_url: str) -> None:
-    """Ingest contract records from a CSV file into the database."""
-    engine = create_engine(db_url)
-    metadata = MetaData(bind=engine)
-    contracts_table = Table('contracts', metadata, autoload_with=engine)
+DB_DEFAULT = Path(__file__).parent.parent / "priis.db"
+OUTPUTS_DIR = Path(__file__).parent.parent.parent / "outputs"
 
-    with open(csv_path, newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        with engine.begin() as conn:
-            for row in reader:
-                stmt = insert(contracts_table).values(
-                    contract_id=row['contract_id'],
-                    vendor_id=int(row['vendor_id']),
-                    agency_id=int(row['agency_id']),
-                    amount=float(row['amount']),
-                    start_date=row['start_date'],
-                    end_date=row['end_date'],
-                    description=row.get('description', '')
-                ).on_conflict_do_nothing(index_elements=['contract_id'])
-                conn.execute(stmt)
+
+def _connect(db_path: str) -> sqlite3.Connection:
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def ingest_sites_geojson(conn: sqlite3.Connection, geojson_path: Path) -> int:
+    """Map gis_intelligence.py GeoJSON output → sites table."""
+    if not geojson_path.exists():
+        print(f"  [skip] {geojson_path} not found")
+        return 0
+
+    with open(geojson_path) as f:
+        fc = json.load(f)
+
+    count = 0
+    for feat in fc.get("features", []):
+        props = feat.get("properties", {})
+        coords = feat.get("geometry", {}).get("coordinates", [None, None])
+        site_id = props.get("id") or props.get("site_id") or f"site-{count}"
+        conn.execute(
+            """
+            INSERT INTO sites (id, name, kind, lat, lng, sensitive, infrastructure_class)
+            VALUES (?,?,?,?,?,?,?)
+            ON CONFLICT(id) DO UPDATE SET
+              name=excluded.name, kind=excluded.kind,
+              lat=excluded.lat, lng=excluded.lng,
+              sensitive=excluded.sensitive,
+              infrastructure_class=excluded.infrastructure_class
+            """,
+            (
+                site_id,
+                props.get("name", site_id),
+                props.get("kind", "unknown"),
+                coords[1],
+                coords[0],
+                bool(props.get("sensitive", False)),
+                props.get("infrastructure_class"),
+            ),
+        )
+        count += 1
+    conn.commit()
+    return count
+
+
+def ingest_fr24_csv(conn: sqlite3.Connection, csv_path: Path) -> int:
+    """Map FR24 candidate CSV → events table (flight kind)."""
+    if not csv_path.exists():
+        print(f"  [skip] {csv_path} not found")
+        return 0
+
+    count = 0
+    with open(csv_path, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            event_id = row.get("id") or f"fr24-{count}"
+            conn.execute(
+                """
+                INSERT INTO events (id, kind, at, site_id, ref_id, label, tier)
+                VALUES (?,?,?,?,?,?,?)
+                ON CONFLICT(id) DO NOTHING
+                """,
+                (
+                    event_id,
+                    "flight",
+                    row.get("timestamp") or row.get("at", ""),
+                    row.get("site_id") or row.get("nearest_site"),
+                    row.get("flight_id") or row.get("ref_id"),
+                    row.get("label") or row.get("callsign", "FR24 flight"),
+                    "T1",
+                ),
+            )
+            count += 1
+    conn.commit()
+    return count
+
+
+def ingest_anomalies_json(conn: sqlite3.Connection, json_path: Path) -> int:
+    """Map earthgpt anomaly JSON output → anomalies table."""
+    if not json_path.exists():
+        print(f"  [skip] {json_path} not found")
+        return 0
+
+    with open(json_path) as f:
+        records = json.load(f)
+
+    if not isinstance(records, list):
+        records = [records]
+
+    count = 0
+    for rec in records:
+        anomaly_id = rec.get("id") or f"anomaly-{count}"
+        conn.execute(
+            """
+            INSERT INTO anomalies
+              (id, title, category, score, band, site_id, summary,
+               factors, contracts, event_ids, confidence, contradictions)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(id) DO UPDATE SET
+              score=excluded.score, band=excluded.band,
+              summary=excluded.summary, factors=excluded.factors,
+              confidence=excluded.confidence
+            """,
+            (
+                anomaly_id,
+                rec.get("title", anomaly_id),
+                rec.get("category", "cross-domain"),
+                float(rec.get("score", 0.5)),
+                rec.get("band", "md"),
+                rec.get("site_id") or rec.get("siteId"),
+                rec.get("summary", ""),
+                json.dumps(rec.get("factors", [])),
+                json.dumps(rec.get("contracts", [])),
+                json.dumps(rec.get("events", [])),
+                int(rec.get("confidence", 2)),
+                json.dumps(rec.get("contradictions", [])),
+            ),
+        )
+        count += 1
+    conn.commit()
+    return count
+
+
+def ingest_finance_csv(conn: sqlite3.Connection, csv_path: Path) -> int:
+    """Map demo financial CSV → contracts + vendors tables."""
+    if not csv_path.exists():
+        print(f"  [skip] {csv_path} not found")
+        return 0
+
+    count = 0
+    with open(csv_path, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            vendor_id = row.get("vendor_id", f"v-{count}")
+            conn.execute(
+                """
+                INSERT INTO vendors (id, name, risk, tier)
+                VALUES (?,?,?,?)
+                ON CONFLICT(id) DO NOTHING
+                """,
+                (
+                    vendor_id,
+                    row.get("vendor_name", vendor_id),
+                    float(row.get("risk", 0.0)),
+                    row.get("tier", "T2"),
+                ),
+            )
+            contract_id = row.get("contract_id") or f"c-finance-{count}"
+            conn.execute(
+                """
+                INSERT INTO contracts
+                  (id, agency, vendor, site, amount, signed, status, tier)
+                VALUES (?,?,?,?,?,?,?,?)
+                ON CONFLICT(id) DO NOTHING
+                """,
+                (
+                    contract_id,
+                    row.get("agency_id", ""),
+                    vendor_id,
+                    row.get("site_id"),
+                    float(row.get("amount", 0)),
+                    row.get("signed") or row.get("date", ""),
+                    row.get("status", "unknown"),
+                    row.get("tier", "T2"),
+                ),
+            )
+            count += 1
+    conn.commit()
+    return count
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description='Ingest contract CSV data into the database.'
-    )
-    parser.add_argument('csv', help='Path to contract CSV file')
-    parser.add_argument(
-        '--db',
-        default=os.getenv('DATABASE_URL', 'postgresql://user:password@localhost:5432/priis'),
-        help='Database URL (default: env DATABASE_URL or local default)',
-    )
+    parser = argparse.ArgumentParser(description="Ingest real pipeline outputs into priis.db")
+    parser.add_argument("--db", default=str(DB_DEFAULT), help="Path to priis.db")
+    parser.add_argument("--outputs", default=str(OUTPUTS_DIR), help="Pipeline outputs directory")
     args = parser.parse_args()
-    ingest_contracts(args.csv, args.db)
-    print('Ingestion completed.')
+
+    outputs = Path(args.outputs)
+    conn = _connect(args.db)
+
+    print("Ingesting sites from GIS GeoJSON...")
+    n = ingest_sites_geojson(conn, outputs / "sites.geojson")
+    print(f"  {n} sites upserted")
+
+    print("Ingesting FR24 flight events...")
+    n = ingest_fr24_csv(conn, outputs / "fr24_selected_export.csv")
+    print(f"  {n} events inserted")
+
+    print("Ingesting anomalies from earthgpt...")
+    for fname in ["anomalies.json", "earthgpt_anomalies.json"]:
+        p = outputs / fname
+        if p.exists():
+            n = ingest_anomalies_json(conn, p)
+            print(f"  {n} anomalies upserted from {fname}")
+
+    print("Ingesting finance CSV...")
+    n = ingest_finance_csv(conn, outputs / "finance.csv")
+    print(f"  {n} contracts/vendors inserted")
+
+    conn.close()
+    print("Done.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
