@@ -25,6 +25,7 @@ def test_validate_flag(populated_db):
 
 
 def test_export_pr_intel_flag(populated_db, tmp_output):
+    pytest.importorskip("pyarrow")
     out = str(tmp_output / "pr_intel")
     result = run(["--db", populated_db, "--export-pr-intel", out])
     assert result.returncode == 0, result.stderr
@@ -39,6 +40,7 @@ def test_export_spiderweb_flag(populated_db, tmp_output):
 
 
 def test_combined_export_flags(populated_db, tmp_output):
+    pytest.importorskip("pyarrow")
     pr_out = str(tmp_output / "pr_intel")
     sw_out = str(tmp_output / "spiderweb")
     result = run([
@@ -55,6 +57,7 @@ def test_combined_export_flags(populated_db, tmp_output):
 
 
 def test_integration_report_all_gates_present(populated_db, tmp_output):
+    pytest.importorskip("pyarrow")
     out = str(tmp_output / "pr_intel")
     run(["--db", populated_db, "--export-pr-intel", out])
     report = json.loads((Path(out) / "integration_report.json").read_text())
@@ -66,6 +69,7 @@ def test_integration_report_all_gates_present(populated_db, tmp_output):
 
 
 def test_export_does_not_break_status(populated_db, tmp_output):
+    pytest.importorskip("pyarrow")
     out = str(tmp_output / "pr")
     r1 = run(["--db", populated_db, "--export-pr-intel", out])
     r2 = run(["--db", populated_db, "--status"])

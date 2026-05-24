@@ -40,6 +40,8 @@ python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain
 | `test_screenshot_inventory.py` | Screenshots table column coverage after sync_to_db |
 | `test_spiderweb_bridge.py` | ILAP + AASB bridge: 5 output files created, manifest structure |
 | `test_temporal_validator.py` | Physics-violation detection (speed, altitude jumps) |
+| `test_fr24_analysis_vector.py` | Analysis vector columns, quality tiers, temporal parsing, wave grouping |
+| `test_fr24_wave_validator.py` | Wave physics checks (climb rate, speed, monotonic timestamps) |
 
 ### GEBCO Bathymetry (39 tests) — requires xarray, scipy, netCDF4
 

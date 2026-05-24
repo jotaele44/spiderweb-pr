@@ -29,6 +29,8 @@ spiderweb-pr/
 │   route_extractor.py          HSV masking + BFS → route polylines
 │   manual_review_queue.py      SQLite-backed low-quality item queue
 │   fr24_event_export.py        Inventory + routes → airspace DB
+│   fr24_ocr_analysis_vector.py Per-candidate analysis vector + temporal wave grouping
+│   fr24_wave_validator.py      Wave physics coherence (altitude, speed, monotonic timestamps)
 │   dashboard.jsx / .html       4-tab browser dashboard
 │   schemas/                    10 JSON Schema files
 │   configs/georef_anchors.csv  5 PR airport anchor points
@@ -100,6 +102,8 @@ spiderweb-pr/
 | `route_extractor.py` | Airspace Intel | FR24 processor |
 | `manual_review_queue.py` | Airspace Intel | FR24 processor |
 | `fr24_event_export.py` | Airspace Intel | FR24 processor |
+| `fr24_ocr_analysis_vector.py` | Airspace Intel | FR24 processor |
+| `fr24_wave_validator.py` | Airspace Intel | FR24 processor |
 | `dashboard.jsx` / `dashboard.html` | Airspace Intel | |
 | `schemas/` | Airspace Intel | |
 | `configs/` | Airspace Intel | |
