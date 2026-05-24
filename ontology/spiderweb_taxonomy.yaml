@@ -1,0 +1,92 @@
+taxonomy_version: "0.1.0"
+
+entity_class:
+  - poi
+  - ilap
+  - corridor
+  - anomaly
+  - observation
+  - evidence_item
+  - hydro_feature
+  - terrain_feature
+  - infrastructure_asset
+  - contractor_entity
+  - dataset
+  - fictional_location
+
+analysis_mode:
+  - factual_research
+  - speculative_hypothesis
+  - fictional_worldbuilding
+  - automation_intake
+  - field_recon
+  - repo_engineering
+  - rejected_false_positive
+
+world_layer:
+  - real_world_verified
+  - real_world_public_record
+  - analytical_hypothesis
+  - fictional_overlay
+  - fictional_only
+
+claim_status:
+  - verified
+  - documented
+  - inferred
+  - hypothesized
+  - fictional
+  - contradicted
+  - rejected
+
+spiderweb_role:
+  - hydro_node
+  - ridge_node
+  - industrial_node
+  - utility_node
+  - coastal_exit_node
+  - karst_entry_node
+  - logistics_node
+  - surveillance_node
+  - municipal_boundary_node
+  - cover_structure
+  - corridor_anchor
+  - corridor_intermediate
+  - corridor_terminal
+  - false_positive
+  - unknown_role
+
+access_assertion_level:
+  - visual_signature_only
+  - plausible_service_access
+  - probable_surface_access
+  - confirmed_surface_access
+  - confirmed_human_accessible
+  - rejected
+
+evidence_tier:
+  - T1
+  - T2
+  - T3
+  - T4
+
+confidence_class:
+  - C0_rejected
+  - C1_weak
+  - C2_possible
+  - C3_plausible
+  - C4_strong
+  - C5_high_confidence
+
+corridor_tier:
+  - AASB_0
+  - AASB_1
+  - AASB_2
+  - AASB_3
+
+mbil_class:
+  - MBIL_0
+  - MBIL_1
+  - MBIL_2
+  - MBIL_3
+  - MBIL_X
