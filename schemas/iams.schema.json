@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "required": [
+    "ilap_id",
+    "candidate_type",
+    "base_confidence",
+    "final_confidence",
+    "dce_status",
+    "geometry"
+  ],
+  "properties": {
+    "ilap_id": { "type": "string" },
+    "candidate_type": { "type": "string" },
+    "subtype": { "type": "string" },
+    "base_confidence": { "type": "number", "minimum": 0, "maximum": 100 },
+    "final_confidence": { "type": "number", "minimum": 0, "maximum": 100 },
+    "aasb_corridor_id": { "type": ["string", "null"] },
+    "dce_status": {
+      "type": "string",
+      "enum": ["active", "merged", "suppressed", "watch"]
+    },
+    "geometry": { "type": "object" }
+  }
+}
