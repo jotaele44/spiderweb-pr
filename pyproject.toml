@@ -56,3 +56,10 @@ select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Default test run excludes integration tests (live external dependencies).
+# Run integration tier explicitly with:  pytest -m integration
+addopts = "-m 'not integration'"
+markers = [
+    "smoke: tests that depend on generated artifacts (data/*.geojson, manifest) — skip cleanly if missing.",
+    "integration: tests that hit live external services (e.g. Census TIGER downloads). Excluded from default runs.",
+]

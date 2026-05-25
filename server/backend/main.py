@@ -12,8 +12,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+import sqlite3
 import subprocess
+import sys
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Optional
 
@@ -24,6 +28,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
+log = logging.getLogger("priis.backend")
+
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 
 # main.py lives at server/backend/main.py → root is two levels up
@@ -31,9 +37,39 @@ ROOT = Path(__file__).parent.parent.parent
 DB_PATH = Path(__file__).parent.parent / "priis.db"
 OUTPUT_DIR = ROOT / "outputs"
 
+# Make sibling ingestion package importable for the startup migration hook.
+_INGEST_DIR = Path(__file__).parent.parent / "ingestion"
+if str(_INGEST_DIR) not in sys.path:
+    sys.path.append(str(_INGEST_DIR))
+
+# ─── Startup migrations ───────────────────────────────────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Run idempotent SQLite migrations on boot, then yield to request loop.
+
+    Migrations are synchronous (sqlite3) and one-shot — fine to block startup.
+    If priis.db doesn't exist yet we skip silently; seed_demo.py will create it
+    and apply the schema (which already includes the migrated columns).
+    """
+    if DB_PATH.exists():
+        try:
+            from migrations import run_all as run_migrations  # type: ignore
+            conn = sqlite3.connect(DB_PATH)
+            try:
+                result = run_migrations(conn)
+                log.info("startup migrations applied: %s", result)
+            finally:
+                conn.close()
+        except Exception as exc:  # noqa: BLE001 — log and continue serving
+            log.warning("startup migrations skipped: %s", exc)
+    else:
+        log.info("priis.db missing at %s; skipping startup migrations", DB_PATH)
+    yield
+
 # ─── App setup ─────────────────────────────────────────────────────────────────
 
-app = FastAPI(title="PRIIS API", version="2.0.0")
+app = FastAPI(title="PRIIS API", version="2.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -201,7 +237,12 @@ async def pipeline_stop(job_id: str):
 
 # ─── GeoJSON layers ────────────────────────────────────────────────────────────
 
-_ALLOWED_LAYERS = {"flights", "sites", "anomalies", "corridors", "heatmap"}
+_ALLOWED_LAYERS = {
+    # Operational overlays
+    "flights", "sites", "anomalies", "corridors", "heatmap",
+    # PR administrative geographies (TIGER/Line, joined via ingest_tiger_pr.py)
+    "municipios", "tracts", "places", "barrios",
+}
 _EMPTY_FC: dict = {"type": "FeatureCollection", "features": []}
 
 

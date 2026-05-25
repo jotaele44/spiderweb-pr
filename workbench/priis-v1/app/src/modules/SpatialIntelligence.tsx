@@ -19,7 +19,126 @@ const rasterStyle: maplibregl.StyleSpecification = {
   layers: [{ id: "osm", type: "raster", source: "osm" }],
 };
 
-type LayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly" | "flights";
+type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
+type LayerKey =
+  | "contracts"
+  | "infrastructure"
+  | "sensitive"
+  | "anomaly"
+  | "flights"
+  | PolygonLayerKey;
+
+interface PolygonLayerConfig {
+  fillOpacity: number;
+  lineColor: string;
+  fillColor: string;
+  defaultOn: boolean;
+  label: string;
+}
+
+const POLYGON_LAYERS: Record<PolygonLayerKey, PolygonLayerConfig> = {
+  municipios: {
+    fillOpacity: 0.08,
+    fillColor: "var(--t1, #4dc4d6)",
+    lineColor: "var(--t1, #4dc4d6)",
+    defaultOn: true,
+    label: "Municipios",
+  },
+  tracts: {
+    fillOpacity: 0.04,
+    fillColor: "var(--t2, #f4b740)",
+    lineColor: "var(--t2, #f4b740)",
+    defaultOn: false,
+    label: "Census tracts",
+  },
+  places: {
+    fillOpacity: 0.05,
+    fillColor: "var(--t3, #a07cff)",
+    lineColor: "var(--t3, #a07cff)",
+    defaultOn: false,
+    label: "Places",
+  },
+  barrios: {
+    fillOpacity: 0.04,
+    fillColor: "var(--t4, #6f7782)",
+    lineColor: "var(--t4, #6f7782)",
+    defaultOn: false,
+    label: "Barrios",
+  },
+};
+
+const POLYGON_LAYER_KEYS = Object.keys(POLYGON_LAYERS) as PolygonLayerKey[];
+
+/**
+ * Toggle a TIGER polygon source + (fill, line) layer pair on the MapLibre
+ * instance. IDs follow the pattern `geo-${key}` / `geo-${key}-fill` /
+ * `geo-${key}-line`. Removal order is line → fill → source (every layer
+ * referencing the source must be gone before removeSource).
+ */
+function usePolygonLayer(
+  mapRef: React.MutableRefObject<maplibregl.Map | null>,
+  key: PolygonLayerKey,
+  isOn: boolean,
+) {
+  const cfg = POLYGON_LAYERS[key];
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const SOURCE_ID = `geo-${key}`;
+    const FILL_ID = `geo-${key}-fill`;
+    const LINE_ID = `geo-${key}-line`;
+
+    function removePolygon() {
+      // Order matters: every layer must be gone before removeSource.
+      if (map!.getLayer(LINE_ID)) map!.removeLayer(LINE_ID);
+      if (map!.getLayer(FILL_ID)) map!.removeLayer(FILL_ID);
+      if (map!.getSource(SOURCE_ID)) map!.removeSource(SOURCE_ID);
+    }
+
+    if (!isOn) {
+      if (map.isStyleLoaded()) removePolygon();
+      return;
+    }
+
+    function addPolygon() {
+      if (map!.getSource(SOURCE_ID)) return;
+      map!.addSource(SOURCE_ID, {
+        type: "geojson",
+        data: `${BASE}/geo/${key}.geojson`,
+      });
+      map!.addLayer({
+        id: FILL_ID,
+        type: "fill",
+        source: SOURCE_ID,
+        paint: {
+          "fill-color": cfg.fillColor,
+          "fill-opacity": cfg.fillOpacity,
+        },
+      });
+      map!.addLayer({
+        id: LINE_ID,
+        type: "line",
+        source: SOURCE_ID,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": cfg.lineColor,
+          "line-width": 0.8,
+          "line-opacity": 0.6,
+        },
+      });
+    }
+
+    if (map.isStyleLoaded()) {
+      addPolygon();
+    } else {
+      map.once("load", addPolygon);
+    }
+
+    return () => {
+      if (mapRef.current?.isStyleLoaded()) removePolygon();
+    };
+  }, [isOn, key, cfg.fillColor, cfg.fillOpacity, cfg.lineColor, mapRef]);
+}
 
 export function SpatialIntelligence({
   data,
@@ -33,13 +152,22 @@ export function SpatialIntelligence({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
-  const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
+  const [layers, setLayers] = useState<Record<LayerKey, boolean>>(() => ({
     contracts: true,
     infrastructure: true,
     sensitive: true,
     anomaly: true,
     flights: false,
-  });
+    ...(Object.fromEntries(
+      POLYGON_LAYER_KEYS.map((k) => [k, POLYGON_LAYERS[k].defaultOn]),
+    ) as Record<PolygonLayerKey, boolean>),
+  }));
+
+  // Polygon overlays — one hook per TIGER layer, all driven by POLYGON_LAYERS config.
+  usePolygonLayer(mapRef, "municipios", layers.municipios);
+  usePolygonLayer(mapRef, "tracts", layers.tracts);
+  usePolygonLayer(mapRef, "places", layers.places);
+  usePolygonLayer(mapRef, "barrios", layers.barrios);
 
   // Initialize map
   useEffect(() => {

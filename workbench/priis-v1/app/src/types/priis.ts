@@ -29,6 +29,10 @@ export interface Site {
   lng: number;
   sensitive?: boolean;
   infrastructure_class?: string;
+  /** TIGER county GEOID (PR STATEFP=72), joined by ingest_tiger_pr.py */
+  municipio_geoid?: string;
+  /** TIGER tract GEOID, joined by ingest_tiger_pr.py */
+  tract_geoid?: string;
 }
 
 export interface Contract {

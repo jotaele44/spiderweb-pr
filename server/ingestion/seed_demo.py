@@ -13,6 +13,8 @@ import json
 import sqlite3
 from pathlib import Path
 
+from migrations import run_all as run_migrations  # noqa: E402  (sibling import)
+
 ROOT = Path(__file__).parent.parent.parent
 SCHEMA = Path(__file__).parent.parent / "database" / "schema_sqlite.sql"
 DB = Path(__file__).parent.parent / "priis.db"
@@ -212,6 +214,8 @@ def seed(conn: sqlite3.Connection) -> None:
 def main() -> None:
     conn = _conn()
     init_schema(conn)
+    migration_result = run_migrations(conn)
+    print(f"Migrations applied: {migration_result}")
     seed(conn)
     conn.close()
 
