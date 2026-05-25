@@ -5,7 +5,7 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from fr24_temporal_wave_pipeline import PIPELINE_VERSION, run
+from fr24_temporal_wave_pipeline import PIPELINE_VERSION, _scan_rows_for_prohibited_labels, run
 
 
 FIELDS = [
@@ -137,3 +137,13 @@ def test_temporal_wave_pipeline_empty_input_safe(tmp_path):
     assert summary["wave_rows"] == 0
     assert summary["physics_report_rows"] == 0
     assert summary["policy_check"]["policy_check_passed"] is True
+
+
+def test_policy_scan_catches_mixed_case_labels():
+    findings = _scan_rows_for_prohibited_labels([
+        {"status": "Confirmed"},
+        {"status": "VERIFIED_EVENT"},
+        {"status": _expected_status()},
+    ])
+
+    assert findings == ["row1:status=Confirmed", "row2:status=VERIFIED_EVENT"]
