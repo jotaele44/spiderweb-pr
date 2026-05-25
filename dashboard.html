@@ -46,8 +46,8 @@
   <div id="root" style="display:none"></div>
 
   <script>
-    // Fetch the JSON export(s), inject into window.flightData, then mount the app.
-    // The FR24 review queue is loaded in parallel and degrades gracefully.
+    // Fetch the JSON export(s), inject into window.*, then mount the app.
+    // FR24 review queue and temporal waves load in parallel and degrade gracefully.
     const fetchJson = (url) =>
       fetch(url).then(r => {
         if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
@@ -57,7 +57,8 @@
     Promise.allSettled([
       fetchJson("dashboard_data.json"),
       fetchJson("fr24_dashboard_review_queue.json"),
-    ]).then(([flight, fr24]) => {
+      fetchJson("fr24_temporal_wave_dashboard.json"),
+    ]).then(([flight, fr24, temporal]) => {
       if (flight.status === "rejected") {
         const err = flight.reason && flight.reason.message ? flight.reason.message : String(flight.reason);
         document.getElementById("loading").innerHTML =
@@ -78,6 +79,7 @@
       }
       window.flightData = flight.value;
       window.fr24DashboardData = fr24.status === "fulfilled" ? fr24.value : null;
+      window.fr24TemporalWaveData = temporal.status === "fulfilled" ? temporal.value : null;
       document.getElementById("loading").style.display = "none";
       document.getElementById("root").style.display = "";
     });
@@ -85,5 +87,8 @@
 
   <!-- Load dashboard.jsx via Babel (transpiled at runtime) -->
   <script type="text/babel" src="dashboard.jsx" data-type="module"></script>
+
+  <!-- Optional temporal-wave visibility overlay; read-only and candidate-only. -->
+  <script type="text/babel" src="dashboard_temporal_waves.jsx" data-type="module"></script>
 </body>
 </html>
