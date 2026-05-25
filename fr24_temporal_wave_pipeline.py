@@ -47,7 +47,7 @@ def _scan_rows_for_prohibited_labels(rows: Iterable[dict]) -> List[str]:
     for row_idx, row in enumerate(rows, 1):
         for key, value in row.items():
             token = str(value or "").strip()
-            if token in PROHIBITED_LABELS:
+            if token.lower() in PROHIBITED_LABELS:
                 findings.append(f"row{row_idx}:{key}={token}")
     return findings
 
