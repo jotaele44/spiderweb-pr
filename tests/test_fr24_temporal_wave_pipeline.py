@@ -8,7 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from fr24_temporal_wave_pipeline import PIPELINE_VERSION, POLICY, run
+from fr24_temporal_wave_pipeline import (
+    PIPELINE_VERSION,
+    POLICY,
+    _scan_rows_for_prohibited_labels,
+    run,
+)
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────
@@ -128,6 +133,16 @@ def test_policy_check_passed_on_clean_run(tmp_path):
 
     assert result["policy_check"]["policy_check_passed"] is True
     assert result["policy_check"]["prohibited_label_count"] == 0
+
+
+def test_policy_scan_catches_mixed_case_labels():
+    findings = _scan_rows_for_prohibited_labels([
+        {"status": "Confirmed"},
+        {"status": "VERIFIED_EVENT"},
+        {"status": "not_confirmed"},
+    ])
+
+    assert findings == ["row1:status=Confirmed", "row2:status=VERIFIED_EVENT"]
 
 
 # ── real data wiring ───────────────────────────────────────────────────────────
