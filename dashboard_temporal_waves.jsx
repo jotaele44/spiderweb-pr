@@ -3,11 +3,20 @@
  *
  * This module is optional and read-only. It renders a browser-side panel from
  * window.fr24TemporalWaveData when fr24_temporal_wave_dashboard.json exists.
+ * It injects a tab-style control into the existing dashboard tab bar without
+ * mutating the main dashboard's React state model.
  */
 
 const TemporalWavePanel = ({ data }) => {
   const [open, setOpen] = React.useState(false);
   const [statusFilter, setStatusFilter] = React.useState("ALL");
+
+  React.useEffect(() => {
+    window.__openFr24TemporalWaves = () => setOpen(true);
+    return () => {
+      if (window.__openFr24TemporalWaves) delete window.__openFr24TemporalWaves;
+    };
+  }, []);
 
   if (!data || !Array.isArray(data.rows)) {
     return null;
@@ -30,7 +39,7 @@ const TemporalWavePanel = ({ data }) => {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="rounded-full bg-gray-900 text-white shadow-lg px-4 py-2 text-sm font-semibold hover:bg-gray-800"
+          className="rounded-full bg-gray-900 text-white shadow-lg px-4 py-2 text-sm font-semibold hover:bg-gray-800 md:hidden"
         >
           Temporal Waves · {counts.wave_count ?? rows.length}
         </button>
@@ -136,6 +145,30 @@ const TemporalWaveCard = ({ row }) => {
   );
 };
 
+const injectTemporalWaveTab = () => {
+  if (typeof document === "undefined") return;
+  if (!window.fr24TemporalWaveData || !Array.isArray(window.fr24TemporalWaveData.rows)) return;
+  if (document.getElementById("fr24-temporal-waves-tab-button")) return;
+
+  const tabBars = [...document.querySelectorAll("div")].filter(el =>
+    el.className &&
+    String(el.className).includes("border-b") &&
+    String(el.className).includes("flex")
+  );
+  const tabBar = tabBars.find(el => el.textContent && el.textContent.includes("FR24 Review Queue"));
+  if (!tabBar) return;
+
+  const btn = document.createElement("button");
+  btn.id = "fr24-temporal-waves-tab-button";
+  btn.type = "button";
+  btn.textContent = "Temporal Waves";
+  btn.className = "px-4 py-2 text-sm font-medium rounded-t border-b-2 border-transparent text-gray-500 hover:text-gray-700";
+  btn.addEventListener("click", () => {
+    if (window.__openFr24TemporalWaves) window.__openFr24TemporalWaves();
+  });
+  tabBar.appendChild(btn);
+};
+
 const mountTemporalWavePanel = () => {
   if (typeof document === "undefined") return;
   if (document.getElementById("fr24-temporal-wave-panel-root")) return;
@@ -143,6 +176,9 @@ const mountTemporalWavePanel = () => {
   container.id = "fr24-temporal-wave-panel-root";
   document.body.appendChild(container);
   ReactDOM.render(<TemporalWavePanel data={window.fr24TemporalWaveData || null} />, container);
+  injectTemporalWaveTab();
+  setTimeout(injectTemporalWaveTab, 250);
+  setTimeout(injectTemporalWaveTab, 1000);
 };
 
 if (typeof window !== "undefined") {
