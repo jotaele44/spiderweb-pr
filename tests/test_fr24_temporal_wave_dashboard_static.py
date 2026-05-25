@@ -25,6 +25,16 @@ def test_temporal_wave_panel_is_read_only_candidate_visibility():
     assert "validated_aircraft_event" not in jsx
 
 
+def test_temporal_wave_tab_control_is_injected_without_core_dashboard_state():
+    jsx = Path("dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
+
+    assert "injectTemporalWaveTab" in jsx
+    assert "fr24-temporal-waves-tab-button" in jsx
+    assert "Temporal Waves" in jsx
+    assert "window.__openFr24TemporalWaves" in jsx
+    assert "FR24 Review Queue" in jsx
+
+
 def test_temporal_wave_exporter_default_output_name():
     exporter = Path("fr24_temporal_wave_dashboard_data.py").read_text(encoding="utf-8")
 
