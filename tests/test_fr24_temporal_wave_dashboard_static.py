@@ -35,6 +35,16 @@ def test_temporal_wave_tab_control_is_injected_without_core_dashboard_state():
     assert "FR24 Review Queue" in jsx
 
 
+def test_temporal_wave_panel_refreshes_when_data_arrives_late():
+    jsx = Path("dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
+
+    assert "TemporalWaveRoot" in jsx
+    assert "React.useState(window.fr24TemporalWaveData || null)" in jsx
+    assert "fr24TemporalWaveDataLoaded" in jsx
+    assert "window.setInterval(syncFromWindow, 250)" in jsx
+    assert "window.clearInterval(interval)" in jsx
+
+
 def test_temporal_wave_exporter_default_output_name():
     exporter = Path("fr24_temporal_wave_dashboard_data.py").read_text(encoding="utf-8")
 
