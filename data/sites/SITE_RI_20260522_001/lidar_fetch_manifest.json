@@ -1,0 +1,29 @@
+{
+  "site_id": "SITE_RI_20260522_001",
+  "center": {
+    "lat": 18.4878021,
+    "lon": -66.9896910
+  },
+  "requested_products": [
+    "bare_earth_dem",
+    "hillshade",
+    "slope",
+    "local_relief_model",
+    "contours",
+    "canopy_height_model_if_available"
+  ],
+  "aoi_radii_meters": [250, 500],
+  "status": "pending_download",
+  "processing_status": {
+    "dem": "pending",
+    "hillshade": "pending",
+    "slope": "pending",
+    "lrm": "pending",
+    "contours": "pending"
+  },
+  "rules": {
+    "no_invented_findings": true,
+    "evidence_backed_scoring_only": true,
+    "fail_loudly_on_missing_dependencies": true
+  }
+}
