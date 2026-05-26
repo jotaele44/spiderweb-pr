@@ -1,0 +1,158 @@
+{
+  "catalog_id": "pr-satellite-fixture-v1",
+  "description": "Synthetic satellite scene catalog for PRII Stage 3 ingestion tests.",
+  "scenes": [
+    {
+      "scene_id": "SAT-PR-S2-001",
+      "synthetic": true,
+      "source": {
+        "provider": "ESA",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2A",
+        "instrument": "MSI"
+      },
+      "acquisition": {
+        "acquired_at": "2024-03-14T14:32:00Z",
+        "processed_at": "2024-03-15T02:00:00Z",
+        "license": "Copernicus Sentinel Data Terms of Use"
+      },
+      "asset": {
+        "source_uri": "s3://fixture-bucket/pr/sentinel2/2024-03-14.tif",
+        "checksum_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "media_type": "image/tiff"
+      },
+      "geometry": {
+        "crs": "EPSG:4326",
+        "footprint": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-67.0, 18.0], [-66.0, 18.0],
+            [-66.0, 18.5], [-67.0, 18.5],
+            [-67.0, 18.0]
+          ]]
+        },
+        "bbox": [-67.0, 18.0, -66.0, 18.5]
+      },
+      "puerto_rico": {"region": "mainland"},
+      "quality": {
+        "cloud_cover_pct": 12.5,
+        "geometric_confidence": 0.92,
+        "source_reliability": "high"
+      }
+    },
+    {
+      "scene_id": "SAT-PR-L9-002",
+      "synthetic": true,
+      "source": {
+        "provider": "USGS",
+        "collection": "landsat-9-c2l2",
+        "platform": "Landsat 9",
+        "instrument": "OLI-TIRS"
+      },
+      "acquisition": {
+        "acquired_at": "2024-04-02T15:10:00Z",
+        "processed_at": "2024-04-03T01:00:00Z",
+        "license": "Public Domain (USGS)"
+      },
+      "asset": {
+        "local_path": "/data/fixtures/pr/landsat9/2024-04-02.tif",
+        "checksum_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "media_type": "image/tiff"
+      },
+      "geometry": {
+        "crs": "EPSG:4326",
+        "footprint": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-67.3, 17.9], [-65.6, 17.9],
+            [-65.6, 18.5], [-67.3, 18.5],
+            [-67.3, 17.9]
+          ]]
+        },
+        "bbox": [-67.3, 17.9, -65.6, 18.5]
+      },
+      "puerto_rico": {"region": "full_island"},
+      "quality": {
+        "cloud_cover_pct": 3.0,
+        "geometric_confidence": 0.88,
+        "source_reliability": "high"
+      }
+    },
+    {
+      "scene_id": "SAT-NYC-OUT-003",
+      "synthetic": true,
+      "source": {
+        "provider": "ESA",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2A",
+        "instrument": "MSI"
+      },
+      "acquisition": {
+        "acquired_at": "2024-03-20T15:00:00Z",
+        "processed_at": "2024-03-21T02:00:00Z",
+        "license": "Copernicus Sentinel Data Terms of Use"
+      },
+      "asset": {
+        "source_uri": "s3://fixture-bucket/nyc/sentinel2/2024-03-20.tif",
+        "checksum_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "media_type": "image/tiff"
+      },
+      "geometry": {
+        "crs": "EPSG:4326",
+        "footprint": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-74.3, 40.4], [-73.7, 40.4],
+            [-73.7, 40.9], [-74.3, 40.9],
+            [-74.3, 40.4]
+          ]]
+        },
+        "bbox": [-74.3, 40.4, -73.7, 40.9]
+      },
+      "puerto_rico": {"region": "mainland"},
+      "quality": {
+        "cloud_cover_pct": 5.0,
+        "geometric_confidence": 0.90,
+        "source_reliability": "medium"
+      }
+    },
+    {
+      "scene_id": "SAT-PR-S2-004",
+      "synthetic": false,
+      "source": {
+        "provider": "ESA",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2B",
+        "instrument": "MSI"
+      },
+      "acquisition": {
+        "acquired_at": "2024-05-01T14:20:00Z",
+        "processed_at": "2024-05-02T02:00:00Z",
+        "license": "Copernicus Sentinel Data Terms of Use"
+      },
+      "asset": {
+        "source_uri": "s3://fixture-bucket/pr/sentinel2/2024-05-01.tif",
+        "checksum_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "media_type": "image/tiff"
+      },
+      "geometry": {
+        "crs": "EPSG:4326",
+        "footprint": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-67.0, 18.0], [-66.0, 18.0],
+            [-66.0, 18.5], [-67.0, 18.5],
+            [-67.0, 18.0]
+          ]]
+        },
+        "bbox": [-67.0, 18.0, -66.0, 18.5]
+      },
+      "puerto_rico": {"region": "mainland"},
+      "quality": {
+        "cloud_cover_pct": 9.0,
+        "geometric_confidence": 0.91,
+        "source_reliability": "high"
+      }
+    }
+  ]
+}
