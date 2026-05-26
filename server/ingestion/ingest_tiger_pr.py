@@ -77,7 +77,7 @@ LAYER_SPECS: dict[str, dict[str, Any]] = {
         # TIGER municipios at full precision are ~3 MB raw / ~600 KB gzipped —
         # acceptable for a one-shot admin baselayer load. Budget set well above
         # the empirical 2025 size to leave headroom for future detail growth.
-        "max_bytes": 5_000_000,
+        "max_bytes": 6_000_000,
         # Oversize policy:
         #   "abort"         → raise; suggests a data-quality regression.
         #   "warn_continue" → keep writing the file but flag in manifest so
