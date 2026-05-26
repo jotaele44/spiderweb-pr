@@ -1,8 +1,19 @@
 """
 FR24 REVIEW QUEUE BUILDER
 
-Builds a priority review queue from fused OCR candidate rows. This utility only
-prioritizes manual review; it does not confirm events.
+Builds a prioritized review queue from the fused OCR event candidates CSV.
+Records are ranked by conflict severity (number of conflicting fields) and
+confidence.  Images with no region match are included at lower priority.
+
+Outputs
+-------
+  fr24_fused_review_queue.csv   Overwrite of the review queue with priority
+                                scores added. Same format as fr24_ocr_fusion.py
+                                output but filtered to rows requiring review.
+
+All output review_status values are candidates only.
+Disallowed: confirmed, confirmed_anomaly, confirmed_aircraft_event,
+            confirmed_infrastructure.
 """
 
 from __future__ import annotations
@@ -10,88 +21,104 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from collections import Counter
 from pathlib import Path
 from typing import List
 
+DISALLOWED_REVIEW_STATUSES = {
+    "confirmed",
+    "confirmed_anomaly",
+    "confirmed_aircraft_event",
+    "confirmed_infrastructure",
+}
 
-def read_csv(path: Path) -> List[dict]:
-    if not path.exists() or path.stat().st_size == 0:
-        return []
-    return list(csv.DictReader(path.open(encoding="utf-8")))
+REVIEW_REQUIRED_STATUSES = {
+    "fusion_conflict_review",
+    "fusion_no_region_match",
+    "region_parsed_candidate",
+    "region_low_text_review",
+    "region_ocr_failed",
+    "region_manual_review_required",
+    "manual_review_required",
+    "low_text_review",
+    "parsed_candidate",
+}
 
 
-def priority_score(row: dict) -> int:
-    score = 0
+def _conflict_count(row: dict) -> int:
+    cf = row.get("conflict_fields", "")
+    if not cf:
+        return 0
+    return len([x for x in cf.split(",") if x.strip()])
+
+
+def _priority_score(row: dict) -> float:
+    score = 0.0
+    conflicts = _conflict_count(row)
+    score += conflicts * 10.0
     status = row.get("review_status", "")
     if status == "fusion_conflict_review":
-        score += 50
-    elif status == "region_only_review":
-        score += 35
-    elif status == "manual_review_required":
-        score += 25
+        score += 20.0
+    elif status == "fusion_no_region_match":
+        score += 5.0
     try:
-        score += min(20, int(row.get("conflict_count") or 0) * 5)
+        conf = float(row.get("confidence", 0) or 0)
+        score += conf * 5.0
     except Exception:
         pass
-    if row.get("registration_wi") or row.get("registration_region"):
-        score += 10
-    if row.get("aircraft_type_wi") or row.get("aircraft_type_region"):
-        score += 8
-    if row.get("barometric_altitude_ft_wi") or row.get("barometric_altitude_ft_region"):
-        score += 4
-    if row.get("ground_speed_mph_wi") or row.get("ground_speed_mph_region"):
-        score += 4
-    return score
+    return round(score, 2)
 
 
-def required_next_check(row: dict) -> str:
-    if row.get("review_status") == "fusion_conflict_review":
-        return "compare_whole_image_vs_region_ocr"
-    if row.get("review_status") == "region_only_review":
-        return "verify_missing_whole_image_parse"
-    if row.get("review_status") == "manual_review_required":
-        return "manual_ocr_field_review"
-    return "spot_check_candidate"
+def build_review_queue(fused_csv: Path, review_csv: Path) -> dict:
+    rows: List[dict] = []
+    if fused_csv.exists():
+        with fused_csv.open(encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
 
+    review_rows = [r for r in rows if r.get("review_status") in REVIEW_REQUIRED_STATUSES]
 
-def build_queue(fused_csv: Path, output_csv: Path) -> dict:
-    rows = read_csv(fused_csv)
-    queue = []
-    for row in rows:
-        if row.get("review_status") == "fused_candidate":
-            continue
-        out = dict(row)
-        out["priority_score"] = priority_score(row)
-        out["required_next_check"] = required_next_check(row)
-        out["queue_status"] = "open"
-        out["confirmation_status"] = "not_confirmed"
-        queue.append(out)
-    queue.sort(key=lambda r: (-int(r.get("priority_score") or 0), r.get("image_name", "")))
-    output_csv.parent.mkdir(parents=True, exist_ok=True)
-    if queue:
-        with output_csv.open("w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=list(queue[0].keys()))
-            writer.writeheader()
-            writer.writerows(queue)
-    else:
-        output_csv.write_text("", encoding="utf-8")
-    summary = {
-        "input_csv": str(fused_csv),
-        "queue_rows": len(queue),
-        "review_status": dict(Counter(r.get("review_status", "") for r in queue)),
-        "output_csv": str(output_csv),
-        "policy": "candidate_only_no_auto_confirmation",
+    for row in review_rows:
+        assert row.get("review_status") not in DISALLOWED_REVIEW_STATUSES
+        row["priority_score"] = _priority_score(row)
+        row["conflict_count"] = _conflict_count(row)
+
+    review_rows.sort(key=lambda r: -float(r.get("priority_score", 0)))
+
+    fallback_fields = ["image_path", "image_name", "review_status", "priority_score", "conflict_count"]
+    fieldnames: List[str] = fallback_fields
+    if rows:
+        fieldnames = list(rows[0].keys())
+        for col in ("priority_score", "conflict_count"):
+            if col not in fieldnames:
+                fieldnames.append(col)
+
+    review_csv.parent.mkdir(parents=True, exist_ok=True)
+    with review_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(review_rows)
+
+    return {
+        "fused_csv": str(fused_csv),
+        "review_csv": str(review_csv),
+        "total_fused": len(rows),
+        "review_rows": len(review_rows),
+        "conflict_rows": sum(1 for r in review_rows if r.get("review_status") == "fusion_conflict_review"),
     }
-    return summary
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build FR24 fused OCR review queue")
-    parser.add_argument("--fused-csv", default="data/_manifests/fr24_audit/fr24_fused_event_candidates.csv")
-    parser.add_argument("--output-csv", default="data/_manifests/fr24_audit/fr24_fused_review_queue_ranked.csv")
+    parser = argparse.ArgumentParser(description="Build prioritized FR24 review queue from fused candidates")
+    parser.add_argument(
+        "--fused-csv",
+        default="data/_manifests/fr24_audit/fr24_fused_event_candidates.csv",
+    )
+    parser.add_argument(
+        "--review-csv",
+        default="data/_manifests/fr24_audit/fr24_fused_review_queue.csv",
+    )
     args = parser.parse_args()
-    print(json.dumps(build_queue(Path(args.fused_csv), Path(args.output_csv)), indent=2))
+    summary = build_review_queue(Path(args.fused_csv), Path(args.review_csv))
+    print(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":

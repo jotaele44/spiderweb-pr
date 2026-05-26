@@ -1,9 +1,34 @@
 """
 FR24 OCR FUSION
 
-Fuses whole-image OCR parser output with region OCR parser output. Conflicting
-field values are preserved side-by-side and routed to review; the fusion layer
-never confirms aircraft events or overwrites source evidence silently.
+Fuses whole-image OCR parsed events with region-level OCR parsed events.
+
+Matching key: image_path
+
+For each matched image the fuser compares six key fields side-by-side and
+flags any field-level conflict where both sources supply a non-empty,
+non-matching value. Conflicting records go to review; non-conflicting records
+are promoted to "fused_candidate".
+
+No confirmed labels are emitted. Fused values are candidates only.
+
+Inputs
+------
+  --whole-image-csv   fr24_ocr_parsed_events_probe_50.csv (from fr24_ocr_parse.py)
+  --region-csv        fr24_region_parsed_events.csv (from fr24_region_parse.py)
+
+Outputs
+-------
+  --output-csv        fr24_fused_event_candidates.csv
+  --review-csv        fr24_fused_review_queue.csv
+
+Column layout in output CSV:
+  provenance from whole-image row (all original columns prefixed where
+  needed), then per-field side-by-side pairs, then:
+    conflict_fields   comma-separated list of field names with conflicts
+    region_source_count   number of region rows fused for this image
+    review_status     "fused_candidate" | "fusion_conflict_review" |
+                      "fusion_no_region_match" | "fusion_region_only"
 """
 
 from __future__ import annotations
@@ -11,164 +36,208 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, List, Optional
 
-FUSION_VERSION = "fr24_ocr_fusion_v0.1.0"
-FUSION_FIELDS = [
+KEY_FIELDS = [
     "callsign_or_label",
-    "operator",
-    "aircraft_type",
     "registration",
-    "origin_code",
-    "destination_code",
+    "aircraft_type",
     "barometric_altitude_ft",
     "ground_speed_mph",
-    "flight_status",
-    "elapsed_departed",
-    "elapsed_arrived",
-    "playback_date",
-    "playback_time",
-    "playback_timezone",
+    "origin_code",
+    "destination_code",
 ]
-REGION_PRIORITY = {
-    "right_panel": 0,
-    "bottom_timeline": 1,
-    "full_image": 2,
-    "map_area": 3,
-    "top_bar": 4,
+
+DISALLOWED_REVIEW_STATUSES = {"confirmed", "confirmed_anomaly", "confirmed_aircraft_event", "confirmed_infrastructure"}
+
+REGION_FIELD_PREFERENCE = {
+    "callsign_or_label": ["callsign"],
+    "barometric_altitude_ft": ["altitude", "panel"],
+    "ground_speed_mph": ["speed", "panel"],
+    "origin_code": ["route", "panel"],
+    "destination_code": ["route", "panel"],
+    "registration": ["panel"],
+    "aircraft_type": ["panel"],
 }
 
 
-def read_csv(path: Path) -> List[dict]:
-    if not path.exists() or path.stat().st_size == 0:
-        return []
-    return list(csv.DictReader(path.open(encoding="utf-8")))
-
-
-def write_csv(path: Path, rows: List[dict], fieldnames: List[str] | None = None) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not fieldnames:
-        fieldnames = list(rows[0].keys()) if rows else []
-    if not fieldnames:
-        path.write_text("", encoding="utf-8")
-        return
-    with path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({k: row.get(k, "") for k in fieldnames})
-
-
-def region_sort_key(row: dict) -> tuple:
-    try:
-        confidence = float(row.get("confidence") or 0)
-    except Exception:
-        confidence = 0.0
-    return (REGION_PRIORITY.get(row.get("region_name", ""), 99), -confidence, row.get("region_name", ""))
-
-
-def best_region_rows(region_rows: Iterable[dict]) -> Dict[str, dict]:
-    grouped: Dict[str, List[dict]] = defaultdict(list)
+def _best_region_value(field: str, region_rows: List[dict]) -> str:
+    preferred = REGION_FIELD_PREFERENCE.get(field, ["panel"])
+    for pref_type in preferred:
+        for row in region_rows:
+            if row.get("region_type") == pref_type and row.get(field, "").strip():
+                return row[field].strip()
     for row in region_rows:
-        grouped[row.get("image_path", "")].append(row)
-    return {image_path: sorted(rows, key=region_sort_key)[0] for image_path, rows in grouped.items() if image_path}
+        if row.get(field, "").strip():
+            return row[field].strip()
+    return ""
 
 
-def values_conflict(a: str, b: str) -> bool:
-    if not a or not b:
-        return False
-    return a.strip().lower() != b.strip().lower()
+def _conflict(wi_val: str, region_val: str) -> bool:
+    return bool(wi_val and region_val and wi_val.strip() != region_val.strip())
 
 
-def fuse_row(whole: dict, region: dict | None) -> dict:
-    image_path = whole.get("image_path", "") or (region or {}).get("image_path", "")
-    image_name = whole.get("image_name", "") or (region or {}).get("image_name", "")
-    out = {
-        "candidate_id": f"fused::{Path(image_path).name}",
-        "image_path": image_path,
-        "image_name": image_name,
-        "whole_review_status": whole.get("review_status", ""),
-        "region_review_status": (region or {}).get("review_status", ""),
-        "region_name": (region or {}).get("region_name", ""),
-        "whole_confidence": whole.get("confidence", ""),
-        "region_confidence": (region or {}).get("confidence", ""),
-        "field_conflicts": "",
-        "conflict_count": 0,
-        "fusion_status": "fused_candidate",
-        "review_status": "fused_candidate",
-        "fusion_version": FUSION_VERSION,
-        "confirmation_status": "not_confirmed",
-    }
-    conflicts: List[str] = []
-    for field in FUSION_FIELDS:
-        wi_value = whole.get(field, "")
-        region_value = (region or {}).get(field, "")
-        out[f"{field}_wi"] = wi_value
-        out[f"{field}_region"] = region_value
-        if values_conflict(wi_value, region_value):
-            conflicts.append(field)
-    out["field_conflicts"] = ";".join(conflicts)
-    out["conflict_count"] = len(conflicts)
-
-    if conflicts:
-        out["fusion_status"] = "fusion_conflict_review"
-        out["review_status"] = "fusion_conflict_review"
-    elif whole.get("review_status") == "manual_review_required" or (region or {}).get("review_status") in {"region_manual_review_required", "region_low_text_review", "region_ocr_failed"}:
-        out["fusion_status"] = "manual_review_required"
-        out["review_status"] = "manual_review_required"
-    return out
-
-
-def fuse(whole_image_csv: Path, region_csv: Path, output_csv: Path, review_csv: Path) -> dict:
-    whole_rows = read_csv(whole_image_csv)
-    region_rows = read_csv(region_csv)
-    best_regions = best_region_rows(region_rows)
-
-    fused: List[dict] = []
+def fuse_records(
+    wi_rows: List[dict],
+    region_rows_by_image: Dict[str, List[dict]],
+) -> List[dict]:
+    fused = []
     seen_images = set()
-    for whole in whole_rows:
-        image_path = whole.get("image_path", "")
-        fused.append(fuse_row(whole, best_regions.get(image_path)))
-        seen_images.add(image_path)
 
-    # Region-only candidates are retained, but review-gated.
-    for image_path, region in best_regions.items():
-        if image_path in seen_images:
+    for wi_row in wi_rows:
+        img = wi_row.get("image_path", "")
+        seen_images.add(img)
+        region_rows = region_rows_by_image.get(img, [])
+
+        out = dict(wi_row)
+        conflict_fields: List[str] = []
+
+        for field in KEY_FIELDS:
+            wi_val = wi_row.get(field, "").strip() if wi_row.get(field) else ""
+            region_val = _best_region_value(field, region_rows)
+
+            out[f"{field}_wi"] = wi_val
+            out[f"{field}_region"] = region_val
+
+            if _conflict(wi_val, region_val):
+                conflict_fields.append(field)
+
+        out["conflict_fields"] = ",".join(conflict_fields)
+        out["region_source_count"] = len(region_rows)
+
+        if conflict_fields:
+            out["review_status"] = "fusion_conflict_review"
+        elif not region_rows:
+            out["review_status"] = "fusion_no_region_match"
+        else:
+            out["review_status"] = "fused_candidate"
+
+        assert out["review_status"] not in DISALLOWED_REVIEW_STATUSES
+        fused.append(out)
+
+    for img, region_rows in region_rows_by_image.items():
+        if img in seen_images:
             continue
-        empty_whole = {"image_path": image_path, "image_name": region.get("image_name", ""), "review_status": "missing_whole_image_parse"}
-        fused_row = fuse_row(empty_whole, region)
-        fused_row["fusion_status"] = "region_only_review"
-        fused_row["review_status"] = "region_only_review"
-        fused.append(fused_row)
+        representative = region_rows[0]
+        out = {
+            "image_path": img,
+            "image_name": representative.get("image_name", ""),
+            "sidecar_path": representative.get("sidecar_path", ""),
+            "sidecar_title": representative.get("sidecar_title", ""),
+            "match_band": representative.get("match_band", ""),
+            "resolved_status": representative.get("resolved_status", ""),
+        }
+        for field in KEY_FIELDS:
+            out[f"{field}_wi"] = ""
+            out[f"{field}_region"] = _best_region_value(field, region_rows)
+        out["conflict_fields"] = ""
+        out["region_source_count"] = len(region_rows)
+        out["review_status"] = "fusion_region_only"
+        fused.append(out)
 
-    fieldnames = list(fused[0].keys()) if fused else []
-    write_csv(output_csv, fused, fieldnames)
-    review_rows = [r for r in fused if r.get("review_status") != "fused_candidate"]
-    write_csv(review_csv, review_rows, fieldnames)
+    return fused
 
-    summary = {
-        "whole_rows": len(whole_rows),
-        "region_rows": len(region_rows),
+
+def _derive_output_fieldnames(wi_rows: List[dict]) -> List[str]:
+    base = list(wi_rows[0].keys()) if wi_rows else [
+        "image_path", "image_name", "sidecar_path", "sidecar_title",
+        "match_band", "resolved_status",
+    ]
+    existing = set(base)
+    extra = []
+    for field in KEY_FIELDS:
+        for suffix in ("_wi", "_region"):
+            col = f"{field}{suffix}"
+            if col not in existing:
+                extra.append(col)
+    extra += ["conflict_fields", "region_source_count", "review_status"]
+    final = []
+    seen = set()
+    for col in base + extra:
+        if col not in seen:
+            final.append(col)
+            seen.add(col)
+    return final
+
+
+def run_fusion(
+    wi_csv: Path,
+    region_csv: Path,
+    output_csv: Path,
+    review_csv: Path,
+) -> dict:
+    wi_rows: List[dict] = []
+    if wi_csv.exists():
+        with wi_csv.open(encoding="utf-8") as f:
+            wi_rows = list(csv.DictReader(f))
+
+    region_rows_by_image: Dict[str, List[dict]] = defaultdict(list)
+    if region_csv.exists():
+        with region_csv.open(encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                region_rows_by_image[row.get("image_path", "")].append(row)
+
+    fused = fuse_records(wi_rows, region_rows_by_image)
+    fieldnames = _derive_output_fieldnames(wi_rows)
+
+    output_csv.parent.mkdir(parents=True, exist_ok=True)
+    review_csv.parent.mkdir(parents=True, exist_ok=True)
+
+    with output_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(fused)
+
+    review_rows = [r for r in fused if r.get("review_status") == "fusion_conflict_review"]
+    with review_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(review_rows)
+
+    status_counts: dict = {}
+    for r in fused:
+        s = r.get("review_status", "unknown")
+        status_counts[s] = status_counts.get(s, 0) + 1
+
+    return {
+        "whole_image_rows": len(wi_rows),
+        "region_rows_total": sum(len(v) for v in region_rows_by_image.values()),
         "fused_rows": len(fused),
-        "review_rows": len(review_rows),
-        "review_status": dict(Counter(r.get("review_status", "") for r in fused)),
+        "conflict_rows": len(review_rows),
+        "review_status_counts": status_counts,
         "output_csv": str(output_csv),
         "review_csv": str(review_csv),
-        "policy": "candidate_only_no_auto_confirmation",
     }
-    return summary
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Fuse whole-image and region OCR parsed candidates")
-    parser.add_argument("--whole-image-csv", default="data/_manifests/fr24_audit/fr24_ocr_parsed_events_probe_50.csv")
-    parser.add_argument("--region-csv", default="data/_manifests/fr24_audit/fr24_region_parsed_events.csv")
-    parser.add_argument("--output-csv", default="data/_manifests/fr24_audit/fr24_fused_event_candidates.csv")
-    parser.add_argument("--review-csv", default="data/_manifests/fr24_audit/fr24_fused_review_queue.csv")
+    parser = argparse.ArgumentParser(description="Fuse whole-image and region OCR parsed events")
+    parser.add_argument(
+        "--whole-image-csv",
+        default="data/_manifests/fr24_audit/fr24_ocr_parsed_events_probe_50.csv",
+    )
+    parser.add_argument(
+        "--region-csv",
+        default="data/_manifests/fr24_audit/fr24_region_parsed_events.csv",
+    )
+    parser.add_argument(
+        "--output-csv",
+        default="data/_manifests/fr24_audit/fr24_fused_event_candidates.csv",
+    )
+    parser.add_argument(
+        "--review-csv",
+        default="data/_manifests/fr24_audit/fr24_fused_review_queue.csv",
+    )
     args = parser.parse_args()
-    print(json.dumps(fuse(Path(args.whole_image_csv), Path(args.region_csv), Path(args.output_csv), Path(args.review_csv)), indent=2))
+    summary = run_fusion(
+        Path(args.whole_image_csv),
+        Path(args.region_csv),
+        Path(args.output_csv),
+        Path(args.review_csv),
+    )
+    print(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":
