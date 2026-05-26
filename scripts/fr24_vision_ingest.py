@@ -43,7 +43,7 @@ except ImportError:
 
 ROOT = Path(__file__).parent.parent
 
-DEFAULT_IMAGE_DIR = Path("/Users/jotaele/spiderweb-pr/data/FR24 Logs")
+DEFAULT_IMAGE_DIR = ROOT / "data" / "FR24 Logs"
 DEFAULT_OUTPUT    = ROOT / "outputs" / "fr24_selected_export.csv"
 DEFAULT_DB        = ROOT / "server" / "priis.db"
 DEFAULT_CHECKPOINT = ROOT / "outputs" / "fr24_ingest_checkpoint.json"
