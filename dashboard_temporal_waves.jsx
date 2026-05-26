@@ -7,6 +7,9 @@
  * mutating the main dashboard's React state model.
  */
 
+const temporalWaveDataReady = (data) =>
+  data && Array.isArray(data.rows);
+
 const TemporalWavePanel = ({ data }) => {
   const [open, setOpen] = React.useState(false);
   const [statusFilter, setStatusFilter] = React.useState("ALL");
@@ -18,18 +21,18 @@ const TemporalWavePanel = ({ data }) => {
     };
   }, []);
 
-  if (!data || !Array.isArray(data.rows)) {
-    return null;
-  }
-
-  const rows = data.rows || [];
-  const counts = data.counts || {};
+  const rows = temporalWaveDataReady(data) ? data.rows : [];
+  const counts = temporalWaveDataReady(data) ? (data.counts || {}) : {};
   const filtered = React.useMemo(() => {
     return rows.filter(r => {
       if (statusFilter !== "ALL" && (r.physics_status || "") !== statusFilter) return false;
       return true;
     });
   }, [rows, statusFilter]);
+
+  if (!temporalWaveDataReady(data)) {
+    return null;
+  }
 
   const generatedAt = data.generated_at ? new Date(data.generated_at).toLocaleString() : "—";
   const statusCounts = data.physics_status_counts || {};
@@ -147,7 +150,7 @@ const TemporalWaveCard = ({ row }) => {
 
 const injectTemporalWaveTab = () => {
   if (typeof document === "undefined") return;
-  if (!window.fr24TemporalWaveData || !Array.isArray(window.fr24TemporalWaveData.rows)) return;
+  if (!temporalWaveDataReady(window.fr24TemporalWaveData)) return;
   if (document.getElementById("fr24-temporal-waves-tab-button")) return;
 
   const tabBars = [...document.querySelectorAll("div")].filter(el =>
@@ -169,16 +172,48 @@ const injectTemporalWaveTab = () => {
   tabBar.appendChild(btn);
 };
 
+const TemporalWaveRoot = () => {
+  const [data, setData] = React.useState(window.fr24TemporalWaveData || null);
+
+  React.useEffect(() => {
+    const syncFromWindow = () => {
+      const next = window.fr24TemporalWaveData || null;
+      if (temporalWaveDataReady(next)) {
+        setData(next);
+        setTimeout(injectTemporalWaveTab, 0);
+      }
+    };
+
+    syncFromWindow();
+    window.addEventListener("fr24TemporalWaveDataLoaded", syncFromWindow);
+    const interval = window.setInterval(syncFromWindow, 250);
+    const timeout = window.setTimeout(() => window.clearInterval(interval), 30000);
+
+    return () => {
+      window.removeEventListener("fr24TemporalWaveDataLoaded", syncFromWindow);
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (temporalWaveDataReady(data)) {
+      injectTemporalWaveTab();
+      setTimeout(injectTemporalWaveTab, 250);
+      setTimeout(injectTemporalWaveTab, 1000);
+    }
+  }, [data]);
+
+  return <TemporalWavePanel data={data} />;
+};
+
 const mountTemporalWavePanel = () => {
   if (typeof document === "undefined") return;
   if (document.getElementById("fr24-temporal-wave-panel-root")) return;
   const container = document.createElement("div");
   container.id = "fr24-temporal-wave-panel-root";
   document.body.appendChild(container);
-  ReactDOM.render(<TemporalWavePanel data={window.fr24TemporalWaveData || null} />, container);
-  injectTemporalWaveTab();
-  setTimeout(injectTemporalWaveTab, 250);
-  setTimeout(injectTemporalWaveTab, 1000);
+  ReactDOM.render(<TemporalWaveRoot />, container);
 };
 
 if (typeof window !== "undefined") {
