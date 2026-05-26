@@ -172,6 +172,60 @@ class ManualReviewQueue:
             writer.writerows(items)
         return output_path
 
+    def get_pending_count(self, queue_type: Optional[str] = None) -> int:
+        """Return the number of pending items (optionally filtered by type)."""
+        conn = self._connect()
+        if queue_type:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM review_queue WHERE queue_type=? AND status='pending'",
+                (queue_type,),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM review_queue WHERE status='pending'"
+            ).fetchone()
+        conn.close()
+        return row[0] if row else 0
+
+    def bulk_approve(self, item_ids: List[str], resolution: str = "bulk_approved") -> int:
+        """Mark multiple items as reviewed in one transaction.
+
+        Returns the number of items actually updated (skips unknown IDs).
+        """
+        if not item_ids:
+            return 0
+        now = datetime.utcnow().isoformat() + "Z"
+        conn = self._connect()
+        affected = 0
+        for item_id in item_ids:
+            affected += conn.execute(
+                "UPDATE review_queue SET status='reviewed', resolution=?, reviewed_at=? "
+                "WHERE item_id=?",
+                (resolution, now, item_id),
+            ).rowcount
+        conn.commit()
+        conn.close()
+        return affected
+
+    def export_to_json(self, output_path: Optional[str] = None,
+                       queue_type: Optional[str] = None) -> str:
+        """Export all items (optionally filtered by type) to a JSON file.
+
+        Returns the path of the written file.
+        """
+        import json as _json
+        items = self.get_all(queue_type=queue_type)
+        if output_path is None:
+            suffix = f"_{queue_type}" if queue_type else ""
+            output_path = str(self.output_dir / f"review_queue{suffix}.json")
+        with open(output_path, "w", encoding="utf-8") as f:
+            _json.dump(
+                {"exported_at": datetime.utcnow().isoformat() + "Z", "items": items},
+                f,
+                indent=2,
+            )
+        return output_path
+
     # ----------------------------------------------------------------- stats
 
     def get_stats(self) -> Dict:

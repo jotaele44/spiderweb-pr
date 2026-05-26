@@ -193,6 +193,77 @@ class CalibrationDriver:
                 })
         return flags
 
+    def explain_flags(self, report: Dict[str, Any]) -> str:
+        """Return a human-readable summary of calibration flags in *report*.
+
+        Returns "No calibration flags — PASS" when the flags list is empty.
+        """
+        flags = report.get("calibration_flags", [])
+        if not flags:
+            return "No calibration flags — PASS"
+        lines = [f"Calibration status: {report.get('status', 'UNKNOWN')}",
+                 f"Mode: {report.get('baseline_mode', 'unknown')}",
+                 f"{len(flags)} flag(s) raised:"]
+        for f in flags:
+            metric = f.get("metric", "?")
+            value  = f.get("value", "?")
+            action = f.get("action", "")
+            if "expected_min" in f:
+                lines.append(
+                    f"  [{metric}] value={value} < min={f['expected_min']} → {action}"
+                )
+            elif "expected_max" in f:
+                lines.append(
+                    f"  [{metric}] value={value} > max={f['expected_max']} → {action}"
+                )
+            else:
+                lines.append(f"  [{metric}] value={value} → {action}")
+        return "\n".join(lines)
+
+    @staticmethod
+    def compare_runs(report_a: Dict[str, Any], report_b: Dict[str, Any]) -> Dict[str, Any]:
+        """Compare two calibration run reports.
+
+        Returns a delta dict with per-metric absolute change (b - a).
+        Positive delta means metric increased from run A to run B.
+        """
+        metrics_a = CalibrationDriver._extract_metrics(report_a)
+        metrics_b = CalibrationDriver._extract_metrics(report_b)
+        all_keys = set(metrics_a) | set(metrics_b)
+        deltas = {}
+        for k in sorted(all_keys):
+            va = metrics_a.get(k)
+            vb = metrics_b.get(k)
+            if va is not None and vb is not None:
+                deltas[k] = round(vb - va, 6)
+            else:
+                deltas[k] = None
+        return {
+            "candidate_count_a": report_a.get("candidate_count"),
+            "candidate_count_b": report_b.get("candidate_count"),
+            "status_a":          report_a.get("status"),
+            "status_b":          report_b.get("status"),
+            "metric_deltas":     deltas,
+        }
+
+    @staticmethod
+    def _extract_metrics(report: Dict[str, Any]) -> Dict[str, float]:
+        """Pull flat metric values from a calibration report."""
+        sr = report.get("signal_rates", {})
+        n  = report.get("candidate_count", 0)
+        td = report.get("tier_distribution", {})
+        md = report.get("mbil_distribution", {})
+        te = report.get("terrain_distribution", {})
+        return {
+            "dedup_rate":         report.get("dedup_rate", 0.0),
+            "hydro_yes_pct":      sr.get("hydro_yes_pct", 0.0),
+            "utility_yes_pct":    sr.get("utility_yes_pct", 0.0),
+            "pct_T4":             td.get("T4", 0) / n if n else 0.0,
+            "pct_T1_or_T2":       (td.get("T1", 0) + td.get("T2", 0)) / n if n else 0.0,
+            "pct_mbil_0":         md.get("MBIL-0", 0) / n if n else 0.0,
+            "pct_urban_terrain":  te.get("urban", 0) / n if n else 0.0,
+        }
+
     def _write_report(self, report: Dict[str, Any]) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         (self.output_dir / "calibration_report.json").write_text(

@@ -1,156 +1,221 @@
-"""Tests for satellite_ingest: PRII Stage 3 satellite source ingestion."""
+"""Tests for satellite_ingest.py (tasks 41-50)."""
 
+import hashlib
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 
-from satellite_ingest import (
-    SatelliteIngestError,
-    SatelliteIngestor,
-    ingest_satellite,
-    load_stac_catalog,
-    load_synthetic_catalog,
-)
-from schema_validation import SchemaValidator
-
-REPO_ROOT = Path(__file__).parent.parent
-FIXTURES = REPO_ROOT / "tests" / "fixtures"
-SYNTHETIC_CATALOG = str(FIXTURES / "satellite_catalog.json")
-STAC_CATALOG = str(FIXTURES / "satellite_stac_items.json")
+from satellite_ingest import SatelliteIngest, PR_LAT_MAX, PR_LAT_MIN, PR_LON_MAX, PR_LON_MIN
 
 
-# ── Synthetic ingestion ───────────────────────────────────────────────────────
+# ── helpers ───────────────────────────────────────────────────────────────────
 
-def test_synthetic_ingest_validates_good_scenes(tmp_path):
-    summary = ingest_satellite(str(tmp_path / "out"), SYNTHETIC_CATALOG, "synthetic")
-    assert summary["catalogued"] == 4
-    assert summary["validated"] == 2
-    assert summary["rejected"] == 2
-
-
-def test_validated_manifests_written_and_schema_clean(tmp_path):
-    out = tmp_path / "out"
-    ingest_satellite(str(out), SYNTHETIC_CATALOG, "synthetic")
-    manifests = sorted((out / "manifests").glob("*.json"))
-    assert len(manifests) == 2
-
-    validator = SchemaValidator()
-    for path in manifests:
-        manifest = json.loads(path.read_text())
-        result = validator.validate(manifest, "satellite_source_manifest")
-        assert result["valid"], f"{path.name}: {result['errors']}"
-
-
-def test_envelope_violation_rejected(tmp_path):
-    summary = ingest_satellite(str(tmp_path / "out"), SYNTHETIC_CATALOG, "synthetic")
-    rejected_ids = {r["scene_id"] for r in summary["rejected_scenes"]}
-    assert "SAT-NYC-OUT-003" in rejected_ids
-
-
-def test_fixture_mode_violation_rejected(tmp_path):
-    summary = ingest_satellite(str(tmp_path / "out"), SYNTHETIC_CATALOG, "synthetic")
-    rejected_ids = {r["scene_id"] for r in summary["rejected_scenes"]}
-    assert "SAT-PR-S2-004" in rejected_ids
-
-
-def test_rejected_scenes_written_with_errors(tmp_path):
-    out = tmp_path / "out"
-    ingest_satellite(str(out), SYNTHETIC_CATALOG, "synthetic")
-    rejected = sorted((out / "rejected").glob("*.json"))
-    assert len(rejected) == 2
-    for path in rejected:
-        record = json.loads(path.read_text())
-        assert record["errors"], f"{path.name} should record validation errors"
-
-
-def test_summary_file_written(tmp_path):
-    out = tmp_path / "out"
-    ingest_satellite(str(out), SYNTHETIC_CATALOG, "synthetic")
-    summary = json.loads((out / "ingest_summary.json").read_text())
-    for key in ("generated_at", "producer", "catalogued", "validated",
-                "rejected", "manifests", "pr_envelope"):
-        assert key in summary
-
-
-def test_build_manifest_adds_envelope_fields(tmp_path):
-    ingestor = SatelliteIngestor(str(tmp_path / "out"))
-    scene = load_synthetic_catalog(SYNTHETIC_CATALOG)[0]
-    manifest = ingestor.build_manifest(scene)
-    assert manifest["manifest_id"] == "SAT-PR-S2-001"
-    assert manifest["schema_version"] == "1.0"
-    assert manifest["producer"]
-    assert manifest["created_at"].endswith("Z")
-    assert manifest["lineage"]["processing_pipeline"]
-
-
-# ── STAC ingestion ────────────────────────────────────────────────────────────
-
-def test_stac_catalog_parsed_and_ingested(tmp_path):
-    scenes = load_stac_catalog(STAC_CATALOG)
-    assert len(scenes) == 1
-    assert scenes[0]["synthetic"] is False
-    assert scenes[0]["source"]["platform"] == "Sentinel-2B"
-
-    summary = ingest_satellite(str(tmp_path / "out"), STAC_CATALOG, "stac")
-    assert summary["validated"] == 1
-    assert summary["rejected"] == 0
-
-
-def test_stac_item_with_null_numeric_props_does_not_crash():
-    from satellite_ingest import _stac_item_to_scene
-
-    item = {
-        "id": "S2_NULLS",
-        "collection": "sentinel-2-l2a",
-        "bbox": [-67.0, 18.0, -66.0, 18.5],
-        "geometry": {"type": "Polygon", "coordinates": [[[-67.0, 18.0]]]},
-        "properties": {"datetime": "2024-07-01T00:00:00Z", "eo:cloud_cover": None},
-        "assets": {"data": {"href": "https://example.com/x.tif", "type": "image/tiff"}},
+def _valid_manifest(synthetic=True):
+    checksum = "a" * 64
+    return {
+        "manifest_id": "SAT-TEST-001",
+        "schema_version": "1.0",
+        "producer": "test-suite",
+        "created_at": "2024-03-15T10:00:00Z",
+        "synthetic": synthetic,
+        "source": {
+            "provider": "ESA",
+            "collection": "sentinel-2-l2a",
+            "platform": "Sentinel-2A",
+            "instrument": "MSI",
+        },
+        "acquisition": {
+            "acquired_at": "2024-03-14T14:00:00Z",
+            "processed_at": "2024-03-15T02:00:00Z",
+            "license": "Copernicus Open Access",
+        },
+        "asset": {
+            "source_uri": "s3://fixture-bucket/pr/img.tif",
+            "checksum_sha256": checksum,
+            "media_type": "image/tiff",
+        },
+        "geometry": {
+            "crs": "EPSG:4326",
+            "footprint": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [-67.0, 18.0], [-66.0, 18.0],
+                    [-66.0, 18.5], [-67.0, 18.5], [-67.0, 18.0],
+                ]],
+            },
+            "bbox": [-67.0, 18.0, -66.0, 18.5],
+        },
+        "puerto_rico": {"region": "mainland"},
+        "quality": {
+            "cloud_cover_pct": 12.5,
+            "geometric_confidence": 0.92,
+            "source_reliability": "high",
+        },
+        "lineage": {"processing_pipeline": "spiderweb-sat-ingest-v1"},
     }
-    scene = _stac_item_to_scene(item)
-    assert isinstance(scene["quality"]["cloud_cover_pct"], float)
-    assert isinstance(scene["quality"]["geometric_confidence"], float)
 
 
-# ── Error handling ────────────────────────────────────────────────────────────
-
-def test_missing_catalog_raises(tmp_path):
-    with pytest.raises(SatelliteIngestError):
-        load_synthetic_catalog(str(tmp_path / "does_not_exist.json"))
-
-
-def test_malformed_catalog_raises(tmp_path):
-    bad = tmp_path / "bad.json"
-    bad.write_text("{not json")
-    with pytest.raises(SatelliteIngestError):
-        load_synthetic_catalog(str(bad))
+def _write_manifest(tmp_path, data, name="manifest.json"):
+    p = tmp_path / name
+    p.write_text(json.dumps(data), encoding="utf-8")
+    return str(p)
 
 
-# ── CLI wiring ────────────────────────────────────────────────────────────────
+# ── ingest: accepted / rejected ───────────────────────────────────────────────
 
-def _run(args: list) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        [sys.executable, "run_all.py"] + args,
-        capture_output=True, text=True, cwd=str(REPO_ROOT),
-    )
-
-
-def test_ingest_satellite_cli(tmp_path):
-    out = tmp_path / "cli_out"
-    result = _run(["--db", str(tmp_path / "smoke.db"),
-                   "--ingest-satellite", str(out),
-                   "--sat-source", "synthetic",
-                   "--sat-catalog", SYNTHETIC_CATALOG])
-    assert result.returncode == 0, result.stdout + result.stderr
-    summary = json.loads((out / "ingest_summary.json").read_text())
-    assert summary["validated"] == 2
+def test_valid_manifest_accepted(tmp_path):
+    path = _write_manifest(tmp_path, _valid_manifest())
+    result = SatelliteIngest(output_dir=str(tmp_path / "out"), dry_run=True).ingest(path)
+    assert result["status"] == "accepted"
+    assert result["errors"] == []
 
 
-def test_ingest_satellite_cli_missing_catalog_exits_nonzero(tmp_path):
-    result = _run(["--db", str(tmp_path / "smoke.db"),
-                   "--ingest-satellite", str(tmp_path / "out"),
-                   "--sat-catalog", str(tmp_path / "nope.json")])
-    assert result.returncode != 0
+def test_missing_required_field_rejected(tmp_path):
+    m = _valid_manifest()
+    del m["manifest_id"]
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(output_dir=str(tmp_path / "out"), dry_run=True).ingest(path)
+    assert result["status"] == "rejected"
+    assert len(result["errors"]) >= 1
+
+
+def test_missing_file_rejected(tmp_path):
+    result = SatelliteIngest(dry_run=True).ingest(str(tmp_path / "nonexistent.json"))
+    assert result["status"] == "rejected"
+    assert any("not found" in e for e in result["errors"])
+
+
+def test_malformed_json_rejected(tmp_path):
+    p = tmp_path / "bad.json"
+    p.write_text("{not valid json", encoding="utf-8")
+    result = SatelliteIngest(dry_run=True).ingest(str(p))
+    assert result["status"] == "rejected"
+
+
+# ── fixture-mode rule ─────────────────────────────────────────────────────────
+
+def test_synthetic_false_with_fixture_uri_rejected(tmp_path):
+    m = _valid_manifest(synthetic=False)
+    m["asset"]["source_uri"] = "s3://fixture-bucket/pr/img.tif"
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "rejected"
+    assert any("fixture" in e.lower() for e in result["errors"])
+
+
+def test_synthetic_false_with_real_uri_accepted(tmp_path):
+    m = _valid_manifest(synthetic=False)
+    m["asset"]["source_uri"] = "s3://real-bucket/pr/sentinel2/2024-03-14.tif"
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "accepted"
+
+
+def test_synthetic_true_allows_fixture_uri(tmp_path):
+    m = _valid_manifest(synthetic=True)
+    m["asset"]["source_uri"] = "s3://test-data/mock-img.tif"
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "accepted"
+
+
+# ── bbox overlap ──────────────────────────────────────────────────────────────
+
+def test_bbox_outside_pr_rejected(tmp_path):
+    m = _valid_manifest()
+    m["geometry"]["bbox"] = [-74.3, 40.4, -73.7, 40.9]  # NYC
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "rejected"
+    assert any("overlap" in e.lower() or "bbox" in e.lower() for e in result["errors"])
+
+
+def test_bbox_at_pr_boundary_accepted(tmp_path):
+    m = _valid_manifest()
+    m["geometry"]["bbox"] = [PR_LON_MIN, PR_LAT_MIN, PR_LON_MAX, PR_LAT_MAX]
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "accepted"
+
+
+# ── checksum verification ─────────────────────────────────────────────────────
+
+def test_checksum_mismatch_rejected(tmp_path):
+    asset_file = tmp_path / "img.tif"
+    asset_file.write_bytes(b"real data")
+    correct_hash = hashlib.sha256(b"real data").hexdigest()
+
+    m = _valid_manifest()
+    m["asset"]["local_path"] = str(asset_file)
+    m["asset"]["checksum_sha256"] = "b" * 64  # wrong hash
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "rejected"
+    assert any("checksum" in e.lower() for e in result["errors"])
+
+
+def test_checksum_match_accepted(tmp_path):
+    asset_file = tmp_path / "img.tif"
+    asset_file.write_bytes(b"real data")
+    correct_hash = hashlib.sha256(b"real data").hexdigest()
+
+    m = _valid_manifest()
+    m["asset"]["local_path"] = str(asset_file)
+    m["asset"]["checksum_sha256"] = correct_hash
+    del m["asset"]["source_uri"]  # use local_path only
+    path = _write_manifest(tmp_path, m)
+    result = SatelliteIngest(dry_run=True).ingest(path)
+    assert result["status"] == "accepted"
+
+
+# ── dry-run vs write ──────────────────────────────────────────────────────────
+
+def test_dry_run_does_not_write(tmp_path):
+    path = _write_manifest(tmp_path, _valid_manifest())
+    out_dir = tmp_path / "out"
+    SatelliteIngest(output_dir=str(out_dir), dry_run=True).ingest(path)
+    assert not out_dir.exists() or len(list(out_dir.iterdir())) == 0
+
+
+def test_non_dry_run_writes_manifest(tmp_path):
+    path = _write_manifest(tmp_path, _valid_manifest())
+    out_dir = tmp_path / "out"
+    result = SatelliteIngest(output_dir=str(out_dir), dry_run=False).ingest(path)
+    assert result["status"] == "accepted"
+    assert result["output_path"] is not None
+    assert Path(result["output_path"]).exists()
+
+
+# ── Phase 9: Production Hardening ────────────────────────────────────────────
+
+def test_ingest_batch_returns_list(tmp_path):
+    paths = [_write_manifest(tmp_path, _valid_manifest(), name=f"m{i}.json") for i in range(3)]
+    ingester = SatelliteIngest(dry_run=True)
+    results = ingester.ingest_batch(paths)
+    assert isinstance(results, list)
+    assert len(results) == 3
+
+
+def test_ingest_batch_all_accepted(tmp_path):
+    paths = [_write_manifest(tmp_path, _valid_manifest(), name=f"m{i}.json") for i in range(2)]
+    ingester = SatelliteIngest(dry_run=True)
+    results = ingester.ingest_batch(paths)
+    assert all(r["status"] == "accepted" for r in results)
+
+
+def test_get_ingest_summary_counts(tmp_path):
+    paths = [_write_manifest(tmp_path, _valid_manifest(), name=f"m{i}.json") for i in range(4)]
+    ingester = SatelliteIngest(dry_run=True)
+    results = ingester.ingest_batch(paths)
+    summary = SatelliteIngest.get_ingest_summary(results)
+    assert summary["total"] == 4
+    assert summary["accepted"] == 4
+    assert summary["rejected"] == 0
+    assert summary["acceptance_rate"] == 1.0
+
+
+def test_get_ingest_summary_empty():
+    summary = SatelliteIngest.get_ingest_summary([])
+    assert summary["total"] == 0
+    assert summary["acceptance_rate"] == 0.0

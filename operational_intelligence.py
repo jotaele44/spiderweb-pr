@@ -14,7 +14,7 @@ import sqlite3
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 from enum import Enum
 
@@ -328,6 +328,157 @@ class AlertEngine:
         conn.commit()
         conn.close()
 
+    def get_active_alerts(self, limit: int = 100) -> List[Dict]:
+        """Return unresolved, unacknowledged alerts ordered by severity then time."""
+        severity_order = "CASE severity " \
+            "WHEN 'CRITICAL' THEN 0 WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 " \
+            "WHEN 'LOW' THEN 3 ELSE 4 END"
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                f"SELECT * FROM alerts WHERE acknowledged=0 AND auto_resolved=0 "
+                f"ORDER BY {severity_order}, timestamp DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        except Exception:
+            rows = []
+        finally:
+            conn.close()
+        return [dict(r) for r in rows]
+
+    def acknowledge_alert(self, alert_id: str, notes: str = "") -> bool:
+        """Mark a single alert as acknowledged. Returns True if a row was updated."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            affected = conn.execute(
+                "UPDATE alerts SET acknowledged=1, acknowledged_at=? "
+                "WHERE alert_id=?",
+                (datetime.utcnow().isoformat(), alert_id),
+            ).rowcount
+            conn.commit()
+        except Exception:
+            affected = 0
+        finally:
+            conn.close()
+        return affected > 0
+
+    def auto_resolve_stale_alerts(self, days: int = 7) -> int:
+        """Mark unacknowledged alerts older than *days* as auto_resolved.
+
+        Returns the count of alerts resolved.
+        """
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        try:
+            affected = conn.execute(
+                "UPDATE alerts SET auto_resolved=1 "
+                "WHERE acknowledged=0 AND auto_resolved=0 AND timestamp < ?",
+                (cutoff,),
+            ).rowcount
+            conn.commit()
+        except Exception:
+            affected = 0
+        finally:
+            conn.close()
+        return affected
+
+    def is_duplicate(self, flight_id: str, category: str,
+                     within_hours: int = 24) -> bool:
+        """Return True if an alert with the same (flight_id, category) was saved
+        within the last *within_hours* hours."""
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(hours=within_hours)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT 1 FROM alerts WHERE flight_id=? AND category=? AND timestamp >= ? LIMIT 1",
+                (flight_id, category, cutoff),
+            ).fetchone()
+        except Exception:
+            row = None
+        finally:
+            conn.close()
+        return row is not None
+
+    def export_alerts_json(self, output_path: str, days: int = 7) -> int:
+        """Export alerts from the last *days* days to a JSON file.
+
+        Returns the number of alerts written.
+        """
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                "SELECT * FROM alerts WHERE timestamp >= ? ORDER BY timestamp DESC",
+                (cutoff,),
+            ).fetchall()
+        except Exception:
+            rows = []
+        finally:
+            conn.close()
+
+        alerts = []
+        for r in rows:
+            d = dict(r)
+            try:
+                d["evidence"] = json.loads(d.get("evidence") or "[]")
+            except Exception:
+                pass
+            alerts.append(d)
+
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_path).write_text(
+            json.dumps({"exported_at": datetime.utcnow().isoformat(), "alerts": alerts}, indent=2),
+            encoding="utf-8",
+        )
+        return len(alerts)
+
+    def get_alert_stats(self, days: int = 30) -> Dict[str, Any]:
+        """Return summary statistics for alerts in the last *days* days."""
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                "SELECT severity, category, acknowledged, auto_resolved "
+                "FROM alerts WHERE timestamp >= ?",
+                (cutoff,),
+            ).fetchall()
+        except Exception:
+            rows = []
+        finally:
+            conn.close()
+
+        total = len(rows)
+        by_severity: Dict[str, int] = {}
+        by_category: Dict[str, int] = {}
+        acknowledged = 0
+        auto_resolved = 0
+
+        for r in rows:
+            sev = r["severity"] or "unknown"
+            cat = r["category"] or "unknown"
+            by_severity[sev] = by_severity.get(sev, 0) + 1
+            by_category[cat] = by_category.get(cat, 0) + 1
+            if r["acknowledged"]:
+                acknowledged += 1
+            if r["auto_resolved"]:
+                auto_resolved += 1
+
+        return {
+            "total":        total,
+            "by_severity":  by_severity,
+            "by_category":  by_category,
+            "acknowledged": acknowledged,
+            "auto_resolved": auto_resolved,
+            "days":         days,
+        }
+
 
 # ============================================================================
 # REPORT GENERATOR
@@ -484,6 +635,118 @@ class ReportGenerator:
             lines += ["", "  ALERT HISTORY", "  ─────────────────────────────────────────────"]
             for a in alert_history:
                 lines.append(f"  [{a['severity']}] {a['category']} × {a['count']}")
+
+        lines += ["", "═" * 70]
+        return "\n".join(lines)
+
+    def severity_breakdown(self, days: int = 7) -> Dict[str, int]:
+        """Return a dict of severity → alert count for the last *days* days."""
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                "SELECT severity, COUNT(*) as cnt FROM alerts "
+                "WHERE timestamp >= ? GROUP BY severity",
+                (cutoff,),
+            ).fetchall()
+        except Exception:
+            rows = []
+        finally:
+            conn.close()
+        return {r["severity"]: r["cnt"] for r in rows}
+
+    def top_callsigns_by_alert_count(self, days: int = 7,
+                                     limit: int = 10) -> List[Dict]:
+        """Return callsigns with the most alerts in the last *days* days.
+
+        Returns a list of dicts with keys ``callsign`` and ``alert_count``.
+        """
+        from datetime import timedelta
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                "SELECT callsign, COUNT(*) as alert_count FROM alerts "
+                "WHERE timestamp >= ? GROUP BY callsign "
+                "ORDER BY alert_count DESC LIMIT ?",
+                (cutoff, limit),
+            ).fetchall()
+        except Exception:
+            rows = []
+        finally:
+            conn.close()
+        return [dict(r) for r in rows]
+
+    def weekly_report(self, date: datetime = None) -> str:
+        """Generate a 7-day operational summary ending at *date* (default: now)."""
+        from datetime import timedelta
+        if date is None:
+            date = datetime.utcnow()
+        end = date
+        start = date - timedelta(days=7)
+        start_str = start.strftime("%Y-%m-%d")
+        end_str = end.strftime("%Y-%m-%d")
+        start_iso = start.isoformat()
+        end_iso = end.isoformat()
+
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            flights_total = (conn.execute(
+                "SELECT COUNT(*) FROM flights WHERE takeoff_time BETWEEN ? AND ?",
+                (start_iso, end_iso),
+            ).fetchone() or [0])[0]
+
+            severity_rows = conn.execute(
+                "SELECT severity, COUNT(*) as cnt FROM alerts "
+                "WHERE timestamp BETWEEN ? AND ? GROUP BY severity",
+                (start_iso, end_iso),
+            ).fetchall()
+            alert_summary = {r["severity"]: r["cnt"] for r in severity_rows}
+
+            callsign_rows = conn.execute(
+                "SELECT callsign, COUNT(*) as cnt FROM alerts "
+                "WHERE timestamp BETWEEN ? AND ? GROUP BY callsign "
+                "ORDER BY cnt DESC LIMIT 5",
+                (start_iso, end_iso),
+            ).fetchall()
+            top_callsigns = [dict(r) for r in callsign_rows]
+        except Exception:
+            flights_total = 0
+            alert_summary = {}
+            top_callsigns = []
+        finally:
+            conn.close()
+
+        total_alerts = sum(alert_summary.values())
+        lines = [
+            "╔" + "═" * 68 + "╗",
+            "║" + f"  WEEKLY OPERATIONAL REPORT — {start_str} to {end_str}".center(68) + "║",
+            "╚" + "═" * 68 + "╝",
+            "",
+            "  SUMMARY (7 DAYS)",
+            "  ─────────────────────────────────────────────",
+            f"  Total flights:     {flights_total}",
+            f"  Total alerts:      {total_alerts}",
+            "",
+            "  ALERT SEVERITY BREAKDOWN",
+            "  ─────────────────────────────────────────────",
+        ]
+        for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]:
+            count = alert_summary.get(sev, 0)
+            if count:
+                lines.append(f"  {sev:<12} {count}")
+        if not total_alerts:
+            lines.append("  No alerts in the past 7 days")
+
+        if top_callsigns:
+            lines += ["", "  TOP CALLSIGNS BY ALERT COUNT",
+                      "  ─────────────────────────────────────────────"]
+            for c in top_callsigns:
+                lines.append(f"  {c['callsign']:<15} {c['cnt']} alerts")
 
         lines += ["", "═" * 70]
         return "\n".join(lines)

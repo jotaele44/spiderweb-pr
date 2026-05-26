@@ -175,3 +175,88 @@ def test_default_top_k():
 
 def test_max_new_tokens():
     assert MAX_NEW_TOKENS == 512
+
+
+def test_build_prompt_with_none_context_returns_string():
+    from query_llm import build_prompt
+    prompt = build_prompt("What is a UAP?", context=None)
+    assert isinstance(prompt, str)
+    assert "UAP" in prompt
+
+
+def test_build_prompt_with_empty_context_returns_string():
+    from query_llm import build_prompt
+    prompt = build_prompt("test query", context="")
+    assert isinstance(prompt, str)
+
+
+# ── Phase 6: LLM hardening ────────────────────────────────────────────────────
+
+def test_sanitize_query_strips_whitespace():
+    from query_llm import sanitize_query
+    assert sanitize_query("  hello  ") == "hello"
+
+
+def test_sanitize_query_removes_control_chars():
+    from query_llm import sanitize_query
+    result = sanitize_query("hello\x00\x01world")
+    assert "\x00" not in result
+    assert "\x01" not in result
+    assert "helloworld" in result
+
+
+def test_sanitize_query_preserves_newline_and_tab():
+    from query_llm import sanitize_query
+    result = sanitize_query("line1\nline2\ttabbed")
+    assert "\n" in result
+    assert "\t" in result
+
+
+def test_sanitize_query_truncates_to_max_length():
+    from query_llm import sanitize_query
+    long_query = "A" * 2000
+    result = sanitize_query(long_query, max_length=500)
+    assert len(result) == 500
+
+
+def test_sanitize_query_empty_returns_empty():
+    from query_llm import sanitize_query
+    assert sanitize_query("") == ""
+
+
+def test_truncate_context_no_change_if_short():
+    from query_llm import truncate_context
+    ctx = "short context"
+    assert truncate_context(ctx, max_chars=1000) == ctx
+
+
+def test_truncate_context_truncates_long():
+    from query_llm import truncate_context
+    long_ctx = "X" * 5000
+    result = truncate_context(long_ctx, max_chars=100)
+    assert len(result) < 5000
+    assert "truncated" in result
+
+
+def test_truncate_context_none_returns_none():
+    from query_llm import truncate_context
+    assert truncate_context(None) is None
+
+
+def test_estimate_tokens_empty():
+    from query_llm import estimate_tokens
+    assert estimate_tokens("") == 0
+
+
+def test_estimate_tokens_short_text():
+    from query_llm import estimate_tokens
+    result = estimate_tokens("hello world")
+    assert isinstance(result, int)
+    assert result >= 1
+
+
+def test_estimate_tokens_scales_with_length():
+    from query_llm import estimate_tokens
+    short = estimate_tokens("hi")
+    long = estimate_tokens("A" * 400)
+    assert long > short

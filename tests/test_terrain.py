@@ -10,7 +10,13 @@ import numpy as np
 import pytest
 
 from gebco.terrain import (
+    PR_LAT_MAX,
+    PR_LAT_MIN,
+    PR_LON_MAX,
+    PR_LON_MIN,
+    bbox_intersects_pr,
     cell_size_meters,
+    clip_to_bbox,
     compute_curvatures,
     compute_roughness,
     compute_rugosity,
@@ -294,3 +300,80 @@ def test_rugosity_int16_input():
     dem = np.zeros((9, 9), dtype=np.int16)
     rug = compute_rugosity(dem, DX, DY, method="area_ratio")
     assert rug.dtype == np.float64
+
+
+# ---------------------------------------------------------------------------
+# bbox_intersects_pr
+# ---------------------------------------------------------------------------
+
+
+def test_bbox_intersects_pr_overlap_centre():
+    assert bbox_intersects_pr(-67.0, 18.0, -66.0, 18.5) is True
+
+
+def test_bbox_intersects_pr_exact_boundary():
+    assert bbox_intersects_pr(PR_LON_MIN, PR_LAT_MIN, PR_LON_MAX, PR_LAT_MAX) is True
+
+
+def test_bbox_intersects_pr_outside_east():
+    assert bbox_intersects_pr(-64.0, 18.0, -63.0, 18.5) is False
+
+
+def test_bbox_intersects_pr_outside_west():
+    assert bbox_intersects_pr(-70.0, 18.0, -69.0, 18.5) is False
+
+
+def test_bbox_intersects_pr_outside_north():
+    assert bbox_intersects_pr(-67.0, 19.5, -66.0, 20.0) is False
+
+
+def test_bbox_intersects_pr_outside_south():
+    assert bbox_intersects_pr(-67.0, 16.0, -66.0, 17.0) is False
+
+
+def test_bbox_intersects_pr_partial_overlap():
+    # Straddles western boundary
+    assert bbox_intersects_pr(-69.0, 18.0, -67.5, 18.5) is True
+
+
+# ---------------------------------------------------------------------------
+# clip_to_bbox
+# ---------------------------------------------------------------------------
+
+
+def _make_grid(rows: int = 10, cols: int = 10) -> np.ndarray:
+    """Grid with unique sequential values for easy index verification."""
+    return np.arange(rows * cols, dtype=np.float64).reshape(rows, cols)
+
+
+def test_clip_to_bbox_full_array():
+    arr = _make_grid(10, 10)
+    cell = 1.0
+    west_orig, north_orig = 0.0, 9.0
+    clipped = clip_to_bbox(arr, west_orig, north_orig, cell, cell, 0.0, 0.0, 9.0, 9.0)
+    assert clipped.shape[0] > 0 and clipped.shape[1] > 0
+
+
+def test_clip_to_bbox_preserves_dtype():
+    arr = np.zeros((8, 8), dtype=np.int16)
+    clipped = clip_to_bbox(arr, 0.0, 7.0, 1.0, 1.0, 1.0, 1.0, 5.0, 5.0)
+    assert clipped.dtype == np.int16
+
+
+def test_clip_to_bbox_no_overlap_returns_empty():
+    arr = _make_grid(5, 5)
+    # Array covers lon [0,4], lat [0,4] (north=4, south=0)
+    # Clip bbox is entirely outside
+    clipped = clip_to_bbox(arr, 0.0, 4.0, 1.0, 1.0, 10.0, 10.0, 15.0, 15.0)
+    assert clipped.size == 0
+
+
+def test_clip_to_bbox_single_cell():
+    arr = np.array([[1.0, 2.0, 3.0],
+                    [4.0, 5.0, 6.0],
+                    [7.0, 8.0, 9.0]])
+    # Cell centres at west=0, north=2; cell_lon=1, cell_lat=1
+    # Row 0 covers north~2, row 1 north~1, row 2 north~0
+    # Col 0 covers west~0, col 1 ~1, col 2 ~2
+    clipped = clip_to_bbox(arr, 0.0, 2.0, 1.0, 1.0, 1.0, 0.5, 2.0, 1.5)
+    assert clipped.size > 0

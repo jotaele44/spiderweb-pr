@@ -30,3 +30,12 @@ def test_compile_intelligence_report_returns_result(populated_db):
     result = ai.compile_intelligence_report("C6062")
     # Must not raise; may return string, dict, or None depending on implementation
     assert result is None or isinstance(result, (dict, str))
+
+
+def test_lookup_callsign_with_no_operator_returns_profile(populated_db):
+    from aircraft_intelligence import AircraftProfile
+    ai = AircraftIntelligence(populated_db)
+    result = ai.lookup_aircraft("XUNKNOWN99")
+    assert result is not None
+    assert isinstance(result, AircraftProfile)
+    assert result.callsign == "XUNKNOWN99"

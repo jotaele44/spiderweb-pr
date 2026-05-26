@@ -441,32 +441,13 @@ def _run_export_fr24_events(images_dir: str, db_path: str):
     print(f"\n  ✓ FR24 events exported to DB: {db_path}")
 
 
-def _run_ingest_satellite(output_dir: str, catalog: str, source: str):
-    print("\n  PRII STAGE 3 — SATELLITE SOURCE INGESTION")
+def _run_ingest_satellite(manifest_path: str, dry_run: bool = False):
+    print("\n  SATELLITE MANIFEST INGEST")
     print("  " + "─" * 50)
-    if not catalog:
-        print("  Error: --sat-catalog is required with --ingest-satellite")
-        sys.exit(1)
-    try:
-        from satellite_ingest import ingest_satellite, SatelliteIngestError
-        try:
-            summary = ingest_satellite(output_dir, catalog, source)
-        except SatelliteIngestError as e:
-            print(f"  Error: {e}")
-            sys.exit(1)
-        print(f"  Source:               {source}")
-        print(f"  Scenes catalogued:    {summary['catalogued']}")
-        print(f"  Manifests validated:  {summary['validated']}")
-        print(f"  Scenes rejected:      {summary['rejected']}")
-        for r in summary["rejected_scenes"]:
-            print(f"    ✗ {r['scene_id']}: {'; '.join(r['errors'][:2])}")
-        print(f"\n  ✓ Manifests written to: {output_dir}/manifests/")
-        print(f"  ✓ Summary written to:   {output_dir}/ingest_summary.json")
-    except SystemExit:
-        raise
-    except Exception as e:
-        print(f"  Ingestion error: {e}")
-        raise
+    from satellite_ingest import ingest_from_cli
+    rc = ingest_from_cli(manifest_path, dry_run=dry_run)
+    if rc != 0:
+        sys.exit(rc)
 
 
 def main():
@@ -521,12 +502,10 @@ Examples:
                         help="Audit spiderweb overlay candidates against operational baseline ranges")
     parser.add_argument("--assess-readiness", metavar="DIR",
                         help="Assess PRII readiness from integration_report + calibration_report in DIR")
-    parser.add_argument("--ingest-satellite", metavar="DIR",
-                        help="Run PRII Stage 3 satellite source ingestion, writing manifests to DIR")
-    parser.add_argument("--sat-source", choices=["synthetic", "stac"], default="synthetic",
-                        help="Catalog source for --ingest-satellite (default: synthetic)")
-    parser.add_argument("--sat-catalog", metavar="PATH",
-                        help="Catalog path (synthetic JSON, or STAC file/URL) for --ingest-satellite")
+    parser.add_argument("--ingest-satellite", metavar="MANIFEST",
+                        help="Validate and ingest a satellite source manifest JSON file")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="With --ingest-satellite: validate only, do not write to disk")
 
     args = parser.parse_args()
 
@@ -617,7 +596,7 @@ Examples:
         _run_assess_readiness(args.assess_readiness)
 
     if args.ingest_satellite:
-        _run_ingest_satellite(args.ingest_satellite, args.sat_catalog, args.sat_source)
+        _run_ingest_satellite(args.ingest_satellite, getattr(args, "dry_run", False))
 
 
 if __name__ == "__main__":

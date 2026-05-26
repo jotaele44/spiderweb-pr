@@ -151,3 +151,177 @@ def test_missing_both_inputs_does_not_crash(tmp_path):
     assert isinstance(report["blockers"], list)
     assert isinstance(report["warnings"], list)
     assert len(report["missing_inputs"]) == 2
+
+
+# ── Phase 8: Dashboard & Output Layer ────────────────────────────────────────
+
+def test_get_gate_status_text_returns_string(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    gate = {"status": "PASS", "pct_with_coords": 1.0, "threshold": 0.70}
+    text = engine.get_gate_status_text("coordinate_coverage", gate)
+    assert isinstance(text, str)
+    assert "coordinate_coverage" in text
+
+
+def test_get_gate_status_text_pass_gate(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    gate = {"status": "PASS", "invalid": 0}
+    text = engine.get_gate_status_text("schema_validation", gate)
+    assert "PASS" in text
+
+
+def test_get_gate_status_text_fail_gate(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    gate = {"status": "FAIL", "avg_confidence": 0.3, "threshold": 0.5}
+    text = engine.get_gate_status_text("ocr_confidence_gate", gate)
+    assert "FAIL" in text
+    assert "0.3" in text
+
+
+def test_get_gate_status_text_unknown_gate(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    text = engine.get_gate_status_text("some_custom_gate", {"status": "PASS"})
+    assert "some_custom_gate" in text
+    assert "PASS" in text
+
+
+def test_assess_satellite_manifests_empty_dir(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    result = engine.assess_satellite_manifests(str(tmp_path))
+    assert result["status"] in ("WARN", "MISSING")
+
+
+def test_assess_satellite_manifests_missing_dir(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    result = engine.assess_satellite_manifests(str(tmp_path / "nonexistent"))
+    assert result["status"] == "MISSING"
+
+
+def test_assess_satellite_manifests_with_manifest(tmp_path):
+    (tmp_path / "sat_manifest.json").write_text("{}", encoding="utf-8")
+    engine = PRIIReadinessEngine(str(tmp_path))
+    result = engine.assess_satellite_manifests(str(tmp_path))
+    assert result["status"] == "PASS"
+    assert "1" in result["message"]
+
+
+def test_to_schema_report_has_required_keys(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assess_result = engine.assess()
+    schema_report = engine.to_schema_report(assess_result)
+    for key in ("generated_at", "status", "gates", "warnings", "errors", "notes"):
+        assert key in schema_report, f"Missing key: {key}"
+
+
+def test_to_schema_report_status_is_ready(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assess_result = engine.assess()
+    schema_report = engine.to_schema_report(assess_result)
+    assert schema_report["status"] == "READY"
+
+
+def test_to_schema_report_includes_satellite_gate(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assess_result = engine.assess()
+    schema_report = engine.to_schema_report(assess_result)
+    assert "satellite_manifests" in schema_report["gates"]
+    assert "status" in schema_report["gates"]["satellite_manifests"]
+
+
+def test_to_schema_report_calibration_fail(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    cal = _passing_calibration_report(tmp_path)
+    cal["status"] = "FAIL"
+    cal["calibration_flags"] = [
+        {"metric": "pct_T4", "value": 0.90, "expected_max": 0.70,
+         "action": "investigate tier thresholds"},
+    ]
+    _write(tmp_path, "calibration_report.json", cal)
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assess_result = engine.assess()
+    schema_report = engine.to_schema_report(assess_result)
+    assert schema_report["gates"]["calibration"]["status"] == "FAIL"
+    assert "pct_T4" in schema_report["gates"]["calibration"]["message"]
+
+
+def test_format_readiness_text_contains_status(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    report = engine.assess()
+    text = engine.format_readiness_text(report)
+    assert isinstance(text, str)
+    assert "READY" in text
+
+
+def test_format_readiness_text_contains_blocker(tmp_path):
+    integration = _passing_integration_report()
+    integration["gates"]["schema_validation"]["status"] = "FAIL"
+    integration["gates"]["schema_validation"]["invalid"] = 3
+    _write(tmp_path, "integration_report.json", integration)
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    report = engine.assess()
+    text = engine.format_readiness_text(report)
+    assert "Blockers" in text
+
+
+def test_export_dashboard_json_creates_file(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assess_result = engine.assess()
+    out_path = tmp_path / "dashboard.json"
+    engine.export_dashboard_json(assess_result, str(out_path))
+    assert out_path.exists()
+
+
+def test_export_dashboard_json_valid_schema_format(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    assess_result = engine.assess()
+    out_path = tmp_path / "dashboard.json"
+    engine.export_dashboard_json(assess_result, str(out_path))
+    data = json.loads(out_path.read_text())
+    assert "status" in data
+    assert "gates" in data
+    assert data["status"] in ("READY", "NOT_READY", "DEGRADED")
+
+
+# ── Phase 10: Observability ───────────────────────────────────────────────────
+
+def test_health_check_healthy(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    _write(tmp_path, "calibration_report.json", _passing_calibration_report(tmp_path))
+    engine = PRIIReadinessEngine(str(tmp_path))
+    hc = engine.health_check()
+    assert hc["status"] == "healthy"
+    assert hc["checks"]["integration_report.json"] == "ok"
+    assert hc["checks"]["calibration_report.json"] == "ok"
+
+
+def test_health_check_degraded_one_missing(tmp_path):
+    _write(tmp_path, "integration_report.json", _passing_integration_report())
+    engine = PRIIReadinessEngine(str(tmp_path))
+    hc = engine.health_check()
+    assert hc["status"] == "degraded"
+    assert hc["checks"]["calibration_report.json"] == "missing"
+
+
+def test_health_check_unhealthy_both_missing(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    hc = engine.health_check()
+    assert hc["status"] == "unhealthy"
+
+
+def test_health_check_has_export_dir(tmp_path):
+    engine = PRIIReadinessEngine(str(tmp_path))
+    hc = engine.health_check()
+    assert "export_dir" in hc

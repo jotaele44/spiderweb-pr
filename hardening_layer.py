@@ -603,6 +603,62 @@ class ResumableJobQueue:
         conn.close()
         return progress
 
+    def get_failed_jobs(self, batch_id: str = None, limit: int = None) -> List[Dict]:
+        """Return jobs with status ERROR, optionally filtered by batch_id."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        query = "SELECT * FROM processing_jobs WHERE status = 'ERROR'"
+        params: List = []
+        if batch_id:
+            query += " AND batch_id = ?"
+            params.append(batch_id)
+        query += " ORDER BY created_at"
+        if limit:
+            query += f" LIMIT {limit}"
+        cursor.execute(query, params)
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+
+    def retry_failed_jobs(self, batch_id: str = None) -> int:
+        """Reset ERROR jobs back to PENDING. Returns the number of jobs reset."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        query = "UPDATE processing_jobs SET status = 'PENDING', error_message = NULL WHERE status = 'ERROR'"
+        params: List = []
+        if batch_id:
+            query += " AND batch_id = ?"
+            params.append(batch_id)
+        cursor.execute(query, params)
+        affected = cursor.rowcount
+        conn.commit()
+        conn.close()
+        return affected
+
+    def get_batch_stats(self, batch_id: str = None) -> Dict[str, Any]:
+        """Return job counts by status for an optional batch, plus total."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        query = "SELECT status, COUNT(*) FROM processing_jobs"
+        params: List = []
+        if batch_id:
+            query += " WHERE batch_id = ?"
+            params.append(batch_id)
+        query += " GROUP BY status"
+        cursor.execute(query, params)
+        by_status = {row[0]: row[1] for row in cursor.fetchall()}
+        conn.close()
+        stats = {
+            "batch_id":   batch_id,
+            "total":      sum(by_status.values()),
+            "pending":    by_status.get("PENDING", 0),
+            "processing": by_status.get("PROCESSING", 0),
+            "complete":   by_status.get("COMPLETE", 0),
+            "error":      by_status.get("ERROR", 0),
+        }
+        return stats
+
 
 # ============================================================================
 # UTILITY FUNCTIONS

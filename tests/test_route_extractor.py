@@ -237,3 +237,13 @@ def test_extract_array_with_extractor_and_segmenter():
     arr = np.zeros((600, 800, 3), dtype="uint8")
     result = ext.extract_array(arr)
     assert isinstance(result, list)
+
+
+def test_extract_array_single_pixel_region_returns_list():
+    np = pytest.importorskip("numpy")
+    from route_extractor import RouteExtractor
+    ext = RouteExtractor()
+    arr = np.zeros((100, 100, 3), dtype="uint8")
+    arr[50, 50] = [0, 0, 255]  # single blue pixel — below min_points threshold
+    result = ext.extract_array(arr)
+    assert isinstance(result, list)

@@ -42,7 +42,8 @@
       "properties": {
         "acquired_at":  {"type": "string", "minLength": 1},
         "processed_at": {"type": "string", "minLength": 1},
-        "license":      {"type": "string", "minLength": 1}
+        "license":      {"type": "string", "minLength": 1},
+        "sensor_mode":  {"type": ["string", "null"]}
       }
     },
 
@@ -107,7 +108,19 @@
         "source_reliability":   {
           "type": "string",
           "enum": ["high", "medium", "low", "unverified"]
-        }
+        },
+        "resolution_m":         {"type": ["number", "null"], "exclusiveMinimum": 0}
+      }
+    },
+
+    "terrain": {
+      "type": "object",
+      "properties": {
+        "min_elevation_m":  {"type": "number"},
+        "max_elevation_m":  {"type": "number"},
+        "mean_elevation_m": {"type": "number"},
+        "std_elevation_m":  {"type": "number", "minimum": 0},
+        "data_source":      {"type": "string", "minLength": 1}
       }
     },
 

@@ -453,6 +453,68 @@ class SpiderwebIntake:
             json.dumps(gap_audit, indent=2), encoding="utf-8"
         )
 
+    def get_candidate_summary(self, candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Return a stats dict: total, counts by _candidate_type and evidence_tier."""
+        from collections import Counter
+        by_type = Counter(c.get("_candidate_type", "unknown") for c in candidates)
+        by_tier = Counter(c.get("evidence_tier", "UNSET") for c in candidates)
+        return {
+            "total": len(candidates),
+            "by_type": dict(by_type),
+            "by_tier": dict(by_tier),
+        }
+
+    def filter_by_tier(self, candidates: List[Dict[str, Any]],
+                       tier: str) -> List[Dict[str, Any]]:
+        """Return candidates whose evidence_tier matches *tier* (e.g. 'TIER-1')."""
+        return [c for c in candidates if c.get("evidence_tier") == tier]
+
+    def validate_candidate_fields(self, candidate: Dict[str, Any]) -> List[str]:
+        """Check that a candidate has the mandatory internal fields.
+
+        Returns a list of error strings (empty = valid).
+        """
+        errors = []
+        for field in ("_lat", "_lon", "_candidate_type"):
+            if field not in candidate:
+                errors.append(f"Missing field: {field}")
+            elif field in ("_lat", "_lon") and candidate[field] is None:
+                errors.append(f"None value for: {field}")
+        return errors
+
+    def get_coverage_stats(self, candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Return geographic bounding box and coordinate stats for *candidates*.
+
+        Only candidates with valid numeric _lat/_lon are included in the stats.
+        Returns an empty-range bbox when no valid coordinates are present.
+        """
+        lats = [c["_lat"] for c in candidates
+                if c.get("_lat") is not None and c.get("_lon") is not None
+                and isinstance(c["_lat"], (int, float))
+                and isinstance(c["_lon"], (int, float))]
+        lons = [c["_lon"] for c in candidates
+                if c.get("_lat") is not None and c.get("_lon") is not None
+                and isinstance(c["_lat"], (int, float))
+                and isinstance(c["_lon"], (int, float))]
+        if not lats:
+            return {
+                "total_with_coords": 0,
+                "lat_range": [None, None],
+                "lon_range": [None, None],
+                "bbox": [None, None, None, None],
+            }
+        return {
+            "total_with_coords": len(lats),
+            "lat_range": [round(min(lats), 6), round(max(lats), 6)],
+            "lon_range": [round(min(lons), 6), round(max(lons), 6)],
+            "bbox": [
+                round(min(lons), 6),
+                round(min(lats), 6),
+                round(max(lons), 6),
+                round(max(lats), 6),
+            ],
+        }
+
     # ── Helpers ───────────────────────────────────────────────────────────────
 
     def _missing_bridge_files(self) -> List[str]:

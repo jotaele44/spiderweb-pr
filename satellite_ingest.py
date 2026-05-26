@@ -1,267 +1,232 @@
 """
-SATELLITE INGEST  —  PRII Stage 3 runtime ingestion
+SATELLITE INGEST
+Validates and ingests satellite source manifests into the data pipeline.
 
-Turns a catalog of satellite/remote-sensing scenes into validated
-`satellite_source_manifest` documents (see
-docs/contracts/SATELLITE_SOURCE_MANIFEST.md). Every manifest is checked
-against schemas/satellite_source_manifest.schema.json before it is written —
-the contract is fail-closed, so envelope violations, fixture-mode violations
-and missing fields are routed to a rejected/ directory instead of the
-manifests/ output.
+Reads a satellite_source_manifest JSON file, validates against the contract
+schema, verifies the asset checksum (when local_path is present), checks bbox
+overlap with the active PR region, and writes validated manifests to
+data/satellite_manifests/.
 
-Two catalog sources are supported:
-
-  synthetic   A local JSON catalog ({"scenes": [...]}). Fully offline; this
-              is the default and what CI exercises.
-  stac        A STAC ItemCollection — either a local JSON file or an HTTP(S)
-              STAC API URL. STAC items are mapped to scenes with documented
-              default enrichment. A bearer token may be supplied via the
-              SAT_STAC_TOKEN environment variable.
-
-This module performs no raster download or image processing — it produces and
-validates source metadata only.
+Usage (CLI):
+    python run_all.py --ingest-satellite MANIFEST_PATH [--dry-run]
 """
 
-import argparse
+import hashlib
 import json
-import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, Optional
 
-from schema_validation import SchemaValidator
+SCHEMAS_DIR = Path(__file__).parent / "schemas"
+MANIFEST_SCHEMA_NAME = "satellite_source_manifest"
+SATELLITE_MANIFESTS_DIR = Path(__file__).parent / "data" / "satellite_manifests"
 
-SCHEMA_NAME = "satellite_source_manifest"
-SCHEMA_VERSION = "1.0"
-PIPELINE_VERSION = "1.0.0"
-DEFAULT_PRODUCER = "spiderweb-sat-ingest"
-
-# Puerto Rico operating envelope — mirrors the schema's prCoordinate bounds.
-PR_ENVELOPE = {"lon_min": -68.2, "lon_max": -65.1, "lat_min": 17.8, "lat_max": 18.7}
-
-# Scene blocks copied verbatim into the manifest.
-_SCENE_BLOCKS = ("source", "acquisition", "asset", "geometry", "puerto_rico", "quality")
+# Puerto Rico bounding box (loose envelope matching schema definitions)
+PR_LON_MIN, PR_LON_MAX = -68.2, -65.1
+PR_LAT_MIN, PR_LAT_MAX = 17.8, 18.7
 
 
 class SatelliteIngestError(Exception):
-    """Raised for catalog-loading problems (bad path, malformed JSON, etc.)."""
+    pass
 
 
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _safe_name(value: str) -> str:
-    keep = [c if (c.isalnum() or c in "-_.") else "_" for c in (value or "scene")]
-    return "".join(keep) or "scene"
-
-
-# ── Catalog loaders ───────────────────────────────────────────────────────────
-
-def load_synthetic_catalog(path: str) -> List[dict]:
-    """Load a synthetic catalog: {"scenes": [...]} (or a bare list of scenes)."""
-    try:
-        doc = json.loads(Path(path).read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise SatelliteIngestError(f"catalog not found: {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise SatelliteIngestError(f"catalog is not valid JSON: {path}") from exc
-
-    scenes = doc.get("scenes", doc) if isinstance(doc, dict) else doc
-    if not isinstance(scenes, list):
-        raise SatelliteIngestError("synthetic catalog must contain a 'scenes' list")
-    return scenes
-
-
-def load_stac_catalog(source: str) -> List[dict]:
-    """Load a STAC ItemCollection from an HTTP(S) URL or a local JSON file."""
-    if source.startswith(("http://", "https://")):
-        import requests
-
-        headers = {}
-        token = os.environ.get("SAT_STAC_TOKEN")
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        resp = requests.get(source, headers=headers, timeout=30)
-        resp.raise_for_status()
-        doc = resp.json()
-    else:
-        try:
-            doc = json.loads(Path(source).read_text(encoding="utf-8"))
-        except FileNotFoundError as exc:
-            raise SatelliteIngestError(f"STAC catalog not found: {source}") from exc
-        except json.JSONDecodeError as exc:
-            raise SatelliteIngestError(f"STAC catalog is not valid JSON: {source}") from exc
-
-    items = doc.get("features") or doc.get("items") or []
-    return [_stac_item_to_scene(item) for item in items]
-
-
-def _stac_item_to_scene(item: dict) -> dict:
-    """Map a STAC Item to a scene dict, enriching with documented defaults.
-
-    STAC items do not carry Puerto Rico region or reliability metadata, so
-    those fields fall back to conservative defaults (`full_island`,
-    `unverified`). An item without a 64-hex sha256 checksum will be rejected
-    by schema validation — that is the intended fail-closed behaviour.
+class SatelliteIngest:
     """
-    props = item.get("properties", {}) or {}
-    assets = item.get("assets", {}) or {}
-    asset = (
-        assets.get("data")
-        or assets.get("visual")
-        or next(iter(assets.values()), {})
-    )
-    instruments = props.get("instruments") or [props.get("instrument", "unknown")]
-    return {
-        "scene_id": item.get("id", ""),
-        "synthetic": False,
-        "source": {
-            "provider": props.get("provider") or props.get("constellation") or "unknown",
-            "collection": item.get("collection") or props.get("collection") or "unknown",
-            "platform": props.get("platform") or "unknown",
-            "instrument": instruments[0] if instruments else "unknown",
-        },
-        "acquisition": {
-            "acquired_at": props.get("datetime") or props.get("start_datetime") or "",
-            "processed_at": props.get("updated") or props.get("created")
-            or props.get("datetime") or "",
-            "license": props.get("license") or "unspecified",
-        },
-        "asset": {
-            "source_uri": asset.get("href", ""),
-            "checksum_sha256": asset.get("file:checksum_sha256")
-            or props.get("file:checksum_sha256") or "",
-            "media_type": asset.get("type") or "image/tiff",
-        },
-        "geometry": {
-            "crs": "EPSG:4326",
-            "footprint": item.get("geometry") or {},
-            "bbox": item.get("bbox") or [],
-        },
-        "puerto_rico": {"region": props.get("pr:region") or "full_island"},
-        "quality": {
-            "cloud_cover_pct": float(props.get("eo:cloud_cover") or 0.0),
-            "geometric_confidence": float(props.get("geometric_confidence") or 0.8),
-            "source_reliability": props.get("source_reliability") or "unverified",
-        },
-    }
+    Validates and persists a satellite source manifest.
 
+    Args:
+        output_dir: Directory to write accepted manifests into.
+                    Defaults to data/satellite_manifests/.
+        dry_run:    If True, validate only — do not write to disk.
+    """
 
-# ── Ingestor ──────────────────────────────────────────────────────────────────
+    def __init__(
+        self,
+        output_dir: Optional[str] = None,
+        dry_run: bool = False,
+    ):
+        self.output_dir = Path(output_dir) if output_dir else SATELLITE_MANIFESTS_DIR
+        self.dry_run = dry_run
+        self._validator = self._load_validator()
 
-class SatelliteIngestor:
-    """Builds, validates, and writes satellite_source_manifest documents."""
+    # ── public ────────────────────────────────────────────────────────────────
 
-    def __init__(self, output_dir: str, producer: str = DEFAULT_PRODUCER):
-        self.output_dir = Path(output_dir)
-        self.producer = producer
-        self._validator = SchemaValidator()
+    def ingest(self, manifest_path: str) -> Dict[str, Any]:
+        """
+        Load, validate, and (unless dry_run) persist a manifest.
 
-    def build_manifest(self, scene: dict) -> dict:
-        """Wrap a scene in the manifest envelope (ids, timestamps, lineage)."""
-        scene_id = scene.get("scene_id") or scene.get("manifest_id") or ""
-        manifest: Dict[str, Any] = {
-            "manifest_id": scene_id,
-            "schema_version": SCHEMA_VERSION,
-            "producer": self.producer,
-            "created_at": _utc_now(),
-            "synthetic": bool(scene.get("synthetic", True)),
+        Returns a result dict with keys:
+          status   : "accepted" | "rejected"
+          errors   : list[str]
+          manifest : the loaded manifest dict (or None on parse failure)
+          output_path : path written (if accepted and not dry_run), else None
+        """
+        result: Dict[str, Any] = {
+            "status": "rejected",
+            "errors": [],
+            "manifest": None,
+            "output_path": None,
         }
-        if scene.get("notes") is not None:
-            manifest["notes"] = scene["notes"]
-        for block in _SCENE_BLOCKS:
-            if block in scene:
-                manifest[block] = scene[block]
-        manifest["lineage"] = scene.get("lineage") or {
-            "processing_pipeline": self.producer,
-            "pipeline_version": PIPELINE_VERSION,
-            "derived_from": [],
-        }
-        return manifest
 
-    def ingest(self, scenes: List[dict]) -> dict:
-        """Validate every scene's manifest; write passes and rejects; summarise."""
-        manifests_dir = self.output_dir / "manifests"
-        rejected_dir = self.output_dir / "rejected"
-        manifests_dir.mkdir(parents=True, exist_ok=True)
+        manifest = self._load_json(manifest_path, result)
+        if manifest is None:
+            return result
+        result["manifest"] = manifest
 
-        validated: List[str] = []
-        rejected: List[dict] = []
+        errors = []
+        errors += self._validate_schema(manifest)
+        errors += self._check_fixture_mode(manifest)
+        errors += self._check_bbox_overlap(manifest)
+        errors += self._verify_checksum(manifest)
 
-        for index, scene in enumerate(scenes):
-            manifest = self.build_manifest(scene)
-            result = self._validator.validate(manifest, SCHEMA_NAME)
-            scene_id = scene.get("scene_id") or manifest["manifest_id"] or f"scene_{index}"
+        if errors:
+            result["errors"] = errors
+            return result
 
-            if result["valid"]:
-                (manifests_dir / f"{_safe_name(manifest['manifest_id'])}.json").write_text(
-                    json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
+        result["status"] = "accepted"
+
+        self._attach_terrain_stats(manifest)
+
+        if not self.dry_run:
+            out_path = self._write_manifest(manifest, manifest_path)
+            result["output_path"] = out_path
+
+        return result
+
+    # ── internal ──────────────────────────────────────────────────────────────
+
+    def _load_json(self, path: str, result: Dict) -> Optional[Dict]:
+        try:
+            return json.loads(Path(path).read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            result["errors"].append(f"File not found: {path}")
+            return None
+        except json.JSONDecodeError as e:
+            result["errors"].append(f"JSON parse error: {e}")
+            return None
+
+    def _validate_schema(self, manifest: Dict) -> list:
+        if self._validator is None:
+            return []
+        result = self._validator.validate(manifest, MANIFEST_SCHEMA_NAME)
+        return result["errors"]
+
+    def _check_fixture_mode(self, manifest: Dict) -> list:
+        """Block fixture/test/mock asset URIs on non-synthetic manifests."""
+        if manifest.get("synthetic") is True:
+            return []
+        asset = manifest.get("asset", {})
+        errors = []
+        for field in ("source_uri", "local_path"):
+            val = asset.get(field, "")
+            if val and any(tok in val.lower() for tok in ("fixture", "test", "mock")):
+                errors.append(
+                    f"asset.{field} contains fixture/test/mock marker "
+                    f"but synthetic=false: {val!r}"
                 )
-                validated.append(manifest["manifest_id"])
-            else:
-                rejected_dir.mkdir(parents=True, exist_ok=True)
-                record = {
-                    "scene_id": scene_id,
-                    "errors": result["errors"],
-                    "manifest": manifest,
-                }
-                (rejected_dir / f"{_safe_name(scene_id)}.json").write_text(
-                    json.dumps(record, indent=2, sort_keys=True), encoding="utf-8"
-                )
-                rejected.append({"scene_id": scene_id, "errors": result["errors"]})
+        return errors
 
-        summary = {
-            "generated_at": _utc_now(),
-            "producer": self.producer,
-            "schema": SCHEMA_NAME,
-            "pr_envelope": PR_ENVELOPE,
-            "catalogued": len(scenes),
-            "validated": len(validated),
-            "rejected": len(rejected),
-            "manifests": sorted(validated),
-            "rejected_scenes": rejected,
-        }
+    def _check_bbox_overlap(self, manifest: Dict) -> list:
+        bbox = manifest.get("geometry", {}).get("bbox")
+        if not bbox or len(bbox) < 4:
+            return []
+        west, south, east, north = bbox[:4]
+        if (east < PR_LON_MIN or west > PR_LON_MAX or
+                north < PR_LAT_MIN or south > PR_LAT_MAX):
+            return [
+                f"bbox {bbox} does not overlap PR region "
+                f"([{PR_LON_MIN},{PR_LAT_MIN},{PR_LON_MAX},{PR_LAT_MAX}])"
+            ]
+        return []
+
+    def _verify_checksum(self, manifest: Dict) -> list:
+        local_path = manifest.get("asset", {}).get("local_path")
+        expected = manifest.get("asset", {}).get("checksum_sha256")
+        if not local_path or not expected:
+            return []
+        p = Path(local_path)
+        if not p.exists():
+            return []
+        actual = hashlib.sha256(p.read_bytes()).hexdigest()
+        if actual != expected:
+            return [
+                f"checksum mismatch for {local_path}: "
+                f"expected {expected}, got {actual}"
+            ]
+        return []
+
+    def _write_manifest(self, manifest: Dict, source_path: str) -> str:
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        (self.output_dir / "ingest_summary.json").write_text(
-            json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8"
-        )
-        return summary
+        stem = Path(source_path).stem
+        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        out = self.output_dir / f"{ts}_{stem}.json"
+        out.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        return str(out)
+
+    def _attach_terrain_stats(self, manifest: Dict) -> None:
+        """Optionally populate manifest['terrain'] with elevation stats from GEBCO.
+
+        Silently skips if GEBCO data is unavailable or bbox is absent.
+        Stats are pre-computed here for informational purposes only — they do
+        not affect accept/reject status.
+        """
+        if "terrain" in manifest:
+            return
+        bbox = manifest.get("geometry", {}).get("bbox")
+        if not bbox or len(bbox) < 4:
+            return
+        try:
+            from gebco import open_gebco
+            west, south, east, north = bbox[:4]
+            ds = open_gebco(west=west, south=south, east=east, north=north)
+            elev = ds["elevation"].values.astype(float)
+            manifest["terrain"] = {
+                "min_elevation_m":  float(elev.min()),
+                "max_elevation_m":  float(elev.max()),
+                "mean_elevation_m": float(elev.mean()),
+                "std_elevation_m":  float(elev.std()),
+                "data_source": "gebco-2023",
+            }
+        except Exception:
+            pass
+
+    def ingest_batch(self, manifest_paths) -> list:
+        """Ingest multiple manifests; return list of per-manifest result dicts."""
+        return [self.ingest(str(p)) for p in manifest_paths]
+
+    @staticmethod
+    def get_ingest_summary(results: list) -> Dict[str, Any]:
+        """Compute acceptance stats from a list of ingest() result dicts."""
+        total    = len(results)
+        accepted = sum(1 for r in results if r.get("status") == "accepted")
+        rejected = total - accepted
+        return {
+            "total":           total,
+            "accepted":        accepted,
+            "rejected":        rejected,
+            "acceptance_rate": round(accepted / total, 4) if total else 0.0,
+        }
+
+    def _load_validator(self):
+        try:
+            from schema_validation import SchemaValidator
+            return SchemaValidator()
+        except Exception:
+            return None
 
 
-def ingest_satellite(output_dir: str, catalog: str, source: str = "synthetic",
-                     producer: str = DEFAULT_PRODUCER) -> dict:
-    """Load a catalog, run ingestion, and return the summary dict."""
-    if source == "stac":
-        scenes = load_stac_catalog(catalog)
+def ingest_from_cli(manifest_path: str, dry_run: bool = False) -> int:
+    """Entry point for run_all.py --ingest-satellite. Returns exit code."""
+    ingester = SatelliteIngest(dry_run=dry_run)
+    result = ingester.ingest(manifest_path)
+
+    if result["status"] == "accepted":
+        note = " (dry-run)" if dry_run else f" → {result['output_path']}"
+        print(f"  ✓ Manifest accepted{note}")
+        return 0
     else:
-        scenes = load_synthetic_catalog(catalog)
-    return SatelliteIngestor(output_dir, producer=producer).ingest(scenes)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="PRII Stage 3 satellite source ingestion")
-    parser.add_argument("output_dir", help="Directory for manifests/ + ingest_summary.json")
-    parser.add_argument("--catalog", required=True,
-                        help="Catalog path (synthetic JSON, or STAC file/URL)")
-    parser.add_argument("--source", choices=["synthetic", "stac"], default="synthetic",
-                        help="Catalog source type (default: synthetic)")
-    parser.add_argument("--producer", default=DEFAULT_PRODUCER,
-                        help=f"Producer name written to manifests (default: {DEFAULT_PRODUCER})")
-    args = parser.parse_args()
-
-    try:
-        summary = ingest_satellite(args.output_dir, args.catalog, args.source, args.producer)
-    except SatelliteIngestError as exc:
-        print(f"[ERROR] {exc}", file=sys.stderr)
-        sys.exit(1)
-
-    print(f"  catalogued: {summary['catalogued']}")
-    print(f"  validated:  {summary['validated']}")
-    print(f"  rejected:   {summary['rejected']}")
-    sys.exit(0)
-
-
-if __name__ == "__main__":
-    main()
+        print(f"  ✗ Manifest rejected:")
+        for err in result["errors"]:
+            print(f"    - {err}")
+        return 1
