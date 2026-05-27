@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Gate OCR baseline runs on RLSM ontology readiness.
+
+This script fails closed when required registry files are missing or common aliases fail resolution.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Dict, List
+
+from pipeline.normalize_locations import normalize_location
+from pipeline.normalize_missions import normalize_mission, normalize_blackout
+from pipeline.normalize_operators import normalize_aircraft_identity, normalize_operator
+
+REQUIRED_CONFIGS = [
+    "place_aliases.yaml",
+    "airport_registry.yaml",
+    "hangar_registry.yaml",
+    "lz_registry.yaml",
+    "poi_registry.yaml",
+    "operator_registry.yaml",
+    "aircraft_aliases.yaml",
+    "mission_vocab.yaml",
+    "behavior_vocab.yaml",
+    "corridor_registry.yaml",
+    "blackout_vocab.yaml",
+    "access_status_vocab.yaml",
+    "spiderweb_terms.yaml",
+]
+
+
+def run_gate(config_dir: Path = Path("configs")) -> Dict[str, object]:
+    failures: List[str] = []
+    warnings: List[str] = []
+
+    for filename in REQUIRED_CONFIGS:
+        if not (config_dir / filename).exists():
+            failures.append(f"missing required config: {filename}")
+
+    alias_expectations = {
+        "SJU": "resolved",
+        "TJSJ": "resolved",
+        "Luis Munoz Marin": "resolved",
+        "SIG": "resolved",
+        "Isla Grande": "resolved",
+        "BQN": "resolved",
+        "Ramey": "resolved",
+        "Vieques airport": "resolved",
+    }
+    for raw, expected in alias_expectations.items():
+        resolved = normalize_location(raw, config_dir=config_dir)
+        if resolved.get("resolution_status") != expected:
+            failures.append(f"alias resolution failed: {raw} -> {resolved}")
+
+    for raw in ["N/A", "Unknown", "blocked"]:
+        ident = normalize_aircraft_identity(raw)
+        if ident.get("identity_status") != "masked_or_unresolved":
+            failures.append(f"masked aircraft handling failed: {raw} -> {ident}")
+        if ident.get("merge_policy") != "do_not_merge_without_cluster_evidence":
+            failures.append(f"masked aircraft merge policy missing: {raw}")
+
+    for raw in ["grid inspection", "coastal patrol", "private charter"]:
+        mission = normalize_mission(raw, config_dir=config_dir)
+        if mission.get("mission_canonical") == "UNKNOWN":
+            failures.append(f"mission alias failed: {raw} -> {mission}")
+
+    operator = normalize_operator("USCG", config_dir=config_dir)
+    if operator.get("resolution_status") != "resolved":
+        failures.append(f"operator alias failed: USCG -> {operator}")
+
+    blackout = normalize_blackout("track gap", config_dir=config_dir)
+    if blackout.get("blackout_class") == "UNKNOWN":
+        failures.append(f"blackout alias failed: track gap -> {blackout}")
+    if not blackout.get("do_not_assume_intentional"):
+        failures.append("blackout intent guard missing")
+
+    status = "pass" if not failures else "fail"
+    return {
+        "gate": "rlsm_operational_ontology_v0_1",
+        "status": status,
+        "failures": failures,
+        "warnings": warnings,
+        "ocr_baseline_allowed": status == "pass",
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config-dir", default="configs")
+    parser.add_argument("--json-out", default=None)
+    args = parser.parse_args()
+    result = run_gate(Path(args.config_dir))
+    text = json.dumps(result, indent=2, ensure_ascii=False)
+    print(text)
+    if args.json_out:
+        Path(args.json_out).write_text(text + "\n", encoding="utf-8")
+    return 0 if result["status"] == "pass" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
