@@ -93,18 +93,19 @@ def run_gate(config_dir: Path = Path("configs")) -> Dict[str, object]:
                 failures.append(f"endpoint recall audit rule missing or false: {required_rule}")
 
     alias_expectations = {
-        "SJU": "resolved",
-        "TJSJ": "resolved",
-        "Luis Munoz Marin": "resolved",
-        "SIG": "resolved",
-        "Isla Grande": "resolved",
-        "BQN": "resolved",
-        "Ramey": "resolved",
-        "Vieques airport": "resolved",
+        "SJU": {"resolved"},
+        "TJSJ": {"resolved"},
+        "Luis Munoz Marin": {"resolved"},
+        "SIG": {"resolved"},
+        "Isla Grande": {"resolved"},
+        "BQN": {"resolved"},
+        # Ramey is intentionally ambiguous: airport, former-base complex, and Borinquen operational area.
+        "Ramey": {"resolved", "collision_review_required"},
+        "Vieques airport": {"resolved"},
     }
-    for raw, expected in alias_expectations.items():
+    for raw, expected_statuses in alias_expectations.items():
         resolved = normalize_location(raw, config_dir=config_dir)
-        if resolved.get("resolution_status") != expected:
+        if resolved.get("resolution_status") not in expected_statuses:
             failures.append(f"alias resolution failed: {raw} -> {resolved}")
 
     for raw in ["N/A", "Unknown", "blocked"]:
