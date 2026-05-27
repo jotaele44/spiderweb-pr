@@ -19,10 +19,15 @@ required_registries:
   - configs/blackout_vocab.yaml
   - configs/access_status_vocab.yaml
   - configs/spiderweb_terms.yaml
-  - configs/evidence_tiers.yaml
+  - configs/location_naming_guardrails.yaml
 normalization_rules:
   preserve_raw_text: true
+  preserve_raw_label: true
+  preserve_coordinates_when_available: true
+  never_invent_site_names: true
+  separate_visible_label_from_project_name: true
   separate_airport_ramp_hangar_lz: true
+  use_project_location_ids_for_unlabeled_points: true
   never_merge_na_aircraft_without_cluster_evidence: true
   route_unknowns_to_review: true
   block_ocr_baseline_until_alias_tests_pass: true
