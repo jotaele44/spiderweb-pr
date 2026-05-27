@@ -21,6 +21,7 @@ required_registries:
   - configs/access_status_vocab.yaml
   - configs/spiderweb_terms.yaml
   - configs/location_naming_guardrails.yaml
+  - configs/endpoint_recall_audit.yaml
 normalization_rules:
   preserve_raw_text: true
   preserve_raw_label: true
@@ -31,6 +32,9 @@ normalization_rules:
   separate_facility_operator_from_aircraft_operator: true
   preserve_visible_operator_label: true
   use_project_location_ids_for_unlabeled_points: true
+  audit_takeoff_and_landing_endpoints: true
+  do_not_assume_track_start_equals_takeoff: true
+  do_not_assume_track_end_equals_landing: true
   never_merge_na_aircraft_without_cluster_evidence: true
   route_unknowns_to_review: true
   block_ocr_baseline_until_alias_tests_pass: true
