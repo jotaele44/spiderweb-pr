@@ -27,7 +27,7 @@ The filename lineage mismatch is expected: screenshots were timestamp-renamed wh
 ### 1. Reconcile sidecars
 
 ```bash
-python fr24_sidecar_reconcile.py \
+python fr24/sidecar_reconcile.py \
   --root "data/Flight Logs" \
   --output-dir data/_manifests/fr24_audit
 ```
@@ -55,7 +55,7 @@ Expected local validation result:
 ### 2. Run OCR probe
 
 ```bash
-python fr24_ocr_probe.py \
+python fr24/ocr_probe.py \
   --manifest data/_manifests/fr24_audit/fr24_manifest_with_sidecars.csv \
   --output-dir data/_manifests/fr24_audit \
   --limit 50
@@ -82,7 +82,7 @@ Observed local validation result:
 ### 3. Parse OCR output
 
 ```bash
-python fr24_ocr_parse.py \
+python fr24/ocr_parse.py \
   --input-jsonl data/_manifests/fr24_audit/fr24_ocr_probe_50.jsonl \
   --output-csv data/_manifests/fr24_audit/fr24_ocr_parsed_events_probe_50.csv \
   --review-csv data/_manifests/fr24_audit/fr24_ocr_review_queue_probe_50.csv

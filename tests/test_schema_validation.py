@@ -7,7 +7,7 @@ import pytest
 
 pytest.importorskip("jsonschema")
 
-from schema_validation import SCHEMAS_DIR, SchemaValidator
+from integration.schema_validation import SCHEMAS_DIR, SchemaValidator
 
 
 @pytest.fixture

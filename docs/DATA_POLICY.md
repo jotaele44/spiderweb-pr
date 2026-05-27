@@ -28,7 +28,7 @@ Defines what is and is not committed to the repository, and how runtime artifact
 - `tests/` — all test files and fixtures
 - `docs/` — this documentation
 - `.github/workflows/ci.yml` — CI pipeline definition
-- `dashboard.html` / `dashboard.jsx` — browser dashboard
+- `dashboard/dashboard.html` / `dashboard/dashboard.jsx` — browser dashboard
 
 ---
 
@@ -64,10 +64,10 @@ Defines what is and is not committed to the repository, and how runtime artifact
 ```bash
 # Correct
 export HF_TOKEN=hf_...
-python query_llm.py "..."
+python llm/query_llm.py "..."
 
 # Wrong — never do this
-# python query_llm.py "..." --token hf_...  (if you add such a flag)
+# python llm/query_llm.py "..." --token hf_...  (if you add such a flag)
 ```
 
 ---
@@ -97,15 +97,15 @@ rm -f outputs/subset_*.nc
 
 | Output path | Written by | Notes |
 |-------------|-----------|-------|
-| `outputs/pr_intel/` | `pr_intel_adapter.py` | 6 parquet + 2 GeoJSON + JSON |
-| `outputs/spiderweb/` | `ilap_airspace_bridge.py`, `aasb_airspace_bridge.py` | |
+| `outputs/pr_intel/` | `integration/pr_intel_adapter.py` | 6 parquet + 2 GeoJSON + JSON |
+| `outputs/spiderweb/` | `integration/ilap_airspace_bridge.py`, `integration/aasb_airspace_bridge.py` | |
 | `outputs/dashboard_data.json` | `run_all.py --export-json` | |
-| `screenshot_inventory.csv` | `screenshot_inventory.py` | placed next to DB |
-| `review/review_queue.db` | `manual_review_queue.py` | placed next to DB |
-| `georef_quality_report.csv` | `geo_calibration.py` | placed next to DB |
-| `review_queue.csv` | `schema_validation.py` | schema validation rejects |
-| `chunks.jsonl` / `finetune.jsonl` | `prepare_data.py` | LLM pipeline |
-| `outputs/pruap_index/` | `rag_pipeline.py` | ChromaDB vector store |
+| `screenshot_inventory.csv` | `fr24/screenshot_inventory.py` | placed next to DB |
+| `review/review_queue.db` | `fr24/manual_review_queue.py` | placed next to DB |
+| `georef_quality_report.csv` | `integration/geo_calibration.py` | placed next to DB |
+| `review_queue.csv` | `integration/schema_validation.py` | schema validation rejects |
+| `chunks.jsonl` / `finetune.jsonl` | `llm/prepare_data.py` | LLM pipeline |
+| `outputs/pruap_index/` | `llm/rag_pipeline.py` | ChromaDB vector store |
 | `outputs/queue.jsonl` | `scripts/make_*.py` | EarthGPT tile queue |
 | `outputs/ranked_targets.geojson` | `scripts/export_ranked_geojson.py` | EarthGPT final output |
 | `tile_cache/*.png` | `earthgpt/tiles.py` | XYZ tile cache |

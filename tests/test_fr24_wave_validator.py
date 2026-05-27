@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from fr24_wave_validator import (
+from fr24.wave_validator import (
     PROHIBITED_LABELS,
     MAX_CLIMB_FT_PER_MIN,
     MAX_SPEED_MPH,

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from spiderweb_intake import (
+from readiness.spiderweb_intake import (
     BRIDGE_FILES,
     DEDUP_THRESH_DEG,
     REQUIRED_FIELDS,
@@ -391,7 +391,7 @@ def test_ocean_still_mbil0(tmp_path):
 
 
 def test_calibration_driver_report_structure(tmp_path):
-    from calibrate_scoring import REQUIRED_REPORT_KEYS, CalibrationDriver
+    from readiness.calibrate_scoring import REQUIRED_REPORT_KEYS, CalibrationDriver
 
     _write_all_five(tmp_path)
     SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
@@ -451,7 +451,7 @@ def _write_gap_audit_json(tmp_path, dups_removed=0):
 
 
 def test_calibration_missing_overlay_reports_missing_inputs(tmp_path):
-    from calibrate_scoring import CalibrationDriver
+    from readiness.calibrate_scoring import CalibrationDriver
     report = CalibrationDriver(str(tmp_path)).run()
     assert "spiderweb_overlay_candidates.geojson" in report["missing_inputs"]
     assert report["candidate_count"] == 0
@@ -459,7 +459,7 @@ def test_calibration_missing_overlay_reports_missing_inputs(tmp_path):
 
 
 def test_calibration_empty_overlay_no_crash(tmp_path):
-    from calibrate_scoring import CalibrationDriver
+    from readiness.calibrate_scoring import CalibrationDriver
     _write_overlay_geojson(tmp_path, n_t4=0)
     _write_gap_audit_json(tmp_path)
     report = CalibrationDriver(str(tmp_path)).run()
@@ -468,7 +468,7 @@ def test_calibration_empty_overlay_no_crash(tmp_path):
 
 
 def test_calibration_fixture_mode_no_fail_on_all_t4(tmp_path):
-    from calibrate_scoring import CalibrationDriver, MIN_OPERATIONAL_CANDIDATES
+    from readiness.calibrate_scoring import CalibrationDriver, MIN_OPERATIONAL_CANDIDATES
     _write_overlay_geojson(tmp_path, n_t4=MIN_OPERATIONAL_CANDIDATES - 1)
     _write_gap_audit_json(tmp_path)
     report = CalibrationDriver(str(tmp_path)).run()
@@ -479,7 +479,7 @@ def test_calibration_fixture_mode_no_fail_on_all_t4(tmp_path):
 
 
 def test_calibration_operational_mode_fails_on_all_t4(tmp_path):
-    from calibrate_scoring import CalibrationDriver, MIN_OPERATIONAL_CANDIDATES
+    from readiness.calibrate_scoring import CalibrationDriver, MIN_OPERATIONAL_CANDIDATES
     _write_overlay_geojson(tmp_path, n_t4=MIN_OPERATIONAL_CANDIDATES)
     _write_gap_audit_json(tmp_path)
     report = CalibrationDriver(str(tmp_path)).run()
@@ -490,7 +490,7 @@ def test_calibration_operational_mode_fails_on_all_t4(tmp_path):
 
 
 def test_calibration_flags_sorted_by_metric(tmp_path):
-    from calibrate_scoring import CalibrationDriver, MIN_OPERATIONAL_CANDIDATES
+    from readiness.calibrate_scoring import CalibrationDriver, MIN_OPERATIONAL_CANDIDATES
     _write_overlay_geojson(tmp_path, n_t4=MIN_OPERATIONAL_CANDIDATES)
     _write_gap_audit_json(tmp_path)
     report = CalibrationDriver(str(tmp_path)).run()

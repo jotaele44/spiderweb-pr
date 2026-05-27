@@ -96,7 +96,7 @@ def ocr_one(path_str: str, db_path_str: str, ocr) -> dict:
     # Aircraft position (optional)
     try:
         from PIL import Image
-        from flight_analyzer import CoordinateMapper
+        from pipeline.flight_analyzer import CoordinateMapper
         img  = Image.open(path_str)
         w, h = img.size
         mapper = CoordinateMapper(w, h)
@@ -185,7 +185,7 @@ def main():
 
     # ── Import (after status/done checks to keep those fast) ─────────────────
     sys.path.insert(0, str(REPO))
-    from flight_analyzer import FlightAnalyzer
+    from pipeline.flight_analyzer import FlightAnalyzer
     fa  = FlightAnalyzer(DATA_DIR, DB_PATH)   # creates schema
     ocr = fa.ocr
 

@@ -18,9 +18,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-SCHEMAS_DIR = Path(__file__).parent / "schemas"
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+SCHEMAS_DIR = _REPO_ROOT / "schemas"
 MANIFEST_SCHEMA_NAME = "satellite_source_manifest"
-SATELLITE_MANIFESTS_DIR = Path(__file__).parent / "data" / "satellite_manifests"
+SATELLITE_MANIFESTS_DIR = _REPO_ROOT / "data" / "satellite_manifests"
 
 # Puerto Rico bounding box (loose envelope matching schema definitions)
 PR_LON_MIN, PR_LON_MAX = -68.2, -65.1
@@ -210,7 +211,7 @@ class SatelliteIngest:
 
     def _load_validator(self):
         try:
-            from schema_validation import SchemaValidator
+            from integration.schema_validation import SchemaValidator
             return SchemaValidator()
         except Exception:
             return None

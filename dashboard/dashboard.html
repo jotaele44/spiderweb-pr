@@ -13,7 +13,8 @@
          xdg-open dashboard.html      # Linux
          # or serve with: python -m http.server 8080
 
-  The page loads dashboard_data.json from the same directory via fetch().
+  The page loads dashboard_data.json (and the FR24 review queue + temporal wave
+  exports) from ../outputs/ via fetch().
   If served from a local file:// URL, use --allow-file-access-from-files (Chrome)
   or simply run the python http.server one-liner above.
 -->
@@ -55,9 +56,9 @@
       });
 
     Promise.allSettled([
-      fetchJson("dashboard_data.json"),
-      fetchJson("fr24_dashboard_review_queue.json"),
-      fetchJson("fr24_temporal_wave_dashboard.json"),
+      fetchJson("../outputs/dashboard_data.json"),
+      fetchJson("../outputs/fr24_dashboard_review_queue.json"),
+      fetchJson("../outputs/fr24_temporal_wave_dashboard.json"),
     ]).then(([flight, fr24, temporal]) => {
       if (flight.status === "rejected") {
         const err = flight.reason && flight.reason.message ? flight.reason.message : String(flight.reason);

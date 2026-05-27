@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from prii_readiness_engine import (
+from readiness.prii_readiness_engine import (
     READINESS_STATUS_DEGRADED,
     READINESS_STATUS_NOT_READY,
     READINESS_STATUS_READY,

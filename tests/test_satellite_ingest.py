@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from satellite_ingest import SatelliteIngest, PR_LAT_MAX, PR_LAT_MIN, PR_LON_MAX, PR_LON_MIN
+from readiness.satellite_ingest import SatelliteIngest, PR_LAT_MAX, PR_LAT_MIN, PR_LON_MAX, PR_LON_MIN
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

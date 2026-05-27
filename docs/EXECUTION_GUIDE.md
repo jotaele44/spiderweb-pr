@@ -93,7 +93,7 @@ python run_all.py --db outputs/flights.db --aircraft N5854Z
 
 # Export DB snapshot for dashboard
 python run_all.py --db outputs/flights.db --export-json outputs/dashboard_data.json
-python -m http.server 8080  # open dashboard.html in browser
+python -m http.server 8080  # open dashboard/dashboard.html in browser
 ```
 
 ---
@@ -145,21 +145,21 @@ python -c "import chromadb, sentence_transformers, transformers; print('LLM deps
 
 ```bash
 # Step 1: Clean and chunk the social data
-python prepare_data.py --input data/PRUAP_MASTER_SOCIAL.csv
+python llm/prepare_data.py --input data/PRUAP_MASTER_SOCIAL.csv
 # produces: chunks.jsonl
 
 # Step 2: Build ChromaDB vector index
-python rag_pipeline.py --build --chunks chunks.jsonl --db outputs/pruap_index
+python llm/rag_pipeline.py --build --chunks chunks.jsonl --db outputs/pruap_index
 
 # Step 3: Query with RAG
-python query_llm.py "UAP sightings near Aguadilla?" --db outputs/pruap_index
+python llm/query_llm.py "UAP sightings near Aguadilla?" --db outputs/pruap_index
 
 # Fine-tuning format instead of RAG chunks
-python prepare_data.py --input data/PRUAP_MASTER_SOCIAL.csv --finetune
+python llm/prepare_data.py --input data/PRUAP_MASTER_SOCIAL.csv --finetune
 # produces: finetune.jsonl
 
 # Query without RAG context (LLM only)
-python query_llm.py "What USO sightings exist near Puerto Rico?" --no-context
+python llm/query_llm.py "What USO sightings exist near Puerto Rico?" --no-context
 ```
 
 ---

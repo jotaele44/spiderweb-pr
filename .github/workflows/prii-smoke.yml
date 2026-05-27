@@ -33,22 +33,22 @@ jobs:
         run: |
           python -m py_compile \
             run_all.py \
-            prii_readiness_engine.py \
-            pr_intel_adapter.py \
-            schema_validation.py \
-            geo_calibration.py \
-            operational_intelligence.py \
-            hardening_layer.py \
-            calibrate_scoring.py \
-            manual_review_queue.py \
-            spiderweb_intake.py \
-            satellite_ingest.py \
+            readiness/prii_readiness_engine.py \
+            integration/pr_intel_adapter.py \
+            integration/schema_validation.py \
+            integration/geo_calibration.py \
+            pipeline/operational_intelligence.py \
+            pipeline/hardening_layer.py \
+            readiness/calibrate_scoring.py \
+            fr24/manual_review_queue.py \
+            readiness/spiderweb_intake.py \
+            readiness/satellite_ingest.py \
             scripts/validate_satellite_batch.py
 
       - name: Validate schemas loadable
         run: |
           python -c "
-          from schema_validation import SchemaValidator
+          from integration.schema_validation import SchemaValidator
           v = SchemaValidator()
           schemas = v.available_schemas()
           assert len(schemas) >= 11, f'Expected >=11 schemas, got {len(schemas)}: {schemas}'

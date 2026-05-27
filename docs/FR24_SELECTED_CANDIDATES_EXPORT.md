@@ -8,10 +8,10 @@ candidate or review records. No event is confirmed by this layer.
 
 It adds:
 
-1. `fr24_selected_export.py` — writes a curated CSV, a full-fidelity JSONL, an
+1. `fr24/selected_export.py` — writes a curated CSV, a full-fidelity JSONL, an
    export summary, and a source manifest extension from
    `fr24_event_candidates_selected.csv`.
-2. `fr24_dashboard_queue.py` — merges review-gated rows from selection,
+2. `fr24/dashboard_queue.py` — merges review-gated rows from selection,
    deduplication, fusion, and OCR error queues into a ranked dashboard queue.
 
 ## Export
@@ -19,7 +19,7 @@ It adds:
 Run:
 
 ```bash
-python fr24_selected_export.py \
+python fr24/selected_export.py \
   --selected-csv data/_manifests/fr24_audit/fr24_event_candidates_selected.csv \
   --field-review-csv data/_manifests/fr24_audit/fr24_field_selection_review_queue.csv \
   --duplicate-review-csv data/_manifests/fr24_audit/fr24_fused_duplicate_review_queue.csv \
@@ -34,7 +34,7 @@ python fr24_selected_export.py \
 
 | File | Purpose |
 |---|---|
-| `fr24_event_candidates_selected.csv` | Selected rows from `fr24_field_select.py` |
+| `fr24_event_candidates_selected.csv` | Selected rows from `fr24/field_select.py` |
 | `fr24_field_selection_review_queue.csv` | Field-selection review rows (counted in summary) |
 | `fr24_fused_duplicate_review_queue.csv` | Dedup review rows (counted in summary) |
 | `fr24_batch_run_ledger.csv` | Joined for `source_batch_id` and `source_batch_finished_at` per `image_path` |
@@ -79,7 +79,7 @@ does not emit these labels, but the gate is enforced anyway.
 Run:
 
 ```bash
-python fr24_dashboard_queue.py \
+python fr24/dashboard_queue.py \
   --selected-csv data/_manifests/fr24_audit/fr24_event_candidates_selected.csv \
   --field-review-csv data/_manifests/fr24_audit/fr24_field_selection_review_queue.csv \
   --duplicate-review-csv data/_manifests/fr24_audit/fr24_fused_duplicate_review_queue.csv \
@@ -89,7 +89,7 @@ python fr24_dashboard_queue.py \
 ```
 
 `fr24_batch_error_queue.csv` is loaded only if present (it is produced by
-`fr24_batch_run.py`). A missing OCR-error file is not an error.
+`fr24/batch_run.py`). A missing OCR-error file is not an error.
 
 ### Ranking
 
@@ -144,10 +144,10 @@ Dashboard operators may transition rows through these allowed values:
 ## Recommended local validation
 
 ```bash
-python -m py_compile fr24_selected_export.py fr24_dashboard_queue.py
+python -m py_compile fr24/selected_export.py fr24/dashboard_queue.py
 
-python fr24_selected_export.py
-python fr24_dashboard_queue.py
+python fr24/selected_export.py
+python fr24/dashboard_queue.py
 ```
 
 ## Next step

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from calibrate_scoring import (
+from readiness.calibrate_scoring import (
     REQUIRED_REPORT_KEYS,
     CalibrationDriver,
     MIN_OPERATIONAL_CANDIDATES,

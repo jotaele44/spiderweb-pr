@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from satellite_ingest import SatelliteIngest
+from readiness.satellite_ingest import SatelliteIngest
 
 
 def main() -> None:

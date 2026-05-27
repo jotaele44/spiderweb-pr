@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from fr24_spiderweb_adapter import (
+from fr24.spiderweb_adapter import (
     ADAPTER_VERSION,
     PROHIBITED_LABELS,
     is_intake_eligible,

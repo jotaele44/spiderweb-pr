@@ -18,9 +18,9 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List
 
-from fr24_field_select import run as field_select_run
-from fr24_ocr_analysis_vector import run as analysis_vector_run
-from fr24_wave_validator import run as wave_validator_run
+from fr24.field_select import run as field_select_run
+from fr24.ocr_analysis_vector import run as analysis_vector_run
+from fr24.wave_validator import run as wave_validator_run
 
 PIPELINE_VERSION = "fr24_temporal_wave_pipeline_v0.1.0"
 POLICY = "candidate_only_no_auto_confirmation"

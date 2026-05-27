@@ -10,28 +10,28 @@ Four independent modules coexist in this repository. They share `tests/`, `outpu
 spiderweb-pr/
 │
 ├── ── AIRSPACE INTEL ────────────────────────────────────────────────────────
-│   flight_analyzer.py          Phase 0: OCR extraction → SQLite
-│   aircraft_intelligence.py    Phase 0: N-number lookup, operator profiles
-│   ensemble_ocr.py             Phase 1: 3-engine OCR consensus
-│   hardening_layer.py          Phase 1: confidence scoring, temporal validation
-│   hardened_pipeline.py        Phase 1: orchestration + checkpointing
-│   gis_intelligence.py         Phase 2: PR infrastructure graph, heatmaps
-│   mission_inference.py        Phase 3: mission scoring, Markov prediction
-│   operational_intelligence.py Phase 4: alerts, daily reports, profiles
+│   pipeline/flight_analyzer.py          Phase 0: OCR extraction → SQLite
+│   pipeline/aircraft_intelligence.py    Phase 0: N-number lookup, operator profiles
+│   pipeline/ensemble_ocr.py             Phase 1: 3-engine OCR consensus
+│   pipeline/hardening_layer.py          Phase 1: confidence scoring, temporal validation
+│   pipeline/hardened_pipeline.py        Phase 1: orchestration + checkpointing
+│   pipeline/gis_intelligence.py         Phase 2: PR infrastructure graph, heatmaps
+│   pipeline/mission_inference.py        Phase 3: mission scoring, Markov prediction
+│   pipeline/operational_intelligence.py Phase 4: alerts, daily reports, profiles
 │   run_all.py                  Unified CLI (all phases + exports)
-│   geo_calibration.py          Pixel → lat/lon with uncertainty
-│   schema_validation.py        JSON Schema Draft-7 record validation
-│   pr_intel_adapter.py         Parquet + GeoJSON + integration_report.json
-│   ilap_airspace_bridge.py     POI/ILAP/corridor GeoJSON for Spiderweb/UGCN
-│   aasb_airspace_bridge.py     Airport-node edge CSV + ingest manifest
-│   screenshot_inventory.py     SHA-256 scan, corrupt/dupe detection
-│   fr24_ui_segmenter.py        FR24 screenshot → map/panel/label regions
-│   route_extractor.py          HSV masking + BFS → route polylines
-│   manual_review_queue.py      SQLite-backed low-quality item queue
-│   fr24_event_export.py        Inventory + routes → airspace DB
-│   fr24_ocr_analysis_vector.py Per-candidate analysis vector + temporal wave grouping
-│   fr24_wave_validator.py      Wave physics coherence (altitude, speed, monotonic timestamps)
-│   dashboard.jsx / .html       4-tab browser dashboard
+│   integration/geo_calibration.py          Pixel → lat/lon with uncertainty
+│   integration/schema_validation.py        JSON Schema Draft-7 record validation
+│   integration/pr_intel_adapter.py         Parquet + GeoJSON + integration_report.json
+│   integration/ilap_airspace_bridge.py     POI/ILAP/corridor GeoJSON for Spiderweb/UGCN
+│   integration/aasb_airspace_bridge.py     Airport-node edge CSV + ingest manifest
+│   fr24/screenshot_inventory.py     SHA-256 scan, corrupt/dupe detection
+│   fr24/ui_segmenter.py        FR24 screenshot → map/panel/label regions
+│   fr24/route_extractor.py          HSV masking + BFS → route polylines
+│   fr24/manual_review_queue.py      SQLite-backed low-quality item queue
+│   fr24/event_export.py        Inventory + routes → airspace DB
+│   fr24/ocr_analysis_vector.py Per-candidate analysis vector + temporal wave grouping
+│   fr24/wave_validator.py      Wave physics coherence (altitude, speed, monotonic timestamps)
+│   dashboard/dashboard.jsx / .html       4-tab browser dashboard
 │   schemas/                    10 JSON Schema files
 │   configs/georef_anchors.csv  5 PR airport anchor points
 │
@@ -44,9 +44,9 @@ spiderweb-pr/
 │   constraints.txt             Exact reproducible pip pins
 │
 ├── ── LLM PIPELINE ──────────────────────────────────────────────────────────
-│   prepare_data.py             Clean + chunk PRUAP_MASTER_SOCIAL.csv
-│   rag_pipeline.py             Embed chunks → ChromaDB; retrieve top-k
-│   query_llm.py                RAG-grounded Q&A CLI (local HF model)
+│   llm/prepare_data.py             Clean + chunk PRUAP_MASTER_SOCIAL.csv
+│   llm/rag_pipeline.py             Embed chunks → ChromaDB; retrieve top-k
+│   llm/query_llm.py                RAG-grounded Q&A CLI (local HF model)
 │
 ├── ── EARTHGPT IOS ──────────────────────────────────────────────────────────
 │   earthgpt/                   Core package (24 modules)
@@ -83,36 +83,36 @@ spiderweb-pr/
 
 | File / Directory | Owned by | Notes |
 |-----------------|----------|-------|
-| `flight_analyzer.py` | Airspace Intel | Core DB writer |
-| `aircraft_intelligence.py` | Airspace Intel | |
-| `ensemble_ocr.py` | Airspace Intel | Phase 1, optional |
-| `hardening_layer.py` | Airspace Intel | Phase 1 |
-| `hardened_pipeline.py` | Airspace Intel | Phase 1 |
-| `gis_intelligence.py` | Airspace Intel | Phase 2 |
-| `mission_inference.py` | Airspace Intel | Phase 3 |
-| `operational_intelligence.py` | Airspace Intel | Phase 4 |
+| `pipeline/flight_analyzer.py` | Airspace Intel | Core DB writer |
+| `pipeline/aircraft_intelligence.py` | Airspace Intel | |
+| `pipeline/ensemble_ocr.py` | Airspace Intel | Phase 1, optional |
+| `pipeline/hardening_layer.py` | Airspace Intel | Phase 1 |
+| `pipeline/hardened_pipeline.py` | Airspace Intel | Phase 1 |
+| `pipeline/gis_intelligence.py` | Airspace Intel | Phase 2 |
+| `pipeline/mission_inference.py` | Airspace Intel | Phase 3 |
+| `pipeline/operational_intelligence.py` | Airspace Intel | Phase 4 |
 | `run_all.py` | Airspace Intel | |
-| `geo_calibration.py` | Airspace Intel | |
-| `schema_validation.py` | Airspace Intel | |
-| `pr_intel_adapter.py` | Airspace Intel | |
-| `ilap_airspace_bridge.py` | Airspace Intel | |
-| `aasb_airspace_bridge.py` | Airspace Intel | |
-| `screenshot_inventory.py` | Airspace Intel | FR24 processor |
-| `fr24_ui_segmenter.py` | Airspace Intel | FR24 processor |
-| `route_extractor.py` | Airspace Intel | FR24 processor |
-| `manual_review_queue.py` | Airspace Intel | FR24 processor |
-| `fr24_event_export.py` | Airspace Intel | FR24 processor |
-| `fr24_ocr_analysis_vector.py` | Airspace Intel | FR24 processor |
-| `fr24_wave_validator.py` | Airspace Intel | FR24 processor |
-| `dashboard.jsx` / `dashboard.html` | Airspace Intel | |
+| `integration/geo_calibration.py` | Airspace Intel | |
+| `integration/schema_validation.py` | Airspace Intel | |
+| `integration/pr_intel_adapter.py` | Airspace Intel | |
+| `integration/ilap_airspace_bridge.py` | Airspace Intel | |
+| `integration/aasb_airspace_bridge.py` | Airspace Intel | |
+| `fr24/screenshot_inventory.py` | Airspace Intel | FR24 processor |
+| `fr24/ui_segmenter.py` | Airspace Intel | FR24 processor |
+| `fr24/route_extractor.py` | Airspace Intel | FR24 processor |
+| `fr24/manual_review_queue.py` | Airspace Intel | FR24 processor |
+| `fr24/event_export.py` | Airspace Intel | FR24 processor |
+| `fr24/ocr_analysis_vector.py` | Airspace Intel | FR24 processor |
+| `fr24/wave_validator.py` | Airspace Intel | FR24 processor |
+| `dashboard/dashboard.jsx` / `dashboard/dashboard.html` | Airspace Intel | |
 | `schemas/` | Airspace Intel | |
 | `configs/` | Airspace Intel | |
 | `gebco/` | GEBCO Bathymetry | |
 | `pyproject.toml` | GEBCO Bathymetry | scoped to `gebco*` |
 | `constraints.txt` | GEBCO Bathymetry | |
-| `prepare_data.py` | LLM Pipeline | |
-| `rag_pipeline.py` | LLM Pipeline | |
-| `query_llm.py` | LLM Pipeline | |
+| `llm/prepare_data.py` | LLM Pipeline | |
+| `llm/rag_pipeline.py` | LLM Pipeline | |
+| `llm/query_llm.py` | LLM Pipeline | |
 | `earthgpt/` | EarthGPT iOS | |
 | `scripts/` | EarthGPT iOS | |
 | `tests/` | All (flat namespace) | |

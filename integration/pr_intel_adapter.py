@@ -20,7 +20,7 @@ except ImportError as _pyarrow_err:
     ) from _pyarrow_err
 
 try:
-    from schema_validation import SchemaValidator
+    from integration.schema_validation import SchemaValidator
     _SCHEMA_VALIDATION_AVAILABLE = True
 except ImportError:
     _SCHEMA_VALIDATION_AVAILABLE = False
@@ -463,7 +463,7 @@ class PRIntelAdapter:
 
     def _count_temporal_violations(self, track_pts: List[dict]) -> int:
         try:
-            from hardening_layer import TemporalValidator
+            from pipeline.hardening_layer import TemporalValidator
             by_flight: Dict[str, list] = {}
             for tp in track_pts:
                 fid = tp.get("flight_id", "")

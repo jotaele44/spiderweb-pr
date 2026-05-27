@@ -5,7 +5,7 @@ from datetime import datetime
 
 import pytest
 
-from operational_intelligence import (
+from pipeline.operational_intelligence import (
     Alert,
     AlertCategory,
     AlertEngine,

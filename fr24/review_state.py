@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Mapping
 
-from fr24_dashboard_data import ALLOWED_QUEUE_STATUSES, LOCAL_STATE_POLICY, LOCAL_STATE_SCHEMA_VERSION
+from fr24.dashboard_data import ALLOWED_QUEUE_STATUSES, LOCAL_STATE_POLICY, LOCAL_STATE_SCHEMA_VERSION
 
 
 def utc_now_iso() -> str:

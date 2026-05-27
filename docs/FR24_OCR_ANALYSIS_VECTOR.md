@@ -18,7 +18,7 @@ All outputs remain candidate records. No event is confirmed by this layer.
 ## Run
 
 ```bash
-python fr24_ocr_analysis_vector.py \
+python fr24/ocr_analysis_vector.py \
   --input-csv data/_manifests/fr24_audit/fr24_event_candidates_selected.csv \
   --output-dir data/_manifests/fr24_audit
 ```
@@ -131,10 +131,10 @@ All columns are prefixed `wave_`.
 ## Recommended local validation
 
 ```bash
-python3 -m py_compile fr24_ocr_analysis_vector.py
+python3 -m py_compile fr24/ocr_analysis_vector.py
 
 # Smoke run (empty input)
-python3 fr24_ocr_analysis_vector.py \
+python3 fr24/ocr_analysis_vector.py \
   --input-csv /dev/null \
   --output-dir /tmp/vector_smoke
 
@@ -144,6 +144,6 @@ python3 -m pytest tests/test_fr24_analysis_vector.py -v
 
 ## Next step
 
-Run `fr24_wave_validator.py` to validate temporal and physical coherence
+Run `fr24/wave_validator.py` to validate temporal and physical coherence
 within each multi-obs wave (altitude climb rates, speed plausibility,
 monotonic timestamps).

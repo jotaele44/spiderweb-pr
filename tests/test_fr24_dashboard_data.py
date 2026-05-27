@@ -8,7 +8,8 @@ from pathlib import Path
 
 import pytest
 
-import fr24_dashboard_data as mod
+import fr24.dashboard_data as mod
+
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:

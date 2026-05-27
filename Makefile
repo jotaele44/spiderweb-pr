@@ -26,7 +26,7 @@ lint:
 
 validate-schemas:
 	python -c "\
-	from schema_validation import SchemaValidator; \
+	from integration.schema_validation import SchemaValidator; \
 	v = SchemaValidator(); \
 	schemas = v.available_schemas(); \
 	print(f'Loaded {len(schemas)} schemas: {schemas}'); \
@@ -52,8 +52,8 @@ preflight: validate-schemas test-prii
 # ── Syntax check ─────────────────────────────────────────────────────────────
 
 syntax-check:
-	python -m py_compile *.py
-	@echo "All root modules compile OK."
+	find . -path ./.git -prune -o -path ./.claude -prune -o -name "*.py" -print -exec python -m py_compile {} +
+	@echo "All Python modules compile OK."
 
 # ── Clean ─────────────────────────────────────────────────────────────────────
 

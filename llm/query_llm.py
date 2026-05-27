@@ -117,7 +117,7 @@ def estimate_tokens(text: str) -> int:
 def get_context(query, db_path, top_k):
     """Retrieve RAG context from the vector index."""
     try:
-        from rag_pipeline import retrieve, format_context
+        from llm.rag_pipeline import retrieve, format_context
     except ImportError:
         print("Error: rag_pipeline.py not found. Make sure it is in the same directory.")
         sys.exit(1)

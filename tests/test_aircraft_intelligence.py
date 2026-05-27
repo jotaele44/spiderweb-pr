@@ -2,7 +2,7 @@
 
 import pytest
 
-from aircraft_intelligence import AircraftIntelligence
+from pipeline.aircraft_intelligence import AircraftIntelligence
 
 
 def test_lookup_known_callsign(populated_db):
@@ -33,7 +33,7 @@ def test_compile_intelligence_report_returns_result(populated_db):
 
 
 def test_lookup_callsign_with_no_operator_returns_profile(populated_db):
-    from aircraft_intelligence import AircraftProfile
+    from pipeline.aircraft_intelligence import AircraftProfile
     ai = AircraftIntelligence(populated_db)
     result = ai.lookup_aircraft("XUNKNOWN99")
     assert result is not None

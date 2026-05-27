@@ -89,7 +89,7 @@ def run_ocr_batch(file_paths: list[str], db_path: Path) -> dict:
     so we monkey-patch it to accept an explicit file list instead.
     """
     sys.path.insert(0, str(REPO))
-    from flight_analyzer import FlightAnalyzer
+    from pipeline.flight_analyzer import FlightAnalyzer
 
     # We need a per-file approach since FlightAnalyzer iterdir()s a directory.
     # Workaround: process each monthly batch by pointing at its parent dir,
@@ -181,7 +181,7 @@ def main():
     print(f"  {'─'*55}")
 
     # Ensure schema exists — FlightAnalyzer.__init__ calls _init_tables() via FlightDatabase
-    from flight_analyzer import FlightAnalyzer
+    from pipeline.flight_analyzer import FlightAnalyzer
     _init = FlightAnalyzer(DATA_DIR, DB_PATH)   # triggers schema creation
     del _init
 

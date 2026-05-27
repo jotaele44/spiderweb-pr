@@ -108,7 +108,7 @@ def main():
     # Import FlightAnalyzer AFTER file scan (avoids slow import on trivial ops)
     # FlightAnalyzer.__init__ → FlightDatabase.__init__ → _init_tables() creates correct schema
     log("Loading FlightAnalyzer + Tesseract (one-time startup)...")
-    from flight_analyzer import FlightAnalyzer
+    from pipeline.flight_analyzer import FlightAnalyzer
     analyzer = FlightAnalyzer(DATA_DIR, DB_PATH)
     log("Tesseract loaded and ready.")
 

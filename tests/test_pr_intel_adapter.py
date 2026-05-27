@@ -9,7 +9,7 @@ from pathlib import Path
 import pyarrow.parquet as pq
 import pytest
 
-from pr_intel_adapter import PROVENANCE_COLS, PRIntelAdapter
+from integration.pr_intel_adapter import PROVENANCE_COLS, PRIntelAdapter
 
 
 def test_export_all_creates_required_files(populated_db, tmp_output):

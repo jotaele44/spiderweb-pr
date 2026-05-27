@@ -4,13 +4,13 @@ import pytest
 
 
 def test_temporal_validator_import():
-    from hardening_layer import TemporalValidator
+    from pipeline.hardening_layer import TemporalValidator
     tv = TemporalValidator()
     assert tv is not None
 
 
 def test_validate_clean_track():
-    from hardening_layer import TemporalValidator
+    from pipeline.hardening_layer import TemporalValidator
     tv = TemporalValidator()
 
     # Well-behaved track: sequential timestamps, moderate speeds
@@ -25,7 +25,7 @@ def test_validate_clean_track():
 
 
 def test_validate_track_with_teleport():
-    from hardening_layer import TemporalValidator
+    from pipeline.hardening_layer import TemporalValidator
     tv = TemporalValidator()
 
     # Two points 1 second apart but 500 km away — impossible speed
@@ -41,7 +41,7 @@ def test_validate_track_with_teleport():
 
 
 def test_count_violations_empty_track():
-    from hardening_layer import TemporalValidator
+    from pipeline.hardening_layer import TemporalValidator
     tv = TemporalValidator()
     results = tv.validate_track([])
     assert tv.count_violations(results) == 0

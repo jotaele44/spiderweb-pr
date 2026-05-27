@@ -6,8 +6,8 @@ This layer hardens the FR24 fused OCR candidate pipeline after batch execution.
 
 It adds:
 
-1. `fr24_fused_dedup.py` — removes duplicate fused candidate rows across one or more fused CSVs.
-2. `fr24_field_select.py` — creates review-gated selected candidate fields while preserving whole-image and region source values.
+1. `fr24/fused_dedup.py` — removes duplicate fused candidate rows across one or more fused CSVs.
+2. `fr24/field_select.py` — creates review-gated selected candidate fields while preserving whole-image and region source values.
 
 These tools keep outputs as candidate records.
 
@@ -16,7 +16,7 @@ These tools keep outputs as candidate records.
 Run:
 
 ```bash
-python fr24_fused_dedup.py \
+python fr24/fused_dedup.py \
   --input-csv data/_manifests/fr24_audit/fr24_fused_event_candidates.csv \
   --output-csv data/_manifests/fr24_audit/fr24_fused_event_candidates_deduped.csv \
   --duplicates-csv data/_manifests/fr24_audit/fr24_fused_duplicate_review_queue.csv \
@@ -44,7 +44,7 @@ Outputs:
 Run:
 
 ```bash
-python fr24_field_select.py \
+python fr24/field_select.py \
   --input-csv data/_manifests/fr24_audit/fr24_fused_event_candidates_deduped.csv \
   --output-csv data/_manifests/fr24_audit/fr24_event_candidates_selected.csv \
   --review-csv data/_manifests/fr24_audit/fr24_field_selection_review_queue.csv \
@@ -92,12 +92,12 @@ Allowed output labels:
 ## Recommended local validation
 
 ```bash
-python -m py_compile fr24_fused_dedup.py fr24_field_select.py
+python -m py_compile fr24/fused_dedup.py fr24/field_select.py
 
-python fr24_fused_dedup.py \
+python fr24/fused_dedup.py \
   --input-csv data/_manifests/fr24_audit/fr24_fused_event_candidates.csv
 
-python fr24_field_select.py \
+python fr24/field_select.py \
   --input-csv data/_manifests/fr24_audit/fr24_fused_event_candidates_deduped.csv
 ```
 
