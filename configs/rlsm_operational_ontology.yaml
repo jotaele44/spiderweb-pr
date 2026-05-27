@@ -12,6 +12,7 @@ required_registries:
   - configs/lz_registry.yaml
   - configs/poi_registry.yaml
   - configs/operator_registry.yaml
+  - configs/facility_operator_registry.yaml
   - configs/aircraft_aliases.yaml
   - configs/mission_vocab.yaml
   - configs/behavior_vocab.yaml
@@ -27,6 +28,8 @@ normalization_rules:
   never_invent_site_names: true
   separate_visible_label_from_project_name: true
   separate_airport_ramp_hangar_lz: true
+  separate_facility_operator_from_aircraft_operator: true
+  preserve_visible_operator_label: true
   use_project_location_ids_for_unlabeled_points: true
   never_merge_na_aircraft_without_cluster_evidence: true
   route_unknowns_to_review: true
