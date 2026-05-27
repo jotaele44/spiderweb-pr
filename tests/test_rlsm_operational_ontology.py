@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pipeline.normalize_locations import normalize_location
+from pipeline.normalize_locations import load_simple_yaml, normalize_location
 from pipeline.normalize_missions import normalize_blackout, normalize_mission
 from pipeline.normalize_operators import normalize_aircraft_identity, normalize_operator
 from pipeline.rlsm_ontology_gate import run_gate
@@ -36,6 +36,17 @@ def test_gap_terms_preserve_uncertainty():
     record = normalize_blackout("track gap", CONFIG_DIR)
     assert record["blackout_class"] != "UNKNOWN"
     assert record["do_not_assume_intentional"] is True
+
+
+def test_endpoint_visual_track_color_is_candidate_only():
+    config = load_simple_yaml(CONFIG_DIR / "endpoint_recall_audit.yaml")
+    white_cue = config["visual_track_cues"]["WHITE_TRACK_LINE"]
+    assert white_cue["allowed_endpoint_inference"] == "endpoint_candidate_only"
+    rules = config["matching_rules"]
+    assert rules["preserve_visual_track_color"] is True
+    assert rules["do_not_assume_white_track_line_confirms_takeoff_or_landing"] is True
+    assert "visual_track_color" in config["required_audit_fields"]
+    assert "visual_track_cue" in config["required_audit_fields"]
 
 
 def test_gate_passes():
