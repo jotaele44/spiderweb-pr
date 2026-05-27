@@ -30,6 +30,7 @@ REQUIRED_CONFIGS = [
     "access_status_vocab.yaml",
     "spiderweb_terms.yaml",
     "location_naming_guardrails.yaml",
+    "endpoint_recall_audit.yaml",
 ]
 
 
@@ -66,6 +67,30 @@ def run_gate(config_dir: Path = Path("configs")) -> Dict[str, object]:
         ]:
             if rules.get(required_rule) is not True:
                 failures.append(f"facility operator rule missing or false: {required_rule}")
+
+    endpoint_audit_path = config_dir / "endpoint_recall_audit.yaml"
+    if endpoint_audit_path.exists():
+        endpoint_audit = load_simple_yaml(endpoint_audit_path)
+        visual_cues = endpoint_audit.get("visual_track_cues", {}) or {}
+        white_cue = visual_cues.get("WHITE_TRACK_LINE", {}) or {}
+        if white_cue.get("allowed_endpoint_inference") != "endpoint_candidate_only":
+            failures.append("white track line must be candidate-only")
+        required_fields = endpoint_audit.get("required_audit_fields", []) or []
+        for required_field in ["visual_track_color", "visual_track_cue"]:
+            if required_field not in required_fields:
+                failures.append(f"endpoint audit field missing: {required_field}")
+        rules = endpoint_audit.get("matching_rules", {}) or {}
+        for required_rule in [
+            "preserve_visual_track_color",
+            "audit_takeoff_and_landing_separately",
+            "do_not_assume_white_track_line_confirms_takeoff_or_landing",
+            "do_not_assume_track_start_equals_takeoff",
+            "do_not_assume_track_end_equals_landing",
+            "route_unlogged_endpoints_to_review",
+            "create_project_location_id_for_new_unlogged_endpoint",
+        ]:
+            if rules.get(required_rule) is not True:
+                failures.append(f"endpoint recall audit rule missing or false: {required_rule}")
 
     alias_expectations = {
         "SJU": "resolved",
