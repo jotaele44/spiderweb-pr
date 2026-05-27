@@ -14,10 +14,11 @@ def test_airport_alias_resolution():
 
 
 def test_na_identity_policy():
-    record = normalize_aircraft_identity("N/A", "B407")
-    assert record["identity_status"] == "masked_or_unresolved"
-    assert record["tail_canonical"] is None
-    assert record["merge_policy"] == "do_not_merge_without_cluster_evidence"
+    for raw in ["N/A", "NA", "N A", "Unknown", "blocked", "no callsign"]:
+        record = normalize_aircraft_identity(raw, "B407")
+        assert record["identity_status"] == "masked_or_unresolved"
+        assert record["tail_canonical"] is None
+        assert record["merge_policy"] == "do_not_merge_without_cluster_evidence"
 
 
 def test_operator_alias_resolution():
