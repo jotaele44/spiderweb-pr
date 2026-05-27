@@ -35,10 +35,10 @@ All outputs are candidates. No confirmed labels are emitted.
 
 | File | Produced by |
 |---|---|
-| `fr24_manifest_with_sidecars.csv` | `fr24_sidecar_reconcile.py` |
-| `fr24_ocr_probe_50.jsonl` | `fr24_ocr_probe.py` |
-| `fr24_region_ocr_results.jsonl` | `fr24_batch_run.py --mode region` |
-| `fr24_full_corpus_batch_plan.csv` | `fr24_batch_plan.py` (or hand-built) |
+| `fr24_manifest_with_sidecars.csv` | `fr24/sidecar_reconcile.py` |
+| `fr24_ocr_probe_50.jsonl` | `fr24/ocr_probe.py` |
+| `fr24_region_ocr_results.jsonl` | `fr24/batch_run.py --mode region` |
+| `fr24_full_corpus_batch_plan.csv` | `fr24/batch_plan.py` (or hand-built) |
 
 ---
 
@@ -47,7 +47,7 @@ All outputs are candidates. No confirmed labels are emitted.
 ### 1. Parse region OCR results
 
 ```bash
-python fr24_region_parse.py \
+python fr24/region_parse.py \
   --input-jsonl data/_manifests/fr24_audit/fr24_region_ocr_results.jsonl \
   --output-csv  data/_manifests/fr24_audit/fr24_region_parsed_events.csv
 ```
@@ -71,7 +71,7 @@ Parser extracts candidate values based on `region_type`:
 ### 2. Parse whole-image OCR (if not already done)
 
 ```bash
-python fr24_ocr_parse.py \
+python fr24/ocr_parse.py \
   --input-jsonl data/_manifests/fr24_audit/fr24_ocr_probe_50.jsonl \
   --output-csv  data/_manifests/fr24_audit/fr24_ocr_parsed_events_probe_50.csv \
   --review-csv  data/_manifests/fr24_audit/fr24_ocr_review_queue_probe_50.csv
@@ -80,7 +80,7 @@ python fr24_ocr_parse.py \
 ### 3. Fuse whole-image and region candidates
 
 ```bash
-python fr24_ocr_fusion.py \
+python fr24/ocr_fusion.py \
   --whole-image-csv data/_manifests/fr24_audit/fr24_ocr_parsed_events_probe_50.csv \
   --region-csv      data/_manifests/fr24_audit/fr24_region_parsed_events.csv \
   --output-csv      data/_manifests/fr24_audit/fr24_fused_event_candidates.csv \
@@ -99,7 +99,7 @@ Output columns include side-by-side pairs: `callsign_or_label_wi` /
 ### 4. Run a batch (whole-image mode)
 
 ```bash
-python fr24_batch_run.py \
+python fr24/batch_run.py \
   --batch-plan data/_manifests/fr24_audit/fr24_full_corpus_batch_plan.csv \
   --batch-id   fr24_batch_0001 \
   --mode       whole-image \
@@ -109,7 +109,7 @@ python fr24_batch_run.py \
 ### 5. Run a batch (region mode)
 
 ```bash
-python fr24_batch_run.py \
+python fr24/batch_run.py \
   --batch-plan data/_manifests/fr24_audit/fr24_full_corpus_batch_plan.csv \
   --batch-id   fr24_batch_0001 \
   --mode       region
@@ -134,7 +134,7 @@ Outputs:
 ### 6. Check batch status
 
 ```bash
-python fr24_batch_status.py \
+python fr24/batch_status.py \
   --ledger data/_manifests/fr24_audit/fr24_batch_run_ledger.csv
 ```
 
@@ -143,7 +143,7 @@ Returns JSON with per-batch-id, per-mode completion counts.
 ### 7. Build prioritized review queue
 
 ```bash
-python fr24_review_queue_builder.py \
+python fr24/review_queue_builder.py \
   --fused-csv  data/_manifests/fr24_audit/fr24_fused_event_candidates.csv \
   --review-csv data/_manifests/fr24_audit/fr24_fused_review_queue.csv
 ```
@@ -154,14 +154,14 @@ python fr24_review_queue_builder.py \
 
 | File | Produced by | Description |
 |---|---|---|
-| `fr24_region_parsed_events.csv` | `fr24_region_parse.py` | Candidate fields per region |
-| `fr24_fused_event_candidates.csv` | `fr24_ocr_fusion.py` | Fused candidates with side-by-side fields |
-| `fr24_fused_review_queue.csv` | `fr24_ocr_fusion.py` / `fr24_review_queue_builder.py` | Conflict and review records |
-| `fr24_batch_run_ledger.csv` | `fr24_batch_run.py` | Append-mode completion ledger |
-| `fr24_batch_error_queue.csv` | `fr24_batch_run.py` | Failed image error queue |
-| `batches/fr24_batch_0001_ocr.jsonl` | `fr24_batch_run.py` | Whole-image OCR JSONL |
-| `batches/fr24_batch_0001_region_ocr.jsonl` | `fr24_batch_run.py` | Region OCR JSONL |
-| `batches/fr24_batch_0001_status.json` | `fr24_batch_run.py` | Batch run summary |
+| `fr24_region_parsed_events.csv` | `fr24/region_parse.py` | Candidate fields per region |
+| `fr24_fused_event_candidates.csv` | `fr24/ocr_fusion.py` | Fused candidates with side-by-side fields |
+| `fr24_fused_review_queue.csv` | `fr24/ocr_fusion.py` / `fr24/review_queue_builder.py` | Conflict and review records |
+| `fr24_batch_run_ledger.csv` | `fr24/batch_run.py` | Append-mode completion ledger |
+| `fr24_batch_error_queue.csv` | `fr24/batch_run.py` | Failed image error queue |
+| `batches/fr24_batch_0001_ocr.jsonl` | `fr24/batch_run.py` | Whole-image OCR JSONL |
+| `batches/fr24_batch_0001_region_ocr.jsonl` | `fr24/batch_run.py` | Region OCR JSONL |
+| `batches/fr24_batch_0001_status.json` | `fr24/batch_run.py` | Batch run summary |
 
 ---
 

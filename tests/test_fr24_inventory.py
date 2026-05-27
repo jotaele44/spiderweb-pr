@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from screenshot_inventory import ScreenshotInventory, scan_directory, MANIFEST_FIELDS
+from fr24.screenshot_inventory import ScreenshotInventory, scan_directory, MANIFEST_FIELDS
 
 
 # ------------------------------------------------------------------ fixtures

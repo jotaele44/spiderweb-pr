@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from fr24_ocr_analysis_vector import (
+from fr24.ocr_analysis_vector import (
     PROHIBITED_LABELS,
     SELECT_FIELDS,
     build_waves,

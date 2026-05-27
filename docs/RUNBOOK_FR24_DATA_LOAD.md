@@ -11,7 +11,7 @@ These steps require the full screenshot corpus (~15k images) on local disk and
 must run on the machine that holds it — not in an ephemeral cloud session.
 Steps run in order; each has a gate that must pass before the next.
 
-> `fr24_manifest_audit.py` uses `datetime.UTC` and **requires Python 3.11+**.
+> `fr24/manifest_audit.py` uses `datetime.UTC` and **requires Python 3.11+**.
 > The corpus location is passed explicitly via `--root`; do not rely on any
 > path baked into the source.
 
@@ -39,13 +39,13 @@ CORPUS="data/Flight Logs"
 
 ```bash
 # 1a. Discover the FR24 shard layout under the corpus root
-python fr24_manifest_audit.py --root "$CORPUS" --discover-fr24-folders
+python fr24/manifest_audit.py --root "$CORPUS" --discover-fr24-folders
 
 # 1b. Fast smoke audit (first 50 images) to confirm the path resolves
-python fr24_manifest_audit.py --root "$CORPUS" --output-dir /tmp/fr24_audit --max-images 50
+python fr24/manifest_audit.py --root "$CORPUS" --output-dir /tmp/fr24_audit --max-images 50
 
 # 1c. Full audit — add --combined if 1a listed more than one */Google Photos/FR24 folder
-python fr24_manifest_audit.py --root "$CORPUS" --output-dir /tmp/fr24_audit
+python fr24/manifest_audit.py --root "$CORPUS" --output-dir /tmp/fr24_audit
 ```
 
 **Gate:** `/tmp/fr24_audit/fr24_manifest_audit_report.json` must report
@@ -94,7 +94,7 @@ python run_all.py --calibrate-scoring outputs/spiderweb
   database is too small to calibrate.
 - `status == "PASS"` → done.
 - `status == "FAIL"` → each `calibration_flags` entry names a metric and the
-  scoring constant to adjust in `spiderweb_intake.py` (e.g. `MUNICIPAL_CENTROIDS`,
+  scoring constant to adjust in `readiness/spiderweb_intake.py` (e.g. `MUNICIPAL_CENTROIDS`,
   `HYDRO_LOCATIONS`, `UTILITY_CORRIDOR_WAYPOINTS`, tier thresholds). Patch the
   constant, re-run Part 3, and repeat until `PASS`.
 

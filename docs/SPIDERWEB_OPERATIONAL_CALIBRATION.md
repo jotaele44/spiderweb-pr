@@ -3,18 +3,18 @@
 ## Purpose
 
 This document describes the calibration workflow for the Spiderweb airspace overlay
-pipeline. Calibration validates that `spiderweb_intake.py` scoring heuristics produce
+pipeline. Calibration validates that `readiness/spiderweb_intake.py` scoring heuristics produce
 sensible tier/MBIL/hydro/utility/terrain distributions when run against a real
 operational database (≥15,000 screenshots).
 
 **What is frozen while waiting for the real DB:**
-- `pr_intel_adapter.py`, `schema_validation.py`, `geo_calibration.py` — PRII modules, read-only
-- `ilap_airspace_bridge.py`, `aasb_airspace_bridge.py` — producer boundary, read-only
+- `integration/pr_intel_adapter.py`, `integration/schema_validation.py`, `integration/geo_calibration.py` — PRII modules, read-only
+- `integration/ilap_airspace_bridge.py`, `integration/aasb_airspace_bridge.py` — producer boundary, read-only
 - Raw FR24 image ingest path — frozen until fresh screenshot corpus is available
 
 **What is active:**
-- `spiderweb_intake.py` — scoring constants and heuristics
-- `calibrate_scoring.py` — calibration driver and baseline comparison
+- `readiness/spiderweb_intake.py` — scoring constants and heuristics
+- `readiness/calibrate_scoring.py` — calibration driver and baseline comparison
 - `run_all.py` — CLI surface (`--export-spiderweb`, `--spiderweb-intake`, `--calibrate-scoring`)
 
 ---
@@ -100,7 +100,7 @@ Flags are sorted alphabetically by `metric` for deterministic diffs.
 |--------|------------------|--------------------------|
 | `pct_T4` | 0.20 – 0.70 | Investigate tier thresholds |
 | `pct_T1_or_T2` | 0.05 – 0.50 | If >0.50: check for tier inflation |
-| `pct_mbil_0` | 0.00 – 0.15 | Expand `MUNICIPAL_CENTROIDS` in `spiderweb_intake.py` |
+| `pct_mbil_0` | 0.00 – 0.15 | Expand `MUNICIPAL_CENTROIDS` in `readiness/spiderweb_intake.py` |
 | `pct_hydro_yes` | 0.05 – 0.40 | Expand `HYDRO_LOCATIONS` |
 | `pct_utility_yes` | 0.10 – 0.60 | Expand `UTILITY_CORRIDOR_WAYPOINTS` |
 | `pct_urban_terrain` | 0.10 – 0.50 | Add urban bounding boxes to `_score_terrain` |
@@ -118,10 +118,10 @@ Flags are sorted alphabetically by `metric` for deterministic diffs.
 | Operational synthetic all-T4 (50 candidates) | `FAIL` |
 | CLI missing-dir | exits nonzero |
 | CLI no-overlay-in-dir | exits nonzero with intake hint |
-| PRII diff (`pr_intel_adapter.py` etc.) | empty |
+| PRII diff (`integration/pr_intel_adapter.py` etc.) | empty |
 | Tracked `.db` / `.geojson` artifacts | none |
 
 When running against the real operational DB, the merge gate additionally requires:
 - `status = "PASS"` (zero calibration flags), **OR**
-- all flagged metrics resolved by patching scoring constants in `spiderweb_intake.py`
+- all flagged metrics resolved by patching scoring constants in `readiness/spiderweb_intake.py`
   with no PRII diff introduced.

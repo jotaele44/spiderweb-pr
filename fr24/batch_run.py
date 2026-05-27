@@ -58,7 +58,7 @@ try:
 except ImportError:
     pytesseract = None  # type: ignore
 
-from fr24_ui_segmenter import FR24UISegmenter
+from fr24.ui_segmenter import FR24UISegmenter
 
 PARSER_VERSION = "1.0.0"
 

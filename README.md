@@ -14,26 +14,26 @@ Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build
 
 | Phase | File | Purpose |
 |-------|------|---------|
-| 0 | `flight_analyzer.py` | OCR extraction, coordinate mapping, SQLite database |
-| 0 | `aircraft_intelligence.py` | N-number lookup, operator profiles, mission deduction |
-| 1 | `ensemble_ocr.py` | 3-engine OCR consensus (Tesseract + PaddleOCR + EasyOCR) |
-| 1 | `hardening_layer.py` | Confidence scoring, temporal physics validation, job queue |
-| 1 | `hardened_pipeline.py` | Phase 1 orchestration with provenance and checkpointing |
-| 2 | `gis_intelligence.py` | Puerto Rico infrastructure graph, corridor analysis, heatmaps |
-| 3 | `mission_inference.py` | Multi-factor mission scoring, behavioral clustering, Markov prediction |
-| 4 | `operational_intelligence.py` | Alert engine, daily reports, aircraft profiles |
+| 0 | `pipeline/flight_analyzer.py` | OCR extraction, coordinate mapping, SQLite database |
+| 0 | `pipeline/aircraft_intelligence.py` | N-number lookup, operator profiles, mission deduction |
+| 1 | `pipeline/ensemble_ocr.py` | 3-engine OCR consensus (Tesseract + PaddleOCR + EasyOCR) |
+| 1 | `pipeline/hardening_layer.py` | Confidence scoring, temporal physics validation, job queue |
+| 1 | `pipeline/hardened_pipeline.py` | Phase 1 orchestration with provenance and checkpointing |
+| 2 | `pipeline/gis_intelligence.py` | Puerto Rico infrastructure graph, corridor analysis, heatmaps |
+| 3 | `pipeline/mission_inference.py` | Multi-factor mission scoring, behavioral clustering, Markov prediction |
+| 4 | `pipeline/operational_intelligence.py` | Alert engine, daily reports, aircraft profiles |
 | — | `run_all.py` | Unified CLI for all phases |
-| — | `dashboard.jsx` + `dashboard.html` | Browser dashboard — 4-tab operational review UI |
+| — | `dashboard/dashboard.jsx` + `dashboard/dashboard.html` | Browser dashboard — 4-tab operational review UI |
 
 ### Integration hardening modules
 
 | File | Purpose |
 |------|---------|
-| `schema_validation.py` | JSON Schema (Draft-7) validation; routes invalid rows to `review_queue.csv` |
-| `geo_calibration.py` | Pixel→geographic coordinate conversion with per-result uncertainty metadata |
-| `pr_intel_adapter.py` | Exports 6 parquet files + 2 GeoJSON + `source_manifest.json` + `integration_report.json` |
-| `ilap_airspace_bridge.py` | POI, ILAP, and corridor candidates as GeoJSON for Spiderweb/UGCN |
-| `aasb_airspace_bridge.py` | Airport-node edge CSV and `spiderweb_ingest_manifest.json` |
+| `integration/schema_validation.py` | JSON Schema (Draft-7) validation; routes invalid rows to `review_queue.csv` |
+| `integration/geo_calibration.py` | Pixel→geographic coordinate conversion with per-result uncertainty metadata |
+| `integration/pr_intel_adapter.py` | Exports 6 parquet files + 2 GeoJSON + `source_manifest.json` + `integration_report.json` |
+| `integration/ilap_airspace_bridge.py` | POI, ILAP, and corridor candidates as GeoJSON for Spiderweb/UGCN |
+| `integration/aasb_airspace_bridge.py` | Airport-node edge CSV and `spiderweb_ingest_manifest.json` |
 | `schemas/` | 10 JSON Schema files covering all exported record types |
 | `configs/georef_anchors.csv` | 5 PR airport anchor points for georeferencing calibration |
 
@@ -41,11 +41,11 @@ Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build
 
 | File | Purpose |
 |------|---------|
-| `screenshot_inventory.py` | Directory scan with SHA-256 hashing, corrupt detection, duplicate grouping, CSV report |
-| `fr24_ui_segmenter.py` | Geometric + edge-detection segmentation of FR24 UI into map/panel/label regions |
-| `route_extractor.py` | HSV color-range masking + 4-connected BFS to extract route polylines from map region |
-| `manual_review_queue.py` | SQLite-backed idempotent queue for low-quality items needing human review |
-| `fr24_event_export.py` | Bridge: inventory → screenshots table; routes → track_points table |
+| `fr24/screenshot_inventory.py` | Directory scan with SHA-256 hashing, corrupt detection, duplicate grouping, CSV report |
+| `fr24/ui_segmenter.py` | Geometric + edge-detection segmentation of FR24 UI into map/panel/label regions |
+| `fr24/route_extractor.py` | HSV color-range masking + 4-connected BFS to extract route polylines from map region |
+| `fr24/manual_review_queue.py` | SQLite-backed idempotent queue for low-quality items needing human review |
+| `fr24/event_export.py` | Bridge: inventory → screenshots table; routes → track_points table |
 
 ## Quick start
 
@@ -75,12 +75,12 @@ python run_all.py --aircraft N5854Z
 # Run specific phase only
 python run_all.py --phase 2
 
-# Export DB snapshot for the browser dashboard
-python run_all.py --export-json dashboard_data.json
+# Export DB snapshot for the browser dashboard (lands under outputs/, gitignored)
+python run_all.py --export-json outputs/dashboard_data.json
 
-# Open the dashboard (serve from the repo directory)
+# Open the dashboard (serve from the repo directory so ../outputs/ resolves)
 python -m http.server 8080
-# then open http://localhost:8080/dashboard.html
+# then open http://localhost:8080/dashboard/dashboard.html
 
 # ── FR24 screenshot processor ─────────────────────────────────────────────────
 
@@ -232,11 +232,11 @@ python -c "from gebco import open_gebco, subset_region; help(subset_region)"
 
 ## LLM Pipeline (PRUAP Social Data)
 
-RAG index and local LLM query over Puerto Rico UAP/UFO Reddit data. See `prepare_data.py`, `rag_pipeline.py`, `query_llm.py`.
+RAG index and local LLM query over Puerto Rico UAP/UFO Reddit data. See `llm/prepare_data.py`, `llm/rag_pipeline.py`, `llm/query_llm.py`.
 
 ```bash
 pip install chromadb sentence-transformers transformers torch accelerate
-python prepare_data.py                    # clean + chunk PRUAP_MASTER_SOCIAL.csv
-python rag_pipeline.py --build            # build ChromaDB vector index
-python query_llm.py "UAP sightings near Aguadilla?"
+python llm/prepare_data.py                    # clean + chunk PRUAP_MASTER_SOCIAL.csv
+python llm/rag_pipeline.py --build            # build ChromaDB vector index
+python llm/query_llm.py "UAP sightings near Aguadilla?"
 ```

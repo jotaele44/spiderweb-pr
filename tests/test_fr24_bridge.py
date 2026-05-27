@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from fr24_event_export import FR24EventExporter
-from manual_review_queue import ManualReviewQueue, QUEUE_TYPES
-from screenshot_inventory import ScreenshotInventory
+from fr24.event_export import FR24EventExporter
+from fr24.manual_review_queue import ManualReviewQueue, QUEUE_TYPES
+from fr24.screenshot_inventory import ScreenshotInventory
 
 
 # ------------------------------------------------------------------ review queue
@@ -209,7 +209,7 @@ def test_get_export_report_has_expected_keys(populated_db, tmp_path):
 
 
 def test_export_route_events_malformed_path_returns_zero(populated_db, tmp_path):
-    from fr24_event_export import FR24EventExporter
+    from fr24.event_export import FR24EventExporter
     exp = FR24EventExporter(populated_db, review_dir=str(tmp_path / "review"))
     inserted = exp.export_route_events("/nonexistent/malformed.jpg", routes=[])
     assert inserted == 0

@@ -6,7 +6,7 @@ import csv
 import json
 from pathlib import Path
 
-from fr24_temporal_wave_dashboard_data import TEMPORAL_DASHBOARD_DATA_VERSION, build_rows, run
+from fr24.temporal_wave_dashboard_data import TEMPORAL_DASHBOARD_DATA_VERSION, build_rows, run
 
 
 def _write_csv(path: Path, rows: list[dict]) -> None:

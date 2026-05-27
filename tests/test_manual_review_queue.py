@@ -4,7 +4,7 @@ import csv
 
 import pytest
 
-from manual_review_queue import EXPORT_FIELDNAMES, QUEUE_TYPES, ManualReviewQueue
+from fr24.manual_review_queue import EXPORT_FIELDNAMES, QUEUE_TYPES, ManualReviewQueue
 
 
 # ── add_item ──────────────────────────────────────────────────────────────────

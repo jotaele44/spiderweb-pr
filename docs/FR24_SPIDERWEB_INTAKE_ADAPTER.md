@@ -27,7 +27,7 @@ All other records are written to a hold queue with
 ## Command
 
 ```bash
-python fr24_spiderweb_adapter.py \
+python fr24/spiderweb_adapter.py \
   --export-jsonl   data/_manifests/fr24_audit/fr24_event_candidates_export.jsonl \
   --output-jsonl   data/_manifests/fr24_audit/fr24_spiderweb_intake_candidates.jsonl \
   --hold-jsonl     data/_manifests/fr24_audit/fr24_spiderweb_hold_queue.jsonl \
@@ -38,7 +38,7 @@ python fr24_spiderweb_adapter.py \
 
 | File | Purpose |
 |---|---|
-| `fr24_event_candidates_export.jsonl` | Full-fidelity export records from `fr24_selected_export.py` |
+| `fr24_event_candidates_export.jsonl` | Full-fidelity export records from `fr24/selected_export.py` |
 
 ## Outputs
 
@@ -146,11 +146,11 @@ The adapter enforces a two-stage prohibited-label check:
 ## Local validation
 
 ```bash
-python -m py_compile fr24_spiderweb_adapter.py
+python -m py_compile fr24/spiderweb_adapter.py
 
 python -m pytest tests/test_fr24_spiderweb_adapter.py -v
 
-python fr24_spiderweb_adapter.py
+python fr24/spiderweb_adapter.py
 ```
 
 ## Next step

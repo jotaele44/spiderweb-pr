@@ -4,7 +4,7 @@ import sqlite3
 
 import pytest
 
-from mission_inference import MultiFactorMissionScorer
+from pipeline.mission_inference import MultiFactorMissionScorer
 
 
 def test_scorer_initializes(populated_db):

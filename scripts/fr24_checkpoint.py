@@ -122,9 +122,9 @@ def upsert_screenshot(conn, rec, now):
 def extract_and_insert_routes(conn, rec, now):
     """Attempt route extraction; silently skip on any error."""
     try:
-        from fr24_ui_segmenter import FR24UISegmenter
-        from route_extractor import RouteExtractor
-        from geo_calibration import GeoCalibration
+        from fr24.ui_segmenter import FR24UISegmenter
+        from fr24.route_extractor import RouteExtractor
+        from integration.geo_calibration import GeoCalibration
         from PIL import Image as PILImage
 
         seg = FR24UISegmenter(mode="geometric")

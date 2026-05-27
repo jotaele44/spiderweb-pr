@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
-from fr24_region_parse import parse_jsonl as region_parse_jsonl, parse_region_record
-from fr24_ocr_fusion import run_fusion, fuse_records
-from fr24_batch_run import run_batch
-from fr24_batch_status import read_ledger, summarize
-from fr24_review_queue_builder import build_review_queue
+from fr24.region_parse import parse_jsonl as region_parse_jsonl, parse_region_record
+from fr24.ocr_fusion import run_fusion, fuse_records
+from fr24.batch_run import run_batch
+from fr24.batch_status import read_ledger, summarize
+from fr24.review_queue_builder import build_review_queue
 
 
 # ---------------------------------------------------------------------------
@@ -396,7 +396,7 @@ class TestBatchRunner:
         # Pre-seed the ledger with status=complete rather than running the batch
         # twice, because Pillow/pytesseract may not be installed in CI — real OCR
         # would fail and record status=failed, which would not be skipped on rerun.
-        from fr24_batch_run import LEDGER_FIELDS, _append_ledger
+        from fr24.batch_run import LEDGER_FIELDS, _append_ledger
         import uuid
         ledger_path = tmp_path / "fr24_batch_run_ledger.csv"
         _append_ledger(ledger_path, {
@@ -508,7 +508,7 @@ class TestBatchStatus:
              "started_at": "", "completed_at": "", "status": "failed",
              "ocr_char_count": "0", "regions_ocr_count": "0", "error": "err"},
         ]
-        from fr24_batch_run import LEDGER_FIELDS
+        from fr24.batch_run import LEDGER_FIELDS
         _write_csv(ledger_path, rows, LEDGER_FIELDS)
 
         loaded = read_ledger(ledger_path)

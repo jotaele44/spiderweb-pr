@@ -2,8 +2,8 @@
 
 import pytest
 
-from fr24_ui_segmenter import FR24UISegmenter, FR24Segments, BBox
-from route_extractor import (
+from fr24.ui_segmenter import FR24UISegmenter, FR24Segments, BBox
+from fr24.route_extractor import (
     RouteExtractor, RouteCandidate, COLOR_RANGES,
     _bbox_of_points, _polyline_length,
 )
@@ -241,7 +241,7 @@ def test_extract_array_with_extractor_and_segmenter():
 
 def test_extract_array_single_pixel_region_returns_list():
     np = pytest.importorskip("numpy")
-    from route_extractor import RouteExtractor
+    from fr24.route_extractor import RouteExtractor
     ext = RouteExtractor()
     arr = np.zeros((100, 100, 3), dtype="uint8")
     arr[50, 50] = [0, 0, 255]  # single blue pixel — below min_points threshold

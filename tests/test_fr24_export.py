@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from fr24_selected_export import (
+from fr24.selected_export import (
     EXPORT_VERSION,
     PROHIBITED_LABELS,
     has_prohibited_label,
     run as export_run,
 )
-from fr24_dashboard_queue import (
+from fr24.dashboard_queue import (
     DASHBOARD_QUEUE_VERSION,
     TIER_FIELD_DISAGREEMENT,
     TIER_FUSION_CONFLICT,

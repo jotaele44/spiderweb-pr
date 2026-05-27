@@ -12,10 +12,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from screenshot_inventory import ScreenshotInventory, _ensure_schema
-from fr24_ui_segmenter import FR24UISegmenter
-from route_extractor import RouteExtractor, RouteCandidate
-from manual_review_queue import ManualReviewQueue
+from fr24.screenshot_inventory import ScreenshotInventory, _ensure_schema
+from fr24.ui_segmenter import FR24UISegmenter
+from fr24.route_extractor import RouteExtractor, RouteCandidate
+from fr24.manual_review_queue import ManualReviewQueue
 
 
 class FR24EventExporter:
@@ -113,7 +113,7 @@ class FR24EventExporter:
         Only high-confidence routes (>= MIN_ROUTE_CONFIDENCE) are exported.
         Returns number of track_point rows inserted.
         """
-        from geo_calibration import GeoCalibration
+        from integration.geo_calibration import GeoCalibration
 
         if not routes:
             return 0

@@ -16,7 +16,7 @@ try:
 except ImportError:
     _JSONSCHEMA_AVAILABLE = False
 
-SCHEMAS_DIR = Path(__file__).parent / "schemas"
+SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
 REVIEW_QUEUE_FIELDNAMES = ["schema_name", "record_json", "errors", "routed_at"]
 
 

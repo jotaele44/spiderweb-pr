@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from rag_pipeline import format_context, COLLECTION_NAME, DEFAULT_TOP_K
+from llm.rag_pipeline import format_context, COLLECTION_NAME, DEFAULT_TOP_K
 
 
 # ------------------------------------------------------------------ helpers
@@ -87,14 +87,14 @@ def test_format_context_missing_metadata_keys_graceful():
 
 def test_get_collection_uses_collection_name(tmp_path):
     chromadb = pytest.importorskip("chromadb")
-    from rag_pipeline import get_collection
+    from llm.rag_pipeline import get_collection
     col = get_collection(str(tmp_path / "chroma_test"))
     assert col.name == COLLECTION_NAME
 
 
 def test_get_collection_idempotent(tmp_path):
     chromadb = pytest.importorskip("chromadb")
-    from rag_pipeline import get_collection
+    from llm.rag_pipeline import get_collection
     db = str(tmp_path / "chroma_idem")
     col1 = get_collection(db)
     col2 = get_collection(db)
@@ -108,7 +108,7 @@ def test_build_index_missing_chunks_file(tmp_path, capsys):
     from unittest.mock import MagicMock
     fake_st = MagicMock()
     with patch.dict(sys.modules, {"sentence_transformers": fake_st}):
-        from rag_pipeline import build_index
+        from llm.rag_pipeline import build_index
         with pytest.raises(SystemExit):
             build_index(str(tmp_path / "nonexistent.jsonl"), str(tmp_path / "db"))
 
@@ -127,7 +127,7 @@ def test_build_index_calls_upsert(tmp_path):
     mock_model.encode.return_value = [[0.1] * 384] * 3
 
     with patch("rag_pipeline.SentenceTransformer", return_value=mock_model):
-        from rag_pipeline import build_index
+        from llm.rag_pipeline import build_index
         build_index(str(chunks_path), str(tmp_path / "db"))
 
     mock_model.encode.assert_called_once()
@@ -137,7 +137,7 @@ def test_build_index_calls_upsert(tmp_path):
 
 def test_retrieve_returns_hits(tmp_path):
     chromadb = pytest.importorskip("chromadb")
-    from rag_pipeline import get_collection, retrieve
+    from llm.rag_pipeline import get_collection, retrieve
 
     db = str(tmp_path / "chroma_retrieve")
     col = get_collection(db)
@@ -162,7 +162,7 @@ def test_retrieve_returns_hits(tmp_path):
 
 def test_retrieve_score_in_range(tmp_path):
     chromadb = pytest.importorskip("chromadb")
-    from rag_pipeline import get_collection, retrieve
+    from llm.rag_pipeline import get_collection, retrieve
 
     db = str(tmp_path / "chroma_score")
     col = get_collection(db)
@@ -190,7 +190,7 @@ def test_retrieve_from_empty_corpus_returns_list(tmp_path):
     mock_model.encode.return_value = [[0.5] * 10]
 
     with patch("rag_pipeline.SentenceTransformer", return_value=mock_model):
-        from rag_pipeline import retrieve
+        from llm.rag_pipeline import retrieve
         results = retrieve("any query", str(tmp_path / "empty_db"), top_k=5)
 
     assert isinstance(results, list)
@@ -199,13 +199,13 @@ def test_retrieve_from_empty_corpus_returns_list(tmp_path):
 # ── Phase 6: RAG hardening ────────────────────────────────────────────────────
 
 def test_safe_retrieve_returns_list_on_import_error():
-    from rag_pipeline import safe_retrieve
+    from llm.rag_pipeline import safe_retrieve
     results = safe_retrieve("query", "/nonexistent/path", top_k=3)
     assert isinstance(results, list)
 
 
 def test_validate_hits_filters_incomplete():
-    from rag_pipeline import validate_hits
+    from llm.rag_pipeline import validate_hits
     good = {"text": "t", "metadata": {}, "score": 0.9}
     bad = {"text": "t", "score": 0.5}  # missing metadata
     result = validate_hits([good, bad])
@@ -214,12 +214,12 @@ def test_validate_hits_filters_incomplete():
 
 
 def test_validate_hits_empty_input():
-    from rag_pipeline import validate_hits
+    from llm.rag_pipeline import validate_hits
     assert validate_hits([]) == []
 
 
 def test_chunk_text_basic():
-    from rag_pipeline import chunk_text
+    from llm.rag_pipeline import chunk_text
     text = "A" * 1000
     chunks = chunk_text(text, max_chars=100, overlap=10)
     assert len(chunks) > 1
@@ -228,24 +228,24 @@ def test_chunk_text_basic():
 
 
 def test_chunk_text_empty_returns_empty():
-    from rag_pipeline import chunk_text
+    from llm.rag_pipeline import chunk_text
     assert chunk_text("") == []
 
 
 def test_chunk_text_short_text_single_chunk():
-    from rag_pipeline import chunk_text
+    from llm.rag_pipeline import chunk_text
     assert chunk_text("hello world", max_chars=512) == ["hello world"]
 
 
 def test_chunk_text_invalid_max_chars_raises():
-    from rag_pipeline import chunk_text
+    from llm.rag_pipeline import chunk_text
     import pytest
     with pytest.raises(ValueError):
         chunk_text("text", max_chars=0)
 
 
 def test_format_context_with_limit_truncates():
-    from rag_pipeline import format_context_with_limit
+    from llm.rag_pipeline import format_context_with_limit
     long_hit = _make_hit(text="X" * 5000)
     result = format_context_with_limit([long_hit], max_chars=100)
     assert len(result) <= 120  # max_chars + truncation marker
@@ -253,7 +253,7 @@ def test_format_context_with_limit_truncates():
 
 
 def test_format_context_with_limit_no_truncation_for_short():
-    from rag_pipeline import format_context_with_limit
+    from llm.rag_pipeline import format_context_with_limit
     hit = _make_hit(text="short text")
     result = format_context_with_limit([hit], max_chars=10000)
     assert "truncated" not in result

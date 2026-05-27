@@ -36,7 +36,7 @@ BANNER = """
 
 
 def run_phase_0(args):
-    from flight_analyzer import FlightAnalyzer
+    from pipeline.flight_analyzer import FlightAnalyzer
     print("\n  PHASE 0: IMAGE EXTRACTION")
     print("  " + "─" * 50)
     analyzer = FlightAnalyzer(args.image_dir, args.db)
@@ -51,7 +51,7 @@ def run_phase_0(args):
 
 
 def run_phase_1(args):
-    from hardened_pipeline import HardenedFlightAnalyzer
+    from pipeline.hardened_pipeline import HardenedFlightAnalyzer
     print("\n  PHASE 1: TELEMETRY HARDENING")
     print("  " + "─" * 50)
     analyzer = HardenedFlightAnalyzer(args.image_dir, args.db)
@@ -64,7 +64,7 @@ def run_phase_1(args):
 
 
 def run_phase_2(args):
-    from gis_intelligence import (
+    from pipeline.gis_intelligence import (
         PuertoRicoInfrastructure, CorridorAnalyzer,
         AnomalyDetector, HeatmapGenerator, Phase2Database,
     )
@@ -135,7 +135,7 @@ def run_phase_2(args):
 
 
 def run_phase_3(args):
-    from mission_inference import Phase3Pipeline
+    from pipeline.mission_inference import Phase3Pipeline
     print("\n  PHASE 3: MISSION INFERENCE")
     print("  " + "─" * 50)
     pipeline = Phase3Pipeline(args.db)
@@ -143,7 +143,7 @@ def run_phase_3(args):
 
 
 def run_phase_4(args):
-    from operational_intelligence import Phase4Pipeline
+    from pipeline.operational_intelligence import Phase4Pipeline
     print("\n  PHASE 4: OPERATIONAL INTELLIGENCE")
     print("  " + "─" * 50)
     pipeline = Phase4Pipeline(args.db)
@@ -151,8 +151,8 @@ def run_phase_4(args):
 
 
 def run_aircraft_profile(args):
-    from operational_intelligence import ReportGenerator
-    from aircraft_intelligence import AircraftIntelligence
+    from pipeline.operational_intelligence import ReportGenerator
+    from pipeline.aircraft_intelligence import AircraftIntelligence
     print(f"\n  AIRCRAFT PROFILE: {args.aircraft}\n")
     intel = AircraftIntelligence(args.db)
     reporter = ReportGenerator(args.db)
@@ -161,7 +161,7 @@ def run_aircraft_profile(args):
 
 
 def run_daily_report(args):
-    from operational_intelligence import ReportGenerator
+    from pipeline.operational_intelligence import ReportGenerator
     reporter = ReportGenerator(args.db)
     report = reporter.daily_report()
     print(report)
@@ -276,7 +276,7 @@ def _run_schema_validation(db_path: str):
         print(f"  Hint: run the pipeline first to populate the database")
         sys.exit(1)
     try:
-        from schema_validation import SchemaValidator
+        from integration.schema_validation import SchemaValidator
         validator = SchemaValidator()
         review_path = str(Path(db_path).parent / "review_queue.csv")
         results = validator.run_db_validation(db_path, review_path)
@@ -303,7 +303,7 @@ def _run_export_pr_intel(db_path: str, output_dir: str):
         print(f"  Hint: run the full pipeline first, then re-run --export-pr-intel")
         sys.exit(1)
     try:
-        from pr_intel_adapter import PRIntelAdapter
+        from integration.pr_intel_adapter import PRIntelAdapter
         adapter = PRIntelAdapter(db_path, output_dir)
         report = adapter.export_all()
         status = report.get("overall_status", "UNKNOWN")
@@ -321,8 +321,8 @@ def _run_export_spiderweb(db_path: str, output_dir: str):
     print("\n  SPIDERWEB BRIDGE EXPORT")
     print("  " + "─" * 50)
     try:
-        from ilap_airspace_bridge import ILAPAirspaceBridge
-        from aasb_airspace_bridge import AASBAirspaceBridge
+        from integration.ilap_airspace_bridge import ILAPAirspaceBridge
+        from integration.aasb_airspace_bridge import AASBAirspaceBridge
         ILAPAirspaceBridge(db_path, output_dir).export_all()
         AASBAirspaceBridge(db_path, output_dir).export_all()
         print(f"\n  ✓ Spiderweb exported to: {output_dir}")
@@ -338,7 +338,7 @@ def _run_spiderweb_intake(intake_dir: str):
         print(f"  Error: directory not found: {intake_dir}")
         sys.exit(1)
     try:
-        from spiderweb_intake import SpiderwebIntake
+        from readiness.spiderweb_intake import SpiderwebIntake
         result = SpiderwebIntake(intake_dir, intake_dir).run()
         audit = result["gap_audit"]["gaps"]
         print(f"  Candidates normalized: {result['total_candidates']}")
@@ -365,7 +365,7 @@ def _run_calibrate_scoring(calibrate_dir: str):
         print(f"  Hint: run --spiderweb-intake {calibrate_dir} first")
         sys.exit(1)
     try:
-        from calibrate_scoring import CalibrationDriver
+        from readiness.calibrate_scoring import CalibrationDriver
         report = CalibrationDriver(calibrate_dir).run()
         flags = report.get("calibration_flags", [])
         print(f"  Mode:                  {report.get('baseline_mode', '?')}")
@@ -391,7 +391,7 @@ def _run_assess_readiness(export_dir: str):
         print(f"  Hint: run --export-pr-intel and --calibrate-scoring first")
         sys.exit(1)
     try:
-        from prii_readiness_engine import PRIIReadinessEngine
+        from readiness.prii_readiness_engine import PRIIReadinessEngine
         report = PRIIReadinessEngine(export_dir).assess()
         status = report.get("readiness_status", "UNKNOWN")
         marker = "✓" if status == "READY" else ("~" if status == "DEGRADED" else "✗")
@@ -417,7 +417,7 @@ def _run_assess_readiness(export_dir: str):
 def _run_scan_inventory(images_dir: str, db_path: str):
     print("\n  SCREENSHOT INVENTORY SCAN")
     print("  " + "─" * 50)
-    from screenshot_inventory import ScreenshotInventory
+    from fr24.screenshot_inventory import ScreenshotInventory
     from pathlib import Path as _Path
     inv = ScreenshotInventory(images_dir, db_path=db_path)
     manifest = inv.scan()
@@ -432,7 +432,7 @@ def _run_scan_inventory(images_dir: str, db_path: str):
 def _run_export_fr24_events(images_dir: str, db_path: str):
     print("\n  FR24 EVENT EXPORT")
     print("  " + "─" * 50)
-    from fr24_event_export import FR24EventExporter
+    from fr24.event_export import FR24EventExporter
     exp = FR24EventExporter(db_path)
     report = exp.export_batch(images_dir)
     print(f"  Screenshots upserted:  {report['screenshots_upserted']}")
@@ -444,7 +444,7 @@ def _run_export_fr24_events(images_dir: str, db_path: str):
 def _run_ingest_satellite(manifest_path: str, dry_run: bool = False):
     print("\n  SATELLITE MANIFEST INGEST")
     print("  " + "─" * 50)
-    from satellite_ingest import ingest_from_cli
+    from readiness.satellite_ingest import ingest_from_cli
     rc = ingest_from_cli(manifest_path, dry_run=dry_run)
     if rc != 0:
         sys.exit(rc)

@@ -2,7 +2,7 @@
 
 import pytest
 
-from gis_intelligence import (
+from pipeline.gis_intelligence import (
     CorridorAnalyzer,
     PuertoRicoInfrastructure,
     haversine_nm,

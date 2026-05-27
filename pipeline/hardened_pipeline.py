@@ -18,14 +18,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from hardening_layer import (
+from pipeline.hardening_layer import (
     ExtractedField,
     MultiFrameConsensus,
     ResumableJobQueue,
     StatefulTrackHypothesis,
     TemporalValidator,
 )
-from ensemble_ocr import EnsembleOCR
+from pipeline.ensemble_ocr import EnsembleOCR
 
 
 # ============================================================================

@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from aasb_airspace_bridge import AASBAirspaceBridge
-from ilap_airspace_bridge import ILAPAirspaceBridge
+from integration.aasb_airspace_bridge import AASBAirspaceBridge
+from integration.ilap_airspace_bridge import ILAPAirspaceBridge
 
 
 def test_ilap_creates_three_geojson_files(populated_db, tmp_output):

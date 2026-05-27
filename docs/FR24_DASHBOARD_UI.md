@@ -10,25 +10,25 @@ Surfaces the FR24 dashboard review queue (`fr24_dashboard_review_queue.csv`) in 
 fr24_dashboard_review_queue.csv
         │
         ▼
-fr24_dashboard_data.py  →  fr24_dashboard_review_queue.json
+fr24/dashboard_data.py  →  fr24_dashboard_review_queue.json
         │                            │
         │                            ▼
-        │              dashboard.html fetches it
+        │              dashboard/dashboard.html fetches it
         │                            │
         │                            ▼
-        └────────────►  ReviewQueueTab in dashboard.jsx
+        └────────────►  ReviewQueueTab in dashboard/dashboard.jsx
 ```
 
 ## Generate the JSON
 
 ```bash
-python fr24_dashboard_data.py \
+python fr24/dashboard_data.py \
   --queue-csv data/_manifests/fr24_audit/fr24_dashboard_review_queue.csv \
   --summary-json data/_manifests/fr24_audit/fr24_dashboard_queue_summary.json \
   --output-json fr24_dashboard_review_queue.json
 ```
 
-Defaults match the canonical paths so `python fr24_dashboard_data.py` works
+Defaults match the canonical paths so `python fr24/dashboard_data.py` works
 without arguments after the dashboard queue has been generated.
 
 The JSON payload contains:
@@ -96,9 +96,9 @@ one.
 ## Recommended local validation
 
 ```bash
-python -m py_compile fr24_dashboard_data.py
+python -m py_compile fr24/dashboard_data.py
 python -m pytest tests/test_fr24_dashboard_data.py -q
-python fr24_dashboard_data.py
+python fr24/dashboard_data.py
 python -m http.server 8080
 # open http://localhost:8080/dashboard.html → Review Queue tab
 ```

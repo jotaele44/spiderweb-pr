@@ -50,7 +50,7 @@ def main() -> None:
 
 def _validate_schema(path: str, schema_name: str) -> None:
     try:
-        from schema_validation import SchemaValidator
+        from integration.schema_validation import SchemaValidator
     except ImportError as e:
         log(f"WARNING: schema validation skipped ({e})", prefix="WARN")
         return

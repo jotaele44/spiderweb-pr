@@ -2,7 +2,7 @@
 TemporalValidator, StatefulTrackHypothesis, ResumableJobQueue."""
 
 import pytest
-from hardening_layer import (
+from pipeline.hardening_layer import (
     ExtractedField,
     MultiFrameConsensus,
     ResumableJobQueue,

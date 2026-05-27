@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from prepare_data import (
+from llm.prepare_data import (
     MIN_TEXT_LENGTH,
     clean_rows,
     load_csv,

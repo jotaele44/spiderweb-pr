@@ -4,8 +4,8 @@
 
 This layer extends the merged FR24 sidecar/OCR probe pipeline with two read-only tools:
 
-1. `fr24_region_ocr.py` — region-based OCR over fixed FR24 screen areas.
-2. `fr24_batch_plan.py` — deterministic full-corpus OCR batch planning.
+1. `fr24/region_ocr.py` — region-based OCR over fixed FR24 screen areas.
+2. `fr24/batch_plan.py` — deterministic full-corpus OCR batch planning.
 
 Both tools preserve the candidate-only policy. They do not confirm aircraft events, anomalies, routes, or operational status.
 
@@ -14,7 +14,7 @@ Both tools preserve the candidate-only policy. They do not confirm aircraft even
 Run:
 
 ```bash
-python fr24_region_ocr.py \
+python fr24/region_ocr.py \
   --manifest data/_manifests/fr24_audit/fr24_manifest_with_sidecars.csv \
   --output-dir data/_manifests/fr24_audit \
   --limit 50
@@ -43,7 +43,7 @@ Outputs:
 Run:
 
 ```bash
-python fr24_batch_plan.py \
+python fr24/batch_plan.py \
   --manifest data/_manifests/fr24_audit/fr24_manifest_with_sidecars.csv \
   --output-dir data/_manifests/fr24_audit \
   --batch-size 250
@@ -52,7 +52,7 @@ python fr24_batch_plan.py \
 Optional bounded run:
 
 ```bash
-python fr24_batch_plan.py \
+python fr24/batch_plan.py \
   --manifest data/_manifests/fr24_audit/fr24_manifest_with_sidecars.csv \
   --output-dir data/_manifests/fr24_audit \
   --batch-size 250 \
@@ -95,4 +95,4 @@ No output from this layer may use:
 
 ## Next development step
 
-After local validation, connect region OCR outputs to `fr24_ocr_parse.py` so the parser can compare full-image and region-specific OCR evidence before producing review queues.
+After local validation, connect region OCR outputs to `fr24/ocr_parse.py` so the parser can compare full-image and region-specific OCR evidence before producing review queues.

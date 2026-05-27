@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def test_dashboard_html_loads_temporal_wave_json_and_module():
-    html = Path("dashboard.html").read_text(encoding="utf-8")
+    html = Path("dashboard/dashboard.html").read_text(encoding="utf-8")
 
     assert "fr24_temporal_wave_dashboard.json" in html
     assert "window.fr24TemporalWaveData" in html
@@ -14,7 +14,7 @@ def test_dashboard_html_loads_temporal_wave_json_and_module():
 
 
 def test_temporal_wave_panel_is_read_only_candidate_visibility():
-    jsx = Path("dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
+    jsx = Path("dashboard/dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
 
     assert "TemporalWavePanel" in jsx
     assert "window.fr24TemporalWaveData" in jsx
@@ -26,7 +26,7 @@ def test_temporal_wave_panel_is_read_only_candidate_visibility():
 
 
 def test_temporal_wave_tab_control_is_injected_without_core_dashboard_state():
-    jsx = Path("dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
+    jsx = Path("dashboard/dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
 
     assert "injectTemporalWaveTab" in jsx
     assert "fr24-temporal-waves-tab-button" in jsx
@@ -36,7 +36,7 @@ def test_temporal_wave_tab_control_is_injected_without_core_dashboard_state():
 
 
 def test_temporal_wave_panel_refreshes_when_data_arrives_late():
-    jsx = Path("dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
+    jsx = Path("dashboard/dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
 
     assert "TemporalWaveRoot" in jsx
     assert "React.useState(window.fr24TemporalWaveData || null)" in jsx
@@ -46,7 +46,7 @@ def test_temporal_wave_panel_refreshes_when_data_arrives_late():
 
 
 def test_temporal_wave_exporter_default_output_name():
-    exporter = Path("fr24_temporal_wave_dashboard_data.py").read_text(encoding="utf-8")
+    exporter = Path("fr24/temporal_wave_dashboard_data.py").read_text(encoding="utf-8")
 
     assert "fr24_temporal_wave_dashboard.json" in exporter
     assert "TEMPORAL_DASHBOARD_DATA_VERSION" in exporter

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from fr24_temporal_wave_pipeline import (
+from fr24.temporal_wave_pipeline import (
     PIPELINE_VERSION,
     POLICY,
     _scan_rows_for_prohibited_labels,

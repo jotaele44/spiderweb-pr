@@ -252,7 +252,7 @@ def run_ocr(delete_after: bool = False):
         cp["stats"] = {"ok": 0, "skip": 0, "err": 0}
 
     sys.path.insert(0, str(REPO))
-    from flight_analyzer import FlightAnalyzer
+    from pipeline.flight_analyzer import FlightAnalyzer
     fa = FlightAnalyzer(STAGING_DIR, DB_PATH)
 
     ok = skip = err = 0

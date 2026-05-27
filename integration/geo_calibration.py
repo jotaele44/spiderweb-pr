@@ -20,7 +20,7 @@ PR_BOUNDS = {"north": 18.65, "south": 17.92, "east": -65.20, "west": -67.30}
 MAP_TOP_FRACTION    = 0.15
 MAP_BOTTOM_FRACTION = 0.75
 
-DEFAULT_ANCHORS_CSV = Path(__file__).parent / "configs" / "georef_anchors.csv"
+DEFAULT_ANCHORS_CSV = Path(__file__).resolve().parent.parent / "configs" / "georef_anchors.csv"
 
 
 @dataclass

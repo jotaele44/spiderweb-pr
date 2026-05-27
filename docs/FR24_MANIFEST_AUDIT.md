@@ -23,8 +23,8 @@ The audit is read-only. It does not modify images, sidecar JSON files, databases
 Run the audit on the Mac that has the raw image folder:
 
 ```bash
-python fr24_manifest_audit.py --root "/Users/jotaele/Documents/GitHub/Raw Flight Logs/Takeout-9/Google Photos/FR24" --output-dir /tmp/fr24_audit --max-images 50
-python fr24_manifest_audit.py --root "/Users/jotaele/Documents/GitHub/Raw Flight Logs/Takeout-9/Google Photos/FR24" --output-dir /tmp/fr24_audit
+python fr24/manifest_audit.py --root "/Users/jotaele/Documents/GitHub/Raw Flight Logs/Takeout-9/Google Photos/FR24" --output-dir /tmp/fr24_audit --max-images 50
+python fr24/manifest_audit.py --root "/Users/jotaele/Documents/GitHub/Raw Flight Logs/Takeout-9/Google Photos/FR24" --output-dir /tmp/fr24_audit
 ```
 
 ## Outputs

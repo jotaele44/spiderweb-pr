@@ -19,7 +19,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Tuple
 
-from hardening_layer import ExtractedField
+from pipeline.hardening_layer import ExtractedField
 
 
 # ============================================================================

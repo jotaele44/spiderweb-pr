@@ -2,7 +2,7 @@
 
 import pytest
 
-from geo_calibration import CoordResult, GeoCalibration
+from integration.geo_calibration import CoordResult, GeoCalibration
 
 PR_BOUNDS = {"north": 18.65, "south": 17.92, "east": -65.20, "west": -67.30}
 
