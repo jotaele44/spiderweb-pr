@@ -15,6 +15,20 @@ endpoint_event_types:
     aliases: [last visible point, last track point, screenshot route end]
     expected_location_roles: [LANDING_POINT_CANDIDATE, TRACK_ENDPOINT_UNRESOLVED]
 
+visual_track_cues:
+  WHITE_TRACK_LINE:
+    meaning: White route/track line visible in screenshot imagery.
+    allowed_endpoint_inference: endpoint_candidate_only
+    rule: A white track line can support an endpoint candidate only at the first visible point, last visible point, discontinuity, or clear low-speed/altitude endpoint; it cannot confirm takeoff or landing by color alone.
+  NON_WHITE_TRACK_LINE:
+    meaning: Route/track line visible in another color.
+    allowed_endpoint_inference: endpoint_candidate_only
+    rule: Treat color as a visual extraction cue, not as confirmation of takeoff, landing, operator, or facility.
+  NO_TRACK_LINE:
+    meaning: No reliable track line visible.
+    allowed_endpoint_inference: insufficient_visual_trace
+    rule: Endpoint extraction requires OCR, coordinates, track points, or manual annotation.
+
 endpoint_match_statuses:
   LOGGED_CONFIRMED:
     meaning: Endpoint matches a known logged location with confirmed or registry-backed status.
@@ -39,6 +53,8 @@ required_audit_fields:
   - lat
   - lon
   - raw_location_label
+  - visual_track_color
+  - visual_track_cue
   - normalized_location_id
   - nearest_logged_location_id
   - nearest_logged_location_distance_m
@@ -51,8 +67,10 @@ required_audit_fields:
 
 matching_rules:
   preserve_raw_endpoint_label: true
+  preserve_visual_track_color: true
   preserve_first_and_last_track_points: true
   audit_takeoff_and_landing_separately: true
+  do_not_assume_white_track_line_confirms_takeoff_or_landing: true
   do_not_assume_track_start_equals_takeoff: true
   do_not_assume_track_end_equals_landing: true
   require_coordinates_for_spatial_match: true
