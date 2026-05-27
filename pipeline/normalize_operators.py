@@ -9,7 +9,21 @@ from typing import Any, Dict
 
 from pipeline.normalize_locations import load_simple_yaml
 
-NA_VALUES = {"n/a", "na", "unknown", "blank", "private", "blocked", "suppressed", "no registration", "no callsign", ""}
+NA_VALUES = {
+    "n/a",
+    "n a",
+    "na",
+    "unknown",
+    "blank",
+    "private",
+    "blocked",
+    "suppressed",
+    "no registration",
+    "noregistration",
+    "no callsign",
+    "nocallsign",
+    "",
+}
 
 
 def _norm(value: Any) -> str:
@@ -17,6 +31,12 @@ def _norm(value: Any) -> str:
     text = text.strip().lower().replace("ñ", "n")
     text = re.sub(r"[^a-z0-9]+", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def _is_masked_identity(raw_tail: Any) -> bool:
+    key = _norm(raw_tail)
+    compact_key = key.replace(" ", "")
+    return key in NA_VALUES or compact_key in NA_VALUES
 
 
 class OperatorIndex:
@@ -66,7 +86,8 @@ def build_operator_index(config_dir: Path = Path("configs")) -> OperatorIndex:
 def normalize_aircraft_identity(raw_tail: Any, aircraft_type: Any = None) -> Dict[str, Any]:
     raw = "" if raw_tail is None else str(raw_tail).strip()
     key = _norm(raw)
-    if key in NA_VALUES:
+    compact_key = key.replace(" ", "")
+    if _is_masked_identity(raw):
         return {
             "raw_tail": raw_tail,
             "tail_canonical": None,
@@ -77,7 +98,7 @@ def normalize_aircraft_identity(raw_tail: Any, aircraft_type: Any = None) -> Dic
             "visibility": "V0",
             "evidence_tier": "T2",
         }
-    if re.fullmatch(r"n[0-9a-z]+", key.replace(" ", "")):
+    if re.fullmatch(r"n[0-9a-z]+", compact_key):
         return {
             "raw_tail": raw_tail,
             "tail_canonical": raw.upper().replace(" ", ""),
