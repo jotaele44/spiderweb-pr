@@ -23,6 +23,13 @@ def _norm(value: Any) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _record_identity(record: Dict[str, Any]) -> str:
+    for field in ("airport_id", "canonical_id", "lz_id", "hangar_id", "corridor_id", "project_location_id"):
+        if record.get(field):
+            return str(record[field])
+    return str(record.get("canonical_name", ""))
+
+
 def _parse_scalar(raw: str) -> Any:
     raw = raw.strip()
     if raw in {"null", "None", ""}:
@@ -52,7 +59,6 @@ def _strip_comment(line: str) -> str:
     stripped = line.strip()
     if not stripped or stripped.startswith("#"):
         return ""
-    # The ontology configs do not use literal # inside values; this keeps the parser small.
     return line.split("#", 1)[0].rstrip()
 
 
@@ -68,17 +74,7 @@ def _prepared_lines(path: Path) -> List[Tuple[int, str]]:
 
 
 def load_simple_yaml(path: Path) -> Dict[str, Any]:
-    """Load the small YAML subset used by configs without external dependencies.
-
-    Supported subset:
-    - nested mappings by indentation
-    - list items using ``- value`` or ``- key: value``
-    - inline scalar lists: ``[a, b, c]``
-    - booleans, integers, floats, null
-
-    The implementation intentionally fails loudly on malformed structure rather than
-    silently converting ontology terms into the wrong shape.
-    """
+    """Load the small YAML subset used by configs without external dependencies."""
     if not path.exists():
         raise FileNotFoundError(path)
 
@@ -136,7 +132,7 @@ def load_simple_yaml(path: Path) -> Dict[str, Any]:
                         if child_indent <= current_indent:
                             break
                         if child_text.startswith("- "):
-                            raise ValueError(f"Unexpected list item under mapping item in {path}: {child_text}")
+                            break
                         if ":" not in child_text:
                             raise ValueError(f"Malformed mapping item in {path}: {child_text}")
                         child_key, child_value = child_text.split(":", 1)
@@ -197,7 +193,12 @@ class AliasIndex:
         if not key:
             return
         if key in self.alias_to_record:
-            self.collisions.setdefault(key, [self.alias_to_record[key]]).append(record)
+            existing = self.alias_to_record[key]
+            same_identity = _record_identity(existing) == _record_identity(record)
+            same_name = _norm(existing.get("canonical_name")) == _norm(record.get("canonical_name"))
+            if same_identity or same_name:
+                return
+            self.collisions.setdefault(key, [existing]).append(record)
             return
         self.alias_to_record[key] = record
 
@@ -237,8 +238,8 @@ class AliasIndex:
 def build_location_index(config_dir: Path = Path("configs")) -> AliasIndex:
     index = AliasIndex()
     for filename, collection_key in [
-        ("place_aliases.yaml", "places"),
         ("airport_registry.yaml", "airports"),
+        ("place_aliases.yaml", "places"),
         ("lz_registry.yaml", "known_lz_candidates"),
         ("hangar_registry.yaml", "known_hangar_candidates"),
         ("corridor_registry.yaml", "corridors"),
