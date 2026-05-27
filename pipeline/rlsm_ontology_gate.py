@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Dict, List
 
-from pipeline.normalize_locations import normalize_location
+from pipeline.normalize_locations import load_simple_yaml, normalize_location
 from pipeline.normalize_missions import normalize_mission, normalize_blackout
 from pipeline.normalize_operators import normalize_aircraft_identity, normalize_operator
 
@@ -28,6 +28,7 @@ REQUIRED_CONFIGS = [
     "blackout_vocab.yaml",
     "access_status_vocab.yaml",
     "spiderweb_terms.yaml",
+    "location_naming_guardrails.yaml",
 ]
 
 
@@ -38,6 +39,19 @@ def run_gate(config_dir: Path = Path("configs")) -> Dict[str, object]:
     for filename in REQUIRED_CONFIGS:
         if not (config_dir / filename).exists():
             failures.append(f"missing required config: {filename}")
+
+    guardrail_path = config_dir / "location_naming_guardrails.yaml"
+    if guardrail_path.exists():
+        guardrails = load_simple_yaml(guardrail_path)
+        principles = guardrails.get("principles", {}) or {}
+        for required_rule in [
+            "preserve_raw_label",
+            "never_invent_site_names",
+            "separate_visible_label_from_project_name",
+            "require_review_for_unlabeled_locations",
+        ]:
+            if principles.get(required_rule) is not True:
+                failures.append(f"location naming guardrail missing or false: {required_rule}")
 
     alias_expectations = {
         "SJU": "resolved",
