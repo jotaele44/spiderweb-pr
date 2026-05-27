@@ -21,6 +21,7 @@ REQUIRED_CONFIGS = [
     "lz_registry.yaml",
     "poi_registry.yaml",
     "operator_registry.yaml",
+    "facility_operator_registry.yaml",
     "aircraft_aliases.yaml",
     "mission_vocab.yaml",
     "behavior_vocab.yaml",
@@ -52,6 +53,19 @@ def run_gate(config_dir: Path = Path("configs")) -> Dict[str, object]:
         ]:
             if principles.get(required_rule) is not True:
                 failures.append(f"location naming guardrail missing or false: {required_rule}")
+
+    facility_operator_path = config_dir / "facility_operator_registry.yaml"
+    if facility_operator_path.exists():
+        facility_ops = load_simple_yaml(facility_operator_path)
+        rules = facility_ops.get("rules", {}) or {}
+        for required_rule in [
+            "preserve_visible_operator_label",
+            "preserve_unlabeled_operator_as_unresolved",
+            "do_not_convert_context_operator_to_verified",
+            "separate_facility_operator_from_aircraft_operator",
+        ]:
+            if rules.get(required_rule) is not True:
+                failures.append(f"facility operator rule missing or false: {required_rule}")
 
     alias_expectations = {
         "SJU": "resolved",
