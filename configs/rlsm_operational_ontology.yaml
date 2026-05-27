@@ -1,0 +1,28 @@
+version: rlsm_operational_ontology_v0_1
+visibility_classes:
+  V0: screenshot_visible
+  V1: screenshot_inferable
+  V2: context_only
+  V3: external_registry_only
+  V4: hypothesis_only
+required_registries:
+  - configs/place_aliases.yaml
+  - configs/airport_registry.yaml
+  - configs/hangar_registry.yaml
+  - configs/lz_registry.yaml
+  - configs/poi_registry.yaml
+  - configs/operator_registry.yaml
+  - configs/aircraft_aliases.yaml
+  - configs/mission_vocab.yaml
+  - configs/behavior_vocab.yaml
+  - configs/corridor_registry.yaml
+  - configs/blackout_vocab.yaml
+  - configs/access_status_vocab.yaml
+  - configs/spiderweb_terms.yaml
+  - configs/evidence_tiers.yaml
+normalization_rules:
+  preserve_raw_text: true
+  separate_airport_ramp_hangar_lz: true
+  never_merge_na_aircraft_without_cluster_evidence: true
+  route_unknowns_to_review: true
+  block_ocr_baseline_until_alias_tests_pass: true
