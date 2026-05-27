@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, List, Tuple
 
 VALID_VISIBILITY = {"V0", "V1", "V2", "V3", "V4"}
 
@@ -47,51 +47,144 @@ def _parse_inline_list(raw: str) -> List[str]:
     return [part.strip().strip('"').strip("'") for part in inner.split(",")]
 
 
-def load_simple_yaml(path: Path) -> Dict[str, Any]:
-    """Load the small YAML subset used by configs without external dependencies."""
-    if not path.exists():
-        raise FileNotFoundError(path)
-    lines = path.read_text(encoding="utf-8").splitlines()
-    root: Dict[str, Any] = {}
-    stack: List[tuple[int, Any]] = [(-1, root)]
+def _strip_comment(line: str) -> str:
+    """Remove simple full/inline comments outside the project YAML subset values."""
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        return ""
+    # The ontology configs do not use literal # inside values; this keeps the parser small.
+    return line.split("#", 1)[0].rstrip()
 
-    for line in lines:
-        if not line.strip() or line.lstrip().startswith("#"):
+
+def _prepared_lines(path: Path) -> List[Tuple[int, str]]:
+    out: List[Tuple[int, str]] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = _strip_comment(raw)
+        if not line.strip():
             continue
         indent = len(line) - len(line.lstrip(" "))
-        text = line.strip()
-        while stack and indent <= stack[-1][0]:
-            stack.pop()
-        parent = stack[-1][1]
+        out.append((indent, line.strip()))
+    return out
 
-        if text.startswith("- "):
-            item_text = text[2:]
-            if not isinstance(parent, list):
-                continue
-            if ":" in item_text:
-                key, value = item_text.split(":", 1)
-                item: Dict[str, Any] = {key.strip(): _parse_scalar(value) if value.strip() else None}
-                parent.append(item)
-                stack.append((indent, item))
-            else:
-                parent.append(_parse_scalar(item_text))
-            continue
 
-        if ":" not in text:
-            continue
-        key, value = text.split(":", 1)
-        key = key.strip()
+def load_simple_yaml(path: Path) -> Dict[str, Any]:
+    """Load the small YAML subset used by configs without external dependencies.
+
+    Supported subset:
+    - nested mappings by indentation
+    - list items using ``- value`` or ``- key: value``
+    - inline scalar lists: ``[a, b, c]``
+    - booleans, integers, floats, null
+
+    The implementation intentionally fails loudly on malformed structure rather than
+    silently converting ontology terms into the wrong shape.
+    """
+    if not path.exists():
+        raise FileNotFoundError(path)
+
+    lines = _prepared_lines(path)
+    if not lines:
+        return {}
+
+    def parse_value(value: str) -> Any:
         value = value.strip()
-        if value == "":
-            # Look ahead: default to list for plural registry keys, otherwise dict.
-            container: Any = [] if key.endswith("s") or key in {"places", "airports", "corridors"} else {}
-            parent[key] = container
-            stack.append((indent, container))
-        elif value.startswith("[") and value.endswith("]"):
-            parent[key] = _parse_inline_list(value)
-        else:
-            parent[key] = _parse_scalar(value)
-    return root
+        if value.startswith("[") and value.endswith("]"):
+            return _parse_inline_list(value)
+        return _parse_scalar(value)
+
+    def parse_block(index: int, indent: int) -> Tuple[Any, int]:
+        if index >= len(lines):
+            return {}, index
+
+        is_list = lines[index][0] == indent and lines[index][1].startswith("- ")
+        if is_list:
+            result: List[Any] = []
+            while index < len(lines):
+                current_indent, text = lines[index]
+                if current_indent < indent:
+                    break
+                if current_indent > indent:
+                    raise ValueError(f"Unexpected nested list indentation in {path}: {text}")
+                if not text.startswith("- "):
+                    break
+
+                item_text = text[2:].strip()
+                index += 1
+                if item_text == "":
+                    if index < len(lines) and lines[index][0] > current_indent:
+                        child, index = parse_block(index, lines[index][0])
+                        result.append(child)
+                    else:
+                        result.append(None)
+                    continue
+
+                if ":" in item_text:
+                    key, value = item_text.split(":", 1)
+                    item: Dict[str, Any] = {}
+                    key = key.strip()
+                    value = value.strip()
+                    if value:
+                        item[key] = parse_value(value)
+                    elif index < len(lines) and lines[index][0] > current_indent:
+                        child, index = parse_block(index, lines[index][0])
+                        item[key] = child
+                    else:
+                        item[key] = None
+
+                    while index < len(lines) and lines[index][0] > current_indent:
+                        child_indent, child_text = lines[index]
+                        if child_indent <= current_indent:
+                            break
+                        if child_text.startswith("- "):
+                            raise ValueError(f"Unexpected list item under mapping item in {path}: {child_text}")
+                        if ":" not in child_text:
+                            raise ValueError(f"Malformed mapping item in {path}: {child_text}")
+                        child_key, child_value = child_text.split(":", 1)
+                        child_key = child_key.strip()
+                        child_value = child_value.strip()
+                        index += 1
+                        if child_value:
+                            item[child_key] = parse_value(child_value)
+                        elif index < len(lines) and lines[index][0] > child_indent:
+                            grandchild, index = parse_block(index, lines[index][0])
+                            item[child_key] = grandchild
+                        else:
+                            item[child_key] = None
+                    result.append(item)
+                else:
+                    result.append(parse_value(item_text))
+            return result, index
+
+        result_dict: Dict[str, Any] = {}
+        while index < len(lines):
+            current_indent, text = lines[index]
+            if current_indent < indent:
+                break
+            if current_indent > indent:
+                raise ValueError(f"Unexpected mapping indentation in {path}: {text}")
+            if text.startswith("- "):
+                break
+            if ":" not in text:
+                raise ValueError(f"Malformed mapping line in {path}: {text}")
+            key, value = text.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+            index += 1
+            if value:
+                result_dict[key] = parse_value(value)
+            elif index < len(lines) and lines[index][0] > current_indent:
+                child, index = parse_block(index, lines[index][0])
+                result_dict[key] = child
+            else:
+                result_dict[key] = None
+        return result_dict, index
+
+    parsed, next_index = parse_block(0, lines[0][0])
+    if next_index != len(lines):
+        raise ValueError(f"Unparsed YAML content in {path} at line index {next_index}")
+    if not isinstance(parsed, dict):
+        raise ValueError(f"Top-level YAML content must be a mapping: {path}")
+    return parsed
 
 
 class AliasIndex:
