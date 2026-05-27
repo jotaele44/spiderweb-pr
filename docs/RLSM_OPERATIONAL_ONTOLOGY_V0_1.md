@@ -52,6 +52,13 @@ The baseline OCR run is blocked unless all of the following pass:
 9. Raw text is preserved beside normalized fields.
 10. Unknowns remain explicit unresolved records, not null-filled guesses.
 
+Run the gate from the repository root as a module so package imports resolve consistently:
+
+```bash
+python -m pipeline.rlsm_ontology_gate
+pytest tests/test_rlsm_operational_ontology.py
+```
+
 ## Evidence language
 
 Use these labels:
