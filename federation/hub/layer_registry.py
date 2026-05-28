@@ -53,8 +53,34 @@ CONTRACT_FINANCE_LAYER = LayerRegistryEntry(
 )
 
 
+SPIDERWEB_SPATIAL_LANE = LayerRegistryEntry(
+    layer_id="spiderweb_spatial_lane",
+    producer="pr-intake-router",
+    export_contract_version="0.1.0",
+    adapter_module="",  # external: Contract-Sweeper shared.pr_intake_router writes the CSV directly
+    engine_module="readiness.spiderweb_spatial_lane",
+    input_artifacts=(
+        "spiderweb_pr_derivatives.csv",
+    ),
+    output_artifacts=(
+        "data/normalized/spatial_intake_items.csv",
+        "data/normalized/infrastructure_assets.csv",
+        "data/normalized/aviation_activity_items.csv",
+        "data/normalized/maritime_activity_items.csv",
+        "data/normalized/hydro_environment_items.csv",
+        "data/normalized/science_dataset_items.csv",
+        "data/exports/poi_candidates.geojson",
+        "data/exports/aoi_candidates.geojson",
+        "data/exports/corridor_candidates.geojson",
+        "spiderweb_spatial_lane_report.json",
+    ),
+    score_features=(),
+)
+
+
 LAYER_REGISTRY: dict[str, LayerRegistryEntry] = {
     CONTRACT_FINANCE_LAYER.layer_id: CONTRACT_FINANCE_LAYER,
+    SPIDERWEB_SPATIAL_LANE.layer_id: SPIDERWEB_SPATIAL_LANE,
 }
 
 
