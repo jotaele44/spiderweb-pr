@@ -92,7 +92,7 @@ jobs:
       - name: Health check — schemas and DB guards
         run: |
           python -c "
-          from schema_validation import SchemaValidator
+          from integration.schema_validation import SchemaValidator
           v = SchemaValidator()
           assert len(v.available_schemas()) >= 11
           print('Schema health OK')
