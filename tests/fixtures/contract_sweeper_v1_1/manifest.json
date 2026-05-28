@@ -1,0 +1,12 @@
+{
+  "producer": "contract-sweeper",
+  "export_contract_version": "1.1.0",
+  "generated_at": "2026-05-28T16:00:00Z",
+  "streams": {
+    "entities": {"path": "entities.jsonl", "count": 2},
+    "sources": {"path": "sources.jsonl", "count": 1},
+    "funding_awards": {"path": "funding_awards.jsonl", "count": 2},
+    "transactions": {"path": "transactions.jsonl", "count": 1},
+    "relationships": {"path": "relationships.jsonl", "count": 1}
+  }
+}
