@@ -11,6 +11,7 @@ numpy>=1.26
 jsonschema>=4.17       # schema validation for all exports
 pyarrow>=14.0          # parquet export for PR Intel adapter
 pytest>=7.4            # test suite
+PyYAML>=6.0            # PR intake router YAML config loading
 
 # ── OPTIONAL (Phase 1 hardening — heavy ML engines) ────────────────────────
 # Install one or both for ensemble OCR consensus (significant accuracy boost).
