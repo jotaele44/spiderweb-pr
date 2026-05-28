@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "federation_export_manifest",
+  "title": "Federation Export Package Manifest",
+  "description": "Reference contract for the manifest.json sidecar of a federation export package (one per producer). Documentation only — written by federation/export_writer.py.",
+  "type": "object",
+  "required": ["producer", "prefix", "schema_version", "generated_at", "synthetic", "files"],
+  "properties": {
+    "producer": {"type": "string", "minLength": 1},
+    "prefix": {"type": "string", "minLength": 1},
+    "schema_version": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "minLength": 1},
+    "synthetic": {"type": "boolean"},
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["filename", "record_type", "record_count", "sha256"],
+        "properties": {
+          "filename": {"type": "string", "minLength": 1},
+          "record_type": {"type": "string", "minLength": 1},
+          "record_count": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string"}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

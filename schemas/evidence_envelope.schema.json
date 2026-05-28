@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "evidence_envelope",
+  "title": "Shared Cross-Repo Evidence Envelope",
+  "description": "Reference contract for one normalized record in a federation export stream. Documentation only — the runtime fail-closed gate lives in federation/validator.py (pure Python, no jsonschema dependency).",
+  "type": "object",
+  "required": [
+    "producer",
+    "record_type",
+    "record_id",
+    "source_id",
+    "timestamp",
+    "geo",
+    "entities",
+    "confidence",
+    "lineage",
+    "payload",
+    "synthetic"
+  ],
+  "properties": {
+    "producer": {"type": "string", "minLength": 1},
+    "record_type": {"type": "string", "minLength": 1},
+    "record_id": {"type": "string", "pattern": "^[a-z_]+:.+"},
+    "source_id": {"type": "string", "pattern": "^[a-z_]+:.+"},
+    "timestamp": {"type": ["string", "null"]},
+    "geo": {
+      "type": ["object", "null"],
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": {"type": "string"},
+        "coordinates": {"type": "array"}
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entity_id", "name", "normalized_name"],
+        "properties": {
+          "entity_id": {"type": "string"},
+          "name": {"type": "string"},
+          "normalized_name": {"type": "string"}
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "required": ["score", "method"],
+      "properties": {
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "method": {"type": "string", "minLength": 1}
+      }
+    },
+    "lineage": {"type": "array"},
+    "payload": {"type": "object"},
+    "synthetic": {"type": "boolean"}
+  },
+  "additionalProperties": true
+}
