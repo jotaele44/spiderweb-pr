@@ -135,3 +135,106 @@ def _tier(score: float) -> str:
     if score >= 0.35:
         return "T3"
     return "T4"
+
+
+def _score_features(features: list[dict[str, Any]], density: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    now = datetime.now(timezone.utc)
+    entity_counts = Counter()
+    for feature in features:
+        props = feature.get("properties") or {}
+        if props.get("entity_id"):
+            entity_counts[str(props["entity_id"])] += 1
+
+    max_amount = max((_safe_float((f.get("properties") or {}).get("amount")) for f in features), default=0.0)
+    max_muni_total = max((_safe_float(row.get("total_amount")) for row in density.values()), default=0.0)
+    scored: list[dict[str, Any]] = []
+
+    for feature in features:
+        props = dict(feature.get("properties") or {})
+        code = str(props.get("municipality_code") or "UNKNOWN")
+        entity_id = str(props.get("entity_id") or "")
+        amount = _safe_float(props.get("amount"))
+        components = {
+            "amount_weight": _amount_score(amount, max_amount),
+            "entity_convergence": _entity_convergence(entity_id, entity_counts),
+            "municipal_density": _municipal_density_score(code, density, max_muni_total),
+            "temporal_funding_pulse": _temporal_pulse(props.get("date"), now),
+        }
+        score = round(
+            0.25 * components["amount_weight"]
+            + 0.30 * components["entity_convergence"]
+            + 0.25 * components["municipal_density"]
+            + 0.20 * components["temporal_funding_pulse"],
+            4,
+        )
+        tier = _tier(score)
+        props.update(
+            {
+                "source_layer": "contract_finance",
+                "spiderweb_score": score,
+                "score_components": components,
+                "evidence_tier": tier,
+                "review_status": "accepted" if tier in {"T1", "T2"} else "manual_review",
+            }
+        )
+        scored.append({"type": "Feature", "geometry": feature.get("geometry"), "properties": props})
+    return sorted(scored, key=lambda f: (-_safe_float((f.get("properties") or {}).get("spiderweb_score")), str((f.get("properties") or {}).get("record_id"))))
+
+
+def _write_geojson(path: Path, features: Iterable[dict[str, Any]]) -> None:
+    payload = {
+        "type": "FeatureCollection",
+        "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}},
+        "features": list(features),
+    }
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _summarize(features: list[dict[str, Any]], ingest_report: dict[str, Any], input_dir: Path) -> dict[str, Any]:
+    by_tier = Counter()
+    by_type = Counter()
+    by_muni: dict[str, dict[str, Any]] = defaultdict(lambda: {"record_count": 0, "total_amount": 0.0})
+    for feature in features:
+        props = feature.get("properties") or {}
+        by_tier[str(props.get("evidence_tier") or "UNKNOWN")] += 1
+        by_type[str(props.get("feature_type") or "unknown")] += 1
+        code = str(props.get("municipality_code") or "UNKNOWN")
+        by_muni[code]["record_count"] += 1
+        by_muni[code]["total_amount"] += _safe_float(props.get("amount"))
+        by_muni[code]["municipality_name"] = props.get("municipality_name") or "UNKNOWN"
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "input_dir": str(input_dir),
+        "producer": ingest_report.get("producer"),
+        "export_contract_version": ingest_report.get("export_contract_version"),
+        "status": "READY" if features else "EMPTY",
+        "record_count": len(features),
+        "by_tier": dict(sorted(by_tier.items())),
+        "by_feature_type": dict(sorted(by_type.items())),
+        "by_municipality": dict(sorted(by_muni.items())),
+        "score_features": ["entity_convergence", "municipal_density", "temporal_funding_pulse"],
+        "outputs": {"scored_overlay": OUTPUT_OVERLAY, "layer_report": OUTPUT_REPORT},
+    }
+
+
+def build_contract_finance_layer(input_dir: str | Path, output_dir: str | Path | None = None) -> dict[str, Any]:
+    """Build the scored SpiderWeb contract/finance overlay from adapter outputs."""
+
+    root = Path(input_dir)
+    out = Path(output_dir) if output_dir else root
+    out.mkdir(parents=True, exist_ok=True)
+    missing = [name for name in REQUIRED_INPUTS if not (root / name).exists()]
+    if missing:
+        raise ContractFinanceLayerError(f"missing contract/finance adapter outputs: {missing}")
+
+    awards = _load_feature_collection(root / "contract_awards.geojson")
+    flows = _load_feature_collection(root / "financial_flows.geojson")
+    density = _load_density(root / "municipality_funding_density.csv")
+    ingest_report = _load_json(root / "contract_finance_ingest_report.json")
+
+    features = _score_features([*awards, *flows], density)
+    _write_geojson(out / OUTPUT_OVERLAY, features)
+    report = _summarize(features, ingest_report, root)
+    (out / OUTPUT_REPORT).write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    return report
