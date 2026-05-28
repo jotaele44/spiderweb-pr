@@ -352,6 +352,27 @@ def _run_spiderweb_intake(intake_dir: str):
         raise
 
 
+def _run_pr_intake_import(intake_dir: str):
+    print("\n  PR INTAKE IMPORT — CONTRACT-SWEEPER DERIVATIVES")
+    print("  " + "─" * 50)
+    if not Path(intake_dir).exists():
+        print(f"  Error: directory not found: {intake_dir}")
+        sys.exit(1)
+    try:
+        from readiness.pr_intake_import import PRIntakeImport
+        manifest = PRIntakeImport(intake_dir, intake_dir).run()
+        print(f"  Records imported:   {manifest['record_count']}")
+        print(f"  Spatial records:    {manifest['spatial_count']}")
+        print(f"  Review queue:       {manifest['review_count']}")
+        print(f"  Missing inputs:     {manifest['missing_files'] or 'none'}")
+        print(f"  Zero-loss:          {'PASS' if manifest['zero_loss_pass'] else 'FAIL'}")
+        print(f"\n  ✓ Records written to: {intake_dir}/pr_intake_records.json")
+        print(f"  ✓ Manifest written to: {intake_dir}/pr_intake_import_manifest.json")
+    except Exception as e:
+        print(f"  Import error: {e}")
+        raise
+
+
 def _run_calibrate_scoring(calibrate_dir: str):
     print("\n  SPIDERWEB SCORING CALIBRATION")
     print("  " + "─" * 50)
@@ -498,6 +519,8 @@ Examples:
                         help="Export FR24 screenshot events from DIR into DB")
     parser.add_argument("--spiderweb-intake", metavar="DIR",
                         help="Normalize --export-spiderweb output into Spiderweb overlay candidates")
+    parser.add_argument("--pr-intake-import", metavar="DIR",
+                        help="Import Contract-Sweeper spiderweb_pr_derivatives.csv from DIR into a Spiderweb intel-record layer")
     parser.add_argument("--calibrate-scoring", metavar="DIR",
                         help="Audit spiderweb overlay candidates against operational baseline ranges")
     parser.add_argument("--assess-readiness", metavar="DIR",
@@ -541,7 +564,8 @@ Examples:
         and (args.validate or args.export_pr_intel or args.export_spiderweb
              or args.scan_inventory or args.export_fr24_events
              or args.spiderweb_intake or args.calibrate_scoring
-             or args.assess_readiness or args.ingest_satellite)
+             or args.assess_readiness or args.ingest_satellite
+             or args.pr_intake_import)
     )
 
     if not new_flags_only:
@@ -588,6 +612,9 @@ Examples:
 
     if args.spiderweb_intake:
         _run_spiderweb_intake(args.spiderweb_intake)
+
+    if args.pr_intake_import:
+        _run_pr_intake_import(args.pr_intake_import)
 
     if args.calibrate_scoring:
         _run_calibrate_scoring(args.calibrate_scoring)

@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pr_intake_derivative",
+  "title": "PR Intake Derivative (spiderweb-pr lane)",
+  "description": "One row of spiderweb_pr_derivatives.csv as written by Contract-Sweeper scripts/route_pr_intake.py. NOTE: this validates the row AS READ FROM CSV — every value is a string, list-valued fields (domains, output_tables) arrive as JSON-encoded strings, and SQL/JSON nulls are written as empty strings. The importer json.loads domains/output_tables and re-validates them as arrays after this schema passes.",
+  "type": "object",
+  "required": ["record_id", "source_item_id", "target_repo", "final_status", "domains", "title", "source_url"],
+  "properties": {
+    "record_id":              {"type": "string", "minLength": 1, "pattern": "^SW-PRINTAKE-[0-9a-f]{12}$"},
+    "source_item_id":         {"type": "string", "minLength": 1},
+    "target_repo":            {"type": "string", "const": "spiderweb-pr"},
+    "canonical_repo":         {"type": "string"},
+    "related_repo_record_id": {"type": "string"},
+    "source_name":            {"type": "string"},
+    "source_url":             {"type": "string", "description": "Required column; may be empty — the producer does not guarantee content."},
+    "published_at":           {"type": "string"},
+    "discovered_at":          {"type": "string"},
+    "title":                  {"type": "string", "description": "Required column; may be empty — the producer does not guarantee content."},
+    "summary_own_words":      {"type": "string"},
+    "domains":                {"type": "string", "minLength": 1, "description": "JSON-encoded array, e.g. '[\"subsurface_hydro\"]'."},
+    "final_status":           {"type": "string", "minLength": 1},
+    "output_tables":          {"type": "string", "description": "JSON-encoded array (possibly '[]')."},
+    "evidence_tier":          {"type": "string"},
+    "confidence_level":       {"type": "string"},
+    "source_hash":            {"type": "string"},
+    "content_hash":           {"type": "string"},
+    "dedupe_group_id":        {"type": "string"}
+  },
+  "additionalProperties": true
+}
