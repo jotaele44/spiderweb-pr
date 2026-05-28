@@ -1,0 +1,58 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from federation.hub.adapters.contract_sweeper import export_contract_sweeper_features
+from readiness.contract_finance_calibration import calibrate_contract_finance_layer
+from readiness.contract_finance_fusion import fuse_contract_finance_scores
+from readiness.contract_finance_layer import build_contract_finance_layer
+from readiness.contract_sweeper_package_gate import assess_contract_sweeper_package
+
+FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_1"
+AIRSPACE_FIXTURE = Path(__file__).parent / "fixtures" / "airspace_overlay_for_contract_fusion.geojson"
+
+
+def test_contract_sweeper_package_gate_accepts_fixture_as_degraded_not_blocked():
+    report = assess_contract_sweeper_package(FIXTURE)
+
+    assert report["producer"] == "contract-sweeper"
+    assert report["export_contract_version"] == "1.1.0"
+    assert report["status"] in {"READY", "DEGRADED"}
+    assert report["metrics"]["money_rows"] == 3
+    assert report["blockers"] == []
+
+
+def test_contract_finance_calibration_report(tmp_path):
+    adapter_out = tmp_path / "adapter"
+    export_contract_sweeper_features(FIXTURE, adapter_out, mode="test")
+    build_contract_finance_layer(adapter_out)
+
+    report = calibrate_contract_finance_layer(adapter_out)
+
+    assert report["records"]["combined_money_features"] == 3
+    assert report["coverage"]["municipality"] == 1.0
+    assert report["amount_profile"]["nonzero_count"] == 3
+    assert (adapter_out / "contract_finance_calibration_report.json").exists()
+
+
+def test_contract_finance_fusion_report_and_overlay(tmp_path):
+    adapter_out = tmp_path / "adapter"
+    fusion_out = tmp_path / "fusion"
+    export_contract_sweeper_features(FIXTURE, adapter_out, mode="test")
+    build_contract_finance_layer(adapter_out)
+
+    report = fuse_contract_finance_scores(
+        AIRSPACE_FIXTURE,
+        adapter_out / "contract_finance_scored_overlay.geojson",
+        fusion_out,
+    )
+
+    assert report["candidate_count"] == 2
+    assert report["matched_candidates"] >= 1
+    overlay = json.loads((fusion_out / "spiderweb_fused_contract_finance_overlay.geojson").read_text(encoding="utf-8"))
+    assert overlay["type"] == "FeatureCollection"
+    assert len(overlay["features"]) == 2
+    best = overlay["features"][0]["properties"]
+    assert best["fused_spiderweb_score"] >= best["base_spiderweb_score"]
+    assert "contract_finance_match" in best
