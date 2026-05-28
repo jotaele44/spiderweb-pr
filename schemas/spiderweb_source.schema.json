@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spiderweb_source",
+  "title": "Spiderweb Source",
+  "description": "A registry entry describing a source whose source_id is referenced by events, observations, and tracks in this package.",
+  "type": "object",
+  "required": ["id", "source_id", "kind", "first_seen_at", "last_seen_at", "lineage", "confidence"],
+  "properties": {
+    "id":            {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "source_id":     {"type": "string", "minLength": 1},
+    "kind":          {"type": "string", "minLength": 1},
+    "first_seen_at": {"type": "string", "minLength": 20},
+    "last_seen_at":  {"type": "string", "minLength": 20},
+    "lineage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["step", "actor", "ts"],
+        "properties": {
+          "step":   {"type": "string", "minLength": 1},
+          "actor":  {"type": "string", "minLength": 1},
+          "ts":     {"type": "string", "minLength": 20},
+          "inputs": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "required": ["score", "method"],
+      "properties": {
+        "score":      {"type": "number", "minimum": 0, "maximum": 1},
+        "method":     {"type": "string", "minLength": 1},
+        "components": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "attributes":   {"type": "object"},
+    "is_synthetic": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}
