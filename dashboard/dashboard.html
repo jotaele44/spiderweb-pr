@@ -13,8 +13,8 @@
          xdg-open dashboard.html      # Linux
          # or serve with: python -m http.server 8080
 
-  The page loads dashboard_data.json (and the FR24 review queue + temporal wave
-  exports) from ../outputs/ via fetch().
+  The page loads dashboard_data.json plus optional FR24 and Contract-Finance
+  exports from ../outputs/ via fetch(). Optional layers degrade gracefully.
   If served from a local file:// URL, use --allow-file-access-from-files (Chrome)
   or simply run the python http.server one-liner above.
 -->
@@ -45,10 +45,11 @@
 <body>
   <div id="loading">Loading flight data…</div>
   <div id="root" style="display:none"></div>
+  <div id="contract-finance-root"></div>
 
   <script>
     // Fetch the JSON export(s), inject into window.*, then mount the app.
-    // FR24 review queue and temporal waves load in parallel and degrade gracefully.
+    // FR24 review queue, temporal waves, and Contract-Finance layers are optional.
     const fetchJson = (url) =>
       fetch(url).then(r => {
         if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
@@ -59,7 +60,9 @@
       fetchJson("../outputs/dashboard_data.json"),
       fetchJson("../outputs/fr24_dashboard_review_queue.json"),
       fetchJson("../outputs/fr24_temporal_wave_dashboard.json"),
-    ]).then(([flight, fr24, temporal]) => {
+      fetchJson("../outputs/contract_finance_layer_report.json"),
+      fetchJson("../outputs/contract_finance_scored_overlay.geojson"),
+    ]).then(([flight, fr24, temporal, contractReport, contractOverlay]) => {
       if (flight.status === "rejected") {
         const err = flight.reason && flight.reason.message ? flight.reason.message : String(flight.reason);
         document.getElementById("loading").innerHTML =
@@ -81,6 +84,10 @@
       window.flightData = flight.value;
       window.fr24DashboardData = fr24.status === "fulfilled" ? fr24.value : null;
       window.fr24TemporalWaveData = temporal.status === "fulfilled" ? temporal.value : null;
+      window.contractFinanceDashboardData =
+        contractReport.status === "fulfilled" && contractOverlay.status === "fulfilled"
+          ? { report: contractReport.value, overlay: contractOverlay.value }
+          : null;
       document.getElementById("loading").style.display = "none";
       document.getElementById("root").style.display = "";
     });
@@ -91,5 +98,8 @@
 
   <!-- Optional temporal-wave visibility overlay; read-only and candidate-only. -->
   <script type="text/babel" src="dashboard_temporal_waves.jsx" data-type="module"></script>
+
+  <!-- Optional Contract-Finance layer toggle. -->
+  <script type="text/babel" src="dashboard_contract_finance.jsx" data-type="module"></script>
 </body>
 </html>
