@@ -1,7 +1,7 @@
 version: 0.1.0
 router_name: pr_intake_domain_router
-primary_repo: Contract-Sweeper
-paired_repo: spiderweb-pr
+primary_repo: spiderweb-pr
+paired_repo: Contract-Sweeper
 zero_loss_required: true
 
 final_status_values:
@@ -248,3 +248,5 @@ validation_gates:
   - no_cross_repo_derivative_without_backlink
   - no_dedupe_without_preserved_source_urls
   - fail_production_if_required_schema_missing
+  - every_spatial_record_has_location_or_manual_geocode_required
+  - every_geometry_has_geometry_confidence
