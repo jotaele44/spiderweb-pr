@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spiderweb_track",
+  "title": "Spiderweb Airspace Track",
+  "description": "An ordered path (LineString) attributed to a single subject (subject_id). The observed_at marks the start of the track segment.",
+  "type": "object",
+  "required": ["id", "source_id", "subject_id", "observed_at", "lineage", "confidence", "path"],
+  "properties": {
+    "id":          {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "source_id":   {"type": "string", "minLength": 1},
+    "subject_id":  {"type": "string", "minLength": 1},
+    "observed_at": {"type": "string", "minLength": 20},
+    "lineage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["step", "actor", "ts"],
+        "properties": {
+          "step":   {"type": "string", "minLength": 1},
+          "actor":  {"type": "string", "minLength": 1},
+          "ts":     {"type": "string", "minLength": 20},
+          "inputs": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "required": ["score", "method"],
+      "properties": {
+        "score":      {"type": "number", "minimum": 0, "maximum": 1},
+        "method":     {"type": "string", "minLength": 1},
+        "components": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "path": {
+      "type": "object",
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": {"type": "string", "enum": ["LineString"]},
+        "coordinates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "items": {"type": "number"}
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "attributes":   {"type": "object"},
+    "is_synthetic": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}

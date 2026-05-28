@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spiderweb_event",
+  "title": "Spiderweb Airspace Event",
+  "description": "A discrete airspace event (e.g. takeoff, landing, alert, corridor crossing). Every row carries a deterministic id, source_id, lineage chain, confidence, and an ISO-8601 event_time.",
+  "type": "object",
+  "required": ["id", "source_id", "event_type", "event_time", "lineage", "confidence", "geometry"],
+  "properties": {
+    "id":          {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "source_id":   {"type": "string", "minLength": 1},
+    "event_type":  {"type": "string", "minLength": 1},
+    "event_time":  {"type": "string", "minLength": 20},
+    "lineage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["step", "actor", "ts"],
+        "properties": {
+          "step":   {"type": "string", "minLength": 1},
+          "actor":  {"type": "string", "minLength": 1},
+          "ts":     {"type": "string", "minLength": 20},
+          "inputs": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "required": ["score", "method"],
+      "properties": {
+        "score":      {"type": "number", "minimum": 0, "maximum": 1},
+        "method":     {"type": "string", "minLength": 1},
+        "components": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "geometry": {
+      "type": "object",
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": {"type": "string", "enum": ["Point", "LineString", "Polygon"]},
+        "coordinates": {}
+      },
+      "additionalProperties": false
+    },
+    "attributes":   {"type": "object"},
+    "is_synthetic": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}
