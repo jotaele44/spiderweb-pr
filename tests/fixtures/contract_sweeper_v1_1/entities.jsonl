@@ -1,0 +1,2 @@
+{"entity_id":"ent:alpha","normalized_name":"ALPHA INFRASTRUCTURE LLC","raw_name":"Alpha Infrastructure LLC","external_ids":{"uei":"UEI000000001","parent_uei":"PARENT000001"},"source_id":"src:usaspending","confidence":0.98,"synthetic":false}
+{"entity_id":"ent:beta","normalized_name":"BETA ELECTRICAL SERVICES INC","raw_name":"Beta Electrical Services Inc","external_ids":{"uei":"UEI000000002"},"source_id":"src:usaspending","confidence":0.91,"synthetic":false}
