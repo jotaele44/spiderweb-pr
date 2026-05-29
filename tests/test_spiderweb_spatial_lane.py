@@ -204,3 +204,36 @@ def test_round_trip_zero_loss_across_the_seam(tmp_path):
     assert report["record_count"] + report["review"]["discrepancy_queue"] == exported
     assert report["zero_loss_pass"] is True
     assert report["review"]["discrepancy_queue"] == 0  # real router output is schema-valid
+
+
+def test_descriptive_enrichment_fields_pass_through(tmp_path):
+    """Producer-enriched descriptive fields (location_text/municipality_name/
+    asset_type/dataset_type/file_format/agency_entity) flow into the normalized
+    record, and lat/lon place the item on the map (no geocode queue)."""
+    rows = [
+        _row(
+            "SW-PRINTAKE-00000000e001",
+            ["infrastructure_footprint"],
+            latitude="18.0111",
+            longitude="-66.6141",
+            location_text="Ponce, Puerto Rico",
+            municipality_name="Ponce",
+            asset_type="hydrology_dataset",
+            dataset_type="lidar_dem",
+            file_format="GeoTIFF",
+            agency_entity="USGS",
+        )
+    ]
+    _write_derivatives(tmp_path, rows)
+    report = build_spiderweb_spatial_lane(str(tmp_path), str(tmp_path))
+
+    assert report["review"]["geocode_queue"] == 0
+    rec = _read_table(tmp_path, "infrastructure_assets.csv")[0]
+    assert rec["location_text"] == "Ponce, Puerto Rico"
+    assert rec["municipality_name"] == "Ponce"
+    assert rec["asset_type"] == "hydrology_dataset"
+    assert rec["dataset_type"] == "lidar_dem"
+    assert rec["file_format"] == "GeoTIFF"
+    assert rec["agency_entity"] == "USGS"
+    assert rec["manual_geocode_required"] == "false"
+    assert rec["latitude"] == "18.0111" and rec["longitude"] == "-66.6141"
