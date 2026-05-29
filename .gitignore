@@ -43,6 +43,10 @@ prii_readiness_report.json
 # ── Common generated data formats ─────────────────────────────────────────────
 *.parquet
 *.jsonl
+# Committed fixtures/samples are not generated data — keep them tracked so a bare
+# `git add` can't silently drop them (see the contract_sweeper_v1_2 CI incident).
+!tests/fixtures/**/*.jsonl
+!exports/**/*.jsonl
 *.nc          # NetCDF (GEBCO)
 
 # ── ChromaDB vector index ─────────────────────────────────────────────────────
