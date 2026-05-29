@@ -9,7 +9,7 @@ from readiness.contract_finance_fusion import fuse_contract_finance_scores
 from readiness.contract_finance_layer import build_contract_finance_layer
 from readiness.contract_sweeper_package_gate import assess_contract_sweeper_package
 
-FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_1"
+FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_2"
 AIRSPACE_FIXTURE = Path(__file__).parent / "fixtures" / "airspace_overlay_for_contract_fusion.geojson"
 
 
@@ -17,7 +17,7 @@ def test_contract_sweeper_package_gate_accepts_fixture_as_degraded_not_blocked()
     report = assess_contract_sweeper_package(FIXTURE)
 
     assert report["producer"] == "contract-sweeper"
-    assert report["export_contract_version"] == "1.1.0"
+    assert report["export_contract_version"] == "1.2.0"
     assert report["status"] in {"READY", "DEGRADED"}
     assert report["metrics"]["money_rows"] == 3
     assert report["blockers"] == []

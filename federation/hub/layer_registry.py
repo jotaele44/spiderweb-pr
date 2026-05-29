@@ -31,7 +31,7 @@ class LayerRegistryEntry:
 CONTRACT_FINANCE_LAYER = LayerRegistryEntry(
     layer_id="contract_finance",
     producer="contract-sweeper",
-    export_contract_version="1.1.0",
+    export_contract_version="1.2.0",
     adapter_module="federation.hub.adapters.contract_sweeper",
     engine_module="readiness.contract_finance_layer",
     input_artifacts=(

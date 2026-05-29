@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI for ingesting Contract-Sweeper v1.1.0 packages into SpiderWeb outputs."""
+"""CLI for ingesting Contract-Sweeper v1.2.0 packages into SpiderWeb outputs."""
 
 from __future__ import annotations
 

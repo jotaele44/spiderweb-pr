@@ -1,1 +1,0 @@
-{"transaction_id":"txn:001","entity_id":"ent:alpha","amount":225000.0,"currency":"USD","transaction_date":"2025-04-30","source_id":"src:usaspending","location":{"municipality_code":"72113","municipality_name":"Ponce","lat":18.0111,"lon":-66.6141},"lineage":{"source_hash":"hash-txn"},"confidence":0.92,"synthetic":false}
