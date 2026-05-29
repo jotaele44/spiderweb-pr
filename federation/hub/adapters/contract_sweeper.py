@@ -1,9 +1,19 @@
-"""Contract-Sweeper v1.1.0 package adapter for SpiderWeb PR.
+"""Contract-Sweeper v1.2.0 package adapter for SpiderWeb PR.
 
 This module intentionally treats Contract-Sweeper as an external producer. It
-reads a package from disk, validates the v1.1.0 native stream contract, and maps
+reads a package from disk, validates the v1.2.0 native stream contract, and maps
 awards / transactions / entities into SpiderWeb-facing feature artifacts without
 importing Contract-Sweeper code.
+
+The v1.2.0 on-wire contract (produced by Contract-Sweeper's
+``scripts/build_export_package.py`` and defined by its
+``schemas/contract_sweeper_*.schema.json``) is the authority for the shapes read
+here: a ``files[]`` manifest, dual entity references on money rows
+(``recipient_entity_id`` + ``funding_agency_entity_id`` on awards,
+``payer_entity_id`` + ``payee_entity_id`` on transactions), and
+``location.latitude`` / ``location.longitude`` coordinates. A cross-repo
+conformance fixture (``tests/fixtures/contract_sweeper_v1_2/``) and test guard
+against silent contract drift.
 """
 
 from __future__ import annotations
@@ -25,7 +35,7 @@ REQUIRED_STREAMS = {
 }
 
 EXPECTED_PRODUCER = "contract-sweeper"
-EXPECTED_VERSION = "1.1.0"
+EXPECTED_VERSION = "1.2.0"
 
 
 class ContractSweeperAdapterError(ValueError):
@@ -137,10 +147,13 @@ def _validate_manifest(manifest: dict[str, Any]) -> None:
             f"unsupported Contract-Sweeper export version {manifest.get('export_contract_version')!r}; "
             f"expected {EXPECTED_VERSION!r}"
         )
-    streams = manifest.get("streams")
-    if not isinstance(streams, dict):
-        raise ContractSweeperAdapterError("manifest.streams must be an object")
-    missing = REQUIRED_STREAMS - set(streams)
+    files = manifest.get("files")
+    if not isinstance(files, list):
+        raise ContractSweeperAdapterError("manifest.files must be an array")
+    declared_streams = {
+        entry.get("stream") for entry in files if isinstance(entry, dict)
+    }
+    missing = REQUIRED_STREAMS - declared_streams
     if missing:
         raise ContractSweeperAdapterError(f"manifest missing streams: {sorted(missing)}")
 
@@ -162,9 +175,12 @@ def _validate_streams(streams: dict[str, list[dict[str, Any]]], *, mode: str) ->
 
     for row in streams["funding_awards"]:
         _require_text(row, "award_id", "funding_awards")
-        entity_id = _require_text(row, "entity_id", "funding_awards")
-        if entity_id not in entities:
-            raise ContractSweeperAdapterError(f"funding_awards references unknown entity_id: {entity_id}")
+        recipient_id = _require_text(row, "recipient_entity_id", "funding_awards")
+        if recipient_id not in entities:
+            raise ContractSweeperAdapterError(f"funding_awards references unknown recipient_entity_id: {recipient_id}")
+        agency_id = _optional_text(row, "funding_agency_entity_id")
+        if agency_id and agency_id not in entities:
+            raise ContractSweeperAdapterError(f"funding_awards references unknown funding_agency_entity_id: {agency_id}")
         source_id = _optional_text(row, "source_id")
         if source_id and source_id not in sources:
             raise ContractSweeperAdapterError(f"funding_awards references unknown source_id: {source_id}")
@@ -176,9 +192,12 @@ def _validate_streams(streams: dict[str, list[dict[str, Any]]], *, mode: str) ->
 
     for row in streams["transactions"]:
         _require_text(row, "transaction_id", "transactions")
-        entity_id = _require_text(row, "entity_id", "transactions")
-        if entity_id not in entities:
-            raise ContractSweeperAdapterError(f"transactions references unknown entity_id: {entity_id}")
+        payer_id = _require_text(row, "payer_entity_id", "transactions")
+        payee_id = _require_text(row, "payee_entity_id", "transactions")
+        if payer_id not in entities:
+            raise ContractSweeperAdapterError(f"transactions references unknown payer_entity_id: {payer_id}")
+        if payee_id not in entities:
+            raise ContractSweeperAdapterError(f"transactions references unknown payee_entity_id: {payee_id}")
         source_id = _optional_text(row, "source_id")
         if source_id and source_id not in sources:
             raise ContractSweeperAdapterError(f"transactions references unknown source_id: {source_id}")
@@ -199,7 +218,7 @@ def _validate_streams(streams: dict[str, list[dict[str, Any]]], *, mode: str) ->
 
 
 def load_contract_sweeper_package(package_dir: str | Path, *, mode: str = "test") -> ContractSweeperPackage:
-    """Load and validate a Contract-Sweeper v1.1.0 package directory."""
+    """Load and validate a Contract-Sweeper v1.2.0 package directory."""
 
     if mode not in {"test", "production"}:
         raise ContractSweeperAdapterError("mode must be 'test' or 'production'")
@@ -219,10 +238,19 @@ def _source_index(package: ContractSweeperPackage) -> dict[str, dict[str, Any]]:
     return {row["source_id"]: row for row in package.streams["sources"]}
 
 
-def _feature_from_money_row(row: dict[str, Any], entity: dict[str, Any], source: dict[str, Any] | None, kind: str) -> dict[str, Any]:
+def _feature_from_money_row(
+    row: dict[str, Any],
+    entity: dict[str, Any],
+    source: dict[str, Any] | None,
+    kind: str,
+    *,
+    primary_ref_field: str,
+    counterparty_ref_field: str,
+) -> dict[str, Any]:
     location = row.get("location") or {}
-    lat = location.get("lat")
-    lon = location.get("lon")
+    # v1.2.0 canonical keys are latitude/longitude; tolerate lat/lon for resilience.
+    lat = location.get("latitude", location.get("lat"))
+    lon = location.get("longitude", location.get("lon"))
     geometry = None
     if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
         geometry = {"type": "Point", "coordinates": [float(lon), float(lat)]}
@@ -232,10 +260,12 @@ def _feature_from_money_row(row: dict[str, Any], entity: dict[str, Any], source:
         "properties": {
             "feature_type": kind,
             "record_id": row.get("award_id") or row.get("transaction_id"),
-            "entity_id": row.get("entity_id"),
+            "entity_id": row.get(primary_ref_field),
+            "counterparty_entity_id": row.get(counterparty_ref_field),
             "entity": {
                 "normalized_name": entity.get("normalized_name"),
-                "raw_name": entity.get("raw_name"),
+                # producer ships `name`; older shapes used `raw_name`.
+                "raw_name": entity.get("name") or entity.get("raw_name"),
                 "external_ids": entity.get("external_ids") or {},
             },
             "amount": row.get("amount"),
@@ -271,11 +301,25 @@ def normalize_contract_sweeper_records(package: ContractSweeperPackage) -> dict[
     entities = _entity_index(package)
     sources = _source_index(package)
     awards = [
-        _feature_from_money_row(row, entities[row["entity_id"]], sources.get(row.get("source_id")), "contract_award")
+        _feature_from_money_row(
+            row,
+            entities[row["recipient_entity_id"]],
+            sources.get(row.get("source_id")),
+            "contract_award",
+            primary_ref_field="recipient_entity_id",
+            counterparty_ref_field="funding_agency_entity_id",
+        )
         for row in package.streams["funding_awards"]
     ]
     flows = [
-        _feature_from_money_row(row, entities[row["entity_id"]], sources.get(row.get("source_id")), "financial_flow")
+        _feature_from_money_row(
+            row,
+            entities[row["payee_entity_id"]],
+            sources.get(row.get("source_id")),
+            "financial_flow",
+            primary_ref_field="payee_entity_id",
+            counterparty_ref_field="payer_entity_id",
+        )
         for row in package.streams["transactions"]
     ]
     return {

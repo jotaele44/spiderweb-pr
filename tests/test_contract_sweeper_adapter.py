@@ -12,14 +12,14 @@ from federation.hub.adapters.contract_sweeper import (
     normalize_contract_sweeper_records,
 )
 
-FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_1"
+FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_2"
 
 
-def test_load_contract_sweeper_v1_1_fixture():
+def test_load_contract_sweeper_v1_2_fixture():
     package = load_contract_sweeper_package(FIXTURE, mode="test")
 
     assert package.producer == "contract-sweeper"
-    assert package.version == "1.1.0"
+    assert package.version == "1.2.0"
     assert set(package.streams) == {
         "entities",
         "sources",
@@ -44,7 +44,7 @@ def test_normalize_contract_sweeper_features():
 def test_export_contract_sweeper_outputs(tmp_path):
     report = export_contract_sweeper_features(FIXTURE, tmp_path, mode="test")
 
-    assert report["export_contract_version"] == "1.1.0"
+    assert report["export_contract_version"] == "1.2.0"
     assert (tmp_path / "contract_awards.geojson").exists()
     assert (tmp_path / "financial_flows.geojson").exists()
     assert (tmp_path / "municipality_funding_density.csv").exists()

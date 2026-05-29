@@ -49,7 +49,10 @@ def _has_municipality(row: dict[str, Any]) -> bool:
 
 def _has_point(row: dict[str, Any]) -> bool:
     loc = row.get("location") if isinstance(row.get("location"), dict) else {}
-    return isinstance(loc.get("lat"), (int, float)) and isinstance(loc.get("lon"), (int, float))
+    # v1.2.0 canonical keys are latitude/longitude; tolerate lat/lon for resilience.
+    lat = loc.get("latitude", loc.get("lat"))
+    lon = loc.get("longitude", loc.get("lon"))
+    return isinstance(lat, (int, float)) and isinstance(lon, (int, float))
 
 
 def _has_lineage(row: dict[str, Any]) -> bool:

@@ -7,14 +7,14 @@ from federation.hub.adapters.contract_sweeper import export_contract_sweeper_fea
 from federation.hub.layer_registry import get_layer_entry
 from readiness.contract_finance_layer import build_contract_finance_layer
 
-FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_1"
+FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_2"
 
 
 def test_contract_finance_layer_registry_entry():
     entry = get_layer_entry("contract_finance")
 
     assert entry.producer == "contract-sweeper"
-    assert entry.export_contract_version == "1.1.0"
+    assert entry.export_contract_version == "1.2.0"
     assert "entity_convergence" in entry.score_features
     assert "municipal_density" in entry.score_features
     assert "temporal_funding_pulse" in entry.score_features
@@ -30,7 +30,7 @@ def test_contract_finance_layer_scores_adapter_outputs(tmp_path):
     assert report["status"] == "READY"
     assert report["record_count"] == 3
     assert report["producer"] == "contract-sweeper"
-    assert report["export_contract_version"] == "1.1.0"
+    assert report["export_contract_version"] == "1.2.0"
 
     overlay_path = layer_out / "contract_finance_scored_overlay.geojson"
     report_path = layer_out / "contract_finance_layer_report.json"
