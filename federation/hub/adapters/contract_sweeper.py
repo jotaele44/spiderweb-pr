@@ -238,6 +238,22 @@ def _source_index(package: ContractSweeperPackage) -> dict[str, dict[str, Any]]:
     return {row["source_id"]: row for row in package.streams["sources"]}
 
 
+def location_point(location: Any) -> tuple[float, float] | None:
+    """Return ``(lat, lon)`` floats from a v1.2.0 location object, or ``None``.
+
+    Canonical keys are ``latitude``/``longitude``; ``lat``/``lon`` are tolerated
+    for resilience. The single source of truth for reading coordinates off a
+    Contract-Sweeper money row, shared by the adapter and the consumer gate.
+    """
+    if not isinstance(location, dict):
+        return None
+    lat = location.get("latitude", location.get("lat"))
+    lon = location.get("longitude", location.get("lon"))
+    if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+        return float(lat), float(lon)
+    return None
+
+
 def _feature_from_money_row(
     row: dict[str, Any],
     entity: dict[str, Any],
@@ -248,12 +264,10 @@ def _feature_from_money_row(
     counterparty_ref_field: str,
 ) -> dict[str, Any]:
     location = row.get("location") or {}
-    # v1.2.0 canonical keys are latitude/longitude; tolerate lat/lon for resilience.
-    lat = location.get("latitude", location.get("lat"))
-    lon = location.get("longitude", location.get("lon"))
-    geometry = None
-    if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
-        geometry = {"type": "Point", "coordinates": [float(lon), float(lat)]}
+    point = location_point(location)
+    geometry = (
+        {"type": "Point", "coordinates": [point[1], point[0]]} if point else None
+    )
     return {
         "type": "Feature",
         "geometry": geometry,
