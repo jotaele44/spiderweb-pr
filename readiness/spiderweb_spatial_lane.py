@@ -154,6 +154,14 @@ def _normalize_row(row: dict[str, str], validator: Draft7Validator):
         "discovered_at": row.get("discovered_at", ""),
         "topic_domain": primary,
         "spiderweb_layer_class": layer_class,
+        # Descriptive enrichment carried by the producer derivative (empty when
+        # the producer didn't supply it — degrade gracefully).
+        "municipality_name": row.get("municipality_name", ""),
+        "location_text": row.get("location_text", ""),
+        "asset_type": row.get("asset_type", ""),
+        "dataset_type": row.get("dataset_type", ""),
+        "file_format": row.get("file_format", ""),
+        "agency_entity": row.get("agency_entity", ""),
         "latitude": lat,
         "longitude": lon,
         "geometry_type": "Point" if has_coords else "",
