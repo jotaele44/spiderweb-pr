@@ -25,6 +25,15 @@ try:
 except ImportError:
     _SCHEMA_VALIDATION_AVAILABLE = False
 
+from provenance_utils import reproducibility_metadata, feature_collection_summary
+
+# Best-effort artifact → schema mapping (full mapping lives in
+# schemas/schema_index.json — Tier 2). None where no schema is registered yet.
+SCHEMA_BY_OUTPUT = {
+    "airspace_events.parquet": "flight_event",
+    "screenshot_evidence.parquet": "screenshot",
+}
+
 
 PROVENANCE_COLS = [
     ("screenshot_id", pa.string()),
@@ -100,15 +109,23 @@ class PRIntelAdapter:
         self._export_mission_inferences(mission_scores, ss_by_flight)
         self._export_anomaly_index(alerts, ss_by_flight)
 
-        # GeoJSON exports
-        self._export_gis_features(flights)
-        self._export_route_lines(flights)
+        # GeoJSON exports (return feature lists for manifest geo-summaries)
+        gis_features = self._export_gis_features(flights, ss_by_flight)
+        route_features = self._export_route_lines(flights, ss_by_flight)
+        geo_summaries = {
+            "gis_airspace_features.geojson": feature_collection_summary(gis_features),
+            "route_lines.geojson": feature_collection_summary(route_features),
+        }
 
         # source_manifest.json (write before completeness check)
         manifest = {
             "generated_at": datetime.utcnow().isoformat() + "Z",
             "db_path": self.db_path,
             "schema_version": "1.0",
+            "reproducibility": reproducibility_metadata(
+                command=f"PRIntelAdapter.export_all db={self.db_path}",
+                input_paths=[self.db_path],
+            ),
             "files": [],  # populated after completeness check
         }
         manifest_path = self.output_dir / "source_manifest.json"
@@ -123,11 +140,28 @@ class PRIntelAdapter:
             else:
                 missing.append(fname)
 
-        # Update manifest with actual generated list
-        manifest["files"] = [
-            {"filename": f, "record_count": self._count_output(f)}
-            for f in generated
-        ]
+        # Update manifest with actual generated list + per-file metadata
+        files_block = []
+        for f in generated:
+            path = self.output_dir / f
+            try:
+                size_bytes = path.stat().st_size
+            except OSError:
+                size_bytes = None
+            count = self._count_output(f)
+            entry = {
+                "filename": f,
+                "record_count": count,
+                "exists": path.exists(),
+                "size_bytes": size_bytes,
+                "row_count": count,
+                "crs": "EPSG:4326" if f.endswith(".geojson") else None,
+                "schema_name": SCHEMA_BY_OUTPUT.get(f),
+            }
+            if f in geo_summaries:
+                entry["geo_summary"] = geo_summaries[f]
+            files_block.append(entry)
+        manifest["files"] = files_block
         manifest_path.write_text(json.dumps(manifest, indent=2))
 
         # Gate thresholds
@@ -229,6 +263,7 @@ class PRIntelAdapter:
                 "num_screenshots": f.get("num_screenshots") or 0,
                 **self._provenance(ss),
             })
+        rows.sort(key=lambda r: str(r.get("flight_id") or ""))
         self._write_parquet("airspace_events.parquet", rows)
 
     def _export_aircraft_profiles(self, profiles: List[dict], ss_by_flight: Dict[str, dict]):
@@ -246,6 +281,7 @@ class PRIntelAdapter:
                 "flight_count": p.get("total_flights") or 0,
                 **self._provenance(ss),
             })
+        rows.sort(key=lambda r: str(r.get("callsign") or ""))
         self._write_parquet("aircraft_profiles.parquet", rows)
 
     def _export_track_points(self, track_pts: List[dict], ss_by_flight: Dict[str, dict]):
@@ -262,6 +298,7 @@ class PRIntelAdapter:
                 "ground_speed_mph": tp.get("ground_speed_mph") or 0,
                 **self._provenance(ss),
             })
+        rows.sort(key=lambda r: (str(r.get("flight_id") or ""), str(r.get("timestamp") or ""), r.get("id") or 0))
         self._write_parquet("track_points.parquet", rows)
 
     def _export_screenshot_evidence(self, screenshots: List[dict]):
@@ -285,6 +322,7 @@ class PRIntelAdapter:
                 "estimated_error_m": float(ss.get("estimated_error_m") or 1500.0),
                 "review_status": ss.get("review_status", "pending"),
             })
+        rows.sort(key=lambda r: str(r.get("screenshot_id") or ""))
         self._write_parquet("screenshot_evidence.parquet", rows)
 
     def _export_mission_inferences(self, scores: List[dict], ss_by_flight: Dict[str, dict]):
@@ -301,6 +339,7 @@ class PRIntelAdapter:
                 "scored_at": ms.get("scored_at", ""),
                 **self._provenance(ss),
             })
+        rows.sort(key=lambda r: str(r.get("flight_id") or ""))
         self._write_parquet("mission_inferences.parquet", rows)
 
     def _export_anomaly_index(self, alerts: List[dict], ss_by_flight: Dict[str, dict]):
@@ -318,14 +357,17 @@ class PRIntelAdapter:
                 "timestamp": a.get("timestamp", ""),
                 **self._provenance(ss),
             })
+        rows.sort(key=lambda r: str(r.get("alert_id") or ""))
         self._write_parquet("anomaly_index.parquet", rows)
 
     # ----------------------------------------------------------------- geojson
 
-    def _export_gis_features(self, flights: List[dict]):
+    def _export_gis_features(self, flights: List[dict], ss_by_flight: Dict[str, dict]):
         features = []
         seen: set = set()
-        for f in flights:
+        # Deterministic: sort flights so first-occurrence-wins dedup is stable (Open Risk #5).
+        for f in sorted(flights, key=lambda x: str(x.get("flight_id") or "")):
+            ss = ss_by_flight.get(f.get("flight_id", ""), {})
             for prefix, lat_k, lon_k, name_k in [
                 ("origin", "origin_lat", "origin_lon", "origin_airport"),
                 ("dest", "dest_lat", "dest_lon", "destination_airport"),
@@ -344,6 +386,9 @@ class PRIntelAdapter:
                             "type": "airport",
                             "radius_nm": None,
                             "operational_notes": "",
+                            "screenshot_id": ss.get("screenshot_id", ""),
+                            "sha256": ss.get("sha256", ""),
+                            "source_path": ss.get("image_path", ""),
                         },
                     })
 
@@ -353,15 +398,17 @@ class PRIntelAdapter:
             "features": features,
         }
         (self.output_dir / "gis_airspace_features.geojson").write_text(json.dumps(geojson, indent=2))
+        return features
 
-    def _export_route_lines(self, flights: List[dict]):
+    def _export_route_lines(self, flights: List[dict], ss_by_flight: Dict[str, dict]):
         features = []
-        for f in flights:
+        for f in sorted(flights, key=lambda x: str(x.get("flight_id") or "")):
             olat = f.get("origin_lat")
             olon = f.get("origin_lon")
             dlat = f.get("dest_lat")
             dlon = f.get("dest_lon")
             if olat and olon and dlat and dlon:
+                ss = ss_by_flight.get(f.get("flight_id", ""), {})
                 features.append({
                     "type": "Feature",
                     "geometry": {
@@ -372,6 +419,9 @@ class PRIntelAdapter:
                         "flight_id": f.get("flight_id", ""),
                         "callsign": f.get("callsign", ""),
                         "duration_min": f.get("flight_duration_minutes") or 0,
+                        "screenshot_id": ss.get("screenshot_id", ""),
+                        "sha256": ss.get("sha256", ""),
+                        "source_path": ss.get("image_path", ""),
                     },
                 })
 
@@ -381,6 +431,7 @@ class PRIntelAdapter:
             "features": features,
         }
         (self.output_dir / "route_lines.geojson").write_text(json.dumps(geojson, indent=2))
+        return features
 
     # ----------------------------------------------------------------- helpers
 

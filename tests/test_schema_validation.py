@@ -57,13 +57,15 @@ def test_validate_batch_routes_invalid(validator, tmp_path):
         import jsonschema
         records = [valid_record, invalid_record]
         valid_records, n_invalid = validator.validate_batch(records, "screenshot", review_path)
-        assert n_invalid == 1
+        assert n_invalid == 1            # one invalid *record*
         assert len(valid_records) == 1
         assert Path(review_path).exists()
         with open(review_path, newline="") as f:
             rows = list(csv.DictReader(f))
-        assert len(rows) == 1
-        assert rows[0]["schema_name"] == "screenshot"
+        # Enriched contract: one row per validation error (>= 1 for one bad record).
+        assert len(rows) >= 1
+        assert all(r["schema_name"] == "screenshot" for r in rows)
+        assert all(r.get("field") and r.get("error_type") for r in rows)
     except ImportError:
         pytest.skip("jsonschema not installed")
 
@@ -94,7 +96,28 @@ def test_review_queue_has_correct_columns(validator, tmp_path):
     validator.validate_batch([invalid], "screenshot", review_path)
     with open(review_path, newline="") as f:
         reader = csv.DictReader(f)
-        assert set(reader.fieldnames) == {"schema_name", "record_json", "errors", "routed_at"}
+        assert set(reader.fieldnames) == {
+            "routed_at", "record_id", "source_file", "schema_name",
+            "field", "error_type", "error_message", "record_json", "suggested_fix",
+        }
+
+
+def test_review_queue_dedups_within_window(validator, tmp_path):
+    """Re-routing an identical invalid record must not duplicate rows (24h dedup)."""
+    try:
+        import jsonschema  # noqa: F401
+    except ImportError:
+        pytest.skip("jsonschema not installed")
+    review_path = str(tmp_path / "review_queue.csv")
+    invalid = {"ocr_confidence": 0.5}  # missing required screenshot fields
+    validator.validate_batch([invalid], "screenshot", review_path)
+    with open(review_path, newline="") as f:
+        first = list(csv.DictReader(f))
+    validator.validate_batch([invalid], "screenshot", review_path)
+    with open(review_path, newline="") as f:
+        second = list(csv.DictReader(f))
+    assert len(first) >= 1
+    assert len(second) == len(first)
 
 
 # ── Stage 1 hardening tests ───────────────────────────────────────────────────

@@ -15,6 +15,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from provenance_utils import reproducibility_metadata, feature_collection_summary
+
 # ── Producer boundary ─────────────────────────────────────────────────────────
 
 BRIDGE_FILES = [
@@ -444,10 +446,15 @@ class SpiderwebIntake:
         overlay = {
             "type": "FeatureCollection",
             "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}},
+            "summary": feature_collection_summary(features),
             "features": features,
         }
         (self.output_dir / "spiderweb_overlay_candidates.geojson").write_text(
             json.dumps(overlay, indent=2), encoding="utf-8"
+        )
+        gap_audit["reproducibility"] = reproducibility_metadata(
+            command="SpiderwebIntake.run",
+            input_paths=[str(self.input_dir / f) for f in BRIDGE_FILES],
         )
         (self.output_dir / "spiderweb_gap_audit.json").write_text(
             json.dumps(gap_audit, indent=2), encoding="utf-8"

@@ -450,6 +450,29 @@ def _run_ingest_satellite(manifest_path: str, dry_run: bool = False):
         sys.exit(rc)
 
 
+def _run_release_check(args):
+    print("\n  RELEASE GATE")
+    print("  " + "─" * 50)
+    from release_check import ReleaseCheck
+    from run_modes import resolve_mode
+    mode = resolve_mode(args).mode
+    out_dir = args.release_output_dir or str(Path(args.db).parent / "release")
+    command = " ".join(["python", "run_all.py"] + sys.argv[1:])
+    report = ReleaseCheck(args.db, out_dir, mode, command=command).run()
+    markers = {"PASS": "✓", "FAIL": "✗", "WARNING": "~", "SKIPPED": "·"}
+    for stage in ("syntax_check", "core_tests", "validate",
+                  "export_pr_intel", "export_spiderweb", "earthgpt_selftest"):
+        st = report.get(stage, {}).get("status", "?")
+        print(f"  {markers.get(st, '?')} {stage:<20} {st}")
+    overall = report["overall_status"]
+    print(f"\n  {markers.get(overall, '?')} Overall: {overall}")
+    if report.get("failure_reasons"):
+        print(f"  Failures: {', '.join(report['failure_reasons'])}")
+    print(f"  ✓ Release report: {report['_report_path']}")
+    if overall != "PASS":
+        sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Puerto Rico Airspace Intelligence System — Unified Pipeline",
@@ -506,6 +529,14 @@ Examples:
                         help="Validate and ingest a satellite source manifest JSON file")
     parser.add_argument("--dry-run", action="store_true",
                         help="With --ingest-satellite: validate only, do not write to disk")
+    parser.add_argument("--release-check", action="store_true",
+                        help="Run the full release gate and write release_report.json")
+    parser.add_argument("--release-output-dir", metavar="DIR", default=None,
+                        help="Where to write release_report.json (default: <db_dir>/release)")
+    parser.add_argument("--strict-production", action="store_true",
+                        help="Strict mode: missing/empty production inputs fail hard (exit 2)")
+    parser.add_argument("--demo", action="store_true",
+                        help="Demo mode: stamp outputs with mode=demo and [DEMO] banners")
 
     args = parser.parse_args()
 
@@ -541,7 +572,8 @@ Examples:
         and (args.validate or args.export_pr_intel or args.export_spiderweb
              or args.scan_inventory or args.export_fr24_events
              or args.spiderweb_intake or args.calibrate_scoring
-             or args.assess_readiness or args.ingest_satellite)
+             or args.assess_readiness or args.ingest_satellite
+             or args.release_check)
     )
 
     if not new_flags_only:
@@ -597,6 +629,9 @@ Examples:
 
     if args.ingest_satellite:
         _run_ingest_satellite(args.ingest_satellite, getattr(args, "dry_run", False))
+
+    if args.release_check:
+        _run_release_check(args)
 
 
 if __name__ == "__main__":
