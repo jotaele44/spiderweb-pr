@@ -14,6 +14,11 @@ import math
 from pathlib import Path
 from typing import Any, Iterable
 
+from readiness.contract_finance_manifest_gate import (
+    ContractFinanceManifestGateError,
+    validate_contract_finance_manifest,
+)
+
 REQUIRED_INPUTS = (
     "contract_awards.geojson",
     "financial_flows.geojson",
@@ -190,7 +195,12 @@ def _write_geojson(path: Path, features: Iterable[dict[str, Any]]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
 
-def _summarize(features: list[dict[str, Any]], ingest_report: dict[str, Any], input_dir: Path) -> dict[str, Any]:
+def _summarize(
+    features: list[dict[str, Any]],
+    ingest_report: dict[str, Any],
+    input_dir: Path,
+    manifest_report: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     by_tier = Counter()
     by_type = Counter()
     by_muni: dict[str, dict[str, Any]] = defaultdict(lambda: {"record_count": 0, "total_amount": 0.0})
@@ -203,7 +213,7 @@ def _summarize(features: list[dict[str, Any]], ingest_report: dict[str, Any], in
         by_muni[code]["total_amount"] += _safe_float(props.get("amount"))
         by_muni[code]["municipality_name"] = props.get("municipality_name") or "UNKNOWN"
 
-    return {
+    report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "input_dir": str(input_dir),
         "producer": ingest_report.get("producer"),
@@ -216,14 +226,36 @@ def _summarize(features: list[dict[str, Any]], ingest_report: dict[str, Any], in
         "score_features": ["entity_convergence", "municipal_density", "temporal_funding_pulse"],
         "outputs": {"scored_overlay": OUTPUT_OVERLAY, "layer_report": OUTPUT_REPORT},
     }
+    if manifest_report is not None:
+        report["artifact_manifest_gate"] = {
+            "status": manifest_report["status"],
+            "producer_repository": manifest_report.get("producer_repository"),
+            "producer_commit": manifest_report.get("producer_commit"),
+            "artifact_count": manifest_report.get("artifact_count"),
+            "required_artifact_count": manifest_report.get("required_artifact_count"),
+        }
+    return report
 
 
-def build_contract_finance_layer(input_dir: str | Path, output_dir: str | Path | None = None) -> dict[str, Any]:
+def build_contract_finance_layer(
+    input_dir: str | Path,
+    output_dir: str | Path | None = None,
+    *,
+    artifact_manifest: str | Path | None = None,
+) -> dict[str, Any]:
     """Build the scored SpiderWeb contract/finance overlay from adapter outputs."""
 
     root = Path(input_dir)
     out = Path(output_dir) if output_dir else root
     out.mkdir(parents=True, exist_ok=True)
+
+    manifest_report: dict[str, Any] | None = None
+    if artifact_manifest is not None:
+        try:
+            manifest_report = validate_contract_finance_manifest(artifact_manifest)
+        except ContractFinanceManifestGateError as exc:
+            raise ContractFinanceLayerError(f"artifact manifest gate failed: {exc}") from exc
+
     missing = [name for name in REQUIRED_INPUTS if not (root / name).exists()]
     if missing:
         raise ContractFinanceLayerError(f"missing contract/finance adapter outputs: {missing}")
@@ -235,6 +267,6 @@ def build_contract_finance_layer(input_dir: str | Path, output_dir: str | Path |
 
     features = _score_features([*awards, *flows], density)
     _write_geojson(out / OUTPUT_OVERLAY, features)
-    report = _summarize(features, ingest_report, root)
+    report = _summarize(features, ingest_report, root, manifest_report)
     (out / OUTPUT_REPORT).write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
     return report

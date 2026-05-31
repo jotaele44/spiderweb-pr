@@ -22,13 +22,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, help="Directory containing Contract-Sweeper adapter outputs")
     parser.add_argument("--out", default=None, help="Output directory for scored layer artifacts; default: --input")
+    parser.add_argument(
+        "--artifact-manifest",
+        default=None,
+        help="Optional Contract-Sweeper artifact_manifest.json path. When supplied, the manifest gate must pass before scoring.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        report = build_contract_finance_layer(args.input, args.out)
+        report = build_contract_finance_layer(args.input, args.out, artifact_manifest=args.artifact_manifest)
     except ContractFinanceLayerError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

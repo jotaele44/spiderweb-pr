@@ -23,6 +23,9 @@ class LayerRegistryEntry:
     input_artifacts: tuple[str, ...]
     output_artifacts: tuple[str, ...]
     score_features: tuple[str, ...]
+    manifest_gate_module: str = ""
+    manifest_gate_argument: str = ""
+    manifest_artifact: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -34,7 +37,11 @@ CONTRACT_FINANCE_LAYER = LayerRegistryEntry(
     export_contract_version="1.2.0",
     adapter_module="federation.hub.adapters.contract_sweeper",
     engine_module="readiness.contract_finance_layer",
+    manifest_gate_module="readiness.contract_finance_manifest_gate",
+    manifest_gate_argument="--artifact-manifest",
+    manifest_artifact="artifact_manifest.json",
     input_artifacts=(
+        "artifact_manifest.json",
         "contract_awards.geojson",
         "financial_flows.geojson",
         "municipality_funding_density.csv",
