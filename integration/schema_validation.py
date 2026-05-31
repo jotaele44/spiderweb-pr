@@ -5,6 +5,8 @@ Validates records against JSON schemas and routes invalid rows to review_queue.c
 
 import csv
 import json
+import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -17,7 +19,51 @@ except ImportError:
     _JSONSCHEMA_AVAILABLE = False
 
 SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
-REVIEW_QUEUE_FIELDNAMES = ["schema_name", "record_json", "errors", "routed_at"]
+
+# Enriched review-queue contract: one row per (record, validation error).
+REVIEW_QUEUE_FIELDNAMES = [
+    "routed_at", "record_id", "source_file", "schema_name",
+    "field", "error_type", "error_message", "record_json", "suggested_fix",
+]
+
+# Candidate identifier keys, in priority order, for review-queue traceability.
+_ID_KEYS = ("flight_id", "screenshot_id", "id", "alert_id", "candidate_id", "manifest_id")
+
+# error_type (jsonschema validator keyword) → operator-facing remediation hint.
+_FIX_HINTS = {
+    "required": "add the missing required field",
+    "type": "correct the value type",
+    "enum": "use an allowed enum value",
+    "format": "fix the value format",
+    "pattern": "match the required pattern",
+    "minimum": "increase the value to meet the minimum",
+    "maximum": "decrease the value to meet the maximum",
+    "minLength": "provide a longer value",
+    "maxLength": "shorten the value",
+}
+
+
+def _extract_record_id(record: dict) -> str:
+    """First non-empty identifier among _ID_KEYS, else ''."""
+    for k in _ID_KEYS:
+        v = record.get(k)
+        if v not in (None, ""):
+            return str(v)
+    return ""
+
+
+def _suggest_fix(error_type: str) -> str:
+    return _FIX_HINTS.get(error_type, "")
+
+
+def _within_window(ts: Optional[str], cutoff_ts: float) -> bool:
+    """True if ISO-8601 *ts* (optionally Z-suffixed) is at or after *cutoff_ts*."""
+    if not ts:
+        return False
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "")).timestamp() >= cutoff_ts
+    except Exception:
+        return False
 
 
 class SchemaValidator:
@@ -63,29 +109,63 @@ class SchemaValidator:
         records: List[dict],
         schema_name: str,
         review_queue_path: str,
+        source_file: str = "",
     ) -> Tuple[List[dict], int]:
         """
         Validate every record in records against schema_name.
-        Invalid records are appended to review_queue_path (CSV, created if missing).
-        Returns (valid_records, n_invalid).
+
+        Invalid records are routed to review_queue_path as ONE ROW PER
+        (record, validation error) with structured columns (see
+        REVIEW_QUEUE_FIELDNAMES). Rows are deduplicated on
+        (schema_name, record_id, field, error_type) within a 24h window and the
+        file is rewritten atomically. Returns (valid_records, n_invalid) where
+        n_invalid counts invalid *records* (not rows).
         """
-        valid_records = []
+        valid_records: List[dict] = []
         invalid_count = 0
+        review_rows: List[dict] = []
 
         for record in records:
-            result = self.validate(record, schema_name)
-            if result["valid"]:
+            errors = self._structured_errors(record, schema_name)
+            if not errors:
                 valid_records.append(record)
-            else:
-                invalid_count += 1
-                self._write_review_item(
-                    review_queue_path,
-                    schema_name=schema_name,
-                    record=record,
-                    errors=result["errors"],
-                )
+                continue
+            invalid_count += 1
+            record_id = _extract_record_id(record)
+            record_json = json.dumps(record, default=str)
+            routed_at = datetime.utcnow().isoformat() + "Z"
+            for err in errors:
+                review_rows.append({
+                    "routed_at": routed_at,
+                    "record_id": record_id,
+                    "source_file": source_file,
+                    "schema_name": schema_name,
+                    "field": err["field"],
+                    "error_type": err["error_type"],
+                    "error_message": err["error_message"],
+                    "record_json": record_json,
+                    "suggested_fix": _suggest_fix(err["error_type"]),
+                })
+
+        if review_rows:
+            self._append_review_rows(review_queue_path, review_rows)
 
         return valid_records, invalid_count
+
+    def _structured_errors(self, record: dict, schema_name: str) -> List[Dict[str, str]]:
+        """Return [{field, error_type, error_message}, ...] for *record*. Empty
+        when valid, jsonschema unavailable, or schema unknown (matches validate())."""
+        if not _JSONSCHEMA_AVAILABLE or schema_name not in self._validators:
+            return []
+        out: List[Dict[str, str]] = []
+        for e in self._validators[schema_name].iter_errors(record):
+            field = ".".join(str(p) for p in e.absolute_path) or "<root>"
+            out.append({
+                "field": field,
+                "error_type": getattr(e, "validator", "") or "",
+                "error_message": e.message,
+            })
+        return out
 
     def validate_export_manifest(self, manifest: dict) -> Dict[str, Any]:
         return self.validate(manifest, "export_manifest")
@@ -117,19 +197,58 @@ class SchemaValidator:
         """Return a sorted list of loaded schema names."""
         return sorted(self._validators.keys())
 
-    def _write_review_item(self, path: str, schema_name: str,
-                           record: dict, errors: List[str]):
-        file_exists = Path(path).exists()
-        with open(path, "a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=REVIEW_QUEUE_FIELDNAMES)
-            if not file_exists:
+    def _append_review_rows(self, path: str, new_rows: List[dict],
+                            dedup_window_hours: float = 24.0) -> None:
+        """Merge *new_rows* into the review queue at *path*, deduplicating on
+        (schema_name, record_id, field, error_type) within *dedup_window_hours*,
+        and rewrite atomically (tmpfile → os.replace). Legacy rows missing the
+        key columns are preserved but not used for dedup."""
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+
+        existing: List[dict] = []
+        if p.exists():
+            try:
+                with open(p, newline="") as f:
+                    existing = list(csv.DictReader(f))
+            except Exception:
+                existing = []
+
+        cutoff = datetime.utcnow().timestamp() - dedup_window_hours * 3600.0
+        recent_keys = set()
+        for r in existing:
+            key = (r.get("schema_name"), r.get("record_id"),
+                   r.get("field"), r.get("error_type"))
+            if None in key:
+                continue  # legacy row without the new key columns
+            if _within_window(r.get("routed_at"), cutoff):
+                recent_keys.add(key)
+
+        deduped: List[dict] = []
+        seen_new = set()
+        for r in new_rows:
+            key = (r["schema_name"], r["record_id"], r["field"], r["error_type"])
+            if key in recent_keys or key in seen_new:
+                continue
+            seen_new.add(key)
+            deduped.append(r)
+
+        combined = existing + deduped
+        fd, tmp = tempfile.mkstemp(dir=str(p.parent), suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=REVIEW_QUEUE_FIELDNAMES,
+                                        extrasaction="ignore")
                 writer.writeheader()
-            writer.writerow({
-                "schema_name": schema_name,
-                "record_json": json.dumps(record, default=str),
-                "errors":      "; ".join(errors),
-                "routed_at":   datetime.utcnow().isoformat() + "Z",
-            })
+                for r in combined:
+                    writer.writerow({k: r.get(k, "") for k in REVIEW_QUEUE_FIELDNAMES})
+            os.replace(tmp, str(p))
+        except Exception:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
 
     def run_db_validation(
         self,
@@ -164,7 +283,8 @@ class SchemaValidator:
                     continue
 
                 valid_rows, n_invalid = self.validate_batch(
-                    rows, schema_name, review_queue_path
+                    rows, schema_name, review_queue_path,
+                    source_file=f"{db_path}:{table}",
                 )
                 results[schema_name] = {
                     "table": table,

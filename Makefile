@@ -1,4 +1,4 @@
-.PHONY: test lint validate-schemas preflight clean
+.PHONY: test lint validate-schemas preflight release-check clean
 
 # ── Test targets ──────────────────────────────────────────────────────────────
 
@@ -48,6 +48,11 @@ docs-check:
 
 preflight: validate-schemas test-prii
 	@echo "Preflight complete."
+
+# ── Release gate ──────────────────────────────────────────────────────────────
+
+release-check:
+	python run_all.py --release-check
 
 # ── Syntax check ─────────────────────────────────────────────────────────────
 

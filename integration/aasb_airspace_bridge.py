@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from provenance_utils import reproducibility_metadata, feature_collection_summary
+
 
 # Known PR airport coordinates for node anchoring
 AIRPORT_COORDS: Dict[str, Tuple[float, float]] = {
@@ -55,6 +57,10 @@ class AASBAirspaceBridge:
             "generated_at": datetime.utcnow().isoformat() + "Z",
             "db_path": self.db_path,
             "schema_version": "1.0",
+            "reproducibility": reproducibility_metadata(
+                command=f"AASBAirspaceBridge.export_all db={self.db_path}",
+                input_paths=[self.db_path],
+            ),
             "files": all_files,
         }
         manifest_path = self.output_dir / "spiderweb_ingest_manifest.json"
@@ -142,8 +148,36 @@ class AASBAirspaceBridge:
                 result.append({
                     "filename": fname,
                     "record_count": self._count_records(fpath),
+                    "bbox": self._bbox_for(fpath),
                 })
         return result
+
+    def _bbox_for(self, path: Path):
+        """[min_lon, min_lat, max_lon, max_lat] in EPSG:4326, or None."""
+        try:
+            if path.suffix == ".geojson":
+                data = json.loads(path.read_text())
+                return feature_collection_summary(data.get("features", []))["bbox"]
+            if path.suffix == ".csv":
+                lons: List[float] = []
+                lats: List[float] = []
+                with open(path, newline="") as f:
+                    for row in csv.DictReader(f):
+                        for lat_k, lon_k in (("from_lat", "from_lon"), ("to_lat", "to_lon")):
+                            try:
+                                lat = float(row.get(lat_k) or 0)
+                                lon = float(row.get(lon_k) or 0)
+                            except ValueError:
+                                continue
+                            if lat or lon:  # skip (0,0) unknown-airport sentinels
+                                lats.append(lat)
+                                lons.append(lon)
+                if lons and lats:
+                    return [round(min(lons), 6), round(min(lats), 6),
+                            round(max(lons), 6), round(max(lats), 6)]
+        except Exception:
+            return None
+        return None
 
     def _count_records(self, path: Path) -> int:
         if path.suffix == ".geojson":

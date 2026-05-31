@@ -55,6 +55,7 @@ class PRIIReadinessEngine:
     def assess(self) -> Dict[str, Any]:
         integration = self._load_json("integration_report.json")
         calibration  = self._load_json("calibration_report.json")
+        release      = self._load_json("release_report.json")
 
         missing_inputs: List[str] = []
         blockers: List[Dict[str, Any]] = []
@@ -143,6 +144,14 @@ class PRIIReadinessEngine:
                 "candidate_count":    cal_count,
                 "baseline_mode":      cal_mode,
             },
+            # Non-breaking link to the umbrella release gate (D1); None when absent.
+            "release": (
+                {
+                    "release_report": str(self.export_dir / "release_report.json"),
+                    "release_status": release.get("overall_status"),
+                }
+                if release is not None else None
+            ),
         }
 
         self._write_report(report)
