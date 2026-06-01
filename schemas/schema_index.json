@@ -1,0 +1,772 @@
+{
+  "$comment": "Master registry mapping every release-pipeline output artifact to its JSON Schema, format, CRS, provenance, and dedup key. Consumed by integration.schema_validation.SchemaValidator.load_index().",
+  "schema_version": "1.0",
+  "generated_at": "2026-06-01T00:00:00Z",
+  "conventions": {
+    "crs": "EPSG:4326 for all GeoJSON; null for non-spatial formats",
+    "provenance_canonical": [
+      "screenshot_id",
+      "source_path",
+      "sha256",
+      "ocr_confidence",
+      "coordinate_method",
+      "coordinate_confidence",
+      "review_status"
+    ],
+    "fact_status_default": "observed for primary-extractor outputs; inferred for derived/scored outputs; null for reports/manifests",
+    "schema_name_null_means": "no JSON Schema registered yet \u2014 see NEXT_100_TASKS"
+  },
+  "artifacts": [
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "airspace_events.parquet",
+      "schema_name": "flight_event",
+      "schema_file": "schemas/flight_event.schema.json",
+      "format": "parquet",
+      "crs": null,
+      "required_columns_summary": [
+        "flight_id",
+        "callsign",
+        "takeoff_time",
+        "landing_time",
+        "origin_airport",
+        "destination_airport"
+      ],
+      "provenance_fields": [
+        "screenshot_id",
+        "source_path",
+        "sha256",
+        "ocr_confidence",
+        "coordinate_method",
+        "coordinate_confidence",
+        "review_status"
+      ],
+      "dedup_key": "flight_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "aircraft_profiles.parquet",
+      "schema_name": "aircraft_profile",
+      "schema_file": "schemas/aircraft_profile.schema.json",
+      "format": "parquet",
+      "crs": null,
+      "required_columns_summary": [
+        "callsign",
+        "aircraft_type",
+        "operator",
+        "primary_mission",
+        "confidence_level"
+      ],
+      "provenance_fields": [
+        "screenshot_id",
+        "source_path",
+        "sha256",
+        "ocr_confidence",
+        "review_status"
+      ],
+      "dedup_key": "callsign",
+      "fact_status_default": "inferred"
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "track_points.parquet",
+      "schema_name": "track_point",
+      "schema_file": "schemas/track_point.schema.json",
+      "format": "parquet",
+      "crs": null,
+      "required_columns_summary": [
+        "id",
+        "flight_id",
+        "timestamp",
+        "latitude",
+        "longitude"
+      ],
+      "provenance_fields": [
+        "screenshot_id",
+        "source_path",
+        "sha256",
+        "coordinate_method",
+        "coordinate_confidence"
+      ],
+      "dedup_key": "id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "screenshot_evidence.parquet",
+      "schema_name": "screenshot",
+      "schema_file": "schemas/screenshot.schema.json",
+      "format": "parquet",
+      "crs": null,
+      "required_columns_summary": [
+        "screenshot_id",
+        "image_path",
+        "processed_at",
+        "ocr_confidence"
+      ],
+      "provenance_fields": [
+        "sha256",
+        "coordinate_method",
+        "coordinate_confidence",
+        "estimated_error_m",
+        "review_status"
+      ],
+      "dedup_key": "screenshot_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "mission_inferences.parquet",
+      "schema_name": "mission_inference",
+      "schema_file": "schemas/mission_inference.schema.json",
+      "format": "parquet",
+      "crs": null,
+      "required_columns_summary": [
+        "flight_id",
+        "mission_type",
+        "total_score",
+        "confidence_level",
+        "scored_at"
+      ],
+      "provenance_fields": [
+        "screenshot_id",
+        "source_path",
+        "sha256",
+        "review_status"
+      ],
+      "dedup_key": "flight_id",
+      "fact_status_default": "inferred"
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "anomaly_index.parquet",
+      "schema_name": "anomaly",
+      "schema_file": "schemas/anomaly.schema.json",
+      "format": "parquet",
+      "crs": null,
+      "required_columns_summary": [
+        "alert_id",
+        "flight_id",
+        "category",
+        "severity",
+        "timestamp"
+      ],
+      "provenance_fields": [
+        "screenshot_id",
+        "source_path",
+        "sha256",
+        "review_status"
+      ],
+      "dedup_key": "alert_id",
+      "fact_status_default": "inferred"
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "gis_airspace_features.geojson",
+      "schema_name": "gis_feature",
+      "schema_file": "schemas/gis_feature.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "feature_id",
+        "name",
+        "type"
+      ],
+      "provenance_fields": [
+        "screenshot_id",
+        "sha256",
+        "source_path"
+      ],
+      "dedup_key": "feature_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "route_lines.geojson",
+      "schema_name": "gis_feature",
+      "schema_file": "schemas/gis_feature.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "flight_id",
+        "callsign",
+        "duration_min"
+      ],
+      "provenance_fields": [
+        "screenshot_id",
+        "sha256",
+        "source_path"
+      ],
+      "dedup_key": "flight_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "source_manifest.json",
+      "schema_name": "export_manifest",
+      "schema_file": "schemas/export_manifest.schema.json",
+      "format": "json",
+      "crs": null,
+      "required_columns_summary": [
+        "generated_at",
+        "db_path",
+        "files"
+      ],
+      "provenance_fields": [
+        "reproducibility"
+      ],
+      "dedup_key": null,
+      "fact_status_default": null
+    },
+    {
+      "workstream": "pr_intel",
+      "artifact_path": "integration_report.json",
+      "schema_name": "integration_report",
+      "schema_file": "schemas/integration_report.schema.json",
+      "format": "json",
+      "crs": null,
+      "required_columns_summary": [
+        "generated_at",
+        "overall_status",
+        "gates"
+      ],
+      "provenance_fields": [],
+      "dedup_key": null,
+      "fact_status_default": null,
+      "notes": "6-gate PR Intel export gate; referenced by ReleaseCheck and PRIIReadinessEngine."
+    },
+    {
+      "workstream": "spiderweb",
+      "artifact_path": "spiderweb_overlay_candidates.geojson",
+      "schema_name": "spiderweb_observation",
+      "schema_file": "schemas/spiderweb_observation.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "source_layer",
+        "candidate_type",
+        "lat",
+        "lon",
+        "confidence",
+        "evidence_tier"
+      ],
+      "provenance_fields": [
+        "linked_flight_id",
+        "linked_aircraft",
+        "corridor_id"
+      ],
+      "dedup_key": null,
+      "fact_status_default": "inferred",
+      "notes": "Top-level summary block (bbox/centroid/feature_count) added by SpiderwebIntake via provenance_utils.feature_collection_summary()."
+    },
+    {
+      "workstream": "spiderweb",
+      "artifact_path": "spiderweb_gap_audit.json",
+      "schema_name": "spiderweb_gap_audit",
+      "schema_file": "schemas/spiderweb_gap_audit.schema.json",
+      "format": "json",
+      "crs": null,
+      "required_columns_summary": [
+        "gaps",
+        "reproducibility"
+      ],
+      "provenance_fields": [
+        "reproducibility"
+      ],
+      "dedup_key": null,
+      "fact_status_default": null,
+      "notes": "Audit doc; reproducibility block injected by SpiderwebIntake._write_outputs()."
+    },
+    {
+      "workstream": "spiderweb",
+      "artifact_path": "spiderweb_ingest_manifest.json",
+      "schema_name": "spiderweb_intake_manifest",
+      "schema_file": "schemas/spiderweb_intake_manifest.schema.json",
+      "format": "json",
+      "crs": null,
+      "required_columns_summary": [
+        "generated_at",
+        "db_path",
+        "files"
+      ],
+      "provenance_fields": [
+        "reproducibility"
+      ],
+      "dedup_key": null,
+      "fact_status_default": null
+    },
+    {
+      "workstream": "spiderweb",
+      "artifact_path": "aasb_airspace_edges.csv",
+      "schema_name": "aasb_export",
+      "schema_file": "schemas/aasb_export.schema.json",
+      "format": "csv",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "edge_id",
+        "from_node",
+        "to_node",
+        "from_lat",
+        "from_lon",
+        "to_lat",
+        "to_lon",
+        "weight",
+        "confidence_score"
+      ],
+      "provenance_fields": [
+        "dominant_callsign"
+      ],
+      "dedup_key": "edge_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "spiderweb",
+      "artifact_path": "airspace_poi_candidates.geojson",
+      "schema_name": "spiderweb_observation",
+      "schema_file": "schemas/spiderweb_observation.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "candidate_type",
+        "confidence"
+      ],
+      "provenance_fields": [
+        "source_zone",
+        "raw_excerpt"
+      ],
+      "dedup_key": null,
+      "fact_status_default": "inferred"
+    },
+    {
+      "workstream": "spiderweb",
+      "artifact_path": "airspace_ilap_candidates.geojson",
+      "schema_name": "ilap_corridor_candidate",
+      "schema_file": "schemas/ilap_corridor_candidate.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "candidate_type",
+        "recurrence_score",
+        "loiter_score",
+        "infra_alignment_score",
+        "overall_confidence"
+      ],
+      "provenance_fields": [],
+      "dedup_key": null,
+      "fact_status_default": "inferred"
+    },
+    {
+      "workstream": "spiderweb",
+      "artifact_path": "airspace_corridor_candidates.geojson",
+      "schema_name": "ilap_corridor_candidate",
+      "schema_file": "schemas/ilap_corridor_candidate.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "candidate_type",
+        "overall_confidence"
+      ],
+      "provenance_fields": [],
+      "dedup_key": null,
+      "fact_status_default": "inferred"
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/rlsm_ingest_manifest.csv",
+      "schema_name": "rlsm_ingest_manifest",
+      "schema_file": "schemas/rlsm_ingest_manifest.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "screenshot_id",
+        "sha256",
+        "filename",
+        "rel_path",
+        "month_bucket",
+        "ingest_status",
+        "ocr_status"
+      ],
+      "provenance_fields": [
+        "sha256",
+        "ingested_at"
+      ],
+      "dedup_key": "sha256",
+      "fact_status_default": "observed",
+      "notes": "11,926-row inventory of every baseline screenshot."
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/rlsm_duplicate_report.csv",
+      "schema_name": "rlsm_duplicate_report",
+      "schema_file": "schemas/rlsm_duplicate_report.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "dup_group_id",
+        "group_size",
+        "sha256",
+        "filename",
+        "rel_path"
+      ],
+      "provenance_fields": [
+        "sha256"
+      ],
+      "dedup_key": "dup_group_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/rlsm_failed_files.csv",
+      "schema_name": "rlsm_failed_files",
+      "schema_file": "schemas/rlsm_failed_files.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "screenshot_id",
+        "filename",
+        "rel_path",
+        "ingest_status",
+        "ingest_error"
+      ],
+      "provenance_fields": [],
+      "dedup_key": "screenshot_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/ocr_raw_by_zone.jsonl",
+      "schema_name": "ocr_raw_by_zone",
+      "schema_file": "schemas/ocr_raw_by_zone.schema.json",
+      "format": "jsonl",
+      "crs": null,
+      "required_columns_summary": [
+        "screenshot_id",
+        "zone",
+        "raw_text",
+        "confidence_mean"
+      ],
+      "provenance_fields": [
+        "run_id",
+        "engine",
+        "psm",
+        "observed_at"
+      ],
+      "dedup_key": null,
+      "fact_status_default": "observed",
+      "notes": "Append-only by OCR runner; immutable raw_text per (screenshot, zone, run)."
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/ocr_normalized_labels.csv",
+      "schema_name": "ocr_normalized_labels",
+      "schema_file": "schemas/ocr_normalized_labels.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "poi_id",
+        "screenshot_id",
+        "raw_label",
+        "normalized_label",
+        "poi_type_guess",
+        "confidence"
+      ],
+      "provenance_fields": [
+        "filename",
+        "observed_at",
+        "review_status"
+      ],
+      "dedup_key": "poi_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/labeled_pois.csv",
+      "schema_name": "labeled_pois",
+      "schema_file": "schemas/labeled_pois.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "poi_id",
+        "screenshot_id",
+        "raw_label",
+        "normalized_label",
+        "bbox_x",
+        "bbox_y",
+        "centroid_x",
+        "centroid_y",
+        "poi_type_guess",
+        "confidence"
+      ],
+      "provenance_fields": [
+        "filename",
+        "observed_at",
+        "review_status"
+      ],
+      "dedup_key": "poi_id",
+      "fact_status_default": "observed"
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/unlabeled_poi_candidates.csv",
+      "schema_name": "unlabeled_poi_candidates",
+      "schema_file": "schemas/unlabeled_poi_candidates.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "candidate_id",
+        "screenshot_id",
+        "candidate_type",
+        "bbox_x",
+        "bbox_y",
+        "centroid_x",
+        "centroid_y",
+        "confidence"
+      ],
+      "provenance_fields": [
+        "filename",
+        "evidence_features",
+        "observed_at",
+        "review_status"
+      ],
+      "dedup_key": "candidate_id",
+      "fact_status_default": "inferred"
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/aircraft_observations.csv",
+      "schema_name": "aircraft_observations",
+      "schema_file": "schemas/aircraft_observations.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "aircraft_obs_id",
+        "screenshot_id",
+        "registration",
+        "callsign",
+        "aircraft_type",
+        "altitude_ft",
+        "speed_kt",
+        "heading_deg",
+        "identity_status",
+        "confidence"
+      ],
+      "provenance_fields": [
+        "filename",
+        "filename_ts",
+        "source_zone",
+        "raw_excerpt",
+        "observed_at"
+      ],
+      "dedup_key": "aircraft_obs_id",
+      "fact_status_default": "observed",
+      "notes": "identity_status \u2208 {confirmed, partial, conflicting, unknown, recovered}; 'recovered' is the raw-text-rescue tier."
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/flight_track_features.csv",
+      "schema_name": "flight_track_features",
+      "schema_file": "schemas/flight_track_features.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "track_feat_id",
+        "screenshot_id",
+        "path_shape",
+        "has_loop",
+        "has_orbit",
+        "has_hover",
+        "confidence"
+      ],
+      "provenance_fields": [
+        "filename",
+        "observed_at"
+      ],
+      "dedup_key": "track_feat_id",
+      "fact_status_default": "inferred",
+      "notes": "Deferred placeholder \u2014 no extractor yet (Workstream B follow-up)."
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/manual_review_labeled_pois.csv",
+      "schema_name": "manual_review",
+      "schema_file": "schemas/manual_review.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "review_id",
+        "screenshot_id",
+        "item_kind",
+        "reason",
+        "severity",
+        "review_status"
+      ],
+      "provenance_fields": [
+        "filename",
+        "item_ref_table",
+        "item_ref_id",
+        "created_at"
+      ],
+      "dedup_key": "review_id",
+      "fact_status_default": null
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/manual_review_unlabeled_candidates.csv",
+      "schema_name": "manual_review",
+      "schema_file": "schemas/manual_review.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "review_id",
+        "screenshot_id",
+        "item_kind",
+        "reason",
+        "severity",
+        "review_status"
+      ],
+      "provenance_fields": [
+        "filename",
+        "item_ref_table",
+        "item_ref_id",
+        "created_at"
+      ],
+      "dedup_key": "review_id",
+      "fact_status_default": null
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/manual_review_aircraft_identity.csv",
+      "schema_name": "manual_review",
+      "schema_file": "schemas/manual_review.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "review_id",
+        "screenshot_id",
+        "item_kind",
+        "reason",
+        "severity",
+        "review_status"
+      ],
+      "provenance_fields": [
+        "filename",
+        "item_ref_table",
+        "item_ref_id",
+        "created_at"
+      ],
+      "dedup_key": "review_id",
+      "fact_status_default": null
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/manual_review_time_conflicts.csv",
+      "schema_name": "manual_review",
+      "schema_file": "schemas/manual_review.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "review_id",
+        "screenshot_id",
+        "item_kind",
+        "reason",
+        "severity",
+        "review_status"
+      ],
+      "provenance_fields": [
+        "filename",
+        "item_ref_table",
+        "item_ref_id",
+        "created_at"
+      ],
+      "dedup_key": "review_id",
+      "fact_status_default": null
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/manual_review_geo_anchor_failures.csv",
+      "schema_name": "manual_review",
+      "schema_file": "schemas/manual_review.schema.json",
+      "format": "csv",
+      "crs": null,
+      "required_columns_summary": [
+        "review_id",
+        "screenshot_id",
+        "item_kind",
+        "reason",
+        "severity",
+        "review_status"
+      ],
+      "provenance_fields": [
+        "filename",
+        "item_ref_table",
+        "item_ref_id",
+        "created_at"
+      ],
+      "dedup_key": "review_id",
+      "fact_status_default": null,
+      "notes": "Empty until geo_anchors extractor lands (deferred)."
+    },
+    {
+      "workstream": "rlsm",
+      "artifact_path": "outputs/rlsm_coverage_report.md",
+      "schema_name": null,
+      "schema_file": null,
+      "format": "markdown",
+      "crs": null,
+      "required_columns_summary": [],
+      "provenance_fields": [],
+      "dedup_key": null,
+      "fact_status_default": null,
+      "notes": "Human-readable coverage report \u2014 not validated."
+    },
+    {
+      "workstream": "readiness",
+      "artifact_path": "prii_readiness_report.json",
+      "schema_name": "prii_readiness_report",
+      "schema_file": "schemas/prii_readiness_report.schema.json",
+      "format": "json",
+      "crs": null,
+      "required_columns_summary": [
+        "generated_at",
+        "export_dir",
+        "readiness_status",
+        "blockers",
+        "warnings",
+        "missing_inputs",
+        "gate_summary"
+      ],
+      "provenance_fields": [
+        "release"
+      ],
+      "dedup_key": null,
+      "fact_status_default": null,
+      "notes": "Now carries a non-breaking `release` link to release_report.json when present (Tier 1 item 9)."
+    },
+    {
+      "workstream": "release",
+      "artifact_path": "release_report.json",
+      "schema_name": "release_report",
+      "schema_file": "schemas/release_report.schema.json",
+      "format": "json",
+      "crs": null,
+      "required_columns_summary": [
+        "metadata",
+        "syntax_check",
+        "core_tests",
+        "validate",
+        "export_pr_intel",
+        "export_spiderweb",
+        "earthgpt_selftest",
+        "overall_status",
+        "failure_reasons"
+      ],
+      "provenance_fields": [
+        "metadata.reproducibility"
+      ],
+      "dedup_key": null,
+      "fact_status_default": null,
+      "notes": "Umbrella release gate; consumed by --release-check. No JSON Schema yet (NEXT_100)."
+    }
+  ]
+}

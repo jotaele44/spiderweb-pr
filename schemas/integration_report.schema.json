@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "integration_report",
+  "type": "object",
+  "description": "6-gate PR Intel export report written by integration.pr_intel_adapter.PRIntelAdapter.export_all().",
+  "required": ["generated_at", "overall_status", "gates"],
+  "properties": {
+    "generated_at":   {"type": "string"},
+    "overall_status": {"type": "string", "enum": ["PASS", "FAIL"]},
+    "gates": {
+      "type": "object",
+      "description": "One sub-object per gate. Standard gates: schema_validation, coordinate_coverage, ocr_confidence_gate, evidence_chain_coverage, export_completeness, temporal_integrity. Each carries a status + gate-specific metrics.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status":              {"type": "string", "enum": ["PASS", "FAIL"]},
+          "records_validated":   {"type": "integer", "minimum": 0},
+          "invalid":             {"type": "integer", "minimum": 0},
+          "pct_with_coords":     {"type": "number", "minimum": 0, "maximum": 1},
+          "threshold":           {"type": "number"},
+          "avg_confidence":      {"type": "number", "minimum": 0, "maximum": 1},
+          "pct_with_screenshot": {"type": "number", "minimum": 0, "maximum": 1},
+          "files_generated":     {"type": "integer", "minimum": 0},
+          "missing":             {"type": "array", "items": {"type": "string"}},
+          "violations":          {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

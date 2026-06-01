@@ -63,13 +63,8 @@ python run_all.py --image-dir data/screenshots --db outputs/flights.db --images 
 # Single phase
 python run_all.py --image-dir data/screenshots --db outputs/flights.db --phase 2
 
-# Full pipeline + all exports
-python run_all.py \
-  --image-dir data/screenshots \
-  --db outputs/flights.db \
-  --validate \
-  --export-pr-intel outputs/pr_intel \
-  --export-spiderweb outputs/spiderweb
+# Full pipeline + all exports (single line — iOS / a-Shell friendly)
+python run_all.py --image-dir data/screenshots --db outputs/flights.db --validate --export-pr-intel outputs/pr_intel --export-spiderweb outputs/spiderweb
 ```
 
 ### FR24 screenshot processor
@@ -225,13 +220,8 @@ python -m pytest tests/ -q
 # Skip GEBCO (no xarray installed)
 python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py
 
-# Module-scoped runs
-python -m pytest tests/test_aircraft_intelligence.py tests/test_cli.py tests/test_end_to_end.py \
-                 tests/test_fr24_bridge.py tests/test_fr24_inventory.py tests/test_geo_calibration.py \
-                 tests/test_gis_intelligence.py tests/test_mission_inference.py tests/test_ocr_confidence.py \
-                 tests/test_pr_intel_adapter.py tests/test_route_extractor.py tests/test_schema_validation.py \
-                 tests/test_screenshot_inventory.py tests/test_spiderweb_bridge.py tests/test_temporal_validator.py \
-                 -q  # Airspace Intel: 123 tests
+# Module-scoped runs (single line — iOS / a-Shell friendly)
+python -m pytest tests/test_aircraft_intelligence.py tests/test_cli.py tests/test_end_to_end.py tests/test_fr24_bridge.py tests/test_fr24_inventory.py tests/test_geo_calibration.py tests/test_gis_intelligence.py tests/test_mission_inference.py tests/test_ocr_confidence.py tests/test_pr_intel_adapter.py tests/test_route_extractor.py tests/test_schema_validation.py tests/test_screenshot_inventory.py tests/test_spiderweb_bridge.py tests/test_temporal_validator.py -q  # Airspace Intel: 123 tests
 
 python -m pytest tests/test_io.py tests/test_terrain.py -q  # GEBCO: 39 tests
 python -m pytest tests/test_metrics.py tests/test_seams.py tests/test_pipeline.py -q  # EarthGPT: 19 tests

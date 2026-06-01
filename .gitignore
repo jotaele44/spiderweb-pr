@@ -7,10 +7,17 @@ __pycache__/
 # outputs/ — all generated files (parquet, GeoJSON, JSON, JSONL, CSV, DB)
 outputs/*
 !outputs/.gitkeep
+# outputs.zip — packaged outputs snapshot at repo root (build artifact)
+outputs.zip
 
 # data/ — input datasets (screenshots, GEBCO .nc, social CSV, etc.)
 data/*
 !data/.gitkeep
+# RLSM: track the schema contract and operator handoff doc, keep large DBs ignored
+!data/rlsm/
+data/rlsm/*
+!data/rlsm/schema.sql
+!data/rlsm/HANDOFF.md
 
 # cache/ — intermediate results, model caches
 cache/*

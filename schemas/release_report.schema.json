@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "release_report",
+  "type": "object",
+  "description": "Umbrella release-gate report written by release_check.ReleaseCheck.run(). See docs/RELEASE_READINESS.md.",
+  "required": ["metadata", "syntax_check", "core_tests", "validate", "export_pr_intel", "export_spiderweb", "earthgpt_selftest", "overall_status", "failure_reasons"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Reproducibility block (D3) — provenance_utils.reproducibility_metadata().",
+      "required": ["timestamp_utc", "repo_commit", "python_version", "platform", "command", "input_paths", "input_sha256s", "mode"],
+      "properties": {
+        "timestamp_utc":  {"type": "string"},
+        "repo_commit":    {"type": "string"},
+        "python_version": {"type": "string"},
+        "platform":       {"type": "string"},
+        "command":        {"type": "string"},
+        "input_paths":    {"type": "array", "items": {"type": "string"}},
+        "input_sha256s":  {"type": "object"},
+        "mode":           {"type": "string", "enum": ["normal", "demo", "strict"]}
+      }
+    },
+    "syntax_check": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status":         {"type": "string", "enum": ["PASS", "FAIL", "SKIPPED", "WARNING"]},
+        "files_checked":  {"type": "integer", "minimum": 0},
+        "failures":       {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "core_tests": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status":     {"type": "string", "enum": ["PASS", "FAIL", "SKIPPED", "WARNING"]},
+        "returncode": {"type": ["integer", "null"]},
+        "passed":     {"type": "integer", "minimum": 0},
+        "failed":     {"type": "integer", "minimum": 0},
+        "skipped":    {"type": "integer", "minimum": 0},
+        "error":      {"type": "integer", "minimum": 0},
+        "summary":    {"type": "string"},
+        "reason":     {"type": "string"}
+      }
+    },
+    "validate": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status":         {"type": "string", "enum": ["PASS", "FAIL", "SKIPPED", "WARNING"]},
+        "schema_invalid": {"type": "integer", "minimum": 0},
+        "review_queue":   {"type": "string"},
+        "tables":         {"type": "object"},
+        "reason":         {"type": "string"},
+        "error":          {"type": "string"},
+        "db":             {"type": "string"}
+      }
+    },
+    "export_pr_intel": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status":             {"type": "string", "enum": ["PASS", "FAIL", "SKIPPED", "WARNING"]},
+        "integration_report": {"type": "string"},
+        "gates":              {"type": "object"},
+        "files":              {"type": "array", "items": {"type": "string"}},
+        "missing":            {"type": "array", "items": {"type": "string"}},
+        "reason":             {"type": "string"},
+        "error":              {"type": "string"}
+      }
+    },
+    "export_spiderweb": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status":   {"type": "string", "enum": ["PASS", "FAIL", "SKIPPED", "WARNING"]},
+        "manifest": {"type": "string"},
+        "files":    {"type": "array", "items": {"type": "string"}},
+        "reason":   {"type": "string"},
+        "error":    {"type": "string"}
+      }
+    },
+    "earthgpt_selftest": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "string", "enum": ["PASS", "FAIL", "SKIPPED", "WARNING"]},
+        "passed": {"type": "integer", "minimum": 0},
+        "total":  {"type": "integer", "minimum": 0},
+        "gates":  {"type": "object"},
+        "reason": {"type": "string"},
+        "error":  {"type": "string"}
+      }
+    },
+    "overall_status":   {"type": "string", "enum": ["PASS", "FAIL"]},
+    "failure_reasons":  {"type": "array", "items": {"type": "string"}},
+    "mode":             {"type": "string", "enum": ["normal", "demo", "strict"]},
+    "demo_warning":     {"type": "string"}
+  },
+  "additionalProperties": true
+}
