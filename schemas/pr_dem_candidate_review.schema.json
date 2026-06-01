@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/pr_dem_candidate_review.schema.json",
+  "title": "PR DEM Candidate Manual Review Record",
+  "description": "Manual QGIS review schema for Puerto Rico DEM terrain-screening candidate rows. This schema records human interpretation and review status; it does not assert subsurface conditions or hidden infrastructure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidate_id",
+    "review_status",
+    "review_decision",
+    "review_confidence",
+    "reviewer",
+    "reviewed_at_utc"
+  ],
+  "properties": {
+    "candidate_id": {
+      "type": "string",
+      "description": "Stable candidate identifier from pr_dem_one_tile_candidates.csv or pr_dem_batch_candidates.csv."
+    },
+    "source_tile": {
+      "type": ["string", "null"],
+      "description": "DEM tile path or name that produced the candidate."
+    },
+    "batch_profile": {
+      "type": ["string", "null"],
+      "description": "Batch profile name, for example arecibo_utuado."
+    },
+    "lon": {
+      "type": ["number", "null"],
+      "minimum": -180,
+      "maximum": 180
+    },
+    "lat": {
+      "type": ["number", "null"],
+      "minimum": -90,
+      "maximum": 90
+    },
+    "x": {
+      "type": ["number", "null"],
+      "description": "Projected X coordinate when lon/lat is unavailable or for CRS-specific review."
+    },
+    "y": {
+      "type": ["number", "null"],
+      "description": "Projected Y coordinate when lon/lat is unavailable or for CRS-specific review."
+    },
+    "crs": {
+      "type": ["string", "null"],
+      "description": "Coordinate reference system for x/y values."
+    },
+    "ILAP_SCORE": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Computed prioritization score from terrain-screening output."
+    },
+    "review_class": {
+      "type": ["string", "null"],
+      "enum": ["Background", "Review", "Candidate", "High Priority", null]
+    },
+    "area_m2": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "mean_slope_deg": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "ring_mean_slope_deg": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "tpi_mean_m": {
+      "type": ["number", "null"]
+    },
+    "terrain_visual_type": {
+      "type": ["string", "null"],
+      "enum": [
+        "flat_pad",
+        "bench_or_terrace",
+        "road_cut",
+        "quarry_or_borrow_area",
+        "building_or_compound_pad",
+        "reservoir_or_water_asset_edge",
+        "karst_depression_or_sinkhole_margin",
+        "agricultural_or_pasture_feature",
+        "natural_summit_or_ridge_flat",
+        "data_artifact",
+        "unclear",
+        null
+      ]
+    },
+    "access_context": {
+      "type": ["string", "null"],
+      "enum": [
+        "road_adjacent",
+        "dead_end_access",
+        "track_or_service_road",
+        "no_visible_access",
+        "access_obscured",
+        "not_reviewed",
+        null
+      ]
+    },
+    "hydro_context": {
+      "type": ["string", "null"],
+      "enum": [
+        "near_stream_or_drainage",
+        "near_reservoir_or_water_asset",
+        "possible_drainage_interruption",
+        "no_clear_hydro_context",
+        "not_reviewed",
+        null
+      ]
+    },
+    "utility_context": {
+      "type": ["string", "null"],
+      "enum": [
+        "near_powerline_or_substation",
+        "near_pipeline_or_water_utility",
+        "near_telecom_or_tower_like_site",
+        "no_clear_utility_context",
+        "not_reviewed",
+        null
+      ]
+    },
+    "karst_context": {
+      "type": ["string", "null"],
+      "enum": [
+        "inside_karst_zone",
+        "near_karst_boundary",
+        "possible_closed_depression",
+        "not_karst_related",
+        "not_reviewed",
+        null
+      ]
+    },
+    "imagery_context": {
+      "type": ["string", "null"],
+      "enum": [
+        "visible_structure",
+        "visible_clearing",
+        "vegetation_obscured",
+        "bare_ground_or_gravel",
+        "shadow_or_cloud_limited",
+        "no_clear_imagery_signal",
+        "not_reviewed",
+        null
+      ]
+    },
+    "review_status": {
+      "type": "string",
+      "enum": ["unreviewed", "in_review", "reviewed", "needs_second_pass", "rejected_artifact"]
+    },
+    "review_decision": {
+      "type": "string",
+      "enum": [
+        "retain_candidate",
+        "retain_low_priority",
+        "escalate_high_priority",
+        "reject_natural_feature",
+        "reject_known_ordinary_infrastructure",
+        "reject_data_artifact",
+        "insufficient_evidence"
+      ]
+    },
+    "review_confidence": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "recommended_next_step": {
+      "type": ["string", "null"],
+      "enum": [
+        "none",
+        "compare_historical_imagery",
+        "check_roads_and_access",
+        "check_hydro_layers",
+        "check_utility_layers",
+        "check_karst_or_geology",
+        "parcel_or_ownership_review",
+        "second_reviewer",
+        "field_validation_if_appropriate",
+        null
+      ]
+    },
+    "review_notes": {
+      "type": ["string", "null"],
+      "description": "Short notes. Keep claims observational and avoid unsupported conclusions."
+    },
+    "reviewer": {
+      "type": "string"
+    },
+    "reviewed_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence_tier": {
+      "type": ["string", "null"],
+      "enum": ["T1_technical", "T2_operational", "T3_eyewitness", "T4_secondary", null],
+      "description": "Evidence tier supporting the review decision. DEM and GIS-derived features are T1 technical evidence; manual visual review is usually T1/T2 depending on source layer."
+    }
+  }
+}
