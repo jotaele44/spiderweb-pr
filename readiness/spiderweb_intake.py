@@ -34,6 +34,12 @@ REQUIRED_FIELDS = [
     "evidence_tier", "linked_flight_id", "linked_aircraft", "corridor_id",
     "mbil_class", "hydro_overlap", "utility_overlap", "terrain_context",
     "review_status",
+    # Tier 3 additive fields (D5):
+    "fact_status",                 # 'observed' (high-conf + ≥2 corroborating) | 'inferred'
+    "spiderweb_role",              # 'node' | 'path' | 'edge' | 'airport_link'
+    "access_assertion_level",      # 'public_record' (airport-anchored) | 'derived_observation'
+    "nearest_municipal_boundary_m",# distance in meters to nearest of MUNICIPAL_CENTROIDS
+    "aasb_mbil_corridor_flag",     # bool: corridor candidate with MBIL-2+ at both endpoints
 ]
 
 # ── Scoring constants ─────────────────────────────────────────────────────────
@@ -186,6 +192,12 @@ class SpiderwebIntake:
         self._score_hydro(candidates)
         self._score_utility(candidates)
         self._score_terrain(candidates)
+        # Tier 3 additive scoring — must run before _assign_evidence_tier so the
+        # MBIL guardrail (T3-27) has the corroboration counts it needs.
+        self._score_spiderweb_role(candidates)
+        self._score_access_assertion(candidates)
+        self._score_nearest_municipal_boundary_m(candidates)
+        self._score_aasb_mbil_corridor_flag(candidates)
         self._assign_evidence_tier(candidates)
         gap_audit = self._gap_audit(candidates, missing_files, dups_removed)
         self._write_outputs(candidates, gap_audit)
@@ -344,18 +356,76 @@ class SpiderwebIntake:
 
     # ── Evidence tier ─────────────────────────────────────────────────────────
 
+    # ── Tier 3 additive scoring helpers (D5) ──────────────────────────────────
+
+    def _score_spiderweb_role(self, candidates: List[Dict[str, Any]]) -> None:
+        """Map candidate_type → canonical spiderweb_role (T3-22)."""
+        ROLE = {"poi": "node", "ilap": "path", "corridor": "edge", "aasb_edge": "airport_link"}
+        for c in candidates:
+            c["spiderweb_role"] = ROLE.get(c["candidate_type"], "node")
+
+    def _score_access_assertion(self, candidates: List[Dict[str, Any]]) -> None:
+        """T3-23: 'public_record' if airport-anchored (aasb_edge or has a known
+        airport in corridor_id), else 'derived_observation'."""
+        # Airport codes known to anchor public-record corridors (AASB nodes).
+        AIRPORT_CODES = {"SJU", "BQN", "PSE", "SIG", "NRR", "MAZ", "ARE", "CPX", "VQS"}
+        for c in candidates:
+            if c["candidate_type"] == "aasb_edge":
+                c["access_assertion_level"] = "public_record"
+                continue
+            corridor_id = c.get("corridor_id") or ""
+            # Conservative check: corridor_id contains an airport code (e.g. "SJU_BQN").
+            if any(code in corridor_id.upper() for code in AIRPORT_CODES):
+                c["access_assertion_level"] = "public_record"
+            else:
+                c["access_assertion_level"] = "derived_observation"
+
+    def _score_nearest_municipal_boundary_m(self, candidates: List[Dict[str, Any]]) -> None:
+        """T3-24: distance in meters to nearest of the 72-municipality centroids.
+
+        Approximation: degrees × 111000 (1° lat ≈ 111 km; longitude correction is
+        small at PR's latitude, ~18°, where cos(18°) ≈ 0.951 — accepting the
+        ~5% over-estimate as the docs state)."""
+        for c in candidates:
+            lat, lon = c.get("lat"), c.get("lon")
+            if lat is None or lon is None:
+                c["nearest_municipal_boundary_m"] = None
+                continue
+            min_dist_deg = min(
+                math.hypot(lat - clat, lon - clon)
+                for clat, clon in MUNICIPAL_CENTROIDS
+            )
+            c["nearest_municipal_boundary_m"] = round(min_dist_deg * 111000, 1)
+
+    def _score_aasb_mbil_corridor_flag(self, candidates: List[Dict[str, Any]]) -> None:
+        """T3-28: True when a corridor candidate has MBIL-2 or MBIL-3.
+
+        Note: the plan asks for 'both endpoints' MBIL-2+, but corridor candidates
+        store a single mbil_class summarizing the corridor as a whole. Flagging
+        when the corridor's own MBIL is ≥ 2 is the available proxy. Per-endpoint
+        flagging requires the AASB-edge MBIL-X plumbing (NEXT_100 T3-28 follow-up)."""
+        MBIL_HIGH = {"MBIL-2", "MBIL-3"}
+        for c in candidates:
+            c["aasb_mbil_corridor_flag"] = (
+                c["candidate_type"] == "corridor"
+                and c.get("mbil_class") in MBIL_HIGH
+            )
+
     def _assign_evidence_tier(self, candidates: List[Dict[str, Any]]) -> None:
         for c in candidates:
             conf = c["confidence"]
             props = c["_raw_props"]
             ctype = c["candidate_type"]
 
-            corroborating = sum([
+            # Corroborating evidence sources (not counting MBIL alone — see
+            # MBIL-only guardrail below).
+            non_mbil_corroborating = sum([
                 c["hydro_overlap"] == "yes",
                 c["utility_overlap"] == "yes",
-                c["mbil_class"] != "MBIL-0",
                 c["corridor_id"] is not None,
             ])
+            mbil_high = c["mbil_class"] in ("MBIL-2", "MBIL-3")
+            corroborating = non_mbil_corroborating + (1 if c["mbil_class"] != "MBIL-0" else 0)
 
             corridor_align = _safe_float(props.get("corridor_alignment_score")) or 0.0
             connecting = int(props.get("connecting_flights") or 0)
@@ -371,7 +441,22 @@ class SpiderwebIntake:
             else:
                 tier = "T4"
 
+            # T3-27 MBIL-only guardrail: if the ONLY positive evidence is MBIL
+            # (no hydro, no utility, no corridor_id), tier stays at T4/T3 even
+            # at high confidence. MBIL is spatial context, not operational signal.
+            mbil_only = (non_mbil_corroborating == 0 and mbil_high)
+            if mbil_only and tier in ("T1", "T2"):
+                tier = "T3"
+
             c["evidence_tier"] = tier
+
+            # T3-21 fact_status: 'observed' when high-confidence with ≥2
+            # NON-MBIL corroborating signals; 'inferred' otherwise. Tied to
+            # the same gate the operator-facing tier uses for T1.
+            if conf >= CONFIDENCE_T1 and non_mbil_corroborating >= 2:
+                c["fact_status"] = "observed"
+            else:
+                c["fact_status"] = "inferred"
 
             if tier in ("T1", "T2"):
                 c["review_status"] = "accepted"
