@@ -251,6 +251,22 @@ def save_checkpoint(path: Path, processed: set[str]) -> None:
     path.write_text(json.dumps(sorted(processed), indent=2))
 
 
+def _image_paths_in_csv(output_path: Path) -> set[str]:
+    """Return the set of image_path values already written to the output CSV.
+
+    Used by --retry-errors to tell successful extractions (in the CSV) apart
+    from previously-checkpointed failures (not in the CSV).
+    """
+    if not output_path.exists() or output_path.stat().st_size == 0:
+        return set()
+    with output_path.open(newline="") as f:
+        return {
+            (row.get("image_path") or "").strip()
+            for row in csv.DictReader(f)
+            if (row.get("image_path") or "").strip()
+        }
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────────
 
 async def run(args: argparse.Namespace) -> None:
@@ -276,6 +292,17 @@ async def run(args: argparse.Namespace) -> None:
 
     # Load checkpoint
     checkpoint = load_checkpoint(checkpoint_path)
+
+    # With --retry-errors, treat any checkpointed image that is NOT in the
+    # output CSV as a previous failure and drop it so it reprocesses. (Older
+    # runs checkpointed failures too, leaving them stuck.)
+    if args.retry_errors and checkpoint:
+        succeeded = _image_paths_in_csv(output_path)
+        retryable = {p for p in checkpoint if p not in succeeded}
+        if retryable:
+            checkpoint -= retryable
+            print(f"  retry-errors: {len(retryable)} previously-failed images requeued")
+
     pending = [p for p in heic_files if str(p) not in checkpoint]
     print(f"  {len(checkpoint)} already processed, {len(pending)} remaining")
 
@@ -306,11 +333,15 @@ async def run(args: argparse.Namespace) -> None:
         fields = await extract_fields(client, semaphore, heic_path, args.model)
         if not fields:
             errors += 1
+            # With --retry-errors, do not checkpoint failed extractions so a
+            # later run reprocesses them. (Default keeps prior behaviour.)
+            if not args.retry_errors:
+                checkpoint.add(str(heic_path))
         else:
             row = build_row(heic_path, fields, sites)
             writer.writerow(row)
             csv_file.flush()
-        checkpoint.add(str(heic_path))
+            checkpoint.add(str(heic_path))
         done += 1
         checkpoint_dirty += 1
         if checkpoint_dirty >= 25:
@@ -343,6 +374,7 @@ def main() -> None:
     parser.add_argument("--db",          default=str(DEFAULT_DB),        help="priis.db for site mapping")
     parser.add_argument("--checkpoint",  default=str(DEFAULT_CHECKPOINT),help="Checkpoint JSON path")
     parser.add_argument("--limit",       type=int, default=0,            help="Process only first N images (0=all)")
+    parser.add_argument("--retry-errors", action="store_true",           help="Reprocess images whose extraction previously failed (don't checkpoint failures)")
     parser.add_argument("--model",       default="claude-haiku-4-5-20251001", help="Claude model to use")
     parser.add_argument("--concurrency", type=int, default=5,            help="Parallel API calls")
     args = parser.parse_args()

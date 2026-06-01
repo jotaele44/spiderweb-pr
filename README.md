@@ -47,6 +47,10 @@ Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build
 | `fr24/manual_review_queue.py` | SQLite-backed idempotent queue for low-quality items needing human review |
 | `fr24/event_export.py` | Bridge: inventory → screenshots table; routes → track_points table |
 
+**Registrations & alerts:** to recover dropped aircraft registrations and set up
+a registration watchlist with alerts, see
+[FR24 Registration Recovery & Alerts](docs/FR24_REGISTRATION_RECOVERY.md).
+
 ## Quick start
 
 ```bash

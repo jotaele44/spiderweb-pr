@@ -16,11 +16,20 @@ import json
 import sqlite3
 import argparse
 import os
+import sys
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from server.ingestion.migrations import run_all as run_migrations  # noqa: E402
+from server.ingestion.registration_alerts import generate_alerts, load_watchlist  # noqa: E402
 
 
 DB_DEFAULT = Path(__file__).parent.parent / "priis.db"
 OUTPUTS_DIR = Path(__file__).parent.parent.parent / "outputs"
+WATCHLIST_DEFAULT = _ROOT / "config" / "registration_watchlist.yaml"
 
 
 def _connect(db_path: str) -> sqlite3.Connection:
@@ -68,8 +77,24 @@ def ingest_sites_geojson(conn: sqlite3.Connection, geojson_path: Path) -> int:
     return count
 
 
+def _as_int_or_none(value: object):
+    """Parse an integer-ish CSV cell, returning None when empty/invalid."""
+    if value in (None, ""):
+        return None
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
 def ingest_fr24_csv(conn: sqlite3.Connection, csv_path: Path) -> int:
-    """Map FR24 candidate CSV → events table (flight kind)."""
+    """Map FR24 candidate CSV → events table (flight kind).
+
+    Persists the full FR24 aircraft detail (registration, aircraft type,
+    operator, route, altitude, speed, status). Uses ON CONFLICT DO UPDATE so
+    re-ingesting backfills registration onto rows already stored — this is how
+    previously-dropped registrations are recovered without wiping the DB.
+    """
     if not csv_path.exists():
         print(f"  [skip] {csv_path} not found")
         return 0
@@ -79,20 +104,51 @@ def ingest_fr24_csv(conn: sqlite3.Connection, csv_path: Path) -> int:
         reader = csv.DictReader(f)
         for row in reader:
             event_id = row.get("id") or f"fr24-{count}"
+            registration = (row.get("registration") or "").strip()
+            callsign = (row.get("callsign") or "").strip()
             conn.execute(
                 """
-                INSERT INTO events (id, kind, at, site_id, ref_id, label, tier)
-                VALUES (?,?,?,?,?,?,?)
-                ON CONFLICT(id) DO NOTHING
+                INSERT INTO events (
+                    id, kind, at, site_id, ref_id, label, tier,
+                    registration, callsign, aircraft_type, operator,
+                    origin_code, destination_code, altitude_ft,
+                    ground_speed_mph, flight_status, image_path
+                )
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ON CONFLICT(id) DO UPDATE SET
+                  at=excluded.at,
+                  site_id=excluded.site_id,
+                  ref_id=excluded.ref_id,
+                  label=excluded.label,
+                  registration=excluded.registration,
+                  callsign=excluded.callsign,
+                  aircraft_type=excluded.aircraft_type,
+                  operator=excluded.operator,
+                  origin_code=excluded.origin_code,
+                  destination_code=excluded.destination_code,
+                  altitude_ft=excluded.altitude_ft,
+                  ground_speed_mph=excluded.ground_speed_mph,
+                  flight_status=excluded.flight_status,
+                  image_path=excluded.image_path
                 """,
                 (
                     event_id,
                     "flight",
                     row.get("timestamp") or row.get("at", ""),
                     row.get("site_id") or row.get("nearest_site"),
-                    row.get("flight_id") or row.get("ref_id"),
-                    row.get("label") or row.get("callsign", "FR24 flight"),
+                    row.get("flight_id") or row.get("ref_id") or callsign,
+                    row.get("label") or callsign or "FR24 flight",
                     "T1",
+                    registration,
+                    callsign,
+                    (row.get("aircraft_type") or "").strip(),
+                    (row.get("operator") or "").strip(),
+                    (row.get("origin_code") or "").strip(),
+                    (row.get("destination_code") or "").strip(),
+                    _as_int_or_none(row.get("altitude_ft")),
+                    _as_int_or_none(row.get("ground_speed_mph")),
+                    (row.get("flight_status") or "").strip(),
+                    (row.get("image_path") or "").strip(),
                 ),
             )
             count += 1
@@ -198,10 +254,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Ingest real pipeline outputs into priis.db")
     parser.add_argument("--db", default=str(DB_DEFAULT), help="Path to priis.db")
     parser.add_argument("--outputs", default=str(OUTPUTS_DIR), help="Pipeline outputs directory")
+    parser.add_argument("--watchlist", default=str(WATCHLIST_DEFAULT), help="Registration watchlist YAML")
+    parser.add_argument("--no-alerts", action="store_true", help="Skip registration alert generation")
     args = parser.parse_args()
 
     outputs = Path(args.outputs)
     conn = _connect(args.db)
+
+    # Ensure the events/alerts schema is up to date before writing.
+    run_migrations(conn)
 
     print("Ingesting sites from GIS GeoJSON...")
     n = ingest_sites_geojson(conn, outputs / "sites.geojson")
@@ -221,6 +282,16 @@ def main() -> None:
     print("Ingesting finance CSV...")
     n = ingest_finance_csv(conn, outputs / "finance.csv")
     print(f"  {n} contracts/vendors inserted")
+
+    if not args.no_alerts:
+        print("Evaluating registration watchlist alerts...")
+        watchlist = load_watchlist(Path(args.watchlist))
+        summary = generate_alerts(conn, watchlist)
+        print(
+            f"  watchlist={summary['watchlist_size']} "
+            f"seen={summary['seen_matches']} missing={summary['missing_matches']} "
+            f"new_alerts={summary['new_alerts']} notified={summary['notified']}"
+        )
 
     conn.close()
     print("Done.")

@@ -137,10 +137,22 @@ async def list_contracts():
 
 @app.get("/events")
 async def list_events():
-    rows = await _rows("SELECT id, kind, at, site_id, ref_id, label, tier FROM events")
+    rows = await _rows(
+        "SELECT id, kind, at, site_id, ref_id, label, tier, "
+        "registration, callsign, aircraft_type, operator, origin_code, "
+        "destination_code, altitude_ft, ground_speed_mph, flight_status, "
+        "image_path FROM events"
+    )
     for r in rows:
         r["siteId"] = r.pop("site_id", None)
         r["refId"] = r.pop("ref_id", None)
+        r["aircraftType"] = r.pop("aircraft_type", None)
+        r["originCode"] = r.pop("origin_code", None)
+        r["destinationCode"] = r.pop("destination_code", None)
+        r["altitudeFt"] = r.pop("altitude_ft", None)
+        r["groundSpeedMph"] = r.pop("ground_speed_mph", None)
+        r["flightStatus"] = r.pop("flight_status", None)
+        r["imagePath"] = r.pop("image_path", None)
     return rows
 
 
@@ -169,7 +181,9 @@ async def list_investigations():
 
 @app.get("/alerts")
 async def list_alerts():
-    return await _rows("SELECT id, at, kind, title, tier, investigation FROM alerts")
+    return await _rows(
+        "SELECT id, at, kind, title, tier, investigation, registration FROM alerts"
+    )
 
 # ─── Pipeline ──────────────────────────────────────────────────────────────────
 

@@ -46,7 +46,19 @@ CREATE TABLE IF NOT EXISTS events (
     site_id TEXT,
     ref_id  TEXT,
     label   TEXT NOT NULL,
-    tier    TEXT
+    tier    TEXT,
+    -- FR24 aircraft detail (extracted by scripts/fr24_vision_ingest.py).
+    -- Persisted here so registrations are not dropped at ingest.
+    registration     TEXT,
+    callsign         TEXT,
+    aircraft_type    TEXT,
+    operator         TEXT,
+    origin_code      TEXT,
+    destination_code TEXT,
+    altitude_ft      INTEGER,
+    ground_speed_mph INTEGER,
+    flight_status    TEXT,
+    image_path       TEXT
 );
 
 CREATE TABLE IF NOT EXISTS anomalies (
@@ -85,5 +97,6 @@ CREATE TABLE IF NOT EXISTS alerts (
     kind           TEXT NOT NULL,
     title          TEXT NOT NULL,
     tier           TEXT NOT NULL,
-    investigation  TEXT
+    investigation  TEXT,
+    registration   TEXT    -- aircraft registration, for kind='aircraft' watchlist alerts
 );
