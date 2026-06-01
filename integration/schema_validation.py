@@ -197,6 +197,36 @@ class SchemaValidator:
         """Return a sorted list of loaded schema names."""
         return sorted(self._validators.keys())
 
+    # ── Schema index (schemas/schema_index.json) ─────────────────────────────
+
+    def load_index(self, index_path: Optional[str] = None) -> Dict[str, Any]:
+        """Load the master artifact→schema registry (schemas/schema_index.json).
+
+        Returns the parsed dict ({schema_version, generated_at, conventions,
+        artifacts}). Returns {} if the file is missing or unparseable so
+        callers can fall back to the existing per-schema glob discovery.
+        """
+        path = Path(index_path) if index_path else (self._dir / "schema_index.json")
+        if not path.exists():
+            return {}
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def index_artifacts(self, index_path: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Return the artifacts list from the schema index (empty list if absent)."""
+        return self.load_index(index_path).get("artifacts", [])
+
+    def index_lookup(
+        self, artifact_path: str, index_path: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Look up an index entry by its *artifact_path*. None if not registered."""
+        for entry in self.index_artifacts(index_path):
+            if entry.get("artifact_path") == artifact_path:
+                return entry
+        return None
+
     def _append_review_rows(self, path: str, new_rows: List[dict],
                             dedup_window_hours: float = 24.0) -> None:
         """Merge *new_rows* into the review queue at *path*, deduplicating on
