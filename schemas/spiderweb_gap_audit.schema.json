@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spiderweb_gap_audit",
+  "type": "object",
+  "description": "Gap audit emitted by readiness/spiderweb_intake.SpiderwebIntake._write_outputs(). See docs/SPIDERWEB_LANGUAGE_BRIDGE.md.",
+  "required": ["gaps"],
+  "properties": {
+    "gaps": {
+      "type": "object",
+      "properties": {
+        "dedup_gap": {
+          "type": "object",
+          "properties": {
+            "duplicates_removed": {"type": "integer", "minimum": 0},
+            "thresh_deg":         {"type": "number"}
+          }
+        },
+        "export_gap": {
+          "type": "object",
+          "properties": {
+            "missing_files":   {"type": "array", "items": {"type": "string"}},
+            "present_files":   {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "evidence_gap": {
+          "type": "object",
+          "properties": {
+            "no_hydro_or_utility":      {"type": "integer", "minimum": 0},
+            "low_confidence_candidates":{"type": "integer", "minimum": 0}
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "reproducibility": {"type": "object", "$ref": "release_report.schema.json#/properties/metadata"}
+  },
+  "additionalProperties": true
+}
