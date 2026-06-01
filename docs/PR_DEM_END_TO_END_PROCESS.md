@@ -4,7 +4,7 @@ This document keeps the full process in order so terminal commands can be run la
 
 ## Phase 0 — Guardrails
 
-Do not treat any candidate count, coordinate, score, queue, or class as valid until the pipeline produces real local output files and the score-sum / review-lock gates pass.
+Do not treat any candidate count, coordinate, score, queue, packet, or class as valid until the pipeline produces real local output files and the score-sum / review-lock / queue-routing gates pass.
 
 The processing order is:
 
@@ -22,6 +22,7 @@ Integrity audit
 → review CSV validation + lock
 → decision queue routing
 → QGIS queue review
+→ follow-up packet generation
 ```
 
 ## Phase 1 — Local folder integrity audit
@@ -261,6 +262,49 @@ Gate:
 
 Open queue layers in QGIS and confirm queue counts in `queue_summary.md` are plausible.
 
+## Phase 10 — Follow-up packet generation
+
+Goal: generate per-candidate follow-up packets for escalated and retained candidates.
+
+Script:
+
+```text
+tools/pr_dem_follow_up_packet_generator.py
+```
+
+Context checklist:
+
+```text
+configs/pr_dem_follow_up_context_layers.json
+```
+
+Default inputs:
+
+```text
+outputs/pr_dem_review_queues/queue_escalated.geojson
+outputs/pr_dem_review_queues/queue_retained.geojson
+```
+
+Outputs:
+
+```text
+outputs/pr_dem_follow_up_packets/briefs/*.md
+outputs/pr_dem_follow_up_packets/follow_up_index.csv
+outputs/pr_dem_follow_up_packets/follow_up_index.json
+outputs/pr_dem_follow_up_packets/follow_up_packet_summary.md
+outputs/pr_dem_follow_up_packets/follow_up_manifest.json
+```
+
+Gate:
+
+| Condition | Required result |
+|---|---|
+| Packet index | Exists and is non-empty |
+| Packet summary | Exists and is readable |
+| Manifest | Contains input/output SHA-256 checksums |
+| Briefs | At least one exists if selected queues contain candidates |
+| Packet count | Matches expected escalated + retained count |
+
 ## Full terminal command block for later
 
 Run this only when ready to execute locally:
@@ -330,8 +374,15 @@ python tools/pr_dem_review_decision_router.py \
   --output-dir outputs/pr_dem_review_queues
 
 cat outputs/pr_dem_review_queues/queue_summary.md
+
+python tools/pr_dem_follow_up_packet_generator.py \
+  --queue-dir outputs/pr_dem_review_queues \
+  --context-config configs/pr_dem_follow_up_context_layers.json \
+  --output-dir outputs/pr_dem_follow_up_packets
+
+cat outputs/pr_dem_follow_up_packets/follow_up_packet_summary.md
 ```
 
 ## Expansion rule
 
-Only expand after the one-tile, Arecibo/Utuado batch, review-lock, and queue-routing gates pass. The next expansion should be a named region batch, not full islandwide native-resolution processing.
+Only expand after the one-tile, Arecibo/Utuado batch, review-lock, queue-routing, and follow-up packet gates pass. The next expansion should be a named region batch, not full islandwide native-resolution processing.
