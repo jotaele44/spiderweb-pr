@@ -156,23 +156,26 @@ def test_duplicate_groups_recorded():
 
 
 def test_exports_reproducible():
-    """Invariant 7: running the exporter twice produces identical files."""
-    # Skip if outputs not built yet
+    """Invariant 7: running the exporter twice in the same DB state produces
+    byte-identical files. Hardened (N6): we export TWICE inside the test and
+    compare h1 vs h2 — both fresh against the current DB. The old form
+    compared on-disk vs fresh, which re-broke whenever the DB advanced
+    without a re-export (a stale-artifact tripwire, not a determinism test)."""
     needed = [
         "rlsm_ingest_manifest.csv",
         "rlsm_duplicate_report.csv",
         "rlsm_failed_files.csv",
     ]
+    from fr24 import rlsm_export
+    rlsm_export.export_all()
     missing = [n for n in needed if not (OUTPUTS / n).exists()]
     if missing:
-        pytest.skip(f"exports not built: {missing}")
-
-    from fr24 import rlsm_export
-    h_before = {n: hashlib.sha256((OUTPUTS / n).read_bytes()).hexdigest() for n in needed}
+        pytest.skip(f"exporter did not produce: {missing}")
+    h1 = {n: hashlib.sha256((OUTPUTS / n).read_bytes()).hexdigest() for n in needed}
     rlsm_export.export_all()
-    h_after = {n: hashlib.sha256((OUTPUTS / n).read_bytes()).hexdigest() for n in needed}
-    diffs = [n for n in needed if h_before[n] != h_after[n]]
-    assert not diffs, f"exports not reproducible: {diffs}"
+    h2 = {n: hashlib.sha256((OUTPUTS / n).read_bytes()).hexdigest() for n in needed}
+    diffs = [n for n in needed if h1[n] != h2[n]]
+    assert not diffs, f"exports not reproducible across two in-test runs: {diffs}"
 
 
 # ---- end-to-end smoke -------------------------------------------------------
