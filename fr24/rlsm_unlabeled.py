@@ -27,11 +27,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing
 import os
 import sqlite3
 import sys
 import time
 from pathlib import Path
+from typing import Optional, Tuple
 
 os.environ.setdefault("OMP_THREAD_LIMIT", "1")
 
@@ -250,12 +252,141 @@ def run(budget_sec: float, limit: int = 0):
     print(json.dumps(snapshot, indent=2))
 
 
+# ── Parallel runner (N5) — mirrors fr24.rlsm_ocr_parallel ──────────────────
+
+# Set per-worker via _worker_init().
+_worker_db_path: Optional[str] = None
+
+
+def _worker_init(db_path: str) -> None:
+    """multiprocessing.Pool initializer — set per-worker DB path + OMP cap."""
+    global _worker_db_path
+    _worker_db_path = db_path
+    os.environ["OMP_THREAD_LIMIT"] = "1"
+
+
+def _worker_process_one(args: Tuple[int, str, int]) -> dict:
+    """Worker function. Returns the same result dict shape as detect_for_screenshot,
+    plus screenshot_id + elapsed_sec for the aggregator."""
+    sid, rel_path, run_id = args
+    t0 = time.time()
+    conn = sqlite3.connect(_worker_db_path, timeout=30.0)
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
+    conn.execute("PRAGMA busy_timeout = 30000")
+    try:
+        res = detect_for_screenshot(conn, sid, rel_path, run_id)
+        conn.commit()
+    except Exception as exc:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        res = {"ok": False, "reason": f"{type(exc).__name__}: {exc}"[:120]}
+    finally:
+        conn.close()
+    res["screenshot_id"] = sid
+    res["elapsed_sec"] = round(time.time() - t0, 3)
+    return res
+
+
+def run_parallel(budget_sec: float, limit: int = 0, workers: int = 4) -> dict:
+    """Parallel sibling of run(). Uses multiprocessing.Pool, one SQLite
+    connection per worker (WAL handles concurrent writes + busy_timeout=30s
+    absorbs transient locks).
+
+    Mirrors fr24.rlsm_ocr_parallel:
+      - main process inserts the processing_runs row + builds the target list
+      - workers run detect_for_screenshot independently
+      - main process aggregates results, finalizes the run row
+    """
+    main_conn = sqlite3.connect(str(DB), timeout=30.0)
+    main_conn.execute("PRAGMA foreign_keys = ON")
+    main_conn.execute("PRAGMA busy_timeout = 30000")
+    cur = main_conn.cursor()
+    cur.execute(
+        "INSERT INTO processing_runs (run_kind, started_at, status, n_inputs, n_processed, n_failed) "
+        "VALUES ('unlabeled_parallel', ?, 'in_progress', 0, 0, 0)",
+        (_iso_now(),),
+    )
+    run_id = cur.lastrowid
+    main_conn.commit()
+
+    where_sql = ("WHERE s.ingest_status='ok' "
+                 "AND NOT EXISTS (SELECT 1 FROM unlabeled_poi_candidates u "
+                 "                WHERE u.screenshot_id = s.screenshot_id)")
+    sql = (f"SELECT s.screenshot_id, s.rel_path FROM screenshots s {where_sql} "
+           "ORDER BY s.screenshot_id")
+    if limit:
+        sql += f" LIMIT {int(limit)}"
+    rows = main_conn.execute(sql).fetchall()
+    n_targets = len(rows)
+    main_conn.close()
+
+    if n_targets == 0:
+        print(json.dumps({"run_id": run_id, "targets": 0, "processed": 0,
+                          "failed": 0, "candidates_emitted": 0,
+                          "elapsed_sec": 0.0, "workers": workers}, indent=2))
+        return {"run_id": run_id, "targets": 0}
+
+    work = [(sid, rel, run_id) for sid, rel in rows]
+    t0 = time.time()
+    n_ok = n_fail = n_emitted = 0
+
+    with multiprocessing.Pool(
+        processes=max(1, workers),
+        initializer=_worker_init,
+        initargs=(str(DB),),
+    ) as pool:
+        for i, res in enumerate(pool.imap_unordered(_worker_process_one, work, chunksize=1)):
+            if time.time() - t0 > budget_sec:
+                pool.terminate()
+                break
+            if res.get("ok"):
+                n_ok += 1
+                n_emitted += res.get("emitted", 0)
+            else:
+                n_fail += 1
+            if (i + 1) % 50 == 0:
+                elapsed = time.time() - t0
+                rate = (i + 1) / elapsed if elapsed else 0
+                remaining_min = (n_targets - i - 1) / rate / 60 if rate else 0
+                print(f"[unlabeled-parallel] {i+1}/{n_targets}  ok={n_ok} fail={n_fail}"
+                      f"  rate={rate:.2f} img/s  ETA={remaining_min:.1f} min", flush=True)
+
+    elapsed = time.time() - t0
+    final_conn = sqlite3.connect(str(DB), timeout=30.0)
+    final_conn.execute("PRAGMA busy_timeout = 30000")
+    final_conn.execute(
+        "UPDATE processing_runs SET ended_at=?, status='completed', "
+        "n_inputs=?, n_processed=?, n_failed=?, notes=? WHERE run_id=?",
+        (_iso_now(), n_targets, n_ok, n_fail,
+         json.dumps({"candidates_emitted": n_emitted, "workers": workers}), run_id),
+    )
+    final_conn.commit()
+    final_conn.close()
+
+    snapshot = {
+        "run_id": run_id, "targets": n_targets, "processed": n_ok, "failed": n_fail,
+        "candidates_emitted": n_emitted, "elapsed_sec": round(elapsed, 2),
+        "workers": workers,
+    }
+    print(json.dumps(snapshot, indent=2))
+    return snapshot
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--budget-sec", type=float, default=35.0)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--workers", type=int, default=1,
+                    help="Worker processes for parallel detection (1 = serial run()).")
     args = ap.parse_args()
-    run(args.budget_sec, args.limit)
+    if args.workers > 1:
+        run_parallel(args.budget_sec, args.limit, args.workers)
+    else:
+        run(args.budget_sec, args.limit)
 
 
 if __name__ == "__main__":
