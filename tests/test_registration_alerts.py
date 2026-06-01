@@ -71,6 +71,8 @@ def test_recent_sighting_suppresses_missing(tmp_path):
 
 
 def test_load_watchlist_reads_seed_config(tmp_path):
+    import pytest
+    pytest.importorskip("yaml")  # load_watchlist parses YAML; skip if PyYAML absent
     cfg = tmp_path / "wl.yaml"
     cfg.write_text(
         "registrations:\n"
