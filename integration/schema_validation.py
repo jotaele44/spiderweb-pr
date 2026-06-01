@@ -18,6 +18,15 @@ try:
 except ImportError:
     _JSONSCHEMA_AVAILABLE = False
 
+# Optional: shapely powers validate_geometry. Falls back to a structural-only
+# check (no GEOS validity) when unavailable so minimal installs still pass.
+try:
+    from shapely.geometry import shape as _shp_shape  # noqa: F401
+    from shapely.errors import GEOSException as _GEOSException  # noqa: F401
+    _SHAPELY_AVAILABLE = True
+except ImportError:
+    _SHAPELY_AVAILABLE = False
+
 SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
 
 # Enriched review-queue contract: one row per (record, validation error).
@@ -40,6 +49,8 @@ _FIX_HINTS = {
     "maximum": "decrease the value to meet the maximum",
     "minLength": "provide a longer value",
     "maxLength": "shorten the value",
+    "null_field": "field is required — supply a non-null value (T2-19)",
+    "invalid_geometry": "fix the geometry — self-intersecting or malformed (T2-18)",
 }
 
 
@@ -154,15 +165,28 @@ class SchemaValidator:
 
     def _structured_errors(self, record: dict, schema_name: str) -> List[Dict[str, str]]:
         """Return [{field, error_type, error_message}, ...] for *record*. Empty
-        when valid, jsonschema unavailable, or schema unknown (matches validate())."""
+        when valid, jsonschema unavailable, or schema unknown (matches validate()).
+
+        T2-19: when a 'type' violation is for an explicit None value on a field
+        that IS in the schema's `required` list, the error is retagged as
+        'null_field' — distinguishes "we tried to write null" from "wrong type."
+        """
         if not _JSONSCHEMA_AVAILABLE or schema_name not in self._validators:
             return []
+        validator = self._validators[schema_name]
+        required = set((validator.schema or {}).get("required", []))
         out: List[Dict[str, str]] = []
-        for e in self._validators[schema_name].iter_errors(record):
+        for e in validator.iter_errors(record):
             field = ".".join(str(p) for p in e.absolute_path) or "<root>"
+            etype = getattr(e, "validator", "") or ""
+            # Retag null-value-for-required-field as 'null_field' (T2-19).
+            if (etype == "type"
+                    and field in required
+                    and record.get(field) is None):
+                etype = "null_field"
             out.append({
                 "field": field,
-                "error_type": getattr(e, "validator", "") or "",
+                "error_type": etype,
                 "error_message": e.message,
             })
         return out
@@ -196,6 +220,54 @@ class SchemaValidator:
     def get_schema_names(self) -> List[str]:
         """Return a sorted list of loaded schema names."""
         return sorted(self._validators.keys())
+
+    # ── Geometry validity (T2-18) ────────────────────────────────────────────
+
+    def validate_geometry(self, features: List[dict]) -> List[Dict[str, Any]]:
+        """Check GeoJSON `features` for geometry validity via shapely (GEOS).
+
+        Returns a list of error dicts:
+            [{feature_index, geometry_type, reason}]
+
+        - Self-intersecting polygons, duplicate consecutive vertices, malformed
+          coordinate nesting all surface here.
+        - When shapely is unavailable, falls back to a structural-only check
+          (each feature must have geometry.type + geometry.coordinates) — still
+          catches the most common "empty geometry" bug, just not topological
+          self-intersections.
+        - Empty / null input → empty error list.
+        """
+        errors: List[Dict[str, Any]] = []
+        for i, feat in enumerate(features or []):
+            geom = (feat or {}).get("geometry") or {}
+            gtype = geom.get("type")
+            coords = geom.get("coordinates")
+            if not gtype or coords is None:
+                errors.append({"feature_index": i, "geometry_type": gtype or "<missing>",
+                               "reason": "missing geometry.type or coordinates"})
+                continue
+            if not _SHAPELY_AVAILABLE:
+                continue  # structural check above is all we can do
+            try:
+                shp = _shp_shape(geom)
+            except (_GEOSException, ValueError, TypeError, AttributeError) as exc:
+                errors.append({"feature_index": i, "geometry_type": gtype,
+                               "reason": f"shape() failed: {type(exc).__name__}: {exc}"[:160]})
+                continue
+            if shp.is_empty:
+                errors.append({"feature_index": i, "geometry_type": gtype,
+                               "reason": "empty geometry"})
+                continue
+            if not shp.is_valid:
+                # explain_validity() is the canonical operator-readable reason
+                # (e.g., "Self-intersection at lon=-66.123 lat=18.456")
+                try:
+                    from shapely.validation import explain_validity
+                    reason = explain_validity(shp)
+                except Exception:
+                    reason = "invalid geometry (GEOS reports !is_valid)"
+                errors.append({"feature_index": i, "geometry_type": gtype, "reason": reason})
+        return errors
 
     # ── Schema index (schemas/schema_index.json) ─────────────────────────────
 

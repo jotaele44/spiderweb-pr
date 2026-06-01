@@ -30,6 +30,11 @@ PyYAML>=6.0            # PR intake router YAML config loading
 #   npm install lucide-react
 #   Requires React 16.8+ and Tailwind CSS v3+
 
+# ── GIS / Geometry (optional, recommended) ──────────────────────────────────
+# shapely powers integration.schema_validation.validate_geometry() (T2-18).
+# When absent, the validator falls back to a structural-only check.
+shapely>=2.0
+
 # ── LLM PIPELINE (optional) ─────────────────────────────────────────────────
 # RAG index + local LLM query over PRUAP social data (prepare_data.py,
 # rag_pipeline.py, query_llm.py)
