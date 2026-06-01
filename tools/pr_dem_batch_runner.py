@@ -5,8 +5,8 @@ This script discovers DEM GeoTIFF tiles, selects a bounded region, runs the
 one-tile pilot on each selected tile, merges the CSV/GeoJSON outputs, and writes
 a batch manifest.
 
-Default named profile: arecibo_utuado.
-The profile is a broad operational bbox, not a legal municipal boundary.
+Profiles are loaded from configs/pr_dem_batch_profiles.json when available.
+The built-in arecibo_utuado profile remains as fallback.
 """
 
 from __future__ import annotations
@@ -18,19 +18,21 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import rasterio
 from rasterio.warp import transform_bounds
 
 
-PROFILES = {
+FALLBACK_PROFILES = {
     "arecibo_utuado": {
         "label": "Arecibo / Utuado broad pilot bbox",
         "bbox_wgs84": [-66.98, 18.12, -66.43, 18.56],
         "note": "Broad operational bbox for first batch testing; not a legal municipal boundary.",
     }
 }
+
+PROFILE_CONFIG = Path("configs") / "pr_dem_batch_profiles.json"
 
 ONE_TILE_CSV = "pr_dem_one_tile_candidates.csv"
 ONE_TILE_GEOJSON = "pr_dem_one_tile_candidates.geojson"
@@ -42,6 +44,24 @@ BATCH_MANIFEST = "batch_manifest.json"
 SCORE_SUM_REPORT = "batch_score_sum_check.json"
 
 SCORE_COLUMNS = ["score_flat_patch", "score_edge_contrast", "score_high_local_position"]
+
+
+def load_profiles(repo_root: Path) -> Dict[str, Dict[str, object]]:
+    config_path = repo_root / PROFILE_CONFIG
+    if not config_path.exists():
+        return dict(FALLBACK_PROFILES)
+    payload = json.loads(config_path.read_text(encoding="utf-8"))
+    profiles = payload.get("profiles", {})
+    if not isinstance(profiles, dict) or not profiles:
+        return dict(FALLBACK_PROFILES)
+    valid: Dict[str, Dict[str, object]] = {}
+    for name, profile in profiles.items():
+        if not isinstance(profile, dict):
+            continue
+        bbox = profile.get("bbox_wgs84")
+        if isinstance(bbox, list) and len(bbox) == 4:
+            valid[str(name)] = profile
+    return valid or dict(FALLBACK_PROFILES)
 
 
 def parse_bbox(value: str) -> List[float]:
@@ -210,11 +230,12 @@ def verify_score_sum(repo_root: Path, merged_csv: Path, report_path: Path) -> in
     return int(proc.returncode)
 
 
-def write_manifest(path: Path, args: argparse.Namespace, selected: Sequence[Dict[str, object]], tile_results: Sequence[Dict[str, object]], merged_count: int, score_returncode: Optional[int]) -> None:
+def write_manifest(path: Path, args: argparse.Namespace, profile_data: Dict[str, object], selected: Sequence[Dict[str, object]], tile_results: Sequence[Dict[str, object]], merged_count: int, score_returncode: Optional[int]) -> None:
     payload = {
         "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "tool": "tools/pr_dem_batch_runner.py",
         "profile": args.profile,
+        "profile_data": profile_data,
         "bbox_wgs84": args.bbox,
         "selected_tile_count": len(selected),
         "processed_tile_count": len(tile_results),
@@ -231,8 +252,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--geodata-root", default="~/Documents/Data/PR_Geodata")
     p.add_argument("--repo-root", default=".")
     p.add_argument("--output-dir", default="outputs/pr_dem_batch_arecibo_utuado")
-    p.add_argument("--profile", choices=sorted(PROFILES), default="arecibo_utuado")
+    p.add_argument("--profile", default="arecibo_utuado", help="Named profile from configs/pr_dem_batch_profiles.json.")
     p.add_argument("--bbox", type=parse_bbox, default=None, help="Optional west,south,east,north bbox in EPSG:4326. Overrides --profile bbox.")
+    p.add_argument("--list-profiles", action="store_true", help="List available profiles and exit.")
     p.add_argument("--max-tiles", type=int, default=0, help="Optional cap for testing. 0 means all selected tiles.")
     p.add_argument("--dry-run", action="store_true", help="Write selected_tiles.csv and manifest, but do not process DEMs.")
     p.add_argument("--resume", action="store_true", help="Skip tile outputs that already have a one-tile manifest.")
@@ -251,8 +273,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     repo_root = Path(args.repo_root).expanduser().resolve()
     geodata_root = Path(args.geodata_root).expanduser().resolve()
-    dem_dir = geodata_root / "01_DEM_1m_LiDAR"
     output_dir = Path(args.output_dir).expanduser().resolve()
+    profiles = load_profiles(repo_root)
+
+    if args.list_profiles:
+        print(json.dumps(profiles, indent=2))
+        return 0
+
+    if args.profile not in profiles and args.bbox is None:
+        raise SystemExit(f"Unknown profile {args.profile!r}. Use --list-profiles or pass --bbox.")
+
+    profile_data = profiles.get(args.profile, {})
+    dem_dir = geodata_root / "01_DEM_1m_LiDAR"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if not dem_dir.exists():
@@ -260,13 +292,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not (repo_root / "tools" / "pr_dem_one_tile_pilot.py").exists():
         raise SystemExit(f"Missing one-tile pilot script under repo root: {repo_root}")
 
-    bbox = args.bbox if args.bbox is not None else PROFILES[args.profile]["bbox_wgs84"]
+    bbox = args.bbox if args.bbox is not None else profile_data["bbox_wgs84"]
     args.bbox = bbox
     selected = select_tiles(dem_dir, bbox, args.max_tiles)
     write_selected_tiles(selected, output_dir / SELECTED_TILES_CSV)
 
     if not selected:
-        write_manifest(output_dir / BATCH_MANIFEST, args, selected, [], 0, None)
+        write_manifest(output_dir / BATCH_MANIFEST, args, profile_data, selected, [], 0, None)
         raise SystemExit("No DEM tiles intersected the selected bbox.")
 
     tile_results: List[Dict[str, object]] = []
@@ -293,7 +325,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 "skipped_existing": skipped,
             })
             if returncode != 0:
-                write_manifest(output_dir / BATCH_MANIFEST, args, selected, tile_results, 0, None)
+                write_manifest(output_dir / BATCH_MANIFEST, args, profile_data, selected, tile_results, 0, None)
                 raise SystemExit(f"Tile processing failed for {tile_path} with return code {returncode}")
 
     merged_count = 0
@@ -303,8 +335,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         merge_geojson(tile_output_dirs, output_dir / MERGED_GEOJSON)
         score_returncode = verify_score_sum(repo_root, output_dir / MERGED_CSV, output_dir / SCORE_SUM_REPORT)
 
-    write_manifest(output_dir / BATCH_MANIFEST, args, selected, tile_results, merged_count, score_returncode)
+    write_manifest(output_dir / BATCH_MANIFEST, args, profile_data, selected, tile_results, merged_count, score_returncode)
 
+    print(f"Profile: {args.profile}")
     print(f"Selected tiles: {len(selected)}")
     print(f"Output dir: {output_dir}")
     print(f"Selected tiles CSV: {output_dir / SELECTED_TILES_CSV}")
