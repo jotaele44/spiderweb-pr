@@ -4,7 +4,7 @@ This document keeps the full process in order so terminal commands can be run la
 
 ## Phase 0 — Guardrails
 
-Do not treat any candidate count, coordinate, score, queue, packet, or class as valid until the pipeline produces real local output files and the score-sum / review-lock / queue-routing gates pass.
+Do not treat any candidate count, coordinate, score, queue, packet, expansion recommendation, or class as valid until the pipeline produces real local output files and the score-sum / review-lock / queue-routing / packet gates pass.
 
 The processing order is:
 
@@ -23,6 +23,7 @@ Integrity audit
 → decision queue routing
 → QGIS queue review
 → follow-up packet generation
+→ regional expansion scoring
 ```
 
 ## Phase 1 — Local folder integrity audit
@@ -305,6 +306,50 @@ Gate:
 | Briefs | At least one exists if selected queues contain candidates |
 | Packet count | Matches expected escalated + retained count |
 
+## Phase 11 — Regional expansion scoring
+
+Goal: rank configured regional batch profiles using queue summaries and follow-up packet outputs.
+
+Script:
+
+```text
+tools/pr_dem_regional_expansion_controller.py
+```
+
+Inputs:
+
+```text
+configs/pr_dem_batch_profiles.json
+outputs/pr_dem_review_queues/queue_summary.json
+outputs/pr_dem_follow_up_packets/follow_up_index.json
+```
+
+Outputs:
+
+```text
+outputs/pr_dem_expansion_controller/expansion_priority_matrix.csv
+outputs/pr_dem_expansion_controller/expansion_priority_matrix.json
+outputs/pr_dem_expansion_controller/expansion_recommendation.md
+outputs/pr_dem_expansion_controller/updated_batch_profiles.proposed.json
+outputs/pr_dem_expansion_controller/expansion_controller_manifest.json
+```
+
+Guide:
+
+```text
+docs/PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md
+```
+
+Gate:
+
+| Condition | Required result |
+|---|---|
+| Expansion matrix | Exists and is non-empty |
+| Recommendation | Manually reviewed |
+| Proposed profile statuses | Reviewed before applying |
+| Top profile bbox | Still appropriate |
+| Controller manifest | Contains input/output SHA-256 checksums |
+
 ## Full terminal command block for later
 
 Run this only when ready to execute locally:
@@ -381,8 +426,17 @@ python tools/pr_dem_follow_up_packet_generator.py \
   --output-dir outputs/pr_dem_follow_up_packets
 
 cat outputs/pr_dem_follow_up_packets/follow_up_packet_summary.md
+
+python tools/pr_dem_regional_expansion_controller.py \
+  --profiles configs/pr_dem_batch_profiles.json \
+  --queue-summary outputs/pr_dem_review_queues/queue_summary.json \
+  --packet-index outputs/pr_dem_follow_up_packets/follow_up_index.json \
+  --output-dir outputs/pr_dem_expansion_controller \
+  --completed-profile arecibo_utuado
+
+cat outputs/pr_dem_expansion_controller/expansion_recommendation.md
 ```
 
 ## Expansion rule
 
-Only expand after the one-tile, Arecibo/Utuado batch, review-lock, queue-routing, and follow-up packet gates pass. The next expansion should be a named region batch, not full islandwide native-resolution processing.
+Only expand after the one-tile, Arecibo/Utuado batch, review-lock, queue-routing, follow-up packet, and regional expansion controller gates pass. The next expansion should be the top manually approved named profile from `expansion_priority_matrix.csv`, not full islandwide native-resolution processing.
