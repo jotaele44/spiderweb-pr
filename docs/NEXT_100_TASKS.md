@@ -91,8 +91,8 @@ The original T4-31..T4-40 list is preserved below for traceability, but each ite
 
 | # | Task | Scope | Effort | Blockers |
 |---|---|---|---|---|
-| **B-flight-track** | `flight_track_features` extractor | Detect path shapes (linear/curve/loop/orbit/hover) from track points + heading. Populate the currently-empty table. | 8 h | None |
-| **B-geo-anchors** | `geo_anchors` pixel→lat/lon | Build a per-screenshot homography from known label positions; populate `geo_anchors`. | 12 h | None |
+| **B-flight-track** | ✅ Heuristic version shipped (PR #66). v2 pass: pixel CV for `track_length_px`, `bbox_*`, `has_loop`/`has_orbit`/`has_gap` + spatial context. | 6 h | PR 9 (geo-anchors) for spatial context |
+| **B-geo-anchors** | ✅ Static version shipped (PR #67). v2 pass: per-screenshot `'derived'` anchors via OCR-matched `labeled_pois` → RANSAC homography fit. | 8 h | None |
 | **B-integrate** | Fold RLSM into `run_all.py` / Makefile / CI | Add `--rlsm-status` flag to `run_all.py`; add `tests/test_rlsm_pipeline.py` to the default suite (it auto-skips on missing DB). | 3 h | None |
 | **B-dedup-unique** | UNIQUE constraint on `aircraft_observations` | Add `(screenshot_id, registration, source_zone)` unique index to prevent run-65/run-67 type duplicates. | 1 h | Migration |
 
@@ -102,9 +102,9 @@ The original T4-31..T4-40 list is preserved below for traceability, but each ite
 
 | # | Task | Scope | Effort | Blockers |
 |---|---|---|---|---|
-| **X1** | Pre-commit hook | Run `python -m py_compile`, `pytest tests/test_schema_validation.py`, `release_check --skip-tests --demo`. | 2 h | None |
-| **X2** | CI smoke for release gate | Add a `release-check` job to `.github/workflows/ci.yml` matching the local Makefile target. | 1 h | None |
-| **X3** | Document iOS-friendly single-line commands | Audit `EXECUTION_GUIDE.md` (if present) for line-continuation-free recipes for a-Shell users. | 2 h | None |
+| **X1** | ✅ Pre-commit hook shipped (PR #69) — `.pre-commit-config.yaml` runs py_compile + schema-validation pytest + release_check demo on matching file changes. | — | done |
+| **X2** | ✅ CI release-check job shipped (PR #69) — `.github/workflows/ci.yml` now has a `release-check` job that runs `release_check.py --skip-tests --demo` after the main test job, with structural-validity asserts on the report. | — | done |
+| **X3** | ✅ iOS-friendly EXECUTION_GUIDE.md shipped (PR #69) — 2 backslash-continuation blocks rewritten as single-line iOS / a-Shell commands; 0 remaining `\` line continuations. | — | done |
 
 ---
 
