@@ -11,6 +11,11 @@ outputs/*
 # data/ — input datasets (screenshots, GEBCO .nc, social CSV, etc.)
 data/*
 !data/.gitkeep
+# RLSM: track the schema contract and operator handoff doc, keep large DBs ignored
+!data/rlsm/
+data/rlsm/*
+!data/rlsm/schema.sql
+!data/rlsm/HANDOFF.md
 
 # cache/ — intermediate results, model caches
 cache/*
