@@ -216,3 +216,45 @@ def test_validate_with_context_prefixes_errors(validator):
     result = validator.validate_with_context({}, "screenshot", "batch-42")
     if not result["valid"]:
         assert all("[batch-42]" in e for e in result["errors"])
+
+
+# ── Schema index (schemas/schema_index.json) ─────────────────────────────────
+
+def test_load_index_returns_artifacts(validator):
+    """schema_index.json parses cleanly and exposes the artifacts list."""
+    idx = validator.load_index()
+    assert isinstance(idx, dict)
+    assert "schema_version" in idx
+    artifacts = validator.index_artifacts()
+    assert isinstance(artifacts, list)
+    assert len(artifacts) > 0, "schema_index.json should list at least one artifact"
+
+
+def test_index_covers_pr_intel_required_outputs(validator):
+    """Every artifact in PRIntelAdapter.REQUIRED_OUTPUTS has an index entry."""
+    try:
+        import pyarrow  # noqa: F401  (PRIntelAdapter imports pyarrow at module import)
+    except ImportError:
+        pytest.skip("pyarrow not installed")
+    from integration.pr_intel_adapter import PRIntelAdapter
+    for artifact in PRIntelAdapter.REQUIRED_OUTPUTS:
+        entry = validator.index_lookup(artifact)
+        assert entry is not None, f"PR Intel artifact {artifact} missing from schema_index.json"
+        assert entry["workstream"] == "pr_intel"
+        assert "format" in entry and entry["format"] in {"parquet", "geojson", "json", "csv", "jsonl", "markdown"}
+
+
+def test_index_schema_files_resolve_on_disk(validator):
+    """Every non-null schema_file path in the index points to an existing file."""
+    from pathlib import Path
+    missing = []
+    for entry in validator.index_artifacts():
+        sf = entry.get("schema_file")
+        if sf and not Path(sf).exists():
+            missing.append(sf)
+    assert not missing, f"schema_index.json references missing schema files: {missing}"
+
+
+def test_index_lookup_returns_none_for_unknown(validator):
+    """Unknown artifact paths return None (no crash)."""
+    assert validator.index_lookup("definitely_not_an_artifact.parquet") is None

@@ -178,12 +178,20 @@ def test_exports_reproducible():
 # ---- end-to-end smoke -------------------------------------------------------
 
 def test_aircraft_observations_well_formed():
-    """Every aircraft row links back to a screenshot and has a valid identity_status."""
+    """Every aircraft row links back to a screenshot and has a valid identity_status.
+
+    Allowed identity_status values:
+      - confirmed / partial / conflicting / unknown — produced by the primary
+        aircraft extractor (fr24/rlsm_extractors.py).
+      - recovered — produced by a separate raw-text rescue pass that scans
+        ocr_observations.raw_text for known FAA tail numbers and inserts new
+        aircraft_observations rows for tails the primary extractor missed.
+    """
     c = _conn()
     rows = c.execute("""
         SELECT aircraft_obs_id, identity_status
         FROM aircraft_observations
-        WHERE identity_status NOT IN ('confirmed','partial','conflicting','unknown')
+        WHERE identity_status NOT IN ('confirmed','partial','conflicting','unknown','recovered')
            OR screenshot_id NOT IN (SELECT screenshot_id FROM screenshots)
     """).fetchall()
     assert not rows, f"{len(rows)} malformed aircraft rows"
