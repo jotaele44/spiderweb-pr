@@ -139,6 +139,12 @@ def run(regs_path: Path, limit: int = 0, dry_run: bool = False) -> dict:
     conn = sqlite3.connect(str(DB), timeout=30.0)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA busy_timeout = 30000")
+    # Ensure aircraft-dedup unique index (idempotent migration for older DBs).
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_air_dedup "
+        "ON aircraft_observations(screenshot_id, registration, source_zone) "
+        "WHERE registration IS NOT NULL AND TRIM(registration) != ''"
+    )
 
     regs = _load_regs(regs_path)
     if limit:

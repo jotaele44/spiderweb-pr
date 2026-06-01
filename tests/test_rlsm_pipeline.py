@@ -32,6 +32,16 @@ def _conn() -> sqlite3.Connection:
         pytest.skip(f"RLSM DB not yet built: {DB}")
     c = sqlite3.connect(DB)
     c.execute("PRAGMA foreign_keys = ON")
+    # CI cascade guard: sqlite3.connect() creates an empty file as a side-effect,
+    # so an earlier test that touched the DB path may have left an empty file.
+    # Skip if the canonical schema is missing — distinguishes "no populated DB"
+    # from "DB has been built and queries should be meaningful".
+    has_tables = c.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='screenshots'"
+    ).fetchone()
+    if not has_tables:
+        c.close()
+        pytest.skip(f"RLSM DB exists but is empty (no schema): {DB}")
     return c
 
 
@@ -156,23 +166,30 @@ def test_duplicate_groups_recorded():
 
 
 def test_exports_reproducible():
-    """Invariant 7: running the exporter twice produces identical files."""
-    # Skip if outputs not built yet
+    """Invariant 7: running the exporter twice in the same DB state produces
+    byte-identical files. Hardened (N6): we export TWICE inside the test and
+    compare h1 vs h2 — both fresh against the current DB. The old form
+    compared on-disk vs fresh, which re-broke whenever the DB advanced
+    without a re-export (a stale-artifact tripwire, not a determinism test)."""
+    # Skip via _conn() if no populated DB (CI without the baseline).
+    # _conn() already creates the file as a side-effect; we close immediately
+    # so the export below opens its own connection cleanly.
+    _conn().close()
     needed = [
         "rlsm_ingest_manifest.csv",
         "rlsm_duplicate_report.csv",
         "rlsm_failed_files.csv",
     ]
+    from fr24 import rlsm_export
+    rlsm_export.export_all()
     missing = [n for n in needed if not (OUTPUTS / n).exists()]
     if missing:
-        pytest.skip(f"exports not built: {missing}")
-
-    from fr24 import rlsm_export
-    h_before = {n: hashlib.sha256((OUTPUTS / n).read_bytes()).hexdigest() for n in needed}
+        pytest.skip(f"exporter did not produce: {missing}")
+    h1 = {n: hashlib.sha256((OUTPUTS / n).read_bytes()).hexdigest() for n in needed}
     rlsm_export.export_all()
-    h_after = {n: hashlib.sha256((OUTPUTS / n).read_bytes()).hexdigest() for n in needed}
-    diffs = [n for n in needed if h_before[n] != h_after[n]]
-    assert not diffs, f"exports not reproducible: {diffs}"
+    h2 = {n: hashlib.sha256((OUTPUTS / n).read_bytes()).hexdigest() for n in needed}
+    diffs = [n for n in needed if h1[n] != h2[n]]
+    assert not diffs, f"exports not reproducible across two in-test runs: {diffs}"
 
 
 # ---- end-to-end smoke -------------------------------------------------------
@@ -206,3 +223,48 @@ def test_review_queue_pointers_resolve():
           AND r.screenshot_id NOT IN (SELECT screenshot_id FROM screenshots)
     """).fetchall()
     assert not rows, f"{len(rows)} review-queue rows reference unknown screenshots"
+
+
+def test_aircraft_observations_dedup_index_exists():
+    """The ix_air_dedup partial-unique index must exist (B-dedup-unique)."""
+    import sqlite3 as _sqlite3
+    c = _conn()
+    row = c.execute(
+        "SELECT sql FROM sqlite_master WHERE type='index' AND name='ix_air_dedup'"
+    ).fetchone()
+    assert row is not None, "ix_air_dedup unique index is missing"
+    sql = row[0]
+    assert "UNIQUE" in sql.upper()
+    assert "registration" in sql and "source_zone" in sql
+
+
+def test_aircraft_observations_dedup_rejects_duplicates():
+    """Inserting a second row with the same (screenshot, registration, source_zone)
+    raises IntegrityError. Test uses a savepoint + rollback so live data is
+    untouched even on success of the first insert."""
+    import sqlite3 as _sqlite3
+    c = _conn()
+    # Pick any real screenshot_id so the FK is satisfied
+    sid_row = c.execute("SELECT screenshot_id FROM screenshots LIMIT 1").fetchone()
+    if not sid_row:
+        pytest.skip("no screenshots in DB")
+    sid = sid_row[0]
+    test_reg = "Z9_TEST_DEDUP_REG"
+    test_zone = "test_zone_dedup"
+    try:
+        c.execute("SAVEPOINT dedup_test")
+        c.execute("""
+            INSERT INTO aircraft_observations
+              (screenshot_id, registration, identity_status, source_zone, observed_at)
+            VALUES (?, ?, 'unknown', ?, '2099-01-01T00:00:00Z')
+        """, (sid, test_reg, test_zone))
+        # Second insert with same (sid, reg, zone) must fail
+        with pytest.raises(_sqlite3.IntegrityError):
+            c.execute("""
+                INSERT INTO aircraft_observations
+                  (screenshot_id, registration, identity_status, source_zone, observed_at)
+                VALUES (?, ?, 'unknown', ?, '2099-01-01T00:00:00Z')
+            """, (sid, test_reg, test_zone))
+    finally:
+        c.execute("ROLLBACK TO SAVEPOINT dedup_test")
+        c.execute("RELEASE SAVEPOINT dedup_test")
