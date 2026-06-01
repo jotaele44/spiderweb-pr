@@ -623,3 +623,120 @@ def test_get_coverage_stats_lon_range():
     stats = intake.get_coverage_stats(candidates)
     assert abs(stats["lon_range"][0] - (-67.0)) < 1e-5
     assert abs(stats["lon_range"][1] - (-65.5)) < 1e-5
+
+
+# ── Tier 3 additive fields (D5) ──────────────────────────────────────────────
+
+
+def _baseline_candidate(**overrides):
+    """A minimal candidate dict ready for any single _score_* helper."""
+    base = {
+        "_raw_props": {},
+        "candidate_type": "poi",
+        "lat": 18.4373, "lon": -66.0018,   # SJU airport, in MUNICIPAL_CENTROIDS
+        "confidence": 0.50,
+        "evidence_tier": None,
+        "linked_flight_id": None, "linked_aircraft": None, "corridor_id": None,
+        "mbil_class": "MBIL-0",
+        "hydro_overlap": "no", "utility_overlap": "no", "terrain_context": "flat",
+        "review_status": "unreviewed",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_score_spiderweb_role_maps_each_candidate_type():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [_baseline_candidate(candidate_type=ct) for ct in
+             ("poi", "ilap", "corridor", "aasb_edge", "unknown")]
+    intake._score_spiderweb_role(cands)
+    assert [c["spiderweb_role"] for c in cands] == [
+        "node", "path", "edge", "airport_link", "node",
+    ]
+
+
+def test_score_access_assertion_public_record_for_airport_anchored():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [
+        _baseline_candidate(candidate_type="aasb_edge"),
+        _baseline_candidate(candidate_type="corridor", corridor_id="SJU_BQN_corridor"),
+        _baseline_candidate(candidate_type="poi", corridor_id="random_island_road"),
+        _baseline_candidate(candidate_type="poi", corridor_id=None),
+    ]
+    intake._score_access_assertion(cands)
+    assert [c["access_assertion_level"] for c in cands] == [
+        "public_record", "public_record", "derived_observation", "derived_observation",
+    ]
+
+
+def test_nearest_municipal_boundary_at_sju_is_zero():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    # SJU centroid is in MUNICIPAL_CENTROIDS; distance to itself ≈ 0.
+    cands = [_baseline_candidate(lat=18.4655, lon=-66.1057)]  # San Juan
+    intake._score_nearest_municipal_boundary_m(cands)
+    assert cands[0]["nearest_municipal_boundary_m"] == 0.0
+
+
+def test_nearest_municipal_boundary_at_ocean_is_large():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    # Mid-Atlantic point — well off PR.
+    cands = [_baseline_candidate(lat=20.0, lon=-50.0)]
+    intake._score_nearest_municipal_boundary_m(cands)
+    # Should be in the thousands of km; just assert > 1,000,000 m.
+    assert cands[0]["nearest_municipal_boundary_m"] > 1_000_000
+
+
+def test_aasb_mbil_corridor_flag_only_fires_on_corridor_with_mbil_high():
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [
+        _baseline_candidate(candidate_type="corridor", mbil_class="MBIL-3"),
+        _baseline_candidate(candidate_type="corridor", mbil_class="MBIL-2"),
+        _baseline_candidate(candidate_type="corridor", mbil_class="MBIL-1"),
+        _baseline_candidate(candidate_type="poi",      mbil_class="MBIL-3"),
+    ]
+    intake._score_aasb_mbil_corridor_flag(cands)
+    assert [c["aasb_mbil_corridor_flag"] for c in cands] == [True, True, False, False]
+
+
+def test_fact_status_observed_requires_two_non_mbil_corroborating():
+    """fact_status='observed' needs high confidence AND ≥2 non-MBIL corroborating
+    signals. MBIL alone never counts toward the observed gate."""
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [
+        # High confidence + 2 non-MBIL (hydro + utility) → observed
+        _baseline_candidate(confidence=0.80, hydro_overlap="yes", utility_overlap="yes"),
+        # High confidence + only MBIL — inferred (guardrail)
+        _baseline_candidate(confidence=0.95, mbil_class="MBIL-3"),
+        # Low confidence + 2 non-MBIL — inferred (confidence gate failed)
+        _baseline_candidate(confidence=0.30, hydro_overlap="yes", utility_overlap="yes"),
+    ]
+    intake._assign_evidence_tier(cands)
+    assert [c["fact_status"] for c in cands] == ["observed", "inferred", "inferred"]
+
+
+def test_mbil_only_guardrail_caps_tier_at_t3():
+    """T3-27: a MBIL-3 candidate with no hydro/utility/corridor MUST cap at T3,
+    even at very high confidence."""
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [_baseline_candidate(
+        confidence=0.99, mbil_class="MBIL-3",
+        hydro_overlap="no", utility_overlap="no", corridor_id=None,
+    )]
+    intake._assign_evidence_tier(cands)
+    assert cands[0]["evidence_tier"] in ("T3", "T4")
+    assert cands[0]["evidence_tier"] != "T1"
+    assert cands[0]["evidence_tier"] != "T2"
+
+
+def test_mbil_does_not_block_genuine_t1():
+    """Sanity: when non-MBIL corroborating is present, MBIL can still co-exist
+    at T1 (the guardrail only blocks MBIL-ALONE escalation)."""
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [_baseline_candidate(
+        confidence=0.90,
+        hydro_overlap="yes", utility_overlap="yes",  # 2 non-MBIL
+        mbil_class="MBIL-3",                          # MBIL on top — fine
+    )]
+    intake._assign_evidence_tier(cands)
+    assert cands[0]["evidence_tier"] == "T1"
+    assert cands[0]["fact_status"] == "observed"
