@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS aircraft_observations (
     speed_kt         INTEGER,
     heading_deg      INTEGER,
     operator_text    TEXT,
-    identity_status  TEXT,                                  -- 'confirmed'|'partial'|'conflicting'|'unknown'
+    identity_status  TEXT,                                  -- 'confirmed'|'partial'|'conflicting'|'unknown'|'recovered'
     confidence       REAL,
     source_zone      TEXT,
     raw_excerpt      TEXT,
