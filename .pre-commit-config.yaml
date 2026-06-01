@@ -1,0 +1,40 @@
+# Pre-commit hook config (X1) — local fast feedback before push.
+#
+# Install once:    pip install pre-commit && pre-commit install
+# Run manually:    pre-commit run --all-files
+#
+# Each hook is designed to finish in <10 s so the commit experience is fast.
+# The full release-gate + CI smoke tests run separately (Makefile / GitHub
+# Actions). Hook config is intentionally minimal — adding heavier checks
+# (full pytest run, EarthGPT selftest) belongs in the release-check CI job,
+# not the commit path.
+repos:
+  - repo: local
+    hooks:
+      - id: py-compile
+        name: py_compile (syntax check)
+        entry: python3 -m py_compile
+        language: system
+        files: '\.py$'
+        # Stop on the first failure — line numbers are enough to fix in-editor.
+        verbose: true
+
+      - id: schema-validation-tests
+        name: pytest tests/test_schema_validation.py
+        entry: python3 -m pytest tests/test_schema_validation.py -q --tb=line
+        language: system
+        # Run once per commit, not per-file. Pass_filenames: false suppresses
+        # the per-file invocation that pre-commit's default does.
+        pass_filenames: false
+        # Only run when schema files or validator changed.
+        files: '^(integration/schema_validation\.py|schemas/.*|tests/test_schema_validation\.py)$'
+
+      - id: release-check-demo-skiptests
+        name: release_check --skip-tests --demo (smoke)
+        entry: python3 release_check.py --db /tmp/precommit_smoke.db --output-dir /tmp/precommit_release --skip-tests --demo
+        language: system
+        pass_filenames: false
+        # Only run when the release gate itself or its inputs changed.
+        files: '^(release_check\.py|run_all\.py|run_modes\.py|provenance_utils\.py|Makefile)$'
+        # Don't run on every commit — only the relevant ones.
+        stages: [pre-commit]
