@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "manual_review",
+  "type": "object",
+  "description": "Single row from any of the 5 outputs/manual_review_*.csv files. Same shape across all item_kinds (labeled_poi_low_conf, unlabeled_candidate, aircraft_identity_conflict, time_conflict, geo_anchor_fail) — the kind itself is in the row, not the file name.",
+  "required": ["review_id", "item_kind"],
+  "properties": {
+    "review_id":      {"type": ["integer", "string"]},
+    "screenshot_id":  {"type": ["integer", "null"]},
+    "filename":       {"type": ["string", "null"]},
+    "item_kind":      {
+      "type": "string",
+      "enum": [
+        "labeled_poi_low_conf", "unlabeled_candidate",
+        "aircraft_identity_conflict", "time_conflict",
+        "geo_anchor_fail", "ocr_low_conf"
+      ]
+    },
+    "item_ref_table": {"type": ["string", "null"]},
+    "item_ref_id":    {"type": ["integer", "null"]},
+    "reason":         {"type": ["string", "null"]},
+    "severity":       {"type": ["string", "null"], "enum": ["low", "medium", "high", null]},
+    "review_status":  {"type": "string", "enum": ["unreviewed", "reviewing", "approved", "rejected"]},
+    "created_at":     {"type": "string"}
+  },
+  "additionalProperties": true
+}
