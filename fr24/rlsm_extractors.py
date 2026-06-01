@@ -552,6 +552,13 @@ def main() -> None:
     conn = sqlite3.connect(DB, timeout=30.0)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA busy_timeout = 30000")  # wait up to 30s for the write lock (concurrency-safe)
+    # Ensure the aircraft-dedup unique index exists (idempotent migration for
+    # pre-existing DBs that predate B-dedup-unique).
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_air_dedup "
+        "ON aircraft_observations(screenshot_id, registration, source_zone) "
+        "WHERE registration IS NOT NULL AND TRIM(registration) != ''"
+    )
     out = {}
     if args.kind in ("aircraft", "all"):
         cur = conn.cursor()

@@ -92,6 +92,13 @@ CREATE TABLE IF NOT EXISTS aircraft_observations (
 CREATE INDEX IF NOT EXISTS ix_air_screenshot   ON aircraft_observations(screenshot_id);
 CREATE INDEX IF NOT EXISTS ix_air_registration ON aircraft_observations(registration);
 CREATE INDEX IF NOT EXISTS ix_air_callsign     ON aircraft_observations(callsign);
+-- Dedup: prevent the run-53/run-67 N999ZY-style double-inserts. Partial index so
+-- it only fires when a registration is actually set (NULL/empty rows are valid
+-- and shouldn't collide). The recover-tails script and rlsm_extractors both
+-- INSERT under this constraint; conflicts surface as sqlite3.IntegrityError.
+CREATE UNIQUE INDEX IF NOT EXISTS ix_air_dedup
+    ON aircraft_observations(screenshot_id, registration, source_zone)
+    WHERE registration IS NOT NULL AND TRIM(registration) != '';
 
 -- Track-shape descriptors per screenshot.
 CREATE TABLE IF NOT EXISTS flight_track_features (

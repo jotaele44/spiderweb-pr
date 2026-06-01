@@ -206,3 +206,48 @@ def test_review_queue_pointers_resolve():
           AND r.screenshot_id NOT IN (SELECT screenshot_id FROM screenshots)
     """).fetchall()
     assert not rows, f"{len(rows)} review-queue rows reference unknown screenshots"
+
+
+def test_aircraft_observations_dedup_index_exists():
+    """The ix_air_dedup partial-unique index must exist (B-dedup-unique)."""
+    import sqlite3 as _sqlite3
+    c = _conn()
+    row = c.execute(
+        "SELECT sql FROM sqlite_master WHERE type='index' AND name='ix_air_dedup'"
+    ).fetchone()
+    assert row is not None, "ix_air_dedup unique index is missing"
+    sql = row[0]
+    assert "UNIQUE" in sql.upper()
+    assert "registration" in sql and "source_zone" in sql
+
+
+def test_aircraft_observations_dedup_rejects_duplicates():
+    """Inserting a second row with the same (screenshot, registration, source_zone)
+    raises IntegrityError. Test uses a savepoint + rollback so live data is
+    untouched even on success of the first insert."""
+    import sqlite3 as _sqlite3
+    c = _conn()
+    # Pick any real screenshot_id so the FK is satisfied
+    sid_row = c.execute("SELECT screenshot_id FROM screenshots LIMIT 1").fetchone()
+    if not sid_row:
+        pytest.skip("no screenshots in DB")
+    sid = sid_row[0]
+    test_reg = "Z9_TEST_DEDUP_REG"
+    test_zone = "test_zone_dedup"
+    try:
+        c.execute("SAVEPOINT dedup_test")
+        c.execute("""
+            INSERT INTO aircraft_observations
+              (screenshot_id, registration, identity_status, source_zone, observed_at)
+            VALUES (?, ?, 'unknown', ?, '2099-01-01T00:00:00Z')
+        """, (sid, test_reg, test_zone))
+        # Second insert with same (sid, reg, zone) must fail
+        with pytest.raises(_sqlite3.IntegrityError):
+            c.execute("""
+                INSERT INTO aircraft_observations
+                  (screenshot_id, registration, identity_status, source_zone, observed_at)
+                VALUES (?, ?, 'unknown', ?, '2099-01-01T00:00:00Z')
+            """, (sid, test_reg, test_zone))
+    finally:
+        c.execute("ROLLBACK TO SAVEPOINT dedup_test")
+        c.execute("RELEASE SAVEPOINT dedup_test")
