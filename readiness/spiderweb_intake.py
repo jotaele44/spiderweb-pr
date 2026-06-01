@@ -15,7 +15,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from provenance_utils import reproducibility_metadata, feature_collection_summary
+from provenance_utils import (
+    reproducibility_metadata,
+    feature_collection_summary,
+    geojson_feature_meta,
+)
 
 # ── Producer boundary ─────────────────────────────────────────────────────────
 
@@ -541,9 +545,14 @@ class SpiderwebIntake:
                 c.get("lon", 0.0),
             ),
         )
+        meta_block = geojson_feature_meta(
+            producer_module="readiness.spiderweb_intake",
+            source_artifact="spiderweb_overlay_candidates.geojson",
+        )
         features = []
         for c in candidates_sorted:
             props = {k: c[k] for k in REQUIRED_FIELDS}
+            props["_meta"] = meta_block
             features.append({
                 "type": "Feature",
                 "geometry": {"type": "Point", "coordinates": [c["lon"], c["lat"]]},

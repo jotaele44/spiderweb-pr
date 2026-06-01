@@ -70,6 +70,29 @@ def test_route_lines_epsg4326(populated_db, tmp_output):
     assert "4326" in crs_name
 
 
+def test_gis_features_carry_meta_block(populated_db, tmp_output):
+    """T5-41: every GeoJSON Feature must carry a standardized _meta block."""
+    PRIntelAdapter(populated_db, str(tmp_output)).export_all()
+    data = json.loads((tmp_output / "gis_airspace_features.geojson").read_text())
+    for feat in data["features"]:
+        meta = feat["properties"].get("_meta")
+        assert meta is not None, "missing _meta block"
+        assert meta["producer_module"] == "integration.pr_intel_adapter"
+        assert meta["source_artifact"] == "gis_airspace_features.geojson"
+        assert meta["produced_at"], "produced_at must be non-empty"
+
+
+def test_route_lines_carry_meta_block(populated_db, tmp_output):
+    """T5-41: route_lines.geojson Features carry the _meta block."""
+    PRIntelAdapter(populated_db, str(tmp_output)).export_all()
+    data = json.loads((tmp_output / "route_lines.geojson").read_text())
+    for feat in data["features"]:
+        meta = feat["properties"].get("_meta")
+        assert meta is not None
+        assert meta["producer_module"] == "integration.pr_intel_adapter"
+        assert meta["source_artifact"] == "route_lines.geojson"
+
+
 def test_export_completeness_gate_passes(populated_db, tmp_output):
     adapter = PRIntelAdapter(populated_db, str(tmp_output))
     report = adapter.export_all()

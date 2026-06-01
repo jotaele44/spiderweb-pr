@@ -161,6 +161,20 @@ def test_intake_loads_poi_candidates(tmp_path):
     assert pois[0]["properties"]["source_layer"] == "airspace_spiderweb_export"
 
 
+def test_overlay_features_carry_meta_block(tmp_path):
+    """T5-41: every spiderweb overlay Feature must carry a _meta block."""
+    _write_poi(tmp_path)
+    SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
+    data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
+    assert data["features"], "expected at least one feature"
+    for feat in data["features"]:
+        meta = feat["properties"].get("_meta")
+        assert meta is not None, "missing _meta block"
+        assert meta["producer_module"] == "readiness.spiderweb_intake"
+        assert meta["source_artifact"] == "spiderweb_overlay_candidates.geojson"
+        assert meta["produced_at"], "produced_at must be non-empty"
+
+
 def test_intake_loads_ilap_candidates(tmp_path):
     _write_ilap(tmp_path)
     SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
