@@ -258,3 +258,111 @@ def test_index_schema_files_resolve_on_disk(validator):
 def test_index_lookup_returns_none_for_unknown(validator):
     """Unknown artifact paths return None (no crash)."""
     assert validator.index_lookup("definitely_not_an_artifact.parquet") is None
+
+
+# ── T2-18 — Geometry validity (shapely) ──────────────────────────────────────
+
+def test_validate_geometry_accepts_valid_features(validator):
+    features = [
+        {"geometry": {"type": "Point", "coordinates": [-66.0, 18.0]}},
+        {"geometry": {"type": "LineString",
+                      "coordinates": [[-67.0, 18.0], [-66.0, 19.0]]}},
+    ]
+    errors = validator.validate_geometry(features)
+    assert errors == []
+
+
+def test_validate_geometry_flags_missing_geometry(validator):
+    features = [
+        {"geometry": {"type": "Point", "coordinates": None}},
+        {"geometry": None},
+    ]
+    errors = validator.validate_geometry(features)
+    assert len(errors) == 2
+    assert all("missing geometry" in e["reason"] for e in errors)
+
+
+def test_validate_geometry_flags_self_intersecting_polygon(validator):
+    """Bowtie polygon: shapely catches self-intersection (needs shapely)."""
+    try:
+        import shapely  # noqa: F401
+    except ImportError:
+        pytest.skip("shapely not installed")
+    # Bowtie: vertices in order (0,0), (1,1), (1,0), (0,1), close → self-intersects.
+    bowtie = [[0.0, 0.0], [1.0, 1.0], [1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]
+    features = [{"geometry": {"type": "Polygon", "coordinates": [bowtie]}}]
+    errors = validator.validate_geometry(features)
+    assert len(errors) == 1
+    assert "Self-intersection" in errors[0]["reason"] or "invalid" in errors[0]["reason"].lower()
+
+
+def test_validate_geometry_empty_input(validator):
+    assert validator.validate_geometry([]) == []
+    assert validator.validate_geometry(None) == []
+
+
+# ── T2-19 — Null-field enforcement ──────────────────────────────────────────
+
+def test_null_for_required_field_tagged_as_null_field(validator):
+    """A None value for a required field → error_type='null_field' (not 'type')."""
+    try:
+        import jsonschema  # noqa: F401
+    except ImportError:
+        pytest.skip("jsonschema not installed")
+    # screenshot's required = [screenshot_id, image_path, processed_at]
+    record = {"screenshot_id": None, "image_path": "/x.png", "processed_at": "2026-06-01T00:00:00Z"}
+    errors = validator._structured_errors(record, "screenshot")
+    # Should have at least one error and it should be null_field, not type
+    null_field_errs = [e for e in errors if e["error_type"] == "null_field"]
+    assert null_field_errs, f"expected a null_field error, got {[e['error_type'] for e in errors]}"
+    assert null_field_errs[0]["field"] == "screenshot_id"
+
+
+def test_missing_required_field_still_tagged_as_required(validator):
+    """Missing key keeps error_type='required' (distinct from null)."""
+    try:
+        import jsonschema  # noqa: F401
+    except ImportError:
+        pytest.skip("jsonschema not installed")
+    record = {"image_path": "/x.png", "processed_at": "2026-06-01T00:00:00Z"}  # no screenshot_id
+    errors = validator._structured_errors(record, "screenshot")
+    req_errs = [e for e in errors if e["error_type"] == "required"]
+    assert req_errs, "expected a 'required' error for the missing key"
+
+
+# ── T2-20 — Confidence-scale enforcement ────────────────────────────────────
+
+def test_all_confidence_properties_on_canonical_scale(validator):
+    """Every numeric property whose name contains 'confidence' across all loaded
+    schemas must declare ONE OF the two canonical scales:
+
+      - [0, 1]   — operational confidence (most derived fields)
+      - [0, 100] — OCR-engine raw confidence (tesseract percentage; e.g.
+                   ocr_raw_by_zone.confidence_mean / .confidence_min)
+
+    Anything else is a contract violation. See
+    docs/SCHEMA_AND_EXPORT_CONTRACTS.md for the canonical policy."""
+    try:
+        import jsonschema  # noqa: F401
+    except ImportError:
+        pytest.skip("jsonschema not installed")
+    CANONICAL_SCALES = ({"min": 0, "max": 1}, {"min": 0, "max": 100})
+    offenders = []
+    for name, v in validator._validators.items():
+        props = (v.schema or {}).get("properties", {}) or {}
+        for prop_name, spec in props.items():
+            if "confidence" not in prop_name.lower():
+                continue
+            if not isinstance(spec, dict):
+                continue
+            ptype = spec.get("type")
+            allowed_numeric = ("number", "integer", ["number", "null"], ["integer", "null"])
+            if ptype not in allowed_numeric:
+                continue  # 'identity_status' and other non-numerics are fine
+            scale = {"min": spec.get("minimum"), "max": spec.get("maximum")}
+            if scale not in CANONICAL_SCALES:
+                offenders.append(f"{name}.{prop_name}: min={scale['min']}, max={scale['max']}")
+    assert not offenders, (
+        "Confidence properties must be on a canonical scale ([0,1] operational "
+        f"OR [0,100] OCR-engine raw): {offenders}"
+    )
