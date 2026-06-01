@@ -32,8 +32,8 @@ registrations:
 
   # Recovered from Flight Log 2025 reconciliation (2026-06-01) and validated
   # against the log's own operator data (FAA registry lookup was blocked in CI).
-  # N407PR (sensitive) and N20 (ambiguous/truncated) remain held in the recovery
-  # queue for manual review, NOT added here — both are confirmed in the log.
+  # N20 (ambiguous/truncated singleton) remains held in the recovery queue for
+  # manual review, NOT added here. N407PR was promoted to active alerting below.
   - registration: N999ZY
     label: Most-active tail in log (ISR/tourism loops)
     operator: Southwest Aviation Enterprises
@@ -62,3 +62,10 @@ registrations:
   - registration: C6054
     label: USCG SAR/coastal training
     operator: US Coast Guard
+
+  # Promoted from manual-review hold (operator decision 2026-06-01). Flagged
+  # sensitive (private/government-adjacent); 29 flights in the log, Oct–Nov 2025.
+  - registration: N407PR
+    label: Private helo — sensitive (promoted from hold)
+    operator: Private
+    expected_within_days: 21
