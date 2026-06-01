@@ -170,6 +170,37 @@ def feature_collection_summary(features: List[dict]) -> Dict[str, object]:
     }
 
 
+def geojson_feature_meta(
+    *,
+    producer_module: str,
+    source_artifact: str,
+    produced_at: Optional[str] = None,
+) -> Dict[str, str]:
+    """Return the standardized GeoJSON Feature `_meta` block (T5-41).
+
+    Every Feature emitted by a producer should carry this block under
+    ``properties._meta`` so a downstream tool can answer three questions
+    by reading a single Feature in isolation:
+
+      - "which module wrote this?"          → ``producer_module``
+      - "what file does it live in?"        → ``source_artifact``
+      - "when was it written?"              → ``produced_at`` (ISO 8601 UTC)
+
+    ``produced_at`` defaults to the current UTC timestamp so all features
+    written in a single run share the same value — this lets consumers
+    cluster a Feature by its emission run without needing the parent
+    manifest's reproducibility block. Pass an explicit timestamp when
+    matching the manifest exactly.
+    """
+    if produced_at is None:
+        produced_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return {
+        "producer_module": producer_module,
+        "source_artifact": source_artifact,
+        "produced_at": produced_at,
+    }
+
+
 def _platform_label() -> str:
     try:
         return f"{platform.system()}-{platform.release()}-{platform.machine()}"

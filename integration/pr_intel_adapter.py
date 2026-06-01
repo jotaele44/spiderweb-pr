@@ -25,7 +25,11 @@ try:
 except ImportError:
     _SCHEMA_VALIDATION_AVAILABLE = False
 
-from provenance_utils import reproducibility_metadata, feature_collection_summary
+from provenance_utils import (
+    reproducibility_metadata,
+    feature_collection_summary,
+    geojson_feature_meta,
+)
 
 # Best-effort artifact → schema mapping (full mapping lives in
 # schemas/schema_index.json — Tier 2). None where no schema is registered yet.
@@ -365,6 +369,10 @@ class PRIntelAdapter:
     def _export_gis_features(self, flights: List[dict], ss_by_flight: Dict[str, dict]):
         features = []
         seen: set = set()
+        meta_block = geojson_feature_meta(
+            producer_module="integration.pr_intel_adapter",
+            source_artifact="gis_airspace_features.geojson",
+        )
         # Deterministic: sort flights so first-occurrence-wins dedup is stable (Open Risk #5).
         for f in sorted(flights, key=lambda x: str(x.get("flight_id") or "")):
             ss = ss_by_flight.get(f.get("flight_id", ""), {})
@@ -389,6 +397,7 @@ class PRIntelAdapter:
                             "screenshot_id": ss.get("screenshot_id", ""),
                             "sha256": ss.get("sha256", ""),
                             "source_path": ss.get("image_path", ""),
+                            "_meta": meta_block,
                         },
                     })
 
@@ -402,6 +411,10 @@ class PRIntelAdapter:
 
     def _export_route_lines(self, flights: List[dict], ss_by_flight: Dict[str, dict]):
         features = []
+        meta_block = geojson_feature_meta(
+            producer_module="integration.pr_intel_adapter",
+            source_artifact="route_lines.geojson",
+        )
         for f in sorted(flights, key=lambda x: str(x.get("flight_id") or "")):
             olat = f.get("origin_lat")
             olon = f.get("origin_lon")
@@ -422,6 +435,7 @@ class PRIntelAdapter:
                         "screenshot_id": ss.get("screenshot_id", ""),
                         "sha256": ss.get("sha256", ""),
                         "source_path": ss.get("image_path", ""),
+                        "_meta": meta_block,
                     },
                 })
 

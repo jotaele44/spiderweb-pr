@@ -145,3 +145,49 @@ def test_feature_collection_summary_ignores_invalid_geom():
     ]
     s = feature_collection_summary(features)
     assert s["feature_count"] == 1  # only the valid one counted
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# T5-41: standardized GeoJSON Feature _meta block
+# ──────────────────────────────────────────────────────────────────────────
+
+def test_geojson_feature_meta_has_three_required_keys():
+    from provenance_utils import geojson_feature_meta
+    block = geojson_feature_meta(
+        producer_module="integration.pr_intel_adapter",
+        source_artifact="gis_airspace_features.geojson",
+    )
+    assert set(block.keys()) == {"producer_module", "source_artifact", "produced_at"}
+    assert block["producer_module"] == "integration.pr_intel_adapter"
+    assert block["source_artifact"] == "gis_airspace_features.geojson"
+
+
+def test_geojson_feature_meta_default_timestamp_is_iso_utc():
+    from provenance_utils import geojson_feature_meta
+    block = geojson_feature_meta(producer_module="m", source_artifact="a")
+    # ISO 8601 with Z suffix: YYYY-MM-DDTHH:MM:SSZ
+    assert re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", block["produced_at"])
+
+
+def test_geojson_feature_meta_explicit_timestamp_respected():
+    from provenance_utils import geojson_feature_meta
+    block = geojson_feature_meta(
+        producer_module="m", source_artifact="a",
+        produced_at="2024-01-01T00:00:00Z",
+    )
+    assert block["produced_at"] == "2024-01-01T00:00:00Z"
+
+
+def test_geojson_feature_meta_shared_across_features_in_same_run():
+    """Multiple Features from the same producer can share one block reference —
+    they should compare equal so downstream consumers can cluster by run."""
+    from provenance_utils import geojson_feature_meta
+    block_a = geojson_feature_meta(
+        producer_module="m", source_artifact="a",
+        produced_at="2024-01-01T00:00:00Z",
+    )
+    block_b = geojson_feature_meta(
+        producer_module="m", source_artifact="a",
+        produced_at="2024-01-01T00:00:00Z",
+    )
+    assert block_a == block_b
