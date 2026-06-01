@@ -32,6 +32,16 @@ def _conn() -> sqlite3.Connection:
         pytest.skip(f"RLSM DB not yet built: {DB}")
     c = sqlite3.connect(DB)
     c.execute("PRAGMA foreign_keys = ON")
+    # CI cascade guard: sqlite3.connect() creates an empty file as a side-effect,
+    # so an earlier test that touched the DB path may have left an empty file.
+    # Skip if the canonical schema is missing — distinguishes "no populated DB"
+    # from "DB has been built and queries should be meaningful".
+    has_tables = c.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='screenshots'"
+    ).fetchone()
+    if not has_tables:
+        c.close()
+        pytest.skip(f"RLSM DB exists but is empty (no schema): {DB}")
     return c
 
 
@@ -161,6 +171,10 @@ def test_exports_reproducible():
     compare h1 vs h2 — both fresh against the current DB. The old form
     compared on-disk vs fresh, which re-broke whenever the DB advanced
     without a re-export (a stale-artifact tripwire, not a determinism test)."""
+    # Skip via _conn() if no populated DB (CI without the baseline).
+    # _conn() already creates the file as a side-effect; we close immediately
+    # so the export below opens its own connection cleanly.
+    _conn().close()
     needed = [
         "rlsm_ingest_manifest.csv",
         "rlsm_duplicate_report.csv",
