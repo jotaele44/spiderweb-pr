@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "description": "Named Puerto Rico DEM batch profiles for bounded terrain-screening runs. Bounding boxes are operational processing extents, not legal municipal boundaries.",
+  "crs": "EPSG:4326",
+  "profiles": {
+    "arecibo_utuado": {
+      "label": "Arecibo / Utuado broad pilot bbox",
+      "bbox_wgs84": [-66.98, 18.12, -66.43, 18.56],
+      "priority": 1,
+      "purpose": "Initial interior/north-karst-adjacent pilot expansion after one-tile validation.",
+      "status": "active_pilot",
+      "notes": "Broad operational bbox. Do not cite as municipal boundary. Review selected_tiles.csv before processing."
+    },
+    "north_karst_belt_west": {
+      "label": "Northern karst belt west broad bbox",
+      "bbox_wgs84": [-67.30, 18.25, -66.65, 18.55],
+      "priority": 2,
+      "purpose": "Karst-interface screening after Arecibo/Utuado gates pass.",
+      "status": "queued_profile",
+      "notes": "Broad geomorphic processing extent; refine with karst layer before formal use."
+    },
+    "central_mountain_corridor": {
+      "label": "Central mountain corridor broad bbox",
+      "bbox_wgs84": [-67.05, 18.05, -66.05, 18.35],
+      "priority": 3,
+      "purpose": "Interior ridge/bench terrain screening after pilot validation.",
+      "status": "queued_profile",
+      "notes": "Broad terrain-processing extent; not a municipal or administrative definition."
+    },
+    "metro_san_juan_edges": {
+      "label": "San Juan metro edge broad bbox",
+      "bbox_wgs84": [-66.25, 18.30, -65.85, 18.50],
+      "priority": 4,
+      "purpose": "Urban-edge terrain artifact and infrastructure-context calibration.",
+      "status": "queued_profile",
+      "notes": "Use mainly for false-positive calibration because urban grading is dense."
+    }
+  }
+}
