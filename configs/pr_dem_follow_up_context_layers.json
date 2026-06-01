@@ -1,0 +1,76 @@
+{
+  "version": "1.0",
+  "description": "Context-layer checklist for PR DEM reviewed candidate follow-up packets. Items are review prompts, not confirmations.",
+  "checklist": [
+    {
+      "id": "dem_hillshade",
+      "label": "DEM hillshade",
+      "evidence_tier": "T1_technical",
+      "question": "Does hillshade support the candidate geometry, or does it suggest a raster/seam artifact?",
+      "expected_artifact": "QGIS screenshot or note"
+    },
+    {
+      "id": "slope_raster",
+      "label": "Slope raster",
+      "evidence_tier": "T1_technical",
+      "question": "Is the candidate internally flat relative to the surrounding terrain?",
+      "expected_artifact": "slope comparison note"
+    },
+    {
+      "id": "recent_imagery",
+      "label": "Recent imagery basemap",
+      "evidence_tier": "T1_technical",
+      "question": "Is there a visible clearing, structure, pad, vegetation obstruction, or no clear signal?",
+      "expected_artifact": "imagery observation note"
+    },
+    {
+      "id": "historical_imagery",
+      "label": "Historical imagery",
+      "evidence_tier": "T1_technical",
+      "question": "Does the feature appear, disappear, expand, or remain stable across time?",
+      "expected_artifact": "date-window comparison note"
+    },
+    {
+      "id": "roads_tiger_edges",
+      "label": "Roads / TIGER edges",
+      "evidence_tier": "T2_operational",
+      "question": "Is there road, dead-end, track, or service access near the candidate?",
+      "expected_artifact": "access-context note"
+    },
+    {
+      "id": "hydro_water_assets",
+      "label": "Hydro / water assets",
+      "evidence_tier": "T2_operational",
+      "question": "Is the candidate near stream, drainage, reservoir, dam, canal, pumping, or water-utility context?",
+      "expected_artifact": "hydro-context note"
+    },
+    {
+      "id": "power_utility_layers",
+      "label": "Power / utility layers",
+      "evidence_tier": "T2_operational",
+      "question": "Is the candidate near a powerline, substation, tower-like site, pipeline, or utility corridor?",
+      "expected_artifact": "utility-context note"
+    },
+    {
+      "id": "karst_geology",
+      "label": "Karst / geology",
+      "evidence_tier": "T1_technical",
+      "question": "Is the candidate inside karst, near a karst boundary, or near a closed-depression context?",
+      "expected_artifact": "geology-context note"
+    },
+    {
+      "id": "parcels_ownership",
+      "label": "Parcel / ownership layer if available",
+      "evidence_tier": "T2_operational",
+      "question": "Does parcel/ownership context explain the feature as ordinary land use or require further review?",
+      "expected_artifact": "ownership-context note"
+    },
+    {
+      "id": "false_positive_check",
+      "label": "False-positive check",
+      "evidence_tier": "T1_technical",
+      "question": "Could this be a quarry, road cut, pasture, agricultural pad, building pad, natural summit, or data artifact?",
+      "expected_artifact": "retain/reject rationale"
+    }
+  ]
+}
