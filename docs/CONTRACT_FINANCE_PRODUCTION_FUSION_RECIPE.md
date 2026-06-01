@@ -6,7 +6,7 @@ SpiderWeb PR.
 The intended boundary is file-based:
 
 ```text
-Contract-Sweeper export package -> SpiderWeb package gate -> adapter outputs -> scoring layer -> calibration -> optional fusion -> dashboard
+Contract-Sweeper export package -> SpiderWeb package gate -> adapter outputs -> manifest-gated scoring layer -> calibration -> optional fusion -> dashboard
 ```
 
 SpiderWeb must not import Contract-Sweeper code. Contract-Sweeper remains the
@@ -41,12 +41,12 @@ python scripts/prepare_uploaded_masters.py \
   --output-dir data/staging/processed_uploaded_masters
 ```
 
-Then generate the v1.1 package:
+Then generate the v1.2 package:
 
 ```bash
 python scripts/run_export.py \
   --processed-dir data/staging/processed_uploaded_masters \
-  --output-dir exports/contract_sweeper_uploaded_masters_v1_1 \
+  --output-dir exports/contract_sweeper_uploaded_masters_v1_2 \
   --mode production
 ```
 
@@ -54,7 +54,7 @@ Then write the shared artifact manifest:
 
 ```bash
 python scripts/write_artifact_manifest.py \
-  --package-dir exports/contract_sweeper_uploaded_masters_v1_1 \
+  --package-dir exports/contract_sweeper_uploaded_masters_v1_2 \
   --source-file /path/to/pr_contracts_master_v2.csv \
   --source-file /path/to/pr_all_awards_master.csv \
   --source-file /path/to/lda_canonical_client_summary_all.csv
@@ -107,10 +107,15 @@ outputs/contract_finance/contract_finance_ingest_report.json
 
 ## Step 3 — Build the scored Contract-Finance layer
 
+Production builds must pass the Contract-Sweeper artifact manifest gate before
+scoring starts. The layer builder refuses unsafe manifests before writing the
+scored overlay.
+
 ```bash
 python scripts/build_contract_finance_layer.py \
   --input outputs/contract_finance \
-  --out outputs/contract_finance
+  --out outputs/contract_finance \
+  --artifact-manifest data/incoming/contract_sweeper/latest/artifact_manifest.json
 ```
 
 Expected outputs:
@@ -119,6 +124,9 @@ Expected outputs:
 outputs/contract_finance/contract_finance_scored_overlay.geojson
 outputs/contract_finance/contract_finance_layer_report.json
 ```
+
+The layer report includes an `artifact_manifest_gate` block when the manifest
+argument is supplied. Required posture is `artifact_manifest_gate.status=READY`.
 
 ## Step 4 — Calibrate the Contract-Finance layer
 
@@ -197,6 +205,7 @@ cp outputs/contract_finance/contract_finance_scored_overlay.geojson outputs/
 | Contract-Sweeper package validates in production mode | Required |
 | `artifact_manifest.json` present | Required |
 | package gate status | `READY` or documented `DEGRADED` |
+| artifact manifest gate | `READY` before scoring |
 | scored overlay generated | Required |
 | calibration report generated | Required |
 | fusion report generated | Required only when overlay exists |
