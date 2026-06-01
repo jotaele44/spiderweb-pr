@@ -48,22 +48,26 @@ Effort is per-engineer-hour and assumes the existing test scaffolding is reused.
 
 ---
 
-## Tier 4 follow-ups (FR24 hardening)
+## Tier 4 follow-ups (FR24 hardening) — **SUPERSEDED BY RLSM**
 
-| # | Task | Scope | Effort | Blockers |
-|---|---|---|---|---|
-| **T4-31** | Rich resumability for `fr24/batch_run.py` | Per-file ledger entries with `attempted_at`/`succeeded_at`/`failed_at`/`error_class`. | 4 h | T4-DECISION (active runner) |
-| **T4-32** | Per-image OCR failure log | Structured `fr24_ocr_failures.jsonl` (path, sha256, zone, error). | 2 h | None |
-| **T4-33** | FR24 batch manifest with reproducibility | Inject D3 block into the FR24 batch output. | 1 h | T4-DECISION |
-| **T4-34** | FR24 summary Markdown | One-page operator summary per batch (counts, top errors, ETA). | 2 h | None |
-| **T4-35** | Align `screenshot_inventory.py` enum with RLSM's | Use `ingest_status` + `ocr_status` vocabularies; avoid inventing a third. | 2 h | None |
-| **T4-36** | FR24 batch dry-run | `--dry-run` prints planned actions, writes nothing. | 1 h | T4-DECISION |
-| **T4-37** | FR24 batch offset | `--offset N` skips first N rows (complements existing `--limit`). | 30 m | T4-DECISION |
-| **T4-38** | RLSM `--workers` (see N5) | Listed here too for completeness. | 2 h | None |
-| **T4-39** | FR24 batch resume from a specific ledger row | `--resume-from <sha256>` to retry a specific failure. | 1 h | T4-DECISION + T4-31 |
-| **T4-40** | OCR engine pinning per zone | `ZONE_OCR_CONFIG` keys → engine version; record in `processing_runs.notes`. | 2 h | None |
+**Decision (DG-2): RLSM is canonical.** The 16-script analysis suite (commit `39918c9`) + the parallel OCR runner + the recover-tails-by-rawtext canonicalization + the `--workers` parallelism (N5) collectively replace `fr24/batch_run.py`'s functionality. The legacy batch runner is treated as **deprecated** going forward; new resumability/manifest/failure-log work targets the RLSM runners instead.
 
-**T4-DECISION** (referenced above): determine whether `fr24/batch_run.py` is still the active path or has been superseded by RLSM's `fr24.rlsm_ocr_parallel`. The 16-script analysis suite (commit `39918c9`) suggests RLSM is the primary path; if confirmed, Tier 4 patches retarget the RLSM runner.
+The original T4-31..T4-40 list is preserved below for traceability, but each item is **marked with its replacement** in RLSM. Items already implemented on the RLSM side carry ✅; items genuinely deferred are flagged.
+
+| # | Original task (fr24/batch_run.py) | RLSM replacement | Status |
+|---|---|---|---|
+| **T4-31** | Per-file ledger with `attempted_at`/`succeeded_at`/`failed_at`/`error_class` | `processing_runs` table records every `run_kind` invocation with `started_at`/`ended_at`/`status`/`n_processed`/`n_failed`/`notes` (per-tail breakdowns in `notes` for `recover_tails`) | ✅ implemented in RLSM |
+| **T4-32** | `fr24_ocr_failures.jsonl` (path, sha256, zone, error) | `ocr_observations.ocr_status='failed'` + `.ocr_error`; queryable via `SELECT * FROM ocr_observations WHERE ocr_status='failed'` | ✅ schema in place; consider exporting a derived JSONL if operators need a flat file |
+| **T4-33** | D3 reproducibility block on FR24 batch output | `processing_runs.git_sha` + per-export reproducibility block on the 14 RLSM CSVs/JSONL (PR #59 added the schema_index, PR #61 added the schemas) | ✅ implemented |
+| **T4-34** | One-page operator summary per batch | `outputs/rlsm_coverage_report.md` is the canonical summary; `rlsm_coverage.py` regenerates it on demand | ✅ implemented |
+| **T4-35** | Align `screenshot_inventory.py` enum with RLSM's | `screenshots.ingest_status` (`ok`/`corrupt`/`unreadable`) + `.ocr_status` (`pending`/`ok`/`partial`/`failed`) ARE the canonical RLSM vocabulary. `fr24/screenshot_inventory.py` retains its CSV format for backward-compat; new producers should write to the SQLite directly. | ✅ vocabulary defined; legacy CSV path tolerated |
+| **T4-36** | `--dry-run` on the batch runner | `scripts/rlsm_recover_tails_by_rawtext.py --dry-run` already exists; `fr24/rlsm_unlabeled` and `rlsm_ocr_parallel` accept `--limit` for sampling | ✅ pattern established; can be propagated to other runners if needed |
+| **T4-37** | `--offset N` to skip first N rows | Replaced by SQL-driven targeting: every RLSM runner queries `WHERE ocr_status='pending'` (or similar) + `ORDER BY screenshot_id` so resumption is implicit. `--limit N` complements. | ✅ implicit via SQL |
+| **T4-38** | RLSM `--workers` parallelism | `fr24/rlsm_ocr_parallel` (multi-worker since day 1) + `fr24/rlsm_unlabeled --workers N` (added in PR #60) | ✅ implemented |
+| **T4-39** | `--resume-from <sha256>` | RLSM runners are resumable via the `NOT EXISTS`-style WHERE clauses — restart picks up where it left off. Per-sha256 retry is achievable by manually flipping `ocr_status='pending'` for a row. | ✅ via SQL |
+| **T4-40** | OCR engine pinning per zone (`ZONE_OCR_CONFIG` → engine version) | `ocr_observations.engine` + `.engine_version` + `.psm` columns ARE pinned per row. Operators can audit drift via `SELECT DISTINCT engine, engine_version, psm FROM ocr_observations`. | ✅ implemented |
+
+**Action items going forward** — there's essentially nothing left under "Tier 4 hardening" as originally scoped, because RLSM covers it. If `fr24/batch_run.py` is still referenced anywhere as a primary path, that's a deprecation-doc task, not a feature task.
 
 ---
 

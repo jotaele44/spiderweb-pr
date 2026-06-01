@@ -45,12 +45,14 @@ For backlog beyond this scorecard, see [`NEXT_100_TASKS.md`](NEXT_100_TASKS.md).
 
 ---
 
-## Tier 4 — FR24 touchpoints (blocked on decision)
+## Tier 4 — FR24 touchpoints — **SUPERSEDED BY RLSM** (DG-2 resolved)
 
-| # | Task | Status | Files | Tests | Validation | Result / Blocker |
+**Decision (DG-2): RLSM is canonical.** The RLSM pipeline (parallel OCR runner, recover-tails canonicalization, `processing_runs` ledger, `outputs/rlsm_coverage_report.md`, schema-pinned `ocr_observations.engine`/`engine_version`/`psm`) collectively replaces `fr24/batch_run.py`'s functionality. See `docs/NEXT_100_TASKS.md` Tier 4 section for the original-task → RLSM-replacement mapping.
+
+| # | Task | Status | Files | Tests | Validation | Result |
 |---|---|---|---|---|---|---|
-| 15 | FR24 batch runner — `--dry-run` / `--offset` / failure log | 🚧 blocked | `fr24/batch_run.py` (?) | — | — | **DECISION**: is `fr24/batch_run.py` still the active path or has RLSM superseded it? |
-| 16 | `fr24/screenshot_inventory.py` status enum | ⬜ not started | `fr24/screenshot_inventory.py` | `tests/test_fr24_inventory.py` (extend) | — | Align with RLSM's `ingest_status`/`ocr_status` vocab |
+| 15 | FR24 batch runner hardening (`--dry-run`/`--offset`/failure log) | ✅ superseded | RLSM runners (`fr24.rlsm_ocr_parallel`, `fr24.rlsm_unlabeled`, etc.) | covered by `tests/test_rlsm_pipeline.py` | RLSM 10/10 tests pass | All sub-features delivered via RLSM (T4-31..T4-40 mapped 1:1) |
+| 16 | `fr24/screenshot_inventory.py` status enum | ✅ vocabulary defined | RLSM `screenshots.ingest_status` + `.ocr_status` columns | `tests/test_rlsm_pipeline.py::test_screema_tables_exist` | DB schema is canonical | Legacy CSV path tolerated; new producers write to SQLite |
 
 ---
 
@@ -104,13 +106,13 @@ For backlog beyond this scorecard, see [`NEXT_100_TASKS.md`](NEXT_100_TASKS.md).
 | Tier 1 | 10 / 10 | 0 | 0 | 0 |
 | Tier 2 | 2 / 2 | 0 | 0 | 0 |
 | Tier 3 | 1 / 2 | 0 | 0 | 1 |
-| Tier 4 | 0 / 2 | 0 | 1 (T4 decision) | 1 |
+| Tier 4 | 2 / 2 (superseded by RLSM) | 0 | 0 | 0 |
 | Tier 5 | 4 / 4 | 0 | 0 | 0 |
 | Tier 6 | 3 / 7 | 0 | 1 | 3 |
 | Workstream B | 9 / 11 | 0 | 0 | 2 |
 | **Total** | **29 / 38** | **0** | **2** | **7** |
 
-**Headline:** Tier 1 + Tier 2 + Tier 5 are **100% complete**. Tier 3 doc is done; field additions outstanding. Tier 4 is blocked on the active-runner decision. Tier 6 partially in flight — 3 new test files outstanding (D2). Workstream B operational at 99.4% coverage; the recover-tails canonicalization (D3) and `--workers` (N5) are the open polish.
+**Headline:** Tier 1 + Tier 2 + Tier 4 (superseded by RLSM) + Tier 5 are **100% complete**. Tier 3 fields landed in PR #63; MBIL-X landed in PR #64. Tier 6 partially in flight. Workstream B operational at 99.4% coverage.
 
 ---
 
