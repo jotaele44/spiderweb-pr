@@ -4,7 +4,7 @@ This document keeps the full process in order so terminal commands can be run la
 
 ## Phase 0 — Guardrails
 
-Do not treat any candidate count, coordinate, score, or class as valid until the pipeline produces real local output files and the score-sum check passes.
+Do not treat any candidate count, coordinate, score, queue, or class as valid until the pipeline produces real local output files and the score-sum / review-lock gates pass.
 
 The processing order is:
 
@@ -17,7 +17,11 @@ Integrity audit
 → Arecibo/Utuado batch dry run
 → Arecibo/Utuado batch run
 → batch score-sum check
-→ QGIS review
+→ QGIS candidate review
+→ manual review CSV completion
+→ review CSV validation + lock
+→ decision queue routing
+→ QGIS queue review
 ```
 
 ## Phase 1 — Local folder integrity audit
@@ -159,7 +163,7 @@ Gate:
 
 The batch score-sum report must pass.
 
-## Phase 7 — QGIS review
+## Phase 7 — QGIS candidate review
 
 Load these files:
 
@@ -178,6 +182,84 @@ Recommended QGIS symbolization:
 | Roads | Overlay for access context |
 | Hydro / water assets | Overlay for infrastructure context |
 | Karst / geology | Overlay for geomorphic context |
+
+Manual review template:
+
+```text
+templates/pr_dem_candidate_manual_review_template.csv
+```
+
+QGIS review guide:
+
+```text
+docs/PR_DEM_QGIS_REVIEW_GUIDE.md
+```
+
+## Phase 8 — Review CSV validation and locked artifact output
+
+Goal: validate manual review rows, merge review metadata into GeoJSON, and produce auditable locked artifacts.
+
+Script:
+
+```text
+tools/pr_dem_review_lock.py
+```
+
+Outputs:
+
+```text
+outputs/pr_dem_review_lock/validation_report.json
+outputs/pr_dem_review_lock/validation_findings.csv
+outputs/pr_dem_review_lock/invalid_review_rows.csv
+outputs/pr_dem_review_lock/reviewed_candidates.geojson
+outputs/pr_dem_review_lock/review_summary.json
+outputs/pr_dem_review_lock/review_summary.md
+outputs/pr_dem_review_lock/locked_review_manifest.json
+```
+
+Gate:
+
+| Condition | Required result |
+|---|---|
+| Review CSV validation | `PASS` |
+| Reviewed GeoJSON | Exists and opens in QGIS |
+| Lock manifest | Contains SHA-256 checksums |
+| Review summary | Exists and is readable |
+
+## Phase 9 — Decision queue routing
+
+Goal: split reviewed candidates into management queues for follow-up.
+
+Script:
+
+```text
+tools/pr_dem_review_decision_router.py
+```
+
+Outputs:
+
+```text
+outputs/pr_dem_review_queues/queue_escalated.geojson
+outputs/pr_dem_review_queues/queue_retained.geojson
+outputs/pr_dem_review_queues/queue_second_pass.geojson
+outputs/pr_dem_review_queues/queue_insufficient_evidence.geojson
+outputs/pr_dem_review_queues/queue_rejected.geojson
+outputs/pr_dem_review_queues/queue_unreviewed.geojson
+outputs/pr_dem_review_queues/queue_all_routed.geojson
+outputs/pr_dem_review_queues/queue_summary.json
+outputs/pr_dem_review_queues/queue_summary.md
+outputs/pr_dem_review_queues/queue_manifest.json
+```
+
+QGIS queue guide:
+
+```text
+docs/PR_DEM_QGIS_QUEUE_STYLE_GUIDE.md
+```
+
+Gate:
+
+Open queue layers in QGIS and confirm queue counts in `queue_summary.md` are plausible.
 
 ## Full terminal command block for later
 
@@ -235,8 +317,21 @@ python tools/pr_dem_batch_runner.py \
   --resume
 
 cat outputs/pr_dem_batch_arecibo_utuado/batch_score_sum_check.json
+
+python tools/pr_dem_review_lock.py \
+  --candidate-geojson outputs/pr_dem_batch_arecibo_utuado/pr_dem_batch_candidates.geojson \
+  --review-csv outputs/manual_review/pr_dem_candidate_review_completed.csv \
+  --schema schemas/pr_dem_candidate_review.schema.json \
+  --output-dir outputs/pr_dem_review_lock \
+  --lock-dir outputs/pr_dem_review_lock/LOCKED
+
+python tools/pr_dem_review_decision_router.py \
+  --reviewed-geojson outputs/pr_dem_review_lock/reviewed_candidates.geojson \
+  --output-dir outputs/pr_dem_review_queues
+
+cat outputs/pr_dem_review_queues/queue_summary.md
 ```
 
 ## Expansion rule
 
-Only expand after the one-tile and Arecibo/Utuado batch gates pass. The next expansion should be a named region batch, not full islandwide native-resolution processing.
+Only expand after the one-tile, Arecibo/Utuado batch, review-lock, and queue-routing gates pass. The next expansion should be a named region batch, not full islandwide native-resolution processing.
