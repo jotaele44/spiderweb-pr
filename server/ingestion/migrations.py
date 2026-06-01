@@ -78,12 +78,65 @@ def _existing_tables(conn: sqlite3.Connection) -> set[str]:
     return {row[0] for row in cur.fetchall()}
 
 
+# FR24 aircraft detail columns added to the events table. Without these, the
+# registration (and other fields) extracted by scripts/fr24_vision_ingest.py
+# were silently dropped at ingest. column name → SQLite type.
+_EVENTS_AIRCRAFT_COLUMNS = {
+    "registration":     "TEXT",
+    "callsign":         "TEXT",
+    "aircraft_type":    "TEXT",
+    "operator":         "TEXT",
+    "origin_code":      "TEXT",
+    "destination_code": "TEXT",
+    "altitude_ft":      "INTEGER",
+    "ground_speed_mph": "INTEGER",
+    "flight_status":    "TEXT",
+    "image_path":       "TEXT",
+}
+
+
+def ensure_events_aircraft_columns(conn: sqlite3.Connection) -> dict[str, bool]:
+    """
+    Add FR24 aircraft-detail columns to the events table if absent.
+
+    Returns a dict mapping column name → True if it was added on this call,
+    False if it was already present.
+    """
+    if "events" not in _existing_tables(conn):
+        # Fresh DB — schema_sqlite.sql already defines the columns.
+        return {col: False for col in _EVENTS_AIRCRAFT_COLUMNS}
+    added = {
+        col: _add_column_if_missing(conn, "events", col, col_type)
+        for col, col_type in _EVENTS_AIRCRAFT_COLUMNS.items()
+    }
+    conn.commit()
+    return added
+
+
+def ensure_alerts_registration_column(conn: sqlite3.Connection) -> dict[str, bool]:
+    """
+    Add a registration TEXT column to the alerts table if absent, so aircraft
+    watchlist alerts can be keyed and displayed by registration.
+    """
+    if "alerts" not in _existing_tables(conn):
+        return {"registration": False}
+    added = {"registration": _add_column_if_missing(conn, "alerts", "registration", "TEXT")}
+    conn.commit()
+    return added
+
+
 def run_all(conn: sqlite3.Connection) -> dict[str, dict]:
     """Run every registered migration. Safe to call on every startup."""
-    return {"sites_geoid": ensure_sites_geoid_columns(conn)}
+    return {
+        "sites_geoid": ensure_sites_geoid_columns(conn),
+        "events_aircraft": ensure_events_aircraft_columns(conn),
+        "alerts_registration": ensure_alerts_registration_column(conn),
+    }
 
 
 __all__ = [
     "ensure_sites_geoid_columns",
+    "ensure_events_aircraft_columns",
+    "ensure_alerts_registration_column",
     "run_all",
 ]

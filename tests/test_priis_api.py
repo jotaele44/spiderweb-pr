@@ -142,7 +142,7 @@ def test_alerts_shape():
     rows = _get("/alerts")
     assert isinstance(rows, list) and len(rows) > 0
     _check_fields(rows[0], ["id", "at", "kind", "title", "tier"], "/alerts")
-    valid_kinds = {"finance", "spatial", "source", "anomaly", "report"}
+    valid_kinds = {"finance", "spatial", "source", "anomaly", "report", "aircraft"}
     for r in rows:
         assert r["kind"] in valid_kinds, f"invalid alert kind: {r['kind']}"
         assert r["tier"] in ("T1", "T2", "T3", "T4"), f"invalid tier: {r['tier']}"
