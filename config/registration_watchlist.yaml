@@ -29,3 +29,25 @@ registrations:
   - registration: N684JB
     label: Private charter (Airbus H130)
     operator: Private
+
+  # Recovered from Flight Log 2025 reconciliation (2026-06-01) — present in the
+  # operator's flight log but absent from the system registry. Owner/operator
+  # not yet validated against the FAA registry (lookup blocked in CI env).
+  # N407PR (sensitive) and N20 (ambiguous/truncated) are intentionally held in
+  # the recovery queue for manual review, NOT added here.
+  - registration: N13VL
+    label: Recovered from Flight Log 2025 — needs FAA validation
+  - registration: N150F
+    label: Recovered from Flight Log 2025 — needs FAA validation
+  - registration: N196DM
+    label: Recovered from Flight Log 2025 — needs FAA validation
+  - registration: N411H
+    label: Recovered from Flight Log 2025 — needs FAA validation
+  - registration: N413LP
+    label: Recovered from Flight Log 2025 — needs FAA validation
+  - registration: N429LE
+    label: Recovered from Flight Log 2025 — needs FAA validation
+  - registration: N999DM
+    label: Recovered from Flight Log 2025 — needs FAA validation
+  - registration: N999ZY
+    label: Recovered from Flight Log 2025 — needs FAA validation
