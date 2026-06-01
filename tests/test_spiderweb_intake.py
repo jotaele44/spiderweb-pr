@@ -382,12 +382,15 @@ def test_caguas_mbil3(tmp_path):
     assert data["features"][0]["properties"]["mbil_class"] == "MBIL-3"
 
 
-def test_ocean_still_mbil0(tmp_path):
-    feats = [_poi_feature(20.0, -66.0)]  # north Atlantic, no PR municipalities nearby
+def test_off_island_gets_mbil_x(tmp_path):
+    """Off-island candidates (here: north Atlantic at lat=20.0) get MBIL-X
+    rather than MBIL-0. MBIL-0 means 'scored, no signal'; MBIL-X means
+    'unclassified' — distinct semantics per docs/SPIDERWEB_LANGUAGE_BRIDGE.md."""
+    feats = [_poi_feature(20.0, -66.0)]  # north Atlantic, outside PR lat bounds
     _write_poi(tmp_path, features=feats)
     SpiderwebIntake(str(tmp_path), str(tmp_path)).run()
     data = json.loads((tmp_path / "spiderweb_overlay_candidates.geojson").read_text())
-    assert data["features"][0]["properties"]["mbil_class"] == "MBIL-0"
+    assert data["features"][0]["properties"]["mbil_class"] == "MBIL-X"
 
 
 def test_calibration_driver_report_structure(tmp_path):
@@ -740,3 +743,55 @@ def test_mbil_does_not_block_genuine_t1():
     intake._assign_evidence_tier(cands)
     assert cands[0]["evidence_tier"] == "T1"
     assert cands[0]["fact_status"] == "observed"
+
+
+# ── T3-25 — MBIL-X (unclassified) ────────────────────────────────────────────
+
+
+def test_mbil_x_for_off_island_candidate():
+    """A candidate clearly outside PR bounds gets MBIL-X, not a numeric tier."""
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [{"_lat": 20.0, "_lon": -50.0}]  # Mid-Atlantic
+    intake._score_mbil(cands)
+    assert cands[0]["mbil_class"] == "MBIL-X"
+
+
+def test_mbil_x_for_missing_coordinates():
+    """Null lat/lon → MBIL-X (geometry not scoreable)."""
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [
+        {"_lat": None, "_lon": -66.0},
+        {"_lat": 18.4, "_lon": None},
+        {"_lat": None, "_lon": None},
+    ]
+    intake._score_mbil(cands)
+    assert all(c["mbil_class"] == "MBIL-X" for c in cands)
+
+
+def test_mbil_x_for_on_island_still_gets_numeric_tier():
+    """Off-island guard isn't too aggressive — SJU still scores MBIL-3."""
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [{"_lat": 18.4373, "_lon": -66.0018}]  # SJU airport
+    intake._score_mbil(cands)
+    assert cands[0]["mbil_class"] == "MBIL-3"
+
+
+def test_mbil_x_does_not_count_as_corroborating():
+    """MBIL-X is 'unknown' — must NOT count toward the corroboration score.
+    A candidate with high confidence + MBIL-X but no other signals stays
+    below T1 (only MBIL-1/2/3 contribute to corroboration)."""
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [_baseline_candidate(
+        confidence=0.99, mbil_class="MBIL-X",
+        hydro_overlap="no", utility_overlap="no", corridor_id=None,
+    )]
+    intake._assign_evidence_tier(cands)
+    assert cands[0]["evidence_tier"] != "T1"
+
+
+def test_mbil_x_not_flagged_as_aasb_mbil_corridor():
+    """A corridor candidate with MBIL-X must NOT trigger aasb_mbil_corridor_flag."""
+    intake = SpiderwebIntake("/tmp/in", "/tmp/out")
+    cands = [_baseline_candidate(candidate_type="corridor", mbil_class="MBIL-X")]
+    intake._score_aasb_mbil_corridor_flag(cands)
+    assert cands[0]["aasb_mbil_corridor_flag"] is False

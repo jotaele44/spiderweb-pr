@@ -310,8 +310,28 @@ class SpiderwebIntake:
     # ── MBIL scoring ──────────────────────────────────────────────────────────
 
     def _score_mbil(self, candidates: List[Dict[str, Any]]) -> None:
+        """Assign MBIL-0..MBIL-3 based on distance to nearest PR municipality,
+        OR MBIL-X (T3-25) for candidates we cannot meaningfully score:
+
+          - Missing/null lat-lon (geometry didn't parse cleanly).
+          - Off-island: outside PR latitude/longitude bounds — MBIL is a PR
+            municipal-proximity metric; it has no semantics off-island.
+
+        MBIL-X means 'unclassified' — distinct from MBIL-0 (we scored, no signal).
+        See docs/SPIDERWEB_LANGUAGE_BRIDGE.md."""
+        # PR bounding box — a few tenths of a degree margin so coastal points
+        # don't get clipped (Aguadilla north ~18.53, southwestern Lajas ~17.95).
+        PR_LAT_MIN, PR_LAT_MAX = 17.80, 18.60
         for c in candidates:
-            dist = _min_dist_deg(c["_lat"], c["_lon"], MUNICIPAL_CENTROIDS)
+            lat, lon = c.get("_lat"), c.get("_lon")
+            if (lat is None or lon is None
+                    or not isinstance(lat, (int, float))
+                    or not isinstance(lon, (int, float))
+                    or lat < PR_LAT_MIN or lat > PR_LAT_MAX
+                    or lon < PR_LON_WEST or lon > PR_LON_EAST):
+                c["mbil_class"] = "MBIL-X"
+                continue
+            dist = _min_dist_deg(lat, lon, MUNICIPAL_CENTROIDS)
             dist_km = dist * 111.0
             if dist_km < 5.0:
                 c["mbil_class"] = "MBIL-3"
@@ -425,7 +445,9 @@ class SpiderwebIntake:
                 c["corridor_id"] is not None,
             ])
             mbil_high = c["mbil_class"] in ("MBIL-2", "MBIL-3")
-            corroborating = non_mbil_corroborating + (1 if c["mbil_class"] != "MBIL-0" else 0)
+            # MBIL-X means 'unclassified' — never count as corroborating (T3-25).
+            mbil_signals = c["mbil_class"] in ("MBIL-1", "MBIL-2", "MBIL-3")
+            corroborating = non_mbil_corroborating + (1 if mbil_signals else 0)
 
             corridor_align = _safe_float(props.get("corridor_alignment_score")) or 0.0
             connecting = int(props.get("connecting_flights") or 0)

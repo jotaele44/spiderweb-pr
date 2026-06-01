@@ -33,7 +33,15 @@ MBIL is the scoring vocabulary for "how built-up is the area around this candida
 | `MBIL-2` | Moderate — village density, multiple roads, light commercial. | 0.30–0.55 |
 | `MBIL-3` | Dense — urban/peri-urban, multiple infrastructure layers stacked. | 0.55–1.00 |
 
-(MBIL-X — meaning "unclassified" or "off-island" — is **not** currently implemented. See [`NEXT_100_TASKS.md`](NEXT_100_TASKS.md) task 25 for the open decision.)
+**MBIL-X** — meaning **unclassified** — fires when a candidate cannot be meaningfully scored on the municipal-proximity axis:
+- Missing/non-numeric `lat`/`lon` (geometry didn't parse).
+- Off-island: outside PR latitude (17.80–18.60) or longitude (PR_LON_WEST..PR_LON_EAST).
+
+MBIL-X is **distinct** from MBIL-0:
+- `MBIL-0` = we scored, no built infrastructure within 15 km.
+- `MBIL-X` = we couldn't score (no usable geometry or off-island context).
+
+**MBIL-X never counts as corroborating** in `_assign_evidence_tier` and **never triggers** the `aasb_mbil_corridor_flag`.
 
 ### MBIL math (current)
 
