@@ -168,7 +168,9 @@ def detect_for_screenshot(conn, sid: int, rel_path: str, run_id: int):
             scale_x = (mz.w) / sw
             scale_y = (mz.h) / sh
             components = _connected_components_threshold(crop)
-    except Exception as ex:
+    except Exception:
+        return {"ok": True, "emitted": 0, "skipped_reason": "non-map (component-detect error)"}
+    if components is None:
         return {"ok": True, "emitted": 0, "skipped_reason": "non-map (too many bright blobs)"}
     cur = conn.cursor()
     emitted = 0
@@ -211,6 +213,8 @@ def run(budget_sec: float, limit: int = 0):
     cur = conn.cursor()
     cur.execute("INSERT INTO processing_runs (run_kind, started_at, status, n_inputs, n_processed, n_failed) "
                 "VALUES ('unlabeled', ?, 'in_progress', 0, 0, 0)", (_iso_now(),))
+    run_id = cur.lastrowid  # missing assignment caused NameError at first detect_for_screenshot call
+    conn.commit()
     where_sql = ("WHERE s.ingest_status='ok' "
                  "AND NOT EXISTS (SELECT 1 FROM unlabeled_poi_candidates u WHERE u.screenshot_id = s.screenshot_id)")
     sql = f"SELECT s.screenshot_id, s.rel_path FROM screenshots s {where_sql} ORDER BY s.screenshot_id"
