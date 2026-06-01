@@ -30,24 +30,35 @@ registrations:
     label: Private charter (Airbus H130)
     operator: Private
 
-  # Recovered from Flight Log 2025 reconciliation (2026-06-01) — present in the
-  # operator's flight log but absent from the system registry. Owner/operator
-  # not yet validated against the FAA registry (lookup blocked in CI env).
-  # N407PR (sensitive) and N20 (ambiguous/truncated) are intentionally held in
-  # the recovery queue for manual review, NOT added here.
-  - registration: N13VL
-    label: Recovered from Flight Log 2025 — needs FAA validation
-  - registration: N150F
-    label: Recovered from Flight Log 2025 — needs FAA validation
-  - registration: N196DM
-    label: Recovered from Flight Log 2025 — needs FAA validation
-  - registration: N411H
-    label: Recovered from Flight Log 2025 — needs FAA validation
-  - registration: N413LP
-    label: Recovered from Flight Log 2025 — needs FAA validation
-  - registration: N429LE
-    label: Recovered from Flight Log 2025 — needs FAA validation
-  - registration: N999DM
-    label: Recovered from Flight Log 2025 — needs FAA validation
+  # Recovered from Flight Log 2025 reconciliation (2026-06-01) and validated
+  # against the log's own operator data (FAA registry lookup was blocked in CI).
+  # N407PR (sensitive) and N20 (ambiguous/truncated) remain held in the recovery
+  # queue for manual review, NOT added here — both are confirmed in the log.
   - registration: N999ZY
-    label: Recovered from Flight Log 2025 — needs FAA validation
+    label: Most-active tail in log (ISR/tourism loops)
+    operator: Southwest Aviation Enterprises
+  - registration: N196DM
+    label: "Tourism/recon (BlueBoy)"
+    operator: Blue Aviation LLC
+  - registration: N411H
+    label: Corporate/VIP transport
+    operator: Caribbean Helicopters
+  - registration: N413LP
+    operator: Private
+  - registration: N150F
+    operator: Private
+  - registration: N999DM
+    operator: Private
+  - registration: N13VL
+    label: Recovered from Flight Log 2025 — operator unconfirmed (Robinson)
+  - registration: N429LE
+    label: Recovered from Flight Log 2025 — operator unconfirmed (Bell 429)
+
+  # US Coast Guard SAR/maritime patrol — surfaced by the Flight Log 2025 parse,
+  # siblings of C6062 already tracked above.
+  - registration: C6038
+    label: USCG SAR (Ramey/Mayagüez patrols)
+    operator: US Coast Guard
+  - registration: C6054
+    label: USCG SAR/coastal training
+    operator: US Coast Guard
