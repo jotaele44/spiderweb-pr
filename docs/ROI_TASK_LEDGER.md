@@ -121,3 +121,14 @@ For backlog beyond this scorecard, see [`NEXT_100_TASKS.md`](NEXT_100_TASKS.md).
 - [`NEXT_100_TASKS.md`](NEXT_100_TASKS.md) — backlog for everything not in this ledger.
 - [`RELEASE_READINESS.md`](RELEASE_READINESS.md) — the gate this work is gated against.
 - [`SCHEMA_AND_EXPORT_CONTRACTS.md`](SCHEMA_AND_EXPORT_CONTRACTS.md), [`SPIDERWEB_LANGUAGE_BRIDGE.md`](SPIDERWEB_LANGUAGE_BRIDGE.md), [`GIS_EXPORT_GUIDE.md`](GIS_EXPORT_GUIDE.md) — referenced from individual rows.
+
+---
+
+## Baselines
+
+Reference points captured after major sweeps so the next change has something concrete to compare against.
+
+| Date | Main HEAD | Tests | Release gate | Notes |
+|---|---|---|---|---|
+| 2026-06-02 | `ae526fd` | 893 passed / 26 skipped / 0 failed | `overall_status: PASS` (demo mode, empty DB, all 6 stages reported) | Captured after PR #72 (RLSM operational ontology rebase) + PR #73 (gitignore cleanup) merged. Triage sweep complete: PR #39 superseded + closed; `input/` + misplaced `registration_recovery_queue.csv` cleaned. Reproduce with: `/usr/bin/python3 -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py && /usr/bin/python3 release_check.py --db /tmp/baseline.db --output-dir /tmp/baseline_release --skip-tests --demo`. |
+| 2026-06-01 | `5a92c94` | 881 passed / 26 skipped / 0 failed | `overall_status: PASS` (demo mode) | Integration PR #70 just merged. Release-readiness sweep landed (Tier 1–5 + RLSM extraction + Workstream B coverage, 22 commits). |
