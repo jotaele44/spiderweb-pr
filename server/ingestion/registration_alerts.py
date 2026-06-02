@@ -22,7 +22,7 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -71,12 +71,17 @@ def _parse_at(value: object) -> Optional[datetime]:
     if not text:
         return None
     try:
-        return datetime.fromisoformat(text)
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
     except ValueError:
         try:
-            return datetime.strptime(text[:10], "%Y-%m-%d")
+            dt = datetime.strptime(text[:10], "%Y-%m-%d")
         except ValueError:
             return None
+    # Normalize to naive UTC so tz-aware ADS-B stamps ("...Z") compare with the
+    # naive timestamps from FR24/flight-log rows without raising TypeError.
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 def seen_registrations(conn: sqlite3.Connection) -> Dict[str, datetime]:

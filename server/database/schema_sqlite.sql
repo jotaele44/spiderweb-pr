@@ -61,6 +61,22 @@ CREATE TABLE IF NOT EXISTS events (
     image_path       TEXT
 );
 
+-- Per-point ADS-B tracks for flight events (ingested by
+-- scripts/parse_adsb_archive.py). One row per position report; flight_id
+-- references events.id. The composite primary key makes re-ingest idempotent
+-- (INSERT OR IGNORE) and indexes lookups by flight.
+CREATE TABLE IF NOT EXISTS track_points (
+    flight_id    TEXT    NOT NULL,   -- → events.id (e.g. 'adsb-3aadc81d')
+    ts           INTEGER NOT NULL,   -- epoch seconds
+    at           TEXT,               -- UTC ISO-8601 timestamp
+    lat          REAL,
+    lng          REAL,
+    altitude_ft  INTEGER,
+    speed        INTEGER,            -- knots, as exported
+    direction    INTEGER,            -- heading degrees
+    PRIMARY KEY (flight_id, ts)
+);
+
 CREATE TABLE IF NOT EXISTS anomalies (
     id              TEXT PRIMARY KEY,
     title           TEXT NOT NULL,

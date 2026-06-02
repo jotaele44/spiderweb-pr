@@ -156,6 +156,38 @@ def ingest_fr24_csv(conn: sqlite3.Connection, csv_path: Path) -> int:
     return count
 
 
+def ingest_track_points(conn: sqlite3.Connection, rows: "list[dict]") -> int:
+    """Insert per-point ADS-B track rows → track_points table.
+
+    Each row needs flight_id + ts (the composite primary key) plus the
+    at/lat/lng/altitude_ft/speed/direction fields. Uses INSERT OR IGNORE so
+    re-ingesting the same flight is idempotent (duplicate points are skipped).
+    Returns the number of rows newly inserted.
+    """
+    inserted = 0
+    for row in rows:
+        cur = conn.execute(
+            """
+            INSERT OR IGNORE INTO track_points
+              (flight_id, ts, at, lat, lng, altitude_ft, speed, direction)
+            VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                row["flight_id"],
+                _as_int_or_none(row.get("ts")),
+                (row.get("at") or "").strip(),
+                row.get("lat"),
+                row.get("lng"),
+                _as_int_or_none(row.get("altitude_ft")),
+                _as_int_or_none(row.get("speed")),
+                _as_int_or_none(row.get("direction")),
+            ),
+        )
+        inserted += cur.rowcount
+    conn.commit()
+    return inserted
+
+
 def ingest_anomalies_json(conn: sqlite3.Connection, json_path: Path) -> int:
     """Map earthgpt anomaly JSON output → anomalies table."""
     if not json_path.exists():

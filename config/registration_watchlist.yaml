@@ -44,7 +44,8 @@ registrations:
     label: Corporate/VIP transport
     operator: Caribbean Helicopters
   - registration: N413LP
-    operator: Private
+    label: ADS-B archive import (Eurocopter AS350 B3)
+    operator: CAMAPE SE
   - registration: N150F
     operator: Private
   - registration: N999DM
@@ -69,3 +70,19 @@ registrations:
     label: Private helo — sensitive (promoted from hold)
     operator: Private
     expected_within_days: 21
+
+  # ADS-B per-tail archive import (operator upload, 2026-06-02). Flight tracks
+  # ingested into events + track_points by scripts/parse_adsb_archive.py.
+  # Operators unconfirmed (no FAA registry lookup in CI) except where an info
+  # PDF accompanied the export. N513LP is reserved/unassigned (no aircraft, no
+  # flights) — held in the recovery ledger, not watchlisted. N79035 was a
+  # mislabel for N79036 and is not a separate tail.
+  - registration: N79036
+    label: ADS-B archive import (Jun 2025, 25 flights)
+  - registration: N26370
+    label: ADS-B archive import (Dec 2025–Jan 2026, 14 flights)
+  - registration: N90JF
+    label: ADS-B archive import (Dec 2025, 11 flights)
+  - registration: N888EV
+    label: ADS-B archive import (MD/Hughes 369E)
+    operator: Netwave Equipment Worldwide Inc
