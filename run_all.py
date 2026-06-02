@@ -160,6 +160,61 @@ def run_aircraft_profile(args):
     print(reporter.aircraft_profile_report(args.aircraft))
 
 
+def run_home_base(args):
+    from pipeline.home_base_correlation import HomeBaseDeducer
+    print(f"\n  HOME-BASE INTELLIGENCE: {args.home_base}\n")
+    print(HomeBaseDeducer(args.db).intelligence_report(args.home_base))
+
+
+def run_fleet_correlation(args):
+    from pipeline.home_base_correlation import FleetColocationAnalyzer
+    print("\n  FLEET HOME-BASE CORRELATION\n")
+    print(FleetColocationAnalyzer(args.db).correlation_report())
+
+
+def _run_export_home_base(db_path: str, output_dir: str):
+    """Write home_base_report.md, home_base_assignments.csv, shared_space_leads.json."""
+    import csv
+    import json
+
+    from pipeline.home_base_correlation import (
+        FleetColocationAnalyzer,
+        HomeBaseDeducer,
+        OPERATOR_MISSION,
+        OPERATOR_OWNER,
+        GENERIC_OPERATORS,
+    )
+
+    print("\n  HOME-BASE EXPORT")
+    print("  " + "─" * 50)
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    fleet = FleetColocationAnalyzer(db_path)
+    deducer = HomeBaseDeducer(db_path)
+    hb = fleet.home_base_map()
+
+    (out / "home_base_report.md").write_text(fleet.correlation_report())
+
+    with open(out / "home_base_assignments.csv", "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["callsign", "lat", "lon", "feature_id", "feature_name",
+                    "operator", "owner", "mission", "confidence"])
+        for cs in sorted(hb):
+            spot = hb[cs]
+            profile = deducer.deduce_profile(cs)
+            op = spot.nearest_operator
+            owner = OPERATOR_OWNER.get(op, "" if op in GENERIC_OPERATORS else op)
+            w.writerow([cs, spot.lat, spot.lon, spot.nearest_feature_id,
+                        spot.nearest_feature_name, op, owner,
+                        OPERATOR_MISSION.get(op, ""), profile.confidence_level])
+
+    leads = {fid: cs for fid, cs in fleet.shared_bases().items() if len(cs) >= 2}
+    (out / "shared_space_leads.json").write_text(json.dumps(leads, indent=2))
+
+    print(f"  ✓ Home-base outputs written to: {output_dir}")
+
+
 def run_daily_report(args):
     from pipeline.operational_intelligence import ReportGenerator
     reporter = ReportGenerator(args.db)
@@ -505,6 +560,12 @@ Examples:
                         help="Generate report only")
     parser.add_argument("--aircraft", type=str,
                         help="Generate intelligence profile for callsign")
+    parser.add_argument("--home-base", dest="home_base", metavar="CALLSIGN",
+                        help="Deduce operator/owner/mission from a craft's home base")
+    parser.add_argument("--fleet-correlation", action="store_true",
+                        help="Cross-craft home-base correlation and shared-space leads")
+    parser.add_argument("--export-home-base", metavar="DIR",
+                        help="Export home-base report + assignments CSV + shared-space leads JSON")
     parser.add_argument("--status", action="store_true",
                         help="Show database status and exit")
     parser.add_argument("--export-json", metavar="PATH",
@@ -561,6 +622,18 @@ Examples:
 
     if args.aircraft:
         run_aircraft_profile(args)
+        return
+
+    if args.home_base:
+        run_home_base(args)
+        return
+
+    if args.fleet_correlation:
+        run_fleet_correlation(args)
+        return
+
+    if args.export_home_base:
+        _run_export_home_base(args.db, args.export_home_base)
         return
 
     # Determine whether to run the main pipeline phases.

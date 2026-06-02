@@ -140,6 +140,17 @@ class PuertoRicoInfrastructure:
             operator="USCG",
             operational_notes="Maritime jurisdiction, active SAR operations"
         ))
+        # USCG home airfield (rotary-wing base). Co-located with Rafael
+        # Hernández / Aguadilla (BQN); modelled separately so a craft that
+        # rests here resolves to USCG rather than the generic FAA airport.
+        self.add_feature(InfrastructureFeature(
+            feature_id="USCG_BORINQUEN",
+            name="USCG Air Station Borinquen",
+            type=InfrastructureType.HELIPORT,
+            latitude=18.4948, longitude=-67.1294, radius_nm=2,
+            operator="USCG",
+            operational_notes="MH-60T home station, NW Puerto Rico SAR/maritime base"
+        ))
 
         # MARITIME ROUTES
         self.add_feature(InfrastructureFeature(

@@ -22,6 +22,7 @@ Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build
 | 2 | `pipeline/gis_intelligence.py` | Puerto Rico infrastructure graph, corridor analysis, heatmaps |
 | 3 | `pipeline/mission_inference.py` | Multi-factor mission scoring, behavioral clustering, Markov prediction |
 | 4 | `pipeline/operational_intelligence.py` | Alert engine, daily reports, aircraft profiles |
+| 4 | `pipeline/home_base_correlation.py` | Home-base (takeoff/landing) → operator/owner/mission deduction + fleet co-location leads |
 | — | `run_all.py` | Unified CLI for all phases |
 | — | `dashboard/dashboard.jsx` + `dashboard/dashboard.html` | Browser dashboard — 4-tab operational review UI |
 
@@ -176,12 +177,23 @@ Phase 1 automatically falls back to Tesseract-only if these are not installed.
 
 ## Key aircraft
 
-| Callsign | Type | Operator | Mission |
-|----------|------|----------|---------|
-| N5854Z | Airbus H125 | Puerto Rico Electric Power Authority | Power line inspection |
-| C6062 | Sikorsky MH-60T | US Coast Guard | Search & Rescue / Maritime Patrol |
-| N767PD | Bell 429 | Puerto Rico Police (FURA) | Law enforcement |
-| N684JB | Airbus H130 | Private | Charter operations |
+| Callsign | Type | Operator | Mission | Home base (resting spot) |
+|----------|------|----------|---------|--------------------------|
+| N5854Z | Airbus H125 | Puerto Rico Electric Power Authority | Power line inspection | Isla Grande / Palo Seco (PREPA) |
+| C6062 | Sikorsky MH-60T | US Coast Guard | Search & Rescue / Maritime Patrol | USCG Air Station Borinquen (NW) |
+| N767PD | Bell 429 | Puerto Rico Police (FURA) | Law enforcement | FURA base, San Juan metro |
+| N684JB | Airbus H130 | Private | Charter operations | Isla Grande GA apron |
+
+The **home base** is the strongest single operator/owner signal — a craft's
+takeoff/landing locations are correlated to the facility that operates them, and
+craft that share an apron are operationally linked. See
+[Aircraft Home-Base Intelligence](docs/AIRCRAFT_HOME_BASE_INTELLIGENCE.md).
+
+```bash
+python run_all.py --home-base C6062        # deduce O/O/M from one craft's resting spot
+python run_all.py --fleet-correlation      # shared-space leads across the fleet
+python run_all.py --export-home-base ./outputs/home_base
+```
 
 ## Database queries
 
