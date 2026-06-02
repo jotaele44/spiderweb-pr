@@ -19,6 +19,19 @@ data/rlsm/*
 !data/rlsm/schema.sql
 !data/rlsm/HANDOFF.md
 
+# input/ — operator-local override for recover-tails FAA N-number list +
+# timestamped auto-backups + derived skip-list. The hermetic CI fallback
+# lives at tests/fixtures/regs.txt (already tracked), so the pipeline runs
+# without input/ being present. Operator's local input stays local.
+input/
+
+# registration_recovery_queue.csv — when produced canonically by
+# server/ingestion/reconcile_registrations.py, it writes to
+# outputs/registration_recovery_queue.csv (already covered by outputs/*).
+# A repo-root copy is a misplaced manual snapshot — also ignore so it
+# doesn't get accidentally committed.
+/registration_recovery_queue.csv
+
 # cache/ — intermediate results, model caches
 cache/*
 !cache/.gitkeep
