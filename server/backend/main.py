@@ -156,6 +156,23 @@ async def list_events():
     return rows
 
 
+@app.get("/events/{flight_id}/track")
+async def event_track(flight_id: str):
+    """Ordered per-point ADS-B track for a flight event (route playback).
+
+    Returns the position reports ingested by scripts/parse_adsb_archive.py into
+    the track_points table, oldest first. Empty list if the flight has no track.
+    """
+    rows = await _rows(
+        "SELECT ts, at, lat, lng, altitude_ft, speed, direction "
+        "FROM track_points WHERE flight_id = ? ORDER BY ts",
+        (flight_id,),
+    )
+    for r in rows:
+        r["altitudeFt"] = r.pop("altitude_ft", None)
+    return rows
+
+
 @app.get("/anomalies")
 async def list_anomalies():
     rows = await _rows(

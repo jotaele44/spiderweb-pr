@@ -125,12 +125,41 @@ def ensure_alerts_registration_column(conn: sqlite3.Connection) -> dict[str, boo
     return added
 
 
+def ensure_track_points_table(conn: sqlite3.Connection) -> bool:
+    """
+    Create the track_points table if absent (per-point ADS-B tracks linked to
+    events.id). CREATE TABLE IF NOT EXISTS is idempotent, so this is safe on
+    every startup. Returns True if the table did not previously exist.
+
+    Keep this in sync with server/database/schema_sqlite.sql.
+    """
+    created = "track_points" not in _existing_tables(conn)
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS track_points (
+            flight_id    TEXT    NOT NULL,
+            ts           INTEGER NOT NULL,
+            at           TEXT,
+            lat          REAL,
+            lng          REAL,
+            altitude_ft  INTEGER,
+            speed        INTEGER,
+            direction    INTEGER,
+            PRIMARY KEY (flight_id, ts)
+        )
+        """
+    )
+    conn.commit()
+    return created
+
+
 def run_all(conn: sqlite3.Connection) -> dict[str, dict]:
     """Run every registered migration. Safe to call on every startup."""
     return {
         "sites_geoid": ensure_sites_geoid_columns(conn),
         "events_aircraft": ensure_events_aircraft_columns(conn),
         "alerts_registration": ensure_alerts_registration_column(conn),
+        "track_points": {"created": ensure_track_points_table(conn)},
     }
 
 
@@ -138,5 +167,6 @@ __all__ = [
     "ensure_sites_geoid_columns",
     "ensure_events_aircraft_columns",
     "ensure_alerts_registration_column",
+    "ensure_track_points_table",
     "run_all",
 ]
