@@ -69,8 +69,24 @@ def load_model(model_id):
 def generate(tokenizer, model, prompt):
     import torch
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    input_len = inputs["input_ids"].shape[1]
+    encoded = tokenizer(prompt, return_tensors="pt")
+    device = getattr(model, "device", None)
+
+    # Hugging Face tokenizers normally return a BatchEncoding with .to(device),
+    # but tests and lightweight adapters may return a plain dict of tensors.
+    # Support both paths without changing the model.generate contract.
+    if hasattr(encoded, "to"):
+        inputs = encoded.to(device) if device is not None else encoded
+    elif isinstance(encoded, dict):
+        inputs = {
+            key: value.to(device) if device is not None and hasattr(value, "to") else value
+            for key, value in encoded.items()
+        }
+    else:
+        raise TypeError("tokenizer must return a BatchEncoding or dict-like tensor mapping")
+
+    input_ids = inputs.get("input_ids") if isinstance(inputs, dict) else inputs["input_ids"]
+    input_len = input_ids.shape[1]
 
     with torch.no_grad():
         output = model.generate(
