@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { byId, fmtMoney } from "../data/mockData";
-import type { PriisData, Selection } from "../types/priis";
+import type { PriisData, Selection, SpatialFilter, SpatialFilterKind, TrackPoint } from "../types/priis";
 import { AnomalyScore, Pill } from "../components/Badges";
+import { toggleSpatialFilter } from "../lib/selectors";
 
 const BASE = "http://localhost:8000";
 
@@ -19,7 +20,14 @@ const rasterStyle: maplibregl.StyleSpecification = {
   layers: [{ id: "osm", type: "raster", source: "osm" }],
 };
 
-type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
+type PolygonLayerKey =
+  | "state"
+  | "municipios"
+  | "barrios"
+  | "tracts"
+  | "block_groups"
+  | "places"
+  | "zctas";
 type LayerKey =
   | "contracts"
   | "infrastructure"
@@ -37,26 +45,19 @@ interface PolygonLayerConfig {
 }
 
 const POLYGON_LAYERS: Record<PolygonLayerKey, PolygonLayerConfig> = {
+  state: {
+    fillOpacity: 0.0,
+    fillColor: "#ffffff",
+    lineColor: "#ffffff",
+    defaultOn: true,
+    label: "PR outline",
+  },
   municipios: {
     fillOpacity: 0.08,
     fillColor: "#4dc4d6",
     lineColor: "#4dc4d6",
     defaultOn: true,
     label: "Municipios",
-  },
-  tracts: {
-    fillOpacity: 0.04,
-    fillColor: "#f4b740",
-    lineColor: "#f4b740",
-    defaultOn: false,
-    label: "Census tracts",
-  },
-  places: {
-    fillOpacity: 0.05,
-    fillColor: "#a07cff",
-    lineColor: "#a07cff",
-    defaultOn: false,
-    label: "Places",
   },
   barrios: {
     fillOpacity: 0.04,
@@ -65,22 +66,85 @@ const POLYGON_LAYERS: Record<PolygonLayerKey, PolygonLayerConfig> = {
     defaultOn: false,
     label: "Barrios",
   },
+  tracts: {
+    fillOpacity: 0.04,
+    fillColor: "#f4b740",
+    lineColor: "#f4b740",
+    defaultOn: false,
+    label: "Census tracts",
+  },
+  block_groups: {
+    fillOpacity: 0.03,
+    fillColor: "#e07a8c",
+    lineColor: "#e07a8c",
+    defaultOn: false,
+    label: "Block groups",
+  },
+  places: {
+    fillOpacity: 0.05,
+    fillColor: "#a07cff",
+    lineColor: "#a07cff",
+    defaultOn: false,
+    label: "Places",
+  },
+  zctas: {
+    fillOpacity: 0.04,
+    fillColor: "#7ec888",
+    lineColor: "#7ec888",
+    defaultOn: false,
+    label: "ZCTAs",
+  },
 };
 
 const POLYGON_LAYER_KEYS = Object.keys(POLYGON_LAYERS) as PolygonLayerKey[];
+
+// Human-friendly labels for the operational overlays (non-polygon keys in
+// the `layers` state). Polygon labels come from POLYGON_LAYERS[k].label.
+const OPERATIONAL_LAYER_LABELS: Record<
+  Exclude<LayerKey, PolygonLayerKey>,
+  string
+> = {
+  contracts: "Contracts",
+  infrastructure: "Infrastructure",
+  sensitive: "Sensitive sites",
+  anomaly: "Anomalies",
+  flights: "Flights",
+};
+
+function labelFor(key: LayerKey): string {
+  if (key in POLYGON_LAYERS) {
+    return POLYGON_LAYERS[key as PolygonLayerKey].label;
+  }
+  return OPERATIONAL_LAYER_LABELS[key as Exclude<LayerKey, PolygonLayerKey>] ?? key;
+}
+
+export type PolygonClickHandler = (
+  geoid: string,
+  label: string,
+  layerKind: PolygonLayerKey,
+) => void;
 
 /**
  * Toggle a TIGER polygon source + (fill, line) layer pair on the MapLibre
  * instance. IDs follow the pattern `geo-${key}` / `geo-${key}-fill` /
  * `geo-${key}-line`. Removal order is line → fill → source (every layer
  * referencing the source must be gone before removeSource).
+ *
+ * If `onClick` is provided, the fill layer becomes interactive: clicking a
+ * polygon invokes the callback with its GEOID + NAME, and hovering changes
+ * the cursor. The callback is read through a ref so passing a new function
+ * each render doesn't tear down the layer.
  */
 function usePolygonLayer(
   mapRef: React.MutableRefObject<maplibregl.Map | null>,
   key: PolygonLayerKey,
   isOn: boolean,
+  onClick?: PolygonClickHandler,
 ) {
   const cfg = POLYGON_LAYERS[key];
+  const onClickRef = useRef(onClick);
+  useEffect(() => { onClickRef.current = onClick; }, [onClick]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -88,8 +152,38 @@ function usePolygonLayer(
     const FILL_ID = `geo-${key}-fill`;
     const LINE_ID = `geo-${key}-line`;
 
+    // Handlers are declared at effect scope so cleanup can reference the
+    // exact same function instances passed to map.on(...).
+    const clickHandler = (
+      e: maplibregl.MapMouseEvent & {
+        features?: maplibregl.MapGeoJSONFeature[];
+      },
+    ) => {
+      const feature = e.features?.[0];
+      if (!feature) return;
+      const props = feature.properties as {
+        GEOID?: string;
+        NAME?: string;
+        NAMELSAD?: string;
+      };
+      if (!props.GEOID) return;
+      onClickRef.current?.(
+        props.GEOID,
+        props.NAMELSAD ?? props.NAME ?? props.GEOID,
+        key,
+      );
+    };
+    const enterHandler = () => {
+      if (map.getCanvas()) map.getCanvas().style.cursor = "pointer";
+    };
+    const leaveHandler = () => {
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+
     function removePolygon() {
-      // Order matters: every layer must be gone before removeSource.
+      map!.off("click", FILL_ID, clickHandler);
+      map!.off("mouseenter", FILL_ID, enterHandler);
+      map!.off("mouseleave", FILL_ID, leaveHandler);
       if (map!.getLayer(LINE_ID)) map!.removeLayer(LINE_ID);
       if (map!.getLayer(FILL_ID)) map!.removeLayer(FILL_ID);
       if (map!.getSource(SOURCE_ID)) map!.removeSource(SOURCE_ID);
@@ -126,6 +220,10 @@ function usePolygonLayer(
           "line-opacity": 0.6,
         },
       });
+      // Wire interactivity after layers exist.
+      map!.on("click", FILL_ID, clickHandler);
+      map!.on("mouseenter", FILL_ID, enterHandler);
+      map!.on("mouseleave", FILL_ID, leaveHandler);
     }
 
     if (map.isStyleLoaded()) {
@@ -144,11 +242,24 @@ export function SpatialIntelligence({
   data,
   selection,
   setSelection,
+  spatialFilter,
+  setSpatialFilter,
+  flightTrack,
 }: {
   data: PriisData;
   selection: Selection | null;
   setSelection: (selection: Selection) => void;
+  spatialFilter: SpatialFilter | null;
+  setSpatialFilter: (filter: SpatialFilter | null) => void;
+  flightTrack: TrackPoint[] | null;
 }) {
+  // Click a polygon → set the cross-module filter. The pure
+  // `toggleSpatialFilter` handles the "click same polygon to clear" rule.
+  const handlePolygonClick: PolygonClickHandler = (geoid, label, layerKind) => {
+    const kind = layerKind as SpatialFilterKind;
+    setSpatialFilter(toggleSpatialFilter(spatialFilter, { kind, geoid, label }));
+  };
+
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -163,11 +274,70 @@ export function SpatialIntelligence({
     ) as Record<PolygonLayerKey, boolean>),
   }));
 
+  // Ephemeral flight track — when a flight event is selected, a polyline of
+  // its ADS-B track is added to the map. Tears down on selection change.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const SOURCE_ID = "flight-track-source";
+    const LAYER_ID = "flight-track-layer";
+
+    function removeTrack() {
+      if (map!.getLayer(LAYER_ID)) map!.removeLayer(LAYER_ID);
+      if (map!.getSource(SOURCE_ID)) map!.removeSource(SOURCE_ID);
+    }
+
+    if (!flightTrack || flightTrack.length < 2) {
+      if (map.isStyleLoaded()) removeTrack();
+      return;
+    }
+
+    function addTrack() {
+      removeTrack();
+      map!.addSource(SOURCE_ID, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: flightTrack!.map((p) => [p.lng, p.lat]),
+          },
+        },
+      });
+      map!.addLayer({
+        id: LAYER_ID,
+        type: "line",
+        source: SOURCE_ID,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": "#f4b740",
+          "line-width": 2.5,
+          "line-opacity": 0.9,
+        },
+      });
+    }
+
+    if (map.isStyleLoaded()) {
+      addTrack();
+    } else {
+      map.once("load", addTrack);
+    }
+
+    return () => {
+      if (mapRef.current?.isStyleLoaded()) removeTrack();
+    };
+  }, [flightTrack]);
+
   // Polygon overlays — one hook per TIGER layer, all driven by POLYGON_LAYERS config.
-  usePolygonLayer(mapRef, "municipios", layers.municipios);
-  usePolygonLayer(mapRef, "tracts", layers.tracts);
-  usePolygonLayer(mapRef, "places", layers.places);
-  usePolygonLayer(mapRef, "barrios", layers.barrios);
+  // PR outline is non-interactive (single feature, no useful filter to set).
+  usePolygonLayer(mapRef, "state", layers.state);
+  usePolygonLayer(mapRef, "municipios", layers.municipios, handlePolygonClick);
+  usePolygonLayer(mapRef, "barrios", layers.barrios, handlePolygonClick);
+  usePolygonLayer(mapRef, "tracts", layers.tracts, handlePolygonClick);
+  usePolygonLayer(mapRef, "block_groups", layers.block_groups, handlePolygonClick);
+  usePolygonLayer(mapRef, "places", layers.places, handlePolygonClick);
+  usePolygonLayer(mapRef, "zctas", layers.zctas, handlePolygonClick);
 
   // Initialize map
   useEffect(() => {
@@ -296,6 +466,20 @@ export function SpatialIntelligence({
       <div className="map-shell">
         <div ref={hostRef} className="map-host" />
         <aside className="layer-panel">
+          {spatialFilter && (
+            <div className="card" style={{ marginBottom: 8, padding: 8 }}>
+              <div className="subtle mono">SPATIAL FILTER</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                <div>
+                  <b>{spatialFilter.label}</b>
+                  <div className="subtle mono" style={{ fontSize: "0.7rem" }}>
+                    {spatialFilter.kind} · {spatialFilter.geoid}
+                  </div>
+                </div>
+                <button className="act" onClick={() => setSpatialFilter(null)}>CLEAR</button>
+              </div>
+            </div>
+          )}
           <h3>Layer control</h3>
           {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => (
             <button
@@ -304,7 +488,7 @@ export function SpatialIntelligence({
               data-active={value}
               onClick={() => setLayers((cur) => ({ ...cur, [key]: !cur[key] }))}
             >
-              <span>{key}</span>
+              <span>{labelFor(key)}</span>
               <span>{value ? "on" : "off"}</span>
             </button>
           ))}

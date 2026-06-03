@@ -33,6 +33,34 @@ export interface Site {
   municipio_geoid?: string;
   /** TIGER tract GEOID, joined by ingest_tiger_pr.py */
   tract_geoid?: string;
+  /** TIGER ZCTA5 GEOID, joined by ingest_tiger_pr.py */
+  zcta_geoid?: string;
+}
+
+/**
+ * Cross-module geographic filter. Set when the user clicks a polygon in
+ * SpatialIntelligence. `kind` matches a TIGER summary level we ingest;
+ * `geoid` is the polygon's GEOID; `label` is a human-friendly name.
+ *
+ * NOTE: Only `municipio`, `tract`, and `zcta` filter Finance — those are
+ * the three GEOIDs joined onto the `sites` table by `ingest_tiger_pr.py`.
+ * Clicks on other polygon kinds (state, places, block_groups, barrios)
+ * still set the filter for Inspector context but don't constrain contracts
+ * until those layers are added to the sites join.
+ */
+export type SpatialFilterKind =
+  | "state"
+  | "municipios"
+  | "barrios"
+  | "tracts"
+  | "block_groups"
+  | "places"
+  | "zctas";
+
+export interface SpatialFilter {
+  kind: SpatialFilterKind;
+  geoid: string;
+  label: string;
 }
 
 export interface Contract {
@@ -113,6 +141,18 @@ export interface PriisData {
   investigations: Investigation[];
   alerts: AlertRecord[];
   watchlist: Selection[];
+}
+
+/** Per-point ADS-B track sample for a flight event. Matches the backend
+ * `/events/{flight_id}/track` response shape. */
+export interface TrackPoint {
+  ts: number;
+  at?: string;
+  lat: number;
+  lng: number;
+  altitudeFt?: number;
+  speed?: number;
+  direction?: number;
 }
 
 export interface QueryResponse {

@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
-import type { ModuleId, PriisData, Selection } from "./types/priis";
+import type { ModuleId, PriisData, Selection, SpatialFilter, TrackPoint } from "./types/priis";
 import { priisData as mockData } from "./data/mockData";
-import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline } from "./api/client";
+import { fetchFlightTrack, fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline } from "./api/client";
 import { CommandBar } from "./components/CommandBar";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
 import { Timeline } from "./components/Timeline";
+import { ToastStack, type ToastMessage, type ToastKind } from "./components/Toast";
 import { CommandCenter } from "./modules/CommandCenter";
 import { FinanceIntelligence } from "./modules/FinanceIntelligence";
 import { SpatialIntelligence } from "./modules/SpatialIntelligence";
 import { AnomalyWorkbench } from "./modules/AnomalyWorkbench";
 import { InvestigationGraph } from "./modules/InvestigationGraph";
 import { QueryLayer } from "./modules/QueryLayer";
+import { clearStaleStorage, usePersistedState } from "./hooks/usePersistedState";
+
+// Bump when ANY persisted-state shape changes incompatibly.
+const STORAGE_VERSION = "1";
+const PERSISTED_KEYS = ["priis_investigation", "priis_cursor", "priis_watchlist"];
+// Run once at module load (before any hook renders) so the lazy useState
+// initialisers inside usePersistedState see a clean slate on a version bump.
+clearStaleStorage(STORAGE_VERSION, PERSISTED_KEYS);
 
 const tabs: { id: ModuleId; label: string }[] = [
   { id: "command", label: "Command" },
@@ -31,9 +40,19 @@ export default function App() {
 
   const [moduleId, setModule] = useState<ModuleId>("command");
   const [selection, setSelection] = useState<Selection | null>({ kind: "anomaly", id: "A-014" });
-  const [activeInvestigation, setActiveInvestigation] = useState("INV-007");
+  // Cross-module geographic filter set from a Spatial polygon click.
+  const [spatialFilter, setSpatialFilter] = useState<SpatialFilter | null>(null);
+  // ADS-B track for the currently selected flight event. null = not loading,
+  // [] = loaded but empty (no track in DB yet).
+  const [flightTrack, setFlightTrack] = useState<TrackPoint[] | null>(null);
+  // Persisted state — load + save are unified by the hook. The bug-prone
+  // load-effect / save-effect split is structurally impossible here.
+  // The watchlist is client-side only; the backend doesn't currently have a
+  // /watchlist endpoint (would require a user model first).
+  const [watchlist, setWatchlist] = usePersistedState<Selection[]>("priis_watchlist", []);
+  const [activeInvestigation, setActiveInvestigation] = usePersistedState("priis_investigation", "INV-007");
   const [query, setQuery] = useState("vendors with concentration near restricted sites");
-  const [cursor, setCursor] = useState("2024-08-14");
+  const [cursor, setCursor] = usePersistedState("priis_cursor", "2024-08-14");
   const [filters, setFilters] = useState([
     { key: "inv", label: "INV-007", color: "var(--t1)" },
     { key: "time", label: "12m window", color: "var(--t2)" },
@@ -45,38 +64,61 @@ export default function App() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [pipelineLog, setPipelineLog] = useState<string[]>([]);
 
+  // Toast stack — small, useState-managed; no need for context yet.
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  function pushToast(text: string, kind: ToastKind = "info", ttl?: number) {
+    const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    setToasts((prev) => [...prev, { id, text, kind, ttl }]);
+  }
+  function dismissToast(id: string) {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }
+
   // Load real data on mount; fall back to mock if API is down
   useEffect(() => {
     void fetchPriisDataWithFallback().then(({ data: d, live: l }) => {
       setData(d);
       setLive(l);
       setLoading(false);
+      if (!l) {
+        pushToast(
+          "API unreachable — workbench running on mock fixture data",
+          "warn",
+          0, // sticky until dismissed
+        );
+      }
     });
   }, []);
 
-  // Versioned localStorage — bump STORAGE_VERSION to wipe stale state on schema change
-  const STORAGE_VERSION = "1";
+  function pinToWatchlist(item: Selection) {
+    setWatchlist((cur) =>
+      cur.some((w) => w.kind === item.kind && w.id === item.id)
+        ? cur
+        : [...cur, item],
+    );
+  }
+  function unpinFromWatchlist(item: Selection) {
+    setWatchlist((cur) => cur.filter((w) => !(w.kind === item.kind && w.id === item.id)));
+  }
 
+  // Fetch the ADS-B track whenever the selection lands on a flight event.
+  // Other selections clear the track (so the temp Spatial layer goes away).
   useEffect(() => {
-    if (localStorage.getItem("priis_storage_version") !== STORAGE_VERSION) {
-      localStorage.removeItem("priis_investigation");
-      localStorage.removeItem("priis_cursor");
-      localStorage.setItem("priis_storage_version", STORAGE_VERSION);
+    if (selection?.kind !== "event") {
+      setFlightTrack(null);
       return;
     }
-    const stored = localStorage.getItem("priis_investigation");
-    if (stored) setActiveInvestigation(stored);
-    const storedCursor = localStorage.getItem("priis_cursor");
-    if (storedCursor) setCursor(storedCursor);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("priis_investigation", activeInvestigation);
-  }, [activeInvestigation]);
-
-  useEffect(() => {
-    localStorage.setItem("priis_cursor", cursor);
-  }, [cursor]);
+    const event = data.events.find((e) => e.id === selection.id);
+    if (!event || event.kind !== "flight") {
+      setFlightTrack(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchFlightTrack(event.id).then((track) => {
+      if (!cancelled) setFlightTrack(track);
+    });
+    return () => { cancelled = true; };
+  }, [selection, data.events]);
 
   async function handlePipelineRun() {
     if (runState === "running" && jobId) {
@@ -87,36 +129,68 @@ export default function App() {
     }
     setPipelineLog([]);
     setRunState("running");
-    const job = await startPipeline();
-    setJobId(job.job_id);
-    streamPipeline(
-      job.job_id,
-      (line) => setPipelineLog((prev) => [...prev, line]),
-      (rc) => {
-        setRunState(rc === 0 ? "done" : "error");
-        setJobId(null);
-      },
-    );
+    try {
+      const job = await startPipeline();
+      setJobId(job.job_id);
+      streamPipeline(
+        job.job_id,
+        (line) => setPipelineLog((prev) => [...prev, line]),
+        (rc) => {
+          setRunState(rc === 0 ? "done" : "error");
+          setJobId(null);
+          if (rc !== 0) {
+            pushToast(
+              `Pipeline exited with code ${rc} — see Query module log for details`,
+              "error",
+            );
+          }
+        },
+      );
+    } catch (err) {
+      setRunState("error");
+      pushToast(
+        `Failed to start pipeline: ${err instanceof Error ? err.message : String(err)}`,
+        "error",
+      );
+    }
   }
+
+  // App-owned watchlist overrides whatever the API returned for `data.watchlist`
+  // (the seed-time field is informational). This lets every module read a
+  // single, persistent watchlist driven by user actions.
+  const liveData: PriisData = { ...data, watchlist };
 
   function renderModule() {
     if (loading) {
-      return <div className="panel" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)" }}>Loading PRIIS data…</div>;
+      // Skeleton mirrors the panel-head + cards layout most modules use, so
+      // the workbench geometry doesn't visibly reflow once data hydrates.
+      return (
+        <div className="panel skeleton-panel" aria-busy="true" aria-label="Loading PRIIS data">
+          <div className="skeleton-row" data-w="40" />
+          <div className="skeleton-row" data-w="80" />
+          <div className="skeleton-row" data-w="60" />
+          <div className="skeleton-row" data-w="100" />
+          <div className="skeleton-row" data-w="80" />
+          <div className="skeleton-row" data-w="60" />
+        </div>
+      );
     }
     switch (moduleId) {
-      case "command":  return <CommandCenter data={data} setSelection={setSelection} setModule={setModule} />;
-      case "finance":  return <FinanceIntelligence data={data} selection={selection} setSelection={setSelection} />;
-      case "spatial":  return <SpatialIntelligence data={data} selection={selection} setSelection={setSelection} />;
-      case "anomaly":  return <AnomalyWorkbench data={data} selection={selection} setSelection={setSelection} />;
-      case "graph":    return <InvestigationGraph data={data} setSelection={setSelection} />;
-      case "query":    return <QueryLayer data={data} setSelection={setSelection} pipelineLog={pipelineLog} />;
+      case "command":  return <CommandCenter data={liveData} setSelection={setSelection} setModule={setModule} />;
+      case "finance":  return <FinanceIntelligence data={liveData} selection={selection} setSelection={setSelection} spatialFilter={spatialFilter} clearSpatialFilter={() => setSpatialFilter(null)} />;
+      case "spatial":  return <SpatialIntelligence data={liveData} selection={selection} setSelection={setSelection} spatialFilter={spatialFilter} setSpatialFilter={setSpatialFilter} flightTrack={flightTrack} />;
+      case "anomaly":  return <AnomalyWorkbench data={liveData} selection={selection} setSelection={setSelection} />;
+      case "graph":    return <InvestigationGraph data={liveData} selection={selection} setSelection={setSelection} />;
+      case "query":    return <QueryLayer data={liveData} setSelection={setSelection} pipelineLog={pipelineLog} pushToast={pushToast} />;
       default: return null;
     }
   }
 
   return (
     <>
-      <div className="classif">UNCLASSIFIED · DEMO · NOT FOR DISTRIBUTION · PR INTEGRATED INTELLIGENCE SYSTEM V1</div>
+      <div className="classif" data-mode={live ? "live" : "mock"}>
+        UNCLASSIFIED · {live ? "LIVE" : "MOCK DATA · API OFFLINE"} · NOT FOR DISTRIBUTION · PR INTEGRATED INTELLIGENCE SYSTEM V1
+      </div>
       <div className="workbench">
         <CommandBar
           query={query}
@@ -129,7 +203,7 @@ export default function App() {
           live={live}
         />
         <LeftRail
-          data={data}
+          data={liveData}
           moduleId={moduleId}
           setModule={setModule}
           activeInvestigation={activeInvestigation}
@@ -149,9 +223,10 @@ export default function App() {
           </div>
           <div className="workspace">{renderModule()}</div>
         </main>
-        <Inspector data={data} selection={selection} setSelection={setSelection} />
+        <Inspector data={liveData} selection={selection} setSelection={setSelection} spatialFilter={spatialFilter} clearSpatialFilter={() => setSpatialFilter(null)} flightTrack={flightTrack} watchlist={watchlist} pinToWatchlist={pinToWatchlist} unpinFromWatchlist={unpinFromWatchlist} />
         <Timeline events={data.events} cursor={cursor} setCursor={setCursor} setSelection={setSelection} />
       </div>
+      <ToastStack messages={toasts} dismiss={dismissToast} />
     </>
   );
 }

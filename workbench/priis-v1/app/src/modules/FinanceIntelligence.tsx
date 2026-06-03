@@ -9,9 +9,10 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { byId, fmtMoney } from "../data/mockData";
-import type { Contract, PriisData, Selection } from "../types/priis";
+import type { Contract, PriisData, Selection, SpatialFilter } from "../types/priis";
 import { Pill, TierBadge } from "../components/Badges";
 import { exportContractsCsv } from "../export/csvExport";
+import { filterContractsBySpatialFilter } from "../lib/selectors";
 
 const colHelper = createColumnHelper<Contract>();
 
@@ -19,25 +20,37 @@ export function FinanceIntelligence({
   data,
   selection,
   setSelection,
+  spatialFilter,
+  clearSpatialFilter,
 }: {
   data: PriisData;
   selection: Selection | null;
   setSelection: (selection: Selection) => void;
+  spatialFilter: SpatialFilter | null;
+  clearSpatialFilter: () => void;
 }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "amount", desc: true }]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const total = data.contracts.reduce((sum, c) => sum + c.amount, 0);
+  // Apply the spatial filter to contracts. The pure selector handles the
+  // unsupported-kind case (returns all contracts) so the status badge
+  // below still surfaces the filter for Inspector context.
+  const filteredContracts = useMemo(
+    () => filterContractsBySpatialFilter(data.contracts, data.sites, spatialFilter),
+    [data.contracts, data.sites, spatialFilter],
+  );
+
+  const total = filteredContracts.reduce((sum, c) => sum + c.amount, 0);
   const vendorTotals = useMemo(
     () =>
       data.vendors
         .map((v) => ({
           vendor: v,
-          total: data.contracts.filter((c) => c.vendor === v.id).reduce((s, c) => s + c.amount, 0),
+          total: filteredContracts.filter((c) => c.vendor === v.id).reduce((s, c) => s + c.amount, 0),
         }))
         .filter((r) => r.total > 0)
         .sort((a, b) => b.total - a.total),
-    [data],
+    [data.vendors, filteredContracts],
   );
 
   const columns = useMemo(
@@ -77,7 +90,7 @@ export function FinanceIntelligence({
   );
 
   const table = useReactTable({
-    data: data.contracts,
+    data: filteredContracts,
     columns,
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
@@ -92,7 +105,24 @@ export function FinanceIntelligence({
       <div className="panel-head">
         <div>
           <h1>Finance Intelligence</h1>
-          <span className="subtle">Contracts · vendors · awards · amendments</span>
+          <span className="subtle">
+            Contracts · vendors · awards · amendments
+            {spatialFilter && (
+              <>
+                {" · "}
+                <b style={{ color: "var(--warn)" }}>
+                  filtered to {spatialFilter.label}
+                </b>{" "}
+                <button
+                  className="act"
+                  style={{ padding: "0 6px", fontSize: "0.7rem" }}
+                  onClick={clearSpatialFilter}
+                >
+                  CLEAR
+                </button>
+              </>
+            )}
+          </span>
         </div>
         <div className="row" style={{ gap: "0.5rem" }}>
           <input
@@ -102,7 +132,10 @@ export function FinanceIntelligence({
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
           />
-          <button className="act" onClick={() => exportContractsCsv(data)}>
+          <button
+            className="act"
+            onClick={() => exportContractsCsv({ ...data, contracts: filteredContracts })}
+          >
             EXPORT CSV
           </button>
         </div>

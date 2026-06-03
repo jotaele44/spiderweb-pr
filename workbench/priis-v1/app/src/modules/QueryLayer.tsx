@@ -1,24 +1,49 @@
 import { useRef, useState } from "react";
-import { streamRagQuery } from "../api/client";
+import { postRagIndex, streamRagQuery } from "../api/client";
 import { runPriisQuery } from "../adapters/queryAdapter";
 import type { PriisData, QueryResponse, Selection } from "../types/priis";
+import type { ToastKind } from "../components/Toast";
 import { ConfidenceMeter, ContradictionFlag, TierBadge } from "../components/Badges";
 
 export function QueryLayer({
   data,
   setSelection,
   pipelineLog = [],
+  pushToast,
 }: {
   data: PriisData;
   setSelection: (selection: Selection) => void;
   pipelineLog?: string[];
+  pushToast?: (text: string, kind?: ToastKind, ttl?: number) => void;
 }) {
   const [query, setQuery] = useState("vendors with concentration near restricted sites");
   const [result, setResult] = useState<QueryResponse | null>(null);
   const [pending, setPending] = useState(false);
   const [streamLines, setStreamLines] = useState<string[]>([]);
   const [useRag, setUseRag] = useState(false);
+  const [indexing, setIndexing] = useState(false);
   const cancelRef = useRef<(() => void) | null>(null);
+
+  async function handleReindex() {
+    const ok = window.confirm(
+      "Re-index the RAG vector store?\n\n" +
+        "This re-runs rag_pipeline.py over all current source documents on the backend.\n" +
+        "The job runs asynchronously and may take several minutes.",
+    );
+    if (!ok) return;
+    setIndexing(true);
+    try {
+      const { job_id } = await postRagIndex();
+      pushToast?.(`RAG re-index started · job ${job_id}`, "info");
+    } catch (err) {
+      pushToast?.(
+        `RAG re-index failed: ${err instanceof Error ? err.message : String(err)}`,
+        "error",
+      );
+    } finally {
+      setIndexing(false);
+    }
+  }
 
   function submit() {
     if (pending) {
@@ -61,6 +86,14 @@ export function QueryLayer({
             title="Toggle between local stub and live RAG backend"
           >
             {useRag ? "RAG LIVE" : "STUB"}
+          </button>
+          <button
+            className="act"
+            disabled={indexing}
+            onClick={() => { void handleReindex(); }}
+            title="Re-index the RAG vector store from current source documents"
+          >
+            {indexing ? "INDEXING…" : "RE-INDEX"}
           </button>
           <button className="act primary" onClick={submit}>
             {pending ? "STOP" : "RUN QUERY"}

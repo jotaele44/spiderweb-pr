@@ -29,6 +29,85 @@ button { cursor: pointer; }
   letter-spacing: .12em;
   z-index: 1000;
 }
+/* When the backend is unreachable, the classification banner switches to a
+ * warning palette so it's impossible to mistake mock data for live data. */
+.classif[data-mode="mock"] {
+  background: var(--warn);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Toast stack — fixed-position notifications surfaced from background work. */
+.toast-stack {
+  position: fixed;
+  bottom: calc(var(--time-h, 56px) + 12px);
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1100;
+  max-width: 360px;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 4px;
+  font: 12px var(--font-mono);
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  animation: toast-in 0.18s ease-out;
+}
+.toast[data-kind="error"] { border-left-color: var(--alert); }
+.toast[data-kind="warn"]  { border-left-color: var(--warn); }
+.toast[data-kind="info"]  { border-left-color: var(--t1); }
+.toast-text { flex: 1; line-height: 1.4; }
+.toast-close {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+}
+.toast-close:hover { color: var(--ink); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading skeleton — replaces the bare "Loading…" text during the initial
+ * fetch so the workbench geometry is visible while data hydrates. */
+.skeleton-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+}
+.skeleton-row {
+  height: 16px;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    var(--line) 50%,
+    var(--surface-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+.skeleton-row[data-w="40"] { width: 40%; }
+.skeleton-row[data-w="60"] { width: 60%; }
+.skeleton-row[data-w="80"] { width: 80%; }
+.skeleton-row[data-w="100"] { width: 100%; }
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
 
 .workbench {
   height: 100vh;
@@ -128,6 +207,7 @@ button { cursor: pointer; }
 .badge[data-tier="T2"] { color: var(--t2); }
 .badge[data-tier="T3"] { color: var(--t3); }
 .badge[data-tier="T4"] { color: var(--t4); }
+.badge[data-tier="unknown"] { color: var(--muted); }
 .pill { border: 1px solid var(--line); padding: 2px 7px; font: 10px var(--font-mono); text-transform: uppercase; }
 .pill[data-tone="ok"] { color: var(--ok); border-color: var(--ok); }
 .pill[data-tone="warn"] { color: var(--warn); border-color: var(--warn); }

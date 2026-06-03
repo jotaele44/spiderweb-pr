@@ -1,15 +1,20 @@
-import type { PriisData, QueryResponse } from "../types/priis";
+import type { EvidenceTier, PriisData, QueryResponse } from "../types/priis";
+import { evidenceTierBreakdown } from "../lib/evidence";
+
+const EMPTY_BREAKDOWN: Record<EvidenceTier, number> = { T1: 0, T2: 0, T3: 0, T4: 0 };
 
 export function runPriisQuery(query: string, data: PriisData): Promise<QueryResponse> {
   const normalized = query.toLowerCase();
   // Promise.resolve() wraps synchronous computation for uniform async interface
   const relevant = normalized.includes("vieques") ? data.anomalies.find((a) => a.id === "A-021") : data.anomalies[0];
   const events = relevant ? data.events.filter((event) => relevant.events.includes(event.id)) : [];
-  const breakdown = { T1: 0, T2: 0, T3: 0, T4: 0 };
-  events.forEach((event) => {
-    if (event.tier) breakdown[event.tier] += 1;
-  });
-  if (relevant) breakdown.T2 += relevant.contracts.length;
+
+  // Shared tier rollup. Previously this adapter dumped every contract into
+  // the T2 bucket regardless of its actual `contract.tier` — fixed by using
+  // the same helper AnomalyWorkbench consumes.
+  const breakdown = relevant
+    ? evidenceTierBreakdown(relevant, data).byTier
+    : EMPTY_BREAKDOWN;
 
   return Promise.resolve({
     finding: relevant

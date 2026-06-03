@@ -3,7 +3,7 @@
  * Falls back to mock data when the API is unreachable.
  * All API responses are validated against Zod schemas.
  */
-import type { PriisData } from "../types/priis";
+import type { PriisData, TrackPoint } from "../types/priis";
 import { priisData } from "../data/mockData";
 import {
   parseArray,
@@ -98,6 +98,33 @@ export function streamPipeline(
     es.close();
   });
   return es;
+}
+
+// ─── Flight tracks ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch the per-point ADS-B track for a flight event. Returns an empty array
+ * if the backend has no track for this flight_id (the table may be empty
+ * until `scripts/parse_adsb_archive.py` has been run).
+ */
+export async function fetchFlightTrack(flightId: string): Promise<TrackPoint[]> {
+  try {
+    return (await get<TrackPoint[]>(`/events/${encodeURIComponent(flightId)}/track`)) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Kick off a RAG re-index job on the backend. Returns the new job_id
+ * immediately; indexing runs asynchronously and the server doesn't expose
+ * progress events — the UI surfaces a toast and lets the operator check
+ * server logs for progress.
+ */
+export async function postRagIndex(): Promise<{ job_id: string; status: string }> {
+  const res = await fetch(`${BASE}/rag/index`, { method: "POST" });
+  if (!res.ok) throw new Error(`/rag/index → ${res.status}`);
+  return res.json() as Promise<{ job_id: string; status: string }>;
 }
 
 // ─── RAG ───────────────────────────────────────────────────────────────────────

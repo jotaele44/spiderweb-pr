@@ -7,10 +7,13 @@ exist at data/*.geojson. If they don't, the tests skip with a clear message
 populated yet (e.g. on fresh clones / CI before the geo step runs).
 
 Counts:
-  - municipios: exact 78 (PR's count is politically stable)
-  - tracts:     [850, 1100]   (Census tract redraws shift counts by vintage)
-  - places:     [200, 350]
-  - barrios:    [800, 1100]
+  - state:        exact 1 (single PR feature)
+  - municipios:   exact 78 (PR's count is politically stable)
+  - tracts:       [850, 1100]   (Census tract redraws shift counts by vintage)
+  - block_groups: [2400, 3200]
+  - places:       [200, 350]
+  - barrios:      [800, 1100]
+  - zctas:        [130, 200]    (PR ZIPs: 006xx, 007xx, 009xx)
 """
 from __future__ import annotations
 
@@ -52,10 +55,13 @@ def client():
 
 
 COUNT_EXPECTATIONS = {
+    "state": (1, 1),            # exact
     "municipios": (78, 78),     # exact
     "tracts": (850, 1100),
+    "block_groups": (2000, 3500),   # generous until first real ingest
     "places": (200, 350),
     "barrios": (800, 1100),
+    "zctas": (100, 220),            # generous until first real ingest
 }
 
 
@@ -95,7 +101,10 @@ def test_content_type_is_json_or_geojson(client):
 def test_feature_coords_within_pr_bbox(client):
     """Sample one feature per polygon layer and assert its first coordinate
     falls inside PR's bbox (-68..-65, 17..19) in WGS84."""
-    for layer in ("municipios", "tracts", "places", "barrios"):
+    for layer in (
+        "state", "municipios", "tracts", "block_groups",
+        "places", "barrios", "zctas",
+    ):
         _skip_if_missing(layer)
         resp = client.get(f"/geo/{layer}.geojson")
         feat = resp.json()["features"][0]
@@ -120,3 +129,20 @@ def test_municipios_geoids_start_with_state_fips_72(client):
     assert geoids, "no GEOIDs in municipios payload"
     bad = [g for g in geoids if not g.startswith("72")]
     assert not bad, f"non-PR GEOIDs leaked through filter: {bad[:5]}"
+
+
+@pytest.mark.smoke
+def test_zctas_only_in_pr_zip_ranges_not_usvi():
+    """Every ZCTA GEOID must begin with 006, 007, or 009. 008xx = USVI must
+    NOT leak through the prefix filter — guards the catch the advisor made."""
+    _skip_if_missing("zctas")
+    payload = json.loads(_data_file("zctas").read_text())
+    geoids = [f["properties"]["GEOID"] for f in payload["features"]]
+    assert geoids, "no GEOIDs in zctas payload"
+    bad = [g for g in geoids if not (
+        g.startswith("006") or g.startswith("007") or g.startswith("009")
+    )]
+    assert not bad, f"non-PR ZCTAs leaked through filter: {bad[:5]}"
+    # Explicit USVI guard — extra clear if the filter ever regresses.
+    usvi_leaks = [g for g in geoids if g.startswith("008")]
+    assert not usvi_leaks, f"USVI ZCTAs leaked: {usvi_leaks[:5]}"

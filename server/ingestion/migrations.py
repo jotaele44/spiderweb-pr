@@ -48,9 +48,13 @@ def _add_column_if_missing(
         ) from exc
 
 
+_SITES_GEOID_COLUMNS = ("municipio_geoid", "tract_geoid", "zcta_geoid")
+
+
 def ensure_sites_geoid_columns(conn: sqlite3.Connection) -> dict[str, bool]:
     """
-    Add municipio_geoid + tract_geoid TEXT columns to the sites table if absent.
+    Add municipio_geoid + tract_geoid + zcta_geoid TEXT columns to the sites
+    table if absent.
 
     Returns a dict mapping column name → True if it was added on this call,
     False if it was already present. Callers may log this for observability.
@@ -58,14 +62,10 @@ def ensure_sites_geoid_columns(conn: sqlite3.Connection) -> dict[str, bool]:
     if "sites" not in _existing_tables(conn):
         # Fresh DB — schema_sqlite.sql will be applied separately. Nothing to
         # migrate yet; the schema file itself already defines the columns.
-        return {"municipio_geoid": False, "tract_geoid": False}
+        return {col: False for col in _SITES_GEOID_COLUMNS}
     added = {
-        "municipio_geoid": _add_column_if_missing(
-            conn, "sites", "municipio_geoid", "TEXT"
-        ),
-        "tract_geoid": _add_column_if_missing(
-            conn, "sites", "tract_geoid", "TEXT"
-        ),
+        col: _add_column_if_missing(conn, "sites", col, "TEXT")
+        for col in _SITES_GEOID_COLUMNS
     }
     conn.commit()
     return added

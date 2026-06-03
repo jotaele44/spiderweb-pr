@@ -15,7 +15,7 @@ export function CommandCenter({ data, setSelection, setModule }: { data: PriisDa
       <div className="panel-grid">
         <div className="cards">
           <Card title="Total awarded" stat={fmtMoney(total)} delta={`${data.contracts.length} contracts`} />
-          <Card title="Contracts flagged" stat={data.contracts.filter((contract) => contract.status === "flagged").length} unit=" of 8" delta="requires evidence review" />
+          <Card title="Contracts flagged" stat={data.contracts.filter((contract) => contract.status === "flagged").length} delta="requires evidence review" />
           <Card title="High-score clusters" stat={high.length} unit=" ≥0.80" delta="pattern-convergence only" />
           <Card title="Sources" stat={data.sources.length} unit=" fixtures" delta="1 partial source" />
         </div>

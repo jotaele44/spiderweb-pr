@@ -52,7 +52,7 @@ from migrations import run_all as run_migrations  # noqa: E402  (sibling import)
 
 # ─── Constants ─────────────────────────────────────────────────────────────────
 
-INGESTOR_VERSION = "1.0.0"
+INGESTOR_VERSION = "1.1.0"  # added: state, block_groups, zctas layers + zcta_geoid join
 PR_STATEFP = "72"
 DEFAULT_YEAR = 2025  # TIGER vintage default; 2024 supported via --year
 TIGER_BASE = "https://www2.census.gov/geo/tiger/TIGER{year}"
@@ -61,13 +61,34 @@ TIGER_BASE = "https://www2.census.gov/geo/tiger/TIGER{year}"
 PR_BBOX_LON = (-68.0, -65.0)
 PR_BBOX_LAT = (17.0, 19.0)
 
+# ZCTA5 codes that belong to Puerto Rico. PR ZIPs are 006xx, 007xx, and 009xx;
+# 008xx is U.S. Virgin Islands and is explicitly excluded from this workbench.
+PR_ZCTA_PREFIXES = ("006", "007", "009")
+
 REPO_ROOT = Path(__file__).parent.parent.parent
 DEFAULT_DB = Path(__file__).parent.parent / "priis.db"
 DEFAULT_DATA_DIR = REPO_ROOT / "data"
 
-# Layer registry. `archive` is the per-state filename; the COUNTY layer is
-# nationwide and gets filtered by STATEFP=72 in-memory.
+# Layer registry. Filter modes:
+#   filter_statefp=True  → keep STATEFP=72 (PR) rows; used for nationwide files.
+#   filter_zcta_pr=True  → keep ZCTA5CE20 starting with 006/007/009; used for
+#                          the nationwide ZCTA file, where 008xx is USVI and
+#                          must NOT be included.
+#   (neither flag set)   → file is already PR-only (e.g. tl_*_72_*.zip), no
+#                          in-memory filter needed.
 LAYER_SPECS: dict[str, dict[str, Any]] = {
+    "state": {
+        "archive_template": "STATE/tl_{year}_us_state.zip",
+        "filter_statefp": True,
+        "expected_min": 1,
+        "expected_max": 1,
+        # Single feature, but the PR coastline (with Vieques, Culebra, islets)
+        # can be ~1-2 MB at full precision. Allow the simplification ladder to
+        # kick in if needed via warn_continue rather than aborting.
+        "simplify_tolerance_initial": 0.0,
+        "max_bytes": 3_000_000,
+        "on_oversize": "warn_continue",
+    },
     "municipios": {
         "archive_template": "COUNTY/tl_{year}_us_county.zip",
         "filter_statefp": True,
@@ -93,6 +114,18 @@ LAYER_SPECS: dict[str, dict[str, Any]] = {
         "max_bytes": 8_000_000,
         "on_oversize": "warn_continue",
     },
+    "block_groups": {
+        "archive_template": "BG/tl_{year}_72_bg.zip",
+        "filter_statefp": False,
+        # Empirical 2025 vintage: 2,555 features. Band kept generous because
+        # _check_count aborts hard mid-loop if exceeded — better to absorb
+        # ±25% redistricting drift than fail a clean run.
+        "expected_min": 2_000,
+        "expected_max": 3_500,
+        "simplify_tolerance_initial": 0.0005,
+        "max_bytes": 12_000_000,
+        "on_oversize": "warn_continue",
+    },
     "places": {
         "archive_template": "PLACE/tl_{year}_72_place.zip",
         "filter_statefp": False,
@@ -109,6 +142,24 @@ LAYER_SPECS: dict[str, dict[str, Any]] = {
         "expected_max": 1_100,
         "simplify_tolerance_initial": 0.0005,
         "max_bytes": 10_000_000,
+        "on_oversize": "warn_continue",
+    },
+    "zctas": {
+        # Nationwide ZCTA file (~500 MB) — filtered in-memory to PR prefixes.
+        # Cached under data/tiger/{year}/, downloaded once per vintage.
+        # NOTE: `--dry-run` still triggers this download because _fetch_zip
+        # runs before the dry-run write guard. Use ZCTA only when you can
+        # spare the bandwidth.
+        "archive_template": "ZCTA520/tl_{year}_us_zcta520.zip",
+        "filter_statefp": False,
+        "filter_zcta_pr": True,
+        # Empirical 2025 vintage: 132 features (after USVI/008xx exclusion).
+        # Floor of 100 absorbs ZCTA consolidation across vintages; ceiling of
+        # 220 catches a filter regression that lets non-PR ZIPs through.
+        "expected_min": 100,
+        "expected_max": 220,
+        "simplify_tolerance_initial": 0.0005,
+        "max_bytes": 6_000_000,
         "on_oversize": "warn_continue",
     },
 }
@@ -210,13 +261,41 @@ def _fetch_zip(layer: str, year: int, cache_dir: Path, force: bool) -> Path:
 
 # ─── GeoDataFrame pipeline ────────────────────────────────────────────────────
 
-def _read_layer(zip_path: Path, *, filter_statefp: bool) -> "gpd.GeoDataFrame":
-    """Read shapefile from zip via pyogrio, optionally filter to PR (STATEFP=72)."""
+def _read_layer(
+    zip_path: Path,
+    *,
+    filter_statefp: bool,
+    filter_zcta_pr: bool = False,
+) -> "gpd.GeoDataFrame":
+    """Read shapefile from zip via pyogrio, optionally filter to PR.
+
+    Filter modes are mutually exclusive in practice and applied in this order:
+      - STATEFP == "72" (nationwide files that carry a STATEFP column)
+      - ZCTA5CE20 startswith 006/007/009 (the nationwide ZCTA file has no
+        STATEFP; 008xx is USVI and must be excluded)
+    """
     gdf = gpd.read_file(f"zip://{zip_path}", engine="pyogrio")
     if filter_statefp:
         before = len(gdf)
         gdf = gdf[gdf["STATEFP"] == PR_STATEFP].copy()
         log.info("filtered STATEFP=72: %d → %d features", before, len(gdf))
+    elif filter_zcta_pr:
+        before = len(gdf)
+        zcta_col = "ZCTA5CE20" if "ZCTA5CE20" in gdf.columns else "ZCTA5CE10"
+        gdf = gdf[gdf[zcta_col].astype(str).str.startswith(PR_ZCTA_PREFIXES)].copy()
+        log.info(
+            "filtered %s startswith %s: %d → %d features",
+            zcta_col, PR_ZCTA_PREFIXES, before, len(gdf),
+        )
+        # TIGER ZCTA columns carry a vintage suffix (20 in current files).
+        # Rename to the unsuffixed names the rest of the pipeline expects so
+        # GEOID-based sjoin and trim work without further branching.
+        rename = {
+            "GEOID20": "GEOID", "ZCTA5CE20": "NAME",
+            "ALAND20": "ALAND", "AWATER20": "AWATER",
+            "INTPTLAT20": "INTPTLAT", "INTPTLON20": "INTPTLON",
+        }
+        gdf = gdf.rename(columns={k: v for k, v in rename.items() if k in gdf.columns})
     return gdf
 
 
@@ -432,34 +511,43 @@ def _apply_site_updates(
     conn: sqlite3.Connection,
     municipio_geoids: dict[str, str],
     tract_geoids: dict[str, str],
+    zcta_geoids: dict[str, str],
     *,
     dry_run: bool,
 ) -> int:
-    """Set municipio_geoid + tract_geoid on every site row. Clears stale values
-    for sites that no longer match. Returns count of UPDATEd rows.
+    """Set municipio_geoid + tract_geoid + zcta_geoid on every site row.
+    Clears stale values for sites that no longer match. Returns count of
+    UPDATEd rows.
 
     In dry_run mode, logs proposed updates and returns 0.
     """
     if dry_run:
-        log.info("DRY-RUN: would clear all GEOIDs, then update %d municipio "
-                 "+ %d tract entries",
-                 len(municipio_geoids), len(tract_geoids))
+        log.info(
+            "DRY-RUN: would clear all GEOIDs, then update %d municipio "
+            "+ %d tract + %d zcta entries",
+            len(municipio_geoids), len(tract_geoids), len(zcta_geoids),
+        )
         return 0
 
     site_ids = [r[0] for r in conn.execute("SELECT id FROM sites").fetchall()]
     cur = conn.cursor()
     cur.execute("BEGIN")
     try:
-        cur.execute("UPDATE sites SET municipio_geoid = NULL, tract_geoid = NULL")
+        cur.execute(
+            "UPDATE sites SET municipio_geoid = NULL, tract_geoid = NULL, "
+            "zcta_geoid = NULL"
+        )
         updated = 0
         for sid in site_ids:
             m = municipio_geoids.get(sid)
             t = tract_geoids.get(sid)
-            if m is None and t is None:
+            z = zcta_geoids.get(sid)
+            if m is None and t is None and z is None:
                 continue
             cur.execute(
-                "UPDATE sites SET municipio_geoid = ?, tract_geoid = ? WHERE id = ?",
-                (m, t, sid),
+                "UPDATE sites SET municipio_geoid = ?, tract_geoid = ?, "
+                "zcta_geoid = ? WHERE id = ?",
+                (m, t, z, sid),
             )
             updated += 1
         cur.execute("COMMIT")
@@ -519,7 +607,11 @@ def run(args: argparse.Namespace) -> int:
         sha = _sha256(zip_path)
         size_zip = zip_path.stat().st_size
 
-        gdf_raw = _read_layer(zip_path, filter_statefp=spec["filter_statefp"])
+        gdf_raw = _read_layer(
+            zip_path,
+            filter_statefp=spec["filter_statefp"],
+            filter_zcta_pr=spec.get("filter_zcta_pr", False),
+        )
         gdf = _repair_geometry(gdf_raw)
         _check_count(layer, gdf)
         gdf = _project_to_wgs84(gdf)
@@ -565,6 +657,7 @@ def run(args: argparse.Namespace) -> int:
     conn = sqlite3.connect(db_path) if db_path.exists() else None
     municipio_updates: dict[str, str] = {}
     tract_updates: dict[str, str] = {}
+    zcta_updates: dict[str, str] = {}
     unmatched_total: list[dict] = []
 
     if conn is not None:
@@ -582,11 +675,21 @@ def run(args: argparse.Namespace) -> int:
         tract_updates, tr_unmatched = _sjoin_with_fallback(
             sites_gdf, geo_layers["tracts"], "tracts"
         )
+        # ZCTA layer is only present when the layer was ingested this run.
+        if "zctas" in geo_layers:
+            zcta_updates, zc_unmatched = _sjoin_with_fallback(
+                sites_gdf, geo_layers["zctas"], "zctas"
+            )
+            unmatched_total.extend(zc_unmatched)
         unmatched_total.extend(mu_unmatched)
         unmatched_total.extend(tr_unmatched)
 
         updated = _apply_site_updates(
-            conn, municipio_updates, tract_updates, dry_run=args.dry_run
+            conn,
+            municipio_updates,
+            tract_updates,
+            zcta_updates,
+            dry_run=args.dry_run,
         )
         log.info("sites enriched: %d (dry_run=%s)", updated, args.dry_run)
         conn.close()
@@ -613,6 +716,7 @@ def run(args: argparse.Namespace) -> int:
         "layers_written": [e["layer"] for e in manifest_entries],
         "sites_municipio_matched": len(municipio_updates),
         "sites_tract_matched": len(tract_updates),
+        "sites_zcta_matched": len(zcta_updates),
         "sites_unmatched_or_skipped": len(unmatched_total),
         "dry_run": args.dry_run,
     }
