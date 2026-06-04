@@ -28,6 +28,12 @@ export const SiteSchema = z.object({
   lng: z.number(),
   sensitive: z.boolean().optional(),
   infrastructure_class: z.string().nullish().transform((v) => v ?? undefined),
+  // Three TIGER GEOIDs joined by server/ingestion/ingest_tiger_pr.py. The
+  // backend's /sites SELECT pulls all three; null is the legitimate
+  // "no overlap" sentinel (especially for ZCTAs over uninhabited parcels).
+  municipio_geoid: z.string().nullish().transform((v) => v ?? undefined),
+  tract_geoid:     z.string().nullish().transform((v) => v ?? undefined),
+  zcta_geoid:      z.string().nullish().transform((v) => v ?? undefined),
 });
 
 export const ContractSchema = z.object({

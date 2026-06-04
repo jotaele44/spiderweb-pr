@@ -77,6 +77,14 @@ export function Inspector({ data, selection, setSelection }: { data: PriisData; 
         <div className="inspector-head"><div className="subtle mono">SITE · {site.id}</div><h2>{site.name}</h2><div className="row"><Pill tone={site.sensitive ? "alert" : "info"}>{site.kind}</Pill></div></div>
         <div className="inspector-body">
           <div className="card"><h3>Coordinates</h3><p className="mono">{site.lat.toFixed(4)}, {site.lng.toFixed(4)}</p></div>
+          {(site.municipio_geoid || site.tract_geoid || site.zcta_geoid) && (
+            <div className="card">
+              <h3>TIGER GEOIDs</h3>
+              {site.municipio_geoid && <p className="mono">municipio · <b>{site.municipio_geoid}</b></p>}
+              {site.tract_geoid     && <p className="mono">tract · <b>{site.tract_geoid}</b></p>}
+              {site.zcta_geoid      && <p className="mono">zcta · <b>{site.zcta_geoid}</b></p>}
+            </div>
+          )}
           <div className="card"><h3>Contracts</h3>{contracts.map((contract) => <button key={contract.id} className="navbtn" onClick={() => setSelection({ kind: "contract", id: contract.id })}><span>{contract.id}</span><span>{fmtMoney(contract.amount)}</span></button>)}</div>
           <div className="card"><h3>Anomalies</h3>{anomalies.map((anomaly) => <button key={anomaly.id} className="navbtn" onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}><span>{anomaly.id}</span><span>{Math.round(anomaly.score * 100)}</span></button>)}</div>
         </div>

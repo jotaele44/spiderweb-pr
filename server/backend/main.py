@@ -120,7 +120,8 @@ async def list_vendors():
 @app.get("/sites")
 async def list_sites():
     rows = await _rows(
-        "SELECT id, name, kind, lat, lng, sensitive, infrastructure_class FROM sites"
+        "SELECT id, name, kind, lat, lng, sensitive, infrastructure_class, "
+        "municipio_geoid, tract_geoid, zcta_geoid FROM sites"
     )
     for r in rows:
         r["sensitive"] = bool(r["sensitive"])
