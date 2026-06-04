@@ -33,6 +33,10 @@ export interface Site {
   municipio_geoid?: string;
   /** TIGER tract GEOID, joined by ingest_tiger_pr.py */
   tract_geoid?: string;
+  /** TIGER ZCTA5 GEOID. May be null even after ingest — ZCTAs are derived
+   * from USPS delivery patterns and have gaps over uninhabited reserves and
+   * military land (e.g. Vieques Western Reserve, Roosevelt Roads). */
+  zcta_geoid?: string;
 }
 
 export interface Contract {
