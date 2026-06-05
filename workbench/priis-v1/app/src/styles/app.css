@@ -36,11 +36,10 @@ button { cursor: pointer; }
   padding-top: 18px;
   display: grid;
   grid-template-columns: var(--rail-w) 1fr var(--inspector-w);
-  grid-template-rows: var(--cmd-h) 1fr var(--time-h);
+  grid-template-rows: var(--cmd-h) 1fr;
   grid-template-areas:
     "cmd cmd cmd"
-    "rail center inspector"
-    "rail timeline timeline";
+    "rail center inspector";
   transition: grid-template-columns .3s ease;
 }
 
@@ -105,13 +104,6 @@ button { cursor: pointer; }
 .inspector-head { padding: 14px; border-bottom: 1px solid var(--line); }
 .inspector-head h2 { margin: 4px 0; font-size: 16px; }
 .inspector-body { padding: 14px; display: grid; gap: 12px; }
-
-.timeline { grid-area: timeline; background: var(--surface); border-top: 1px solid var(--line); overflow: hidden; }
-.timeline-head { height: 28px; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--line); font: 10px var(--font-mono); color: var(--muted); }
-.timeline-lanes { position: relative; height: calc(100% - 28px); }
-.timeline-event { position: absolute; top: 12px; transform: translateX(-50%); width: 9px; height: 44px; border-left: 2px solid var(--ink); }
-.timeline-event button { position: absolute; top: 46px; transform: translateX(-50%); border: 0; background: transparent; font: 9px var(--font-mono); color: var(--muted); white-space: nowrap; }
-.cursor-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--alert); }
 
 .panel { height: 100%; display: grid; grid-template-rows: auto 1fr; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
