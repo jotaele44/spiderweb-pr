@@ -38,22 +38,34 @@ def test_static_dashboard_bundle_copies_assets_and_rewrites_output_paths(tmp_pat
 
     assert (dist / "index.html").exists()
     assert (dist / "dashboard.jsx").exists()
-    assert (dist / "dashboard_temporal_waves.jsx").exists()
     assert (dist / "dashboard_contract_finance.jsx").exists()
+    assert not (dist / "dashboard_temporal_waves.jsx").exists()
     assert (dist / "outputs" / "dashboard_data.json").exists()
     assert (dist / "outputs" / "fr24_dashboard_review_queue.json").exists()
 
     html = (dist / "index.html").read_text(encoding="utf-8")
-    assert 'fetchJson("./outputs/dashboard_data.json")' in html
-    assert 'fetchJson("../outputs/dashboard_data.json")' not in html
+    assert 'url: "./outputs/dashboard_data.json"' in html
+    assert 'url: "../outputs/dashboard_data.json"' not in html
+    assert "dashboardLoadContract" in html
+    assert "source-status-panel" in html
+    assert "fr24_temporal_wave_dashboard.json" not in html
+    assert "dashboard_temporal_waves.jsx" not in html
 
     manifest_path = dist / "static_dashboard_manifest.json"
     persisted = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["server_required"] is False
     assert persisted["server_required"] is False
     assert persisted["entrypoint"] == "index.html"
+    assert persisted["load_contract"]["required_outputs"] == ["dashboard_data.json"]
+    assert persisted["load_contract"]["required_dashboard_arrays"] == [
+        "flights",
+        "aircraft_profiles",
+        "alerts",
+        "anomalies",
+    ]
     assert persisted["required_outputs"]["dashboard_data.json"].endswith("dashboard_data.json")
     assert persisted["optional_outputs"]["contract_finance_scored_overlay.geojson"] == "missing"
+    assert "fr24_temporal_wave_dashboard.json" not in persisted["optional_outputs"]
 
 
 def test_static_dashboard_bundle_requires_dashboard_data_json(tmp_path):
@@ -67,6 +79,28 @@ def test_static_dashboard_bundle_requires_dashboard_data_json(tmp_path):
             source_outputs=outputs,
             clean=True,
         )
+
+
+def test_dashboard_html_declares_validation_and_empty_states():
+    html = Path("dashboard/dashboard.html").read_text(encoding="utf-8")
+
+    assert "validateRequiredDashboard" in html
+    assert "missing required array" in html
+    assert "Could not load valid dashboard_data.json" in html
+    assert "degraded" in html
+    assert "blocked" in html
+    assert "source-status-panel" in html
+    assert "dashboardDataLoaded" in html
+
+
+def test_bottom_temporal_timeline_overlay_removed_from_static_dashboard():
+    html = Path("dashboard/dashboard.html").read_text(encoding="utf-8")
+    exporter = Path("scripts/export_static_dashboard.py").read_text(encoding="utf-8")
+
+    assert "fr24_temporal_wave_dashboard.json" not in html
+    assert "dashboard_temporal_waves.jsx" not in html
+    assert "fr24_temporal_wave_dashboard.json" not in exporter
+    assert "dashboard_temporal_waves.jsx" not in exporter
 
 
 def test_cli_db_mode_generates_dashboard_json_via_run_all(tmp_path):
