@@ -1,51 +1,31 @@
-"""Static wiring tests for FR24 temporal-wave dashboard visibility."""
+"""Static dashboard tests for retiring the bottom temporal-wave overlay."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 
-def test_dashboard_html_loads_temporal_wave_json_and_module():
+def test_dashboard_html_no_longer_loads_temporal_wave_overlay():
     html = Path("dashboard/dashboard.html").read_text(encoding="utf-8")
 
-    assert "fr24_temporal_wave_dashboard.json" in html
-    assert "window.fr24TemporalWaveData" in html
-    assert "dashboard_temporal_waves.jsx" in html
+    assert "fr24_temporal_wave_dashboard.json" not in html
+    assert "window.fr24TemporalWaveData" not in html
+    assert "dashboard_temporal_waves.jsx" not in html
 
 
-def test_temporal_wave_panel_is_read_only_candidate_visibility():
-    jsx = Path("dashboard/dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
+def test_temporal_wave_panel_source_remains_reference_only():
+    """The old component can remain in-tree as a reference file, but static
+    dashboard wiring must not load or bundle it."""
+    exporter = Path("scripts/export_static_dashboard.py").read_text(encoding="utf-8")
+    html = Path("dashboard/dashboard.html").read_text(encoding="utf-8")
 
-    assert "TemporalWavePanel" in jsx
-    assert "window.fr24TemporalWaveData" in jsx
-    assert "Read-only candidate visibility" in jsx
-    assert "localStorage" not in jsx
-    assert "fetch(" not in jsx
-    assert "confirmed_aircraft_event" not in jsx
-    assert "validated_aircraft_event" not in jsx
-
-
-def test_temporal_wave_tab_control_is_injected_without_core_dashboard_state():
-    jsx = Path("dashboard/dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
-
-    assert "injectTemporalWaveTab" in jsx
-    assert "fr24-temporal-waves-tab-button" in jsx
-    assert "Temporal Waves" in jsx
-    assert "window.__openFr24TemporalWaves" in jsx
-    assert "FR24 Review Queue" in jsx
+    assert "dashboard_temporal_waves.jsx" not in exporter
+    assert "fr24_temporal_wave_dashboard.json" not in exporter
+    assert "dashboard_temporal_waves.jsx" not in html
+    assert "fr24_temporal_wave_dashboard.json" not in html
 
 
-def test_temporal_wave_panel_refreshes_when_data_arrives_late():
-    jsx = Path("dashboard/dashboard_temporal_waves.jsx").read_text(encoding="utf-8")
-
-    assert "TemporalWaveRoot" in jsx
-    assert "React.useState(window.fr24TemporalWaveData || null)" in jsx
-    assert "fr24TemporalWaveDataLoaded" in jsx
-    assert "window.setInterval(syncFromWindow, 250)" in jsx
-    assert "window.clearInterval(interval)" in jsx
-
-
-def test_temporal_wave_exporter_default_output_name():
+def test_temporal_wave_exporter_can_still_generate_reference_artifact():
     exporter = Path("fr24/temporal_wave_dashboard_data.py").read_text(encoding="utf-8")
 
     assert "fr24_temporal_wave_dashboard.json" in exporter
