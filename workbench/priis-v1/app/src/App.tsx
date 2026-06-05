@@ -5,7 +5,6 @@ import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline
 import { CommandBar } from "./components/CommandBar";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
-import { Timeline } from "./components/Timeline";
 import { CommandCenter } from "./modules/CommandCenter";
 import { FinanceIntelligence } from "./modules/FinanceIntelligence";
 import { SpatialIntelligence } from "./modules/SpatialIntelligence";
@@ -203,7 +202,6 @@ export default function App() {
           <div className="workspace">{renderModule()}</div>
         </main>
         <Inspector data={data} selection={selection} setSelection={setSelection} />
-        <Timeline events={data.events} cursor={cursor} setCursor={setCursor} setSelection={setSelection} />
       </div>
     </>
   );
