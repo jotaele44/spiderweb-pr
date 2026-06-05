@@ -26,7 +26,7 @@ CONTRACT_SWEEPER = REPO_ROOT.parent / "Contract-Sweeper"
 OUTPUT_SCHEMA = json.loads((REPO_ROOT / "schemas" / "spiderweb_spatial_lane_record.schema.json").read_text())
 
 
-# ── Fixtures mirroring the producer's on-disk CSV ─────────────────────────────
+# ── Fixtures mirroring the producer's on-disk CSV ──────────────────────────────
 
 def _write_derivatives(d: Path, rows) -> None:
     flat = []
@@ -73,6 +73,7 @@ def _mixed_rows():
         _row("SW-PRINTAKE-00000000a007", ["geography_gis", "infrastructure_footprint"]),  # priority→infra
         _row("SW-PRINTAKE-00000000a008", ["poi_aoi_corridor_candidate"],
              latitude="18.45", longitude="-66.10"),  # has coords → poi candidate
+        _row("SW-PRINTAKE-00000000a009", ["federal_military_activity"]),  # → dedicated fed-mil table
         _row("BAD-ID", ["geography_gis"]),            # invalid record_id → discrepancy
         _row("SW-PRINTAKE-00000000b002", []),         # empty domains → discrepancy
     ]
@@ -83,7 +84,7 @@ def _read_table(out: Path, name):
         return list(csv.DictReader(f))
 
 
-# ── Routing + required fields ─────────────────────────────────────────────────
+# ── Routing + required fields ──────────────────────────────────────────
 
 def test_domain_routing_to_tables(tmp_path):
     _write_derivatives(tmp_path, _mixed_rows())
@@ -94,6 +95,7 @@ def test_domain_routing_to_tables(tmp_path):
     assert bt["aviation_activity_items.csv"] == 1
     assert bt["maritime_activity_items.csv"] == 1
     assert bt["science_dataset_items.csv"] == 1
+    assert bt["federal_military_activity_items.csv"] == 1  # a009 fed-mil
     assert bt["spatial_intake_items.csv"] == 2      # a006 gis + a008 candidate
 
 
@@ -121,8 +123,8 @@ def test_records_validate_against_output_schema(tmp_path):
 def test_manual_geocode_required_and_queue(tmp_path):
     _write_derivatives(tmp_path, _mixed_rows())
     report = build_spiderweb_spatial_lane(str(tmp_path), str(tmp_path))
-    # 7 valid no-coord records → geocode queue; the coord-bearing candidate is excluded
-    assert report["review"]["geocode_queue"] == 7
+    # 8 valid no-coord records → geocode queue; the coord-bearing candidate is excluded
+    assert report["review"]["geocode_queue"] == 8
     hydro = _read_table(tmp_path, "hydro_environment_items.csv")[0]
     assert hydro["manual_geocode_required"] == "true"
     cand = _read_table(tmp_path, "spatial_intake_items.csv")
@@ -154,11 +156,12 @@ def test_invalid_rows_routed_to_discrepancy_and_zero_loss(tmp_path):
     assert ids == {"BAD-ID", "SW-PRINTAKE-00000000b002"}
 
 
-def test_all_six_tables_written_even_when_empty(tmp_path):
+def test_all_tables_written_even_when_empty(tmp_path):
     _write_derivatives(tmp_path, [_row("SW-PRINTAKE-00000000a001", ["aviation_activity"])])
     build_spiderweb_spatial_lane(str(tmp_path), str(tmp_path))
     for name in ("spatial_intake_items.csv", "infrastructure_assets.csv", "aviation_activity_items.csv",
-                 "maritime_activity_items.csv", "hydro_environment_items.csv", "science_dataset_items.csv"):
+                 "maritime_activity_items.csv", "hydro_environment_items.csv", "science_dataset_items.csv",
+                 "federal_military_activity_items.csv"):
         assert (tmp_path / "data" / "normalized" / name).exists()
 
 
