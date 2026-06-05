@@ -1,4 +1,7 @@
 import json
+import sqlite3
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -64,3 +67,38 @@ def test_static_dashboard_bundle_requires_dashboard_data_json(tmp_path):
             source_outputs=outputs,
             clean=True,
         )
+
+
+def test_cli_db_mode_generates_dashboard_json_via_run_all(tmp_path):
+    """Regression: running the script directly with --db must put the repo root
+    on sys.path so `from run_all import export_json` resolves. Previously this
+    raised `ModuleNotFoundError: No module named 'run_all'`."""
+    db_path = tmp_path / "priis.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "CREATE TABLE flights (flight_id TEXT, callsign TEXT, aircraft_type TEXT, "
+        "operator TEXT, mission_type TEXT, takeoff_time TEXT)"
+    )
+    conn.commit()
+    conn.close()
+
+    outputs = tmp_path / "outputs"  # no dashboard_data.json -> must be generated from --db
+    dist = tmp_path / "dist" / "static-dashboard"
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "scripts/export_static_dashboard.py",
+            "--db", str(db_path),
+            "--outputs", str(outputs),
+            "--dist", str(dist),
+        ],
+        cwd=_repo_root(),
+        capture_output=True,
+        text=True,
+    )
+
+    assert "ModuleNotFoundError" not in proc.stderr, proc.stderr
+    assert proc.returncode == 0, proc.stderr
+    assert (outputs / "dashboard_data.json").exists()
+    assert (dist / "outputs" / "dashboard_data.json").exists()

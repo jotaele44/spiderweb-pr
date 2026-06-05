@@ -70,7 +70,14 @@ def _generate_dashboard_json(db_path: Path, dashboard_json: Path) -> None:
     if not db_path.exists():
         raise StaticDashboardExportError(f"database not found: {db_path}")
     dashboard_json.parent.mkdir(parents=True, exist_ok=True)
-    from run_all import export_json
+    # Direct execution (``python scripts/export_static_dashboard.py``) puts
+    # ``scripts/`` on sys.path, not the repo root, so ``run_all`` in the parent
+    # directory is not importable. Add the root before importing, matching the
+    # pattern used across scripts/ (e.g. parse_adsb_archive.py, cascade_refine.py).
+    root = repo_root_from()
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    from run_all import export_json  # noqa: E402
 
     export_json(str(db_path), str(dashboard_json))
 
