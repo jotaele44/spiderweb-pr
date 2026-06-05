@@ -56,6 +56,7 @@ TABLE_FIELDS = NORMALIZED_FIELDS + EXTENSION_FIELDS
 NORMALIZED_TABLES = (
     "spatial_intake_items.csv", "infrastructure_assets.csv", "aviation_activity_items.csv",
     "maritime_activity_items.csv", "hydro_environment_items.csv", "science_dataset_items.csv",
+    "federal_military_activity_items.csv",
 )
 CANDIDATE_GEOJSONS = ("poi_candidates.geojson", "aoi_candidates.geojson", "corridor_candidates.geojson")
 REPORT_FILENAME = "spiderweb_spatial_lane_report.json"
@@ -70,7 +71,7 @@ DOMAIN_ROUTING = {
     "environment_weather": ("science_dataset", "science_dataset_items.csv"),
     "science_dataset": ("science_dataset", "science_dataset_items.csv"),
     "geography_gis": ("gis_dataset", "spatial_intake_items.csv"),
-    "federal_military_activity": ("federal_military_activity", "spatial_intake_items.csv"),
+    "federal_military_activity": ("federal_military_activity", "federal_military_activity_items.csv"),
     "physical_observation": ("physical_observation", "spatial_intake_items.csv"),
     "poi_aoi_corridor_candidate": ("candidate", "spatial_intake_items.csv"),
 }
