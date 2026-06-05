@@ -24,13 +24,11 @@ from typing import Iterable
 REQUIRED_OUTPUTS = ("dashboard_data.json",)
 OPTIONAL_OUTPUTS = (
     "fr24_dashboard_review_queue.json",
-    "fr24_temporal_wave_dashboard.json",
     "contract_finance_layer_report.json",
     "contract_finance_scored_overlay.geojson",
 )
 DASHBOARD_ASSETS = (
     "dashboard.jsx",
-    "dashboard_temporal_waves.jsx",
     "dashboard_contract_finance.jsx",
 )
 
@@ -84,7 +82,9 @@ def _generate_dashboard_json(db_path: Path, dashboard_json: Path) -> None:
 
 def _rewrite_dashboard_html(raw_html: str) -> str:
     """Convert repo-local dashboard paths into bundle-local paths."""
-    rewritten = raw_html.replace('fetchJson("../outputs/', 'fetchJson("./outputs/')
+    rewritten = raw_html.replace('url: "../outputs/', 'url: "./outputs/')
+    rewritten = rewritten.replace("url: '../outputs/", "url: './outputs/")
+    rewritten = rewritten.replace('fetchJson("../outputs/', 'fetchJson("./outputs/')
     rewritten = rewritten.replace("fetchJson('../outputs/", "fetchJson('./outputs/")
     rewritten = rewritten.replace(
         "Open this file in a browser:",
@@ -152,6 +152,12 @@ def bundle_static_dashboard(
         "dist_dir": str(dist_dir),
         "source_outputs": str(source_outputs),
         "entrypoint": "index.html",
+        "load_contract": {
+            "required_outputs": list(REQUIRED_OUTPUTS),
+            "optional_outputs": list(OPTIONAL_OUTPUTS),
+            "required_dashboard_arrays": ["flights", "aircraft_profiles", "alerts", "anomalies"],
+            "degraded_optional_outputs_allowed": True,
+        },
         "required_outputs": required,
         "optional_outputs": optional,
         "dashboard_assets": {asset: str(dist_dir / asset) for asset in DASHBOARD_ASSETS},
