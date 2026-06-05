@@ -41,7 +41,18 @@ button { cursor: pointer; }
     "cmd cmd cmd"
     "rail center inspector"
     "rail timeline timeline";
+  transition: grid-template-columns .3s ease;
 }
+
+/* Collapsible chrome: slide the rail/inspector out of frame by zeroing their
+   track widths. State and selection live in React, so this only hides them. */
+.workbench[data-left-collapsed="true"] { --rail-w: 0px; }
+.workbench[data-right-collapsed="true"] { --inspector-w: 0px; }
+.workbench[data-left-collapsed="true"] .rail,
+.workbench[data-left-collapsed="true"] .brand,
+.workbench[data-right-collapsed="true"] .inspector { overflow: hidden; }
+
+.chrome-toggle { font: 13px var(--font-mono); min-width: 26px; color: var(--muted); }
 
 .cmdbar {
   grid-area: cmd;
@@ -140,8 +151,9 @@ button { cursor: pointer; }
 .desc { color: var(--ink-2); line-height: 1.45; }
 .hr { height: 1px; background: var(--line); margin: 10px 0; }
 .map-host { width: 100%; height: 100%; }
-.map-shell { display: grid; grid-template-columns: 1fr 280px; height: 100%; }
+.map-shell { display: grid; grid-template-columns: 1fr 280px; height: 100%; transition: grid-template-columns .3s ease; }
 .layer-panel { border-left: 1px solid var(--line); background: var(--surface); padding: 12px; overflow: auto; }
+.map-shell[data-layer-collapsed="true"] .layer-panel { overflow: hidden; padding: 0; border-left: 0; }
 .graph-surface { position: relative; height: 100%; min-height: 420px; background: radial-gradient(circle at 50% 50%, var(--surface-3), var(--bg)); overflow: hidden; }
 .graph-node { position: absolute; transform: translate(-50%, -50%); border: 1px solid var(--line-hard); background: var(--surface-2); padding: 8px 10px; min-width: 120px; text-align: center; font: 11px var(--font-mono); }
 .query-box { display: grid; grid-template-columns: 1fr auto; gap: 8px; }

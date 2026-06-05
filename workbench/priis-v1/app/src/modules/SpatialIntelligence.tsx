@@ -144,14 +144,21 @@ export function SpatialIntelligence({
   data,
   selection,
   setSelection,
+  leftCollapsed = false,
+  rightCollapsed = false,
 }: {
   data: PriisData;
   selection: Selection | null;
   setSelection: (selection: Selection) => void;
+  leftCollapsed?: boolean;
+  rightCollapsed?: boolean;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
+    () => localStorage.getItem("priis_layer_collapsed") === "true",
+  );
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>(() => ({
     contracts: true,
     infrastructure: true,
@@ -284,6 +291,34 @@ export function SpatialIntelligence({
     if (site) map.flyTo({ center: [site.lng, site.lat], zoom: 11, speed: 0.8 });
   }, [data.sites, selection]);
 
+  // Persist the layer-panel collapse preference.
+  useEffect(() => {
+    localStorage.setItem("priis_layer_collapsed", String(layerPanelCollapsed));
+  }, [layerPanelCollapsed]);
+
+  // "L" toggles the layer panel. Ignore while typing in an input/textarea.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+      if (event.key === "l" || event.key === "L") {
+        event.preventDefault();
+        setLayerPanelCollapsed((value) => !value);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Reflow MapLibre after any surrounding layout transition completes, so the
+  // canvas matches its container instead of leaving blank gutters.
+  useEffect(() => {
+    const timer = window.setTimeout(() => mapRef.current?.resize(), 320);
+    return () => window.clearTimeout(timer);
+  }, [leftCollapsed, rightCollapsed, layerPanelCollapsed]);
+
   return (
     <section className="panel">
       <div className="panel-head">
@@ -291,9 +326,23 @@ export function SpatialIntelligence({
           <h1>Spatial Intelligence</h1>
           <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence</span>
         </div>
-        <Pill tone="info">MapLibre GL JS</Pill>
+        <div className="row">
+          <button
+            className="act"
+            data-on={!layerPanelCollapsed}
+            onClick={() => setLayerPanelCollapsed((value) => !value)}
+            title="Toggle layer panel (L)"
+          >
+            {layerPanelCollapsed ? "Show layers" : "Hide layers"}
+          </button>
+          <Pill tone="info">MapLibre GL JS</Pill>
+        </div>
       </div>
-      <div className="map-shell">
+      <div
+        className="map-shell"
+        data-layer-collapsed={layerPanelCollapsed}
+        style={{ gridTemplateColumns: layerPanelCollapsed ? "1fr 0px" : "1fr 280px" }}
+      >
         <div ref={hostRef} className="map-host" />
         <aside className="layer-panel">
           <h3>Layer control</h3>
