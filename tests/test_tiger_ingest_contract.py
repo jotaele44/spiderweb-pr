@@ -26,6 +26,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).parent.parent
 INGEST_DIR = REPO_ROOT / "server" / "ingestion"
+CORE_TIGER_LAYERS = {"municipios", "tracts", "places", "barrios"}
 
 # Add server/ingestion to sys.path so we can import migrations + the script.
 sys.path.insert(0, str(INGEST_DIR))
@@ -72,9 +73,12 @@ def test_ensure_sites_geoid_columns_handles_fresh_db(tmp_path):
 # ── manifest shape ───────────────────────────────────────────────────────────
 
 @pytest.mark.smoke
-def test_manifest_includes_all_four_layers():
-    """If the ingest has been run, the 2025 manifest must list all 4 layers
-    with both source AND output provenance (sha256 + bytes + feature_count)."""
+def test_manifest_includes_core_layers_and_all_layer_provenance():
+    """If the ingest has been run, the 2025 manifest must list the core PR
+    layers with both source AND output provenance. Expanded TIGER coverage
+    layers are allowed because local smoke artifacts may include newer optional
+    baselayers such as state, ZCTAs, or block groups.
+    """
     manifest_path = REPO_ROOT / "data" / "tiger" / "2025" / "manifest.json"
     if not manifest_path.exists():
         pytest.skip(
@@ -85,7 +89,7 @@ def test_manifest_includes_all_four_layers():
     assert manifest["ingestor"] == "ingest_tiger_pr.py"
     assert manifest["year"] == 2025
     layers = {e["layer"] for e in manifest["layers"]}
-    assert layers == {"municipios", "tracts", "places", "barrios"}
+    assert CORE_TIGER_LAYERS <= layers
     # Each entry has provenance for both the input zip and the output GeoJSON.
     for entry in manifest["layers"]:
         src = entry["source"]
@@ -232,8 +236,6 @@ def test_dry_run_against_live_census(tmp_path):
     # Script prints one indented JSON object to stdout; logs go to stderr.
     summary = json.loads(result.stdout)
     assert summary["dry_run"] is True
-    assert set(summary["layers_written"]) == {
-        "municipios", "tracts", "places", "barrios"
-    }
+    assert CORE_TIGER_LAYERS <= set(summary["layers_written"])
     assert summary["sites_municipio_matched"] >= 0
     assert summary["sites_tract_matched"] >= 0
