@@ -16,7 +16,12 @@
       "export_envelope": "federation/envelope.py",
       "validator": "scripts/validate_export.py",
       "sample_package": "exports/samples/manifest.sample.json",
-      "streams": ["events", "observations", "tracks", "sources"]
+      "streams": [
+        "events",
+        "observations",
+        "tracks",
+        "sources"
+      ]
     },
     "consumer_side": {
       "query_hub": "federation/hub/query.py",
@@ -30,18 +35,20 @@
     "test_suite": "python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py",
     "validate_schemas": "make validate-schemas",
     "validate_export": "python scripts/validate_export.py --package exports/samples --mode test",
-    "build_spatial_lane": "python scripts/build_spiderweb_spatial_lane.py"
+    "build_spatial_lane": "python scripts/build_spiderweb_spatial_lane.py",
+    "export_canonical": "python3 scripts/federation_export.py --mode test"
   },
   "canonical_outputs": {
     "export_sample_manifest": "exports/samples/manifest.sample.json",
     "spatial_intake_items": "data/normalized/spatial_intake_items.csv",
-    "federation_readiness_doc": "docs/federation_readiness.md"
+    "federation_readiness_doc": "docs/federation_readiness.md",
+    "canonical_export_dir": "exports/federation"
   },
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
     "ready_for_hub_live_execution": false,
     "blocking_conditions": [
-      "producer export uses the spiderweb evidence-envelope (events/observations/tracks/sources with spiderweb_* schemas); a canonical sources/entities/relationships adapter to exports/federation/ is a federation follow-up (Part 2 / G2-B1)",
+      "canonical export adapter (scripts/federation_export.py) projects the envelope streams (events/observations/tracks/sources) -> entities/sources/relationships; geometry is not carried on canonical entities (cross-producer spatial join is G3-C2)",
       "query-hub correlates on temporal + normalized_name only; spatial (location) and external_ids resolution is a follow-up (Part 2 / G3-C2)",
       "live production export requires real (non-synthetic) rows; the mode=test->production gate in docs/federation_readiness.md must pass"
     ]
