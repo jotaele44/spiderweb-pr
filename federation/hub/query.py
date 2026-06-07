@@ -16,12 +16,19 @@ exposed as standalone helpers:
 from __future__ import annotations
 
 import calendar
+import math
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from .index import FederationIndex, parse_timestamp, record_normalized_names
+from .index import (
+    FederationIndex,
+    parse_timestamp,
+    record_external_ids,
+    record_normalized_names,
+    record_point,
+)
 from .package_loader import load_package
 from .normalize import normalize_package
 
@@ -111,6 +118,77 @@ def correlate_entities(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                         "match_basis": "normalized_name",
                         "confidence": confidence,
                         "explanation": f"Shared normalized entity name '{norm}'.",
+                    }
+                )
+    return links
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius = 6371.0088
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlmb = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlmb / 2) ** 2
+    return 2 * radius * math.asin(math.sqrt(a))
+
+
+def correlate_spatial(records: List[Dict[str, Any]], threshold_km: float = 1.0) -> List[Dict[str, Any]]:
+    """Mode D: link cross-producer records whose locations fall within threshold_km."""
+    pts = [(rec, record_point(rec)) for rec in records]
+    pts = [(rec, pt) for rec, pt in pts if pt is not None]
+
+    links: List[Dict[str, Any]] = []
+    for i in range(len(pts)):
+        for j in range(i + 1, len(pts)):
+            ra, pa = pts[i]
+            rb, pb = pts[j]
+            if ra.get("producer") == rb.get("producer"):
+                continue
+            dist = _haversine_km(pa[0], pa[1], pb[0], pb[1])
+            if dist > threshold_km:
+                continue
+            src, tgt = _ordered(ra.get("record_id"), rb.get("record_id"))
+            confidence = round(max(0.0, 1.0 - dist / threshold_km), 3)
+            links.append(
+                {
+                    "source_record_id": src,
+                    "target_record_id": tgt,
+                    "link_type": "spatial_proximity",
+                    "match_basis": "location",
+                    "confidence": confidence,
+                    "explanation": f"Records within {round(dist, 2)} km.",
+                }
+            )
+    return links
+
+
+def correlate_by_external_id(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Mode E: link cross-producer records sharing an external id (uei/duns/...)."""
+    by_xid: Dict[tuple, List[Dict[str, Any]]] = {}
+    for rec in records:
+        for key, val in record_external_ids(rec):
+            by_xid.setdefault((key, val), []).append(rec)
+
+    links: List[Dict[str, Any]] = []
+    for (key, val), recs in by_xid.items():
+        for i in range(len(recs)):
+            for j in range(i + 1, len(recs)):
+                ra, rb = recs[i], recs[j]
+                if ra.get("producer") == rb.get("producer"):
+                    continue
+                if ra.get("record_id") == rb.get("record_id"):
+                    continue
+                src, tgt = _ordered(ra.get("record_id"), rb.get("record_id"))
+                scores = [s for s in (_score(ra), _score(rb)) if s is not None]
+                confidence = round(min(scores), 3) if scores else 0.9
+                links.append(
+                    {
+                        "source_record_id": src,
+                        "target_record_id": tgt,
+                        "link_type": "entity_correlation",
+                        "match_basis": f"external_id:{key}",
+                        "confidence": confidence,
+                        "explanation": f"Shared external id {key}={val}.",
                     }
                 )
     return links
@@ -302,6 +380,8 @@ def query_federation(
     links = _dedupe_links(
         correlate_temporal(selected_records, window_days=window_days)
         + correlate_entities(selected_records)
+        + correlate_spatial(selected_records)
+        + correlate_by_external_id(selected_records)
     )
 
     return {
