@@ -16,9 +16,10 @@ Reads a package dir (defaults to exports/samples, accepting `<name>.jsonl` or
 `<name>.sample.jsonl`) and writes `exports/federation/{sources,entities,
 relationships}.jsonl` + a Hub-conformant manifest. Deterministic ids. Stdlib only.
 
-NOTE: the canonical entity schema carries no geometry, so observation lat/lon is
-not projected here; cross-producer spatial resolution (Part 2 / G3-C2) consumes
-the producer's native location, not these entities.
+NOTE (Z2): the canonical entity schema now carries an optional `location`
+{lat, lon}; record entities (observations/events/tracks) project a representative
+WGS84 point from their GeoJSON geometry/path so the query-hub's correlate_spatial
+can join them against other producers' entities.
 """
 from __future__ import annotations
 
@@ -76,6 +77,32 @@ def _aircraft(record: dict[str, Any]) -> str | None:
     return record.get("subject_id") or (record.get("attributes") or {}).get("callsign")
 
 
+def _point(record: dict[str, Any]) -> dict[str, float] | None:
+    """Representative WGS84 {lat, lon} from a record's GeoJSON Point geometry or
+    LineString path (first vertex). GeoJSON order is [lon, lat]. Returns None when
+    absent or out of range (Z2)."""
+    coords = None
+    geom = record.get("geometry")
+    if isinstance(geom, dict) and geom.get("type") == "Point":
+        c = geom.get("coordinates")
+        if isinstance(c, list) and len(c) >= 2:
+            coords = c
+    if coords is None:
+        path = record.get("path")
+        if isinstance(path, dict) and path.get("type") == "LineString":
+            cc = path.get("coordinates")
+            if isinstance(cc, list) and cc and isinstance(cc[0], list) and len(cc[0]) >= 2:
+                coords = cc[0]
+    if coords is None:
+        return None
+    lon, lat = coords[0], coords[1]
+    if not (isinstance(lat, (int, float)) and isinstance(lon, (int, float))):
+        return None
+    if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
+        return None
+    return {"lat": round(float(lat), 6), "lon": round(float(lon), 6)}
+
+
 def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict]], now: str) -> dict[str, list[dict]]:
     sources: dict[str, dict] = {}
     src_entity: dict[str, str] = {}
@@ -118,6 +145,10 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
                 "lineage": _lineage("RECORD_ENTITY"), "synthetic": synthetic,
                 "created_at": when, "extracted_at": now,
             }
+            # Z2: project a representative point so correlate_spatial can join this
+            loc = _point(r)
+            if loc:
+                entities[ent_id]["location"] = loc
             # reported_by -> source entity
             tgt = src_entity.get(raw_src) or _fid("ent", "source", raw_src)
             relationships.update(_rel(ent_id, "reported_by", tgt, sid, score, synthetic, when, now))
