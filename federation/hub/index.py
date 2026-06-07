@@ -34,6 +34,49 @@ def record_normalized_names(record: Dict[str, Any]) -> List[str]:
     return names
 
 
+def _coerce_latlon(lat: Any, lon: Any) -> Optional[tuple]:
+    if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+        if -90 <= float(lat) <= 90 and -180 <= float(lon) <= 180:
+            return (float(lat), float(lon))
+    return None
+
+
+def record_point(record: Dict[str, Any]) -> Optional[tuple]:
+    """Best-effort (lat, lon) for a record, from ``location`` or a GeoJSON Point.
+
+    Accepts ``location.{lat|latitude}/{lon|longitude}`` or a ``geometry``/``geo``
+    GeoJSON Point (``coordinates`` are ``[lon, lat]``). Returns None if absent.
+    """
+    loc = record.get("location")
+    if isinstance(loc, dict):
+        pt = _coerce_latlon(loc.get("lat", loc.get("latitude")),
+                            loc.get("lon", loc.get("longitude")))
+        if pt:
+            return pt
+    for key in ("geometry", "geo"):
+        geom = record.get(key)
+        if isinstance(geom, dict) and geom.get("type") == "Point":
+            coords = geom.get("coordinates")
+            if isinstance(coords, (list, tuple)) and len(coords) >= 2:
+                pt = _coerce_latlon(coords[1], coords[0])  # GeoJSON is [lon, lat]
+                if pt:
+                    return pt
+    return None
+
+
+def record_external_ids(record: Dict[str, Any]) -> List[tuple]:
+    """All (key, value) external identifiers carried by a record's entities."""
+    out: List[tuple] = []
+    for ent in record.get("entities") or []:
+        if isinstance(ent, dict):
+            xids = ent.get("external_ids")
+            if isinstance(xids, dict):
+                for key, val in xids.items():
+                    if isinstance(val, str) and val.strip():
+                        out.append((str(key), val.strip()))
+    return out
+
+
 class FederationIndex:
     """Bundles the records plus lookup structures used by the query modes."""
 
