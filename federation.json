@@ -48,8 +48,7 @@
     "ready_for_hub_discovery": true,
     "ready_for_hub_live_execution": false,
     "blocking_conditions": [
-      "canonical export adapter (scripts/federation_export.py) projects the envelope streams (events/observations/tracks/sources) -> entities/sources/relationships; geometry is not carried on canonical entities (cross-producer spatial join is G3-C2)",
-      "query-hub correlates on temporal + normalized_name only; spatial (location) and external_ids resolution is a follow-up (Part 2 / G3-C2)",
+      "canonical export adapter (scripts/federation_export.py) projects the envelope streams (events/observations/tracks/sources) -> entities/sources/relationships; geometry is not yet carried on canonical entities (Z2 follow-up), so the query-hub's correlate_spatial has no entity geometry to join on",
       "live production export requires real (non-synthetic) rows; the mode=test->production gate in docs/federation_readiness.md must pass"
     ]
   }
