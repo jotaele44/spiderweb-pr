@@ -4,7 +4,7 @@ Flight tracking, mission deduction, and operational intelligence from FlightRada
 
 > **Integration status**: integration-ready after validation gates pass. Run `--validate` and review `integration_report.json` before treating outputs as production data.
 
-**Extended docs**: [Architecture](docs/ARCHITECTURE.md) · [Execution Guide](docs/EXECUTION_GUIDE.md) · [Testing](docs/TESTING.md) · [Data Policy](docs/DATA_POLICY.md)
+**Extended docs**: [Architecture](docs/ARCHITECTURE.md) · [Execution Guide](docs/EXECUTION_GUIDE.md) · [Testing](docs/TESTING.md) · [Data Policy](docs/DATA_POLICY.md) · [Roadmap (Next 100 Tasks V2)](docs/NEXT_100_TASKS_V2.md)
 
 ## What it does
 

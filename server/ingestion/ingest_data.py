@@ -29,7 +29,7 @@ from server.ingestion.registration_alerts import generate_alerts, load_watchlist
 
 DB_DEFAULT = Path(__file__).parent.parent / "priis.db"
 OUTPUTS_DIR = Path(__file__).parent.parent.parent / "outputs"
-WATCHLIST_DEFAULT = _ROOT / "config" / "registration_watchlist.yaml"
+WATCHLIST_DEFAULT = _ROOT / "configs" / "registration_watchlist.yaml"
 
 
 def _connect(db_path: str) -> sqlite3.Connection:
