@@ -1,0 +1,47 @@
+name: Intake Normalize (spatial lane)
+
+# Normalizes a delivered PR-intake derivative into the spiderweb-pr spatial/
+# operational lane. Triggered when the Contract-Sweeper router delivers
+# data/intake/pr_intake/spiderweb_pr_derivatives.csv (via the cross-repo
+# intake-delivery workflow), or manually. Path-filtered to the derivative file
+# so it never fires on dropzone scaffolding (.gitkeep/README).
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'data/intake/pr_intake/spiderweb_pr_derivatives.csv'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install jsonschema
+      - name: Normalize spatial lane (only if a derivative was delivered)
+        run: |
+          if [ -f data/intake/pr_intake/spiderweb_pr_derivatives.csv ]; then
+            python3 scripts/build_spiderweb_spatial_lane.py --input data/intake/pr_intake --out .
+          else
+            echo "no spiderweb_pr_derivatives.csv delivered; nothing to normalize"
+          fi
+      - name: Open PR with normalized spatial tables
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: intake/spatial-lane-update
+          title: "Intake: spatial/operational lane update"
+          commit-message: "Intake normalize: spatial/operational lane"
+          body: Automated spatial-lane normalization of a delivered PR-intake derivative.
+          add-paths: |
+            data/normalized/*.csv
+            data/exports/*.geojson
+            data/review/*.csv
