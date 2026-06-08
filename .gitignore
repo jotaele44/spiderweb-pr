@@ -13,6 +13,12 @@ outputs.zip
 # data/ — input datasets (screenshots, GEBCO .nc, social CSV, etc.)
 data/*
 !data/.gitkeep
+# PR-intake dropzone (#41): the router delivers spiderweb_pr_derivatives.csv here
+!data/intake/
+!data/intake/pr_intake/
+!data/intake/pr_intake/.gitkeep
+!data/intake/pr_intake/README.md
+!data/intake/pr_intake/spiderweb_pr_derivatives.csv
 # RLSM: track the schema contract and operator handoff doc, keep large DBs ignored
 !data/rlsm/
 data/rlsm/*
