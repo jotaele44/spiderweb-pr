@@ -3,31 +3,45 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gebco-bathymetry-pipeline"
+name = "spiderweb-pr"
 version = "0.1.0"
-description = "Regional subset extraction and terrain analysis for GEBCO 2023 bathymetry"
+description = "Puerto Rico Airspace Intelligence System — FR24 OCR/GIS flight intelligence, federation, and the GEBCO bathymetry pipeline"
 requires-python = ">=3.11"
+# Shared scientific stack. This is the single source of truth for version ranges;
+# requirements*.txt defer to these, and constraints.txt holds the exact pins.
+# Upper bounds intentionally loose (<next-major) to reduce resolver friction.
 dependencies = [
-    "numpy>=2.4,<2.5",
-    "scipy>=1.17,<1.18",
-    "pandas>=3.0,<3.1",
+    "numpy>=2.4,<3",
+    "scipy>=1.17,<2",
+    "pandas>=3.0,<4",
     "xarray>=2026.1,<2027",
-    "netCDF4>=1.7.4,<1.8",
-    "matplotlib>=3.10,<3.11",
-    "shapely>=2.1,<2.2",
-    "scikit-image>=0.26,<0.27",
-    "openpyxl>=3.1,<3.2",
+    "netCDF4>=1.7.4,<2",
+    "matplotlib>=3.10,<4",
+    "shapely>=2.1,<3",
+    "scikit-image>=0.26,<1",
+    "openpyxl>=3.1,<4",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=9.0.2,<9.1",
-    "black>=26.3.0,<26.4",
+    "pytest>=9.0.2,<10",
+    "black>=26.3.0,<27",
     "ruff>=0.15.5,<0.16",
 ]
 
 [tool.setuptools.packages.find]
-include = ["gebco*"]
+include = [
+    "pipeline*",
+    "fr24*",
+    "integration*",
+    "readiness*",
+    "federation*",
+    "server*",
+    "scripts*",
+    "gebco*",
+    "earthgpt*",
+    "llm*",
+]
 
 # ---------------------------------------------------------------------------
 # Exact pins for fully reproducible environments (pip install -c constraints.txt)

@@ -1,11 +1,15 @@
 # Puerto Rico Airspace Intelligence System — Dependencies
 
+# NOTE: version ranges for the shared scientific stack (numpy, scipy, pandas,
+# shapely, …) are owned by pyproject.toml. The ranges below are kept consistent
+# with it; exact reproducible pins live in constraints.txt.
+
 # ── REQUIRED (Phase 0 baseline) ────────────────────────────────────────────
 # Core image processing and OCR
 opencv-python>=4.8
 pytesseract>=0.3.10
 Pillow>=10.0
-numpy>=1.26
+numpy>=2.4,<3
 
 # ── REQUIRED (integration hardening) ───────────────────────────────────────
 jsonschema>=4.17       # schema validation for all exports
@@ -33,7 +37,7 @@ PyYAML>=6.0            # PR intake router YAML config loading
 # ── GIS / Geometry (optional, recommended) ──────────────────────────────────
 # shapely powers integration.schema_validation.validate_geometry() (T2-18).
 # When absent, the validator falls back to a structural-only check.
-shapely>=2.0
+shapely>=2.1,<3
 
 # ── LLM PIPELINE (optional) ─────────────────────────────────────────────────
 # RAG index + local LLM query over PRUAP social data (prepare_data.py,

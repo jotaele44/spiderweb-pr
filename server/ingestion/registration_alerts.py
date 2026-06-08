@@ -15,7 +15,7 @@ channel is configured.
 
 Usage (from repo root):
     python3 server/ingestion/registration_alerts.py [--db server/priis.db] \
-        [--watchlist config/registration_watchlist.yaml] [--no-notify]
+        [--watchlist configs/registration_watchlist.yaml] [--no-notify]
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from server.ingestion.registration_common import normalize_registration  # noqa:
 from server.notifications.notifier import send_alert  # noqa: E402
 
 DB_DEFAULT = _ROOT / "server" / "priis.db"
-WATCHLIST_DEFAULT = _ROOT / "config" / "registration_watchlist.yaml"
+WATCHLIST_DEFAULT = _ROOT / "configs" / "registration_watchlist.yaml"
 
 SEEN_TIER = "T3"
 MISSING_TIER = "T1"
