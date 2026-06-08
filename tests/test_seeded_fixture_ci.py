@@ -141,17 +141,20 @@ def _seed_flight_db(db_path: Path) -> None:
         (
             "FL001", "N5854Z", "Airbus H125", "PREPA", "SJU", "PSE",
             "2024-03-15T08:00:00", "2024-03-15T08:35:00", 35, 2400, 95.0,
-            "powerline_inspection", 18.4373, -66.0018, 18.0083, -66.5632, 1, 0.75,
+            "powerline_inspection", 18.4373, -66.0018, 18.0083, -66.5632,
+            1, 0.75,
         ),
         (
             "FL002", "N767PD", "Bell 429", "FURA", "SJU", "BQN",
             "2024-03-15T09:00:00", "2024-03-15T09:42:00", 42, 2600, 105.0,
-            "law_enforcement", 18.4373, -66.0018, 18.4948, -67.1294, 1, 0.65,
+            "law_enforcement", 18.4373, -66.0018, 18.4948, -67.1294,
+            1, 0.65,
         ),
         (
             "FL003", "C6062", "MH-60T", "USCG", "BQN", "SJU",
             "2024-03-15T10:00:00", "2024-03-15T10:50:00", 50, 3200, 120.0,
-            "maritime_patrol", 18.4948, -67.1294, 18.4373, -66.0018, 1, 0.55,
+            "maritime_patrol", 18.4948, -67.1294, 18.4373, -66.0018,
+            1, 0.55,
         ),
     ]
     cur.executemany(
@@ -160,9 +163,24 @@ def _seed_flight_db(db_path: Path) -> None:
     )
 
     screenshots = [
-        ("SS001", "fixtures/fr24/ss001.png", "FL001", "2024-03-15T08:36:00Z", "N5854Z", 1200, 45, 18.4373, -66.0018, "2024-03-15T08:05:00", "N5854Z SJU PSE", 0.91, SHA64, "fixed_pr_bounds", 0.86, 250.0, "approved"),
-        ("SS002", "fixtures/fr24/ss002.png", "FL002", "2024-03-15T09:43:00Z", "N767PD", 1400, 50, 18.4380, -66.0020, "2024-03-15T09:05:00", "N767PD SJU BQN", 0.88, SHA64, "fixed_pr_bounds", 0.84, 275.0, "approved"),
-        ("SS003", "fixtures/fr24/ss003.png", "FL003", "2024-03-15T10:51:00Z", "C6062", 1800, 70, 18.4948, -67.1294, "2024-03-15T10:05:00", "C6062 BQN SJU", 0.89, SHA64, "fixed_pr_bounds", 0.83, 300.0, "approved"),
+        (
+            "SS001", "fixtures/fr24/ss001.png", "FL001", "2024-03-15T08:36:00Z",
+            "N5854Z", 1200, 45, 18.4373, -66.0018, "2024-03-15T08:05:00",
+            "N5854Z SJU PSE", 0.91, SHA64, "fixed_pr_bounds", 0.86, 250.0,
+            "approved",
+        ),
+        (
+            "SS002", "fixtures/fr24/ss002.png", "FL002", "2024-03-15T09:43:00Z",
+            "N767PD", 1400, 50, 18.4380, -66.0020, "2024-03-15T09:05:00",
+            "N767PD SJU BQN", 0.88, SHA64, "fixed_pr_bounds", 0.84, 275.0,
+            "approved",
+        ),
+        (
+            "SS003", "fixtures/fr24/ss003.png", "FL003", "2024-03-15T10:51:00Z",
+            "C6062", 1800, 70, 18.4948, -67.1294, "2024-03-15T10:05:00",
+            "C6062 BQN SJU", 0.89, SHA64, "fixed_pr_bounds", 0.83, 300.0,
+            "approved",
+        ),
     ]
     cur.executemany(
         "INSERT INTO screenshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -186,8 +204,14 @@ def _seed_flight_db(db_path: Path) -> None:
     )
 
     mission_scores = [
-        ("FL001", "powerline_inspection", 0.82, None, '{"corridor": 0.75}', "Seeded fixture mission inference", "2024-03-15T08:40:00Z"),
-        ("FL002", "law_enforcement", 0.76, None, '{"recurrence": 0.65}', "Seeded fixture mission inference", "2024-03-15T09:45:00Z"),
+        (
+            "FL001", "powerline_inspection", 0.82, None, '{"corridor": 0.75}',
+            "Seeded fixture mission inference", "2024-03-15T08:40:00Z",
+        ),
+        (
+            "FL002", "law_enforcement", 0.76, None, '{"recurrence": 0.65}',
+            "Seeded fixture mission inference", "2024-03-15T09:45:00Z",
+        ),
     ]
     cur.executemany("INSERT INTO mission_scores VALUES (?, ?, ?, ?, ?, ?, ?)", mission_scores)
 
@@ -199,6 +223,11 @@ def _seed_flight_db(db_path: Path) -> None:
         )
     ]
     cur.executemany("INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", alerts)
+    # Dashboard JSON currently orders alerts by triggered_at while the anomaly
+    # schema/export path uses timestamp. Include both so this smoke exercises
+    # non-empty dashboard alerts without changing the production exporter here.
+    cur.execute("ALTER TABLE alerts ADD COLUMN triggered_at TEXT")
+    cur.execute("UPDATE alerts SET triggered_at = timestamp")
 
     aircraft_profiles = [
         ("N5854Z", "Airbus H125", "PREPA", "powerline_inspection", 0.92, "2024-03-15T08:35:00Z", 1),
