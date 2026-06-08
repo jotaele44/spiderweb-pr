@@ -47,9 +47,12 @@
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
     "ready_for_hub_live_execution": false,
+    "resolved_conditions": [
+      "Z2 geometry projection complete: scripts/federation_export.py projects representative WGS84 location onto canonical record entities for observations, events, and tracks when Point geometry or LineString path data exists."
+    ],
     "blocking_conditions": [
-      "canonical export adapter (scripts/federation_export.py) projects the envelope streams (events/observations/tracks/sources) -> entities/sources/relationships; geometry is not yet carried on canonical entities (Z2 follow-up), so the query-hub's correlate_spatial has no entity geometry to join on",
-      "live production export requires real (non-synthetic) rows; the mode=test->production gate in docs/federation_readiness.md must pass"
+      "live production export requires real (non-synthetic) rows; the mode=test->production gate in docs/federation_readiness.md must pass",
+      "downstream hub staging must validate production package correlation across temporal, normalized-name, spatial, and external-id strategies before live execution"
     ]
   }
 }
