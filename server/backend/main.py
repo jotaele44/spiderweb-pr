@@ -103,7 +103,39 @@ async def _rows(query: str, params: tuple = ()) -> list[dict[str, Any]]:
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "db": str(DB_PATH), "db_exists": DB_PATH.exists()}
+    """Liveness + DB integrity (T10-83).
+
+    Reports the DB path/existence and, when the DB is present, runs
+    ``PRAGMA integrity_check`` and counts user tables. ``status`` is ``ok`` only
+    when the DB exists and integrity passes; ``degraded`` otherwise. Always
+    returns 200 so a load balancer can read the body rather than guessing.
+    """
+    result: dict[str, Any] = {
+        "status": "ok",
+        "db": str(DB_PATH),
+        "db_exists": DB_PATH.exists(),
+    }
+    if not DB_PATH.exists():
+        result["status"] = "degraded"
+        result["reason"] = "db_missing"
+        return result
+    try:
+        integrity = (await _rows("PRAGMA integrity_check"))
+        ok = bool(integrity) and str(
+            next(iter(integrity[0].values()))
+        ).lower() == "ok"
+        tables = await _rows(
+            "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table'"
+        )
+        result["integrity_ok"] = ok
+        result["table_count"] = tables[0]["n"] if tables else 0
+        if not ok:
+            result["status"] = "degraded"
+            result["reason"] = "integrity_check_failed"
+    except Exception as exc:  # pragma: no cover - defensive
+        result["status"] = "degraded"
+        result["reason"] = f"db_error: {exc}"
+    return result
 
 # ─── Entity endpoints ──────────────────────────────────────────────────────────
 

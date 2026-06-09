@@ -10,6 +10,15 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _deterministic_seed():
+    """Seed RNGs before every test so stochastic steps are reproducible (T10-86)."""
+    from pipeline.seeding import set_global_seed
+
+    set_global_seed()
+    yield
+
+
 @pytest.fixture
 def tmp_output(tmp_path):
     """Temporary directory for test output files."""
