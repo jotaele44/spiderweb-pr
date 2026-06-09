@@ -132,3 +132,30 @@ Reference points captured after major sweeps so the next change has something co
 |---|---|---|---|---|
 | 2026-06-02 | `ae526fd` | 893 passed / 26 skipped / 0 failed | `overall_status: PASS` (demo mode, empty DB, all 6 stages reported) | Captured after PR #72 (RLSM operational ontology rebase) + PR #73 (gitignore cleanup) merged. Triage sweep complete: PR #39 superseded + closed; `input/` + misplaced `registration_recovery_queue.csv` cleaned. Reproduce with: `/usr/bin/python3 -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py && /usr/bin/python3 release_check.py --db /tmp/baseline.db --output-dir /tmp/baseline_release --skip-tests --demo`. |
 | 2026-06-01 | `5a92c94` | 881 passed / 26 skipped / 0 failed | `overall_status: PASS` (demo mode) | Integration PR #70 just merged. Release-readiness sweep landed (Tier 1–5 + RLSM extraction + Workstream B coverage, 22 commits). |
+
+---
+
+## NEXT_100_TASKS_V2 roadmap — Themes 2–12 (2026-06-09)
+
+Executed theme-by-theme, each CI-gated and squash-merged (Themes 2–7) or stacked
+(Themes 8–12). See [CHANGELOG.md](../CHANGELOG.md) for the per-task detail.
+
+| Theme | Scope | Status | Key deliverables |
+|---|---|---|---|
+| 2 | Schema & validation | ✅ complete | `federation_manifest` schema, `CONTRACT_VERSION`, example-artifact CI gate |
+| 3 | Spiderweb language | ✅ complete | shared `integration/mbil.py`, `aasb_mbil_corridor_flag`, terrain hook |
+| 4 | Performance & scale | ✅ complete | WAL pragmas, hot-col indexes, `executemany`, MBIL `lru_cache`, per-stage timing |
+| 5 | Testing & coverage | ✅ complete | `pytest-cov` ratchet (≥55%), export reproducibility, release-gate coverage |
+| 6 | CI/CD & DX | ✅ complete | lint/type gate (ruff+black+mypy allowlist), concurrency, dependabot, release tagging, badges, `make bootstrap` |
+| 7 | GIS / export | ✅ complete | GeoJSON `_meta`, CRS/EPSG stamping, corridor labels, centroid CSV hook, native KML, QGIS `.qml` pack |
+| 8 | RLSM pipeline | ✅ complete | `ocr_failures.jsonl`, per-zone/per-engine coverage drift |
+| 9 | Federation | ✅ complete | golden envelope fixture, live-execution criteria, external-id correlation, export dry-run/diff |
+| 10 | Observability | ✅ complete | structured logging, config loader, deterministic seeding, server `/health` integrity |
+| 11 | Security & data policy | ✅ complete | pip-audit CI, secrets scan, path-traversal guards, SQL audit |
+| 12 | Docs & structure | ✅ complete | docs index, subsystem READMEs, FR24 guide, monorepo-split eval, API ref, this ledger |
+
+Deferred (blocked or heavy-dependency, tracked in the roadmap): #68/#69 pixel-CV
+flight-track/geo-anchor v2, #72/#73 OCR recalibration/ensemble, #76 hub rtree,
+#77 version negotiation, #62/#64 contextily/geopandas exports, #81 error
+taxonomy, #84 checkpoint/resume, #89 data-policy redaction lint, #92 LICENSE
+(owner decision).
