@@ -10,6 +10,12 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Theme 9 — Federation hardening:** committed golden envelope fixture
+  (`tests/fixtures/envelope_v1_0.golden.json`) + a contract-version pin test
+  (#74); `federation/readiness.py` encoding the live-execution gate criteria
+  with tests (#75); cross-producer external-id (UEI) correlation fixtures and
+  tests exercising `correlate_by_external_id` (#78); `--dry-run` and
+  `--diff-from` modes for `scripts/federation_export.py` (#79).
 - **Theme 8 — RLSM pipeline upgrades:** `ocr_failures.jsonl` operator export
   (flat JSONL of every `ocr_status='failed'` screenshot); per-zone and
   per-engine OCR coverage/drift sections in `rlsm_coverage_report.md`.

@@ -179,6 +179,48 @@ def _rel(src_ent, rtype, tgt_ent, sid, score, synthetic, created, now):
     }}
 
 
+# Primary-key field per canonical stream (used by the diff mode).
+_ID_FIELD = {
+    "sources": "source_id",
+    "entities": "entity_id",
+    "relationships": "relationship_id",
+}
+
+
+def _load_existing_streams(prev_dir: Path) -> dict[str, list[dict]]:
+    """Load {sources,entities,relationships}.jsonl from a previous export dir."""
+    out: dict[str, list[dict]] = {}
+    for stream in ("sources", "entities", "relationships"):
+        fp = prev_dir / f"{stream}.jsonl"
+        out[stream] = (
+            [json.loads(ln) for ln in fp.read_text().splitlines() if ln.strip()]
+            if fp.exists() else []
+        )
+    return out
+
+
+def diff_streams(new_streams: dict[str, list[dict]],
+                 prev_streams: dict[str, list[dict]]) -> dict[str, Any]:
+    """Per-stream added/removed/changed record diff keyed on the stream's id."""
+    report: dict[str, Any] = {}
+    for stream in ("sources", "entities", "relationships"):
+        idf = _ID_FIELD[stream]
+        new_by = {r[idf]: r for r in new_streams.get(stream, [])}
+        old_by = {r[idf]: r for r in prev_streams.get(stream, [])}
+        added = sorted(set(new_by) - set(old_by))
+        removed = sorted(set(old_by) - set(new_by))
+        changed = sorted(
+            k for k in (set(new_by) & set(old_by))
+            if json.dumps(new_by[k], sort_keys=True)
+            != json.dumps(old_by[k], sort_keys=True)
+        )
+        report[stream] = {
+            "added": len(added), "removed": len(removed), "changed": len(changed),
+            "added_ids": added, "removed_ids": removed, "changed_ids": changed,
+        }
+    return report
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -218,6 +260,10 @@ def main() -> int:
     ap.add_argument("--package", default=str(REPO_ROOT / "exports/samples"))
     ap.add_argument("--out", default=str(REPO_ROOT / "exports/federation"))
     ap.add_argument("--mode", default="test", choices=["test", "production"])
+    ap.add_argument("--dry-run", action="store_true",
+                    help="Build streams and report counts without writing any files.")
+    ap.add_argument("--diff-from", default=None,
+                    help="Compare the would-be export against a previous export dir.")
     args = ap.parse_args()
 
     pkg = Path(args.package)
@@ -235,8 +281,20 @@ def main() -> int:
             print(f"FAIL — {len(synthetic)} synthetic rows are not allowed in production mode")
             return 1
 
-    manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
+
+    if args.diff_from:
+        prev = _load_existing_streams(Path(args.diff_from))
+        diff = diff_streams(streams, prev)
+        print(json.dumps({"diff_from": args.diff_from, "diff": diff}, indent=2))
+
+    if args.dry_run:
+        print(json.dumps({"dry_run": True, "out": args.out, "counts": counts,
+                          "would_write": [f"{s}.jsonl" for s, n in counts.items() if n]
+                          + ["manifest.json"]}, indent=2))
+        return 0
+
+    manifest_path = write_package(streams, Path(args.out), args.mode, now)
     print(f"wrote {manifest_path} — {counts}")
     return 0
 

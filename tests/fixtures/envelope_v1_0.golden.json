@@ -1,0 +1,23 @@
+{
+  "contract_version": "1.0",
+  "envelope": {
+    "producer": "spiderweb-pr",
+    "record_type": "observation",
+    "record_id": "spiderweb:obs_golden_0001",
+    "source_id": "spiderweb:src_fr24",
+    "timestamp": "2023-03-21T00:00:00Z",
+    "geo": {"type": "Point", "coordinates": [-66.1057, 18.4655]},
+    "entities": [
+      {
+        "entity_id": "spiderweb:op_acme",
+        "name": "ACME CONSTRUCTION INC",
+        "normalized_name": "ACME CONSTRUCTION",
+        "external_ids": {"uei": "ACME123UEI4567"}
+      }
+    ],
+    "confidence": {"score": 0.7, "method": "producer_contract"},
+    "lineage": [{"stage": "ocr_fusion"}],
+    "payload": {"raw_text": "ACME survey rotorcraft over San Juan"},
+    "synthetic": true
+  }
+}
