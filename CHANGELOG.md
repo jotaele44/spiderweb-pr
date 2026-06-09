@@ -10,6 +10,11 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Theme 8 — RLSM pipeline upgrades:** `ocr_failures.jsonl` operator export
+  (flat JSONL of every `ocr_status='failed'` screenshot); per-zone and
+  per-engine OCR coverage/drift sections in `rlsm_coverage_report.md`.
+  (#66 recover-tails `processing_runs` emission and #67 `ix_air_dedup`
+  unique index were already in place — verified, no change.)
 - **Theme 7 — GIS / export upgrades:** per-feature `_meta` block on every ILAP
   GeoJSON feature; explicit `epsg: 4326` on FeatureCollections and CRS/EPSG
   stamps on the AASB manifest; operator-facing `corridor_label` on corridors;
