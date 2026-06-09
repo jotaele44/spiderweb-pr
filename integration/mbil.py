@@ -18,6 +18,7 @@ Usage::
 from __future__ import annotations
 
 import math
+from functools import lru_cache
 from typing import List, Tuple
 
 # Puerto Rico bounding box — a few tenths of a degree margin so coastal points
@@ -109,8 +110,12 @@ def _min_dist_deg(lat: float, lon: float, centroids: List[Tuple[float, float]]) 
     return min(math.sqrt((lat - clat) ** 2 + (lon - clon) ** 2) for clat, clon in centroids)
 
 
+@lru_cache(maxsize=4096)
 def mbil_class(lat: float, lon: float) -> str:
     """Return the MBIL proximity class for the given point.
+
+    Results are memoized (LRU, 4096 slots) — repeated calls with the same
+    coordinates are O(1) after the first lookup.
 
     Args:
         lat: Latitude in decimal degrees (WGS-84).
