@@ -26,6 +26,50 @@ from release_check import (  # noqa: E402
 )
 
 
+# ── populated-DB stage coverage (T5-36) ──────────────────────────────────────
+
+
+def test_populated_db_runs_export_stages(populated_db, tmp_path):
+    """With a real DB present, the DB-dependent stages execute instead of
+    SKIPPING — exercising the validate + both export stages end to end."""
+    out_dir = tmp_path / "out"
+    rc = ReleaseCheck(populated_db, str(out_dir), mode="normal", run_tests=False)
+    report = rc.run()
+
+    # validate + exports no longer SKIPPED now that the DB exists.
+    assert report["validate"]["status"] != SKIPPED
+    assert report["export_pr_intel"]["status"] != SKIPPED
+    assert report["export_spiderweb"]["status"] != SKIPPED
+
+
+def test_populated_db_writes_spiderweb_manifest(populated_db, tmp_path):
+    """export_spiderweb must materialize the ingest manifest under the gate
+    output directory."""
+    out_dir = tmp_path / "out"
+    rc = ReleaseCheck(populated_db, str(out_dir), mode="normal", run_tests=False)
+    rc.run()
+    manifest = out_dir / "spiderweb" / "spiderweb_ingest_manifest.json"
+    assert manifest.exists(), "spiderweb manifest not written"
+
+
+def test_populated_db_overall_status_is_pass(populated_db, tmp_path):
+    """A clean populated DB with tests skipped should gate PASS (no FAIL in any
+    gating stage)."""
+    out_dir = tmp_path / "out"
+    rc = ReleaseCheck(populated_db, str(out_dir), mode="normal", run_tests=False)
+    report = rc.run()
+    assert report["overall_status"] == PASS, report.get("failure_reasons")
+
+
+def test_populated_db_pr_intel_report_written(populated_db, tmp_path):
+    """export_pr_intel must emit integration_report.json into pr_intel/."""
+    out_dir = tmp_path / "out"
+    rc = ReleaseCheck(populated_db, str(out_dir), mode="normal", run_tests=False)
+    rc.run()
+    report_json = out_dir / "pr_intel" / "integration_report.json"
+    assert report_json.exists(), "integration_report.json not written"
+
+
 # ── basics ──────────────────────────────────────────────────────────────────
 
 
