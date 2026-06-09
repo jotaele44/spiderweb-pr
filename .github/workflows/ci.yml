@@ -66,6 +66,48 @@ jobs:
           test -f /tmp/ci_spiderweb/spiderweb_ingest_manifest.json
           test -f /tmp/ci_spiderweb/aasb_airspace_edges.csv
 
+      - name: Example-artifact schema gate (T2-18)
+        run: |
+          python -c "
+          import json, sys
+          from pathlib import Path
+          from integration.schema_validation import SchemaValidator
+
+          v = SchemaValidator()
+
+          # Validate checked-in sample export JSONL files against their schema_id
+          manifest = json.loads(Path('exports/samples/manifest.sample.json').read_text())
+          samples_dir = Path('exports/samples')
+          errors = []
+          for entry in manifest.get('files', []):
+              schema_id = entry.get('schema_id')
+              fname = entry.get('filename')
+              if not schema_id or not fname:
+                  continue
+              fpath = samples_dir / fname
+              if not fpath.exists():
+                  errors.append(f'sample file missing: {fpath}')
+                  continue
+              for i, line in enumerate(fpath.read_text().splitlines()):
+                  line = line.strip()
+                  if not line:
+                      continue
+                  record = json.loads(line)
+                  result = v.validate(record, schema_id)
+                  if not result['valid']:
+                      errors.append(f'{fname}:{i+1} ({schema_id}): {result[\"errors\"]}')
+          # Validate federation.json against federation_manifest schema
+          fed = json.loads(Path('federation.json').read_text())
+          result = v.validate(fed, 'federation_manifest')
+          if not result['valid']:
+              errors.append(f'federation.json: {result[\"errors\"]}')
+          if errors:
+              for e in errors:
+                  print('FAIL:', e)
+              sys.exit(1)
+          print(f'Example-artifact gate: all sample records and federation.json valid.')
+          "
+
   # ── Release-gate smoke (X2) — mirrors `make release-check` locally ──────────
   release-check:
     runs-on: ubuntu-latest

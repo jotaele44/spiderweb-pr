@@ -766,7 +766,27 @@
       ],
       "dedup_key": null,
       "fact_status_default": null,
-      "notes": "Umbrella release gate; consumed by --release-check. No JSON Schema yet (NEXT_100)."
+      "notes": "Umbrella release gate; consumed by --release-check. Schema: schemas/release_report.schema.json."
+    },
+    {
+      "workstream": "federation",
+      "artifact_path": "federation.json",
+      "schema_name": "federation_manifest",
+      "schema_file": "schemas/federation_manifest.schema.json",
+      "format": "json",
+      "crs": null,
+      "required_columns_summary": [
+        "schema_version",
+        "program_id",
+        "repository_full_name",
+        "federation_role",
+        "production_status",
+        "federation_readiness_gate"
+      ],
+      "provenance_fields": [],
+      "dedup_key": null,
+      "fact_status_default": null,
+      "notes": "Cross-repo federation discovery manifest. Validated by scripts/validate_export.py and schema_index coverage test."
     }
   ]
 }

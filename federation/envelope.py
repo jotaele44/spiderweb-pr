@@ -9,6 +9,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+# Increment when the required field set or semantics change in a breaking way.
+# Producers and consumers should assert equality against this constant to catch
+# divergence early (see federation/validator.py).
+CONTRACT_VERSION = "1.0"
+
 # The canonical field set of the shared evidence envelope.
 ENVELOPE_FIELDS = (
     "producer",
