@@ -1,5 +1,9 @@
 # Puerto Rico Airspace Intelligence System
 
+[![CI](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml/badge.svg)](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/badge/coverage-%E2%89%A555%25-brightgreen)](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml)
+[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
+
 Flight tracking, mission deduction, and operational intelligence from FlightRadar24 screenshots.
 
 > **Integration status**: integration-ready after validation gates pass. Run `--validate` and review `integration_report.json` before treating outputs as production data.

@@ -4,6 +4,7 @@ This is an independent copy of the cross-repo federation contract. It is
 intentionally NOT shared via import with the other producer: each repo owns its
 own copy so the producers stay decoupled and independently testable.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -43,7 +44,9 @@ class EvidenceEnvelope:
     timestamp: Optional[str] = None
     geo: Optional[Dict[str, Any]] = None
     entities: List[Dict[str, Any]] = field(default_factory=list)
-    confidence: Dict[str, Any] = field(default_factory=lambda: dict(_DEFAULT_CONFIDENCE))
+    confidence: Dict[str, Any] = field(
+        default_factory=lambda: dict(_DEFAULT_CONFIDENCE)
+    )
     lineage: List[Any] = field(default_factory=list)
     payload: Dict[str, Any] = field(default_factory=dict)
     synthetic: bool = False
@@ -65,7 +68,8 @@ class EvidenceEnvelope:
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "EvidenceEnvelope":
-        missing = [k for k in ("producer", "record_type", "record_id", "source_id") if k not in d]
+        required = ("producer", "record_type", "record_id", "source_id")
+        missing = [k for k in required if k not in d]
         if missing:
             raise ValueError(f"envelope missing required keys: {missing}")
         return cls(

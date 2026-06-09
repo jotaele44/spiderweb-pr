@@ -20,7 +20,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-
 MODE_NORMAL = "normal"
 MODE_DEMO = "demo"
 MODE_STRICT = "strict"

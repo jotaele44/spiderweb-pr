@@ -9,6 +9,15 @@
 # (full pytest run, EarthGPT selftest) belongs in the release-check CI job,
 # not the commit path.
 repos:
+  # Fast file-hygiene hooks (T6-48). All complete in well under a second.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-added-large-files
+
   - repo: local
     hooks:
       - id: py-compile

@@ -4,6 +4,7 @@ Call ``configure_connection()`` immediately after ``sqlite3.connect()`` in
 every pipeline module.  The PRAGMAs are idempotent and safe to set on an
 existing database.
 """
+
 from __future__ import annotations
 
 import sqlite3
