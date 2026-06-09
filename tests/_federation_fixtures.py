@@ -40,8 +40,14 @@ CS_RECORD_TYPES = {
 # --------------------------------------------------------------------------
 
 
+# Shared external id carried by ACME in BOTH producers — lets the hub correlate
+# them on a stable government identifier (UEI) independent of name spelling (T9-78).
+ACME_UEI = "ACME123UEI4567"
+
+
 def build_spiderweb_streams(*, synthetic: bool = True) -> Dict[str, List[EvidenceEnvelope]]:
     acme = org_entity_ref("op_acme", "ACME CONSTRUCTION INC")
+    acme["external_ids"] = {"uei": ACME_UEI}
     src_fr24 = "src_fr24"
 
     event = build_airspace_event(
@@ -131,6 +137,7 @@ def build_contract_sweeper_streams(*, synthetic: bool = True) -> Dict[str, List[
     acme = _cs_entity("ent_acme", "ACME CONSTRUCTION INC", synthetic)
     navy = _cs_entity("ent_navy", "Department of the Navy", synthetic)
     acme_ref = acme.entities[0]
+    acme_ref["external_ids"] = {"uei": ACME_UEI}  # same UEI as the spiderweb ACME (T9-78)
     navy_ref = navy.entities[0]
 
     award = EvidenceEnvelope(
