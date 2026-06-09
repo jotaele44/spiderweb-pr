@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        # Matches requires-python >=3.11 (the scientific stack needs 3.11+).
+        python-version: ["3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -23,11 +24,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install core test dependencies
-        run: pip install "jsonschema>=4.17" "pyarrow>=14.0" "pytest>=7.4" "Pillow>=10.0" "numpy>=1.26" "requests>=2.31" "shapely>=2.0" "openpyxl>=3.1,<3.2"
-
-      - name: Install backend test dependencies
-        run: pip install -r server/backend/requirements.txt "httpx>=0.27"
+      - name: Install package (airspace + earthgpt + server extras)
+        run: pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
 
       - name: Syntax check all Python modules
         run: find . -path ./.git -prune -o -path ./.claude -prune -o -name "*.py" -print -exec python -m py_compile {} +
@@ -81,8 +79,8 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install core dependencies
-        run: pip install "jsonschema>=4.17" "pyarrow>=14.0" "pytest>=7.4" "Pillow>=10.0" "numpy>=1.26" "requests>=2.31" "shapely>=2.0" "openpyxl>=3.1,<3.2"
+      - name: Install package (airspace + earthgpt extras)
+        run: pip install -e ".[airspace,earthgpt]"
 
       - name: Release gate (skip-tests + demo mode, against empty DB)
         # --skip-tests because the `test` job above already ran the full suite;
@@ -115,8 +113,55 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install GEBCO dependencies
-        run: pip install -r requirements-gebco.txt
+      - name: Install GEBCO dependencies (gebco extra)
+        run: pip install -e ".[gebco,dev]"
 
       - name: Run GEBCO test suite (39 tests)
         run: python -m pytest tests/test_io.py tests/test_terrain.py -v --tb=short
+
+  # ── Packaging: every extra resolves and its subsystem imports cleanly ────────
+  # First real exercise of `pip install .` (packages.find + py-modules + extras).
+  # `rag` is omitted — torch is too heavy/slow for CI.
+  install-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        extra: [airspace, gebco, earthgpt, server, federation]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package with the ${{ matrix.extra }} extra
+        run: pip install -e ".[${{ matrix.extra }}]"
+
+      - name: Import smoke for ${{ matrix.extra }}
+        run: |
+          python - <<'PY'
+          import importlib, os
+          extra = os.environ["EXTRA"]
+          modules = {
+              "airspace": ["pipeline", "fr24", "integration"],
+              "gebco": ["gebco"],
+              "earthgpt": ["earthgpt"],
+              "server": ["aiosqlite", "fastapi"],
+              "federation": ["federation"],
+          }[extra]
+          for m in modules:
+              importlib.import_module(m)
+          print(f"{extra}: imported {', '.join(modules)} OK")
+          PY
+        env:
+          EXTRA: ${{ matrix.extra }}
+
+      - name: Console entry points are installed
+        run: |
+          spiderweb-run --help > /dev/null
+          spiderweb-release-check --help > /dev/null
+          echo "console scripts OK"

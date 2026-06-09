@@ -22,12 +22,75 @@ dependencies = [
     "openpyxl>=3.1,<4",
 ]
 
+# Per-subsystem extras. The shared scientific stack lives in `dependencies` above;
+# each extra adds only what that subsystem needs on top. Install e.g.
+#   pip install -e ".[airspace]"        (ranges)
+#   pip install -c constraints.txt -e ".[airspace]"   (exact pins)
 [project.optional-dependencies]
+# Puerto Rico Airspace Intelligence System — OCR/vision + export validation.
+airspace = [
+    "opencv-python>=4.8,<5",
+    "pytesseract>=0.3.10,<0.4",
+    "Pillow>=10.0,<12",
+    "pillow-heif>=1.3.0,<2",
+    "jsonschema>=4.17,<5",
+    "pyarrow>=14.0",
+    "PyYAML>=6.0,<7",
+]
+# GEBCO bathymetry — the rest of the stack (numpy/scipy/xarray/pandas/…) is in base `dependencies`.
+gebco = [
+    "netCDF4>=1.7.4,<2",
+    "scikit-image>=0.26,<1",
+]
+# LLM pipeline (RAG over PRUAP social data). Heavy ML — installs torch + transformers.
+rag = [
+    "praw>=7.8.1,<8",
+    "chromadb>=0.4.0,<2",
+    "sentence-transformers>=2.7.0,<6",
+    "transformers>=4.40.0,<6",
+    "torch>=2.2.0,<3",
+    "accelerate>=0.27.0,<2",
+]
+# EarthGPT iOS satellite anomaly detection (no heavy GIS stack).
+earthgpt = [
+    "requests>=2.31.0,<3",
+    "python-dotenv>=1.0.0,<2",
+    "folium>=0.15.0,<1",
+]
+# PRIIS FastAPI backend (ranges mirror the pinned server/backend/requirements.txt).
+server = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "sse-starlette>=2.1,<3",
+    "aiosqlite>=0.20,<1",
+    "pydantic>=2.7,<3",
+]
+# Cross-repo federation hub.
+federation = [
+    "jsonschema>=4.17,<5",
+]
+# Convenience union of every runtime subsystem (gebco is already in base).
+all = [
+    "spiderweb-pr[airspace,rag,earthgpt,server,federation]",
+]
 dev = [
     "pytest>=9.0.2,<10",
     "black>=26.3.0,<27",
     "ruff>=0.15.5,<0.16",
 ]
+
+[project.scripts]
+spiderweb-run = "run_all:main"
+spiderweb-release-check = "release_check:main"
+
+[tool.setuptools]
+# Top-level orchestration modules (live at the repo root, not inside a package)
+# so the console-script entry points above can import them post-install.
+py-modules = ["run_all", "release_check", "run_modes", "provenance_utils"]
+
+[tool.setuptools.package-data]
+# Ship PEP 561 typing markers so downstream consumers see this package as typed.
+"*" = ["py.typed"]
 
 [tool.setuptools.packages.find]
 include = [

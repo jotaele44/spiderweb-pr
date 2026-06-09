@@ -1,56 +1,19 @@
-# Puerto Rico Airspace Intelligence System — Dependencies
-
-# NOTE: version ranges for the shared scientific stack (numpy, scipy, pandas,
-# shapely, …) are owned by pyproject.toml. The ranges below are kept consistent
-# with it; exact reproducible pins live in constraints.txt.
-
-# ── REQUIRED (Phase 0 baseline) ────────────────────────────────────────────
-# Core image processing and OCR
-opencv-python>=4.8
-pytesseract>=0.3.10
-Pillow>=10.0
-numpy>=2.4,<3
-
-# ── REQUIRED (integration hardening) ───────────────────────────────────────
-jsonschema>=4.17       # schema validation for all exports
-pyarrow>=14.0          # parquet export for PR Intel adapter
-pytest>=7.4            # test suite
-PyYAML>=6.0            # PR intake router YAML config loading
-
-# ── OPTIONAL (Phase 1 hardening — heavy ML engines) ────────────────────────
-# Install one or both for ensemble OCR consensus (significant accuracy boost).
-# These require substantial disk space and download time.
+# Puerto Rico Airspace Intelligence System — combined runtime dependencies.
 #
-# PaddleOCR (requires paddlepaddle first):
-#   pip install paddlepaddle>=2.6
-#   pip install paddleocr>=2.7
+# Dependencies are defined as extras in pyproject.toml. This file installs the
+# airspace core plus the optional RAG and EarthGPT subsystems:
 #
-# EasyOCR (requires PyTorch):
-#   pip install torch>=2.0
-#   pip install easyocr>=1.7
-
-# ── OPTIONAL (dashboard) ───────────────────────────────────────────────────
-# The React dashboard (dashboard.jsx) uses npm packages, not pip:
-#   npm install lucide-react
-#   Requires React 16.8+ and Tailwind CSS v3+
-
-# ── GIS / Geometry (optional, recommended) ──────────────────────────────────
-# shapely powers integration.schema_validation.validate_geometry() (T2-18).
-# When absent, the validator falls back to a structural-only check.
-shapely>=2.1,<3
-
-# ── LLM PIPELINE (optional) ─────────────────────────────────────────────────
-# RAG index + local LLM query over PRUAP social data (prepare_data.py,
-# rag_pipeline.py, query_llm.py)
-praw>=7.8.1
-chromadb>=0.4.0
-sentence-transformers>=2.7.0
-transformers>=4.40.0
-torch>=2.2.0
-accelerate>=0.27.0
-
-# ── EARTHGPT IOS (optional) ──────────────────────────────────────────────────
-# Satellite anomaly detection pipeline (earthgpt/ package, scripts/)
-requests>=2.31.0
-python-dotenv>=1.0.0
-folium>=0.15.0
+#   pip install -r requirements.txt
+#   pip install -c constraints.txt -r requirements.txt   # exact pins
+#
+# For a single subsystem use the per-feature shim instead:
+#   requirements-airspace.txt   requirements-gebco.txt
+#   requirements-rag.txt        requirements-earthgpt.txt
+#
+# The PRIIS FastAPI backend is a separate extra:  pip install -e ".[server]"
+# The React dashboard uses npm, not pip:  npm install lucide-react
+#
+# System prerequisite (not pip-installable):
+#   Ubuntu:  sudo apt-get install tesseract-ocr
+#   macOS:   brew install tesseract
+-e .[airspace,rag,earthgpt]

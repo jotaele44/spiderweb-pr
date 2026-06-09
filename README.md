@@ -55,8 +55,9 @@ a registration watchlist with alerts, see
 ## Quick start
 
 ```bash
-# Install required dependencies
-pip install opencv-python pytesseract Pillow numpy
+# Install the airspace subsystem (editable, with its extra)
+pip install -e ".[airspace]"
+# For exact reproducible pins:  pip install -c constraints.txt -e ".[airspace]"
 
 # Install Tesseract OCR (system package)
 # Ubuntu: sudo apt-get install tesseract-ocr
@@ -120,6 +121,29 @@ for gate, info in r['gates'].items():
     print(f'  {gate}: {info[\"status\"]}')
 "
 ```
+
+## Dependencies & extras
+
+Dependencies follow a **two-tier model**:
+
+- **Version ranges** live in `pyproject.toml` — a shared scientific stack in
+  `dependencies`, plus one optional-dependency **extra** per subsystem.
+- **Exact reproducible pins** live in `constraints.txt`
+  (`pip install -c constraints.txt -e ".[airspace]"`).
+
+| Extra | Subsystem | Install |
+|---|---|---|
+| `airspace` | FR24 OCR/GIS flight intelligence | `pip install -e ".[airspace]"` |
+| `gebco` | GEBCO bathymetry pipeline | `pip install -e ".[gebco]"` |
+| `rag` | LLM/RAG pipeline (heavy ML) | `pip install -e ".[rag]"` |
+| `earthgpt` | EarthGPT iOS anomaly detection | `pip install -e ".[earthgpt]"` |
+| `server` | PRIIS FastAPI backend | `pip install -e ".[server]"` |
+| `federation` | Cross-repo federation hub | `pip install -e ".[federation]"` |
+| `all` | every runtime subsystem | `pip install -e ".[all]"` |
+
+The `requirements-*.txt` files are thin shims over these extras. Installing the
+package exposes two console scripts: `spiderweb-run` (= `run_all.py`) and
+`spiderweb-release-check` (= `release_check.py`).
 
 ## Integration outputs
 
