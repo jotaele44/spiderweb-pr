@@ -10,6 +10,12 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Theme 12 — Docs & structure:** subsystem-grouped `docs/README.md` index
+  (#93); ARCHITECTURE status refresh for federation + RLSM-canonical (#94);
+  per-subsystem `gebco`/`earthgpt`/`llm` READMEs (#96); monorepo-split decision
+  doc (#97); consolidated `docs/FR24_GUIDE.md` TOC (#98); `docs/API_REFERENCE.md`
+  (pdoc) (#99); roadmap Themes 2–12 migrated into `ROI_TASK_LEDGER.md` with the
+  roadmap/ledger/changelog linked from the README (#100).
 - **Theme 11 — Security & data policy:** advisory `pip-audit` CI job (#87);
   `.env.example` + a committed-secrets scan test (#88); `pipeline/path_safety.py`
   (`safe_join`/`is_within` path-traversal guards) (#90); an SQL-parameterization

@@ -142,3 +142,26 @@ pip install -r requirements-gebco.txt       # GEBCO only
 pip install -r requirements-rag.txt         # LLM pipeline only
 pip install -r requirements-earthgpt.txt    # EarthGPT only
 ```
+
+## Status refresh (2026-06, roadmap Themes 2–12)
+
+The system has two mature integration surfaces beyond the phase-0–4 airspace
+pipeline:
+
+- **Federation** (`federation/`) — a cross-repo evidence-envelope contract
+  (`CONTRACT_VERSION`) with a deterministic correlation hub
+  (`federation/hub/query.py`) supporting temporal, normalized-name, spatial, and
+  external-id strategies. Live execution is gated by
+  `federation/readiness.py` and `federation.json`'s readiness block.
+- **RLSM-canonical** (`data/rlsm/schema.sql`, `fr24/`) — the lossless screenshot
+  mining pipeline is the canonical model for FR24 ingestion; see
+  [FR24_GUIDE.md](FR24_GUIDE.md).
+
+Cross-cutting layers added across the roadmap: packaging extras +
+`pip install -e .` (Theme 1), schema/validation contracts (Theme 2), a
+performance layer (WAL/indexes/batch inserts/caching, Theme 4), a coverage
+ratchet + lint/type gate (Themes 5–6), GIS/export upgrades incl. native KML
+(Theme 7), and observability/security helpers under `pipeline/` (Themes 10–11).
+
+> The `requirements-*.txt` files below are now thin shims over
+> `pip install -e ".[extra]"` — see the root README's "Dependencies & extras".
