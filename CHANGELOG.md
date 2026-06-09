@@ -10,6 +10,11 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Theme 11 — Security & data policy:** advisory `pip-audit` CI job (#87);
+  `.env.example` + a committed-secrets scan test (#88); `pipeline/path_safety.py`
+  (`safe_join`/`is_within` path-traversal guards) (#90); an SQL-parameterization
+  audit test asserting no `%`/`.format()`-built SQL (#91). (#92 license selection
+  deferred — an owner decision; #89 data-policy lint deferred.)
 - **Theme 10 — Observability & robustness:** central structured logging
   (`pipeline/logging_config.py`, JSON formatter) wired into `run_all.py` with
   `--verbose`/`--quiet`/`--log-json` (`pipeline/verbosity.py`) (#80, #82);

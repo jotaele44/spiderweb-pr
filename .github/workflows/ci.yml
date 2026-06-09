@@ -17,6 +17,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── Dependency vulnerability scan (advisory, non-gating) ────────────────────
+  # pip-audit reports known CVEs in the resolved dependency set (T11-87). Run as
+  # continue-on-error so a freshly-published advisory surfaces in the logs
+  # without blocking unrelated PRs; promote to gating once the set is clean.
+  security-audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: pip-audit (advisory)
+        run: |
+          pip install pip-audit
+          pip install -e ".[airspace,earthgpt,server]"
+          pip-audit --progress-spinner off || true
+
   # ── Lint + type check (ruff + black + mypy) on a curated allowlist ──────────
   # CI parity (T6-50): lint + type + test + release-check all gate. The allowlist
   # is intentionally small (gradual per-package typing, T6-49) and grows over
@@ -37,7 +57,7 @@ jobs:
 
       - name: Lint + type-check (curated allowlist)
         run: |
-          LINT_PATHS="provenance_utils.py run_modes.py integration/mbil.py pipeline/db_utils.py pipeline/terrain_hook.py federation/envelope.py federation/readiness.py pipeline/logging_config.py pipeline/config_loader.py pipeline/seeding.py pipeline/verbosity.py"
+          LINT_PATHS="provenance_utils.py run_modes.py integration/mbil.py pipeline/db_utils.py pipeline/terrain_hook.py federation/envelope.py federation/readiness.py pipeline/logging_config.py pipeline/config_loader.py pipeline/seeding.py pipeline/verbosity.py pipeline/path_safety.py"
           echo "Allowlist: $LINT_PATHS"
           python -m ruff check $LINT_PATHS
           python -m black --check $LINT_PATHS
