@@ -75,6 +75,7 @@ all = [
 ]
 dev = [
     "pytest>=9.0.2,<10",
+    "pytest-cov>=7.0,<8",
     "black>=26.3.0,<27",
     "ruff>=0.15.5,<0.16",
 ]
@@ -142,3 +143,30 @@ markers = [
     "smoke: tests that depend on generated artifacts (data/*.geojson, manifest) — skip cleanly if missing.",
     "integration: tests that hit live external services (e.g. Census TIGER downloads). Excluded from default runs.",
 ]
+
+# ── Coverage (T5-42) ─────────────────────────────────────────────────────────
+# The CI `test` job runs pytest with --cov and --cov-fail-under to enforce a
+# floor; the ratchet only protects the core production packages exercised by the
+# base (non-gebco) suite. tests/, one-off scripts/, the gebco extra (not
+# installed in the base job), and the server backend (separate test concerns)
+# are omitted so the percentage reflects library code, not unrun tooling.
+[tool.coverage.run]
+branch = true
+source = ["integration", "pipeline", "fr24", "readiness", "federation", "llm",
+          "earthgpt", "provenance_utils", "run_modes", "release_check"]
+omit = [
+    "tests/*",
+    "scripts/*",
+    "gebco/*",
+    "server/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+
