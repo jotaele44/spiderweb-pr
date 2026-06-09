@@ -19,7 +19,9 @@ The pipeline emits these GeoJSON artifacts (per [`SCHEMA_AND_EXPORT_CONTRACTS.md
 | `airspace_ilap_candidates.geojson` | `Point` / `LineString` | `ilap_corridor_candidate` | ILAP track candidates |
 | `airspace_corridor_candidates.geojson` | `LineString` | `ilap_corridor_candidate` | Corridor candidates |
 
-All carry per-feature **provenance** (`screenshot_id`, `sha256`, `source_path`) plus type-specific properties — see the relevant schema for the full list.
+All carry per-feature **provenance** (`screenshot_id`, `sha256`, `source_path`) plus type-specific properties — see the relevant schema for the full list. The ILAP artifacts additionally carry a `properties._meta` block (`producer_module`, `source_artifact`, `produced_at`) so a single feature is self-describing, and each FeatureCollection stamps an explicit `epsg: 4326` alongside the OGC `crs` URN.
+
+The ILAP bridge also writes a native **`.kml`** sibling next to each `.geojson` (e.g. `airspace_corridor_candidates.kml`) — see [Google Earth Pro](#google-earth-pro).
 
 ---
 
@@ -30,6 +32,18 @@ All carry per-feature **provenance** (`screenshot_id`, `sha256`, `source_path`) 
 1. **Drag-and-drop** the `.geojson` file from Finder/Explorer onto the QGIS map canvas.
 2. QGIS auto-detects EPSG:4326 from the inline `crs` member — verify in the Layers panel (right-click → Properties → Source → CRS).
 3. If the file is large (the full `screenshot_evidence` mirror can be ~50 MB), set rendering to "Render Layer Without Caching" the first time to avoid the cache-build pause.
+
+### Ready-made styles (`.qml`)
+
+The repo ships QGIS layer styles under [`styles/`](../styles) — load via right-click layer → Properties → Symbology → Style ▾ → Load Style:
+
+| Layer | Style file | Renders by |
+|---|---|---|
+| `airspace_poi_candidates` | `styles/airspace_poi_candidates.qml` | `review_priority` (HIGH/MEDIUM/LOW) |
+| `airspace_corridor_candidates` | `styles/airspace_corridor_candidates.qml` | `corridor_label` (HIGH/MEDIUM/LOW activity) |
+| `aasb_airspace_edges` | `styles/aasb_airspace_edges.qml` | graduated on `weight` (flight count) |
+
+For `aasb_airspace_edges.csv`, add it as a **Delimited Text** layer with geometry from `from_lat`/`from_lon` (point) or build lines from the four coordinate columns, then load the `.qml`.
 
 ### Symbology hints
 
@@ -52,27 +66,26 @@ Every feature has `properties.screenshot_id` and `properties.source_path`. To au
 
 Google Earth doesn't read GeoJSON natively — it consumes KML/KMZ.
 
-### Quick conversion (per file)
+### Native KML export (in-pipeline)
 
-```
-# Requires GDAL 2.4+ (Homebrew: brew install gdal)
-ogr2ogr -f KML route_lines.kml outputs/route_lines.geojson
-ogr2ogr -f KML gis_airspace_features.kml outputs/gis_airspace_features.geojson
-```
-
-Then **File → Open** the `.kml` in Google Earth Pro.
+The ILAP bridge now emits a **`.kml` sibling** next to every `.geojson` it writes
+(`integration/kml_export.py`, T7-58). No external tooling required — just
+**File → Open** the `.kml` (e.g. `airspace_corridor_candidates.kml`) in Google
+Earth Pro. Feature properties travel as `<ExtendedData>`, so attributes are
+visible in the placemark balloon.
 
 ### Notes
 
-- KML loses some GeoJSON properties (Google Earth's KML reader only displays a subset by default). Right-click the layer → Properties → Description to add a custom `<description>` template if you need all fields visible.
-- Use Google Earth's Time Slider with `properties.takeoff_time` (when KML-converted with `--lco DateField=takeoff_time`) to animate a flight history.
+- The KML writer is dependency-free and supports `Point` and `LineString`
+  geometries — the two types the airspace bridges produce. Coordinates are
+  `lon,lat` (EPSG:4326), the same axis order as GeoJSON.
+- The nested `_meta` block is intentionally omitted from `<ExtendedData>` (it is
+  not a flat scalar); all other properties round-trip.
 
-### KML export — not yet implemented in-pipeline
-
-The pipeline does **not** currently emit `.kml` directly. Two paths if you want this:
-
-1. **Quick path (no new dependency):** the `ogr2ogr` one-liner above.
-2. **Native KML export (deferred to [`NEXT_100_TASKS.md`](NEXT_100_TASKS.md), task 49):** add a thin `_export_kml` step in `integration/pr_intel_adapter.py` using `simplekml` (optional dep, `pip install simplekml`).
+> **Deprecated (T7-63):** the previous `ogr2ogr -f KML …` workaround is no longer
+> needed now that native KML ships in-pipeline. It remains a valid fallback for
+> the `pr_intel_adapter` artifacts (`route_lines.geojson`,
+> `gis_airspace_features.geojson`), which do not yet emit KML siblings.
 
 ---
 

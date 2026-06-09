@@ -59,6 +59,9 @@ class AASBAirspaceBridge:
             "generated_at": datetime.utcnow().isoformat() + "Z",
             "db_path": self.db_path,
             "schema_version": "1.0",
+            # Manifest-level CRS so consumers know the datum without opening a file (T7-65).
+            "crs": "EPSG:4326",
+            "epsg": 4326,
             "reproducibility": reproducibility_metadata(
                 command=f"AASBAirspaceBridge.export_all db={self.db_path}",
                 input_paths=[self.db_path],
@@ -158,6 +161,9 @@ class AASBAirspaceBridge:
                     "filename": fname,
                     "record_count": self._count_records(fpath),
                     "bbox": self._bbox_for(fpath),
+                    # Every geo artifact carries an explicit CRS/EPSG stamp (T7-65).
+                    "crs": "EPSG:4326",
+                    "epsg": 4326,
                 })
         return result
 

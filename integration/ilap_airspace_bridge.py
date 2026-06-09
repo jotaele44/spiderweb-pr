@@ -13,7 +13,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from integration.mbil import mbil_class, mbil_proximity_weight
+from integration.kml_export import write_kml_for_geojson
+from provenance_utils import geojson_feature_meta
 
+PRODUCER_MODULE = "integration.ilap_airspace_bridge"
+
+# EPSG code for the WGS-84 lat/lon CRS every artifact is emitted in (T7-65).
+EPSG_CODE = 4326
 
 IDENTITY_NOTE = (
     "N/A or weak aircraft identity may increase review priority "
@@ -31,6 +37,23 @@ CONFIDENCE_WEIGHTS = {
 GRID_DEG = 0.05  # ~5 km grid cell size
 
 
+def corridor_activity_label(connecting_flights: int) -> str:
+    """Map a corridor's connecting-flight count to an operator-facing label (T7-59).
+
+    Mirrors the POI review-priority banding so an analyst reads corridor and POI
+    layers with one mental model.
+
+      HIGH    ≥ 5 connecting flights — established, repeatedly-flown corridor
+      MEDIUM  3–4                    — emerging corridor worth monitoring
+      LOW     2                      — minimal evidence (below 2 is not emitted)
+    """
+    if connecting_flights >= 5:
+        return "HIGH"
+    if connecting_flights >= 3:
+        return "MEDIUM"
+    return "LOW"
+
+
 class ILAPAirspaceBridge:
     def __init__(self, db_path: str, output_dir: str):
         self.db_path = db_path
@@ -38,6 +61,9 @@ class ILAPAirspaceBridge:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def export_all(self) -> Dict[str, Any]:
+        # One emission timestamp shared by every feature in this run (T7-57).
+        self._produced_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         track_pts = self._safe_query(conn, "SELECT * FROM track_points")
@@ -63,6 +89,14 @@ class ILAPAirspaceBridge:
             "output_dir": str(self.output_dir),
             "files": counts,
         }
+
+    def _meta(self, source_artifact: str) -> Dict[str, str]:
+        """Standardized GeoJSON Feature `_meta` block for this run (T7-57)."""
+        return geojson_feature_meta(
+            producer_module=PRODUCER_MODULE,
+            source_artifact=source_artifact,
+            produced_at=getattr(self, "_produced_at", None),
+        )
 
     # ------------------------------------------------------------------ POI
 
@@ -127,6 +161,7 @@ class ILAPAirspaceBridge:
                     "review_priority": priority,
                     "mbil_class": poi_mbil,
                     "identity_note": IDENTITY_NOTE,
+                    "_meta": self._meta("airspace_poi_candidates.geojson"),
                 },
             })
 
@@ -177,6 +212,7 @@ class ILAPAirspaceBridge:
                     "mission_type": f.get("mission_type", ""),
                     "corridor_alignment_score": corridor_score,
                     "identity_note": IDENTITY_NOTE,
+                    "_meta": self._meta("airspace_ilap_candidates.geojson"),
                 },
             })
 
@@ -234,8 +270,10 @@ class ILAPAirspaceBridge:
                         "poi_a": f"{lat1},{lon1}",
                         "poi_b": f"{lat2},{lon2}",
                         "connecting_flights": corridor_flights,
+                        "corridor_label": corridor_activity_label(corridor_flights),
                         "mbil_class": corridor_mbil,
                         "identity_note": IDENTITY_NOTE,
+                        "_meta": self._meta("airspace_corridor_candidates.geojson"),
                     },
                 })
 
@@ -252,9 +290,14 @@ class ILAPAirspaceBridge:
         geojson = {
             "type": "FeatureCollection",
             "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}},
+            # Explicit machine-readable EPSG alongside the OGC URN crs (T7-65).
+            "epsg": EPSG_CODE,
             "features": features,
         }
         (self.output_dir / filename).write_text(json.dumps(geojson, indent=2))
+        # Native KML sibling for Google Earth / QGIS (T7-58) — no ogr2ogr needed.
+        kml_path = (self.output_dir / filename).with_suffix(".kml")
+        write_kml_for_geojson(geojson, kml_path)
 
     def _safe_query(self, conn: sqlite3.Connection, sql: str) -> List[dict]:
         try:
