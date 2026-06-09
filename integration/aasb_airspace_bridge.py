@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from provenance_utils import reproducibility_metadata, feature_collection_summary
+from integration.mbil import is_mbil_high, mbil_class
 
 
 # Known PR airport coordinates for node anchoring
@@ -32,6 +33,7 @@ EDGE_FIELDNAMES = [
     "from_lat", "from_lon", "to_lat", "to_lon",
     "weight", "flight_count", "avg_duration_min",
     "dominant_callsign", "confidence_score",
+    "aasb_mbil_corridor_flag",
 ]
 
 
@@ -107,6 +109,12 @@ class AASBAirspaceBridge:
                 if data["callsign_counts"] else ""
             confidence = min(1.0, flight_count / 5.0)
 
+            # T3-28: flag edges where both endpoints are MBIL-2+ (inner periurban
+            # or closer), indicating the corridor links two high-activity municipal zones.
+            mbil_from = mbil_class(from_lat, from_lon) if (from_lat or from_lon) else "MBIL-X"
+            mbil_to = mbil_class(to_lat, to_lon) if (to_lat or to_lon) else "MBIL-X"
+            corridor_flag = is_mbil_high(mbil_from) and is_mbil_high(mbil_to)
+
             edges.append({
                 "edge_id": f"EDGE_{idx:04d}_{origin}_{dest}",
                 "from_node": origin,
@@ -120,6 +128,7 @@ class AASBAirspaceBridge:
                 "avg_duration_min": round(avg_dur, 2),
                 "dominant_callsign": dominant,
                 "confidence_score": round(confidence, 4),
+                "aasb_mbil_corridor_flag": corridor_flag,
             })
 
         return edges

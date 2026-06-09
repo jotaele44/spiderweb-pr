@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from pipeline.terrain_hook import get_terrain_context
 from provenance_utils import (
     reproducibility_metadata,
     feature_collection_summary,
@@ -364,19 +365,7 @@ class SpiderwebIntake:
 
     def _score_terrain(self, candidates: List[Dict[str, Any]]) -> None:
         for c in candidates:
-            lat, lon = c["_lat"], c["_lon"]
-            if URBAN_LAT[0] <= lat <= URBAN_LAT[1] and URBAN_LON[0] <= lon <= URBAN_LON[1]:
-                c["terrain_context"] = "urban"
-            elif (PONCE_URBAN_LAT[0] <= lat <= PONCE_URBAN_LAT[1]
-                  and PONCE_URBAN_LON[0] <= lon <= PONCE_URBAN_LON[1]):
-                c["terrain_context"] = "urban"
-            elif (MAYAGUEZ_URBAN_LAT[0] <= lat <= MAYAGUEZ_URBAN_LAT[1]
-                  and MAYAGUEZ_URBAN_LON[0] <= lon <= MAYAGUEZ_URBAN_LON[1]):
-                c["terrain_context"] = "urban"
-            elif lon <= PR_LON_WEST or lon >= PR_LON_EAST:
-                c["terrain_context"] = "coastal"
-            else:
-                c["terrain_context"] = "inland"
+            c["terrain_context"] = get_terrain_context(c["_lat"], c["_lon"])
 
     # ── Evidence tier ─────────────────────────────────────────────────────────
 

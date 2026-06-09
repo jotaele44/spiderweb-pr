@@ -12,6 +12,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from integration.mbil import mbil_class, mbil_proximity_weight
+
 
 IDENTITY_NOTE = (
     "N/A or weak aircraft identity may increase review priority "
@@ -92,7 +94,8 @@ class ILAPAirspaceBridge:
             loiter = self._loiter_score(points)
             infra_align = 0.3  # placeholder; real impl would cross-ref infra layer
             hydro_utility = 0.2
-            mbil_proximity = 0.1
+            poi_mbil = mbil_class(center_lat, center_lon)
+            mbil_proximity = mbil_proximity_weight(poi_mbil)
 
             overall = (
                 CONFIDENCE_WEIGHTS["recurrence"] * recurrence
@@ -122,6 +125,7 @@ class ILAPAirspaceBridge:
                     "infra_alignment_score": round(infra_align, 4),
                     "overall_confidence": round(overall, 4),
                     "review_priority": priority,
+                    "mbil_class": poi_mbil,
                     "identity_note": IDENTITY_NOTE,
                 },
             })
@@ -217,6 +221,9 @@ class ILAPAirspaceBridge:
                 if corridor_flights < 2:
                     continue
 
+                mid_lat = (lat1 + lat2) / 2.0
+                mid_lon = (lon1 + lon2) / 2.0
+                corridor_mbil = mbil_class(mid_lat, mid_lon)
                 features.append({
                     "type": "Feature",
                     "geometry": {
@@ -227,6 +234,7 @@ class ILAPAirspaceBridge:
                         "poi_a": f"{lat1},{lon1}",
                         "poi_b": f"{lat2},{lon2}",
                         "connecting_flights": corridor_flights,
+                        "mbil_class": corridor_mbil,
                         "identity_note": IDENTITY_NOTE,
                     },
                 })
