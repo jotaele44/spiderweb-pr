@@ -16,6 +16,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from pipeline.db_utils import configure_connection
+
 
 # ============================================================================
 # DATA STRUCTURES
@@ -350,6 +352,7 @@ class FlightDatabase:
 
     def _init_tables(self):
         conn = sqlite3.connect(self.db_path)
+        configure_connection(conn)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -423,6 +426,12 @@ class FlightDatabase:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_flights_callsign ON flights(callsign)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_track_flight ON track_points(flight_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenshots_flight ON screenshots(flight_id)")
+        # T4-25: covering indexes for hot bridge and pipeline queries
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_flights_origin ON flights(origin_airport)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_flights_dest ON flights(destination_airport)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_flights_mission ON flights(mission_type)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenshots_conf ON screenshots(ocr_confidence)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_track_coords ON track_points(latitude, longitude)")
 
         # Evidence-chain columns added in integration hardening upgrade
         _NEW_SCREENSHOT_COLS = [
@@ -457,6 +466,7 @@ class FlightDatabase:
                 sha256_hex = None
 
         conn = sqlite3.connect(self.db_path)
+        configure_connection(conn)
         cursor = conn.cursor()
         cursor.execute('''
             INSERT OR REPLACE INTO screenshots

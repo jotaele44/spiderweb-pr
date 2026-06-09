@@ -31,8 +31,9 @@ import py_compile
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from provenance_utils import reproducibility_metadata
 from run_modes import (
@@ -97,15 +98,15 @@ class ReleaseCheck:
             )
 
         sections: Dict[str, Any] = {
-            "syntax_check": self.syntax_check(),
-            "core_tests": self.core_tests() if self.run_tests else {
+            "syntax_check": _timed(self.syntax_check),
+            "core_tests": _timed(self.core_tests) if self.run_tests else {
                 "status": SKIPPED, "passed": 0, "failed": 0, "skipped": 0,
-                "reason": "run_tests=False",
+                "reason": "run_tests=False", "elapsed_sec": 0.0,
             },
-            "validate": self.validate(),
-            "export_pr_intel": self.export_pr_intel(),
-            "export_spiderweb": self.export_spiderweb(),
-            "earthgpt_selftest": self.earthgpt_selftest(),
+            "validate": _timed(self.validate),
+            "export_pr_intel": _timed(self.export_pr_intel),
+            "export_spiderweb": _timed(self.export_spiderweb),
+            "earthgpt_selftest": _timed(self.earthgpt_selftest),
         }
         return self.summarize(sections)
 
@@ -247,6 +248,14 @@ class ReleaseCheck:
 
 
 # ---- helpers ---------------------------------------------------------------
+
+def _timed(fn: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
+    """Call *fn*, inject ``elapsed_sec`` into the returned dict, and return it."""
+    t0 = time.monotonic()
+    result = fn()
+    result["elapsed_sec"] = round(time.monotonic() - t0, 3)
+    return result
+
 
 def _parse_pytest_counts(text: str) -> Dict[str, int]:
     out = {"passed": 0, "failed": 0, "skipped": 0, "error": 0}
