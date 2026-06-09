@@ -6,7 +6,9 @@
 # Curated lint/type allowlist (T6-49/50) — must match LINT_PATHS in ci.yml.
 # Grows as more modules are cleaned in later themes.
 LINT_PATHS := provenance_utils.py run_modes.py integration/mbil.py \
-	pipeline/db_utils.py pipeline/terrain_hook.py federation/envelope.py
+	pipeline/db_utils.py pipeline/terrain_hook.py federation/envelope.py \
+	federation/readiness.py pipeline/logging_config.py pipeline/config_loader.py \
+	pipeline/seeding.py pipeline/verbosity.py
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \

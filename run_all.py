@@ -598,8 +598,25 @@ Examples:
                         help="Strict mode: missing/empty production inputs fail hard (exit 2)")
     parser.add_argument("--demo", action="store_true",
                         help="Demo mode: stamp outputs with mode=demo and [DEMO] banners")
+    parser.add_argument("--verbose", "-v", action="store_true",
+                        help="Verbose logging (DEBUG level)")
+    parser.add_argument("--quiet", "-q", action="store_true",
+                        help="Quiet logging (WARNING level and above)")
+    parser.add_argument("--log-json", action="store_true",
+                        help="Emit structured JSON log lines")
 
     args = parser.parse_args()
+
+    # Central logging setup (T10-80/82): --verbose/-quiet pick the level.
+    import logging as _logging
+    from pipeline.logging_config import configure_logging
+    from pipeline.verbosity import resolve_log_level
+
+    configure_logging(
+        level=resolve_log_level(verbose=args.verbose, quiet=args.quiet,
+                                default=_logging.INFO),
+        json_format=args.log_json,
+    )
 
     print(BANNER)
     print(f"  Database:   {args.db}")

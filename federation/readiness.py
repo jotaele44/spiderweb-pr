@@ -13,6 +13,7 @@ The two blocking conditions mirror ``docs/federation_readiness.md`` and the
    cross-producer correlation strategy: temporal, normalized-name, spatial, and
    external-id.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List

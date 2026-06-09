@@ -10,6 +10,13 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Theme 10 — Observability & robustness:** central structured logging
+  (`pipeline/logging_config.py`, JSON formatter) wired into `run_all.py` with
+  `--verbose`/`--quiet`/`--log-json` (`pipeline/verbosity.py`) (#80, #82);
+  schema-light central YAML config loader (`pipeline/config_loader.py`) (#85);
+  deterministic global seeding (`pipeline/seeding.py`) + autouse test seed
+  fixture (#86); `/health` endpoint now runs a SQLite integrity check and
+  reports table count (#83). New modules added to the CI lint/type allowlist.
 - **Theme 9 — Federation hardening:** committed golden envelope fixture
   (`tests/fixtures/envelope_v1_0.golden.json`) + a contract-version pin test
   (#74); `federation/readiness.py` encoding the live-execution gate criteria
