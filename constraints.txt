@@ -14,4 +14,5 @@ pytest==9.0.2
 pytest-cov==7.0.0
 black==26.3.0
 ruff==0.15.5
+mypy==1.13.0
 jsonschema==4.26.0

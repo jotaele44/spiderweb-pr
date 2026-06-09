@@ -9,6 +9,11 @@ on:
     branches:
       - main
 
+# Cancel superseded in-flight runs on the same ref (T6-54).
+concurrency:
+  group: prii-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prii-smoke:
     name: PRII readiness smoke

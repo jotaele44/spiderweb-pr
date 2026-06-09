@@ -25,6 +25,7 @@ To wire in the GEBCO/SRTM DEM:
 
 The interface itself must not change — callers depend on the five-value enum above.
 """
+
 from __future__ import annotations
 
 # Puerto Rico bounding box constants (shared with mbil.py).
@@ -39,9 +40,9 @@ _PR_LON_EAST: float = -65.50
 # Bounds match the URBAN_*/PONCE_URBAN_*/MAYAGUEZ_URBAN_* constants in
 # readiness/spiderweb_intake.py — keep them in sync.
 _URBAN_BOXES = (
-    (18.35, 18.50, -66.20, -65.90),   # San Juan / Carolina metro
-    (17.95, 18.07, -66.68, -66.52),   # Ponce metro
-    (18.18, 18.28, -67.20, -67.08),   # Mayagüez metro
+    (18.35, 18.50, -66.20, -65.90),  # San Juan / Carolina metro
+    (17.95, 18.07, -66.68, -66.52),  # Ponce metro
+    (18.18, 18.28, -67.20, -67.08),  # Mayagüez metro
 )
 
 

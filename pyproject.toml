@@ -78,6 +78,7 @@ dev = [
     "pytest-cov>=7.0,<8",
     "black>=26.3.0,<27",
     "ruff>=0.15.5,<0.16",
+    "mypy>=1.13,<2",
 ]
 
 [project.scripts]
@@ -169,4 +170,18 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
 ]
+
+# ── mypy (T6-49) ─────────────────────────────────────────────────────────────
+# Gradual per-package typing. The CI `lint` job type-checks a curated allowlist
+# of already-clean leaf modules (see the LINT_PATHS var in ci.yml) — NOT the
+# whole repo. follow_imports = "silent" keeps the gate scoped to the allowlist:
+# errors in not-yet-typed dependency modules don't fail the check. The allowlist
+# grows as more modules are cleaned in later themes. Config is lenient (no
+# --strict) so the gate stays green while typing coverage expands incrementally.
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+no_implicit_optional = true
+warn_unused_ignores = true
+follow_imports = "silent"
 

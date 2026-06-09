@@ -19,7 +19,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
-
 REPRO_KEYS = (
     "timestamp_utc",
     "repo_commit",
@@ -32,7 +31,7 @@ REPRO_KEYS = (
 )
 
 CHUNK = 65536
-SMALL_FILE_MAX_BYTES = 32 * 1024 * 1024   # don't hash anything >32MB by default
+SMALL_FILE_MAX_BYTES = 32 * 1024 * 1024  # don't hash anything >32MB by default
 
 
 def reproducibility_metadata(

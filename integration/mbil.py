@@ -15,6 +15,7 @@ Usage::
     cls = mbil_class(lat, lon)          # → 'MBIL-3' | ... | 'MBIL-X'
     w   = mbil_proximity_weight(cls)    # → float in [0, 1]
 """
+
 from __future__ import annotations
 
 import math
@@ -103,11 +104,21 @@ MUNICIPAL_CENTROIDS: List[Tuple[float, float]] = [
 ]
 
 # MBIL class → normalised [0, 1] confidence weight contribution.
-_MBIL_WEIGHTS = {"MBIL-3": 1.0, "MBIL-2": 0.75, "MBIL-1": 0.5, "MBIL-0": 0.0, "MBIL-X": 0.0}
+_MBIL_WEIGHTS = {
+    "MBIL-3": 1.0,
+    "MBIL-2": 0.75,
+    "MBIL-1": 0.5,
+    "MBIL-0": 0.0,
+    "MBIL-X": 0.0,
+}
 
 
-def _min_dist_deg(lat: float, lon: float, centroids: List[Tuple[float, float]]) -> float:
-    return min(math.sqrt((lat - clat) ** 2 + (lon - clon) ** 2) for clat, clon in centroids)
+def _min_dist_deg(
+    lat: float, lon: float, centroids: List[Tuple[float, float]]
+) -> float:
+    return min(
+        math.sqrt((lat - clat) ** 2 + (lon - clon) ** 2) for clat, clon in centroids
+    )
 
 
 @lru_cache(maxsize=4096)
@@ -126,7 +137,8 @@ def mbil_class(lat: float, lon: float) -> str:
         ``'MBIL-X'`` (off-island / missing coordinates).
     """
     if not (
-        isinstance(lat, (int, float)) and isinstance(lon, (int, float))
+        isinstance(lat, (int, float))
+        and isinstance(lon, (int, float))
         and _PR_LAT_MIN <= lat <= _PR_LAT_MAX
         and _PR_LON_WEST <= lon <= _PR_LON_EAST
     ):
