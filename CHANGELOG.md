@@ -10,6 +10,13 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Theme 7 — GIS / export upgrades:** per-feature `_meta` block on every ILAP
+  GeoJSON feature; explicit `epsg: 4326` on FeatureCollections and CRS/EPSG
+  stamps on the AASB manifest; operator-facing `corridor_label` on corridors;
+  operator-supplied centroid CSV hook (`SPIDERWEB_CENTROID_CSV` +
+  `set_municipal_centroids`); dependency-free native KML export (`.kml` sibling
+  per GeoJSON, replacing the ogr2ogr workaround); QGIS `.qml` style pack under
+  `styles/`.
 - **Theme 6 — CI/CD & developer experience:** `lint` CI job (ruff + black + mypy)
   on a curated, gradually-growing allowlist; `concurrency` cancellation and
   docs-only `paths-ignore` on CI; Dependabot (pip + github-actions); tag-driven

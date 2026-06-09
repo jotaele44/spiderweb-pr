@@ -18,9 +18,11 @@ Usage::
 
 from __future__ import annotations
 
+import csv
 import math
+import os
 from functools import lru_cache
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 # Puerto Rico bounding box — a few tenths of a degree margin so coastal points
 # don't get clipped (Aguadilla north ~18.53, southwestern Lajas ~17.95).
@@ -112,6 +114,49 @@ _MBIL_WEIGHTS = {
     "MBIL-X": 0.0,
 }
 
+# Active centroid set used by mbil_class(). Defaults to the built-in list but can
+# be overridden with operator-supplied centroids (T7-60). Kept as a module global
+# so the @lru_cache on mbil_class stays valid for the lifetime of a centroid set.
+_ACTIVE_CENTROIDS: List[Tuple[float, float]] = list(MUNICIPAL_CENTROIDS)
+
+# Env var: path to a centroid CSV applied at import time (columns: lat, lon).
+_CENTROID_CSV_ENV = "SPIDERWEB_CENTROID_CSV"
+
+
+def load_centroid_csv(csv_path: str) -> List[Tuple[float, float]]:
+    """Load ``(lat, lon)`` centroid pairs from a CSV with ``lat``/``lon`` columns.
+
+    Rows with missing or unparseable coordinates are skipped. Raises
+    ``ValueError`` if the file yields no usable centroids (a silent empty set
+    would make every point classify as MBIL-0).
+    """
+    centroids: List[Tuple[float, float]] = []
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            try:
+                lat = float(row["lat"])
+                lon = float(row["lon"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            centroids.append((lat, lon))
+    if not centroids:
+        raise ValueError(f"no usable (lat, lon) centroids in {csv_path}")
+    return centroids
+
+
+def set_municipal_centroids(centroids: List[Tuple[float, float]]) -> None:
+    """Replace the active centroid set and invalidate the mbil_class cache (T7-60)."""
+    global _ACTIVE_CENTROIDS
+    if not centroids:
+        raise ValueError("centroid set must be non-empty")
+    _ACTIVE_CENTROIDS = list(centroids)
+    mbil_class.cache_clear()
+
+
+def reset_municipal_centroids() -> None:
+    """Restore the built-in 72-municipality centroid set (T7-60)."""
+    set_municipal_centroids(list(MUNICIPAL_CENTROIDS))
+
 
 def _min_dist_deg(
     lat: float, lon: float, centroids: List[Tuple[float, float]]
@@ -143,7 +188,7 @@ def mbil_class(lat: float, lon: float) -> str:
         and _PR_LON_WEST <= lon <= _PR_LON_EAST
     ):
         return "MBIL-X"
-    dist_km = _min_dist_deg(lat, lon, MUNICIPAL_CENTROIDS) * 111.0
+    dist_km = _min_dist_deg(lat, lon, _ACTIVE_CENTROIDS) * 111.0
     if dist_km < 5.0:
         return "MBIL-3"
     if dist_km < 10.0:
@@ -161,3 +206,22 @@ def mbil_proximity_weight(cls: str) -> float:
 def is_mbil_high(cls: str) -> bool:
     """True when the MBIL class is MBIL-2 or MBIL-3 (inner periurban or closer)."""
     return cls in ("MBIL-2", "MBIL-3")
+
+
+def _apply_env_centroids() -> Optional[str]:
+    """Apply the SPIDERWEB_CENTROID_CSV override at import time, if set and readable.
+
+    Returns the path applied, or None. Failures are swallowed (the built-in set
+    stays active) so a bad env var never breaks the import.
+    """
+    path = os.environ.get(_CENTROID_CSV_ENV)
+    if not path:
+        return None
+    try:
+        set_municipal_centroids(load_centroid_csv(path))
+        return path
+    except (OSError, ValueError):
+        return None
+
+
+_apply_env_centroids()
