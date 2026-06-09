@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "federation_manifest",
+  "title": "Spiderweb Federation Discovery Manifest",
+  "description": "Root federation.json discovery manifest that declares this repo's role, endpoints, and readiness gates for the cross-repo federation hub.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "program_id",
+    "repository_full_name",
+    "federation_role",
+    "production_status",
+    "federation_readiness_gate"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Monotonically increasing manifest schema version string."
+    },
+    "program_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repository_full_name": {
+      "type": "string",
+      "pattern": "^[^/]+/[^/]+"
+    },
+    "repository_legacy_name": {
+      "type": "string"
+    },
+    "federation_role": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hub_parent": {
+      "type": "string"
+    },
+    "jurisdiction": {
+      "type": "string"
+    },
+    "active_vector": {
+      "type": "string"
+    },
+    "production_status": {
+      "type": "string",
+      "enum": [
+        "PRODUCTION",
+        "STAGING",
+        "NON_PRODUCTION_DIAGNOSTIC",
+        "DECOMMISSIONED"
+      ]
+    },
+    "pause_lock_required": {
+      "type": "boolean"
+    },
+    "source_truth": {
+      "type": "object",
+      "properties": {
+        "role_note": {"type": "string"},
+        "producer_side": {"type": "object"},
+        "consumer_side": {"type": "object"}
+      }
+    },
+    "hub_callable_commands": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "canonical_outputs": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "federation_readiness_gate": {
+      "type": "object",
+      "required": ["ready_for_hub_discovery"],
+      "properties": {
+        "ready_for_hub_discovery": {"type": "boolean"},
+        "ready_for_hub_live_execution": {"type": "boolean"},
+        "resolved_conditions": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "blocking_conditions": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

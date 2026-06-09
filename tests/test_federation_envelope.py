@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from federation.envelope import EvidenceEnvelope, entity_ref
+from federation.envelope import CONTRACT_VERSION, EvidenceEnvelope, entity_ref
 from federation.export_writer import normalize_name
 from federation.namespace import (
     PREFIX,
@@ -61,3 +61,21 @@ def test_envelope_round_trips_through_dict():
         "geo", "entities", "confidence", "lineage", "payload", "synthetic",
     }
     assert EvidenceEnvelope.from_dict(d).to_dict() == d
+
+
+def test_contract_version_is_string():
+    assert isinstance(CONTRACT_VERSION, str) and len(CONTRACT_VERSION) > 0
+
+
+def test_federation_manifest_valid_against_schema():
+    """federation.json must pass its registered JSON Schema (T2-#17)."""
+    import json
+    from pathlib import Path
+
+    pytest.importorskip("jsonschema")
+    from integration.schema_validation import SchemaValidator
+
+    repo_root = Path(__file__).parent.parent
+    manifest = json.loads((repo_root / "federation.json").read_text())
+    result = SchemaValidator().validate(manifest, "federation_manifest")
+    assert result["valid"], f"federation.json schema errors: {result['errors']}"
