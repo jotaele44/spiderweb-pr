@@ -43,15 +43,13 @@ spatial-lane builder. With it gone, delivered derivatives are **no longer auto-n
 here, with no signal back to the sender.** This is a deliberate behavioral change of the
 producer-only pivot, but it touches a sibling repo — see the precondition reminder.
 
-### Known stale references (follow-up, non-blocking)
-These docs/schema still describe the retired consumer flow and reference the moved scripts
-by their old `scripts/` paths. They do not affect CI; relocate or annotate them in a
-follow-up:
-- `docs/contracts/PR_INTAKE_DERIVATIVE_HANDOFF.md`
-- `docs/CONTRACT_FINANCE_PRODUCTION_FUSION_RECIPE.md`
-- `docs/contracts/CONTRACT_FINANCE_CONNECTIVITY_HEALTH.md`
-- `data/intake/pr_intake/README.md`
-- `schemas/spiderweb_spatial_lane_record.schema.json` (left in place; still counted by `make validate-schemas`)
+### Retired consumer-flow docs/schema (resolved)
+The docs/schema that described the retired consumer flow were relocated or annotated:
+- `docs/legacy/contracts/PR_INTAKE_DERIVATIVE_HANDOFF.md` (relocated)
+- `docs/legacy/contracts/CONTRACT_FINANCE_CONNECTIVITY_HEALTH.md` (relocated)
+- `docs/legacy/schemas/spiderweb_spatial_lane_record.schema.json` (relocated; schema count 41, still ≥11)
+- `docs/CONTRACT_FINANCE_PRODUCTION_FUSION_RECIPE.md` (deprecation banner + legacy paths)
+- `data/intake/pr_intake/README.md` (deprecation banner)
 
 ## Co-resident standalone subsystems (kept by decision)
 `earthgpt/` (satellite anomaly), `gebco/` (bathymetry), and `llm/` (UAP RAG) are
@@ -60,12 +58,14 @@ producer path (zero federation imports) but are retained here by decision (they 
 into CI: `earthgpt` selftest gate, dedicated `test-gebco` job, `llm` subprocess from the
 FastAPI server). Relocating them is a separate, out-of-scope effort.
 
-## Precondition reminders (cross-repo — confirm before merge)
-1. Retiring the in-repo correlators assumes `thehub-pr` + PRIIS cover the four strategies
-   (or intentionally drop them). Confirm upstream coverage before relying on this boundary
-   in production.
-2. The deleted `intake-normalize.yml` severed the Contract-Sweeper → spiderweb intake-
-   delivery contract (`spiderweb_pr_derivatives.csv`). Either retire the sender side in
-   Contract-Sweeper, or re-home the normalization (it now lives at
-   `docs/legacy/scripts/build_spiderweb_spatial_lane.py`) wherever the spatial lane should
-   be owned. Until then, delivered derivatives are silently un-normalized.
+## Cross-repo resolutions
+1. **Resolved** — the four cross-producer correlation strategies (temporal /
+   normalized-entity / spatial-haversine / external-id) were **re-homed into thehub-pr**
+   (`src/hub/correlate.py` + the `hub correlate` step; merged thehub-pr #10). The central
+   aggregator now owns cross-producer correlation, where it sees all producers; PRIIS's
+   record↔infrastructure linking is unchanged. An earlier read confirmed neither the hub
+   nor PRIIS covered these before, so this closed a real gap rather than a duplication.
+2. **Resolved** — the Contract-Sweeper → spiderweb delivery sender was retired
+   (Contract-Sweeper #250: removed the cross-repo delivery step + `deliver_derivatives.py`).
+   The normalizer itself is preserved at `docs/legacy/scripts/build_spiderweb_spatial_lane.py`
+   should the spatial lane ever be re-homed.

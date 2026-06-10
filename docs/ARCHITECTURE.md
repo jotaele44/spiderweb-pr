@@ -19,7 +19,6 @@ spiderweb-pr/
 │   pipeline/mission_inference.py        Phase 3: mission scoring, Markov prediction
 │   pipeline/operational_intelligence.py Phase 4: alerts, daily reports, profiles
 │   run_all.py                  Unified CLI (all phases + exports)
-│   integration/geo_calibration.py          Pixel → lat/lon with uncertainty
 │   integration/schema_validation.py        JSON Schema Draft-7 record validation
 │   integration/pr_intel_adapter.py         Parquet + GeoJSON + integration_report.json
 │   integration/ilap_airspace_bridge.py     POI/ILAP/corridor GeoJSON for Spiderweb/UGCN
@@ -92,7 +91,6 @@ spiderweb-pr/
 | `pipeline/mission_inference.py` | Airspace Intel | Phase 3 |
 | `pipeline/operational_intelligence.py` | Airspace Intel | Phase 4 |
 | `run_all.py` | Airspace Intel | |
-| `integration/geo_calibration.py` | Airspace Intel | |
 | `integration/schema_validation.py` | Airspace Intel | |
 | `integration/pr_intel_adapter.py` | Airspace Intel | |
 | `integration/ilap_airspace_bridge.py` | Airspace Intel | |

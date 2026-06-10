@@ -41,7 +41,6 @@ jobs:
             readiness/prii_readiness_engine.py \
             integration/pr_intel_adapter.py \
             integration/schema_validation.py \
-            integration/geo_calibration.py \
             pipeline/operational_intelligence.py \
             pipeline/hardening_layer.py \
             readiness/calibrate_scoring.py \

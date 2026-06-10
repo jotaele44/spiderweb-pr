@@ -50,7 +50,6 @@ Builds a searchable flight/event database, then applies GIS correlation, mission
 | File | Purpose |
 |------|---------|
 | `integration/schema_validation.py` | JSON Schema (Draft-7) validation; routes invalid rows to `review_queue.csv` |
-| `integration/geo_calibration.py` | Pixel→geographic coordinate conversion with per-result uncertainty metadata |
 | `integration/pr_intel_adapter.py` | Exports 6 parquet files + 2 GeoJSON + `source_manifest.json` + `integration_report.json` |
 | `integration/ilap_airspace_bridge.py` | POI, ILAP, and corridor candidates as GeoJSON for Spiderweb/UGCN |
 | `integration/aasb_airspace_bridge.py` | Airport-node edge CSV and `spiderweb_ingest_manifest.json` |
