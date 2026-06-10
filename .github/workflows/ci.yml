@@ -84,7 +84,7 @@ jobs:
         run: pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
 
       - name: Syntax check all Python modules
-        run: find . -path ./.git -prune -o -path ./.claude -prune -o -name "*.py" -print -exec python -m py_compile {} +
+        run: find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
 
       # test_io / test_terrain need the gebco extra (scipy/xarray), which is NOT
       # installed in this job — they run in the dedicated `test-gebco` job below

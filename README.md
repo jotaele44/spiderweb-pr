@@ -12,7 +12,7 @@ federation Hub ([thehub-pr](https://github.com/jotaele44/thehub-pr)).
 > **FR24 airspace ingestion moved.** The FlightRadar24 screenshot-processing pipeline
 > (`fr24/`, the RLSM analysis suite) now lives in the airspace producer
 > [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr). This repo retains the
-> flight-analysis pipeline, GIS/integration exports, and the federation producer + query-hub.
+> flight-analysis pipeline, GIS/integration exports, and the federation producer export.
 
 > **Integration status**: integration-ready after validation gates pass. Run `--validate` and review `integration_report.json` before treating outputs as production data.
 
@@ -20,9 +20,10 @@ federation Hub ([thehub-pr](https://github.com/jotaele44/thehub-pr)).
 
 ## Federation role
 
-spiderweb-pr is a **dual producer + consumer** in the PRII federation:
+spiderweb-pr is a **producer** in the PRII federation:
 - **Producer** — `federation/export_writer.py` + `federation/envelope.py` emit a spatial/operational evidence envelope; `scripts/federation_export.py` projects it to the Hub's canonical `{entities, sources, relationships}` (geometry carried on entities for spatial correlation). Readiness gate: `federation.json` + [`docs/federation_readiness.md`](docs/federation_readiness.md).
-- **Query-hub** — `federation/hub/query.py` correlates validated producer packages (temporal, normalized-entity, spatial-haversine, external-id).
+
+Cross-producer correlation is owned by the parent hub ([thehub-pr](https://github.com/jotaele44/thehub-pr)) and the downstream PRIIS consumer. The former in-repo query-hub (temporal / normalized-entity / spatial-haversine / external-id correlation) is retired under [`docs/legacy/federation/hub/`](docs/legacy/federation/hub/) — see [`docs/REPO_BOUNDARY.md`](docs/REPO_BOUNDARY.md).
 
 ## What it does
 

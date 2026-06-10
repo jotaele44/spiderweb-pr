@@ -26,5 +26,5 @@ def test_federation_manifest_live_execution_blockers_are_current():
     assert gate["ready_for_hub_live_execution"] is False
     assert gate["blocking_conditions"] == [
         "live production export requires real (non-synthetic) rows; the mode=test->production gate in docs/federation_readiness.md must pass",
-        "downstream hub staging must validate production package correlation across temporal, normalized-name, spatial, and external-id strategies before live execution",
+        "the parent hub (thehub-pr) must validate this producer's canonical package (entities/sources/relationships) before live execution",
     ]

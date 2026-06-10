@@ -91,7 +91,7 @@ release-check:  ## Run the umbrella release gate
 # ── Syntax check ─────────────────────────────────────────────────────────────
 
 syntax-check:  ## Compile every Python module (no import)
-	find . -path ./.git -prune -o -path ./.claude -prune -o -name "*.py" -print -exec python -m py_compile {} +
+	find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
 	@echo "All Python modules compile OK."
 
 # ── Clean ─────────────────────────────────────────────────────────────────────
