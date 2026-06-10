@@ -248,7 +248,7 @@ jobs:
           import importlib, os
           extra = os.environ["EXTRA"]
           modules = {
-              "airspace": ["pipeline", "fr24", "integration"],
+              "airspace": ["pipeline", "integration"],
               "gebco": ["gebco"],
               "earthgpt": ["earthgpt"],
               "server": ["aiosqlite", "fastapi"],
