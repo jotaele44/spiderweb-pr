@@ -48,7 +48,7 @@ from run_modes import (
 REPO_ROOT = Path(__file__).resolve().parent
 
 # Source trees to syntax-check (compile-only). Root *.py added separately.
-SYNTAX_DIRS = ("integration", "readiness", "fr24", "pipeline", "earthgpt", "llm", "federation")
+SYNTAX_DIRS = ("integration", "readiness", "pipeline", "earthgpt", "llm", "federation")
 
 # GEBCO io/terrain tests run in a dedicated CI job (D7) — keep them out of the gate.
 PYTEST_IGNORES = ("tests/test_io.py", "tests/test_terrain.py")

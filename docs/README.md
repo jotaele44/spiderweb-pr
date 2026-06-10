@@ -34,10 +34,11 @@ the relevant subsystem below.
 - [pr_intake_router_contract_sweeper_lane.md](pr_intake_router_contract_sweeper_lane.md)
 - [pr_intake_router_spiderweb_lane.md](pr_intake_router_spiderweb_lane.md)
 
-## FR24 / RLSM screenshot pipeline
-- **[FR24_GUIDE.md](FR24_GUIDE.md) — consolidated index of all FR24 docs (T12-98)**
+## RLSM ontology & registry (reference)
+> The FR24 / RLSM screenshot-processing pipeline migrated to
+> [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr) (the airspace producer).
+> These reference docs remain for the operational ontology and registry contract.
 - [RLSM_OPERATIONAL_ONTOLOGY_V0_1.md](RLSM_OPERATIONAL_ONTOLOGY_V0_1.md)
-- [RUNBOOK_FR24_DATA_LOAD.md](RUNBOOK_FR24_DATA_LOAD.md)
 - [FAA_REGISTRY_PIPELINE.md](FAA_REGISTRY_PIPELINE.md)
 
 ## Spiderweb language & calibration
@@ -58,7 +59,6 @@ the relevant subsystem below.
   [PR_DEM_QGIS_REVIEW_GUIDE.md](PR_DEM_QGIS_REVIEW_GUIDE.md)
 
 ## Dashboard & UI
-- [FR24_DASHBOARD_UI.md](FR24_DASHBOARD_UI.md)
 - [STATIC_DASHBOARD_MODE.md](STATIC_DASHBOARD_MODE.md)
 
 ## Policy & structure

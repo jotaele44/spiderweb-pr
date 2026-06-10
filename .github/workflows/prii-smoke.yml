@@ -45,7 +45,6 @@ jobs:
             pipeline/operational_intelligence.py \
             pipeline/hardening_layer.py \
             readiness/calibrate_scoring.py \
-            fr24/manual_review_queue.py \
             readiness/spiderweb_intake.py \
             readiness/satellite_ingest.py \
             scripts/validate_satellite_batch.py

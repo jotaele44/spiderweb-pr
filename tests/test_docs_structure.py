@@ -31,18 +31,9 @@ def test_subsystem_readmes_exist(pkg):
 
 
 def test_new_docs_present():
-    for name in ("FR24_GUIDE.md", "MONOREPO_SPLIT_EVALUATION.md", "API_REFERENCE.md"):
+    # FR24_GUIDE.md migrated to skywatcher-pr with the FR24/RLSM pipeline.
+    for name in ("MONOREPO_SPLIT_EVALUATION.md", "API_REFERENCE.md"):
         assert (DOCS / name).exists(), f"docs/{name} missing"
-
-
-def test_fr24_guide_links_resolve():
-    guide = (DOCS / "FR24_GUIDE.md").read_text()
-    broken = [
-        m.group(1)
-        for m in re.finditer(r"\]\(([^)]+\.md)\)", guide)
-        if not (DOCS / m.group(1)).exists()
-    ]
-    assert not broken, f"FR24_GUIDE.md broken links: {broken}"
 
 
 def test_ledger_records_roadmap_completion():
