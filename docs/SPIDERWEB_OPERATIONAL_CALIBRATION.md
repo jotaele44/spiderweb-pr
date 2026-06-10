@@ -8,7 +8,7 @@ sensible tier/MBIL/hydro/utility/terrain distributions when run against a real
 operational database (≥15,000 screenshots).
 
 **What is frozen while waiting for the real DB:**
-- `integration/pr_intel_adapter.py`, `integration/schema_validation.py`, `integration/geo_calibration.py` — PRII modules, read-only
+- `integration/pr_intel_adapter.py`, `integration/schema_validation.py` — PRII modules, read-only
 - `integration/ilap_airspace_bridge.py`, `integration/aasb_airspace_bridge.py` — producer boundary, read-only
 - Raw FR24 image ingest path — frozen until fresh screenshot corpus is available
 

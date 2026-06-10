@@ -30,7 +30,6 @@ python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain
 | `test_end_to_end.py` | Full `--validate`, `--export-pr-intel`, `--export-spiderweb` smoke runs |
 | `test_fr24_bridge.py` | `FR24EventExporter`, `ManualReviewQueue` adapter compatibility |
 | `test_fr24_inventory.py` | `ScreenshotInventory`: scan, SHA-256, corrupt detection, dedup, CSV report |
-| `test_geo_calibration.py` | `GeoCalibration` 3 modes, `CoordResult`, `pixel_to_coord`, `in_pr_bbox` |
 | `test_gis_intelligence.py` | Haversine distance, corridor membership, PR infrastructure graph |
 | `test_mission_inference.py` | Mission scorer probabilities, confidence levels, multi-factor weights |
 | `test_ocr_confidence.py` | Confidence thresholds, low-confidence routing to review queue |

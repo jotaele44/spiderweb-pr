@@ -1,5 +1,13 @@
 # Contract-Finance Production Fusion Recipe
 
+> **⚠️ Deprecated (2026-06): retired consumer flow.** spiderweb-pr is now a
+> producer-only federation node. The consumer/query-hub steps this runbook
+> describes (`ingest_contract_sweeper_package`, `assess_contract_sweeper_package`,
+> `federation_conformance_check`, and the query-hub) were retired — the scripts
+> named below now live under `docs/legacy/scripts/` and the hub under
+> `docs/legacy/federation/hub/`. Cross-producer correlation moved to thehub-pr.
+> Kept as historical reference; see `docs/REPO_BOUNDARY.md`.
+
 This runbook describes the production handoff from Contract-Sweeper into
 SpiderWeb PR.
 

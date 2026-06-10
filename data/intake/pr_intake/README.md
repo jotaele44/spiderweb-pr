@@ -1,5 +1,14 @@
 # PR-intake dropzone (spiderweb-pr spatial/operational lane, #41)
 
+> **⚠️ Deprecated (2026-06): receiver retired.** spiderweb-pr became a producer-only
+> federation node. The receiver workflow `.github/workflows/intake-normalize.yml` was
+> **deleted**, and the normalizer now lives at
+> `docs/legacy/scripts/build_spiderweb_spatial_lane.py` (via
+> `docs/legacy/readiness/spiderweb_spatial_lane.py`). Delivered derivatives are **no
+> longer auto-normalized**. Contract-Sweeper also retired its cross-repo delivery
+> (its `intake-delivery.yml` no longer pushes here). Kept as historical reference;
+> see `docs/REPO_BOUNDARY.md`.
+
 The Contract-Sweeper PR-intake router delivers this repo's lane export here:
 
 ```

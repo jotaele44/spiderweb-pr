@@ -102,7 +102,6 @@ rm -f outputs/subset_*.nc
 | `outputs/dashboard_data.json` | `run_all.py --export-json` | |
 | `screenshot_inventory.csv` | `fr24/screenshot_inventory.py` | placed next to DB |
 | `review/review_queue.db` | `fr24/manual_review_queue.py` | placed next to DB |
-| `georef_quality_report.csv` | `integration/geo_calibration.py` | placed next to DB |
 | `review_queue.csv` | `integration/schema_validation.py` | schema validation rejects |
 | `chunks.jsonl` / `finetune.jsonl` | `llm/prepare_data.py` | LLM pipeline |
 | `outputs/pruap_index/` | `llm/rag_pipeline.py` | ChromaDB vector store |
