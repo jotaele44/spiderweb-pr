@@ -1,18 +1,32 @@
-# Puerto Rico Airspace Intelligence System
+# spiderweb-pr — Spatial / Operational Intelligence Producer (PRII federation)
 
 [![CI](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml/badge.svg)](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml)
 [![coverage](https://img.shields.io/badge/coverage-%E2%89%A555%25-brightgreen)](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml)
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
 
-Flight tracking, mission deduction, and operational intelligence from FlightRadar24 screenshots.
+The **spatial / operational** producer node of the Puerto Rico Integrated Intelligence
+(PRII) federation. It builds a flight/event database, applies GIS correlation, mission
+inference and anomaly detection, and exports a canonical evidence envelope for the
+federation Hub ([thehub-pr](https://github.com/jotaele44/thehub-pr)).
+
+> **FR24 airspace ingestion moved.** The FlightRadar24 screenshot-processing pipeline
+> (`fr24/`, the RLSM analysis suite) now lives in the airspace producer
+> [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr). This repo retains the
+> flight-analysis pipeline, GIS/integration exports, and the federation producer + query-hub.
 
 > **Integration status**: integration-ready after validation gates pass. Run `--validate` and review `integration_report.json` before treating outputs as production data.
 
 **Extended docs**: [Docs index](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Execution Guide](docs/EXECUTION_GUIDE.md) · [Testing](docs/TESTING.md) · [Data Policy](docs/DATA_POLICY.md) · [Roadmap (Next 100 Tasks V2)](docs/NEXT_100_TASKS_V2.md) · [Task ledger](docs/ROI_TASK_LEDGER.md) · [Changelog](CHANGELOG.md)
 
+## Federation role
+
+spiderweb-pr is a **dual producer + consumer** in the PRII federation:
+- **Producer** — `federation/export_writer.py` + `federation/envelope.py` emit a spatial/operational evidence envelope; `scripts/federation_export.py` projects it to the Hub's canonical `{entities, sources, relationships}` (geometry carried on entities for spatial correlation). Readiness gate: `federation.json` + [`docs/federation_readiness.md`](docs/federation_readiness.md).
+- **Query-hub** — `federation/hub/query.py` correlates validated producer packages (temporal, normalized-entity, spatial-haversine, external-id).
+
 ## What it does
 
-Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build a searchable flight database, then applies GIS correlation, mission inference, and anomaly detection to produce actionable airspace intelligence for Puerto Rico.
+Builds a searchable flight/event database, then applies GIS correlation, mission inference, and anomaly detection to produce actionable spatial/operational intelligence for Puerto Rico, exported for the federation.
 
 ## Architecture
 
@@ -42,19 +56,8 @@ Processes 15,000+ FlightRadar24 screenshots via OCR and computer vision to build
 | `schemas/` | 10 JSON Schema files covering all exported record types |
 | `configs/georef_anchors.csv` | 5 PR airport anchor points for georeferencing calibration |
 
-### FR24 screenshot processor modules
-
-| File | Purpose |
-|------|---------|
-| `fr24/screenshot_inventory.py` | Directory scan with SHA-256 hashing, corrupt detection, duplicate grouping, CSV report |
-| `fr24/ui_segmenter.py` | Geometric + edge-detection segmentation of FR24 UI into map/panel/label regions |
-| `fr24/route_extractor.py` | HSV color-range masking + 4-connected BFS to extract route polylines from map region |
-| `fr24/manual_review_queue.py` | SQLite-backed idempotent queue for low-quality items needing human review |
-| `fr24/event_export.py` | Bridge: inventory → screenshots table; routes → track_points table |
-
-**Registrations & alerts:** to recover dropped aircraft registrations and set up
-a registration watchlist with alerts, see
-[FR24 Registration Recovery & Alerts](docs/FR24_REGISTRATION_RECOVERY.md).
+> **FR24 screenshot ingestion** (`fr24/`, route extraction, RLSM analysis, registration
+> recovery) migrated to [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr).
 
 ## Quick start
 
@@ -91,14 +94,6 @@ python run_all.py --export-json outputs/dashboard_data.json
 # Open the dashboard (serve from the repo directory so ../outputs/ resolves)
 python -m http.server 8080
 # then open http://localhost:8080/dashboard/dashboard.html
-
-# ── FR24 screenshot processor ─────────────────────────────────────────────────
-
-# Scan a directory: SHA-256 hash, corrupt detection, duplicate grouping, CSV report
-python run_all.py --db flight_database.db --scan-inventory /path/to/screenshots
-
-# Export FR24 events: inventory → screenshots table + routes → track_points table
-python run_all.py --db flight_database.db --export-fr24-events /path/to/screenshots
 
 # ── Integration hardening (standalone, runs against existing DB) ──────────────
 
@@ -137,7 +132,7 @@ Dependencies follow a **two-tier model**:
 
 | Extra | Subsystem | Install |
 |---|---|---|
-| `airspace` | FR24 OCR/GIS flight intelligence | `pip install -e ".[airspace]"` |
+| `airspace` | GIS / flight-analysis pipeline + integration exports | `pip install -e ".[airspace]"` |
 | `gebco` | GEBCO bathymetry pipeline | `pip install -e ".[gebco]"` |
 | `rag` | LLM/RAG pipeline (heavy ML) | `pip install -e ".[rag]"` |
 | `earthgpt` | EarthGPT iOS anomaly detection | `pip install -e ".[earthgpt]"` |
@@ -177,19 +172,6 @@ package exposes two console scripts: `spiderweb-run` (= `run_all.py`) and
 | `spiderweb_ingest_manifest.json` | Bridge file inventory |
 
 Every exported record includes provenance: `screenshot_id`, `source_path`, `sha256`, `ocr_confidence`, `coordinate_method`, `coordinate_confidence`, `review_status`. Low-confidence records are routed to `review_queue.csv`.
-
-### `--scan-inventory <DIR>` produces
-
-`screenshot_inventory.csv` (next to the DB) with columns: `path`, `filename`, `size_bytes`, `sha256`, `width`, `height`, `is_corrupt`, `is_duplicate`, `duplicate_of`, `scanned_at`. Summary printed to stdout. Corrupt and duplicate counts are reported; valid images are synced to the `screenshots` DB table.
-
-### `--export-fr24-events <DIR>` produces
-
-Runs the full FR24 event export pipeline over `<DIR>`:
-1. Scans and inventories all images (SHA-256, corrupt/dupe detection)
-2. Upserts non-corrupt, non-duplicate records into the `screenshots` table
-3. Extracts colored route polylines from each valid image
-4. Writes extracted route points as rows in the `track_points` table
-5. Routes small/low-quality images to the `manual_review_queue` SQLite DB
 
 ## Optional: Phase 1 hardening (higher OCR accuracy)
 
