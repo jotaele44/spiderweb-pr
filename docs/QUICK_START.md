@@ -30,18 +30,11 @@ python3 run_all.py --db ~/flight_database.db --export-spiderweb /tmp/spiderweb
 python3 run_all.py --db ~/flight_database.db --export-pr-intel /tmp/pr_intel
 ```
 
-## Mac-only: drain the RLSM screenshot pipeline
+## RLSM screenshot pipeline — migrated
 
-The OCR + unlabeled-vision passes are expensive (~3 h on 4 workers) and are not part of `run_all.py`. Run them on the operator's Mac, not inside CI / Claude's sandbox.
-
-```
-OMP_THREAD_LIMIT=1 python3 -m fr24.rlsm_ocr_parallel --workers 4 --budget-sec 86400
-OMP_THREAD_LIMIT=1 python3 -m fr24.rlsm_unlabeled --budget-sec 86400
-python3 -m fr24.rlsm_extractors --kind all
-python3 -m fr24.rlsm_flight_track          # path_shape per screenshot
-python3 -m fr24.rlsm_geo_anchors           # static anchors per screenshot
-python3 -m fr24.rlsm_export && python3 -m fr24.rlsm_coverage
-```
+The OCR + unlabeled-vision RLSM passes (`fr24.rlsm_*`) **migrated to
+[skywatcher-pr](https://github.com/jotaele44/skywatcher-pr)** in 2026-06 (PRs
+#110/#111) and no longer live in this repo. Run that pipeline from skywatcher-pr.
 
 ## Where things live
 

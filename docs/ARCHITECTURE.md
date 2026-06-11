@@ -23,13 +23,9 @@ spiderweb-pr/
 │   integration/pr_intel_adapter.py         Parquet + GeoJSON + integration_report.json
 │   integration/ilap_airspace_bridge.py     POI/ILAP/corridor GeoJSON for Spiderweb/UGCN
 │   integration/aasb_airspace_bridge.py     Airport-node edge CSV + ingest manifest
-│   fr24/screenshot_inventory.py     SHA-256 scan, corrupt/dupe detection
-│   fr24/ui_segmenter.py        FR24 screenshot → map/panel/label regions
-│   fr24/route_extractor.py          HSV masking + BFS → route polylines
-│   fr24/manual_review_queue.py      SQLite-backed low-quality item queue
-│   fr24/event_export.py        Inventory + routes → airspace DB
-│   fr24/ocr_analysis_vector.py Per-candidate analysis vector + temporal wave grouping
-│   fr24/wave_validator.py      Wave physics coherence (altitude, speed, monotonic timestamps)
+│   (FR24 screenshot pipeline — screenshot_inventory, ui_segmenter, route_extractor,
+│    manual_review_queue, event_export, ocr_analysis_vector, wave_validator, RLSM suite —
+│    migrated to skywatcher-pr; see https://github.com/jotaele44/skywatcher-pr)
 │   dashboard/dashboard.jsx / .html       4-tab browser dashboard
 │   schemas/                    10 JSON Schema files
 │   configs/georef_anchors.csv  5 PR airport anchor points
@@ -95,13 +91,7 @@ spiderweb-pr/
 | `integration/pr_intel_adapter.py` | Airspace Intel | |
 | `integration/ilap_airspace_bridge.py` | Airspace Intel | |
 | `integration/aasb_airspace_bridge.py` | Airspace Intel | |
-| `fr24/screenshot_inventory.py` | Airspace Intel | FR24 processor |
-| `fr24/ui_segmenter.py` | Airspace Intel | FR24 processor |
-| `fr24/route_extractor.py` | Airspace Intel | FR24 processor |
-| `fr24/manual_review_queue.py` | Airspace Intel | FR24 processor |
-| `fr24/event_export.py` | Airspace Intel | FR24 processor |
-| `fr24/ocr_analysis_vector.py` | Airspace Intel | FR24 processor |
-| `fr24/wave_validator.py` | Airspace Intel | FR24 processor |
+| FR24 screenshot pipeline (`screenshot_inventory`, `ui_segmenter`, `route_extractor`, `manual_review_queue`, `event_export`, `ocr_analysis_vector`, `wave_validator`, RLSM suite) | [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr) | Migrated 2026-06 (PRs #110/#111); no longer in this repo |
 | `dashboard/dashboard.jsx` / `dashboard/dashboard.html` | Airspace Intel | |
 | `schemas/` | Airspace Intel | |
 | `configs/` | Airspace Intel | |
@@ -151,9 +141,10 @@ pipeline:
   (`federation/hub/query.py`) supporting temporal, normalized-name, spatial, and
   external-id strategies. Live execution is gated by
   `federation/readiness.py` and `federation.json`'s readiness block.
-- **RLSM-canonical** (`data/rlsm/schema.sql`, `fr24/`) — the lossless screenshot
-  mining pipeline is the canonical model for FR24 ingestion; see
-  [FR24_GUIDE.md](FR24_GUIDE.md).
+- **RLSM-canonical** — the lossless screenshot mining pipeline (formerly `fr24/` +
+  `data/rlsm/`) was the canonical model for FR24 ingestion. It **migrated to
+  [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr)** in 2026-06 (PRs
+  #110/#111) and is no longer part of this repo.
 
 Cross-cutting layers added across the roadmap: packaging extras +
 `pip install -e .` (Theme 1), schema/validation contracts (Theme 2), a
