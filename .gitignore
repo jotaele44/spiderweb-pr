@@ -288,3 +288,6 @@ __marimo__/
 
 # generated canonical export (scripts/federation_export.py)
 exports/federation/
+
+# flight/airspace subsystem stripped to skywatcher-pr (from_spiderweb/) — staging, delete anytime
+.migration_trash_flight/
