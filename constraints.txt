@@ -2,17 +2,17 @@
 # Usage: pip install -c constraints.txt -e ".[dev]"
 #
 # numpy 2.4.0 was yanked from PyPI due to a backward-compatibility bug; 2.4.2 is required.
-numpy==2.4.2
+numpy==2.4.6
 scipy==1.17.1
-pandas==3.0.1
-xarray==2026.2.0
+pandas==3.0.3
+xarray==2026.4.0
 netCDF4==1.7.4
-matplotlib==3.10.8
+matplotlib==3.10.9
 shapely==2.1.2
 scikit-image==0.26.0
-pytest==9.0.2
-pytest-cov==7.0.0
-black==26.3.0
-ruff==0.15.5
+pytest==9.0.3
+pytest-cov==7.1.0
+black==26.5.1
+ruff==0.15.16
 mypy==1.13.0
 jsonschema==4.26.0
