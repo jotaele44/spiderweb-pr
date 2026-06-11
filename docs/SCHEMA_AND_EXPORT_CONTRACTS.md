@@ -54,7 +54,13 @@ The overlay carries a top-level `summary` block (bbox / centroid / feature_count
 
 ---
 
-## Workstream: RLSM extraction (`fr24/rlsm_*`, `scripts/rlsm_*`)
+## Workstream: RLSM extraction (`fr24/rlsm_*`, `scripts/rlsm_*`) — migrated
+
+> **Migrated.** The RLSM extraction pipeline (`fr24/rlsm_*`, `scripts/rlsm_*`,
+> `data/rlsm/schema.sql`, `tests/test_rlsm_pipeline.py`) moved to
+> [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr) in 2026-06 (PRs
+> #110/#111). The contract below is retained for historical reference; these
+> artifacts are no longer produced by this repo.
 
 The RLSM pipeline emits 14 derived artifacts under `outputs/` plus a markdown coverage report. None has a JSON Schema registered yet (Tier 2 follow-up; see [`docs/NEXT_100_TASKS.md`](NEXT_100_TASKS.md) when it lands).
 
