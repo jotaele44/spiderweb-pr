@@ -40,7 +40,7 @@ def load_yaml_config(
         raise ConfigError(f"config not found: {p}")
 
     try:
-        import yaml  # type: ignore[import-untyped]
+        import yaml
     except ImportError as exc:  # pragma: no cover - PyYAML ships in the airspace extra
         raise ConfigError("PyYAML is required to load configs") from exc
 
