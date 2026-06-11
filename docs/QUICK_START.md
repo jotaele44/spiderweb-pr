@@ -9,7 +9,8 @@ A Puerto Rico Airspace Intelligence System (PRIIS) that turns FR24 flight screen
 - **PR Intel exports** — flight events, aircraft profiles, track points, screenshot evidence, mission inferences, anomaly index, GIS overlays. Lives under `<output-dir>/`.
 - **Spiderweb overlay** — POI / ILAP / corridor / AASB-edge candidates fused into a single GeoJSON layer with MBIL classifications + evidence tiers. Lives at `<output-dir>/spiderweb_overlay_candidates.geojson`.
 - **Release report** — single PASS/FAIL umbrella aggregating syntax + tests + validate + 2 exports + EarthGPT self-test. Lives at `<release-output-dir>/release_report.json`.
-- **RLSM screenshot pipeline** — separate, append-only OCR + extraction pipeline over the 11,924-image FR24 baseline. Lives at `data/rlsm/rlsm_screenshot_analysis.sqlite` + `outputs/` CSVs.
+
+> The RLSM screenshot pipeline that previously appeared here migrated to skywatcher-pr — see below.
 
 ## Five commands an operator runs most days
 
@@ -46,12 +47,12 @@ The OCR + unlabeled-vision RLSM passes (`fr24.rlsm_*`) **migrated to
 | Per-artifact schema + provenance contract | [`SCHEMA_AND_EXPORT_CONTRACTS.md`](SCHEMA_AND_EXPORT_CONTRACTS.md) |
 | Status of every release-readiness task | [`ROI_TASK_LEDGER.md`](ROI_TASK_LEDGER.md) |
 | What's still outstanding | [`NEXT_100_TASKS.md`](NEXT_100_TASKS.md) |
-| RLSM specifics + on-Mac runbook | [`../data/rlsm/HANDOFF.md`](../data/rlsm/HANDOFF.md) |
+| RLSM screenshot pipeline + runbook (migrated) | [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr) |
 | FAA registry ingestion | [`FAA_REGISTRY_PIPELINE.md`](FAA_REGISTRY_PIPELINE.md) |
 
 ## Three things that trip up new operators
 
-1. **`data/*` is gitignored** except for `data/rlsm/schema.sql` and `data/rlsm/HANDOFF.md`. The large screenshot baseline + SQLite DB live on disk only; check `.gitignore` if you're confused about what's tracked.
+1. **`data/*` is gitignored.** The large screenshot baseline + SQLite DBs live on disk only; check `.gitignore` if you're confused about what's tracked. (The former `data/rlsm/` schema + handoff migrated to skywatcher-pr.)
 2. **Strict / demo / normal modes:** `--strict-production` raises on missing inputs; `--demo` labels manifests `mode: "demo"` and prefixes banners; default is `normal`. See [D2 in the plan](#) for details.
 3. **MBIL alone cannot escalate to T1/T2.** A candidate with high `mbil_class` but no hydro / utility / corridor_id corroboration stays at T4 by design (T3-27 guardrail). See [`SPIDERWEB_LANGUAGE_BRIDGE.md`](SPIDERWEB_LANGUAGE_BRIDGE.md).
 
@@ -59,5 +60,4 @@ The OCR + unlabeled-vision RLSM passes (`fr24.rlsm_*`) **migrated to
 
 - `release_report.json["overall_status"] == "FAIL"` → look at `failure_reasons` first, then `<stage>.status` per section.
 - Schema validation errors → read `<output-dir>/schema_validation.review_queue.csv` (enriched 9-column format: `routed_at`, `record_id`, `source_file`, `schema_name`, `field`, `error_type`, `error_message`, `record_json`, `suggested_fix`).
-- RLSM test failures → check `processing_runs` for `status='in_progress'` rows (resumable; not actual failures).
 - Anything else → reproduce locally with the 5 commands above and bisect.
