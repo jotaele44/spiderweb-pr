@@ -7,7 +7,11 @@ doesn't drift back into split authority with the hub.
 ## This repo owns
 - The spatial/operational **flight-analysis pipeline** (`pipeline/`), GIS correlation,
   mission inference, anomaly detection, and the integration/export surfaces
-  (`integration/`, `schemas/`).
+  (`integration/`, `schemas/`). This includes spiderweb's **own** ILAP/AASB airspace
+  bridges (`integration/{ilap,aasb}_airspace_bridge.py`), which are the producer flavor
+  driving phase-2 / `release_check` export. They are a per-repo adaptation that shares an
+  ancestor with — but is **not** interchangeable with — skywatcher-pr's airspace copies;
+  the ownership split is recorded in `docs/DUPLICATION_REGISTER.md`.
 - The **federation producer**: `federation/export_writer.py` + `federation/envelope.py`
   emit a validated evidence envelope; `scripts/federation_export.py` projects it to the
   Hub's canonical `{entities, sources, relationships}` (geometry carried on entities).
