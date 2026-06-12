@@ -244,3 +244,19 @@ python llm/prepare_data.py                    # clean + chunk PRUAP_MASTER_SOCIA
 python llm/rag_pipeline.py --build            # build ChromaDB vector index
 python llm/query_llm.py "UAP sightings near Aguadilla?"
 ```
+
+## USGS OFR 98-038 Puerto Rico geology / mineral layers
+
+Spiderweb tracks the USGS Open-File Report 98-038 Puerto Rico geology/mineral package as a structural-geodata baseline. The source package covers geologic maps, faults, gravity, magnetic, mineral occurrence, terrane, placer drainage, Vieques, Mona, and Puerto Rico outline layers.
+
+Tracked registry files:
+
+- `data/usgs_ofr_98_038/registry/usgs_ofr_98_038_manifest.json`
+- `data/usgs_ofr_98_038/registry/usgs_ofr_98_038_layers.csv`
+- `data/usgs_ofr_98_038/docs/README_USGS_OFR_98_038_BUILD.md`
+
+Normalized lightweight derivative:
+
+- `data/usgs_ofr_98_038/derived/usgs_ofr_98_038_metallic_occurrences_wgs84.geojson`
+
+Raw ARC/INFO `.e00`, GeoPackage, ZIP, and shapefile binaries remain local/ignored unless explicitly force-added for release packaging.
