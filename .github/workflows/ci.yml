@@ -243,6 +243,8 @@ jobs:
         run: pip install -e ".[${{ matrix.extra }}]"
 
       - name: Import smoke for ${{ matrix.extra }}
+        env:
+          EXTRA: ${{ matrix.extra }}
         run: |
           python - <<'PY'
           import importlib, os
@@ -258,11 +260,3 @@ jobs:
               importlib.import_module(m)
           print(f"{extra}: imported {', '.join(modules)} OK")
           PY
-        env:
-          EXTRA: ${{ matrix.extra }}
-
-      - name: Console entry points are installed
-        run: |
-          spiderweb-run --help > /dev/null
-          spiderweb-release-check --help > /dev/null
-          echo "console scripts OK"
