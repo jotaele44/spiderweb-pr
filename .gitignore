@@ -24,6 +24,15 @@ data/*
 data/rlsm/*
 !data/rlsm/schema.sql
 !data/rlsm/HANDOFF.md
+# NamUs missing-persons: allowlist the provenance README; raw + canonical CSVs
+# stay ignored (PII at the source; redacted-but-still-personal at the canonical).
+# The `data/sources/namus/*` re-ignore re-blocks dated snapshot subdirs so
+# `data/sources/namus/2026-06-11/namus_mp_pr.csv` is never tracked even though
+# the parent `data/sources/namus/` is allowlisted for the README.
+!data/sources/
+!data/sources/namus/
+data/sources/namus/*
+!data/sources/namus/README.md
 
 # input/ — operator-local override for recover-tails FAA N-number list +
 # timestamped auto-backups + derived skip-list. The hermetic CI fallback

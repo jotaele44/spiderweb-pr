@@ -1,0 +1,1560 @@
+version: ilap_registry_v0_1
+generated_at: '2026-06-11T17:46:02Z'
+producer_module: scripts.populate_dataset_layers
+canonical_definition: ILAP = infrastructure_linked_access_point (configs/spiderweb_terms.yaml). Types below are observed vocabulary
+  from source datasets — values are preserved verbatim per location_naming_guardrails (never invented).
+ilap_type_sources:
+  Spiderweb_ILAP_Predictions.geojson:
+    type=Industrial-River ILAP Candidate: 5
+    type=Dam-Adjacent ILAP Candidate: 4
+  Spiderweb_Water_Signals.geojson:
+    ilap_class=ILAP-Urban: 32
+    ilap_class=ILAP-Coastal: 11
+    ilap_class=ILAP-Hydro-Karst: 8
+    ilap_class=ILAP-Ridge: 4
+  AASB_All_Corridors_Nodes_v1.geojson:
+    ilap_type=Hydro: 9
+    ilap_type=Utility: 6
+    ilap_type=Coastal: 3
+    ilap_type=Ridge: 2
+    ilap_type=Quarry: 1
+    ilap_type=Industrial: 1
+  geojson__Spiderweb_Corridors_Master.geojson:
+    link_type=Analytical_Karst_Entry_to_Spring: 21
+    link_type=Analytical_Reservoir_to_RiverMouth: 18
+  FIC_OSAP_ILAP_Links_v4.geojson:
+    link_type=OSAP_to_ILAP: 14
+    link_type=OSAP_Primary_to_Secondary: 7
+    link_type=OSAP_Primary_Ring: 7
+  FIC_OSAP_ILAP_Paths_v6_All.geojson:
+    posture=Stealth: 28
+    link_type=OSAP_to_ILAP: 28
+    posture=Logistics: 28
+    link_type=OSAP_Primary_to_Secondary: 14
+    link_type=OSAP_Primary_Ring: 14
+  Spiderweb_Consolidated_Dataset_v1_4.sqlite:hydro_ilap_matrix.ilap_type_calc:
+    Hydro: 46
+    Coastal Outlet: 23
+    Utility: 12
+  pr_spiderweb_nodes_v5.csv:node_type:
+    Dam: 36
+    Reservoir: 20
+    Hydroelectric Plant: 14
+    River: 11
+    Lagoon: 5
+    Canal: 5
+    Spring: 4
+    Losing Stream: 3
+    unspecified: 2
+    Sinkhole: 1
+    Karst Infiltration Zone: 1
+    Swallow Hole: 1
+    Sinkhole Cluster: 1
+ilap_type_canonical_groups:
+  HYDRO:
+  - Hydro
+  - ILAP-Hydro-Karst
+  - Dam Nodes
+  - Dam-Adjacent ILAP Candidate
+  - Dam
+  - Reservoir
+  - Hydroelectric Plant
+  - River
+  - Lagoon
+  - Canal
+  - Spring
+  - Losing Stream
+  COASTAL:
+  - Coastal Outlet
+  - Coastal
+  - ILAP-Coastal
+  UTILITY:
+  - Utility
+  URBAN:
+  - ILAP-Urban
+  RIDGE_TERRAIN:
+  - Ridge
+  - ILAP-Ridge
+  INDUSTRIAL:
+  - Industrial
+  - Industrial-River ILAP Candidate
+  - Quarry
+  SUBSURFACE:
+  - Subsurface Entry Nodes
+  - Sinkhole
+  - Karst Infiltration Zone
+  - Swallow Hole
+  - Subsurface_Karst
+  SUBSEA:
+  - logistics
+  - stealth
+  UNSPECIFIED:
+  - ILAP Nodes
+  - unspecified
+corridor_type_enum_note: Distinct from schemas/ilap_corridor_candidate.schema.json corridor_type (point_to_point|patrol|survey|hub_spoke|unknown),
+  which classifies flight corridors, not ILAP ground nodes.
+ilap_nodes:
+- node_id: SW-ALL-0000012
+  name: Aguadilla Coastal Access Cut
+  ilap_type: Coastal Outlet
+  lat: 18.49
+  lon: -67.138
+  hydro_region_band: Northern Karst / North Coastal (proxy)
+  corridor_id: C-01
+  corridor_tier: AASB-3 (calc)
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000013
+  name: Aguirre Power Complex
+  ilap_type: Utility
+  lat: 18.005
+  lon: -66.005
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000014
+  name: Aguirre Power Complex
+  ilap_type: Utility
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000017
+  name: Aibonito Utility Vault
+  ilap_type: Utility
+  lat: 18.137
+  lon: -66.266
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: C-05
+  corridor_tier: AASB-2 (calc)
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000036
+  name: Bahía Urbana Heliport
+  ilap_type: Coastal Outlet
+  lat: 18.01
+  lon: -66.01
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000037
+  name: Bahía Urbana Heliport
+  ilap_type: Coastal Outlet
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000057
+  name: Cabo Rojo Coastal Observation Area
+  ilap_type: Coastal Outlet
+  lat: 18.149
+  lon: -67.187
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: C-07
+  corridor_tier: AASB-2 (calc)
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000083
+  name: Carraízo Dam
+  ilap_type: Hydro
+  lat: 18.028
+  lon: -66.028
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000084
+  name: Carraízo Dam
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000090
+  name: Cataño Wastewater Facility
+  ilap_type: Hydro
+  lat: 18.029
+  lon: -66.029
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000091
+  name: Cataño Wastewater Facility
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000113
+  name: Coamo–Guayama–Patillas Hydro Corridor
+  ilap_type: Hydro
+  lat: 18.034
+  lon: -66.034
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: AASB-3
+  corridor_tier: AASB-3 (calc)
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000134
+  name: Culebra Airport
+  ilap_type: Coastal Outlet
+  lat: 18.04
+  lon: -66.04
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000135
+  name: Culebra Airport
+  ilap_type: Coastal Outlet
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000219
+  name: Fajardo Marinas
+  ilap_type: Coastal Outlet
+  lat: 18.047
+  lon: -66.047
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000220
+  name: Fajardo Marinas
+  ilap_type: Coastal Outlet
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000240
+  name: Gasoducto del Sur
+  ilap_type: Utility
+  lat: 18.05
+  lon: -66.05
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000241
+  name: Gasoducto del Sur
+  ilap_type: Utility
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000242
+  name: Ghost Gasoducto del Sur
+  ilap_type: Utility
+  lat: 18.051
+  lon: -66.051
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000243
+  name: Ghost Gasoducto del Sur
+  ilap_type: Utility
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000246
+  name: Guajataca Dam Outflow ILAP
+  ilap_type: Hydro
+  lat: 18.053
+  lon: -66.053
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: AASB-2
+  corridor_tier: AASB-3 (calc)
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000247
+  name: Guajataca Dam
+  ilap_type: Hydro
+  lat: 18.054
+  lon: -66.054
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000248
+  name: Guajataca Dam
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000253
+  name: Guánica Fishing Port
+  ilap_type: Coastal Outlet
+  lat: 18.057
+  lon: -66.057
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000254
+  name: Guánica Fishing Port
+  ilap_type: Coastal Outlet
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000257
+  name: Guayama Wastewater Consolidation
+  ilap_type: Hydro
+  lat: 18.059
+  lon: -66.059
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000258
+  name: Guayama Wastewater Consolidation
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000285
+  name: Isla Grande Harbor Surveillance
+  ilap_type: Coastal Outlet
+  lat: 18.456
+  lon: -66.092
+  hydro_region_band: Northern Karst / North Coastal (proxy)
+  corridor_id: C-09
+  corridor_tier: AASB-1 (calc)
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000296
+  name: La Plata Dam Outlet
+  ilap_type: Hydro
+  lat: 18.071
+  lon: -66.071
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: AASB-1
+  corridor_tier: AASB-3 (calc)
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000297
+  name: La Plata Dam
+  ilap_type: Hydro
+  lat: 18.072
+  lon: -66.072
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000298
+  name: La Plata Dam
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000299
+  name: Lago Caonillas
+  ilap_type: Hydro
+  lat: 18.073
+  lon: -66.073
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000300
+  name: Lago Caonillas
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000301
+  name: Lago Cinco
+  ilap_type: Hydro
+  lat: 18.074
+  lon: -66.074
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000302
+  name: Lago Cuatro
+  ilap_type: Hydro
+  lat: 18.075
+  lon: -66.075
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000303
+  name: Lago del Rey
+  ilap_type: Hydro
+  lat: 18.076
+  lon: -66.076
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000304
+  name: Lago Dos Bocas
+  ilap_type: Hydro
+  lat: 18.077
+  lon: -66.077
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000305
+  name: Lago Dos Bocas
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000306
+  name: Lago Dos
+  ilap_type: Hydro
+  lat: 18.078
+  lon: -66.078
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000307
+  name: Lago La Torre
+  ilap_type: Hydro
+  lat: 18.079
+  lon: -66.079
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000308
+  name: Lago Las Mercedes
+  ilap_type: Hydro
+  lat: 18.08
+  lon: -66.08
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000309
+  name: Lago Lucchetti
+  ilap_type: Hydro
+  lat: 18.081
+  lon: -66.081
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000310
+  name: Lago Lucchetti
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000311
+  name: Lago Ponceña
+  ilap_type: Hydro
+  lat: 18.082
+  lon: -66.082
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000312
+  name: Lago Tres
+  ilap_type: Hydro
+  lat: 18.083
+  lon: -66.083
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000313
+  name: Lago Uno
+  ilap_type: Hydro
+  lat: 18.084
+  lon: -66.084
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000314
+  name: Lago Vasallo
+  ilap_type: Hydro
+  lat: 18.085
+  lon: -66.085
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000315
+  name: Lago Villa España
+  ilap_type: Hydro
+  lat: 18.086
+  lon: -66.086
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000316
+  name: Lago Vista Alegre
+  ilap_type: Hydro
+  lat: 18.087
+  lon: -66.087
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000317
+  name: Lago Vista Serena
+  ilap_type: Hydro
+  lat: 18.088
+  lon: -66.088
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000333
+  name: LUMA Substations
+  ilap_type: Utility
+  lat: 18.097
+  lon: -66.097
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000334
+  name: LUMA Substations
+  ilap_type: Utility
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000335
+  name: LUMA–USACE Underground Network
+  ilap_type: Utility
+  lat: 18.098
+  lon: -66.098
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000336
+  name: LUMA–USACE Underground Network
+  ilap_type: Utility
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000345
+  name: Mayagüez Port
+  ilap_type: Coastal Outlet
+  lat: 18.103
+  lon: -66.103
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000346
+  name: Mayagüez Port
+  ilap_type: Coastal Outlet
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000349
+  name: Minillas Subsurface Utility Node
+  ilap_type: Utility
+  lat: 18.426
+  lon: -66.061
+  hydro_region_band: Northern Karst / North Coastal (proxy)
+  corridor_id: C-02
+  corridor_tier: AASB-3 (calc)
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000389
+  name: Patillas Dam
+  ilap_type: Hydro
+  lat: 18.111
+  lon: -66.111
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000390
+  name: Patillas Dam
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000398
+  name: Playa Grande Sugar Mill
+  ilap_type: Coastal Outlet
+  lat: 18.116
+  lon: -66.116
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000399
+  name: Playa Grande Sugar Mill
+  ilap_type: Coastal Outlet
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000400
+  name: Playa Grande Sugar Mill
+  ilap_type: Coastal Outlet
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: AASB-1
+  corridor_tier: AASB-3 (calc)
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000402
+  name: Ponce Coastal Defense Area
+  ilap_type: Coastal Outlet
+  lat: 17.971
+  lon: -66.622
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: C-04
+  corridor_tier: AASB-3 (calc)
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000403
+  name: Ponce Port Cable Trench
+  ilap_type: Coastal Outlet
+  lat: 17.971
+  lon: -66.622
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: C-04
+  corridor_tier: AASB-3 (calc)
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000410
+  name: PRASA Maunabo
+  ilap_type: Hydro
+  lat: 18.12
+  lon: -66.12
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000411
+  name: PRASA Maunabo
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000412
+  name: PRASA Patillas
+  ilap_type: Hydro
+  lat: 18.121
+  lon: -66.121
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000413
+  name: PRASA Patillas
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000416
+  name: Puente de la Playa
+  ilap_type: Coastal Outlet
+  lat: 17.9578
+  lon: -66.0508
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000421
+  name: Punta de las Figuras Coastal Dunes
+  ilap_type: Coastal Outlet
+  lat: 17.9548
+  lon: -66.0469
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000431
+  name: Ramey Air Station / Coast Guard Borinquen
+  ilap_type: Coastal Outlet
+  lat: 18.125
+  lon: -66.125
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000432
+  name: Ramey Air Station / Coast Guard Borinquen
+  ilap_type: Coastal Outlet
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000437
+  name: Restos del Muelle de Arroyo
+  ilap_type: Coastal Outlet
+  lat: 17.9584
+  lon: -66.0529
+  hydro_region_band: Southern Interior Valleys / South Coastal (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: source_provided
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000442
+  name: Río Blanco Intake
+  ilap_type: Hydro
+  lat: 18.128
+  lon: -66.128
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000443
+  name: Río Blanco Intake
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000479
+  name: Tres Haciendas Waterworks
+  ilap_type: Hydro
+  lat: 18.14
+  lon: -66.14
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000480
+  name: Tres Haciendas Waterworks
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000481
+  name: Tres Haciendas Waterworks
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: AASB-2
+  corridor_tier: AASB-3 (calc)
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000482
+  name: Tres Pueblos Reservoir Outlet
+  ilap_type: Hydro
+  lat: 18.141
+  lon: -66.141
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: AASB-1
+  corridor_tier: AASB-3 (calc)
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000509
+  name: Vieques Underwater Base
+  ilap_type: Hydro
+  lat: 18.154
+  lon: -66.154
+  hydro_region_band: Central Mountain Belt (proxy)
+  corridor_id: null
+  corridor_tier: null
+  coord_method: earthgpt_verified
+  match_confidence: 90.0
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: SW-ALL-0000510
+  name: Vieques Underwater Base
+  ilap_type: Hydro
+  lat: null
+  lon: null
+  hydro_region_band: null
+  corridor_id: null
+  corridor_tier: null
+  coord_method: null
+  match_confidence: null
+  visibility: V3
+  status: registered
+  source_file: Spiderweb_Consolidated_Dataset_v1_4.sqlite
+  source_table: hydro_ilap_matrix
+- node_id: NK-01
+  name: Sistema de Cuevas Río Camuy
+  ilap_type: Hydro
+  ilap_subtype: Sinkhole
+  lat: 18.3687
+  lon: -66.8893
+  corridor_id: AASB-C01
+  corridor_name: Northern Karst Spine
+  municipality: Camuy
+  node_confidence: 95
+  structural_role: Anchor
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: NK-02
+  name: Manantial Río Camuy
+  ilap_type: Hydro
+  ilap_subtype: Spring
+  lat: 18.3742
+  lon: -66.9015
+  corridor_id: AASB-C01
+  corridor_name: Northern Karst Spine
+  municipality: Camuy
+  node_confidence: 90
+  structural_role: Pressure Node
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: NK-03
+  name: Planta Filtración Hatillo
+  ilap_type: Utility
+  ilap_subtype: Pump
+  lat: 18.4865
+  lon: -66.8102
+  corridor_id: AASB-C01
+  corridor_name: Northern Karst Spine
+  municipality: Hatillo
+  node_confidence: 87
+  structural_role: Transfer
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: NK-04
+  name: Lago Dos Bocas
+  ilap_type: Hydro
+  ilap_subtype: Embalse
+  lat: 18.3264
+  lon: -66.6718
+  corridor_id: AASB-C01
+  corridor_name: Northern Karst Spine
+  municipality: Utuado/Arecibo
+  node_confidence: 92
+  structural_role: Convergence
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: NK-05
+  name: AAA Línea Matriz Arecibo
+  ilap_type: Utility
+  ilap_subtype: Valve Cluster
+  lat: 18.4721
+  lon: -66.7156
+  corridor_id: AASB-C01
+  corridor_name: Northern Karst Spine
+  municipality: Arecibo
+  node_confidence: 85
+  structural_role: Transit
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: NK-06
+  name: Arecibo Coastal Discharge
+  ilap_type: Coastal
+  ilap_subtype: SGD
+  lat: 18.4877
+  lon: -66.7079
+  corridor_id: AASB-C01
+  corridor_name: Northern Karst Spine
+  municipality: Arecibo
+  node_confidence: 78
+  structural_role: Outlet
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: CMB-01
+  name: Monte Guilarte Ridge Access
+  ilap_type: Ridge
+  ilap_subtype: Cut
+  lat: 18.1735
+  lon: -66.7681
+  corridor_id: AASB-C02
+  corridor_name: Central Mountain Ridge Cut
+  municipality: Adjuntas
+  node_confidence: 84
+  structural_role: Elev Anchor
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: CMB-02
+  name: Adjuntas Quarry
+  ilap_type: Quarry
+  ilap_subtype: Terraced
+  lat: 18.1643
+  lon: -66.7321
+  corridor_id: AASB-C02
+  corridor_name: Central Mountain Ridge Cut
+  municipality: Adjuntas
+  node_confidence: 77
+  structural_role: Mask
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: CMB-03
+  name: Lago Caonillas
+  ilap_type: Hydro
+  ilap_subtype: Embalse
+  lat: 18.2978
+  lon: -66.6829
+  corridor_id: AASB-C02
+  corridor_name: Central Mountain Ridge Cut
+  municipality: Utuado
+  node_confidence: 90
+  structural_role: Hydraulic
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: CMB-04
+  name: Caonillas Intake
+  ilap_type: Utility
+  ilap_subtype: Intake
+  lat: 18.2992
+  lon: -66.6758
+  corridor_id: AASB-C02
+  corridor_name: Central Mountain Ridge Cut
+  municipality: Utuado
+  node_confidence: 83
+  structural_role: Pressure
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: CMB-05
+  name: Caonillas–Dos Bocas Transfer
+  ilap_type: Hydro
+  ilap_subtype: Tunnel
+  lat: 18.3112
+  lon: -66.6687
+  corridor_id: AASB-C02
+  corridor_name: Central Mountain Ridge Cut
+  municipality: Utuado
+  node_confidence: 88
+  structural_role: Subsurface
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: SIV-01
+  name: Lago Coamo
+  ilap_type: Hydro
+  ilap_subtype: Dam
+  lat: 18.0833
+  lon: -66.3538
+  corridor_id: AASB-C03
+  corridor_name: Southern Interior Waterworks Axis
+  municipality: Coamo
+  node_confidence: 88
+  structural_role: Anchor
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: SIV-02
+  name: Tres Haciendas System
+  ilap_type: Industrial
+  ilap_subtype: Waterworks
+  lat: 18.0791
+  lon: -66.3594
+  corridor_id: AASB-C03
+  corridor_name: Southern Interior Waterworks Axis
+  municipality: Coamo
+  node_confidence: 91
+  structural_role: Historic Node
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: SIV-03
+  name: Guayama Pump Station
+  ilap_type: Utility
+  ilap_subtype: Pump
+  lat: 17.9842
+  lon: -66.1124
+  corridor_id: AASB-C03
+  corridor_name: Southern Interior Waterworks Axis
+  municipality: Guayama
+  node_confidence: 79
+  structural_role: Transit
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: SIV-04
+  name: Lago Patillas
+  ilap_type: Hydro
+  ilap_subtype: Dam
+  lat: 18.0047
+  lon: -66.0086
+  corridor_id: AASB-C03
+  corridor_name: Southern Interior Waterworks Axis
+  municipality: Patillas
+  node_confidence: 86
+  structural_role: Convergence
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: SIV-05
+  name: Patillas Coastal SGD
+  ilap_type: Coastal
+  ilap_subtype: Outlet
+  lat: 17.9831
+  lon: -65.9824
+  corridor_id: AASB-C03
+  corridor_name: Southern Interior Waterworks Axis
+  municipality: Patillas
+  node_confidence: 74
+  structural_role: Outlet
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: LCE-01
+  name: Laguna Cartagena
+  ilap_type: Hydro
+  ilap_subtype: Lagoon
+  lat: 17.9836
+  lon: -67.0702
+  corridor_id: AASB-C04
+  corridor_name: Laguna Cartagena Extension
+  municipality: Lajas
+  node_confidence: 93
+  structural_role: Anchor
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: LCE-02
+  name: Sierra Bermeja Edge
+  ilap_type: Ridge
+  ilap_subtype: Cut
+  lat: 17.9692
+  lon: -67.0605
+  corridor_id: AASB-C04
+  corridor_name: Laguna Cartagena Extension
+  municipality: Lajas
+  node_confidence: 76
+  structural_role: Structural
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: LCE-03
+  name: Lajas Irrigation Canal
+  ilap_type: Utility
+  ilap_subtype: Canal
+  lat: 17.9951
+  lon: -67.0532
+  corridor_id: AASB-C04
+  corridor_name: Laguna Cartagena Extension
+  municipality: Lajas
+  node_confidence: 80
+  structural_role: Transit
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: EST-01
+  name: Lago Carraízo
+  ilap_type: Hydro
+  ilap_subtype: Dam
+  lat: 18.3408
+  lon: -66.0031
+  corridor_id: AASB-C05
+  corridor_name: Eastern Sierra Transition
+  municipality: Trujillo Alto
+  node_confidence: 92
+  structural_role: Anchor
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: EST-02
+  name: Carraízo Pump Station
+  ilap_type: Utility
+  ilap_subtype: Pump
+  lat: 18.3381
+  lon: -66.0014
+  corridor_id: AASB-C05
+  corridor_name: Eastern Sierra Transition
+  municipality: Trujillo Alto
+  node_confidence: 85
+  structural_role: Transfer
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features
+- node_id: EST-03
+  name: Loíza River Mouth
+  ilap_type: Coastal
+  ilap_subtype: Outlet
+  lat: 18.4311
+  lon: -65.8829
+  corridor_id: AASB-C05
+  corridor_name: Eastern Sierra Transition
+  municipality: Loíza
+  node_confidence: 77
+  structural_role: Outlet
+  visibility: V3
+  status: registered
+  source_file: AASB_All_Corridors_Nodes_v1.geojson
+  source_table: features

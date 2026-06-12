@@ -1,0 +1,28 @@
+{
+  "errors": [],
+  "files": [
+    {
+      "filename": "airspace_events.sample.jsonl",
+      "row_errors": [],
+      "stream": "events"
+    },
+    {
+      "filename": "observations.sample.jsonl",
+      "row_errors": [],
+      "stream": "observations"
+    },
+    {
+      "filename": "tracks.sample.jsonl",
+      "row_errors": [],
+      "stream": "tracks"
+    },
+    {
+      "filename": "sources.sample.jsonl",
+      "row_errors": [],
+      "stream": "sources"
+    }
+  ],
+  "mode": "test",
+  "package_dir": "/Users/jotaele/Documents/GitHub/spiderweb-pr/exports/samples",
+  "status": "ok"
+}

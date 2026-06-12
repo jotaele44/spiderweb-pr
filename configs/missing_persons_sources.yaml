@@ -1,0 +1,553 @@
+# Missing-persons source registry (phase 2a).
+#
+# Single source of truth for: harvester wiring, license/federation gates,
+# refresh cadence, expected PR yield, stratum tier. The audit
+# (tools/pr_geodata_integrity_audit.py:audit_missing_persons_sources) reads
+# this file and reports coverage gaps. The consolidator
+# (scripts/consolidate_missing_persons.py, phase 2b) reads it to discover
+# which per-source canonicals exist on disk.
+#
+# Statuses:
+#   harvester_landed  — code exists and has been verified end-to-end
+#   harvester_planned — slated in the rollout but not yet built
+#   manual_pull       — operator drops files; no automation possible
+#   aggregate_only    — only aggregate counts available, never case-level
+#   cannot_reach      — closed to outside ingestion (LE-only / paywalled)
+#
+# Strata:
+#   A — confirmed/structured (federation aggregate-eligible)
+#   B — confirmed/narrative  (federation aggregate-eligible, with provenance)
+#   C — tip-stream           (workbench-only, NEVER federation)
+#
+# federation_eligible options:
+#   true             — case + aggregate both go through federation envelope
+#   aggregate_only   — only the municipio aggregate; never per-case
+#   false            — never federated (raw PII, ToS-restricted, or stratum C)
+#
+# Adding a source: copy a stanza, set status=harvester_planned, set the
+# expected_pr_yield_per_year so the audit can flag yield-gap regressions later.
+
+version: missing_persons_sources_v1
+generated_by: phase_2a
+last_updated: "2026-06-12"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FEDERAL US
+# ─────────────────────────────────────────────────────────────────────────────
+sources:
+
+  namus:
+    operator: "NIJ — National Institute of Justice / DOJ Office of Justice Programs"
+    url: "https://namus.nij.ojp.gov"
+    classes: [missing_juvenile, missing_adult_woman, missing_adult_other]
+    access_method: manual_csv          # account-gated bulk export
+    harvester: scripts.namus_harvest
+    snapshot_dir: data/sources/namus
+    license_tier: tiered_permission    # 4 levels (verified 3-0 in deep research)
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 90
+    expected_pr_yield_per_year: 200
+    stratum: A
+    status: harvester_landed
+    phase: 1
+    notes: "Three NamUs streams (Missing / Unidentified / Unclaimed) verified — Missing landed here, Unidentified + Unclaimed are separate entries below."
+
+  namus_unidentified:
+    operator: "NIJ"
+    url: "https://namus.nij.ojp.gov"
+    classes: [unidentified_remains]
+    access_method: manual_csv
+    harvester: scripts.namus_unidentified_harvest
+    snapshot_dir: data/sources/namus_unidentified
+    license_tier: tiered_permission
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 90
+    expected_pr_yield_per_year: 40
+    stratum: A
+    status: harvester_planned
+    phase: 2d
+
+  namus_unclaimed:
+    operator: "NIJ"
+    url: "https://namus.nij.ojp.gov"
+    classes: [unclaimed_decedent]
+    access_method: manual_csv
+    harvester: scripts.namus_unclaimed_harvest
+    snapshot_dir: data/sources/namus_unclaimed
+    license_tier: tiered_permission
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 180
+    expected_pr_yield_per_year: 20
+    stratum: A
+    status: harvester_planned
+    phase: 2d
+
+  ncic_aggregate:
+    operator: "FBI Criminal Justice Information Services Division"
+    url: "https://www.fbi.gov/services/cjis/ncic"
+    classes: [missing_juvenile, missing_adult_woman, missing_adult_other, cognitive_impairment, endangered_adult]
+    access_method: aggregate_pdf
+    harvester: scripts.ncic_aggregate_harvest
+    snapshot_dir: data/sources/ncic_aggregate
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 365
+    expected_pr_yield_per_year: 0     # aggregate only — yield is a count, not rows
+    stratum: A
+    status: aggregate_only
+    phase: 2d
+    notes: "Raw case-level NCIC access is LE-only by federal statute. Annual DOJ-OJP statistical reports give state/territory aggregates only."
+
+  ncmec_aggregate:
+    operator: "National Center for Missing & Exploited Children"
+    url: "https://www.missingkids.org/ourwork/ncmecdata"
+    classes: [missing_juvenile]
+    access_method: aggregate_pdf
+    harvester: null
+    snapshot_dir: data/sources/ncmec_aggregate
+    license_tier: ngo_attribution_required
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 365
+    expected_pr_yield_per_year: 0
+    stratum: A
+    status: aggregate_only
+    phase: deferred
+    notes: "No public API/CSV; PDF reports only. PR coverage undocumented at this access tier (workflow finding)."
+
+  uscg_d7_sar:
+    operator: "US Coast Guard District 7 (PR/USVI)"
+    url: "https://www.atlanticarea.uscg.mil/Our-Organization/District-7/"
+    classes: [maritime, missing_adult_other]
+    access_method: foia
+    harvester: null
+    snapshot_dir: data/sources/uscg_d7_sar
+    license_tier: gov_foia_response
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 365
+    expected_pr_yield_per_year: 60
+    stratum: A
+    status: manual_pull
+    phase: deferred
+    notes: "MISLE/HOMEPORT case extracts via FOIA. Per-incident lat/lon available but release is operator-discretion."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PR COMMONWEALTH
+# ─────────────────────────────────────────────────────────────────────────────
+
+  prpb_desaparecidos:
+    operator: "Negociado de la Policía de PR"
+    url: "https://www.policia.pr.gov/desaparecidos"
+    classes: [missing_juvenile, missing_adult_woman, missing_adult_other]
+    access_method: html_scrape
+    harvester: scripts.prpb_desaparecidos_harvest
+    snapshot_dir: data/sources/prpb_desaparecidos
+    license_tier: gov_public_unclear
+    federation_eligible: false         # ToS unclear; raw PII on page
+    refresh_cadence_days: 7
+    expected_pr_yield_per_year: 3000
+    stratum: A
+    status: harvester_landed
+    phase: 2c.2
+    notes: "Photo gallery, multi-card per HTML page. Names visible on page DROPPED at harvest (never extracted into canonical). case_id_hash derived from photo URL filename stem; municipio/age/date scanned from caption text. Geocoding from municipio centroid or address text deferred to consolidator (phase 2b)."
+
+  prpb_alertas_amber:
+    operator: "Negociado de la Policía de PR (Plan AMBER)"
+    url: "https://www.policia.pr.gov/alertas-de-emergencia"
+    classes: [missing_juvenile]
+    access_method: html_per_incident
+    harvester: scripts.prpb_alertas_amber_harvest
+    snapshot_dir: data/sources/prpb_alertas_amber
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 1
+    expected_pr_yield_per_year: 15
+    stratum: A
+    status: harvester_landed
+    phase: 2c.1
+    plan_match: AMBER
+    notes: "Kidnapped minors under 18. Per-incident page; address text only, geocode required."
+
+  prpb_alertas_rosa:
+    operator: "Negociado de la Policía de PR (Plan ROSA)"
+    url: "https://www.policia.pr.gov/alertas-de-emergencia"
+    classes: [endangered_woman]
+    access_method: html_per_incident
+    harvester: scripts.prpb_alertas_rosa_harvest
+    snapshot_dir: data/sources/prpb_alertas_rosa
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 1
+    expected_pr_yield_per_year: 30
+    stratum: A
+    status: harvester_landed
+    phase: 2c.1
+    plan_match: ROSA
+    notes: "Missing/kidnapped women 18+ in dangerous circumstances."
+
+  prpb_alertas_silver:
+    operator: "Negociado de la Policía de PR (Plan SILVER)"
+    url: "https://www.policia.pr.gov/alertas-de-emergencia"
+    classes: [cognitive_impairment]
+    access_method: html_per_incident
+    harvester: scripts.prpb_alertas_silver_harvest
+    snapshot_dir: data/sources/prpb_alertas_silver
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 1
+    expected_pr_yield_per_year: 80
+    stratum: A
+    status: harvester_landed
+    phase: 2c.1
+    plan_match: SILVER
+    notes: "Persons with cognitive impairment (Alzheimer's/dementia)."
+
+  prpb_alertas_ashanti:
+    operator: "Negociado de la Policía de PR (Plan ASHANTI)"
+    url: "https://www.policia.pr.gov/alertas-de-emergencia"
+    classes: [endangered_adult]
+    access_method: html_per_incident
+    harvester: scripts.prpb_alertas_ashanti_harvest
+    snapshot_dir: data/sources/prpb_alertas_ashanti
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 1
+    expected_pr_yield_per_year: 40
+    stratum: A
+    status: harvester_landed
+    phase: 2c.1
+    plan_match: ASHANTI
+    notes: "Missing/kidnapped adults 18+ in dangerous circumstances (not covered by AMBER/ROSA/SILVER)."
+
+  prpb_powerbi_aggregate:
+    operator: "Negociado de la Policía de PR"
+    url: "https://policiapr.azurewebsites.net/reportes-publicos/"
+    classes: [missing_juvenile, missing_adult_woman, missing_adult_other]
+    access_method: powerbi_extract
+    harvester: scripts.prpb_powerbi_aggregate_harvest
+    snapshot_dir: data/sources/prpb_powerbi_aggregate
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 30
+    expected_pr_yield_per_year: 0      # publishes counts, not cases
+    stratum: A
+    status: harvester_planned
+    phase: 2c
+    notes: "Power BI dashboards expose JSON data layer with some effort. Currently no missing-persons dashboard — only crime, use-of-force, complaints, personnel. Watch for additions."
+
+  dsp_aggregate:
+    operator: "Departamento de Seguridad Pública de PR"
+    url: "https://www.dsp.pr.gov/negociados/negociado-de-la-policia-de-puerto-rico"
+    classes: [missing_juvenile, missing_adult_woman, missing_adult_other]
+    access_method: pdf_extract
+    harvester: scripts.dsp_aggregate_harvest
+    snapshot_dir: data/sources/dsp_aggregate
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 365
+    expected_pr_yield_per_year: 0
+    stratum: A
+    status: harvester_planned
+    phase: 2c
+    notes: "DSP is the umbrella agency over PRPB. Statistical reports referenced from the bureau landing page; harvested as PDF tables."
+
+  nmead_disaster:
+    operator: "Negociado de Manejo de Emergencias y Administración de Desastres"
+    url: "https://www.nmead.pr.gov"
+    classes: [disaster]
+    access_method: pdf_per_event
+    harvester: scripts.nmead_disaster_harvest
+    snapshot_dir: data/sources/nmead_disaster
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 0            # event-driven, not periodic
+    expected_pr_yield_per_year: 0
+    stratum: A
+    status: harvester_planned
+    phase: 2g
+    notes: "Post-event situation reports list missing/unaccounted-for. Backfill module reads disaster_events.yaml to tag rows."
+
+  icf_unidentified:
+    operator: "Instituto de Ciencias Forenses de PR"
+    url: "https://www.cienciasforenses.pr.gov"
+    classes: [unidentified_remains]
+    access_method: pdf_extract
+    harvester: scripts.icf_unidentified_harvest
+    snapshot_dir: data/sources/icf_unidentified
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 180
+    expected_pr_yield_per_year: 30
+    stratum: A
+    status: harvester_planned
+    phase: 2d
+    notes: "Annual unidentified-remains report. Closes the loop with namus_unidentified by case-linkage on found_date + sex + age_band."
+
+  registro_demografico_aggregate:
+    operator: "Registro Demográfico — Depto de Salud de PR"
+    url: "https://www.salud.pr.gov/RD"
+    classes: [unidentified_remains, unclaimed_decedent]
+    access_method: aggregate_csv
+    harvester: scripts.registro_demografico_aggregate_harvest
+    snapshot_dir: data/sources/registro_demografico_aggregate
+    license_tier: gov_public_aggregate_only
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 365
+    expected_pr_yield_per_year: 0
+    stratum: A
+    status: harvester_planned
+    phase: 2d
+    notes: "Death-cert aggregates that, when joined with missing-persons last_seen_date + age_band + sex, close cases (status → resolved_deceased)."
+
+  departamento_familia_aggregate:
+    operator: "Departamento de la Familia de PR"
+    url: "https://familia.pr.gov"
+    classes: [endangered_adult, cognitive_impairment]
+    access_method: foia
+    harvester: null
+    snapshot_dir: data/sources/departamento_familia_aggregate
+    license_tier: gov_foia_response
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 365
+    expected_pr_yield_per_year: 0
+    stratum: A
+    status: manual_pull
+    phase: deferred
+    notes: "Vulnerable-adults registry. No public surface; FOIA only."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CROSS-BORDER
+# ─────────────────────────────────────────────────────────────────────────────
+
+  iom_missing_migrants:
+    operator: "International Organization for Migration (UN)"
+    url: "https://missingmigrants.iom.int/downloads"
+    classes: [maritime]
+    access_method: public_csv
+    harvester: scripts.iom_missing_migrants_harvest
+    snapshot_dir: data/sources/iom_missing_migrants
+    license_tier: cc_by_4
+    federation_eligible: true          # cleanest open-license source
+    refresh_cadence_days: 30
+    expected_pr_yield_per_year: 30
+    stratum: A
+    status: harvester_planned
+    phase: 2b
+    notes: "Cleanest non-NamUs structured source. Caribbean route covers PR maritime SAR cases with direct lat/lon."
+
+  interpol_yellow:
+    operator: "Interpol (via OpenSanctions mirror)"
+    url: "https://www.opensanctions.org/datasets/interpol_yellow_notices/"
+    classes: [international_missing]
+    access_method: public_jsonl
+    harvester: scripts.interpol_yellow_harvest
+    snapshot_dir: data/sources/interpol_yellow
+    license_tier: opensanctions_terms
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 30
+    expected_pr_yield_per_year: 5
+    stratum: A
+    status: harvester_planned
+    phase: 2b
+    notes: "Sparse PR-specific coverage but only structured Interpol surface. OpenSanctions ships JSONL with stable IDs."
+
+  icrc_caribbean:
+    operator: "International Committee of the Red Cross"
+    url: "https://missingpersons.icrc.org"
+    classes: [maritime, missing_adult_other]
+    access_method: aggregate_pdf
+    harvester: null
+    snapshot_dir: data/sources/icrc_caribbean
+    license_tier: ngo_attribution_required
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 365
+    expected_pr_yield_per_year: 0
+    stratum: A
+    status: aggregate_only
+    phase: deferred
+    notes: "Family-tracing program; aggregate only at public tier."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOURNALISM / NGO (stratum B)
+# ─────────────────────────────────────────────────────────────────────────────
+
+  observatorio_eeg:
+    operator: "Observatorio de Equidad de Género (Centro Mujer y Salud Pública)"
+    url: "https://observatoriopr.org"
+    classes: [endangered_woman, missing_adult_woman]
+    access_method: pdf_per_quarter
+    harvester: scripts.observatorio_pdf_harvest
+    snapshot_dir: data/sources/observatorio_eeg
+    license_tier: ngo_attribution_required
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 90
+    expected_pr_yield_per_year: 50
+    stratum: B
+    status: harvester_planned
+    phase: 2e
+    notes: "Femicide-adjacent tracker. Tabular PDF extraction with PDFplumber or tabula. Geocoding from narrative addresses required."
+
+  proyecto_matria:
+    operator: "Proyecto Matria"
+    url: "https://www.proyectomatria.org"
+    classes: [endangered_woman]
+    access_method: scrape_with_pdfs
+    harvester: scripts.proyecto_matria_harvest
+    snapshot_dir: data/sources/proyecto_matria
+    license_tier: ngo_attribution_required
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 90
+    expected_pr_yield_per_year: 30
+    stratum: B
+    status: harvester_planned
+    phase: 2e
+
+  inter_news_femicide:
+    operator: "Inter News Service (PR)"
+    url: "https://inter-news.org"
+    classes: [endangered_woman]
+    access_method: rss_with_scrape
+    harvester: scripts.inter_news_femicide_harvest
+    snapshot_dir: data/sources/inter_news_femicide
+    license_tier: journalism_fair_use
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 30
+    expected_pr_yield_per_year: 25
+    stratum: B
+    status: harvester_planned
+    phase: 2e
+
+  cpi_genero:
+    operator: "Centro de Periodismo Investigativo"
+    url: "https://periodismoinvestigativo.com/category/genero/"
+    classes: [endangered_woman, missing_adult_woman]
+    access_method: rss_with_scrape
+    harvester: scripts.cpi_genero_harvest
+    snapshot_dir: data/sources/cpi_genero
+    license_tier: journalism_fair_use
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 30
+    expected_pr_yield_per_year: 15
+    stratum: B
+    status: harvester_planned
+    phase: 2e
+    notes: "Long-form investigative pieces. Geocoding from narrative; expect to triangulate against PRPB undercounting."
+
+  diaspora_news:
+    operator: "El Diario NY + Univision Especiales (PR diaspora coverage)"
+    url: "https://eldiariony.com,https://www.univision.com"
+    classes: [missing_adult_woman, endangered_woman]
+    access_method: rss_with_scrape
+    harvester: scripts.diaspora_news_harvest
+    snapshot_dir: data/sources/diaspora_news
+    license_tier: journalism_fair_use
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 30
+    expected_pr_yield_per_year: 10
+    stratum: B
+    status: harvester_planned
+    phase: 2e
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TIP-STREAM (stratum C — workbench-only, NEVER federation)
+# ─────────────────────────────────────────────────────────────────────────────
+
+  fb_personasdesaparecidaspr:
+    operator: "Volunteer Facebook community"
+    url: "https://www.facebook.com/personasdesaparecidaspr/"
+    classes: [missing_juvenile, missing_adult_woman, missing_adult_other]
+    access_method: facebook_scrape
+    harvester: scripts.fb_personasdesaparecidaspr_harvest
+    snapshot_dir: data/sources/fb_personasdesaparecidaspr
+    license_tier: facebook_tos_restricted
+    federation_eligible: false
+    refresh_cadence_days: 7
+    expected_pr_yield_per_year: 500
+    stratum: C
+    status: harvester_planned
+    phase: 2f
+    notes: "Tip-stream layer ONLY. Used for under-reporting heatmap (tipstream-vs-confirmed delta per municipio)."
+
+  fb_busquedapr:
+    operator: "Volunteer Facebook community (Búsqueda PR / ÁnGeLeS DESAPARECIDOS PR)"
+    url: "https://www.facebook.com/busquedapr"
+    classes: [missing_juvenile, missing_adult_woman, missing_adult_other]
+    access_method: facebook_scrape
+    harvester: scripts.fb_busquedapr_harvest
+    snapshot_dir: data/sources/fb_busquedapr
+    license_tier: facebook_tos_restricted
+    federation_eligible: false
+    refresh_cadence_days: 7
+    expected_pr_yield_per_year: 300
+    stratum: C
+    status: harvester_planned
+    phase: 2f
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HISTORICAL COHORT BACKFILLS (one-shot)
+# ─────────────────────────────────────────────────────────────────────────────
+
+  gwu_maria_mortality_study:
+    operator: "George Washington University Milken Institute SPH"
+    url: "https://prstudy.publichealth.gwu.edu"
+    classes: [disaster]
+    access_method: published_dataset
+    harvester: scripts.backfill_disaster_cohort
+    snapshot_dir: data/sources/maria_cohort
+    license_tier: academic_published
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 0            # one-shot
+    expected_pr_yield_per_year: 0
+    stratum: B
+    status: harvester_planned
+    phase: 2g
+    disaster_event_id: maria-2017
+    notes: "Official 2,975 excess-mortality figure backed by the GWU study, linked to PR DOH vital records. Treats indirect-attribution deaths as 'missing-presumed-dead' for the disaster_event_id=maria-2017 tag."
+
+  quartz_maria_dataset:
+    operator: "Quartz / PR DOH excess-mortality linkage"
+    url: "https://qz.com/1241128/we-asked-puerto-rico-for-data-on-hurricane-maria-deaths/"
+    classes: [disaster]
+    access_method: published_dataset
+    harvester: scripts.backfill_disaster_cohort
+    snapshot_dir: data/sources/maria_cohort
+    license_tier: journalism_fair_use
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 0
+    expected_pr_yield_per_year: 0
+    stratum: B
+    status: harvester_planned
+    phase: 2g
+    disaster_event_id: maria-2017
+    notes: "Cross-check for GWU study. Published as CSV."
+
+  backfill_fiona_2022:
+    operator: "NMEAD + FEMA"
+    url: "https://www.fema.gov/disaster/4671"
+    classes: [disaster]
+    access_method: pdf_per_event
+    harvester: scripts.backfill_disaster_cohort
+    snapshot_dir: data/sources/fiona_cohort
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 0
+    expected_pr_yield_per_year: 0
+    stratum: A
+    status: harvester_planned
+    phase: 2g
+    disaster_event_id: fiona-2022
+
+  backfill_earthquake_2020_sw:
+    operator: "USGS + NMEAD"
+    url: "https://earthquake.usgs.gov/earthquakes/eventpage/us60007anp"
+    classes: [disaster]
+    access_method: published_dataset
+    harvester: scripts.backfill_disaster_cohort
+    snapshot_dir: data/sources/earthquake_2020_sw_cohort
+    license_tier: gov_public
+    federation_eligible: aggregate_only
+    refresh_cadence_days: 0
+    expected_pr_yield_per_year: 0
+    stratum: A
+    status: harvester_planned
+    phase: 2g
+    disaster_event_id: earthquake-2020-sw
