@@ -39,3 +39,37 @@ def test_lookup_callsign_with_no_operator_returns_profile(populated_db):
     assert result is not None
     assert isinstance(result, AircraftProfile)
     assert result.callsign == "XUNKNOWN99"
+
+
+def test_update_aircraft_profiles_table_writes_all_callsigns(populated_db):
+    """update_aircraft_profiles_table refreshes one row per distinct callsign.
+
+    Also guards the connection-batching refactor: the result must be identical
+    to the previous per-callsign-connection implementation.
+    """
+    import json
+    import sqlite3
+
+    ai = AircraftIntelligence(populated_db)
+    ai.update_aircraft_profiles_table()
+
+    conn = sqlite3.connect(populated_db)
+    rows = {
+        r[0]: r
+        for r in conn.execute(
+            "SELECT callsign, owner, operator, primary_mission, operational_patterns "
+            "FROM aircraft_profiles"
+        )
+    }
+    conn.close()
+
+    # Every distinct flight callsign is present.
+    assert set(rows) == {"N5854Z", "C6062", "N767PD"}
+
+    # Known-operator enrichment landed in the table.
+    assert rows["N5854Z"][1] == "Puerto Rico Electric Power Authority"
+    assert rows["N5854Z"][3] == "Power Line Inspection"
+
+    # operational_patterns round-trips as JSON for every row.
+    for callsign in rows:
+        assert isinstance(json.loads(rows[callsign][4]), dict)

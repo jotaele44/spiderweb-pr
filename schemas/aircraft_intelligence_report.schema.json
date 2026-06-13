@@ -12,7 +12,7 @@
     "primary_mission":   {"type": ["string", "null"]},
     "secondary_missions":{"type": "array", "items": {"type": "string"}},
     "confidence_level":  {"type": "number", "minimum": 0, "maximum": 1},
-    "data_source":       {"type": "string", "enum": ["known_db", "deduced", "db_history", "unknown"]},
+    "data_source":       {"type": "string", "enum": ["known_db", "deduced", "unknown"]},
     "total_flights":     {"type": ["integer", "null"], "minimum": 0},
     "first_seen":        {"type": ["string", "null"]},
     "last_seen":         {"type": ["string", "null"]},
