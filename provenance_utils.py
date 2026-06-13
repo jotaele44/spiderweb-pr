@@ -34,6 +34,11 @@ CHUNK = 65536
 SMALL_FILE_MAX_BYTES = 32 * 1024 * 1024  # don't hash anything >32MB by default
 
 
+def _utcnow() -> datetime:
+    """Naive UTC now — drop-in for the deprecated ``datetime.utcnow()``."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def reproducibility_metadata(
     command: Optional[str] = None,
     input_paths: Optional[Iterable[str]] = None,
@@ -60,7 +65,7 @@ def reproducibility_metadata(
                 hashed[p] = "unknown"
 
     return {
-        "timestamp_utc": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
+        "timestamp_utc": _utcnow().isoformat() + "Z",
         "repo_commit": git_head_or_unknown(),
         "python_version": platform.python_version(),
         "platform": _platform_label(),
@@ -192,7 +197,7 @@ def geojson_feature_meta(
     matching the manifest exactly.
     """
     if produced_at is None:
-        produced_at = datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y-%m-%dT%H:%M:%SZ")
+        produced_at = _utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
         "producer_module": producer_module,
         "source_artifact": source_artifact,
