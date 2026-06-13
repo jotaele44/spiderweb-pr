@@ -15,7 +15,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 
@@ -130,7 +130,7 @@ class AlertEngine:
             return []
         callsign = flight.get("callsign", "UNKNOWN")
         return [Alert(
-            alert_id=f"RESTR_{flight['flight_id']}_{datetime.utcnow().strftime('%H%M%S')}",
+            alert_id=f"RESTR_{flight['flight_id']}_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%H%M%S')}",
             flight_id=flight.get("flight_id", ""),
             callsign=callsign,
             category=AlertCategory.RESTRICTED_AIRSPACE,
@@ -138,7 +138,7 @@ class AlertEngine:
             title=f"{callsign} entered restricted airspace",
             description=f"Flight tracked within {len(restricted)} restricted zone(s)",
             evidence=[f"Near: {r.get('infrastructure', 'restricted zone')}" for r in restricted],
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             recommended_action="Verify aircraft authorization. Cross-reference with FAA NOTAM.",
         )]
 
@@ -156,7 +156,7 @@ class AlertEngine:
             title=f"Unknown aircraft: {callsign}",
             description="Aircraft not in known operator database",
             evidence=[f"Callsign {callsign} has no registered operator profile"],
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             recommended_action="Research N-number via FAA registry. Add operator profile if legitimate.",
         )]
 
@@ -181,7 +181,7 @@ class AlertEngine:
             title=f"{callsign} operating at night ({hour:02d}:00)",
             description="Non-emergency operator active outside typical hours",
             evidence=[f"Departure at hour {hour:02d}:00 UTC"],
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             recommended_action="Confirm emergency or special operation. Update operator profile if pattern.",
         )]
 
@@ -199,7 +199,7 @@ class AlertEngine:
             title=f"{callsign} extended operation: {duration} minutes",
             description="Flight duration exceeds typical operational envelope",
             evidence=[f"Duration: {duration} minutes ({duration/60:.1f} hours)"],
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             recommended_action="Verify no emergency situation. Check fuel/range constraints.",
         )]
 
@@ -222,7 +222,7 @@ class AlertEngine:
             description=f"Closest approach: {closest.get('infrastructure', 'facility')}",
             evidence=[f"{a.get('infrastructure','?')}: {(a.get('distance_nm') or 0):.2f} nm"
                       for a in critical],
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             recommended_action="Verify operational authorization. Log for infrastructure security.",
         )]
 
@@ -250,7 +250,7 @@ class AlertEngine:
             title=f"{callsign}: {count} physics validation failures",
             description="Track points failed physical plausibility checks",
             evidence=[f"{count} points flagged for impossible motion"],
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             recommended_action="Review raw screenshots for OCR corruption. Re-extract if needed.",
         )]
 
@@ -275,7 +275,7 @@ class AlertEngine:
             title=f"New aircraft in airspace: {callsign}",
             description="First-time observation of this callsign",
             evidence=[f"No prior flights from {callsign} in database"],
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             recommended_action="Research aircraft registration. Create operator profile.",
         )]
 
@@ -305,7 +305,7 @@ class AlertEngine:
             title=f"{callsign}: Low extraction confidence ({avg_confidence:.0%})",
             description="OCR confidence below acceptable threshold",
             evidence=[f"Average confidence: {avg_confidence:.2%}"],
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             recommended_action="Manually verify extracted data against source screenshots.",
         )]
 
@@ -354,7 +354,7 @@ class AlertEngine:
             affected = conn.execute(
                 "UPDATE alerts SET acknowledged=1, acknowledged_at=? "
                 "WHERE alert_id=?",
-                (datetime.utcnow().isoformat(), alert_id),
+                (datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), alert_id),
             ).rowcount
             conn.commit()
         except Exception:
@@ -369,7 +369,7 @@ class AlertEngine:
         Returns the count of alerts resolved.
         """
         from datetime import timedelta
-        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)).isoformat()
         conn = sqlite3.connect(self.db_path)
         try:
             affected = conn.execute(
@@ -389,7 +389,7 @@ class AlertEngine:
         """Return True if an alert with the same (flight_id, category) was saved
         within the last *within_hours* hours."""
         from datetime import timedelta
-        cutoff = (datetime.utcnow() - timedelta(hours=within_hours)).isoformat()
+        cutoff = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=within_hours)).isoformat()
         conn = sqlite3.connect(self.db_path)
         try:
             row = conn.execute(
@@ -408,7 +408,7 @@ class AlertEngine:
         Returns the number of alerts written.
         """
         from datetime import timedelta
-        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)).isoformat()
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         try:
@@ -432,7 +432,7 @@ class AlertEngine:
 
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         Path(output_path).write_text(
-            json.dumps({"exported_at": datetime.utcnow().isoformat(), "alerts": alerts}, indent=2),
+            json.dumps({"exported_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), "alerts": alerts}, indent=2),
             encoding="utf-8",
         )
         return len(alerts)
@@ -440,7 +440,7 @@ class AlertEngine:
     def get_alert_stats(self, days: int = 30) -> Dict[str, Any]:
         """Return summary statistics for alerts in the last *days* days."""
         from datetime import timedelta
-        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)).isoformat()
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         try:
@@ -490,7 +490,7 @@ class ReportGenerator:
 
     def daily_report(self, date: datetime = None) -> str:
         if date is None:
-            date = datetime.utcnow()
+            date = datetime.now(timezone.utc).replace(tzinfo=None)
         date_str = date.strftime("%Y-%m-%d")
         start = f"{date_str}T00:00:00"
         end   = f"{date_str}T23:59:59"
@@ -642,7 +642,7 @@ class ReportGenerator:
     def severity_breakdown(self, days: int = 7) -> Dict[str, int]:
         """Return a dict of severity → alert count for the last *days* days."""
         from datetime import timedelta
-        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)).isoformat()
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         try:
@@ -664,7 +664,7 @@ class ReportGenerator:
         Returns a list of dicts with keys ``callsign`` and ``alert_count``.
         """
         from datetime import timedelta
-        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)).isoformat()
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         try:
@@ -684,7 +684,7 @@ class ReportGenerator:
         """Generate a 7-day operational summary ending at *date* (default: now)."""
         from datetime import timedelta
         if date is None:
-            date = datetime.utcnow()
+            date = datetime.now(timezone.utc).replace(tzinfo=None)
         end = date
         start = date - timedelta(days=7)
         start_str = start.strftime("%Y-%m-%d")

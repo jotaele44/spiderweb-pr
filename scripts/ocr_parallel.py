@@ -25,7 +25,7 @@ import sys
 import time
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 REPO      = Path(__file__).parent
@@ -48,7 +48,7 @@ def load_ckpt():
         return json.loads(CKPT_PATH.read_text())
     return {"processed_idx": 0, "total": 0, "file_list": [],
             "stats": {"ok": 0, "skip": 0, "err": 0},
-            "started_at": datetime.utcnow().isoformat()}
+            "started_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}
 
 def save_ckpt(cp):
     CKPT_PATH.write_text(json.dumps(cp, indent=2))

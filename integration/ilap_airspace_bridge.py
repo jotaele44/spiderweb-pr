@@ -8,7 +8,7 @@ import json
 import math
 import sqlite3
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -62,7 +62,7 @@ class ILAPAirspaceBridge:
 
     def export_all(self) -> Dict[str, Any]:
         # One emission timestamp shared by every feature in this run (T7-57).
-        self._produced_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        self._produced_at = datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -85,7 +85,7 @@ class ILAPAirspaceBridge:
         self._write_geojson("airspace_corridor_candidates.geojson", corridor_features)
 
         return {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "output_dir": str(self.output_dir),
             "files": counts,
         }

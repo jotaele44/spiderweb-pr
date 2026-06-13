@@ -17,7 +17,7 @@ import json
 import sqlite3
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 REPO       = Path(__file__).parent
@@ -44,7 +44,7 @@ def load_checkpoint():
             "attempted": 0, "ocr_ok": 0, "ocr_skip": 0, "ocr_err": 0,
             "flights_linked": 0,
         },
-        "started_at": datetime.utcnow().isoformat(),
+        "started_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
     }
 
 

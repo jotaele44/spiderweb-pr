@@ -15,7 +15,7 @@ import hashlib
 import platform
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
@@ -60,7 +60,7 @@ def reproducibility_metadata(
                 hashed[p] = "unknown"
 
     return {
-        "timestamp_utc": datetime.utcnow().isoformat() + "Z",
+        "timestamp_utc": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
         "repo_commit": git_head_or_unknown(),
         "python_version": platform.python_version(),
         "platform": _platform_label(),
@@ -192,7 +192,7 @@ def geojson_feature_meta(
     matching the manifest exactly.
     """
     if produced_at is None:
-        produced_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        produced_at = datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
         "producer_module": producer_module,
         "source_artifact": source_artifact,

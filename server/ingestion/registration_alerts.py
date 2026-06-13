@@ -132,7 +132,7 @@ def generate_alerts(
     env: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Evaluate both rules, persist new alerts, notify on each new one."""
-    now = now or datetime.utcnow()
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
     today = now.strftime("%Y-%m-%d")
     latest = seen_registrations(conn)
 

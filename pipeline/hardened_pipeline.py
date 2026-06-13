@@ -14,7 +14,7 @@ Falls back gracefully to Tesseract-only when heavy ML engines are absent.
 
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -118,7 +118,7 @@ class HardenedFlightAnalyzer:
         validates with StatefulTrackHypothesis, stores provenance, checkpoints.
         """
         if batch_id is None:
-            batch_id = f"batch_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+            batch_id = f"batch_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M%S')}"
 
         # Step 1: Find images
         image_files = sorted([
@@ -232,10 +232,10 @@ class HardenedFlightAnalyzer:
              latitude, longitude, timestamp, raw_text, ocr_confidence)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            screenshot_id, image_path, datetime.utcnow().isoformat(),
+            screenshot_id, image_path, datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             val("callsign"), val("altitude_ft"), val("speed_mph"),
             None, None,  # lat/lon from visual detection (not OCR)
-            datetime.utcnow().isoformat(), "",
+            datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), "",
             fields.get("callsign", ExtractedField("", 0, 0, 0, "", "")).ocr_confidence,
         ))
         conn.commit()
