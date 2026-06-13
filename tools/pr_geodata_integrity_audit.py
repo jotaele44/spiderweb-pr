@@ -659,8 +659,13 @@ def audit_pipeline_paths(audit: Audit, geodata_root: Path, repo_root_input: Opti
     expected_hits: List[Dict[str, str]] = []
     scanned_count = 0
 
+    self_path = Path(__file__).resolve()
     for file_path in iter_text_files(repo_root, max_file_mb=max_file_mb):
         scanned_count += 1
+        if file_path.resolve() == self_path:
+            # The marker constants defined in this script would otherwise
+            # self-match and produce a guaranteed false-positive FAIL.
+            continue
         try:
             text = file_path.read_text(encoding="utf-8", errors="ignore")
         except Exception:
