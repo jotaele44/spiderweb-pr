@@ -4,6 +4,10 @@
 
 > Boundary: FlightRadar24 screenshot ingestion, FR24 route extraction, and active airspace observation export belong to [`skywatcher-pr`](https://github.com/jotaele44/skywatcher-pr). Spiderweb retains legacy spatial bridge logic and spatial / operational export surfaces, but it is not the active FR24 owner.
 
+## Status refresh
+
+As of the latest boundary refresh, `spiderweb-pr` operates purely as the spatial / operational **Federation** producer: it validates retained records and materializes canonical export packages for `thehub-pr` to discover and aggregate. FlightRadar24 screenshot ingestion and the **RLSM** (resilient loader / state-machine) airspace pipeline have been migrated to `skywatcher-pr` and are no longer owned here. This document is refreshed whenever the federation role or the FR24 / RLSM boundary changes.
+
 ## Current module map
 
 ```text

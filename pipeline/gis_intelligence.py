@@ -14,6 +14,7 @@ Components:
 
 import sqlite3
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import List, Tuple, Dict, Optional
 from enum import Enum
 import json
@@ -330,16 +331,26 @@ class AnomalyDetector:
         anomalies = []
 
         if flight_data.get("operator") == "PREPA":
-            try:
-                hour = int(flight_data.get("takeoff_time", "00:00:00")[11:13])
-                if hour < 7 or hour > 18:
+            takeoff_raw = flight_data.get("takeoff_time") or ""
+            if takeoff_raw:
+                try:
+                    hour = datetime.fromisoformat(
+                        takeoff_raw.replace("Z", "+00:00")
+                    ).hour
+                    if hour < 7 or hour > 18:
+                        anomalies.append({
+                            "type": "unusual_time",
+                            "severity": "low",
+                            "description": f"PREPA flight outside typical hours (hour {hour})",
+                        })
+                except ValueError:
+                    # Don't silently swallow: surface that the timestamp was
+                    # unparseable so the anomaly check isn't dropped unnoticed.
                     anomalies.append({
-                        "type": "unusual_time",
+                        "type": "unparseable_takeoff_time",
                         "severity": "low",
-                        "description": f"PREPA flight outside typical hours (hour {hour})",
+                        "description": f"Could not parse takeoff_time: {takeoff_raw!r}",
                     })
-            except (ValueError, IndexError):
-                pass
 
         duration_hours = flight_data.get("flight_duration_minutes", 0) / 60
         if flight_data.get("aircraft_type") == "H125" and duration_hours > 8:
