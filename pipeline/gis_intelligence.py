@@ -14,7 +14,7 @@ Components:
 
 import sqlite3
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Tuple, Dict, Optional
 from enum import Enum
 import json
@@ -547,7 +547,6 @@ class Phase2Database:
         conn.close()
 
     def store_anomalies(self, flight_id: str, anomalies: List[Dict]):
-        from datetime import datetime
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         for anomaly in anomalies:
@@ -560,7 +559,7 @@ class Phase2Database:
                 anomaly.get("type", "unknown"),
                 anomaly.get("severity", "unknown"),
                 anomaly.get("description", ""),
-                datetime.utcnow().isoformat(),
+                datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             ))
         conn.commit()
         conn.close()

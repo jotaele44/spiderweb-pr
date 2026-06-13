@@ -11,7 +11,7 @@ import csv
 import json
 import math
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -207,7 +207,7 @@ class SpiderwebIntake:
         gap_audit = self._gap_audit(candidates, missing_files, dups_removed)
         self._write_outputs(candidates, gap_audit)
         return {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "total_candidates": len(candidates),
             "output_dir": str(self.output_dir),
             "gap_audit": gap_audit,
@@ -507,7 +507,7 @@ class SpiderwebIntake:
         pct_low = round(mbil_0 / total, 4) if total else 0.0
 
         return {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "total_candidates": total,
             "after_dedup": total,
             "gaps": {

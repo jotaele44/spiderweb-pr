@@ -10,7 +10,7 @@ operational DB export is available.
 
 import json
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -85,7 +85,7 @@ class CalibrationDriver:
             status = "WARN"
 
         report = {
-            "generated_at":        datetime.utcnow().isoformat() + "Z",
+            "generated_at":        datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "export_dir":          str(self.export_dir),
             "baseline_mode":       mode,
             "status":              status,

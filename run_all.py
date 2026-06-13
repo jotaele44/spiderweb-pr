@@ -15,7 +15,7 @@ Usage:
 import argparse
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -56,7 +56,7 @@ def run_phase_1(args):
     print("  " + "─" * 50)
     analyzer = HardenedFlightAnalyzer(args.image_dir, args.db)
     analyzer.process_with_hardening(
-        batch_id=f"run_{datetime.utcnow().strftime('%Y%m%d_%H%M')}",
+        batch_id=f"run_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M')}",
         max_images=args.images,
         checkpoint_interval=50,
     )
@@ -220,7 +220,7 @@ def run_daily_report(args):
     reporter = ReportGenerator(args.db)
     report = reporter.daily_report()
     print(report)
-    report_path = Path(args.db).parent / f"daily_report_{datetime.utcnow().strftime('%Y%m%d')}.txt"
+    report_path = Path(args.db).parent / f"daily_report_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d')}.txt"
     with open(report_path, "w") as f:
         f.write(report)
     print(f"\n  Report saved: {report_path}")
@@ -255,7 +255,7 @@ def export_json(db_path: str, output_path: str):
                 aircraft_profiles_raw = []
 
         data = {
-            "exported_at": datetime.utcnow().isoformat() + "Z",
+            "exported_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "db_path": db_path,
             "flights": rows("flights", "ORDER BY takeoff_time DESC"),
             "aircraft_profiles": aircraft_profiles_raw,
@@ -589,7 +589,7 @@ Examples:
     print(f"  Database:   {args.db}")
     print(f"  Image dir:  {args.image_dir}")
     print(f"  Max images: {args.images or 'All'}")
-    print(f"  Started:    {datetime.utcnow().isoformat()}\n")
+    print(f"  Started:    {datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}\n")
 
     if args.status:
         print_status(args.db)
@@ -633,7 +633,7 @@ Examples:
     )
 
     if not new_flags_only:
-        start = datetime.utcnow()
+        start = datetime.now(timezone.utc).replace(tzinfo=None)
 
         if args.phase is None or args.phase == 0:
             run_phase_0(args)
@@ -650,7 +650,7 @@ Examples:
         if args.phase is None or args.phase == 4:
             run_phase_4(args)
 
-        elapsed = (datetime.utcnow() - start).total_seconds()
+        elapsed = (datetime.now(timezone.utc).replace(tzinfo=None) - start).total_seconds()
         print("\n" + "═" * 70)
         print(f"  PIPELINE COMPLETE")
         print(f"  Elapsed: {elapsed:.0f}s ({elapsed/3600:.2f}h)")

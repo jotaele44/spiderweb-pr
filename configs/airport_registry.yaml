@@ -64,3 +64,11 @@ airports:
     lat: 18.2557
     lon: -67.1485
     aliases: [MAZ, TJMZ, Mayaguez airport, Mayagüez airport]
+  - airport_id: airport_are_tjab
+    canonical_name: Antonio (Nery) Juarbe Pol Airport
+    iata: ARE
+    icao: TJAB
+    municipality: Arecibo
+    lat: 18.4500
+    lon: -66.6757
+    aliases: [ARE, TJAB, Arecibo airport, Antonio Nery Juarbe Pol]

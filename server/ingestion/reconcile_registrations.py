@@ -30,7 +30,7 @@ import argparse
 import csv
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -79,7 +79,7 @@ def reconcile(
     now: Optional[datetime] = None,
     env: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
-    now = now or datetime.utcnow()
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
     today = now.strftime("%Y-%m-%d")
 
     csv_map = csv_registrations(csv_path)

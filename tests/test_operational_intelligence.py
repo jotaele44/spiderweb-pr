@@ -1,7 +1,7 @@
 """Tests for operational_intelligence: Alert, AlertEngine, ReportGenerator."""
 
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -387,7 +387,7 @@ def test_get_alert_stats_returns_dict(tmp_path):
 def test_get_alert_stats_counts_saved_alerts(tmp_path):
     db = _make_db(tmp_path)
     engine = AlertEngine(db)
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
     engine.save_alerts([
         _alert(alert_id="A1", severity=AlertSeverity.MEDIUM,
                category=AlertCategory.UNUSUAL_BEHAVIOR, timestamp=now),
@@ -401,7 +401,7 @@ def test_get_alert_stats_counts_saved_alerts(tmp_path):
 def test_get_alert_stats_acknowledged_count(tmp_path):
     db = _make_db(tmp_path)
     engine = AlertEngine(db)
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
     engine.save_alerts([_alert(alert_id="B1", timestamp=now)])
     alerts = engine.get_active_alerts()
     engine.acknowledge_alert(alerts[0]["alert_id"])
