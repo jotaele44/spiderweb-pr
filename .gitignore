@@ -288,3 +288,11 @@ __marimo__/
 
 # generated canonical export (scripts/federation_export.py)
 exports/federation/
+
+# Frontend hand-written code lives in server/frontend/src/lib — the Python `lib/`
+# rule above wrongly ignores it. Re-include it.
+!server/frontend/src/lib/
+!server/frontend/src/lib/**
+
+# standalone single-file export (build artifact, regenerate via build-export.sh)
+export-standalone/
