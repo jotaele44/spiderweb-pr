@@ -44,7 +44,7 @@ gebco = [
 ]
 # LLM pipeline (RAG over PRUAP social data). Heavy ML — installs torch + transformers.
 rag = [
-    "praw>=7.8.1,<8",
+    "praw>=7.8.1,<9",
     "chromadb>=0.4.0,<2",
     "sentence-transformers>=2.7.0,<6",
     "transformers>=4.40.0,<6",
