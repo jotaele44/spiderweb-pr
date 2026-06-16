@@ -184,3 +184,102 @@ def test_wrapped_photo_src_is_person_not_icon(wrapped_snapshot: Path) -> None:
     # source_record_url_hash values for the two distinct people.)
     url_hashes = {r["source_record_url_hash"] for r in rows}
     assert len(url_hashes) == 2
+
+
+# ---------------------------------------------------------------- review v2 fixes
+# Pin the second-round adversarial-review HIGH findings: a card-ish WRAPPER must
+# not swallow its inner cards; nav/footer/pagination <li>s must not become rows;
+# overlapping paginated pages must dedup; and non-UTF-8 pages must keep accents.
+
+def _snapshot_from(tmp_path: Path, *pages: bytes) -> Path:
+    snap = tmp_path / "2026-06-12"
+    snap.mkdir()
+    for i, page in enumerate(pages, 1):
+        (snap / f"page_{i}.html").write_bytes(page)
+    return snap
+
+
+_CARD = (
+    '<li class="missing-card"><img src="/desaparecidos/photos/MP-{n}.jpg">'
+    '<p>Edad: {age} años</p><p>{caption}</p></li>'
+)
+
+
+def test_card_wrapper_not_swallowed_and_nav_not_phantom(tmp_path: Path) -> None:
+    html = (
+        '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"></head><body>'
+        '<nav><ul><li>Inicio</li><li>Desaparecidos</li><li>Contacto</li></ul></nav>'
+        '<section class="missing-persons"><ul>'
+        + _CARD.format(n=1, age=28, caption="Última vez vista en San Juan")
+        + _CARD.format(n=2, age=40, caption="en Ponce")
+        + '</ul></section>'
+        '<footer><ul><li>Llame al 9-1-1</li></ul></footer>'
+        '</body></html>'
+    ).encode("utf-8")
+    _out, kept, _dropped, rows = _run(_snapshot_from(tmp_path, html))
+    # 2 person cards — the card-ish <section> wrapper is NOT one row, and the
+    # nav/footer <li>s (no <img>) are NOT phantom rows.
+    assert kept == 2, f"wrapper swallowed cards or nav/footer leaked: kept={kept}"
+    assert {r["last_seen_municipio"] for r in rows} == {"San Juan", "Ponce"}
+
+
+def test_unclosed_li_siblings_all_survive(tmp_path: Path) -> None:
+    """Real gov HTML routinely omits </li> (and </p>); html.parser does NOT
+    auto-close them. Every person card must still emit — not collapse to just
+    the last one (silent data loss)."""
+    html = (
+        '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>'
+        '<ul class="gallery">'
+        '<li class="missing-card"><img src="/desaparecidos/photos/MP-1.jpg">'
+        '<p>Edad: 28 años<p>Última vez vista en San Juan'
+        '<li class="missing-card"><img src="/desaparecidos/photos/MP-2.jpg">'
+        '<p>Edad: 40 años<p>en Ponce'
+        '<li class="missing-card"><img src="/desaparecidos/photos/MP-3.jpg">'
+        '<p>Edad: 9 años<p>en Caguas'
+        '</ul></body></html>'
+    ).encode("utf-8")
+    _out, kept, _dropped, rows = _run(_snapshot_from(tmp_path, html))
+    assert kept == 3, f"unclosed <li> siblings collapsed to {kept}"
+    assert {r["last_seen_municipio"] for r in rows} == {"San Juan", "Ponce", "Caguas"}
+
+
+def test_card_with_nested_sublist_is_not_discarded(tmp_path: Path) -> None:
+    """A real card that contains a nested <ul> sub-list (details) must still
+    emit — the sub-items emit nothing, so the card is a leaf, not a wrapper."""
+    html = (
+        '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>'
+        '<ul class="gallery"><li class="missing-card">'
+        '<img src="/desaparecidos/photos/MP-7.jpg"><p>Edad: 30 años</p>'
+        '<ul><li>seña particular</li><li>vestimenta</li></ul>'
+        '<p>en Caguas</p></li></ul></body></html>'
+    ).encode("utf-8")
+    _out, kept, _dropped, rows = _run(_snapshot_from(tmp_path, html))
+    assert kept == 1
+    assert rows[0]["last_seen_municipio"] == "Caguas"
+
+
+def test_cross_page_dedup_collapses_same_person(tmp_path: Path) -> None:
+    page = (
+        '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>'
+        '<ul class="gallery">'
+        + _CARD.format(n=777, age=30, caption="en Caguas")
+        + '</ul></body></html>'
+    ).encode("utf-8")
+    # Same person (same photo stem) appears on two overlapping saved pages.
+    _out, kept, dropped, _rows = _run(_snapshot_from(tmp_path, page, page))
+    assert kept == 1, "same person across pages must dedup to one row"
+    assert dropped == 1
+
+
+def test_non_utf8_page_preserves_accented_municipio(tmp_path: Path) -> None:
+    # A Windows-1252 page (common for older PR-gov HTML). Read as UTF-8 it would
+    # mangle 'Bayamón' and the municipio match would silently fail.
+    html = (
+        '<!DOCTYPE html><html><head><meta charset="windows-1252"></head><body>'
+        '<ul class="gallery">'
+        + _CARD.format(n=9, age=22, caption="Última vez vista en Bayamón")
+        + '</ul></body></html>'
+    ).encode("cp1252")
+    _out, kept, _dropped, rows = _run(_snapshot_from(tmp_path, html))
+    assert kept == 1
+    assert rows[0]["last_seen_municipio"] == "Bayamón"

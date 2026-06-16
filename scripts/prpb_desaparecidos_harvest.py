@@ -75,6 +75,31 @@ from scripts._text_extract_es import (  # noqa: E402
 )
 
 
+_META_CHARSET_RE = re.compile(rb"""charset=["']?\s*([\w-]+)""", re.IGNORECASE)
+
+
+def _read_html(path: Path) -> str:
+    """Decode an operator-saved HTML page robustly. Older PR-gov pages are often
+    Latin-1/CP1252, not UTF-8; reading those as UTF-8 mangles every accented
+    field (Bayamón, años, …) and silently loses municipios/ages. Try the
+    declared ``<meta charset>`` first, then UTF-8, then CP1252, and only
+    last-resort replace."""
+    raw = path.read_bytes()
+    candidates: List[str] = []
+    m = _META_CHARSET_RE.search(raw[:2048])
+    if m:
+        try:
+            candidates.append(m.group(1).decode("ascii").lower())
+        except UnicodeDecodeError:
+            pass
+    for enc in [*candidates, "utf-8", "cp1252"]:
+        try:
+            return raw.decode(enc)
+        except (LookupError, UnicodeDecodeError):
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
 # ---------------------------------------------------------------- card extractor
 
 class _GalleryCardExtractor(HTMLParser):
@@ -95,14 +120,18 @@ class _GalleryCardExtractor(HTMLParser):
         tags), plus ``<div>``/``<a>``/``<figure>``/``<section>`` ONLY when their
         class attribute matches a card-ish token (card|item|persona|
         desaparecid|missing|result|gallery-item).
-      * All text and all ``<img>`` srcs inside the container accumulate into the
-        one card. At close we pick the best person-photo src (prefer a src whose
-        path looks like a person photo; else the first img) and emit ONLY if the
-        caption text is non-empty — so logo/icon-only containers never emit.
-
-    Cards do not nest in real galleries; if a second container opens while one
-    is active it is treated as interior structure, and the active card closes
-    when we return to its open depth.
+      * We keep a STACK of open containers and emit only a LEAF container — one
+        whose nested containers did NOT themselves emit cards. So a card-ish
+        WRAPPER (``<section class=missing-persons>`` / ``<div class=results>``
+        around many cards) is discarded rather than swallowing every inner card
+        into a single phantom row, while a real card that merely holds a sub-list
+        is still emitted. Unclosed sibling ``<li>``s (which ``html.parser`` does
+        not auto-close) are recovered via an implied end tag.
+      * All text and ``<img>`` srcs accumulate into the innermost open card. At
+        close we pick the best person-photo src (prefer a path that looks like a
+        person photo; else the first img) and emit ONLY if the card has BOTH
+        caption text AND a photo — so a logo, a nav/footer/pagination ``<li>``,
+        or a share-icon container never becomes a row.
 
     Name strings inside the caption survive in ``text`` — but the harvester's
     ``normalize_row`` NEVER reads them into the canonical. ``text`` is forensic
@@ -111,6 +140,13 @@ class _GalleryCardExtractor(HTMLParser):
 
     CONTAINER_TAGS = {"li", "article"}
     AMBIGUOUS_CONTAINER_TAGS = {"div", "a", "figure", "section"}
+    # <li> has an OPTIONAL end tag and html.parser does NOT auto-close it, so a
+    # real page's unclosed sibling <li>s would otherwise nest and get discarded
+    # as wrappers (dropping every card but the last). We implement the implied
+    # </li>. LIST_TAGS track genuine nesting: a new <li> is a sibling to close
+    # ONLY when no list is currently open inside the active card.
+    AUTO_CLOSE_TAGS = {"li"}
+    LIST_TAGS = {"ul", "ol", "menu", "dl"}
     CARD_CLASS_RE = re.compile(
         r"card|item|persona|desaparecid|missing|result|gallery-item|thumb-card",
         re.IGNORECASE,
@@ -132,8 +168,10 @@ class _GalleryCardExtractor(HTMLParser):
         self._cards: List[Dict[str, str]] = []
         self._depth = 0
         self._skip_depth = 0
-        # Exactly one active card at a time (the innermost open container).
-        self._active: Optional[Dict[str, object]] = None
+        # Stack of open card containers (innermost last). A container is emitted
+        # only when it closes as a LEAF (no nested card container opened inside
+        # it), so a card-ish wrapper around many cards is discarded, not merged.
+        self._stack: List[Dict[str, object]] = []
 
     @property
     def cards(self) -> List[Dict[str, str]]:
@@ -152,12 +190,12 @@ class _GalleryCardExtractor(HTMLParser):
         return False
 
     def _add_img(self, attrs: List[Tuple[str, Optional[str]]]) -> None:
-        if self._active is None:
+        if not self._stack:
             return
         attr_map = {k.lower(): (v or "") for k, v in attrs}
         src = attr_map.get("src", "").strip()
         if src:
-            self._active["imgs"].append(src)  # type: ignore[union-attr]
+            self._stack[-1]["imgs"].append(src)  # type: ignore[union-attr]
 
     def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
         tag = tag.lower()
@@ -168,12 +206,25 @@ class _GalleryCardExtractor(HTMLParser):
             return
         if tag not in self.VOID_TAGS:
             self._depth += 1
-        if self._active is None and self._is_container(tag, attrs):
-            self._active = {"open_depth": self._depth, "imgs": [], "text_chunks": []}
+        if tag in self.LIST_TAGS and self._stack:
+            self._stack[-1]["open_lists"] = self._stack[-1].get("open_lists", 0) + 1  # type: ignore[operator]
+        if self._is_container(tag, attrs):
+            # Implied </li>: an unclosed sibling <li> closes the previous one.
+            # A genuinely nested <li> sits inside an open list (open_lists > 0)
+            # and is left alone — so flat unclosed siblings are recovered without
+            # collapsing real sub-lists.
+            while (tag in self.AUTO_CLOSE_TAGS and self._stack
+                   and self._stack[-1].get("open_tag") == tag
+                   and self._stack[-1].get("open_lists", 0) == 0):
+                self._close_top()
+            self._stack.append(
+                {"open_depth": self._depth, "open_tag": tag, "open_lists": 0,
+                 "imgs": [], "text_chunks": [], "had_emitted_child": False}
+            )
         if tag == "img":
             self._add_img(attrs)
-        elif tag == "br" and self._active is not None:
-            self._active["text_chunks"].append("\n")  # type: ignore[union-attr]
+        elif tag == "br" and self._stack:
+            self._stack[-1]["text_chunks"].append("\n")  # type: ignore[union-attr]
 
     def handle_startendtag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
         """``<img/>`` self-closing form (XHTML-shaped pages)."""
@@ -189,46 +240,55 @@ class _GalleryCardExtractor(HTMLParser):
             return
         if self._skip_depth:
             return
-        if tag in self.BLOCK_TAGS and self._active is not None:
-            self._active["text_chunks"].append("\n")  # type: ignore[union-attr]
+        if tag in self.BLOCK_TAGS and self._stack:
+            self._stack[-1]["text_chunks"].append("\n")  # type: ignore[union-attr]
+        if tag in self.LIST_TAGS and self._stack:
+            self._stack[-1]["open_lists"] = max(0, self._stack[-1].get("open_lists", 0) - 1)  # type: ignore[operator]
         if tag in self.VOID_TAGS:
             return
-        # Closing the element that opened the active card → emit and reset.
-        if self._active is not None and self._depth == self._active["open_depth"]:
-            self._finish_active()
+        # Closing the element that opened the innermost card → resolve it.
+        if self._stack and self._depth == self._stack[-1]["open_depth"]:
+            self._close_top()
         if self._depth > 0:
             self._depth -= 1
 
     def handle_data(self, data: str) -> None:
-        if self._skip_depth or self._active is None:
+        if self._skip_depth or not self._stack:
             return
-        self._active["text_chunks"].append(data)  # type: ignore[union-attr]
+        self._stack[-1]["text_chunks"].append(data)  # type: ignore[union-attr]
 
     def close(self) -> None:  # type: ignore[override]
         super().close()
-        if self._active is not None:
-            self._finish_active()
+        while self._stack:
+            self._close_top()
 
-    def _finish_active(self) -> None:
-        card = self._active
-        self._active = None
-        if card is None:
-            return
+    def _close_top(self) -> None:
+        card = self._stack.pop()
         text = "".join(card["text_chunks"])  # type: ignore[arg-type]
         text = re.sub(r"[ \t]+", " ", text)
         text = re.sub(r"\n{2,}", "\n", text).strip()
-        # Require a caption — logo/icon-only containers (no text) never emit.
-        if not text:
-            return
         imgs = card["imgs"]  # type: ignore[assignment]
+        # A real person card has BOTH a caption and a photo (this is a photo
+        # gallery), AND is a leaf — a container whose children already emitted
+        # cards is a wrapper, not a card, so it is discarded (its leaves were the
+        # real rows). Requiring an <img> also drops nav/footer/pagination <li>s
+        # and caption/photo-less logo containers. Note: a card that merely holds
+        # a nested sub-list (whose items emit nothing) keeps had_emitted_child
+        # False and is still emitted.
+        if not text or not imgs or card.get("had_emitted_child"):
+            return
         photo_src = ""
         for src in imgs:  # type: ignore[union-attr]
             if self.PHOTO_SRC_RE.search(src):
                 photo_src = src
                 break
-        if not photo_src and imgs:
+        if not photo_src:
             photo_src = imgs[0]  # type: ignore[index]
         self._cards.append({"photo_src": photo_src, "text": text})
+        if self._stack:
+            # The enclosing container produced a real card child → it is a
+            # wrapper, and must not also emit itself as a row.
+            self._stack[-1]["had_emitted_child"] = True
 
 
 # ---------------------------------------------------------------- harvester
@@ -246,8 +306,9 @@ class PrpbDesaparecidosHarvest(HarvestBase):
         snapshot_date = snapshot_dir.name
         canonical: List[Dict[str, str]] = []
         dropped = 0
+        seen_ids: set[str] = set()
         for html_path in html_paths:
-            page_html = html_path.read_text(encoding="utf-8", errors="replace")
+            page_html = _read_html(html_path)
             extractor = _GalleryCardExtractor()
             extractor.feed(page_html)
             extractor.close()
@@ -257,6 +318,14 @@ class PrpbDesaparecidosHarvest(HarvestBase):
                 if row is None:
                     dropped += 1
                     continue
+                # Cross-page dedup: paginated pulls overlap, and the same person
+                # can appear on two saved pages. case_id_hash is the photo-stem
+                # identity, so a re-pull of one person collapses to one row.
+                case_id = row.get("case_id_hash", "")
+                if case_id and case_id in seen_ids:
+                    dropped += 1
+                    continue
+                seen_ids.add(case_id)
                 canonical.append(row)
         out_path = snapshot_dir / self.canonical_filename()
         self.write_canonical(canonical, out_path)
@@ -290,11 +359,17 @@ class PrpbDesaparecidosHarvest(HarvestBase):
         # Date extraction has a cue-first / free-text-fallback shape: the
         # gallery captions rarely use a 'Fecha:' label, so when the cue fails
         # we scan the whole caption for any date pattern.
-        canonical["report_date"] = extract_date(match_after_cue(text, FIELD_CUES["report_date"]))
-        canonical["last_seen_date"] = (
-            extract_date(match_after_cue(text, FIELD_CUES["last_seen_date"]))
-            or extract_date(text)
-        )
+        report_date = extract_date(match_after_cue(text, FIELD_CUES["report_date"]))
+        canonical["report_date"] = report_date
+        last_seen_cued = extract_date(match_after_cue(text, FIELD_CUES["last_seen_date"]))
+        if last_seen_cued:
+            canonical["last_seen_date"] = last_seen_cued
+        else:
+            # Free-text fallback (captions rarely label the date), but don't just
+            # re-read the report date into last_seen — that double-assigns one
+            # date to two fields with different meanings.
+            free = extract_date(text)
+            canonical["last_seen_date"] = free if free and free != report_date else ""
 
         age = extract_age(text)
         canonical["age_band"] = bucket_age(age)

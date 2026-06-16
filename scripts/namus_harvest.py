@@ -243,6 +243,16 @@ def _is_iso_date_name(name: str) -> bool:
         return False
 
 
+def _iso_date_or_blank(value: str) -> str:
+    """Keep a date only if it is a valid ISO ``YYYY-MM-DD``. NamUs exports ISO,
+    so this is a passthrough in practice — but it blanks a malformed/garbage cell
+    instead of forwarding it, keeping every source's date columns consistently
+    ISO for the consolidator's cross-source linkage (PRPB normalizes via
+    ``extract_date``; NamUs validates here)."""
+    value = (value or "").strip()
+    return value if _is_iso_date_name(value) else ""
+
+
 def latest_snapshot_dir(sources_dir: Path) -> Optional[Path]:
     if not sources_dir.exists():
         return None
@@ -269,21 +279,25 @@ def redact_rows(raw_rows: Iterable[Dict[str, str]], snapshot_date: str) -> Tuple
         raw_lat = pick(row, "lat")
         raw_lon = pick(row, "lon")
         has_direct_coords = bool(raw_lat and raw_lon)
+        # Explicit None check, not `or ""`: a real 0.0 coordinate is falsy and
+        # would otherwise be silently dropped (and disagree with geocode_method).
+        lat_v = coerce_coord(raw_lat)
+        lon_v = coerce_coord(raw_lon)
         canonical = {
             "case_id_hash": hash_case_id(raw_case),
             "source_id": SOURCE_ID,
             "source_record_url_hash": hash_case_id(pick(row, "case_url")),
-            "report_date": pick(row, "report_date"),
-            "last_seen_date": pick(row, "last_seen_date"),
-            "found_date": pick(row, "found_date"),
+            "report_date": _iso_date_or_blank(pick(row, "report_date")),
+            "last_seen_date": _iso_date_or_blank(pick(row, "last_seen_date")),
+            "found_date": _iso_date_or_blank(pick(row, "found_date")),
             "status": status,
             "status_reason": pick(row, "status_reason"),
             "age_band": age_band,
             "age_exact_known": "true" if age_raw else "",
             "sex": sex,
             "ethnicity_band": bucket_ethnicity(pick(row, "race")),
-            "last_seen_lat": coerce_coord(raw_lat) or "",
-            "last_seen_lon": coerce_coord(raw_lon) or "",
+            "last_seen_lat": "" if lat_v is None else lat_v,
+            "last_seen_lon": "" if lon_v is None else lon_v,
             "last_seen_geocode_method": "direct" if has_direct_coords else "",
             # municipio/barrio populated downstream by the consolidator using
             # PIP against data/municipios.geojson and data/barrios.geojson —

@@ -47,6 +47,20 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 DEFAULT_EXPECTED_DEM_COUNT = 191
 DEFAULT_OUTPUT_DIR = Path("outputs") / "pr_geodata_audit"
 
+
+def _is_iso_date_name(name: str) -> bool:
+    """True only for a real ISO ``YYYY-MM-DD`` directory name. Used for snapshot
+    selection so a len-10 non-date ('9999-99-99', 'tmp_backup') can't sort
+    lexicographically above real dates and shadow the true latest snapshot.
+    Mirrors namus_harvest._is_iso_date_name."""
+    if len(name) != 10 or name[4] != "-" or name[7] != "-":
+        return False
+    try:
+        dt.date.fromisoformat(name)
+        return True
+    except ValueError:
+        return False
+
 EXPECTED_CORE_DIRS = {
     "dem": "01_DEM_1m_LiDAR",
     "geodatabases": "03_Geodatabases",
@@ -398,7 +412,17 @@ def audit_dem_crs(
         else:
             audit.add("PASS", "dem", "crs_inventory", "Sampled DEM CRS values are within expected Puerto Rico UTM zones.", evidence={"crs_counts": dict(crs_counter), "sample_count": len(sample_tiles)})
 
-        if any(not key.startswith("1") for key in resolution_counter.keys()):
+        def _is_1m(key: str) -> bool:
+            # key is "<xres> x <yres>"; test numerically, not by string prefix
+            # ('10 x 10' / '1.5 x 1.5' both start with '1' but are not 1m, and a
+            # genuine '0.5 x 0.5' would be wrongly flagged).
+            try:
+                axes = [float(v) for v in key.split(" x ")]
+            except ValueError:
+                return False
+            return len(axes) == 2 and all(abs(a - 1.0) <= 0.01 for a in axes)
+
+        if any(not _is_1m(key) for key in resolution_counter.keys()):
             audit.add("WARN", "dem", "resolution_inventory", "Sampled DEM resolutions are not uniformly 1-meter-like.", evidence=dict(resolution_counter))
         else:
             audit.add("PASS", "dem", "resolution_inventory", "Sampled DEM resolutions are consistent with 1-meter tiles.", evidence=dict(resolution_counter))
@@ -827,10 +851,10 @@ def audit_missing_persons_coverage(audit: Audit, repo_root: Path) -> None:
             )
             continue
 
-        # Find latest dated subdir
+        # Find latest dated subdir (strict ISO so a len-10 non-date can't shadow
+        # the true latest — see _is_iso_date_name).
         snaps = sorted(
-            (p for p in snap_root.iterdir()
-             if p.is_dir() and len(p.name) == 10 and p.name[4] == "-"),
+            (p for p in snap_root.iterdir() if p.is_dir() and _is_iso_date_name(p.name)),
             reverse=True,
         )
         if not snaps:
@@ -865,7 +889,12 @@ def audit_missing_persons_coverage(audit: Audit, repo_root: Path) -> None:
                 with canonical.open(encoding="utf-8") as fh:
                     row_count = sum(1 for _ in fh) - 1  # minus header
                 # Prorate expected to the snapshot's effective window
-                # (rough: use cadence_days; if cadence=90 quarterly, multiply expected by 90/365)
+                # (rough: use cadence_days; if cadence=90 quarterly, multiply expected by 90/365).
+                # CAVEAT: this assumes each snapshot holds only that window's NEW
+                # rows. If the canonical CSV is a CUMULATIVE registry pull (the
+                # current harvester model), the band under-counts and may emit a
+                # spurious low-yield WARN. WARN-only, so it never gates; revisit
+                # the proration once snapshot semantics are pinned.
                 prorated = expected * (cadence / 365.0) if cadence > 0 else expected
                 lo = prorated * (1 - MISSING_PERSONS_YIELD_BAND)
                 hi = prorated * (1 + MISSING_PERSONS_YIELD_BAND)
@@ -876,8 +905,13 @@ def audit_missing_persons_coverage(audit: Audit, repo_root: Path) -> None:
                         f"(band {lo:.0f}-{hi:.0f}). Possible upstream change or harvester regression.",
                         canonical,
                     )
-            except Exception:
-                pass
+            except Exception as exc:
+                # Don't silently swallow a read/parse failure — surface it.
+                audit.add(
+                    "WARN", "missing_persons_coverage", "yield_band",
+                    f"Source {source_id}: could not compute yield band ({type(exc).__name__}: {exc}).",
+                    canonical,
+                )
 
     metrics["landed_sources"] = landed
     metrics["planned_sources"] = planned
@@ -939,7 +973,7 @@ def audit_missing_persons_sources(audit: Audit, repo_root: Path) -> None:
 
     snapshots = sorted(
         (p for p in namus_root.iterdir()
-         if p.is_dir() and len(p.name) == 10 and p.name[4] == "-"),
+         if p.is_dir() and _is_iso_date_name(p.name)),
         reverse=True,
     )
     metrics["snapshot_count"] = len(snapshots)

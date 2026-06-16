@@ -25,8 +25,27 @@ the test for it lives in tests/test_prpb_alertas.py.
 
 from __future__ import annotations
 
+import datetime
 import re
+import unicodedata
 from typing import List
+
+
+def _nfc(text: str) -> str:
+    """Normalize to NFC so the precomposed-char regexes below match decomposed
+    input. HTML and copy-paste pipelines sometimes deliver 'n' + U+0303 instead
+    of 'ñ' (and 'a' + U+0301 instead of 'á'); without this, accented ages and
+    municipio names silently fail to match."""
+    return unicodedata.normalize("NFC", text) if text else text
+
+
+def _valid_ymd(y: int, mo: int, d: int) -> bool:
+    """True if (y, mo, d) form a real calendar date."""
+    try:
+        datetime.date(y, mo, d)
+        return True
+    except ValueError:
+        return False
 
 
 # ---------------------------------------------------------------- dates
@@ -49,8 +68,13 @@ SPANISH_MONTHS = {
 
 
 def extract_date(value: str) -> str:
-    """Normalize a date-bearing string to ISO YYYY-MM-DD. Returns "" if none
-    of our patterns match. Slash format is DD/MM/YYYY (PR convention).
+    """Normalize a date-bearing string to ISO YYYY-MM-DD. Returns "" if none of
+    our patterns match OR the matched fields are not a real calendar date (so an
+    out-of-range month/day never leaks downstream as a bogus 'date').
+
+    Slash dates default to DD/MM/YYYY (PR convention). When the second field is
+    >12 it cannot be a month, so we read it as US MM/DD/YYYY instead. A genuinely
+    ambiguous slash date (both fields ≤12, e.g. 03/05) stays DD/MM by convention.
 
     Works as both a cue-anchored extractor (the caller passes the text after
     'Fecha:') AND a free-text scanner (the caller passes the whole caption).
@@ -59,20 +83,28 @@ def extract_date(value: str) -> str:
     'Reportado desaparecido en Carolina el 2024-08-15'."""
     if not value:
         return ""
+    value = _nfc(value)
     for p in DATE_PATTERNS:
         m = p.search(value)
         if not m:
             continue
-        if len(m.groups()) == 3:
-            a, b, c = m.groups()
-            if a.isdigit() and len(a) == 4:
-                return f"{a}-{int(b):02d}-{int(c):02d}"
-            if c.isdigit() and len(c) == 4 and b.isdigit():
-                return f"{c}-{int(b):02d}-{int(a):02d}"
-            if c.isdigit() and len(c) == 4:
-                mm = SPANISH_MONTHS.get(b.lower(), "")
-                if mm:
-                    return f"{c}-{mm}-{int(a):02d}"
+        a, b, c = m.groups()
+        if len(a) == 4:                          # ISO YYYY-MM-DD
+            y, mo, d = int(a), int(b), int(c)
+        elif not b.isdigit():                    # "DD de <mes> de YYYY"
+            mo_str = SPANISH_MONTHS.get(b.lower(), "")
+            if not mo_str:
+                continue
+            y, mo, d = int(c), int(mo_str), int(a)
+        else:                                    # D/M/YYYY (PR) or M/D/YYYY (US)
+            y = int(c)
+            f1, f2 = int(a), int(b)
+            d, mo = f1, f2                        # PR convention: day / month
+            if f2 > 12 and f1 <= 12:             # 2nd field can't be a month →
+                d, mo = f2, f1                    # treat as US month / day
+        if _valid_ymd(y, mo, d):
+            return f"{y:04d}-{mo:02d}-{d:02d}"
+        # matched substring is not a real date — keep scanning later patterns
     return ""
 
 
@@ -129,6 +161,26 @@ RESOLVED_ALIVE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Negators that flip a resolution/death verb back to an OPEN case. Spanish
+# missing-persons copy routinely phrases an unresolved case as "no ha sido
+# localizada", "aún no la han encontrado", "sin ser hallada" — a bare keyword
+# scan would wrongly mark those resolved. (This also rejects a 404 page's
+# "Página no encontrada".)
+_NEGATOR_RE = re.compile(r"\b(no|sin|nunca|jam[áa]s|tampoco|ni)\b", re.IGNORECASE)
+
+
+def _has_unnegated_match(text: str, pattern: re.Pattern) -> bool:
+    """True if ``pattern`` matches at least once WITHOUT a negator in the ~24
+    chars immediately preceding that match. Scoping the negator to a short
+    preceding window keeps it local, so 'no ha sido vista pero fue encontrada'
+    still resolves on 'encontrada'."""
+    for m in pattern.finditer(text):
+        window = text[max(0, m.start() - 24):m.start()]
+        if _NEGATOR_RE.search(window):
+            continue
+        return True
+    return False
+
 
 def first_match(text: str, patterns: List[re.Pattern]) -> str:
     for p in patterns:
@@ -140,6 +192,7 @@ def first_match(text: str, patterns: List[re.Pattern]) -> str:
 
 def match_after_cue(text: str, cues: List[str]) -> str:
     """Find the first cue, return the text from end-of-cue to newline."""
+    text = _nfc(text)
     for cue in cues:
         m = re.search(cue, text, re.IGNORECASE)
         if m:
@@ -155,19 +208,28 @@ def match_after_cue(text: str, cues: List[str]) -> str:
 # must NOT read these as an age (a bogus small number would wrongly flip an
 # adult case to missing_juvenile). We detect a relative-time cue immediately
 # before the "NN años" span and skip it.
-_RELATIVE_TIME_PREFIX_RE = re.compile(r"\b(hace|lleva|desde|por)\s*$", re.IGNORECASE)
+# Matches a relative-time cue ('hace'/'lleva'/'desde'/'por') optionally
+# followed by a few filler words before the number: 'hace unos 5 años',
+# 'lleva casi 3 años'. The original end-anchored form ('hace\s*$') missed any
+# interposed word and let 'hace unos 5 años' be read as age 5.
+_RELATIVE_TIME_PREFIX_RE = re.compile(
+    r"\b(hace|lleva|desde|por)\b(?:\s+\w+){0,3}\s*$", re.IGNORECASE
+)
 
 
 def extract_age(text: str) -> str:
     """Find a numeric age. Prefer a labeled 'Edad: NN'; otherwise fall back to
     the first 'NN años' that is NOT part of a relative-time phrase
-    ('hace 5 años' → skipped). Returns the bare number string, or ''."""
+    ('hace 5 años', 'hace unos 5 años' → skipped). Returns the bare number
+    string, or ''."""
+    text = _nfc(text)
     label_match = re.search(r"edad\s*:?\s*(\d{1,3})", text, re.IGNORECASE)
     if label_match:
         return label_match.group(1)
     for m in re.finditer(r"(\d{1,3})\s*a[ñn]os", text, re.IGNORECASE):
-        # Inspect up to 15 chars before the number for a relative-time cue.
-        window = text[max(0, m.start() - 15):m.start()]
+        # Inspect up to 30 chars before the number for a relative-time cue
+        # (wide enough to span the cue + interposed filler words).
+        window = text[max(0, m.start() - 30):m.start()]
         if _RELATIVE_TIME_PREFIX_RE.search(window):
             continue
         return m.group(1)
@@ -188,12 +250,16 @@ def extract_status(text: str) -> str:
     This is a shared primitive: PRPB Alertas, PRPB Desaparecidos, and the
     journalism/NGO sources all route status through here, so the canonical
     ``resolved_deceased`` value (used everywhere else in the pipeline) must be
-    reachable from Spanish text — the old extractor could never produce it."""
+    reachable from Spanish text — the old extractor could never produce it.
+
+    Resolution/death verbs are ignored when locally negated ('no ha sido
+    encontrada' stays ``active``), so an open case is never silently closed."""
     if not text:
         return "active"
-    if DECEASED_RE.search(text):
+    text = _nfc(text)
+    if _has_unnegated_match(text, DECEASED_RE):
         return "resolved_deceased"
-    if RESOLVED_ALIVE_RE.search(text):
+    if _has_unnegated_match(text, RESOLVED_ALIVE_RE):
         return "resolved_alive"
     return "active"
 
@@ -239,9 +305,14 @@ MUNICIPIO_PATTERNS = [
 # match on these produces false positives on in-domain text:
 #   "Florida" (US state / flower-adjective), "Salinas" (salt flats — a real
 #   non-municipio PR feature near Cabo Rojo), "Dorado" (golden — appearance
-#   descriptions like "cabello dorado"), "Arroyo" (stream/brook), "Cataño".
+#   descriptions like "cabello dorado"), "Arroyo" (stream/brook), "Cataño",
+#   "Rincón" (the common noun for "corner": "la vieron en un rincón oscuro").
 # These match ONLY when anchored to a location cue ("en Dorado"), never bare.
-AMBIGUOUS_MUNICIPIOS = {"Florida", "Salinas", "Dorado", "Arroyo", "Cataño"}
+# NOTE: "Carolina" is deliberately NOT here — it is one of PR's largest
+# municipios and PRPB addresses cite it bare ("…Norte, Carolina"); excluding it
+# would lose recall. The residual given-name false positive ("Se busca a
+# Carolina, 25 años") is an accepted limitation, not closed by this set.
+AMBIGUOUS_MUNICIPIOS = {"Florida", "Salinas", "Dorado", "Arroyo", "Cataño", "Rincón"}
 
 # Location-cue-anchored matcher: a preposition/locator immediately followed by
 # a municipio name. Longest-first alternation so "San Juan" wins over a bare
@@ -268,6 +339,7 @@ def extract_municipio(text: str) -> str:
          to avoid false positives on appearance/description text.
 
     Empty string if none."""
+    text = _nfc(text)
     cue_match = _CUE_MUNICIPIO_RE.search(text)
     if cue_match:
         return _MUNICIPIO_LOOKUP.get(cue_match.group(1).lower(), cue_match.group(1))

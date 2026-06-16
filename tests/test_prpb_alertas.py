@@ -159,3 +159,38 @@ def test_v2_schema_intact_for_alertas_harvesters(tmp_path):
     assert set(rows[0].keys()) == set(CANONICAL_COLUMNS)
     # source_id is uniformly tagged per harvester subclass.
     assert rows[0]["source_id"] == "prpb_alertas_rosa"
+
+
+# ---------------------------------------------------------------- review v2 fixes
+
+def _stage_html(tmp_path: Path, filename: str, html: str) -> Path:
+    snap = tmp_path / "2026-06-12"
+    snap.mkdir()
+    (snap / filename).write_text(html, encoding="utf-8")
+    return snap
+
+
+def test_non_alert_page_is_dropped_not_phantom(tmp_path):
+    """A 404 / error / non-alert page carries no real signal (no date, age,
+    address, or municipio) and must be dropped — not emitted as a phantom
+    missing-person row carrying only a plan_match."""
+    html = ("<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>"
+            "<h1>Página no encontrada</h1><p>Error 404</p></body></html>")
+    snap = _stage_html(tmp_path, "ALERT-AMBER-2024-404.html", html)
+    _out, kept, dropped, rows = _run(PrpbAlertasAmberHarvest(), snap)
+    assert kept == 0 and dropped == 1
+    assert rows == []
+
+
+def test_negated_status_stays_active(tmp_path):
+    """An active alert whose narrative says the person has NOT yet been found
+    ('aún no ha sido localizada') must stay active, not flip to resolved_alive."""
+    html = ("<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>"
+            "<p>Estado: ACTIVO</p><p>Edad: 30 años</p>"
+            "<p>Última vez vista en Ponce</p>"
+            "<p>La familia indica que la joven aún no ha sido localizada.</p>"
+            "</body></html>")
+    snap = _stage_html(tmp_path, "ALERT-ROSA-2024-099.html", html)
+    _out, kept, dropped, rows = _run(PrpbAlertasRosaHarvest(), snap)
+    assert kept == 1 and dropped == 0
+    assert rows[0]["status"] == "active"

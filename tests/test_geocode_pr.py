@@ -24,8 +24,10 @@ sys.path.insert(0, str(REPO_ROOT))
 from scripts.geocode_pr import (  # noqa: E402
     CachedBackend,
     FixtureBackend,
+    GeocodeBackendError,
     GeocodeResult,
     _addr_key,
+    _norm_address,
     municipio_from_point,
 )
 
@@ -130,6 +132,82 @@ def test_backend_fallthrough_order(tmp_path: Path):
     assert miss.calls == 1 and hit.calls == 1
 
 
+# ------------------------------------------------ transient errors vs no-match
+
+class _ErroringBackend:
+    """Simulates a transport failure (timeout/429/5xx) on every call."""
+
+    name = "erroring"
+
+    def __init__(self):
+        self.calls = 0
+
+    def geocode(self, address):
+        self.calls += 1
+        raise GeocodeBackendError("simulated timeout")
+
+
+def test_transient_error_writes_no_negative_marker(tmp_path: Path):
+    """A transient transport error must NOT persist a (permanent) negative
+    marker — otherwise one flaky request poisons the address forever."""
+    err = _ErroringBackend()
+    cb = CachedBackend([err], cache_dir=tmp_path)
+
+    assert cb.geocode("Calle Flaky, Ponce") is None
+    cache_file = tmp_path / f"{_addr_key('Calle Flaky, Ponce')}.json"
+    assert not cache_file.exists(), "transient error must not write a negative marker"
+
+    # Next call retries the backend (no negative marker is suppressing it).
+    assert cb.geocode("Calle Flaky, Ponce") is None
+    assert err.calls == 2
+
+
+def test_error_then_hit_falls_through(tmp_path: Path):
+    """An erroring backend doesn't abort the chain; a later backend can hit."""
+    err = _ErroringBackend()
+    hit = CountingFixtureBackend({"San Juan": SJU})
+    cb = CachedBackend([err, hit], cache_dir=tmp_path)
+    r = cb.geocode("San Juan")
+    assert r is not None and r.lat == 18.4222
+    assert err.calls == 1 and hit.calls == 1
+
+
+# ------------------------------------------------ out-of-PR result rejection
+
+MIAMI = GeocodeResult(25.7617, -80.1918, "fixture", "exact", "Miami, FL")
+
+
+def test_out_of_pr_result_is_rejected(tmp_path: Path):
+    """A provider returning a non-PR coordinate (ambiguous mainland street name)
+    is rejected — never served or cached as a positive."""
+    backend = CountingFixtureBackend({"Calle Ambigua": MIAMI})
+    cb = CachedBackend([backend], cache_dir=tmp_path)
+    assert cb.geocode("Calle Ambigua") is None
+    cache_file = tmp_path / f"{_addr_key('Calle Ambigua')}.json"
+    if cache_file.exists():
+        # Acceptable to record a clean no-match, but never the bad coordinate.
+        assert json.loads(cache_file.read_text()).get("negative") is True
+
+
+# ------------------------------------------------ normalization / empty input
+
+def test_norm_address_strips_accents_for_cache_dedup(tmp_path: Path):
+    assert _norm_address("Bayamón, PR") == _norm_address("Bayamon, PR")
+    backend = CountingFixtureBackend({"Bayamón, PR": SJU})
+    cb = CachedBackend([backend], cache_dir=tmp_path)
+    assert cb.geocode("Bayamón, PR") is not None
+    assert cb.geocode("bayamon  pr") is not None   # accent/case/punct variant
+    assert backend.calls == 1, "accent variants must share one cache entry"
+
+
+def test_empty_address_short_circuits(tmp_path: Path):
+    backend = CountingFixtureBackend({})
+    cb = CachedBackend([backend], cache_dir=tmp_path)
+    assert cb.geocode("") is None
+    assert cb.geocode("   ") is None
+    assert backend.calls == 0, "empty input must not reach the backend"
+
+
 # ---------------------------------------------------------------- municipio PIP
 
 def test_municipio_from_point_resolves_known_point():
@@ -148,3 +226,31 @@ def test_municipio_from_point_in_bbox_but_ocean_is_empty():
     # A point inside the PR bounding box but in the ocean (south of the island)
     # falls in no municipio polygon.
     assert municipio_from_point(17.7, -66.5) == ""
+
+
+def _square_fc(name: str, lon: float, lat: float, d: float = 0.5) -> dict:
+    """A 1-feature FeatureCollection: a square polygon centred on (lon, lat)."""
+    return {
+        "type": "FeatureCollection",
+        "features": [{
+            "type": "Feature",
+            "properties": {"NAME": name},
+            "geometry": {"type": "Polygon", "coordinates": [[
+                [lon - d, lat - d], [lon + d, lat - d],
+                [lon + d, lat + d], [lon - d, lat + d], [lon - d, lat - d],
+            ]]},
+        }],
+    }
+
+
+def test_load_municipios_keyed_by_path(tmp_path: Path):
+    """A second call with a DIFFERENT municipios_path must load THAT file, not
+    silently reuse the first dataset (the old module-global cache bug)."""
+    pt_lat, pt_lon = 18.4, -66.1  # inside the PR bbox
+    p1 = tmp_path / "a.geojson"
+    p2 = tmp_path / "b.geojson"
+    p1.write_text(json.dumps(_square_fc("AlphaTown", pt_lon, pt_lat)))
+    p2.write_text(json.dumps(_square_fc("BetaCity", pt_lon, pt_lat)))
+
+    assert municipio_from_point(pt_lat, pt_lon, municipios_path=p1) == "AlphaTown"
+    assert municipio_from_point(pt_lat, pt_lon, municipios_path=p2) == "BetaCity"

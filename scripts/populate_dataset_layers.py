@@ -28,7 +28,7 @@ import math
 import sqlite3
 import struct
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -292,14 +292,30 @@ def _polygon_contains(point: Tuple[float, float], geometry: Dict) -> bool:
     return False
 
 
+def _is_iso_date_dirname(name: str) -> bool:
+    """True only for a real ISO ``YYYY-MM-DD`` directory name. Guards snapshot
+    selection so a non-date sibling ('tmp', '_quarantine', a fat-fingered
+    '9999-99-99') can't sort lexicographically above real dates and shadow the
+    true latest snapshot. Mirrors namus_harvest._is_iso_date_name."""
+    if len(name) != 10 or name[4] != "-" or name[7] != "-":
+        return False
+    try:
+        date.fromisoformat(name)
+        return True
+    except ValueError:
+        return False
+
+
 def _latest_namus_canonical(sources_root: Path) -> Optional[Path]:
     """Most recent ``<date>/namus_mp_pr_canonical.csv`` under data/sources/namus/."""
     base = sources_root / "namus"
     if not base.exists():
         return None
-    for snap in sorted(base.iterdir(), reverse=True):
-        if not snap.is_dir():
-            continue
+    snaps = sorted(
+        (p for p in base.iterdir() if p.is_dir() and _is_iso_date_dirname(p.name)),
+        reverse=True,
+    )
+    for snap in snaps:
         cand = snap / "namus_mp_pr_canonical.csv"
         if cand.exists():
             return cand
@@ -359,6 +375,7 @@ def emit_missing_persons_layers(
     # ── aggregated counts by municipio ───────────────────────────────────────
     muni = json.loads(municipios_geojson.read_text(encoding="utf-8"))
     poly_feats: List[Dict] = []
+    total_assigned = 0
     for muni_feat in muni.get("features", []):
         geom = muni_feat.get("geometry") or {}
         props_in = muni_feat.get("properties") or {}
@@ -381,6 +398,7 @@ def emit_missing_persons_layers(
                 resolved += 1
             elif status == "cold":
                 cold += 1
+        total_assigned += count
         agg_props = {
             "GEOID": props_in.get("GEOID"),
             "NAME": props_in.get("NAME"),
@@ -397,13 +415,26 @@ def emit_missing_persons_layers(
         }
         poly_feats.append(feature(None, None, agg_props, canonical_csv.name, geometry=geom))
 
+    # Conservation check: an in-PR case whose point lands in no municipio polygon
+    # (coastal sliver, boundary gap, simplified geometry) is in the cases layer
+    # but in zero aggregate polygons. This is the federation-eligible surface, so
+    # surface the residual instead of letting the aggregate quietly undercount.
+    # max(0, …): a point on a shared municipio boundary can match two polygons
+    # and be double-counted, which would otherwise print a negative residual.
+    unassigned = max(0, len(point_feats) - total_assigned)
+    if unassigned:
+        print(f"  WARN missing_persons_by_municipio: {unassigned} in-PR case(s) "
+              f"fell in no municipio polygon (not counted in any aggregate)")
+
     lw.write(
         "missing_persons_by_municipio", poly_feats,
         source_file=canonical_csv.name, source_layer="csv+municipios.geojson",
         domain="public_safety", role="aggregate",
         notes=(
             f"NamUs cases aggregated to {municipios_geojson.name} polygons. "
-            f"Zero-case municipios preserved. Redaction: {redaction_notes}"
+            f"Zero-case municipios preserved. {total_assigned} of "
+            f"{len(point_feats)} in-PR cases assigned; {unassigned} fell in no "
+            f"polygon. Redaction: {redaction_notes}"
         ),
     )
 
@@ -575,7 +606,12 @@ def main() -> int:
                        "has_coordinates=false); matches null geom rows in PR_Karst_Subsurface_v2.")
 
     edges_csv = find_source("pr_spiderweb_edges_v5.csv", src_dirs)
-    if edges_csv and node_xy:
+    # NOTE: do NOT also require node_xy — when the nodes CSV is missing/empty the
+    # per-edge `a and b` check below already writes null geometry with attributes
+    # preserved. Gating on node_xy silently dropped the entire edges layer.
+    if not edges_csv:
+        print("  MISSING source pr_spiderweb_edges_v5.csv — skipped spiderweb_graph_edges_v5")
+    else:
         feats, skipped = [], 0
         unresolved = 0
         with open(edges_csv, encoding="utf-8-sig") as fh:
@@ -645,8 +681,12 @@ def main() -> int:
                 for r in rws:
                     key = r.get("name") or r.get("Name") or r.get("fid")
                     lz_status[key] = status
-            except Exception:
-                pass
+            except Exception as exc:
+                # Visible, not silent: a swallowed read error here leaves
+                # lz_status empty, so verified/historic LZs get silently demoted
+                # to T3 'candidate' in lz_registry.yaml.
+                print(f"  ERROR reading {lz_src.name}:{tbl}: {exc} "
+                      f"— LZs from this table left unclassified")
 
     for fname, tbl, lname, domain in gpkg_specs:
         src = find_source(fname, src_dirs)
@@ -733,12 +773,19 @@ def main() -> int:
                 skipped += 1
                 continue
             if geom.get("type") == "Point":
-                lon, lat = geom["coordinates"][:2]
+                coords = geom.get("coordinates") or []
+                if len(coords) < 2:
+                    skipped += 1  # malformed point (was an uncaught unpack error)
+                    continue
+                lon, lat = coords[0], coords[1]
                 if lname.startswith("fic_osap"):
                     pass  # offshore layers legitimately fall outside the land bbox
                 elif not in_pr(lat, lon):
                     skipped += 1
                     continue
+                # Normalize to 2D so a 3D [lon,lat,z] source point doesn't carry
+                # its Z into output (the rest of the pipeline emits [lon,lat]).
+                geom = {"type": "Point", "coordinates": [lon, lat]}
             else:
                 try:
                     c = geom["coordinates"]
@@ -784,13 +831,12 @@ def main() -> int:
                  skipped_no_coords=skipped)
 
     # ── 7. Reference-only registrations (too heavy / unresolved CRS / superseded) ──
-    wh = find_source("Spiderweb_Master_Warehouse_EXEC_20260217.gpkg", src_dirs)
-    if wh:
-        con = sqlite3.connect(str(wh))
-        for tbl, n in con.execute(
-                "SELECT table_name,(SELECT COUNT(*) FROM gpkg_contents c2 WHERE c2.table_name=c1.table_name) FROM gpkg_contents c1"):
-            pass
-        con.close()
+    # Registered below by literal name; no live GPKG inspection is needed. A
+    # prior dead `gpkg_contents` probe here looped with a `pass` body (produced
+    # nothing) yet ran an unguarded query that raised an uncaught
+    # OperationalError on a present-but-non-GPKG file — aborting the entire run
+    # AFTER all layer building but BEFORE any manifest/registry was written, and
+    # leaking the connection. Removed.
     for name, sf, sl, cnt, dom, why in [
         ("prepa_transmission_lines_2014", "Spiderweb_Master_Warehouse_EXEC_20260217.gpkg",
          "05_ENERGY__PREPA2014__g37_electric_LineasTransmision_2014", 13539, "power",

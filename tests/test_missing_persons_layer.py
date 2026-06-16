@@ -244,3 +244,55 @@ def test_municipio_aggregate_status_breakdown(emitted) -> None:
     # Resolved (alive or deceased) in PR: MP12346, MP12349, MP12352 = 3
     assert total_active == 4
     assert total_resolved == 3
+
+
+# ---------------------------------------------------------------- review v2 fixes
+
+def test_latest_namus_canonical_ignores_non_iso_dirs(tmp_path: Path, populate_module) -> None:
+    """Snapshot selection must filter to valid ISO-date dirs, so a non-date
+    sibling that sorts lexicographically above real dates ('tmp', '9999-99-99')
+    cannot shadow the true latest snapshot."""
+    namus = tmp_path / "sources" / "namus"
+    for name in ["2026-06-10", "2026-06-12", "9999-99-99", "tmp"]:
+        d = namus / name
+        d.mkdir(parents=True)
+        (d / "namus_mp_pr_canonical.csv").write_text("x", encoding="utf-8")
+    got = populate_module._latest_namus_canonical(tmp_path / "sources")
+    assert got == namus / "2026-06-12" / "namus_mp_pr_canonical.csv"
+
+
+def test_municipio_aggregate_conservation_accounting(emitted) -> None:
+    """The federation-eligible aggregate must account for every in-PR case: the
+    per-municipio counts sum to the in-PR case total (no silent undercount), and
+    the meta notes report the assignment accounting."""
+    cases_fc, muni_fc = emitted
+    in_pr = len(cases_fc["features"])
+    assigned = sum(f["properties"]["case_count"] for f in muni_fc["features"])
+    assert assigned == in_pr  # every fixture case lands in a municipio polygon
+    assert f"{assigned} of {in_pr} in-PR cases assigned" in muni_fc["meta"]["notes"]
+
+
+def test_municipio_aggregate_surfaces_unassigned(tmp_path: Path, populate_module, capsys) -> None:
+    """An in-PR case that falls in no municipio polygon (ocean point inside the
+    bbox) is surfaced as unassigned, not silently dropped from the aggregate."""
+    cols = namus_harvest.CANONICAL_COLUMNS
+    row = {c: "" for c in cols}
+    row.update({"case_id_hash": "deadbeef0001", "source_id": "namus",
+                "status": "active", "last_seen_lat": "17.7", "last_seen_lon": "-66.5",
+                "snapshot_date": "2026-06-11"})
+    canonical = tmp_path / "namus_mp_pr_canonical.csv"
+    with canonical.open("w", encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=cols)
+        w.writeheader()
+        w.writerow(row)
+    out_dir = tmp_path / "gis"
+    out_dir.mkdir()
+    lw = populate_module.LayerWriter(out_dir=out_dir, manifest_path=tmp_path / "m.json")
+    populate_module.emit_missing_persons_layers(
+        lw, canonical_csv=canonical, municipios_geojson=MUNICIPIOS_GEOJSON,
+    )
+    lw.flush()
+    assert "fell in no municipio polygon" in capsys.readouterr().out
+    muni_fc = json.loads((out_dir / "missing_persons_by_municipio.geojson").read_text())
+    assert sum(f["properties"]["case_count"] for f in muni_fc["features"]) == 0
+    assert "1 fell in no polygon" in muni_fc["meta"]["notes"]

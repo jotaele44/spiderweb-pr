@@ -41,8 +41,11 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import ssl
 import sys
+import time
+import unicodedata
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, asdict
@@ -57,6 +60,13 @@ PR_LAT = (17.6, 18.7)
 PR_LON = (-68.0, -65.1)
 
 USER_AGENT = "spiderweb-pr/geocode (https://github.com/; missing-persons pipeline)"
+
+
+def _within_pr(lat: float, lon: float) -> bool:
+    """True if (lat, lon) falls inside the PR bounding box (incl. Mona, Vieques,
+    Culebra). Used to reject provider results that geocoded to a same-named
+    mainland street."""
+    return PR_LAT[0] <= lat <= PR_LAT[1] and PR_LON[0] <= lon <= PR_LON[1]
 
 
 # ---------------------------------------------------------------- result type
@@ -74,9 +84,20 @@ class GeocodeResult:
 
 
 def _norm_address(address: str) -> str:
-    """Canonicalize before hashing so 'San Juan, PR' and 'san juan,  pr' share
-    a cache entry. Lowercase, collapse whitespace, strip punctuation runs."""
-    return " ".join(address.lower().replace(",", " ").split())
+    """Canonicalize before hashing so 'San Juan, PR', 'san juan,  pr', and
+    'Bayamón'/'Bayamon' share a cache entry: lowercase, strip accents (NFKD +
+    drop combining marks, so 'ñ'→'n'), drop punctuation, collapse whitespace.
+    Empty/None → ''.
+
+    NOTE: backends always receive the ORIGINAL address string, so this governs
+    only cache-key dedup and the FixtureBackend lookup — it never alters what
+    we send to a provider."""
+    if not address:
+        return ""
+    text = unicodedata.normalize("NFKD", address)
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    text = re.sub(r"[^\w\s]", " ", text.lower())
+    return " ".join(text.split())
 
 
 def _addr_key(address: str) -> str:
@@ -98,10 +119,21 @@ def _is_offline() -> bool:
     return os.environ.get("SPIDERWEB_OFFLINE") == "1"
 
 
+class GeocodeBackendError(Exception):
+    """A transport-level failure (timeout, HTTP 4xx/5xx, DNS, TLS, bad JSON).
+
+    Kept DISTINCT from a clean 'no match' (a 200 with zero results, which a
+    backend signals by returning None). The cache layer must never persist a
+    negative marker for a transient error, or one flaky request poisons an
+    address permanently (NEG_TTL_SECS defaults to 0)."""
+
+
 def _http_get_json(url: str, *, timeout: float = 10.0) -> Optional[Dict[str, Any]]:
-    """One-shot urllib GET → JSON. Returns None on any failure (no exceptions
-    propagate to caller — harvester resilience matters more than diagnostics
-    here; backend ``method`` tag tells you which backend was tried)."""
+    """One-shot urllib GET → JSON.
+
+    Returns None ONLY when offline (a deliberate skip). On any transport/parse
+    failure it raises :class:`GeocodeBackendError` so the caller can tell a
+    transient error apart from a genuine empty result."""
     if _is_offline():
         return None
     try:
@@ -110,8 +142,8 @@ def _http_get_json(url: str, *, timeout: float = 10.0) -> Optional[Dict[str, Any
         with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
             payload = resp.read()
         return json.loads(payload.decode("utf-8"))
-    except Exception:
-        return None
+    except Exception as exc:
+        raise GeocodeBackendError(f"{type(exc).__name__}: {exc}") from exc
 
 
 class CensusBackend(Backend):
@@ -144,7 +176,10 @@ class CensusBackend(Backend):
             lat=round(lat, 6),
             lon=round(lon, 6),
             method=self.name,
-            confidence=str(m.get("tigerLine", {}).get("side") or "approximate"),
+            # Census /onelineaddress returns TIGER street-line interpolation;
+            # 'tigerLine.side' is the L/R side flag, NOT a match-quality signal,
+            # so report the honest interpolation confidence instead.
+            confidence="interpolated",
             matched_address=m.get("matchedAddress") or address,
         )
 
@@ -256,35 +291,66 @@ class CachedBackend(Backend):
     def _store(self, path: Path, payload: Dict[str, Any]) -> None:
         path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
+    def _negative_expired(self, entry: Dict[str, Any]) -> bool:
+        """A negative entry is reconsidered once it is older than NEG_TTL_SECS.
+        With the default (0) negatives are permanent and this is always False."""
+        if self.NEG_TTL_SECS <= 0:
+            return False
+        ts = entry.get("ts")
+        if not isinstance(ts, (int, float)):
+            return False
+        return (time.time() - ts) > self.NEG_TTL_SECS
+
     def geocode(self, address: str) -> Optional[GeocodeResult]:
+        if not address or not address.strip():
+            return None
         path = self._cache_path(address)
         cached = self._load(path)
         if cached is not None:
             if cached.get("negative"):
-                return None
-            try:
-                # The cache file always carries the ORIGINAL method tag so
-                # downstream callers know which backend produced the result.
-                return GeocodeResult(
-                    lat=float(cached["lat"]),
-                    lon=float(cached["lon"]),
-                    method=cached["method"],
-                    confidence=cached.get("confidence", "unknown"),
-                    matched_address=cached.get("matched_address", address),
-                )
-            except (KeyError, TypeError, ValueError):
-                pass  # malformed cache entry — fall through to refetch
+                if not self._negative_expired(cached):
+                    return None
+                # expired negative → fall through and re-attempt
+            else:
+                try:
+                    # The cache file always carries the ORIGINAL method tag so
+                    # downstream callers know which backend produced the result.
+                    result = GeocodeResult(
+                        lat=float(cached["lat"]),
+                        lon=float(cached["lon"]),
+                        method=cached["method"],
+                        confidence=cached.get("confidence", "unknown"),
+                        matched_address=cached.get("matched_address", address),
+                    )
+                except (KeyError, TypeError, ValueError):
+                    result = None
+                # Serve only an in-PR cached point; a malformed or out-of-PR
+                # entry (e.g. an older poisoned cache) falls through to refetch.
+                if result is not None and _within_pr(result.lat, result.lon):
+                    return result
 
+        errored = False
         for backend in self.backends:
-            result = backend.geocode(address)
+            try:
+                result = backend.geocode(address)
+            except GeocodeBackendError:
+                # Transient transport failure — NOT a no-match. Skip this
+                # backend but remember it so we don't write a negative marker.
+                errored = True
+                continue
             if result is None:
+                continue
+            if not _within_pr(result.lat, result.lon):
+                # Provider returned a non-PR coordinate (ambiguous mainland
+                # street name); reject rather than cache a wrong point.
                 continue
             self._store(path, result.as_dict())
             return result
 
-        # Negative cache only if we actually attempted (not offline).
-        if not _is_offline():
-            self._store(path, {"negative": True, "address": address})
+        # Negative-cache only a genuine, fully-attempted all-miss: online AND no
+        # backend errored (a transient failure must be retried on the next run).
+        if not _is_offline() and not errored:
+            self._store(path, {"negative": True, "address": address, "ts": time.time()})
         return None
 
 
@@ -332,16 +398,19 @@ def _polygon_contains(point: Tuple[float, float], geometry: Dict[str, Any]) -> b
     return False
 
 
-_MUNICIPIOS_CACHE: Optional[List[Tuple[str, Dict[str, Any]]]] = None
+# Keyed by RESOLVED path so a second call with a different municipios_path
+# loads that file instead of silently returning the first dataset.
+_MUNICIPIOS_CACHE: Dict[Path, List[Tuple[str, Dict[str, Any]]]] = {}
 
 
 def _load_municipios(path: Path = DEFAULT_MUNICIPIOS) -> List[Tuple[str, Dict[str, Any]]]:
-    global _MUNICIPIOS_CACHE
-    if _MUNICIPIOS_CACHE is not None:
-        return _MUNICIPIOS_CACHE
+    key = path.resolve()
+    cached = _MUNICIPIOS_CACHE.get(key)
+    if cached is not None:
+        return cached
     if not path.exists():
-        _MUNICIPIOS_CACHE = []
-        return _MUNICIPIOS_CACHE
+        _MUNICIPIOS_CACHE[key] = []
+        return _MUNICIPIOS_CACHE[key]
     fc = json.loads(path.read_text(encoding="utf-8"))
     out: List[Tuple[str, Dict[str, Any]]] = []
     for f in fc.get("features", []):
@@ -349,14 +418,14 @@ def _load_municipios(path: Path = DEFAULT_MUNICIPIOS) -> List[Tuple[str, Dict[st
         geom = f.get("geometry") or {}
         if name and geom:
             out.append((name, geom))
-    _MUNICIPIOS_CACHE = out
+    _MUNICIPIOS_CACHE[key] = out
     return out
 
 
 def municipio_from_point(lat: float, lon: float, *, municipios_path: Path = DEFAULT_MUNICIPIOS) -> str:
     """PIP a (lat, lon) into a PR municipio. Returns the NAME field, or "" if
     outside any municipio polygon (including out-of-PR points)."""
-    if not (PR_LAT[0] <= lat <= PR_LAT[1] and PR_LON[0] <= lon <= PR_LON[1]):
+    if not _within_pr(lat, lon):
         return ""
     point = (lon, lat)  # GeoJSON is (lon, lat)
     for name, geom in _load_municipios(municipios_path):

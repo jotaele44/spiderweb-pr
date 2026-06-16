@@ -113,6 +113,18 @@ def move(src: Path, dst: Path, reason: str, execute: bool) -> None:
     log("move", src, dst, reason)
     if execute:
         dst.parent.mkdir(parents=True, exist_ok=True)
+        # Never overwrite: shutil.move clobbers an existing file (or moves INTO an
+        # existing directory), which would make quarantine non-reversible if a
+        # prior run already placed a same-name file. Uniquify the destination.
+        if dst.exists():
+            i = 1
+            while True:
+                cand = dst.with_name(f"{dst.stem}__dup{i}{dst.suffix}")
+                if not cand.exists():
+                    dst = cand
+                    break
+                i += 1
+            log("move", src, dst, reason + " (dst existed; uniquified)")
         shutil.move(str(src), str(dst))
 
 

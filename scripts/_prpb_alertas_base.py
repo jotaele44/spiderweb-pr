@@ -60,7 +60,6 @@ from scripts._harvest_base import (  # noqa: E402
     empty_canonical,
     hash_id,
     normalize_sex,
-    normalize_status,
     validate_incident_class,
 )
 from scripts._text_extract_es import (  # noqa: E402
@@ -216,5 +215,15 @@ class PrpbAlertasBase(HarvestBase):
 
         canonical["incident_class"] = validate_incident_class(self.INCIDENT_CLASS)
         canonical["plan_match"] = self.PLAN_MATCH
+
+        # Require at least one real alert signal before keeping the row. A 404,
+        # an error page, or a template-changed non-alert page yields none of
+        # these — emitting it would create a phantom missing-person record with
+        # a real plan_match and everything else blank.
+        if not any([
+            canonical["report_date"], canonical["last_seen_date"], age,
+            raw.get("address_raw"), raw.get("municipio_guess"),
+        ]):
+            return None
 
         return canonical

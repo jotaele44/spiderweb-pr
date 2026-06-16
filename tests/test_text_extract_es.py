@@ -26,6 +26,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from scripts._harvest_base import VALID_INCIDENT_CLASSES, validate_incident_class  # noqa: E402
 from scripts._text_extract_es import (  # noqa: E402
     extract_age,
+    extract_date,
     extract_municipio,
     extract_status,
 )
@@ -61,6 +62,41 @@ def test_deceased_wins_over_alive_verb():
     assert extract_status("encontrado fallecido") == "resolved_deceased"
 
 
+@pytest.mark.parametrize("text,expected", [
+    # Negated resolution verbs describe an OPEN case → must stay active.
+    ("no ha sido encontrada", "active"),
+    ("aún no la han localizado", "active"),
+    ("sin ser hallada", "active"),
+    ("Página no encontrada", "active"),          # 404 page, not a resolution
+    ("no fue hallada sin vida", "active"),        # negated death verb too
+    # Un-negated verbs still resolve.
+    ("fue encontrada en Ponce", "resolved_alive"),
+    ("hallada sin vida", "resolved_deceased"),
+    # Negation is local: a later un-negated verb still resolves.
+    ("no había sido vista pero fue encontrada", "resolved_alive"),
+])
+def test_extract_status_negation(text, expected):
+    assert extract_status(text) == expected
+
+
+# ---------------------------------------------------------------- extract_date
+
+@pytest.mark.parametrize("text,expected", [
+    ("2024-08-15", "2024-08-15"),                 # ISO passthrough
+    ("15 de marzo de 2024", "2024-03-15"),        # Spanish long form
+    ("25/12/2024", "2024-12-25"),                 # DD/MM (PR convention)
+    ("03/25/2024", "2024-03-25"),                 # 2nd field >12 → US MM/DD
+    ("05/03/2024", "2024-03-05"),                 # ambiguous → DD/MM default
+    # Impossible calendar dates must NOT leak — return "" instead of a bogus ISO.
+    ("2024-13-45", ""),
+    ("30/02/2024", ""),
+    ("31/13/2024", ""),
+    ("", ""),
+])
+def test_extract_date(text, expected):
+    assert extract_date(text) == expected
+
+
 # ---------------------------------------------------------------- extract_age
 
 @pytest.mark.parametrize("text,expected", [
@@ -68,12 +104,24 @@ def test_deceased_wins_over_alive_verb():
     ("Edad: 9 años", "9"),
     ("Tiene unos 40 años", "40"),               # legit unlabeled age
     ("Desaparecio hace 5 años en Ponce", ""),   # relative time → not age
+    ("desapareció hace unos 5 años", ""),       # interposed filler word
     ("lleva 3 años desaparecida", ""),
+    ("lleva casi 3 años desaparecida", ""),     # interposed filler word
     ("Reportada desaparecida desde hace 8 años", ""),
     ("Edad: desconocida. desaparecido hace 8 años", ""),
 ])
 def test_extract_age(text, expected):
     assert extract_age(text) == expected
+
+
+def test_decomposed_unicode_accents_still_match():
+    # HTML served NFD ('n' + combining tilde) must still extract age/municipio.
+    import unicodedata
+    nfd_age = unicodedata.normalize("NFD", "Edad: 12 años")
+    nfd_muni = unicodedata.normalize("NFD", "vista en Bayamón")
+    assert nfd_age != "Edad: 12 años"            # confirm the input is decomposed
+    assert extract_age(nfd_age) == "12"
+    assert extract_municipio(nfd_muni) == "Bayamón"
 
 
 # ---------------------------------------------------------------- extract_municipio
@@ -84,10 +132,12 @@ def test_extract_age(text, expected):
     ("compro sal en las salinas de Cabo Rojo", "Cabo Rojo"),  # Cabo Rojo wins via cue
     ("llevaba un reloj dorado", ""),
     ("cabello dorado y ojos verdes", ""),
+    ("la vieron en un rincón oscuro", ""),       # 'rincón' = corner, not Rincón
     # Ambiguous names match WHEN location-cue-anchored.
     ("visto por ultima vez en Florida", "Florida"),
     ("municipio de Dorado", "Dorado"),
     ("residente de Salinas", "Salinas"),
+    ("vista por última vez en Rincón", "Rincón"),
     # Unambiguous names match bare or cued.
     ("Última vez vista en San Juan", "San Juan"),
     ("cerca del Hospital Damas, Ponce", "Ponce"),

@@ -30,6 +30,11 @@ data/rlsm/*
 # `data/sources/namus/2026-06-11/namus_mp_pr.csv` is never tracked even though
 # the parent `data/sources/namus/` is allowlisted for the README.
 !data/sources/
+# Re-block loose source datasets dropped directly under data/sources/ (the
+# .gpkg/.geojson/.csv/.sqlite inputs); like all of data/ these are operator-local
+# inputs per DATA_POLICY.md and must never be committed. Allowlist provenance
+# (READMEs) explicitly below, mirroring the namus pattern.
+data/sources/*
 !data/sources/namus/
 data/sources/namus/*
 !data/sources/namus/README.md
@@ -297,3 +302,6 @@ __marimo__/
 
 # generated canonical export (scripts/federation_export.py)
 exports/federation/
+
+# built standalone frontend bundle (Vite build output, not source)
+server/frontend/export-standalone/
