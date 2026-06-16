@@ -398,7 +398,17 @@ def audit_dem_crs(
         else:
             audit.add("PASS", "dem", "crs_inventory", "Sampled DEM CRS values are within expected Puerto Rico UTM zones.", evidence={"crs_counts": dict(crs_counter), "sample_count": len(sample_tiles)})
 
-        if any(not key.startswith("1") for key in resolution_counter.keys()):
+        def _is_1m(key: str) -> bool:
+            # key is "<xres> x <yres>"; test numerically, not by string prefix
+            # ('10 x 10' / '1.5 x 1.5' both start with '1' but are not 1m, and a
+            # genuine '0.5 x 0.5' would be wrongly flagged).
+            try:
+                axes = [float(v) for v in key.split(" x ")]
+            except ValueError:
+                return False
+            return len(axes) == 2 and all(abs(a - 1.0) <= 0.01 for a in axes)
+
+        if any(not _is_1m(key) for key in resolution_counter.keys()):
             audit.add("WARN", "dem", "resolution_inventory", "Sampled DEM resolutions are not uniformly 1-meter-like.", evidence=dict(resolution_counter))
         else:
             audit.add("PASS", "dem", "resolution_inventory", "Sampled DEM resolutions are consistent with 1-meter tiles.", evidence=dict(resolution_counter))
