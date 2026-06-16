@@ -8,7 +8,7 @@ import json
 import math
 import sqlite3
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -62,7 +62,7 @@ class ILAPAirspaceBridge:
 
     def export_all(self) -> Dict[str, Any]:
         # One emission timestamp shared by every feature in this run (T7-57).
-        self._produced_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        self._produced_at = datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -85,7 +85,7 @@ class ILAPAirspaceBridge:
         self._write_geojson("airspace_corridor_candidates.geojson", corridor_features)
 
         return {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "output_dir": str(self.output_dir),
             "files": counts,
         }
@@ -227,35 +227,44 @@ class ILAPAirspaceBridge:
         if n < 2:
             return features
 
-        # Build origin→dest flight index
-        route_counts: Dict[Tuple[str, str], int] = defaultdict(int)
+        poi_coords = [(pf["properties"]["lat"], pf["properties"]["lon"]) for pf in poi_features]
+
+        # Pre-index: for each flight, which POIs its origin / destination fall
+        # within 0.1° of. Accumulating connecting-flight counts from these lists
+        # is equivalent to the previous per-pair O(flights) scan (a flight links
+        # POI a→b when its origin is near a and its dest near b, either
+        # direction) but avoids re-scanning every flight for every POI pair —
+        # O(pairs × flights) becomes O(POIs × flights + pairs).
+        pair_counts: Dict[Tuple[int, int], int] = defaultdict(int)
         for f in flights:
-            o = f.get("origin_airport", "")
-            d = f.get("destination_airport", "")
-            if o and d and o != d:
-                key = (min(o, d), max(o, d))
-                route_counts[key] += 1
+            o_lat, o_lon = f.get("origin_lat"), f.get("origin_lon")
+            d_lat, d_lon = f.get("dest_lat"), f.get("dest_lon")
+            origin_near = [
+                k for k, (plat, plon) in enumerate(poi_coords)
+                if self._near(o_lat, o_lon, plat, plon, 0.1)
+            ]
+            if not origin_near:
+                continue
+            dest_near = [
+                k for k, (plat, plon) in enumerate(poi_coords)
+                if self._near(d_lat, d_lon, plat, plon, 0.1)
+            ]
+            for a in origin_near:
+                for b in dest_near:
+                    if a != b:
+                        pair_counts[(min(a, b), max(a, b))] += 1
 
         # Pair POI candidates that have ≥ 2 connecting flights
         for i in range(n):
             for j in range(i + 1, n):
+                corridor_flights = pair_counts.get((i, j), 0)
+                if corridor_flights < 2:
+                    continue
+
                 p1 = poi_features[i]["properties"]
                 p2 = poi_features[j]["properties"]
                 lat1, lon1 = p1["lat"], p1["lon"]
                 lat2, lon2 = p2["lat"], p2["lon"]
-
-                corridor_flights = sum(
-                    1 for f in flights
-                    if self._near(f.get("origin_lat"), f.get("origin_lon"), lat1, lon1, 0.1)
-                    and self._near(f.get("dest_lat"), f.get("dest_lon"), lat2, lon2, 0.1)
-                ) + sum(
-                    1 for f in flights
-                    if self._near(f.get("origin_lat"), f.get("origin_lon"), lat2, lon2, 0.1)
-                    and self._near(f.get("dest_lat"), f.get("dest_lon"), lat1, lon1, 0.1)
-                )
-
-                if corridor_flights < 2:
-                    continue
 
                 mid_lat = (lat1 + lat2) / 2.0
                 mid_lon = (lon1 + lon2) / 2.0

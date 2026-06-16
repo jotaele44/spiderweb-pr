@@ -12,7 +12,7 @@ import re
 import sqlite3
 import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -156,7 +156,7 @@ class FlightRadarOCR:
             mtime = os.path.getmtime(image_path)
             return datetime.utcfromtimestamp(mtime).isoformat()
         except Exception:
-            return datetime.utcnow().isoformat()
+            return datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
     def _extract_callsign(self, text: str) -> str:
         """Extract N-number or ICAO callsign from OCR text."""
@@ -478,7 +478,7 @@ class FlightDatabase:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             screenshot_id, image_path, None,
-            datetime.utcnow().isoformat(),
+            datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             data.callsign, data.altitude_ft, data.ground_speed_mph,
             data.latitude, data.longitude, data.timestamp,
             data.raw_text[:2000], data.ocr_confidence,

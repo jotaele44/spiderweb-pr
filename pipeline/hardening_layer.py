@@ -16,7 +16,7 @@ import sqlite3
 import math
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from collections import defaultdict
@@ -316,7 +316,7 @@ class StatefulTrackHypothesis:
         try:
             ts = datetime.fromisoformat(timestamp)
         except Exception:
-            ts = datetime.utcnow()
+            ts = datetime.now(timezone.utc).replace(tzinfo=None)
 
         if callsign not in self.states:
             # First observation — initialize state
@@ -479,7 +479,7 @@ class ResumableJobQueue:
             job_id = _make_job_id(path)
             cursor.execute(
                 "INSERT OR IGNORE INTO processing_jobs (job_id, image_path, batch_id, created_at) VALUES (?, ?, ?, ?)",
-                (job_id, path, batch_id, datetime.utcnow().isoformat())
+                (job_id, path, batch_id, datetime.now(timezone.utc).replace(tzinfo=None).isoformat())
             )
 
         conn.commit()
@@ -512,7 +512,7 @@ class ResumableJobQueue:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE processing_jobs SET status = 'PROCESSING', started_at = ? WHERE job_id = ?",
-            (datetime.utcnow().isoformat(), job_id)
+            (datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), job_id)
         )
         conn.commit()
         conn.close()
@@ -522,7 +522,7 @@ class ResumableJobQueue:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE processing_jobs SET status = 'COMPLETE', completed_at = ? WHERE job_id = ?",
-            (datetime.utcnow().isoformat(), job_id)
+            (datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), job_id)
         )
         conn.commit()
         conn.close()
@@ -540,19 +540,19 @@ class ResumableJobQueue:
     def save_checkpoint(self, batch_id: str, completed: int, failed: int):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        checkpoint_id = f"{batch_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        checkpoint_id = f"{batch_id}_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M%S')}"
         cursor.execute('''
             INSERT OR REPLACE INTO job_checkpoints
             (checkpoint_id, batch_id, completed, failed, checkpoint_time)
             VALUES (?, ?, ?, ?, ?)
-        ''', (checkpoint_id, batch_id, completed, failed, datetime.utcnow().isoformat()))
+        ''', (checkpoint_id, batch_id, completed, failed, datetime.now(timezone.utc).replace(tzinfo=None).isoformat()))
         conn.commit()
         conn.close()
 
     def store_extraction_confidence(self, image_filename: str, fields: Dict[str, ExtractedField]):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         for field_name, ef in fields.items():
             record_id = f"{image_filename}_{field_name}"
@@ -574,7 +574,7 @@ class ResumableJobQueue:
     def store_validation_results(self, flight_id: str, results: List[ValidationResult]):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         for result in results:
             cursor.execute('''

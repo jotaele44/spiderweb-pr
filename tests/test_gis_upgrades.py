@@ -82,6 +82,40 @@ def test_ilap_corridors_have_label(populated_db, tmp_output):
         assert feat["properties"].get("corridor_label") in ("HIGH", "MEDIUM", "LOW")
 
 
+def test_build_corridor_candidates_counts_both_directions(tmp_output, tmp_path):
+    """Regression pin for the corridor pre-indexing refactor.
+
+    A corridor pair's connecting_flights must equal forward + reverse flights
+    whose origin/destination fall within 0.1° of the two POIs. POIs with no
+    connecting flights must not produce a corridor.
+    """
+    bridge = ILAPAirspaceBridge(str(tmp_path / "x.db"), str(tmp_output))
+
+    def poi(lat, lon):
+        return {"properties": {"lat": lat, "lon": lon}}
+
+    # POI 0 ≈ (18.0, -66.0), POI 1 ≈ (18.5, -66.5), POI 2 far away (no flights).
+    poi_features = [poi(18.0, -66.0), poi(18.5, -66.5), poi(19.5, -67.5)]
+    flights = [
+        # two forward flights POI0 → POI1
+        {"origin_lat": 18.02, "origin_lon": -66.02, "dest_lat": 18.48, "dest_lon": -66.48},
+        {"origin_lat": 18.01, "origin_lon": -66.01, "dest_lat": 18.52, "dest_lon": -66.52},
+        # one reverse flight POI1 → POI0
+        {"origin_lat": 18.49, "origin_lon": -66.49, "dest_lat": 18.03, "dest_lon": -66.03},
+        # non-connecting flight (origin near POI0, dest near nothing)
+        {"origin_lat": 18.00, "origin_lon": -66.00, "dest_lat": 10.0, "dest_lon": -60.0},
+    ]
+
+    features = bridge._build_corridor_candidates(poi_features, flights)
+
+    assert len(features) == 1
+    props = features[0]["properties"]
+    assert props["connecting_flights"] == 3  # 2 forward + 1 reverse
+    assert props["corridor_label"] == "MEDIUM"
+    assert props["poi_a"] == "18.0,-66.0"
+    assert props["poi_b"] == "18.5,-66.5"
+
+
 # ── T7-58 native KML export ──────────────────────────────────────────────────
 
 def test_ilap_writes_kml_siblings(populated_db, tmp_output):

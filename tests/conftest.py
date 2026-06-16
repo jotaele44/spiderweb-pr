@@ -4,7 +4,7 @@ Shared pytest fixtures for the PR Airspace Intelligence test suite.
 
 import sqlite3
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -250,7 +250,7 @@ def _insert_data(conn: sqlite3.Connection):
                 "INSERT INTO screenshots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     ss_id, f"/tmp/img_{ss_id}.jpg", f["flight_id"],
-                    datetime.utcnow().isoformat(),
+                    datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
                     f["callsign"], f["max_altitude_ft"], int(f["avg_speed_mph"]),
                     f["origin_lat"], f["origin_lon"], ts,
                     f"OCR text for {f['callsign']}", 0.85,

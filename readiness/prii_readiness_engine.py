@@ -19,7 +19,7 @@ and has no CLI surface (added in a later phase).
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -130,7 +130,7 @@ class PRIIReadinessEngine:
             readiness_status = READINESS_STATUS_READY
 
         report = {
-            "generated_at":    datetime.utcnow().isoformat() + "Z",
+            "generated_at":    datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "export_dir":      str(self.export_dir),
             "readiness_status": readiness_status,
             "blockers":        blockers,

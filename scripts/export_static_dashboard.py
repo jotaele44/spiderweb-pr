@@ -17,7 +17,7 @@ import argparse
 import json
 import shutil
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -148,7 +148,7 @@ def bundle_static_dashboard(
     manifest: dict[str, object] = {
         "mode": "static-dashboard",
         "server_required": False,
-        "created_at": datetime.utcnow().isoformat() + "Z",
+        "created_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
         "dist_dir": str(dist_dir),
         "source_outputs": str(source_outputs),
         "entrypoint": "index.html",

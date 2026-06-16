@@ -22,7 +22,7 @@ import os
 import sqlite3
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 REPO     = Path(__file__).parent
@@ -35,7 +35,7 @@ SUPPORTED = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".tif"}
 
 
 def log(msg: str):
-    ts = datetime.utcnow().strftime("%H:%M:%S")
+    ts = datetime.now(timezone.utc).replace(tzinfo=None).strftime("%H:%M:%S")
     print(f"[{ts}] {msg}", flush=True)
 
 
@@ -74,7 +74,7 @@ def save_progress(idx: int, total: int, stats: dict):
         "processed": idx, "total": total,
         "pct": round(idx / max(total, 1) * 100, 1),
         "stats": stats,
-        "updated_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
     }, indent=2))
 
 

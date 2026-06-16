@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Personas Desaparecidas</title></head>
+<body>
+  <header>
+    <!-- Site logo: an <img> OUTSIDE any card container — must NOT become a row. -->
+    <img src="/assets/prpb-logo.png" alt="logo">
+    <h1>Negociado de la Policía de Puerto Rico</h1>
+  </header>
+  <main>
+    <div class="gallery">
+
+      <!-- Card with a thumbnail WRAPPER div around the photo. The old parser
+           closed the card on the inner </div> and dropped the caption. -->
+      <div class="missing-card">
+        <div class="thumb">
+          <a href="/caso/801"><img src="/desaparecidos/photos/MP-2024-0801.jpg" alt="Maria Rivera"></a>
+        </div>
+        <div class="info">
+          <h3>Maria Rivera Sanchez</h3>
+          <p>Edad: 28 años</p>
+          <p>Última vez vista en San Juan</p>
+        </div>
+        <!-- per-card share icon: a second <img> that must NOT win case_id -->
+        <img src="/assets/share.svg" alt="compartir">
+      </div>
+
+      <div class="missing-card">
+        <div class="thumb">
+          <a href="/caso/815"><img src="/desaparecidos/photos/MP-2024-0815.jpg" alt="Anibal Cruz"></a>
+        </div>
+        <div class="info">
+          <h3>Anibal Cruz Mercado</h3>
+          <p>Edad: 9 años</p>
+          <p>Reportado desaparecido en Carolina el 2024-08-15</p>
+        </div>
+        <img src="/assets/share.svg" alt="compartir">
+      </div>
+
+    </div>
+  </main>
+  <footer>
+    <img src="/assets/icon-phone.svg" alt="telefono">
+    <p>Comuníquese con el 9-1-1.</p>
+  </footer>
+</body>
+</html>

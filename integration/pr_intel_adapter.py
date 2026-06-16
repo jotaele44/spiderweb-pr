@@ -6,7 +6,7 @@ suitable for integration with PR Integrated Intel System (PIIS).
 
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -123,7 +123,7 @@ class PRIntelAdapter:
 
         # source_manifest.json (write before completeness check)
         manifest = {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "db_path": self.db_path,
             "schema_version": "1.0",
             "reproducibility": reproducibility_metadata(
@@ -233,7 +233,7 @@ class PRIntelAdapter:
         overall_status = "PASS" if all(g["status"] == "PASS" for g in gates.values()) else "FAIL"
 
         report = {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "overall_status": overall_status,
             "gates": gates,
         }

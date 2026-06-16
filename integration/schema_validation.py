@@ -7,7 +7,7 @@ import csv
 import json
 import os
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -144,7 +144,7 @@ class SchemaValidator:
             invalid_count += 1
             record_id = _extract_record_id(record)
             record_json = json.dumps(record, default=str)
-            routed_at = datetime.utcnow().isoformat() + "Z"
+            routed_at = datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z"
             for err in errors:
                 review_rows.append({
                     "routed_at": routed_at,
@@ -316,7 +316,7 @@ class SchemaValidator:
             except Exception:
                 existing = []
 
-        cutoff = datetime.utcnow().timestamp() - dedup_window_hours * 3600.0
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None).timestamp() - dedup_window_hours * 3600.0
         recent_keys = set()
         for r in existing:
             key = (r.get("schema_name"), r.get("record_id"),
