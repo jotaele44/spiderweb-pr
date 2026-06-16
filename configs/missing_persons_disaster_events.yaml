@@ -1,0 +1,47 @@
+# Named PR disaster events for cohort tagging (phase 2a → consumed by phase 2g
+# backfill module). Each event sets a date window so backfilled rows from
+# disaster sources can be tagged with `disaster_event_id`. The audit cross-
+# checks that every harvester emitting `incident_class=disaster` references an
+# id from this registry — keeps the enum closed and prevents typo drift.
+#
+# Adding an event: copy a stanza, pick a stable kebab-case id, set the date
+# window generously (the cohort dataset publication runs months after the
+# event). The id is what gets stamped into the canonical CSV `disaster_event_id`
+# column — once it's in production, do NOT rename it.
+
+version: missing_persons_disaster_events_v1
+last_updated: "2026-06-12"
+
+events:
+
+  maria-2017:
+    name: "Hurricane María"
+    kind: tropical_cyclone
+    landfall_date: "2017-09-20"
+    cohort_window:
+      start: "2017-09-06"   # María formed Sep 16; this includes Irma (Sep 6) pre-window because some PR migrants were caught in Irma's path too
+      end: "2018-02-28"     # GWU study extended attribution through Feb 2018
+    primary_sources: [gwu_maria_mortality_study, quartz_maria_dataset]
+    secondary_sources: [nmead_disaster, registro_demografico_aggregate]
+    notes: "Official 2,975 excess-mortality figure (GWU 2018). The cohort window is intentionally wider than the storm itself because indirect-attribution deaths kept accruing for months due to grid/healthcare collapse."
+
+  fiona-2022:
+    name: "Hurricane Fiona"
+    kind: tropical_cyclone
+    landfall_date: "2022-09-18"
+    cohort_window:
+      start: "2022-09-15"
+      end: "2022-12-31"
+    primary_sources: [backfill_fiona_2022, nmead_disaster]
+    secondary_sources: [registro_demografico_aggregate]
+
+  earthquake-2020-sw:
+    name: "2020 SW Puerto Rico earthquake sequence"
+    kind: earthquake
+    landfall_date: "2020-01-07"   # M6.4 main shock
+    cohort_window:
+      start: "2019-12-28"   # foreshock sequence started end of Dec 2019
+      end: "2020-05-31"
+    primary_sources: [backfill_earthquake_2020_sw, nmead_disaster]
+    secondary_sources: [registro_demografico_aggregate]
+    notes: "Sequence not a single event — extended cohort window covers M5.8 foreshock, M6.4 mainshock, M5.9 aftershock, plus the displacement period."

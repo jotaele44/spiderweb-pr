@@ -47,6 +47,20 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 DEFAULT_EXPECTED_DEM_COUNT = 191
 DEFAULT_OUTPUT_DIR = Path("outputs") / "pr_geodata_audit"
 
+
+def _is_iso_date_name(name: str) -> bool:
+    """True only for a real ISO ``YYYY-MM-DD`` directory name. Used for snapshot
+    selection so a len-10 non-date ('9999-99-99', 'tmp_backup') can't sort
+    lexicographically above real dates and shadow the true latest snapshot.
+    Mirrors namus_harvest._is_iso_date_name."""
+    if len(name) != 10 or name[4] != "-" or name[7] != "-":
+        return False
+    try:
+        dt.date.fromisoformat(name)
+        return True
+    except ValueError:
+        return False
+
 EXPECTED_CORE_DIRS = {
     "dem": "01_DEM_1m_LiDAR",
     "geodatabases": "03_Geodatabases",
@@ -398,7 +412,17 @@ def audit_dem_crs(
         else:
             audit.add("PASS", "dem", "crs_inventory", "Sampled DEM CRS values are within expected Puerto Rico UTM zones.", evidence={"crs_counts": dict(crs_counter), "sample_count": len(sample_tiles)})
 
-        if any(not key.startswith("1") for key in resolution_counter.keys()):
+        def _is_1m(key: str) -> bool:
+            # key is "<xres> x <yres>"; test numerically, not by string prefix
+            # ('10 x 10' / '1.5 x 1.5' both start with '1' but are not 1m, and a
+            # genuine '0.5 x 0.5' would be wrongly flagged).
+            try:
+                axes = [float(v) for v in key.split(" x ")]
+            except ValueError:
+                return False
+            return len(axes) == 2 and all(abs(a - 1.0) <= 0.01 for a in axes)
+
+        if any(not _is_1m(key) for key in resolution_counter.keys()):
             audit.add("WARN", "dem", "resolution_inventory", "Sampled DEM resolutions are not uniformly 1-meter-like.", evidence=dict(resolution_counter))
         else:
             audit.add("PASS", "dem", "resolution_inventory", "Sampled DEM resolutions are consistent with 1-meter tiles.", evidence=dict(resolution_counter))
@@ -659,8 +683,13 @@ def audit_pipeline_paths(audit: Audit, geodata_root: Path, repo_root_input: Opti
     expected_hits: List[Dict[str, str]] = []
     scanned_count = 0
 
+    self_path = Path(__file__).resolve()
     for file_path in iter_text_files(repo_root, max_file_mb=max_file_mb):
         scanned_count += 1
+        if file_path.resolve() == self_path:
+            # The marker constants defined in this script would otherwise
+            # self-match and produce a guaranteed false-positive FAIL.
+            continue
         try:
             text = file_path.read_text(encoding="utf-8", errors="ignore")
         except Exception:
@@ -693,6 +722,391 @@ def audit_pipeline_paths(audit: Audit, geodata_root: Path, repo_root_input: Opti
         audit.add("PASS", "pipeline_paths", "expected_dem_folder_exists", "Expected DEM folder exists at PR_Geodata/01_DEM_1m_LiDAR.", expected_dem)
     else:
         audit.add("FAIL", "pipeline_paths", "expected_dem_folder_exists", "Expected DEM folder is missing: PR_Geodata/01_DEM_1m_LiDAR.", expected_dem)
+
+
+NAMUS_REQUIRED_RAW_COLUMNS = {
+    "Case Number", "Date Reported Missing", "Date Last Seen",
+    "Status", "Missing Age", "Sex", "Latitude", "Longitude",
+}
+NAMUS_CANONICAL_COLUMNS = {
+    "case_id_hash", "source_id", "source_record_url_hash",
+    "report_date", "last_seen_date", "found_date",
+    "status", "status_reason",
+    "age_band", "age_exact_known", "sex", "ethnicity_band",
+    "last_seen_lat", "last_seen_lon", "last_seen_geocode_method",
+    "last_seen_municipio", "last_seen_barrio",
+    "circumstances_category", "circumstances_subcategory",
+    "incident_class", "plan_match", "disaster_event_id",
+    "linkage_keys_json", "coord_disagreement_km",
+    "snapshot_date",
+}
+NAMUS_FRESHNESS_WARN_DAYS = 180
+
+
+MISSING_PERSONS_REGISTRY_PATH = Path("configs") / "missing_persons_sources.yaml"
+MISSING_PERSONS_DISASTER_EVENTS_PATH = Path("configs") / "missing_persons_disaster_events.yaml"
+MISSING_PERSONS_YIELD_BAND = 0.5   # ±50% of expected_pr_yield_per_year triggers WARN
+
+
+def _load_yaml(path: Path) -> Optional[Dict[str, Any]]:
+    if not path.exists():
+        return None
+    try:
+        import yaml
+    except ImportError:
+        return None
+    try:
+        return yaml.safe_load(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def audit_missing_persons_coverage(audit: Audit, repo_root: Path) -> None:
+    """Phase 2a — YAML-driven coverage audit.
+
+    Replaces the narrow NamUs-only checks below with a registry-driven view:
+    each source in configs/missing_persons_sources.yaml is checked against its
+    declared harvester / snapshot / yield band, and class-coverage is
+    aggregated across the whole registry. All findings WARN-only — sparse
+    coverage is a real-world gap, not an engineering FAIL."""
+
+    registry_path = repo_root / MISSING_PERSONS_REGISTRY_PATH
+    events_path = repo_root / MISSING_PERSONS_DISASTER_EVENTS_PATH
+    metrics: Dict[str, Any] = {"registry_path": str(registry_path)}
+    audit.metrics["missing_persons_coverage"] = metrics
+
+    registry = _load_yaml(registry_path)
+    if registry is None:
+        audit.add(
+            "WARN", "missing_persons_coverage", "registry_loadable",
+            "configs/missing_persons_sources.yaml missing or unparseable; coverage cannot be audited.",
+            registry_path,
+        )
+        return
+
+    sources = registry.get("sources") or {}
+    metrics["source_count"] = len(sources)
+    metrics["registry_version"] = registry.get("version", "unknown")
+
+    events = _load_yaml(events_path) or {}
+    valid_event_ids = set((events.get("events") or {}).keys())
+
+    landed = []
+    planned = []
+    aggregate_only = []
+    manual_pull = []
+
+    per_class_landed: Dict[str, int] = {}
+
+    for source_id, cfg in sources.items():
+        status = cfg.get("status")
+        harvester_module = cfg.get("harvester")
+        snapshot_dir_rel = cfg.get("snapshot_dir")
+        classes = cfg.get("classes") or []
+        stratum = cfg.get("stratum")
+        fed = cfg.get("federation_eligible")
+
+        # Per-source bucket
+        if status == "harvester_landed":
+            landed.append(source_id)
+            for cls in classes:
+                per_class_landed[cls] = per_class_landed.get(cls, 0) + 1
+        elif status == "harvester_planned":
+            planned.append(source_id)
+        elif status == "aggregate_only":
+            aggregate_only.append(source_id)
+        elif status == "manual_pull":
+            manual_pull.append(source_id)
+
+        # Federation eligibility ↔ stratum consistency
+        if stratum == "C" and fed not in (False, "false"):
+            audit.add(
+                "WARN", "missing_persons_coverage", "stratum_federation_consistency",
+                f"Source {source_id}: stratum=C must NEVER be federation-eligible "
+                f"(got federation_eligible={fed!r}). Workbench-only.",
+                registry_path,
+            )
+
+        # Disaster_event_id, if declared, must exist in the events registry
+        decl_event = cfg.get("disaster_event_id")
+        if decl_event and decl_event not in valid_event_ids:
+            audit.add(
+                "WARN", "missing_persons_coverage", "disaster_event_id_valid",
+                f"Source {source_id} references disaster_event_id={decl_event!r} "
+                f"not in configs/missing_persons_disaster_events.yaml.",
+                registry_path,
+            )
+
+        # For landed sources only: check the on-disk surface
+        if status != "harvester_landed":
+            continue
+        if not snapshot_dir_rel:
+            continue
+        snap_root = repo_root / snapshot_dir_rel
+        if not snap_root.exists():
+            audit.add(
+                "WARN", "missing_persons_coverage", "snapshot_dir_present",
+                f"Source {source_id}: declared snapshot_dir does not exist.",
+                snap_root,
+            )
+            continue
+
+        # Find latest dated subdir (strict ISO so a len-10 non-date can't shadow
+        # the true latest — see _is_iso_date_name).
+        snaps = sorted(
+            (p for p in snap_root.iterdir() if p.is_dir() and _is_iso_date_name(p.name)),
+            reverse=True,
+        )
+        if not snaps:
+            audit.add(
+                "WARN", "missing_persons_coverage", "snapshot_present",
+                f"Source {source_id}: no dated snapshot under {snap_root.name}/.",
+                snap_root,
+            )
+            continue
+
+        latest = snaps[0]
+        # Cadence
+        cadence = cfg.get("refresh_cadence_days") or 0
+        if cadence > 0:
+            try:
+                age = (dt.date.today() - dt.date.fromisoformat(latest.name)).days
+                if age > cadence * 2:
+                    audit.add(
+                        "WARN", "missing_persons_coverage", "snapshot_freshness",
+                        f"Source {source_id}: latest snapshot is {age}d old; "
+                        f"cadence is {cadence}d (>2x threshold).",
+                        latest,
+                    )
+            except ValueError:
+                pass
+
+        # Yield band — count canonical rows. The shared harvester base writes
+        # "<source_id>_pr_canonical.csv", but NamUs writes "namus_mp_pr_canonical.csv"
+        # (an "mp_" infix). Resolve the actual file (prefer the exact name, else
+        # the lone "*_canonical.csv" in the snapshot) so the row-count check is
+        # not silently skipped for a landed harvester.
+        canonical = latest / f"{source_id}_pr_canonical.csv"
+        if not canonical.exists():
+            matches = sorted(latest.glob("*_canonical.csv"))
+            if matches:
+                canonical = matches[0]
+        expected = cfg.get("expected_pr_yield_per_year") or 0
+        if canonical.exists() and expected > 0:
+            try:
+                with canonical.open(encoding="utf-8") as fh:
+                    row_count = sum(1 for _ in fh) - 1  # minus header
+                # Prorate expected to the snapshot's effective window
+                # (rough: use cadence_days; if cadence=90 quarterly, multiply expected by 90/365).
+                # CAVEAT: this assumes each snapshot holds only that window's NEW
+                # rows. If the canonical CSV is a CUMULATIVE registry pull (the
+                # current harvester model), the band under-counts and may emit a
+                # spurious low-yield WARN. WARN-only, so it never gates; revisit
+                # the proration once snapshot semantics are pinned.
+                prorated = expected * (cadence / 365.0) if cadence > 0 else expected
+                lo = prorated * (1 - MISSING_PERSONS_YIELD_BAND)
+                hi = prorated * (1 + MISSING_PERSONS_YIELD_BAND)
+                if row_count < lo:
+                    audit.add(
+                        "WARN", "missing_persons_coverage", "yield_band",
+                        f"Source {source_id}: {row_count} rows vs. expected ~{prorated:.0f} "
+                        f"(band {lo:.0f}-{hi:.0f}). Possible upstream change or harvester regression.",
+                        canonical,
+                    )
+            except Exception as exc:
+                # Don't silently swallow a read/parse failure — surface it.
+                audit.add(
+                    "WARN", "missing_persons_coverage", "yield_band",
+                    f"Source {source_id}: could not compute yield band ({type(exc).__name__}: {exc}).",
+                    canonical,
+                )
+
+    metrics["landed_sources"] = landed
+    metrics["planned_sources"] = planned
+    metrics["aggregate_only_sources"] = aggregate_only
+    metrics["manual_pull_sources"] = manual_pull
+    metrics["classes_with_landed_source"] = sorted(per_class_landed.keys())
+    metrics["per_class_landed_count"] = per_class_landed
+
+    if landed:
+        audit.add(
+            "PASS", "missing_persons_coverage", "landed_sources_present",
+            f"{len(landed)} harvester(s) landed: {', '.join(landed)}.",
+            registry_path,
+        )
+    else:
+        audit.add(
+            "WARN", "missing_persons_coverage", "landed_sources_present",
+            "No harvesters with status=harvester_landed in registry.",
+            registry_path,
+        )
+
+    # Class coverage — gather every class declared anywhere in the registry
+    all_declared_classes = set()
+    for cfg in sources.values():
+        all_declared_classes.update(cfg.get("classes") or [])
+    uncovered = sorted(all_declared_classes - set(per_class_landed.keys()))
+    if uncovered:
+        audit.add(
+            "WARN", "missing_persons_coverage", "class_coverage",
+            f"{len(uncovered)} incident class(es) have NO landed harvester yet: "
+            f"{', '.join(uncovered)}.",
+            registry_path,
+            evidence={"uncovered_classes": uncovered,
+                      "covered_classes": sorted(per_class_landed.keys())},
+        )
+    else:
+        audit.add(
+            "PASS", "missing_persons_coverage", "class_coverage",
+            f"All {len(all_declared_classes)} declared incident classes have ≥1 landed harvester.",
+            registry_path,
+        )
+
+
+def audit_missing_persons_sources(audit: Audit, repo_root: Path) -> None:
+    """Validate the NamUs missing-persons ingestion surface. All findings are
+    WARN-only: PR coverage of NamUs is historically thin, so absent data is a
+    real-world gap, not a code defect, and must not block the gate."""
+    namus_root = repo_root / "data" / "sources" / "namus"
+    metrics: Dict[str, Any] = {"namus_root": str(namus_root)}
+    audit.metrics["missing_persons_sources"] = metrics
+
+    if not namus_root.exists():
+        audit.add(
+            "WARN", "missing_persons_sources", "namus_root_exists",
+            "data/sources/namus/ does not exist; missing-persons layers will be skipped.",
+            namus_root,
+        )
+        return
+
+    snapshots = sorted(
+        (p for p in namus_root.iterdir()
+         if p.is_dir() and _is_iso_date_name(p.name)),
+        reverse=True,
+    )
+    metrics["snapshot_count"] = len(snapshots)
+    if not snapshots:
+        audit.add(
+            "WARN", "missing_persons_sources", "snapshot_present",
+            "No dated NamUs snapshot subdirectories under data/sources/namus/.",
+            namus_root,
+        )
+        return
+
+    latest = snapshots[0]
+    metrics["latest_snapshot"] = latest.name
+
+    # Freshness
+    try:
+        snap_date = dt.date.fromisoformat(latest.name)
+        age_days = (dt.date.today() - snap_date).days
+        metrics["latest_snapshot_age_days"] = age_days
+        if age_days > NAMUS_FRESHNESS_WARN_DAYS:
+            audit.add(
+                "WARN", "missing_persons_sources", "snapshot_freshness",
+                f"Latest NamUs snapshot is {age_days} days old (threshold {NAMUS_FRESHNESS_WARN_DAYS}d).",
+                latest,
+            )
+        else:
+            audit.add(
+                "PASS", "missing_persons_sources", "snapshot_freshness",
+                f"Latest NamUs snapshot is {age_days} days old.",
+                latest,
+            )
+    except ValueError:
+        audit.add(
+            "WARN", "missing_persons_sources", "snapshot_freshness",
+            f"Latest snapshot dir name is not ISO date: {latest.name}",
+            latest,
+        )
+
+    # Raw CSV columns
+    raw = latest / "namus_mp_pr.csv"
+    if raw.exists():
+        try:
+            with raw.open(encoding="utf-8-sig") as fh:
+                header = next(csv.reader(fh))
+            missing = sorted(NAMUS_REQUIRED_RAW_COLUMNS - set(header))
+            if missing:
+                audit.add(
+                    "WARN", "missing_persons_sources", "raw_columns_present",
+                    f"NamUs raw CSV missing expected columns: {missing}",
+                    raw,
+                    evidence={"header": header},
+                )
+            else:
+                audit.add(
+                    "PASS", "missing_persons_sources", "raw_columns_present",
+                    "NamUs raw CSV has all required columns.",
+                    raw,
+                )
+        except Exception as exc:
+            audit.add(
+                "WARN", "missing_persons_sources", "raw_columns_present",
+                f"Could not read NamUs raw CSV header: {exc}",
+                raw,
+            )
+    else:
+        audit.add(
+            "WARN", "missing_persons_sources", "raw_csv_present",
+            "Latest snapshot has no namus_mp_pr.csv.",
+            latest,
+        )
+
+    # Canonical (post-harvest) check + PII grep
+    canonical = latest / "namus_mp_pr_canonical.csv"
+    if canonical.exists():
+        with canonical.open(encoding="utf-8") as fh:
+            header = next(csv.reader(fh))
+        if set(header) == NAMUS_CANONICAL_COLUMNS:
+            audit.add(
+                "PASS", "missing_persons_sources", "canonical_schema",
+                "Canonical CSV schema matches contract.",
+                canonical,
+            )
+        else:
+            audit.add(
+                "WARN", "missing_persons_sources", "canonical_schema",
+                "Canonical CSV schema drift from contract.",
+                canonical,
+                evidence={"header": header,
+                          "expected": sorted(NAMUS_CANONICAL_COLUMNS)},
+            )
+    else:
+        audit.add(
+            "WARN", "missing_persons_sources", "canonical_present",
+            "Run scripts/namus_harvest.py to produce namus_mp_pr_canonical.csv before populate.",
+            latest,
+        )
+
+    # Municipio aggregate coverage (if the layer has been emitted)
+    muni_layer = repo_root / "data" / "gis_layers" / "missing_persons_by_municipio.geojson"
+    municipios = repo_root / "data" / "municipios.geojson"
+    if muni_layer.exists() and municipios.exists():
+        try:
+            layer = json.loads(muni_layer.read_text(encoding="utf-8"))
+            expected = len(json.loads(municipios.read_text(encoding="utf-8")).get("features", []))
+            actual = len(layer.get("features", []))
+            metrics["municipio_layer_features"] = actual
+            metrics["municipios_expected"] = expected
+            if actual == expected:
+                audit.add(
+                    "PASS", "missing_persons_sources", "municipio_coverage",
+                    f"Aggregate layer covers all {expected} municipios (zero-case rows preserved).",
+                    muni_layer,
+                )
+            else:
+                audit.add(
+                    "WARN", "missing_persons_sources", "municipio_coverage",
+                    f"Aggregate layer has {actual}/{expected} municipios — silent drops?",
+                    muni_layer,
+                )
+        except Exception as exc:
+            audit.add(
+                "WARN", "missing_persons_sources", "municipio_coverage",
+                f"Could not validate municipio coverage: {exc}",
+                muni_layer,
+            )
 
 
 def write_json_report(audit: Audit, output_dir: Path, status: str, args: argparse.Namespace) -> Path:
@@ -868,6 +1282,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     audit_shapefiles(audit, geodata_root, resolved.get("shapefiles"))
     audit_tiger_vectors(audit, geodata_root, resolved.get("geodatabases"), args.no_vector_read)
     audit_pipeline_paths(audit, geodata_root, args.repo_root, args.max_text_file_mb)
+    repo_root_self = Path(__file__).resolve().parent.parent
+    audit_missing_persons_sources(audit, repo_root_self)
+    audit_missing_persons_coverage(audit, repo_root_self)
 
     status = audit.gate_status(strict=args.strict)
 
