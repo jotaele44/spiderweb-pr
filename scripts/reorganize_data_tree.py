@@ -21,7 +21,7 @@ PR_Geodata:
 
 Explicitly NOT touched (non-breaking guarantees):
   - Code-referenced paths: data/tiger/, data/faa_registry/, boundary geojsons,
-    data/gis_layers/, data/rlsm/, data/ground_truth/, todays_batch*.csv (live
+    data/gis_layers/, data/rlsm/, todays_batch*.csv (live
     working queue), data/census/, data/sites/, data/intake/.
   - PR_Geodata numbered core dirs expected by tools/pr_geodata_integrity_audit
     (01_DEM_1m_LiDAR, 03_Geodatabases, 05_Vector_Shapefiles), karst_geojson/
@@ -82,7 +82,6 @@ DIR_PURPOSES = {
     "tiger": "TIGER/Line source data (code-referenced; do not move).",
     "faa_registry": "FAA aircraft registry source data (code-referenced; do not move).",
     "rlsm": "RLSM screenshot-analysis runtime DB (schema.sql + HANDOFF committed).",
-    "ground_truth": "Ground-truth harvest store (ledger, sqlite, per-tail dirs).",
     "census": "Census geography collection lists.",
     "intake": "PR intake derivatives lane (committed README/CSV).",
     "manual_logs": "Manually captured flight/ops logs.",
