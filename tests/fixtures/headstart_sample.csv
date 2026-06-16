@@ -1,0 +1,4 @@
+hs_id,service_location_name,recipient_name,latitude,longitude,status,funded_slots,program_type_label
+HS-001,Centro Head Start A,Operator Alpha,18.2201,-66.5901,Active,40,Head Start
+HS-002,Centro Head Start B,Operator Alpha,18.2251,-66.5951,Active,32,Early Head Start
+HS-003,Centro Head Start C,Operator Beta,18.4101,-66.0601,Inactive,20,Head Start
