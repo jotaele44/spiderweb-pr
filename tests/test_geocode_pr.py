@@ -31,6 +31,11 @@ from scripts.geocode_pr import (  # noqa: E402
     municipio_from_point,
 )
 
+# Tracked, simplified municipio polygons — the real data/municipios.geojson is
+# 5 MB and gitignored, so it is absent on a fresh checkout / CI. This fixture
+# covers the points these tests reference.
+MUNI_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "municipios_pr_sample.geojson"
+
 
 @pytest.fixture(autouse=True)
 def _deterministic_seed():
@@ -211,21 +216,21 @@ def test_empty_address_short_circuits(tmp_path: Path):
 # ---------------------------------------------------------------- municipio PIP
 
 def test_municipio_from_point_resolves_known_point():
-    # San Juan interior point (INTPTLAT/INTPTLON from municipios.geojson).
-    assert municipio_from_point(18.4222, -66.0691) == "San Juan"
+    # San Juan interior point.
+    assert municipio_from_point(18.4222, -66.0691, municipios_path=MUNI_FIXTURE) == "San Juan"
     # Ponce interior point.
-    assert municipio_from_point(18.0017, -66.6067) == "Ponce"
+    assert municipio_from_point(18.0017, -66.6067, municipios_path=MUNI_FIXTURE) == "Ponce"
 
 
 def test_municipio_from_point_out_of_pr_is_empty():
     # Miami — outside the PR bbox entirely.
-    assert municipio_from_point(25.7617, -80.1918) == ""
+    assert municipio_from_point(25.7617, -80.1918, municipios_path=MUNI_FIXTURE) == ""
 
 
 def test_municipio_from_point_in_bbox_but_ocean_is_empty():
     # A point inside the PR bounding box but in the ocean (south of the island)
     # falls in no municipio polygon.
-    assert municipio_from_point(17.7, -66.5) == ""
+    assert municipio_from_point(17.7, -66.5, municipios_path=MUNI_FIXTURE) == ""
 
 
 def _square_fc(name: str, lon: float, lat: float, d: float = 0.5) -> dict:

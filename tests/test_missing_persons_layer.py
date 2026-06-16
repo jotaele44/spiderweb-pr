@@ -37,7 +37,10 @@ def _deterministic_seed():
     yield
 
 FIXTURE_CSV = REPO_ROOT / "tests" / "fixtures" / "namus_mp_pr_sample.csv"
-MUNICIPIOS_GEOJSON = REPO_ROOT / "data" / "municipios.geojson"
+# Tracked, simplified municipio polygons. The real data/municipios.geojson is
+# 5 MB and gitignored (absent on fresh checkout / CI); this fixture contains the
+# municipios the NamUs sample lands in, plus a zero-case municipio (Adjuntas).
+MUNICIPIOS_GEOJSON = REPO_ROOT / "tests" / "fixtures" / "municipios_pr_sample.geojson"
 
 # Fields that must never appear in any committed downstream artifact.
 PII_FIELDS = {"First Name", "Last Name", "Date of Birth", "Circumstances of Disappearance", "Photo URL"}

@@ -881,8 +881,16 @@ def audit_missing_persons_coverage(audit: Audit, repo_root: Path) -> None:
             except ValueError:
                 pass
 
-        # Yield band — count canonical rows
+        # Yield band — count canonical rows. The shared harvester base writes
+        # "<source_id>_pr_canonical.csv", but NamUs writes "namus_mp_pr_canonical.csv"
+        # (an "mp_" infix). Resolve the actual file (prefer the exact name, else
+        # the lone "*_canonical.csv" in the snapshot) so the row-count check is
+        # not silently skipped for a landed harvester.
         canonical = latest / f"{source_id}_pr_canonical.csv"
+        if not canonical.exists():
+            matches = sorted(latest.glob("*_canonical.csv"))
+            if matches:
+                canonical = matches[0]
         expected = cfg.get("expected_pr_yield_per_year") or 0
         if canonical.exists() and expected > 0:
             try:
