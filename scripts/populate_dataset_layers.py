@@ -328,12 +328,15 @@ def emit_missing_persons_layers(
     canonical_csv: Path,
     municipios_geojson: Path,
 ) -> None:
-    """Emit the two NamUs-derived layers. Caller owns ``lw.flush()`` timing."""
+    """Emit the NamUs-derived layers. Caller owns ``lw.flush()`` timing.
+
+    The case-level point layer needs only the canonical NamUs coordinates, so it
+    is emitted whenever the canonical CSV is present. Only the *aggregate* layer
+    needs the municipio polygons — its absence skips the aggregate alone, not the
+    whole pipeline (a missing/untracked municipios file no longer silently
+    suppresses the case points)."""
     if not canonical_csv.exists():
         print(f"  MISSING canonical {canonical_csv} — skipped missing_persons layers")
-        return
-    if not municipios_geojson.exists():
-        print(f"  MISSING {municipios_geojson} — skipped missing_persons_by_municipio")
         return
 
     with open(canonical_csv, encoding="utf-8") as fh:
@@ -373,6 +376,12 @@ def emit_missing_persons_layers(
     )
 
     # ── aggregated counts by municipio ───────────────────────────────────────
+    # The aggregate (and only the aggregate) needs the municipio polygons. If the
+    # file is absent (e.g. untracked on a fresh checkout), emit the case layer
+    # above and skip just this layer rather than the whole pipeline.
+    if not municipios_geojson.exists():
+        print(f"  MISSING {municipios_geojson} — skipped missing_persons_by_municipio aggregate")
+        return
     muni = json.loads(municipios_geojson.read_text(encoding="utf-8"))
     poly_feats: List[Dict] = []
     total_assigned = 0
