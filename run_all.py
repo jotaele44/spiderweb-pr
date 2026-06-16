@@ -386,6 +386,35 @@ def _run_export_spiderweb(db_path: str, output_dir: str):
         raise
 
 
+def _run_headstart_export(csv_path: str, output_dir: str, grid_only: bool = False):
+    print("\n  HEAD START CIVIC LAYER EXPORT")
+    print("  " + "─" * 50)
+    if not Path(csv_path).exists():
+        print(f"  Error: Head Start CSV not found: {csv_path}")
+        sys.exit(1)
+    try:
+        from spiderweb.exports.headstart_context_grid import export_context_grid
+        from spiderweb.ingestors.ingest_headstart import export_headstart
+
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        grid_summary = export_context_grid(csv_path, out / "headstart_context_grid.geojson")
+        if grid_only:
+            print(f"  Public grid cells: {grid_summary['grid_cells']}")
+            print(f"\n  ✓ Public grid export written to: {grid_summary['output_path']}")
+            return
+        summary = export_headstart(csv_path, out)
+        print(f"  Records:          {summary['records']}")
+        print(f"  Operators:        {summary['operators']}")
+        print(f"  Edges:            {summary['edges']}")
+        print(f"  Public grid cells: {grid_summary['grid_cells']}")
+        print("  Policy: precise points restricted; public output is grid-only")
+        print(f"\n  ✓ Head Start civic layer exported to: {output_dir}")
+    except Exception as e:
+        print(f"  Head Start export error: {e}")
+        raise
+
+
 def _run_spiderweb_intake(intake_dir: str):
     print("\n  SPIDERWEB INTAKE — OVERLAY + GAP AUDIT")
     print("  " + "─" * 50)
@@ -456,7 +485,7 @@ def _run_assess_readiness(export_dir: str):
             key = b.get("gate") or b.get("flag") or ""
             print(f"  ✗ BLOCKER [{src}:{key}] {b.get('detail', '')}")
         for w in report.get("warnings", []):
-            print(f"  ~ WARNING [{w.get('source')}] {w.get('detail', '')}")
+            print(f"  ~ WARNING [{w.get('source')}] {w.get('detail')}")
         if report.get("missing_inputs"):
             print(f"  Missing inputs: {', '.join(report['missing_inputs'])}")
         print(f"\n  ✓ Readiness report written to: {export_dir}/prii_readiness_report.json")
@@ -517,7 +546,6 @@ Examples:
   python run_all.py --export-json data.json      Export DB snapshot for dashboard
         """
     )
-
     parser.add_argument("--phase", type=int, choices=[0, 1, 2, 3, 4],
                         help="Run only specified phase (0-4)")
     parser.add_argument("--images", type=int, default=None,
@@ -547,6 +575,12 @@ Examples:
                         help="Export PR Intel parquet/GeoJSON to DIR")
     parser.add_argument("--export-spiderweb", metavar="DIR",
                         help="Export Spiderweb bridge outputs to DIR")
+    parser.add_argument("--headstart-csv", metavar="PATH",
+                        help="Ingest Head Start PR CSV and export civic layer artifacts")
+    parser.add_argument("--export-headstart", metavar="DIR",
+                        help="Directory for Head Start civic layer exports")
+    parser.add_argument("--headstart-grid-only", action="store_true",
+                        help="With --headstart-csv/--export-headstart: write public grid only")
     parser.add_argument("--spiderweb-intake", metavar="DIR",
                         help="Normalize --export-spiderweb output into Spiderweb overlay candidates")
     parser.add_argument("--calibrate-scoring", metavar="DIR",
@@ -618,6 +652,13 @@ Examples:
 
     if args.export_home_base:
         _run_export_home_base(args.db, args.export_home_base)
+        return
+
+    if args.headstart_csv or args.export_headstart:
+        if not (args.headstart_csv and args.export_headstart):
+            print("  Error: --headstart-csv and --export-headstart must be supplied together")
+            sys.exit(1)
+        _run_headstart_export(args.headstart_csv, args.export_headstart, args.headstart_grid_only)
         return
 
     # Determine whether to run the main pipeline phases.
