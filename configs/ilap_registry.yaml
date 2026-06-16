@@ -1,9 +1,13 @@
 version: ilap_registry_v0_1
-generated_at: '2026-06-11T17:46:02Z'
+generated_at: '2026-06-13T10:31:25Z'
 producer_module: scripts.populate_dataset_layers
 canonical_definition: ILAP = infrastructure_linked_access_point (configs/spiderweb_terms.yaml). Types below are observed vocabulary
   from source datasets — values are preserved verbatim per location_naming_guardrails (never invented).
 ilap_type_sources:
+  Spiderweb_ILAP_Master.geojson:subcategory:
+    Dam Nodes: 52
+    ILAP Nodes: 34
+    Subsurface Entry Nodes: 21
   Spiderweb_ILAP_Predictions.geojson:
     type=Industrial-River ILAP Candidate: 5
     type=Dam-Adjacent ILAP Candidate: 4
