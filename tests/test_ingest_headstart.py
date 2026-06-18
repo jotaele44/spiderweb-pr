@@ -51,6 +51,23 @@ def test_context_grid_suppresses_precise_points(tmp_path):
     assert all(f["properties"]["suppression"] == "precise_points_removed" for f in grid["features"])
 
 
+def test_context_grid_features_validate_against_schema(tmp_path):
+    # The real exporter output must satisfy the canonical headstart_context_grid
+    # JSON Schema (the sample file alone can't guarantee the live path does).
+    # Note: SchemaValidator.validate no-ops without jsonschema, so this is a
+    # strict check only when jsonschema is installed (as in CI).
+    from integration.schema_validation import SchemaValidator
+
+    out = tmp_path / "headstart_context_grid.geojson"
+    export_context_grid(FIXTURE, out)
+    grid = json.loads(out.read_text())
+    validator = SchemaValidator()
+    for feature in grid["features"]:
+        result = validator.validate(feature, "headstart_context_grid")
+        assert result["valid"], result["errors"]
+
+
+
 def test_enrichment_null_handling():
     enricher = HeadStartContextEnricher()
     readiness = enricher.readiness(set())

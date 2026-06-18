@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "headstart_context_grid",
+  "title": "Head Start Context Grid Cell (public)",
+  "description": "A privacy-safe aggregated grid cell for the civic Head Start PR layer, emitted by spiderweb/exports/headstart_context_grid.py. Precise service-location points are restricted; the public artifact carries only quantized grid centroids with per-cell counts. One GeoJSON Feature per record (the example-artifact CI gate validates one Feature per JSONL line).",
+  "type": "object",
+  "required": ["type", "geometry", "properties"],
+  "properties": {
+    "type": {"const": "Feature"},
+    "geometry": {
+      "type": "object",
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": {"const": "Point"},
+        "coordinates": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": [
+            {"type": "number", "minimum": -67.4, "maximum": -65.1},
+            {"type": "number", "minimum": 17.7, "maximum": 18.6}
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "properties": {
+      "type": "object",
+      "required": ["grid_id", "layer_id", "record_count", "funded_slots_total", "public_export", "precision", "suppression"],
+      "properties": {
+        "grid_id": {"type": "string", "pattern": "^-?\\d+\\.\\d+,-?\\d+\\.\\d+$"},
+        "layer_id": {"const": "civic_headstart_pr"},
+        "record_count": {"type": "integer", "minimum": 1},
+        "funded_slots_total": {"type": "integer", "minimum": 0},
+        "public_export": {"const": true},
+        "precision": {"type": "integer", "minimum": 0},
+        "suppression": {"const": "precise_points_removed"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
