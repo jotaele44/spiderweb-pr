@@ -787,6 +787,53 @@
       "dedup_key": null,
       "fact_status_default": null,
       "notes": "Cross-repo federation discovery manifest. Validated by scripts/validate_export.py and schema_index coverage test."
+    },
+    {
+      "workstream": "civic_headstart",
+      "artifact_path": "headstart_context_grid.geojson",
+      "schema_name": "headstart_context_grid",
+      "schema_file": "schemas/headstart_context_grid.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "grid_id",
+        "layer_id",
+        "record_count",
+        "funded_slots_total",
+        "public_export",
+        "precision",
+        "suppression"
+      ],
+      "provenance_fields": [],
+      "dedup_key": "grid_id",
+      "fact_status_default": "observed",
+      "notes": "Privacy-safe public grid for the civic Head Start PR layer (spiderweb/exports/headstart_context_grid.py). Precise points are restricted; public export is grid-only. Per-Feature schema; sample-gated via exports/samples and the CI example-artifact gate."
+    },
+    {
+      "workstream": "civic_headstart",
+      "artifact_path": "headstart_locations.geojson",
+      "schema_name": "headstart_service_location",
+      "schema_file": "schemas/headstart_service_location.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "id",
+        "source_id",
+        "layer_id",
+        "node_type",
+        "label",
+        "operator_id",
+        "standalone_confidence",
+        "sensitivity",
+        "public_export"
+      ],
+      "provenance_fields": [
+        "source_id",
+        "operator_id"
+      ],
+      "dedup_key": "id",
+      "fact_status_default": "observed",
+      "notes": "RESTRICTED — precise service-location points (sensitivity=high, public_export=grid_only). NOT in exports/samples; public release uses headstart_context_grid.geojson only."
     }
   ]
 }
