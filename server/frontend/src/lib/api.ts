@@ -33,6 +33,23 @@ export interface Contract {
 export interface Source { id: string; name: string; tier?: string; kind?: string; status?: string }
 export type GeoJSON = { type: 'FeatureCollection'; features: any[] }
 
+// Layer Catalog — folder labels & visibility tree (labels only; geometry deferred).
+// Mirrors configs/layer_catalog.yaml served by GET /catalog.
+export interface CatalogLayer {
+  layer_id: string; label: string; status: 'deferred'
+  pri_table?: boolean; pipeline_wired?: boolean
+}
+export interface CatalogFamily {
+  id: string; label: string; visibility: 'V1' | 'V2' | 'V3'; domain: string
+  layers: CatalogLayer[]
+}
+export interface VisibilityClass { label: string; rank: number; access_default: string }
+export interface LayerCatalog {
+  version: string; binding: string
+  visibility_classes: Record<'V1' | 'V2' | 'V3', VisibilityClass>
+  families: CatalogFamily[]
+}
+
 async function getJSON<T>(path: string, fallback: T): Promise<T> {
   if (OFFLINE) {
     const key = path.split('?')[0] // server-side filters degrade to the unfiltered snapshot
@@ -55,6 +72,7 @@ export const getAnomalies = () => getJSON<Anomaly[]>('/anomalies', [])
 export const getContracts = () => getJSON<Contract[]>('/contracts', [])
 export const getSources = () => getJSON<Source[]>('/sources', [])
 export const getGeoLayer = (layer: string) => getJSON<GeoJSON | null>(`/geo/${layer}.geojson`, null)
+export const getCatalog = () => getJSON<LayerCatalog | null>('/catalog', null)
 
 // Streaming RAG query (SSE). Returns an abort function.
 export function streamRagQuery(

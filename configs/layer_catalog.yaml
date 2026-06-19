@@ -1,0 +1,350 @@
+version: rlsm_layer_catalog_v0_1
+generated_at: '2026-06-19T21:13:55Z'
+producer_module: scripts.build_layer_catalog
+binding: labels_only
+note: Folder labels & visibility gate only — no geometry/coordinates bound. Every layer carries status=deferred
+  until a later pins-pass wires it.
+visibility_classes:
+  V3:
+    label: Public / Shareable
+    rank: 3
+    access_default: PUBLIC
+  V2:
+    label: Restricted / Operational
+    rank: 2
+    access_default: RESTRICTED
+  V1:
+    label: Sensitive / Analytic
+    rank: 1
+    access_default: OBSERVE_ONLY
+families:
+- id: admin_geographies
+  label: Administrative Geographies
+  visibility: V3
+  domain: admin
+  layers:
+  - layer_id: municipios
+    label: Municipios
+    status: deferred
+  - layer_id: tracts
+    label: Tracts
+    status: deferred
+  - layer_id: places
+    label: Places
+    status: deferred
+  - layer_id: barrios
+    label: Barrios
+    status: deferred
+- id: airports
+  label: Airports & Aerodromes
+  visibility: V3
+  domain: transportation
+  layers:
+  - layer_id: airports
+    label: Airports
+    status: deferred
+- id: hydrology
+  label: Hydrology
+  visibility: V3
+  domain: hydro
+  layers:
+  - layer_id: hydro_points_normalized
+    label: Hydro Points Normalized
+    status: deferred
+  - layer_id: hydro_master_v3
+    label: Hydro Master v3
+    status: deferred
+  - layer_id: nid_dams
+    label: NID Dams
+    status: deferred
+- id: utility_other
+  label: Utility / Other
+  visibility: V3
+  domain: utility
+  layers:
+  - layer_id: mast
+    label: Mast
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+- id: petroleum_pipeline
+  label: Petroleum & Pipeline
+  visibility: V3
+  domain: petroleum
+  layers:
+  - layer_id: petroleum_site
+    label: Petroleum Site
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: petroleum_well
+    label: Petroleum Well
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: pipeline
+    label: Pipeline
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: pipeline_feature
+    label: Pipeline Feature
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+- id: power_grid
+  label: Power Grid
+  visibility: V3
+  domain: power
+  layers:
+  - layer_id: power_compensator
+    label: Power Compensator
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: power_generator_point
+    label: Power Generator Point
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: power_generator_polygon
+    label: Power Generator Polygon
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: power_line
+    label: Power Line
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: power_plant
+    label: Power Plant
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: power_substation_point
+    label: Power Substation Point
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: power_substation_polygon
+    label: Power Substation Polygon
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: power_switch
+    label: Power Switch
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: power_tower
+    label: Power Tower
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: power_transformer
+    label: Power Transformer
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+- id: water_sewer
+  label: Water & Sewer
+  visibility: V3
+  domain: water_sewer
+  layers:
+  - layer_id: pumping_station
+    label: Pumping Station
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: wastewater_plant
+    label: Wastewater Plant
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: water_reservoir
+    label: Water Reservoir
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: water_tower_point
+    label: Water Tower Point
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: water_tower_polygon
+    label: Water Tower Polygon
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: water_treatment_plant
+    label: Water Treatment Plant
+    status: deferred
+    pri_table: true
+    pipeline_wired: true
+  - layer_id: water_well_point
+    label: Water Well Point
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: water_well_polygon
+    label: Water Well Polygon
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+- id: telecom
+  label: Telecom
+  visibility: V3
+  domain: telecom
+  layers:
+  - layer_id: telecom_building_point
+    label: Telecom Building Point
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: telecom_building_polygon
+    label: Telecom Building Polygon
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+  - layer_id: telecom_cable
+    label: Telecom Cable
+    status: deferred
+    pri_table: true
+    pipeline_wired: false
+- id: civic_social
+  label: Civic / Social Infrastructure
+  visibility: V2
+  domain: civic_social_infrastructure
+  layers:
+  - layer_id: civic_headstart_pr
+    label: Head Start Service Locations
+    status: deferred
+- id: landing_zones
+  label: Landing Zones
+  visibility: V2
+  domain: lz
+  layers:
+  - layer_id: landing_zones_master
+    label: Landing Zones Master
+    status: deferred
+- id: hangars_ramps
+  label: Hangars & Ramps
+  visibility: V2
+  domain: aviation_facility
+  layers:
+  - layer_id: hangar_candidates
+    label: Hangar Candidates
+    status: deferred
+- id: operational_sites
+  label: Operational Sites
+  visibility: V2
+  domain: sites
+  layers:
+  - layer_id: sites
+    label: Sites
+    status: deferred
+  - layer_id: fire_stations_consolidated
+    label: Fire Stations Consolidated
+    status: deferred
+- id: flight_activity
+  label: Flight Activity
+  visibility: V2
+  domain: flights
+  layers:
+  - layer_id: flights
+    label: Flights
+    status: deferred
+- id: public_safety
+  label: Public Safety
+  visibility: V2
+  domain: public_safety
+  layers:
+  - layer_id: missing_persons_cases
+    label: Missing Persons Cases
+    status: deferred
+  - layer_id: missing_persons_by_municipio
+    label: Missing Persons by Municipio
+    status: deferred
+- id: ilap_constructs
+  label: ILAP — Infrastructure-Linked Access Points
+  visibility: V1
+  domain: ilap
+  layers:
+  - layer_id: ilap_master_nodes
+    label: ILAP Master Nodes
+    status: deferred
+  - layer_id: ilap_predictions
+    label: ILAP Predictions
+    status: deferred
+  - layer_id: hydro_candidate_nodes
+    label: Hydro Candidate Nodes
+    status: deferred
+  - layer_id: water_signals
+    label: Water Signals
+    status: deferred
+  - layer_id: fic_osap_final_set_v3
+    label: FIC OSAP Final Set v3
+    status: deferred
+  - layer_id: fic_osap_candidates_v2
+    label: FIC OSAP Candidates v2
+    status: deferred
+  - layer_id: fic_osap_ilap_links_v4
+    label: FIC OSAP ILAP Links v4
+    status: deferred
+  - layer_id: fic_osap_ilap_paths_v6
+    label: FIC OSAP ILAP Paths v6
+    status: deferred
+- id: aasb_corridors
+  label: AASB — Aerial Anomaly Surveillance Bands / Corridors
+  visibility: V1
+  domain: corridor
+  layers:
+  - layer_id: aasb_corridor_nodes
+    label: AASB Corridor Nodes
+    status: deferred
+  - layer_id: corridors
+    label: Corridors
+    status: deferred
+  - layer_id: corridor_index_v1
+    label: Corridor Index v1
+    status: deferred
+  - layer_id: subsurface_corridors_master
+    label: Subsurface Corridors Master
+    status: deferred
+- id: spiderweb_graph
+  label: Spiderweb Hydro Graph
+  visibility: V1
+  domain: hydro_graph
+  layers:
+  - layer_id: spiderweb_graph_nodes_v5
+    label: Spiderweb Graph Nodes v5
+    status: deferred
+  - layer_id: spiderweb_graph_edges_v5
+    label: Spiderweb Graph Edges v5
+    status: deferred
+  - layer_id: consolidated_master_registry
+    label: Consolidated Master POI Registry
+    status: deferred
+- id: subsurface_karst
+  label: Subsurface / Karst
+  visibility: V1
+  domain: subsurface
+  layers:
+  - layer_id: karst_subsurface_nodes_v2
+    label: Karst Subsurface Nodes v2
+    status: deferred
+  - layer_id: karst_subsurface_edges_v2
+    label: Karst Subsurface Edges v2
+    status: deferred
+- id: signal_anomaly
+  label: Signal / Anomaly & Shadow
+  visibility: V1
+  domain: anomaly
+  layers:
+  - layer_id: anomalies
+    label: Anomalies
+    status: deferred
+  - layer_id: heatmap
+    label: Heatmap
+    status: deferred

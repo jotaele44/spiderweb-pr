@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "layer_catalog",
+  "title": "Spiderweb-PR Layer Catalog (labels & folder tree only)",
+  "description": "Single source of truth organizing every map layer into a visibility-class → family → layer folder tree with canonical display labels. Emitted by scripts/build_layer_catalog.py. This pass binds labels only — no geometry/coordinates; every layer carries status=deferred. Enforced by tests/test_layer_catalog.py.",
+  "type": "object",
+  "required": ["version", "binding", "visibility_classes", "families"],
+  "properties": {
+    "version": {"type": "string", "pattern": "^rlsm_layer_catalog_v"},
+    "generated_at": {"type": "string"},
+    "producer_module": {"type": "string"},
+    "binding": {"const": "labels_only"},
+    "note": {"type": "string"},
+    "visibility_classes": {
+      "type": "object",
+      "description": "Top-level folders / the gate. Exactly the canonical V1/V2/V3 ladder.",
+      "required": ["V1", "V2", "V3"],
+      "additionalProperties": false,
+      "properties": {
+        "V1": {"$ref": "#/definitions/visibilityClass"},
+        "V2": {"$ref": "#/definitions/visibilityClass"},
+        "V3": {"$ref": "#/definitions/visibilityClass"}
+      }
+    },
+    "families": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/definitions/family"}
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "visibilityClass": {
+      "type": "object",
+      "required": ["label", "rank", "access_default"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "rank": {"type": "integer", "minimum": 1, "maximum": 3},
+        "access_default": {"enum": ["PUBLIC", "RESTRICTED", "OBSERVE_ONLY"]}
+      },
+      "additionalProperties": false
+    },
+    "family": {
+      "type": "object",
+      "required": ["id", "label", "visibility", "domain", "layers"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "label": {"type": "string", "minLength": 1},
+        "visibility": {"enum": ["V1", "V2", "V3"]},
+        "domain": {"type": "string", "minLength": 1},
+        "layers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/definitions/layer"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "layer": {
+      "type": "object",
+      "required": ["layer_id", "label", "status"],
+      "properties": {
+        "layer_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "label": {"type": "string", "minLength": 1},
+        "status": {"const": "deferred"},
+        "pri_table": {"type": "boolean"},
+        "pipeline_wired": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

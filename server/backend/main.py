@@ -301,12 +301,37 @@ async def pipeline_stop(job_id: str):
 
 # ─── GeoJSON layers ────────────────────────────────────────────────────────────
 
-_ALLOWED_LAYERS = {
+# The set of servable layers is derived from the Layer Catalog (single source of
+# truth, configs/layer_catalog.yaml, built by scripts/build_layer_catalog.py) so the
+# allowlist and the catalogued folder tree can't drift. The hardcoded fallback keeps
+# the geo API online if the catalog file is missing or unreadable.
+CATALOG_PATH = ROOT / "configs" / "layer_catalog.yaml"
+_FALLBACK_LAYERS = {
     # Operational overlays
     "flights", "sites", "anomalies", "corridors", "heatmap",
     # PR administrative geographies (TIGER/Line, joined via ingest_tiger_pr.py)
     "municipios", "tracts", "places", "barrios",
 }
+
+
+def _load_layer_catalog() -> dict:
+    try:
+        import yaml
+        return yaml.safe_load(CATALOG_PATH.read_text(encoding="utf-8")) or {}
+    except FileNotFoundError:
+        log.warning("layer_catalog.yaml not found at %s — using fallback allowlist", CATALOG_PATH)
+        return {}
+    except Exception as exc:  # malformed YAML, etc. — never take the geo API offline
+        log.warning("failed to load layer_catalog.yaml (%s) — using fallback allowlist", exc)
+        return {}
+
+
+_LAYER_CATALOG = _load_layer_catalog()
+_ALLOWED_LAYERS = {
+    layer["layer_id"]
+    for fam in _LAYER_CATALOG.get("families", [])
+    for layer in fam.get("layers", [])
+} or _FALLBACK_LAYERS
 _EMPTY_FC: dict = {"type": "FeatureCollection", "features": []}
 
 
@@ -370,6 +395,16 @@ async def geo_layer(layer: str):
     if layer == "anomalies":
         return JSONResponse(await _anomalies_from_db(), media_type="application/geo+json")
     return JSONResponse(_EMPTY_FC, media_type="application/geo+json")
+
+
+@app.get("/catalog")
+async def layer_catalog():
+    """Layer Catalog: the visibility-class → family → layer folder tree (labels only,
+    no geometry). The frontend renders this as the layer-toggle tree ahead of any
+    pin/coordinate data. Source of truth: configs/layer_catalog.yaml."""
+    if not _LAYER_CATALOG:
+        raise HTTPException(503, "layer catalog unavailable")
+    return _LAYER_CATALOG
 
 # ─── RAG / Query ───────────────────────────────────────────────────────────────
 
