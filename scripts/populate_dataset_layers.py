@@ -2,7 +2,7 @@
 """Populate Spiderweb-PR dataset layers, POI groups, and ILAP types.
 
 Builds normalized GIS dataset layers (``data/gis_layers/*.geojson``, EPSG:4326),
-populates ``configs/poi_registry.yaml`` (poi_records grouped by poi_taxonomy),
+populates ``configs/pin_registry.yaml`` (pin_records grouped by pin_taxonomy),
 extends ``configs/lz_registry.yaml`` (known_lz_candidates), and generates
 ``configs/ilap_registry.yaml`` (observed ILAP type vocabulary + typed nodes).
 
@@ -471,7 +471,7 @@ def main() -> int:
 
     # ── 1. Consolidated master registry (most complete typed POI source) ──
     cons_path = find_source("Spiderweb_Consolidated_Master_Registry.geojson", src_dirs)
-    poi_records: List[Dict] = []
+    pin_records: List[Dict] = []
     # Order matters: subcategory-specific rules MUST precede category catch-alls,
     # otherwise e.g. Hydrology swallows its Water Infrastructure / Subsurface rows.
     # mode: "prefix" matches subcategory.startswith, "contains" matches substring.
@@ -533,10 +533,10 @@ def main() -> int:
                 except (TypeError, ValueError):
                     confv = None
                 tier = "T2" if (confv or 0) >= 0.8 else "T3"
-                poi_records.append({
-                    "poi_id": str(props["registry_id"] or f"poi_{len(poi_records):05d}"),
+                pin_records.append({
+                    "pin_id": str(props["registry_id"] or f"pin_{len(pin_records):05d}"),
                     "canonical_name": str(props["name"] or "")[:160] or None,
-                    "poi_class": grp,
+                    "pin_class": grp,
                     "source_subcategory": sub or None,
                     "lat": round(float(lat), 6) if lat is not None else None,
                     "lon": round(float(lon), 6) if lon is not None else None,
@@ -551,7 +551,7 @@ def main() -> int:
                  source_layer="features", domain="poi", role="primary",
                  skipped_no_coords=skipped,
                  notes="Most complete typed POI source (supersedes Spiderweb_POI_Master).")
-        print("  poi_records groups:", dict(sorted(group_counts.items())))
+        print("  pin_records groups:", dict(sorted(group_counts.items())))
 
     # ── 2. Hydro layers ──
     hp = find_source("PR_Hydro_Layer_100pct_Normalized_Points.csv", src_dirs)
@@ -885,31 +885,31 @@ def main() -> int:
 
     lw.flush()
 
-    # ── 8. configs/poi_registry.yaml ──
-    poi_reg_path = REPO_ROOT / "configs" / "poi_registry.yaml"
-    reg = yaml.safe_load(poi_reg_path.read_text(encoding="utf-8"))
-    reg["version"] = "rlsm_poi_registry_v0_2"
+    # ── 8. configs/pin_registry.yaml ──
+    pin_reg_path = REPO_ROOT / "configs" / "pin_registry.yaml"
+    reg = yaml.safe_load(pin_reg_path.read_text(encoding="utf-8"))
+    reg["version"] = "rlsm_pin_registry_v1_0"
     reg["populated_at"] = RUN_TS
     reg["population_source"] = {
         "primary": "Spiderweb_Consolidated_Master_Registry.geojson",
         "producer": PRODUCER,
         "group_mapping_note": (
-            "category/subcategory → poi_taxonomy mapping: Hydrology→HYDRO; Power "
+            "category/subcategory → pin_taxonomy mapping: Hydrology→HYDRO; Power "
             "Infrastructure→POWER_GRID; Water Infrastructure*→WATER_SEWER; *Industrial* & "
             "Contamination Sites→INDUSTRIAL; Airports & Landing Zones→TRANSPORTATION; "
             "Military & Vieques Contamination*→MILITARY_FEDERAL; Subsurface*→"
             "SUBSURFACE_INDICATOR; Signal Detection→ANOMALY_LAYER (Residential Cover→"
             "RESIDENTIAL_COVER); Protected Areas→TERRAIN. Education/Recreation/Health/"
-            "Emergency Services intentionally excluded from poi_records (reference layers; "
+            "Emergency Services intentionally excluded from pin_records (reference layers; "
             "see data/gis_layers/consolidated_master_registry.geojson)."
         ),
     }
-    reg["poi_records"] = poi_records
+    reg["pin_records"] = pin_records
     if not args.dry_run:
-        poi_reg_path.write_text(
+        pin_reg_path.write_text(
             yaml.safe_dump(reg, sort_keys=False, allow_unicode=True, width=120),
             encoding="utf-8")
-    print(f"  poi_registry: {len(poi_records)} poi_records")
+    print(f"  pin_registry: {len(pin_records)} pin_records")
 
     # ── 9. configs/lz_registry.yaml ──
     lz_reg_path = REPO_ROOT / "configs" / "lz_registry.yaml"
