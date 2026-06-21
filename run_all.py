@@ -323,6 +323,36 @@ def print_status(db_path: str):
         print(f"  Database not found or uninitialized: {e}")
 
 
+def print_rlsm_status(db_path: str):
+    """RLSM screenshot-processing status: coverage + low-confidence backlog."""
+    try:
+        conn = sqlite3.connect(db_path)
+
+        print("\n  RLSM STATUS")
+        print("  " + "─" * 45)
+
+        def _count(sql: str):
+            try:
+                return conn.execute(sql).fetchone()[0]
+            except Exception:
+                return None
+
+        rows = [
+            ("Screenshots processed", _count("SELECT COUNT(*) FROM screenshots")),
+            ("Low-confidence (<0.5)",
+             _count("SELECT COUNT(*) FROM screenshots WHERE ocr_confidence < 0.5")),
+            ("No OCR text",
+             _count("SELECT COUNT(*) FROM screenshots WHERE raw_text IS NULL OR raw_text = ''")),
+        ]
+        for label, val in rows:
+            shown = f"{val:,}" if isinstance(val, int) else "N/A"
+            print(f"  {label:<30} {shown:>8}")
+
+        conn.close()
+    except Exception as e:
+        print(f"  Database not found or uninitialized: {e}")
+
+
 def _run_schema_validation(db_path: str):
     print("\n  SCHEMA VALIDATION")
     print("  " + "─" * 50)
@@ -567,6 +597,8 @@ Examples:
                         help="Export home-base report + assignments CSV + shared-space leads JSON")
     parser.add_argument("--status", action="store_true",
                         help="Show database status and exit")
+    parser.add_argument("--rlsm-status", dest="rlsm_status", action="store_true",
+                        help="Show RLSM screenshot processing status and exit")
     parser.add_argument("--export-json", metavar="PATH",
                         help="Export DB snapshot to JSON for dashboard.html")
     parser.add_argument("--validate", action="store_true",
@@ -627,6 +659,10 @@ Examples:
 
     if args.status:
         print_status(args.db)
+        return
+
+    if args.rlsm_status:
+        print_rlsm_status(args.db)
         return
 
     if args.export_json:
