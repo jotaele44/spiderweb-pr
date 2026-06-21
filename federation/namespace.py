@@ -5,6 +5,7 @@ across producers without collision (e.g. both repos may emit ``src_*``).
 Namespacing is idempotent: re-applying it to an already-namespaced ID is a
 no-op.
 """
+
 from __future__ import annotations
 
 from typing import Optional
@@ -36,7 +37,9 @@ def namespaced_id(raw: object, prefix: str = PREFIX) -> str:
 def is_namespaced(value: object, prefix: str = PREFIX) -> bool:
     """True if ``value`` carries the ``<prefix>:`` namespace and a body."""
     token = f"{prefix}:"
-    return isinstance(value, str) and value.startswith(token) and len(value) > len(token)
+    return (
+        isinstance(value, str) and value.startswith(token) and len(value) > len(token)
+    )
 
 
 def prefix_for_producer(producer: str) -> Optional[str]:
