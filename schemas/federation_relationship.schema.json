@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "federation_relationship",
+  "title": "PRII Canonical Federation Relationship",
+  "description": "One relationships[] record in the hub-facing canonical package written by scripts/federation_export.py. Consumed by thehub-pr.",
+  "type": "object",
+  "required": ["relationship_id", "source_id", "source_entity_id", "target_entity_id", "relationship_type", "evidence_source_id", "confidence", "lineage", "synthetic", "created_at", "extracted_at"],
+  "properties": {
+    "relationship_id": {"type": "string", "pattern": "^rel_[0-9a-f]{32}$"},
+    "source_id": {"type": "string", "pattern": "^src_[0-9a-f]{32}$"},
+    "source_entity_id": {"type": "string", "pattern": "^ent_[0-9a-f]{32}$"},
+    "target_entity_id": {"type": "string", "pattern": "^ent_[0-9a-f]{32}$"},
+    "relationship_type": {"type": "string", "enum": ["reported_by", "observed"]},
+    "evidence_source_id": {"type": "string", "pattern": "^src_[0-9a-f]{32}$"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "lineage": {"$ref": "#/definitions/lineage"},
+    "synthetic": {"type": "boolean"},
+    "created_at": {"type": "string", "minLength": 1},
+    "extracted_at": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "lineage": {
+      "type": "object",
+      "required": ["producer_script", "producer_phase", "extraction_method"],
+      "properties": {
+        "producer_script": {"type": "string"},
+        "producer_phase": {"type": "string"},
+        "extraction_method": {"type": "string"},
+        "source_inputs": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  }
+}

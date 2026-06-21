@@ -1,0 +1,257 @@
+{
+  "manifest": {
+    "created_at": "2023-03-20T00:00:00Z",
+    "export_contract_version": "1.0.0",
+    "extracted_at": "2023-03-20T00:00:00Z",
+    "federation": {
+      "hub_parent": "thehub-pr",
+      "producer_repo": "spiderweb-pr"
+    },
+    "files": [
+      {
+        "filename": "sources.jsonl",
+        "record_count": 1,
+        "schema_id": "federation_source.schema.json",
+        "sha256": "f96de0930698c8ef3441889710672f879cece18b11e0ead374fcc30d866b2dd8",
+        "stream": "sources"
+      },
+      {
+        "filename": "entities.jsonl",
+        "record_count": 5,
+        "schema_id": "federation_entity.schema.json",
+        "sha256": "49f596c72fd4c7e54051c0da8d6fa5d481067514a3a965a0346add9df9493bfb",
+        "stream": "entities"
+      },
+      {
+        "filename": "relationships.jsonl",
+        "record_count": 4,
+        "schema_id": "federation_relationship.schema.json",
+        "sha256": "670ab8432bcf9924849cb04642c8e31e49e2347bcc09a74de432a478e81b09e2",
+        "stream": "relationships"
+      }
+    ],
+    "mode": "test",
+    "package_id": "pkg_e120ab0652a490fe2b883671be08c4a9",
+    "producer": "spiderweb-pr"
+  },
+  "mode": "test",
+  "now": "2023-03-20T00:00:00Z",
+  "streams": {
+    "entities": [
+      {
+        "confidence": 1.0,
+        "created_at": "2023-03-20T00:00:00Z",
+        "entity_id": "ent_f8efbd6a297535222dfcc936253efa59",
+        "entity_type": "sensor_source",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "jurisdiction": "PR",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "SOURCE_ENTITY",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "name": "src_a",
+        "normalized_name": "SRC_A",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": true
+      },
+      {
+        "confidence": 0.8,
+        "created_at": "2023-03-20T12:00:00Z",
+        "entity_id": "ent_2e06623c5f844bda70a75af502b38c5c",
+        "entity_type": "airspace_event",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "jurisdiction": "PR",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "RECORD_ENTITY",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "location": {
+          "lat": 18.4655,
+          "lon": -66.1057
+        },
+        "name": "airspace_event evt_0000",
+        "normalized_name": "AIRSPACE_EVENT EVT_0000",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": false
+      },
+      {
+        "confidence": 0.8,
+        "created_at": "2023-03-20T12:00:00Z",
+        "entity_id": "ent_2766b5ff365a509a2eebee7b84971603",
+        "entity_type": "aircraft",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "jurisdiction": "PR",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "AIRCRAFT_ENTITY",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "name": "N12345",
+        "normalized_name": "N12345",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": false
+      },
+      {
+        "confidence": 0.7,
+        "created_at": "2023-03-20T12:05:00Z",
+        "entity_id": "ent_ea50819465a9e40c014f4b072ecbc9e4",
+        "entity_type": "airspace_observation",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "jurisdiction": "PR",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "RECORD_ENTITY",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "location": {
+          "lat": 18.4,
+          "lon": -66.0
+        },
+        "name": "airspace_observation obs_0000",
+        "normalized_name": "AIRSPACE_OBSERVATION OBS_0000",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": false
+      },
+      {
+        "confidence": 0.9,
+        "created_at": "2023-03-20T12:10:00Z",
+        "entity_id": "ent_63952ee65be2611529d6f9f467e3d8ad",
+        "entity_type": "airspace_track",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "jurisdiction": "PR",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "RECORD_ENTITY",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "location": {
+          "lat": 18.3,
+          "lon": -66.2
+        },
+        "name": "airspace_track trk_0000",
+        "normalized_name": "AIRSPACE_TRACK TRK_0000",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": false
+      }
+    ],
+    "relationships": [
+      {
+        "confidence": 0.8,
+        "created_at": "2023-03-20T12:00:00Z",
+        "evidence_source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "RELATIONSHIP",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "relationship_id": "rel_3c2c5f3353e6bad3e2f8a6cd935091a7",
+        "relationship_type": "reported_by",
+        "source_entity_id": "ent_2e06623c5f844bda70a75af502b38c5c",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": false,
+        "target_entity_id": "ent_f8efbd6a297535222dfcc936253efa59"
+      },
+      {
+        "confidence": 0.8,
+        "created_at": "2023-03-20T12:00:00Z",
+        "evidence_source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "RELATIONSHIP",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "relationship_id": "rel_3a8e0a17c5a2c25691e87c85f039771b",
+        "relationship_type": "observed",
+        "source_entity_id": "ent_2e06623c5f844bda70a75af502b38c5c",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": false,
+        "target_entity_id": "ent_2766b5ff365a509a2eebee7b84971603"
+      },
+      {
+        "confidence": 0.7,
+        "created_at": "2023-03-20T12:05:00Z",
+        "evidence_source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "RELATIONSHIP",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "relationship_id": "rel_3a0d28e0a9bdae2c9b6665a5b197afb6",
+        "relationship_type": "reported_by",
+        "source_entity_id": "ent_ea50819465a9e40c014f4b072ecbc9e4",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": false,
+        "target_entity_id": "ent_f8efbd6a297535222dfcc936253efa59"
+      },
+      {
+        "confidence": 0.9,
+        "created_at": "2023-03-20T12:10:00Z",
+        "evidence_source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "RELATIONSHIP",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "relationship_id": "rel_a6bb355060154ec1e003a925dfd21a2a",
+        "relationship_type": "reported_by",
+        "source_entity_id": "ent_63952ee65be2611529d6f9f467e3d8ad",
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "synthetic": false,
+        "target_entity_id": "ent_f8efbd6a297535222dfcc936253efa59"
+      }
+    ],
+    "sources": [
+      {
+        "confidence": 1.0,
+        "created_at": "2023-03-20T00:00:00Z",
+        "extracted_at": "2023-03-20T00:00:00Z",
+        "lineage": {
+          "extraction_method": "deterministic_envelope_projection",
+          "producer_phase": "SOURCE_REGISTRY",
+          "producer_script": "scripts/federation_export.py",
+          "source_inputs": [
+            "exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"
+          ]
+        },
+        "source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "source_name": "src_a",
+        "source_ref": "src_a",
+        "source_type": "fr24",
+        "synthetic": true
+      }
+    ]
+  }
+}
