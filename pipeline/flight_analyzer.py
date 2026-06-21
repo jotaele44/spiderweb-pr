@@ -490,6 +490,7 @@ class FlightDatabase:
 
     def store_flight(self, record: FlightRecord):
         conn = sqlite3.connect(self.db_path)
+        configure_connection(conn)
         cursor = conn.cursor()
         cursor.execute('''
             INSERT OR REPLACE INTO flights
@@ -508,16 +509,19 @@ class FlightDatabase:
             record.mission_type, record.num_screenshots,
         ))
 
-        for pt in record.track_points:
-            cursor.execute('''
-                INSERT INTO track_points
-                (flight_id, timestamp, latitude, longitude, altitude_ft, ground_speed_mph)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
+        track_rows = [
+            (
                 record.flight_id, pt.get("timestamp", ""),
                 pt.get("latitude", 0.0), pt.get("longitude", 0.0),
                 pt.get("altitude_ft", 0), pt.get("ground_speed_mph", 0),
-            ))
+            )
+            for pt in record.track_points
+        ]
+        cursor.executemany('''
+            INSERT INTO track_points
+            (flight_id, timestamp, latitude, longitude, altitude_ft, ground_speed_mph)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', track_rows)
 
         conn.commit()
         conn.close()

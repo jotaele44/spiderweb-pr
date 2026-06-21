@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS events (
     image_path       TEXT
 );
 
+-- Index the registration-watchlist scan in server/ingestion/registration_alerts.py
+-- ("SELECT ... FROM events WHERE kind='flight'"), which otherwise full-scans events.
+CREATE INDEX IF NOT EXISTS idx_events_kind ON events(kind);
+
 -- Per-point ADS-B tracks for flight events (ingested by
 -- scripts/parse_adsb_archive.py). One row per position report; flight_id
 -- references events.id. The composite primary key makes re-ingest idempotent
