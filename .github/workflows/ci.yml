@@ -90,7 +90,7 @@ jobs:
       # installed in this job — they run in the dedicated `test-gebco` job below
       # (T5-44). Coverage ratchet (T5-42) enforces a floor on the core packages.
       - name: Run test suite (airspace intel + LLM pipeline + earthgpt)
-        run: python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-report=term-missing:skip-covered --cov-fail-under=55
+        run: python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-report=term-missing:skip-covered --cov-fail-under=64
 
       - name: EarthGPT self-test (7 gates)
         run: |

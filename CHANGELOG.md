@@ -74,4 +74,8 @@ GitHub Release using the matching section below (T6-53).
 - **Theme 2 — Schema & validation contracts:** `federation_manifest` JSON
   Schema; `CONTRACT_VERSION` constant; example-artifact schema CI gate.
 
+### Changed
+- Coverage ratchet floor raised **55 → 64** (`--cov-fail-under` in CI); the core
+  suite measures 66.13% TOTAL, leaving ~2pp headroom.
+
 [Unreleased]: https://github.com/jotaele44/spiderweb-pr/commits/main

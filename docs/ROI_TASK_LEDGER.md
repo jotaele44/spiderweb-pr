@@ -146,7 +146,7 @@ Executed theme-by-theme, each CI-gated and squash-merged (Themes 2–7) or stack
 | 2 | Schema & validation | ✅ complete | `federation_manifest` schema, `CONTRACT_VERSION`, example-artifact CI gate |
 | 3 | Spiderweb language | ✅ complete | shared `integration/mbil.py`, `aasb_mbil_corridor_flag`, terrain hook |
 | 4 | Performance & scale | ✅ complete | WAL pragmas, hot-col indexes, `executemany`, MBIL `lru_cache`, per-stage timing |
-| 5 | Testing & coverage | ✅ complete | `pytest-cov` ratchet (≥55%), export reproducibility, release-gate coverage |
+| 5 | Testing & coverage | ✅ complete | `pytest-cov` ratchet (≥64%), export reproducibility, release-gate coverage |
 | 6 | CI/CD & DX | ✅ complete | lint/type gate (ruff+black+mypy allowlist), concurrency, dependabot, release tagging, badges, `make bootstrap` |
 | 7 | GIS / export | ✅ complete | GeoJSON `_meta`, CRS/EPSG stamping, corridor labels, centroid CSV hook, native KML, QGIS `.qml` pack |
 | 8 | RLSM pipeline | ✅ complete | `ocr_failures.jsonl`, per-zone/per-engine coverage drift |
