@@ -67,6 +67,45 @@ python run_all.py --image-dir data/screenshots --db outputs/flights.db --phase 2
 python run_all.py --image-dir data/screenshots --db outputs/flights.db --validate --export-pr-intel outputs/pr_intel --export-spiderweb outputs/spiderweb
 ```
 
+### RLSM unlabeled — parallel OCR runner
+
+`scripts/rlsm_unlabeled.py` OCRs a directory of **unlabeled** screenshots into the
+local flight DB using this repo's FlightAnalyzer OCR engine. It is a thin parallel
+harness (mini-batch `ThreadPoolExecutor`, thread-safe writes, sha256 dedup) — not
+the FR24 inventory/route/mining pipeline, which migrated to
+[skywatcher-pr](https://github.com/jotaele44/skywatcher-pr).
+
+Prereqs: the system `tesseract` engine (see [Prerequisites](#prerequisites)) plus
+`pip install -e ".[airspace]"`.
+
+```bash
+# Process a directory across 4 workers (OMP is auto-pinned to 1 thread/worker)
+python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --workers 4
+
+# Smoke on the first 5 images
+python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --limit 5
+
+# Time-box a run (stop dispatching new work after 30s; safe to re-run)
+python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --time-budget 30
+
+# Counts only (no processing)
+python scripts/rlsm_unlabeled.py --status --db outputs/flights.db
+```
+
+Throughput is ~1.1 s/img effective at 4 workers with OMP pinned; tune `--workers`
+to the core count. Runs are **resumable** — already-stored screenshots are skipped
+via sha256 dedup, so re-running after an interruption picks up where it left off.
+
+Verify a real run end-to-end:
+
+```bash
+python scripts/rlsm_unlabeled.py --image-dir /path/to/shots --limit 5 --db /tmp/rlsm.db
+#   → "processed 5/5  ok:N skip:M err:0"
+python scripts/rlsm_unlabeled.py --status --db /tmp/rlsm.db   # screenshot count climbed
+python run_all.py --db /tmp/rlsm.db --status                  # cross-check via the main CLI
+python run_all.py --db /tmp/rlsm.db --rlsm-status             # RLSM-specific counts (#129)
+```
+
 ### FR24 screenshot processor
 
 The FR24 screenshot ingestion pipeline (inventory scan, route extraction, RLSM mining)

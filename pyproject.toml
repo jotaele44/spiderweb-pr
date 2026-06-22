@@ -178,8 +178,11 @@ exclude_lines = [
 # errors in not-yet-typed dependency modules don't fail the check. The allowlist
 # grows as more modules are cleaned in later themes. Config is lenient (no
 # --strict) so the gate stays green while typing coverage expands incrementally.
+# python_version matches the lint runner (Python 3.12 in ci.yml): modern dependency
+# stubs (e.g. numpy 2.5.0+) ship PEP-695 `type` aliases that mypy rejects as a hard
+# syntax error at a 3.11 target. Runtime 3.11 support stays covered by the test matrix.
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 ignore_missing_imports = true
 no_implicit_optional = true
 warn_unused_ignores = true
