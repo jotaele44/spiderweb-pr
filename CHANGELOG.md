@@ -10,6 +10,15 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Post-V2 sweep (civic-data & hardening):** dataset layers / POI groups / ILAP
+  types (#120); missing-persons + geodata source ingestion — harvesters, PR
+  geocoder, layers (#123); FR24 ground-truth track harvest removed (migrated to
+  skywatcher-pr) (#124); Head Start civic-layer schema contract (#125); batched
+  flight track-point inserts + watchlist-scan index (#127); canonical-export
+  contract golden test (#128); parallel unlabeled-RLSM runner + `run_all
+  --rlsm-status` (#129); `federation/namespace.py` added to the lint/type
+  allowlist (#130). Roadmap, ledger, and changelog reconciled against `main`
+  (Theme 12 #100).
 - **Theme 12 — Docs & structure:** subsystem-grouped `docs/README.md` index
   (#93); ARCHITECTURE status refresh for federation + RLSM-canonical (#94);
   per-subsystem `gebco`/`earthgpt`/`llm` READMEs (#96); monorepo-split decision

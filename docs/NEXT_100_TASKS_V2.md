@@ -69,13 +69,13 @@ doc and are marked ✅ below for traceability.
 
 | # | Task | Scope | Effort | Blockers |
 |---|---|---|---|---|
-| **24** | N5 `--workers` for rlsm_unlabeled | Mirror `rlsm_ocr_parallel`'s `ProcessPoolExecutor`; ~70→18 min on 4 workers. | 2 h | None |
-| **25** | SQLite index audit | Covering indexes on hot cols (`ocr_status`, `screenshot_id`, `registration`). | 2 h | Migration |
-| **26** | Bulk-insert batching | `executemany` + single transaction in RLSM extractors. | 2 h | None |
+| **24** ✅ | N5 `--workers` for rlsm_unlabeled | **Done (#129)** — injectable mini-batch ThreadPool harness; tesseract is a subprocess, so OMP pinning (not ProcessPool) is the real lever — added in the post-V2 tidy PR. | 2 h | None |
+| **25** ✅ | SQLite index audit | **Done** — covering indexes in Theme 4; watchlist-scan index extended in #127. | 2 h | Migration |
+| **26** ✅ | Bulk-insert batching | **Done** — `executemany` in Theme 4; flight track-point inserts batched in #127. | 2 h | None |
 | **27** | WAL + tuned PRAGMAs | Enable WAL + cache/synchronous tuning on the flight DB. | 1 h | None |
 | **28** | Profile operational_intelligence | Profile the 35 KB hottest module; optimize hotspots. | 4 h | None |
 | **29** | Vectorize adapter loops | Replace `iterrows` with vectorized/`itertuples` in adapters. | 3 h | None |
-| **30** | Cache OCR engine init | Reuse engine across files in the parallel runner. | 2 h | None |
+| **30** ✅ | Cache OCR engine init | **Done (#129)** — the OCR engine is built once (`_OCRWorker(fa.ocr)`) and reused across every `process()` call. | 2 h | None |
 | **31** | Parquet export option | Optional pyarrow Parquet for the large CSV exports. | 2 h | None |
 | **32** | Chunked reads | Lazy/chunked reads for the 500k-candidate tables. | 3 h | None |
 | **33** | Memoize centroid distances | Cache municipal-centroid distance (T3-24 path). | 1 h | None |
@@ -91,8 +91,8 @@ doc and are marked ✅ below for traceability.
 | **38** | Tier 6 #23 test_provenance_utils | Cover the 8-key metadata block + git fallback. | 1 h | None |
 | **39** | Tier 6 #26 spiderweb_intake ext | Tests for the new additive fields. | 2 h | #23 |
 | **40** | N6 / B7 harden reproducibility | "Two fresh exports" instead of on-disk-vs-fresh. | 30 m | None |
-| **41** | B-integrate RLSM into suite | `--rlsm-status` flag on `run_all.py` + add `test_rlsm_pipeline.py` to default suite. | 3 h | None |
-| **42** | Coverage + ratchet | `pytest-cov` + enforced floor in CI. | 2 h | None |
+| **41** ✅ | B-integrate RLSM into suite | **Done (#129)** — `--rlsm-status` on `run_all.py`; `tests/test_rlsm_unlabeled.py` in the default suite. | 3 h | None |
+| **42** ✅ | Coverage + ratchet | **Done** — `pytest-cov` floor in CI (Theme 5); raised 55→64 in the post-V2 tidy PR (TOTAL 66.13%). | 2 h | None |
 | **43** | Property-based tests | hypothesis for OCR-confidence + geometry parsers. | 3 h | None |
 | **44** | Resolve ignored suites | Fix or document `test_io` / `test_terrain` exclusions. | 2 h | None |
 | **45** | GeoJSON golden-file tests | Golden shape per GeoJSON export. | 3 h | #57 |
@@ -144,7 +144,7 @@ doc and are marked ✅ below for traceability.
 
 | # | Task | Scope | Effort | Blockers |
 |---|---|---|---|---|
-| **74** | Contract-compat CI test | Wire the #15 golden fixture + version assert into CI on both sides. | 2 h | #15 |
+| **74** ✅ | Contract-compat CI test | **Done** — golden envelope + version-pin test (Theme 9); canonical-export contract golden added in #128. | 2 h | #15 |
 | **75** | live_execution gate | Criteria + test for flipping `federation.json` live-execution to true. | 3 h | None |
 | **76** | Hub-query spatial index | Pagination + rtree spatial index in the hub query path. | 4 h | rtree |
 | **77** | Version negotiation | Envelope schema-version negotiation handshake. | 3 h | #14 |
@@ -185,7 +185,7 @@ doc and are marked ✅ below for traceability.
 | **97** | Monorepo-split evaluation | Decision doc + extras boundary (RECOMMENDATIONS #5). | 4 h | #1 |
 | **98** | Consolidate FR24 docs | Merge the `FR24_*.md` set into one guide with a TOC. | 3 h | None |
 | **99** | API reference | Generate pdoc/mkdocs reference for public modules. | 3 h | None |
-| **100** | Roadmap maintenance | Migrate finished items into `ROI_TASK_LEDGER.md`; link this doc from README. | 1 h | None |
+| **100** ✅ | Roadmap maintenance | **Done (this PR)** — post-V2 PRs recorded in `ROI_TASK_LEDGER.md`; roadmap + ledger linked from README. | 1 h | None |
 
 ---
 
