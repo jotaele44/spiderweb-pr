@@ -8,8 +8,10 @@ loop, and the thread-safe write path — is unit-testable without pytesseract or
 opencv. ``--workers`` controls concurrency.
 
 The default worker (built lazily in ``main`` via ``_build_default_worker``)
-wraps the existing FlightAnalyzer OCR engine, so the runner is real when the OCR
-stack is installed; only that heavy path is exercised outside CI.
+wraps the existing FlightAnalyzer OCR engine — constructed once and reused across
+every image — so the runner is real when the OCR stack is installed; only that
+heavy path is exercised outside CI. ``main`` pins ``OMP_THREAD_LIMIT=1`` before
+importing that stack so the worker threads don't oversubscribe the CPU.
 
 Usage:
   python3 scripts/rlsm_unlabeled.py --image-dir DIR --db DB [--workers 4]
@@ -19,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import sqlite3
 import sys
 import threading
@@ -185,6 +188,14 @@ def main(argv: Optional[list[str]] = None) -> int:
     if not paths:
         print(f"  no images found under {args.image_dir}")
         return 0
+
+    # Pin OpenMP to one thread per worker *before* the OCR stack is imported
+    # (FlightAnalyzer → pytesseract, lazily inside _build_default_worker). This
+    # mirrors scripts/ocr_parallel.py and is the real throughput lever: without
+    # it each of the N tesseract workers spawns its own OMP pool and they
+    # oversubscribe the CPU. setdefault leaves an operator override intact.
+    os.environ.setdefault("OMP_THREAD_LIMIT", "1")
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
 
     worker, store = _build_default_worker(args.image_dir, args.db)
     stats = run_batch(paths, args.db, worker, workers=args.workers,
