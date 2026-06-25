@@ -53,7 +53,7 @@ jobs:
           cache: pip
 
       - name: Install dev tooling
-        run: pip install -e ".[dev]"
+        run: pip install -c constraints.txt -e ".[dev]"
 
       - name: Lint + type-check (curated allowlist)
         run: |
