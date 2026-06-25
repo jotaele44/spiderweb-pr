@@ -84,3 +84,23 @@ constants, not domain vocabulary; renaming them breaks interchange formats and t
 
 The rename of the existing pipeline/backend/frontend domain vocabulary is staged as a
 tracked follow-up migration on top of this canonical Pin layer.
+
+## Staged migration status
+
+| Stage | Area | Status |
+|-------|------|--------|
+| 1 | Config / registry (`pin_registry.yaml` + loader alias) | **done** |
+| 2 | RLSM validation schemas | **deferred — see below** |
+| 3 | Code (`pipeline/`, `integration/`, `server/`, `scripts/`, …) | pending |
+| 4 | Tests + non-legacy docs | pending |
+
+**Stage 2 deferred (cross-repo coupling).** The `poi`-named schemas — `labeled_pois`,
+`unlabeled_poi_candidates`, `ocr_normalized_labels`, `manual_review` — are dormant,
+validation-only contracts in this repo. The RLSM pipeline that produced their artifacts
+(`outputs/*_pois.csv` with `poi_id` / `poi_type_guess` columns) **migrated to
+[skywatcher-pr](https://github.com/jotaele44/skywatcher-pr)** (PRs #110/#111), so those
+artifacts are no longer generated here and no in-repo code validates against these schema
+names. Renaming only our schema identity (`$id` / filename) would desync the name from the
+`poi_*` columns it still describes; renaming the columns/artifacts would make our schemas
+reject the CSVs skywatcher-pr still emits. This schema family therefore **awaits
+coordination with skywatcher-pr** and is intentionally left untouched until then.
