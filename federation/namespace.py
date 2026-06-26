@@ -17,7 +17,7 @@ PREFIX = "spiderweb"
 # which namespace each producer's records must carry.
 PRODUCER_PREFIXES = {
     "spiderweb-pr": "spiderweb",
-    "contract-sweeper": "contract_sweeper",
+    "moneysweep-pr": "moneysweep",
 }
 
 

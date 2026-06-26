@@ -20,12 +20,12 @@ from readiness.contract_finance_layer import (  # noqa: E402
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", required=True, help="Directory containing Contract-Sweeper adapter outputs")
+    parser.add_argument("--input", required=True, help="Directory containing moneysweep-pr adapter outputs")
     parser.add_argument("--out", default=None, help="Output directory for scored layer artifacts; default: --input")
     parser.add_argument(
         "--artifact-manifest",
         default=None,
-        help="Optional Contract-Sweeper artifact_manifest.json path. When supplied, the manifest gate must pass before scoring.",
+        help="Optional moneysweep-pr artifact_manifest.json path. When supplied, the manifest gate must pass before scoring.",
     )
     return parser
 

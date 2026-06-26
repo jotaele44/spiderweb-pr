@@ -29,7 +29,7 @@ def test_valid_manifest_passes_gate():
     report = validate_contract_finance_manifest(FIXTURE)
 
     assert report["status"] == "READY"
-    assert report["producer_repository"] == "jotaele44/Contract-Sweeper"
+    assert report["producer_repository"] == "jotaele44/moneysweep-pr"
     assert report["artifact_count"] == 11
     assert "outputs/contract_finance/contract_finance_geo_rows.csv" in report["declared_paths"]
 

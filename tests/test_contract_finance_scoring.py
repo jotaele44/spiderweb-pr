@@ -3,7 +3,7 @@
 These modules feed the static dashboard and stay in the producer-only tree; their
 former tests were coupled to the retired query-hub (now under docs/legacy/). This
 suite exercises the pure scoring/fusion/calibration logic directly — no federation
-query-hub, no Contract-Sweeper adapter.
+query-hub, no moneysweep-pr adapter.
 """
 from __future__ import annotations
 

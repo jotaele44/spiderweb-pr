@@ -41,4 +41,4 @@ Calibration source files used for the first real-data pass:
 
 ## Calibration decision
 
-The first production-ready SpiderWeb contract-finance calibration should be **municipality/entity-density first**, not point-geometry first. Point geometry can be promoted once Contract-Sweeper emits geocoded v1.1 packages with sufficient `location.lat` / `location.lon` coverage.
+The first production-ready SpiderWeb contract-finance calibration should be **municipality/entity-density first**, not point-geometry first. Point geometry can be promoted once moneysweep-pr emits geocoded v1.1 packages with sufficient `location.lat` / `location.lon` coverage.

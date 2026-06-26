@@ -35,13 +35,13 @@ The four retired correlation strategies (now owned upstream): **temporal**,
 **normalized-entity**, **spatial-haversine**, **external-id**.
 
 Moved under `docs/legacy/`:
-- `docs/legacy/federation/hub/**` (query, index, package_loader, normalize, layer_registry, adapters/contract_sweeper)
-- `docs/legacy/readiness/{spiderweb_spatial_lane,contract_sweeper_package_gate}.py`
-- `docs/legacy/scripts/{build_spiderweb_spatial_lane,ingest_contract_sweeper_package,federation_conformance_check,assess_contract_sweeper_package}.py`
+- `docs/legacy/federation/hub/**` (query, index, package_loader, normalize, layer_registry, adapters/moneysweep)
+- `docs/legacy/readiness/{spiderweb_spatial_lane,moneysweep_package_gate}.py`
+- `docs/legacy/scripts/{build_spiderweb_spatial_lane,ingest_moneysweep_package,federation_conformance_check,assess_moneysweep_package}.py`
 - `docs/legacy/tests/**` (7 consumer tests + `test_federation_hardening_hub_xid.py`)
 
 The `.github/workflows/intake-normalize.yml` workflow was deleted. **Cross-repo
-consequence:** that workflow fired when Contract-Sweeper's `intake-delivery` workflow
+consequence:** that workflow fired when moneysweep-pr's `intake-delivery` workflow
 pushed `data/intake/pr_intake/spiderweb_pr_derivatives.csv`, normalizing it via the
 spatial-lane builder. With it gone, delivered derivatives are **no longer auto-normalized
 here, with no signal back to the sender.** This is a deliberate behavioral change of the
@@ -69,7 +69,7 @@ FastAPI server). Relocating them is a separate, out-of-scope effort.
    aggregator now owns cross-producer correlation, where it sees all producers; PRIIS's
    record↔infrastructure linking is unchanged. An earlier read confirmed neither the hub
    nor PRIIS covered these before, so this closed a real gap rather than a duplication.
-2. **Resolved** — the Contract-Sweeper → spiderweb delivery sender was retired
-   (Contract-Sweeper #250: removed the cross-repo delivery step + `deliver_derivatives.py`).
+2. **Resolved** — the moneysweep-pr → spiderweb delivery sender was retired
+   (moneysweep-pr #250: removed the cross-repo delivery step + `deliver_derivatives.py`).
    The normalizer itself is preserved at `docs/legacy/scripts/build_spiderweb_spatial_lane.py`
    should the spatial lane ever be re-homed.

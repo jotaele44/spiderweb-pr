@@ -7,7 +7,7 @@ CLOSED before a record is admitted to the federation hub. These checks always
 run and an empty package is treated as invalid.
 
 The functions take an ``expected_prefix`` so the hub can validate either
-producer's package (``spiderweb`` or ``contract_sweeper``) with the same code.
+producer's package (``spiderweb`` or ``moneysweep``) with the same code.
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ REQUIRED_KEYS = (
     "synthetic",
 )
 
-# Record types that must additionally pass the financial gate (Contract-Sweeper).
+# Record types that must additionally pass the financial gate (moneysweep-pr).
 FINANCIAL_RECORD_TYPES = frozenset({"funding_award", "transaction"})
 
 _CURRENCY_RE = re.compile(r"^[A-Z]{3}$")

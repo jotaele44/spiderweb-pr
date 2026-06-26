@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 EXPECTED_MANIFEST_TYPE = "contract_finance_artifact_manifest"
-EXPECTED_PRODUCER_REPO = "jotaele44/Contract-Sweeper"
+EXPECTED_PRODUCER_REPO = "jotaele44/moneysweep-pr"
 EXPECTED_ROW_LEVEL_SOURCE = "outputs/contract_finance/contract_finance_geo_rows.csv"
 EXPECTED_READINESS_GATE = "outputs/contract_finance/spiderweb_engine_readiness_reassessment.json"
 EXPECTED_REQUIRED_ARTIFACT_COUNT = 11
@@ -28,7 +28,7 @@ REQUIRED_ARTIFACT_FIELDS = {"path", "required", "format", "role", "git_blob_sha"
 
 
 class ContractFinanceManifestGateError(ValueError):
-    """Raised when the Contract-Sweeper contract-finance manifest is unsafe to consume."""
+    """Raised when the moneysweep-pr contract-finance manifest is unsafe to consume."""
 
 
 def _load_manifest(path: Path) -> dict[str, Any]:
@@ -57,7 +57,7 @@ def assess_contract_finance_manifest(manifest_path: str | Path) -> dict[str, Any
         producer = {}
 
     if producer.get("repository") != EXPECTED_PRODUCER_REPO:
-        errors.append("producer.repository must be jotaele44/Contract-Sweeper")
+        errors.append("producer.repository must be jotaele44/moneysweep-pr")
     if not producer.get("commit"):
         errors.append("producer.commit is required")
 

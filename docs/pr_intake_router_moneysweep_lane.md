@@ -1,15 +1,15 @@
-# PR Intake Router — Contract-Sweeper Lane
+# PR Intake Router — moneysweep-pr Lane
 
 ## Active vector
-`CONTRACT-SWEEPER_POLITICS_FINANCE_UPDATE_LANE`
+`MONEYSWEEP_POLITICS_FINANCE_UPDATE_LANE`
 
 ## Purpose
-This document defines the Contract-Sweeper side of the shared Puerto Rico intake router. Contract-Sweeper is the canonical repository for politics, finance, procurement, public-funding, contracts, lobbying, budget authority, and public-execution-chain records.
+This document defines the moneysweep-pr side of the shared Puerto Rico intake router. moneysweep-pr is the canonical repository for politics, finance, procurement, public-funding, contracts, lobbying, budget authority, and public-execution-chain records.
 
-The shared router should ingest Puerto Rico-relevant raw items once, classify the topic domain, assign canonical ownership, and then write only the correct derivative records into Contract-Sweeper.
+The shared router should ingest Puerto Rico-relevant raw items once, classify the topic domain, assign canonical ownership, and then write only the correct derivative records into moneysweep-pr.
 
 ## Canonical ownership
-Contract-Sweeper owns records when the primary signal is one or more of:
+moneysweep-pr owns records when the primary signal is one or more of:
 
 - public funds
 - budget authority
@@ -23,7 +23,7 @@ Contract-Sweeper owns records when the primary signal is one or more of:
 - public corporation finance or governance
 - contractor / recipient / beneficiary chains
 
-## Route to Contract-Sweeper
+## Route to moneysweep-pr
 A raw item should be routed here when any of these fields are detected:
 
 | Signal | Examples | Canonical action |
@@ -36,7 +36,7 @@ A raw item should be routed here when any of these fields are detected:
 | T1 confirmation | COR3, FEMA, OpenFEMA, OCPR, ASG, OGP, Hacienda, NEPR, HUD/CDBG | Create or update `t1_matches` |
 
 ## Do not make canonical here
-Do not make Contract-Sweeper canonical for records that are primarily:
+Do not make moneysweep-pr canonical for records that are primarily:
 
 - GIS / map / dataset / spatial layer
 - terrain, hydrography, karst, geology, LiDAR, DEM, bathymetry
@@ -47,21 +47,21 @@ For those, route to spiderweb-pr. If the same item has fiscal data, create a bac
 
 ## Dual-route rules
 
-| Input class | Canonical repo | Contract-Sweeper record | spiderweb-pr derivative |
+| Input class | Canonical repo | moneysweep-pr record | spiderweb-pr derivative |
 |---|---|---|---|
-| Infrastructure funding announcement | Contract-Sweeper | funding lead / project / award | POI/AOI/project footprint if location exists |
-| Environmental grant | Contract-Sweeper | award / funding event | dataset/site layer if spatial data exists |
-| Road/bridge contract | Contract-Sweeper | contract/procurement event | infrastructure asset or corridor candidate |
-| USACE project notice with amount | Contract-Sweeper | funding/procurement/agency action | federal infrastructure AOI |
-| LUMA/Genera project with FEMA/PREPA/NEPR funding | Contract-Sweeper | funding/procurement lead | grid asset if location exists |
+| Infrastructure funding announcement | moneysweep-pr | funding lead / project / award | POI/AOI/project footprint if location exists |
+| Environmental grant | moneysweep-pr | award / funding event | dataset/site layer if spatial data exists |
+| Road/bridge contract | moneysweep-pr | contract/procurement event | infrastructure asset or corridor candidate |
+| USACE project notice with amount | moneysweep-pr | funding/procurement/agency action | federal infrastructure AOI |
+| LUMA/Genera project with FEMA/PREPA/NEPR funding | moneysweep-pr | funding/procurement lead | grid asset if location exists |
 
 ## Required normalized fields
 
-Every Contract-Sweeper derivative record must preserve:
+Every moneysweep-pr derivative record must preserve:
 
 - `record_id`
 - `source_item_id`
-- `canonical_repo = Contract-Sweeper`
+- `canonical_repo = moneysweep-pr`
 - `related_repo_record_id`
 - `source_name`
 - `source_url`
@@ -96,7 +96,7 @@ Every Contract-Sweeper derivative record must preserve:
 ## Zero-loss status logic
 Every observed item must receive exactly one final intake status:
 
-- `routed_contract_sweeper`
+- `routed_moneysweep`
 - `routed_spiderweb_pr`
 - `dual_routed_contract_primary`
 - `dual_routed_spiderweb_primary`
@@ -124,10 +124,10 @@ No item may disappear between raw intake and normalized output.
 - `data/normalized/contracts_procurement_events.csv`
 - `data/review/verification_queue.csv`
 - `data/review/discrepancy_queue.csv`
-- `data/exports/contract_sweeper_crosswalk_queue.csv`
+- `data/exports/moneysweep_crosswalk_queue.csv`
 - `reports/weekly/politics_finance_update_report.md`
 
 ## Next execution string
 ```text
-EXECUTE_NEXT_VECTOR: IMPLEMENT_CONTRACT-SWEEPER_POLITICS_FINANCE_LANE → ADD_DOMAIN_ROUTER → ADD_POLITICS_FINANCE_TABLES → WIRE_FUNDING+PROCUREMENT+LOBBYING_CLASSIFIERS → ADD_T1_VERIFICATION_QUEUE → EXPORT_CONTRACT-SWEEPER_CROSSWALK_REPORT
+EXECUTE_NEXT_VECTOR: IMPLEMENT_MONEYSWEEP_POLITICS_FINANCE_LANE → ADD_DOMAIN_ROUTER → ADD_POLITICS_FINANCE_TABLES → WIRE_FUNDING+PROCUREMENT+LOBBYING_CLASSIFIERS → ADD_T1_VERIFICATION_QUEUE → EXPORT_MONEYSWEEP_CROSSWALK_REPORT
 ```

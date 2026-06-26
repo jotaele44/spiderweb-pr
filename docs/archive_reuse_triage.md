@@ -65,7 +65,7 @@ planned by this document:
 - PR.INT workbench architecture (revisit after the FR24 temporal dashboard
   stabilizes).
 - FR24 screenshot / HEIC ingest plan.
-- Contract-Sweeper NGO / OSFL integration (belongs in Contract-Sweeper).
+- moneysweep-pr NGO / OSFL integration (belongs in moneysweep-pr).
 - Puerto Rico anomaly / UAP intake rubric (convergence only; no claim escalation
   without corroboration).
 

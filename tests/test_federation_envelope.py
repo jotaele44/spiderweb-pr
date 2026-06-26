@@ -24,9 +24,9 @@ def test_namespaced_id_is_idempotent():
 
 
 def test_namespaced_id_supports_other_prefix():
-    cs = namespaced_id("award_1", prefix="contract_sweeper")
-    assert cs == "contract_sweeper:award_1"
-    assert namespaced_id(cs, prefix="contract_sweeper") == cs
+    cs = namespaced_id("award_1", prefix="moneysweep")
+    assert cs == "moneysweep:award_1"
+    assert namespaced_id(cs, prefix="moneysweep") == cs
 
 
 def test_namespaced_id_rejects_empty():
@@ -38,7 +38,7 @@ def test_namespaced_id_rejects_empty():
 
 def test_prefix_for_producer():
     assert prefix_for_producer("spiderweb-pr") == "spiderweb"
-    assert prefix_for_producer("contract-sweeper") == "contract_sweeper"
+    assert prefix_for_producer("moneysweep-pr") == "moneysweep"
     assert prefix_for_producer("unknown") is None
 
 
