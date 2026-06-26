@@ -53,6 +53,9 @@ jobs:
           cache: pip
 
       - name: Install dev tooling
+        # Pin via constraints.txt (numpy==2.4.6 etc.) for a reproducible lint
+        # environment. Without it, pip floats to numpy>=2.5 whose typeshed stubs
+        # use PEP 695 `type` statements that mypy (python_version 3.11) rejects.
         run: pip install -c constraints.txt -e ".[dev]"
 
       - name: Lint + type-check (curated allowlist)
