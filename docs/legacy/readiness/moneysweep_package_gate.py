@@ -1,8 +1,8 @@
-"""Production readiness gate for Contract-Sweeper packages.
+"""Production readiness gate for moneysweep-pr packages.
 
 This gate runs at the SpiderWeb consumer boundary. It validates that a
-Contract-Sweeper export package is production-safe before adapter ingestion and
-engine scoring. It does not import Contract-Sweeper.
+moneysweep-pr export package is production-safe before adapter ingestion and
+engine scoring. It does not import moneysweep-pr.
 """
 
 from __future__ import annotations
@@ -13,9 +13,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from federation.hub.adapters.contract_sweeper import (
+from federation.hub.adapters.moneysweep import (
     ContractSweeperAdapterError,
-    load_contract_sweeper_package,
+    load_moneysweep_package,
     location_point,
 )
 
@@ -57,13 +57,13 @@ def _has_lineage(row: dict[str, Any]) -> bool:
     return isinstance(lineage, dict) and bool(lineage)
 
 
-def assess_contract_sweeper_package(
+def assess_moneysweep_package(
     package_dir: str | Path,
     output_path: str | Path | None = None,
     *,
     thresholds: PackageGateThresholds | None = None,
 ) -> dict[str, Any]:
-    """Assess a Contract-Sweeper package and optionally write a gate report."""
+    """Assess a moneysweep-pr package and optionally write a gate report."""
 
     thresholds = thresholds or PackageGateThresholds()
     package_dir = Path(package_dir)
@@ -71,7 +71,7 @@ def assess_contract_sweeper_package(
     warnings: list[dict[str, Any]] = []
 
     try:
-        package = load_contract_sweeper_package(package_dir, mode="production")
+        package = load_moneysweep_package(package_dir, mode="production")
     except ContractSweeperAdapterError as exc:
         report = {
             "generated_at": datetime.now(timezone.utc).isoformat(),

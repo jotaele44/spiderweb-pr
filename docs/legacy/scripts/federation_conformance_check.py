@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Live cross-repo conformance check for the Contract-Sweeper financial handoff.
+"""Live cross-repo conformance check for the moneysweep-pr financial handoff.
 
-When the Contract-Sweeper repo is available locally, this builds a real export
+When the moneysweep-pr repo is available locally, this builds a real export
 package with *its* producer (``scripts/build_export_package.py``) and ingests it
 through *this* repo's consumer (adapter + production gate + contract-finance
 layer). A green run proves the producer and consumer agree on the v1.2.0 on-wire
 contract — the guarantee that the committed conformance fixtures encode.
 
-In separate-repo CI (where Contract-Sweeper is not checked out) it skips
-gracefully with exit code 0; the committed ``tests/fixtures/contract_sweeper_v1_2``
-fixture + ``tests/test_contract_sweeper_conformance.py`` cover the consumer side.
+In separate-repo CI (where moneysweep-pr is not checked out) it skips
+gracefully with exit code 0; the committed ``tests/fixtures/moneysweep_v1_2``
+fixture + ``tests/test_moneysweep_conformance.py`` cover the consumer side.
 
 Usage::
 
-    python scripts/federation_conformance_check.py [--contract-sweeper PATH]
+    python scripts/federation_conformance_check.py [--moneysweep-pr PATH]
 """
 
 from __future__ import annotations
@@ -28,20 +28,20 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from federation.hub.adapters.contract_sweeper import (  # noqa: E402
+from federation.hub.adapters.moneysweep import (  # noqa: E402
     EXPECTED_VERSION,
-    export_contract_sweeper_features,
+    export_moneysweep_features,
 )
 from readiness.contract_finance_layer import build_contract_finance_layer  # noqa: E402
-from readiness.contract_sweeper_package_gate import assess_contract_sweeper_package  # noqa: E402
+from readiness.moneysweep_package_gate import assess_moneysweep_package  # noqa: E402
 
 DEFAULT_CS_PATHS = (
-    REPO_ROOT.parent / "Contract-Sweeper",
-    REPO_ROOT.parent / "contract-sweeper",
+    REPO_ROOT.parent / "moneysweep-pr",
+    REPO_ROOT.parent / "moneysweep-pr",
 )
 
 
-def _find_contract_sweeper(explicit: str | None) -> Path | None:
+def _find_moneysweep(explicit: str | None) -> Path | None:
     candidates = [Path(explicit)] if explicit else list(DEFAULT_CS_PATHS)
     for cand in candidates:
         if (cand / "scripts" / "build_export_package.py").is_file():
@@ -61,13 +61,13 @@ def _load_producer_builder(cs_root: Path):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--contract-sweeper", default=None, help="path to the Contract-Sweeper repo")
+    parser.add_argument("--moneysweep-pr", default=None, help="path to the moneysweep-pr repo")
     args = parser.parse_args(argv)
 
-    cs_root = _find_contract_sweeper(args.contract_sweeper)
+    cs_root = _find_moneysweep(args.moneysweep)
     if cs_root is None:
-        print("[SKIP] Contract-Sweeper repo not found locally; "
-              "consumer-side conformance is covered by tests/test_contract_sweeper_conformance.py")
+        print("[SKIP] moneysweep-pr repo not found locally; "
+              "consumer-side conformance is covered by tests/test_moneysweep_conformance.py")
         return 0
 
     builder = _load_producer_builder(cs_root)
@@ -91,9 +91,9 @@ def main(argv: list[str] | None = None) -> int:
         # Build a real package with the producer's own build script.
         builder.build_package(input_dir=build_input, output_dir=pkg, mode=build_mode)
 
-        export_contract_sweeper_features(pkg, adapter_out, mode=build_mode)
+        export_moneysweep_features(pkg, adapter_out, mode=build_mode)
         layer = build_contract_finance_layer(adapter_out, layer_out)
-        gate = assess_contract_sweeper_package(pkg) if build_mode == "production" else None
+        gate = assess_moneysweep_package(pkg) if build_mode == "production" else None
 
     if (gate is not None and gate["status"] == "NOT_READY") or layer["status"] != "READY":
         gate_status = gate["status"] if gate else "skipped(test-mode)"

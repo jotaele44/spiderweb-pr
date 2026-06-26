@@ -1,17 +1,17 @@
 """Federation adapters for external evidence-package producers."""
 
-from .contract_sweeper import (
+from .moneysweep import (
     ContractSweeperAdapterError,
     ContractSweeperPackage,
-    export_contract_sweeper_features,
-    load_contract_sweeper_package,
-    normalize_contract_sweeper_records,
+    export_moneysweep_features,
+    load_moneysweep_package,
+    normalize_moneysweep_records,
 )
 
 __all__ = [
     "ContractSweeperAdapterError",
     "ContractSweeperPackage",
-    "export_contract_sweeper_features",
-    "load_contract_sweeper_package",
-    "normalize_contract_sweeper_records",
+    "export_moneysweep_features",
+    "load_moneysweep_package",
+    "normalize_moneysweep_records",
 ]

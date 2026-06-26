@@ -1,18 +1,18 @@
-"""Contract-Sweeper v1.2.0 package adapter for SpiderWeb PR.
+"""moneysweep-pr v1.2.0 package adapter for SpiderWeb PR.
 
-This module intentionally treats Contract-Sweeper as an external producer. It
+This module intentionally treats moneysweep-pr as an external producer. It
 reads a package from disk, validates the v1.2.0 native stream contract, and maps
 awards / transactions / entities into SpiderWeb-facing feature artifacts without
-importing Contract-Sweeper code.
+importing moneysweep-pr code.
 
-The v1.2.0 on-wire contract (produced by Contract-Sweeper's
+The v1.2.0 on-wire contract (produced by moneysweep-pr's
 ``scripts/build_export_package.py`` and defined by its
-``schemas/contract_sweeper_*.schema.json``) is the authority for the shapes read
+``schemas/moneysweep_*.schema.json``) is the authority for the shapes read
 here: a ``files[]`` manifest, dual entity references on money rows
 (``recipient_entity_id`` + ``funding_agency_entity_id`` on awards,
 ``payer_entity_id`` + ``payee_entity_id`` on transactions), and
 ``location.latitude`` / ``location.longitude`` coordinates. A cross-repo
-conformance fixture (``tests/fixtures/contract_sweeper_v1_2/``) and test guard
+conformance fixture (``tests/fixtures/moneysweep_v1_2/``) and test guard
 against silent contract drift.
 """
 
@@ -34,17 +34,17 @@ REQUIRED_STREAMS = {
     "relationships",
 }
 
-EXPECTED_PRODUCER = "contract-sweeper"
+EXPECTED_PRODUCER = "moneysweep-pr"
 EXPECTED_VERSION = "1.2.0"
 
 
 class ContractSweeperAdapterError(ValueError):
-    """Raised when a Contract-Sweeper package cannot be safely consumed."""
+    """Raised when a moneysweep-pr package cannot be safely consumed."""
 
 
 @dataclass(frozen=True)
 class ContractSweeperPackage:
-    """Validated Contract-Sweeper package loaded from disk."""
+    """Validated moneysweep-pr package loaded from disk."""
 
     package_dir: Path
     manifest: dict[str, Any]
@@ -144,7 +144,7 @@ def _validate_manifest(manifest: dict[str, Any]) -> None:
         )
     if manifest.get("export_contract_version") != EXPECTED_VERSION:
         raise ContractSweeperAdapterError(
-            f"unsupported Contract-Sweeper export version {manifest.get('export_contract_version')!r}; "
+            f"unsupported moneysweep-pr export version {manifest.get('export_contract_version')!r}; "
             f"expected {EXPECTED_VERSION!r}"
         )
     files = manifest.get("files")
@@ -217,8 +217,8 @@ def _validate_streams(streams: dict[str, list[dict[str, Any]]], *, mode: str) ->
             raise ContractSweeperAdapterError(f"relationships references unknown target_entity_id: {target_entity_id}")
 
 
-def load_contract_sweeper_package(package_dir: str | Path, *, mode: str = "test") -> ContractSweeperPackage:
-    """Load and validate a Contract-Sweeper v1.2.0 package directory."""
+def load_moneysweep_package(package_dir: str | Path, *, mode: str = "test") -> ContractSweeperPackage:
+    """Load and validate a moneysweep-pr v1.2.0 package directory."""
 
     if mode not in {"test", "production"}:
         raise ContractSweeperAdapterError("mode must be 'test' or 'production'")
@@ -243,7 +243,7 @@ def location_point(location: Any) -> tuple[float, float] | None:
 
     Canonical keys are ``latitude``/``longitude``; ``lat``/``lon`` are tolerated
     for resilience. The single source of truth for reading coordinates off a
-    Contract-Sweeper money row, shared by the adapter and the consumer gate.
+    moneysweep-pr money row, shared by the adapter and the consumer gate.
     """
     if not isinstance(location, dict):
         return None
@@ -309,8 +309,8 @@ def _municipality_density(features: Iterable[dict[str, Any]]) -> list[dict[str, 
     return sorted(totals.values(), key=lambda row: (-row["total_amount"], row["municipality_code"]))
 
 
-def normalize_contract_sweeper_records(package: ContractSweeperPackage) -> dict[str, Any]:
-    """Map Contract-Sweeper native streams into SpiderWeb contract/finance features."""
+def normalize_moneysweep_records(package: ContractSweeperPackage) -> dict[str, Any]:
+    """Map moneysweep-pr native streams into SpiderWeb contract/finance features."""
 
     entities = _entity_index(package)
     sources = _source_index(package)
@@ -367,7 +367,7 @@ def _write_graphml(path: Path, entities: list[dict[str, Any]], edges: list[dict[
         '<graphml xmlns="http://graphml.graphdrawing.org/xmlns">',
         '  <key id="label" for="node" attr.name="label" attr.type="string"/>',
         '  <key id="relationship_type" for="edge" attr.name="relationship_type" attr.type="string"/>',
-        '  <graph id="contract_sweeper_entities" edgedefault="directed">',
+        '  <graph id="moneysweep_entities" edgedefault="directed">',
     ]
     for entity in entities:
         entity_id = _xml_escape(entity.get("entity_id"))
@@ -391,11 +391,11 @@ def _write_graphml(path: Path, entities: list[dict[str, Any]], edges: list[dict[
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def export_contract_sweeper_features(package_dir: str | Path, out_dir: str | Path, *, mode: str = "test") -> dict[str, Any]:
+def export_moneysweep_features(package_dir: str | Path, out_dir: str | Path, *, mode: str = "test") -> dict[str, Any]:
     """Load, validate, normalize, and export SpiderWeb contract/finance artifacts."""
 
-    package = load_contract_sweeper_package(package_dir, mode=mode)
-    normalized = normalize_contract_sweeper_records(package)
+    package = load_moneysweep_package(package_dir, mode=mode)
+    normalized = normalize_moneysweep_records(package)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
 
