@@ -35,7 +35,7 @@ ROUTER_CONFIG_PATH = REPO_ROOT / "configs" / "pr_intake_domain_router.yaml"
 
 ROUTE_RESULTS_FILENAME = "route_results.jsonl"
 SW_DERIVATIVES_FILENAME = "spiderweb_pr_derivatives.csv"
-CS_DERIVATIVES_FILENAME = "contract_sweeper_derivatives.csv"
+CS_DERIVATIVES_FILENAME = "moneysweep_derivatives.csv"
 REVIEW_QUEUE_FILENAME = "manual_review_queue.csv"
 SUMMARY_FILENAME = "routing_summary.json"
 
@@ -154,7 +154,7 @@ def _route_item(
 
     matched = _matched_rules(corpus, rules)
     sw_rules = [r for r in matched if r.get("canonical_repo") == "spiderweb-pr"]
-    cs_rules = [r for r in matched if r.get("canonical_repo") == "Contract-Sweeper"]
+    cs_rules = [r for r in matched if r.get("canonical_repo") == "moneysweep-pr"]
 
     sw_record_id = _record_id(SW_RECORD_ID_PREFIX, source_item_id)
     cs_record_id = _record_id(CS_RECORD_ID_PREFIX, source_item_id)
@@ -164,10 +164,10 @@ def _route_item(
         all_tables = _output_tables_from_rules(matched)
         cond = _check_dual_condition(all_domains, dual_conditions)
         canonical = cond["canonical_repo"] if cond else "spiderweb-pr"
-        derivative = cond.get("derivative_repo", "") if cond else "Contract-Sweeper"
+        derivative = cond.get("derivative_repo", "") if cond else "moneysweep-pr"
         status = (
             "dual_routed_contract_primary"
-            if canonical == "Contract-Sweeper"
+            if canonical == "moneysweep-pr"
             else "dual_routed_spiderweb_primary"
         )
         return {
@@ -188,8 +188,8 @@ def _route_item(
 
     if cs_rules:
         return {
-            "source_item_id": source_item_id, "final_status": "routed_contract_sweeper",
-            "reason": "", "canonical_repo": "Contract-Sweeper", "derivative_repo": "",
+            "source_item_id": source_item_id, "final_status": "routed_moneysweep",
+            "reason": "", "canonical_repo": "moneysweep-pr", "derivative_repo": "",
             "domains": _domains_from_rules(cs_rules),
             "output_tables": _output_tables_from_rules(cs_rules),
             "sw_record_id": "", "cs_record_id": cs_record_id,
@@ -298,9 +298,9 @@ def route(
                 item, result, "spiderweb-pr",
                 result["sw_record_id"], result["cs_record_id"],
             ))
-        elif status == "routed_contract_sweeper":
+        elif status == "routed_moneysweep":
             cs_rows.append(_derivative_row(
-                item, result, "Contract-Sweeper",
+                item, result, "moneysweep-pr",
                 result["cs_record_id"], result["sw_record_id"],
             ))
         elif status in DUAL_STATUSES:
@@ -309,7 +309,7 @@ def route(
                 result["sw_record_id"], result["cs_record_id"],
             ))
             cs_rows.append(_derivative_row(
-                item, result, "Contract-Sweeper",
+                item, result, "moneysweep-pr",
                 result["cs_record_id"], result["sw_record_id"],
             ))
         elif status == "manual_review_required":
@@ -330,14 +330,14 @@ def route(
         "router_version": str(config.get("version", "unknown")),
         "input_count": len(items),
         "spiderweb_pr_derivative_count": len(sw_rows),
-        "contract_sweeper_derivative_count": len(cs_rows),
+        "moneysweep_derivative_count": len(cs_rows),
         "manual_review_count": len(review_rows),
         "by_status": dict(sorted(status_counts.items())),
         "zero_loss_pass": sum(status_counts.values()) == len(items),
         "outputs": {
             "route_results": ROUTE_RESULTS_FILENAME,
             "spiderweb_pr_derivatives": SW_DERIVATIVES_FILENAME,
-            "contract_sweeper_derivatives": CS_DERIVATIVES_FILENAME,
+            "moneysweep_derivatives": CS_DERIVATIVES_FILENAME,
             "manual_review_queue": REVIEW_QUEUE_FILENAME,
         },
     }

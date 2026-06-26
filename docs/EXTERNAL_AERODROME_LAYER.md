@@ -153,7 +153,7 @@ These are seed observations from the current Ascendas / offshore Puerto Rico scr
 EAL feeds later layers in this order:
 
 ```text
-EAL -> Facility Node Layer -> Airframe Entity Layer -> PR Flight Crosswalk -> Contract-Sweeper Fusion -> Spiderweb Graph
+EAL -> Facility Node Layer -> Airframe Entity Layer -> PR Flight Crosswalk -> moneysweep-pr Fusion -> Spiderweb Graph
 ```
 
 Strong signal examples:

@@ -105,7 +105,7 @@ doc and are marked ✅ below for traceability.
 |---|---|---|---|---|
 | **48** | Expand pre-commit | Add eof-fixer, yaml-lint to the existing ruff+black hooks. | 1 h | None |
 | **49** | Introduce mypy | Gradual per-package typing + CI type-check job. | 4 h | #5 |
-| **50** | CI parity | lint + type + test + release-check matrix (parity with Contract-Sweeper). | 3 h | #49 |
+| **50** | CI parity | lint + type + test + release-check matrix (parity with moneysweep-pr). | 3 h | #49 |
 | **51** | CI caching | Cache pip + model downloads. | 1 h | None |
 | **52** | Dependency-refresh workflow | dependabot or scheduled cron PR. | 1 h | None |
 | **53** | Release tagging | Tag workflow + CHANGELOG generation. | 2 h | None |

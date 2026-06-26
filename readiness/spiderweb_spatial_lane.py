@@ -1,17 +1,17 @@
 """Spiderweb-pr spatial/operational intake lane.
 
-Consumes the Contract-Sweeper PR-intake router's spiderweb-pr lane export
+Consumes the moneysweep-pr PR-intake router's spiderweb-pr lane export
 (``spiderweb_pr_derivatives.csv``) and normalizes it into the spatial/operational
 tables, candidate geojsons, and review queues defined by
 ``docs/pr_intake_router_spiderweb_lane.md``. This module does not import
-Contract-Sweeper; it treats the router as an external producer.
+moneysweep-pr; it treats the router as an external producer.
 
 Degrade-gracefully contract: the router derivative does not yet carry
 geometry/location/asset/agency fields (producer enrichment is a held follow-up).
 Those normalized fields are therefore emitted empty, every coordinate-less record
 is marked ``manual_geocode_required`` and listed in the geocode queue, and the
 candidate geojsons stay empty until the producer carries coordinates. Routing,
-Contract-Sweeper backlink, topic domain, layer class, tier, and provenance are
+moneysweep-pr backlink, topic domain, layer class, tier, and provenance are
 populated now and the structure is ready to absorb the richer fields unchanged.
 
 Extension fields beyond the spec's 34 (``final_status``, ``title``,
@@ -39,7 +39,7 @@ EXPORT_CONTRACT_VERSION = "0.1.0"
 
 # The 34 normalized fields mandated by docs/pr_intake_router_spiderweb_lane.md.
 NORMALIZED_FIELDS = (
-    "record_id", "source_item_id", "canonical_repo", "related_contract_sweeper_record_id",
+    "record_id", "source_item_id", "canonical_repo", "related_moneysweep_record_id",
     "source_name", "source_url", "published_at", "discovered_at",
     "topic_domain", "spiderweb_layer_class",
     "municipality_name", "municipality_geoid", "location_text",
@@ -148,7 +148,7 @@ def _normalize_row(row: dict[str, str], validator: Draft7Validator):
         "record_id": row.get("record_id", ""),
         "source_item_id": row.get("source_item_id", ""),
         "canonical_repo": row.get("canonical_repo", ""),
-        "related_contract_sweeper_record_id": row.get("related_repo_record_id", ""),
+        "related_moneysweep_record_id": row.get("related_repo_record_id", ""),
         "source_name": row.get("source_name", ""),
         "source_url": row.get("source_url", ""),
         "published_at": row.get("published_at", ""),
@@ -226,7 +226,7 @@ def _daily_report(report: dict[str, Any]) -> str:
         f"- geocode_queue (manual_geocode_required): {report['review']['geocode_queue']}",
         f"- discrepancy_queue (schema/gate failures): {report['review']['discrepancy_queue']}",
         "",
-        "Geometry/location/asset fields are empty pending Contract-Sweeper producer "
+        "Geometry/location/asset fields are empty pending moneysweep-pr producer "
         "enrichment; candidate geojsons populate once derivatives carry coordinates.",
         "",
     ]

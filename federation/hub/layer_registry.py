@@ -33,9 +33,9 @@ class LayerRegistryEntry:
 
 CONTRACT_FINANCE_LAYER = LayerRegistryEntry(
     layer_id="contract_finance",
-    producer="contract-sweeper",
+    producer="moneysweep-pr",
     export_contract_version="1.2.0",
-    adapter_module="federation.hub.adapters.contract_sweeper",
+    adapter_module="federation.hub.adapters.moneysweep",
     engine_module="readiness.contract_finance_layer",
     manifest_gate_module="readiness.contract_finance_manifest_gate",
     manifest_gate_argument="--artifact-manifest",
@@ -64,7 +64,7 @@ SPIDERWEB_SPATIAL_LANE = LayerRegistryEntry(
     layer_id="spiderweb_spatial_lane",
     producer="pr-intake-router",
     export_contract_version="0.1.0",
-    adapter_module="",  # external: Contract-Sweeper shared.pr_intake_router writes the CSV directly
+    adapter_module="",  # external: moneysweep-pr shared.pr_intake_router writes the CSV directly
     engine_module="readiness.spiderweb_spatial_lane",
     input_artifacts=(
         "spiderweb_pr_derivatives.csv",

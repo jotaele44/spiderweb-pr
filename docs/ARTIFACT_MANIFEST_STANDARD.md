@@ -1,9 +1,9 @@
 # Artifact Manifest Standard
 
 This document defines the shared artifact manifest expected at the
-Contract-Sweeper -> SpiderWeb handoff boundary.
+moneysweep-pr -> SpiderWeb handoff boundary.
 
-The manifest is written by Contract-Sweeper and consumed by SpiderWeb operators
+The manifest is written by moneysweep-pr and consumed by SpiderWeb operators
 for auditability, reproducibility, and run-to-run comparison. It is not a
 replacement for `manifest.json`; it is the file-level evidence ledger for the
 package.
@@ -31,8 +31,8 @@ manifest enforcement is added.
 |---|---|---:|---|
 | `schema_version` | string | yes | Must be `artifact_manifest.v1` for this standard. |
 | `generated_at` | string | yes | ISO-8601 timestamp from producer runtime. |
-| `producer` | string | yes | Expected: `contract-sweeper`. |
-| `export_contract_version` | string | yes | Expected Contract-Sweeper export version, currently `1.1.0`. |
+| `producer` | string | yes | Expected: `moneysweep-pr`. |
+| `export_contract_version` | string | yes | Expected moneysweep-pr export version, currently `1.1.0`. |
 | `package_dir` | string | yes | Producer-side package path at manifest creation time. |
 | `artifact_count` | integer | yes | Number of artifact records. |
 | `source_count` | integer | yes | Number of source-file records. |
@@ -50,7 +50,7 @@ Each item in `artifacts` should use:
 | `bytes` | integer | yes | File size in bytes. |
 | `record_count` | integer or null | yes | JSONL row count, CSV data-row count, or null when not row-based. |
 
-Minimum expected artifact paths for a Contract-Sweeper package:
+Minimum expected artifact paths for a moneysweep-pr package:
 
 ```text
 manifest.json
@@ -94,9 +94,9 @@ lda_canonical_client_summary_all.csv
 {
   "schema_version": "artifact_manifest.v1",
   "generated_at": "2026-05-28T23:00:00+00:00",
-  "producer": "contract-sweeper",
+  "producer": "moneysweep-pr",
   "export_contract_version": "1.1.0",
-  "package_dir": "exports/contract_sweeper_uploaded_masters_v1_1",
+  "package_dir": "exports/moneysweep_uploaded_masters_v1_1",
   "artifact_count": 6,
   "source_count": 3,
   "artifacts": [
@@ -124,7 +124,7 @@ lda_canonical_client_summary_all.csv
 |---|---|
 | Missing `artifact_manifest.json` | Block production handoff once manifest enforcement is automated. |
 | Unknown `schema_version` major | Block. |
-| `producer != contract-sweeper` | Block for Contract-Finance path. |
+| `producer != moneysweep-pr` | Block for Contract-Finance path. |
 | `export_contract_version != 1.1.0` | Block until adapter compatibility is updated. |
 | Missing required stream artifacts | Block. |
 | SHA mismatch after transfer | Block. |
@@ -136,7 +136,7 @@ lda_canonical_client_summary_all.csv
 The artifact manifest answers:
 
 ```text
-Did SpiderWeb receive the exact files Contract-Sweeper claims to have produced?
+Did SpiderWeb receive the exact files moneysweep-pr claims to have produced?
 ```
 
 The package gate answers:
@@ -149,11 +149,11 @@ Both are needed for evidence-grade production handoff.
 
 ## Current implementation posture
 
-Contract-Sweeper can now write `artifact_manifest.json` with:
+moneysweep-pr can now write `artifact_manifest.json` with:
 
 ```bash
 python scripts/write_artifact_manifest.py \
-  --package-dir exports/contract_sweeper_uploaded_masters_v1_1 \
+  --package-dir exports/moneysweep_uploaded_masters_v1_1 \
   --source-file /path/to/pr_contracts_master_v2.csv \
   --source-file /path/to/pr_all_awards_master.csv \
   --source-file /path/to/lda_canonical_client_summary_all.csv
