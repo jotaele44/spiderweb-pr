@@ -253,7 +253,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
     tables: dict[str, list[dict[str, Any]]] = {name: [] for name in NORMALIZED_TABLES}
     geocode_queue: list[dict[str, Any]] = []
     discrepancy_queue: list[dict[str, Any]] = []
-    poi_features: list[dict[str, Any]] = []
+    pin_features: list[dict[str, Any]] = []
     by_tier: Counter = Counter()
     by_layer_class: Counter = Counter()
 
@@ -278,7 +278,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
                 "location_text": record["location_text"],
             })
         elif record["spiderweb_layer_class"] == "candidate":
-            poi_features.append(_point_feature(record))
+            pin_features.append(_point_feature(record))
 
     normalized_dir = out / "data" / "normalized"
     exports_dir = out / "data" / "exports"
@@ -290,7 +290,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
     for name in NORMALIZED_TABLES:
         _write_csv(normalized_dir / name, sorted(tables[name], key=lambda r: r["record_id"]), TABLE_FIELDS)
 
-    _write_geojson(exports_dir / "poi_candidates.geojson", sorted(poi_features, key=lambda f: f["properties"]["record_id"]))
+    _write_geojson(exports_dir / "poi_candidates.geojson", sorted(pin_features, key=lambda f: f["properties"]["record_id"]))
     _write_geojson(exports_dir / "aoi_candidates.geojson", [])
     _write_geojson(exports_dir / "corridor_candidates.geojson", [])
 
@@ -312,7 +312,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
         "by_table": {name: len(tables[name]) for name in NORMALIZED_TABLES},
         "by_tier": dict(sorted(by_tier.items())),
         "by_layer_class": dict(sorted(by_layer_class.items())),
-        "candidate_features": len(poi_features),
+        "candidate_features": len(pin_features),
         "review": {"geocode_queue": len(geocode_queue), "discrepancy_queue": len(discrepancy_queue)},
         "zero_loss_pass": normalized_count + len(discrepancy_queue) == len(rows),
         "outputs": {

@@ -70,17 +70,17 @@ class ILAPAirspaceBridge:
         flights = self._safe_query(conn, "SELECT * FROM flights")
         conn.close()
 
-        poi_features = self._build_poi_candidates(track_pts)
+        pin_features = self._build_pin_candidates(track_pts)
         ilap_features = self._build_ilap_candidates(flights, track_pts)
-        corridor_features = self._build_corridor_candidates(poi_features, flights)
+        corridor_features = self._build_corridor_candidates(pin_features, flights)
 
         counts = {
-            "airspace_poi_candidates.geojson": len(poi_features),
+            "airspace_poi_candidates.geojson": len(pin_features),
             "airspace_ilap_candidates.geojson": len(ilap_features),
             "airspace_corridor_candidates.geojson": len(corridor_features),
         }
 
-        self._write_geojson("airspace_poi_candidates.geojson", poi_features)
+        self._write_geojson("airspace_poi_candidates.geojson", pin_features)
         self._write_geojson("airspace_ilap_candidates.geojson", ilap_features)
         self._write_geojson("airspace_corridor_candidates.geojson", corridor_features)
 
@@ -100,7 +100,7 @@ class ILAPAirspaceBridge:
 
     # ------------------------------------------------------------------ POI
 
-    def _build_poi_candidates(self, track_pts: List[dict]) -> List[dict]:
+    def _build_pin_candidates(self, track_pts: List[dict]) -> List[dict]:
         # Cluster by 0.05° grid cell
         cells: Dict[Tuple[int, int], List[dict]] = defaultdict(list)
         for tp in track_pts:
@@ -128,8 +128,8 @@ class ILAPAirspaceBridge:
             loiter = self._loiter_score(points)
             infra_align = 0.3  # placeholder; real impl would cross-ref infra layer
             hydro_utility = 0.2
-            poi_mbil = mbil_class(center_lat, center_lon)
-            mbil_proximity = mbil_proximity_weight(poi_mbil)
+            pin_mbil = mbil_class(center_lat, center_lon)
+            mbil_proximity = mbil_proximity_weight(pin_mbil)
 
             overall = (
                 CONFIDENCE_WEIGHTS["recurrence"] * recurrence
@@ -159,7 +159,7 @@ class ILAPAirspaceBridge:
                     "infra_alignment_score": round(infra_align, 4),
                     "overall_confidence": round(overall, 4),
                     "review_priority": priority,
-                    "mbil_class": poi_mbil,
+                    "mbil_class": pin_mbil,
                     "identity_note": IDENTITY_NOTE,
                     "_meta": self._meta("airspace_poi_candidates.geojson"),
                 },
@@ -220,14 +220,14 @@ class ILAPAirspaceBridge:
 
     # --------------------------------------------------------------- corridors
 
-    def _build_corridor_candidates(self, poi_features: List[dict],
+    def _build_corridor_candidates(self, pin_features: List[dict],
                                    flights: List[dict]) -> List[dict]:
         features = []
-        n = len(poi_features)
+        n = len(pin_features)
         if n < 2:
             return features
 
-        poi_coords = [(pf["properties"]["lat"], pf["properties"]["lon"]) for pf in poi_features]
+        pin_coords = [(pf["properties"]["lat"], pf["properties"]["lon"]) for pf in pin_features]
 
         # Pre-index: for each flight, which POIs its origin / destination fall
         # within 0.1° of. Accumulating connecting-flight counts from these lists
@@ -240,13 +240,13 @@ class ILAPAirspaceBridge:
             o_lat, o_lon = f.get("origin_lat"), f.get("origin_lon")
             d_lat, d_lon = f.get("dest_lat"), f.get("dest_lon")
             origin_near = [
-                k for k, (plat, plon) in enumerate(poi_coords)
+                k for k, (plat, plon) in enumerate(pin_coords)
                 if self._near(o_lat, o_lon, plat, plon, 0.1)
             ]
             if not origin_near:
                 continue
             dest_near = [
-                k for k, (plat, plon) in enumerate(poi_coords)
+                k for k, (plat, plon) in enumerate(pin_coords)
                 if self._near(d_lat, d_lon, plat, plon, 0.1)
             ]
             for a in origin_near:
@@ -261,8 +261,8 @@ class ILAPAirspaceBridge:
                 if corridor_flights < 2:
                     continue
 
-                p1 = poi_features[i]["properties"]
-                p2 = poi_features[j]["properties"]
+                p1 = pin_features[i]["properties"]
+                p2 = pin_features[j]["properties"]
                 lat1, lon1 = p1["lat"], p1["lon"]
                 lat2, lon2 = p2["lat"], p2["lon"]
 
