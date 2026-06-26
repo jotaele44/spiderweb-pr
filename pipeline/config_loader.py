@@ -9,12 +9,61 @@ error instead of a downstream ``KeyError``.
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
 
 class ConfigError(ValueError):
     """Raised when a config file is missing, unparseable, or fails validation."""
+
+
+# ── Compatibility aliases (poi -> pin migration, stage 1) ────────────────────
+# Deprecated config filenames mapped to their canonical replacements. When a
+# caller requests the old name and it no longer exists on disk, we transparently
+# resolve to the new file and emit a DeprecationWarning, so stragglers and
+# external references keep working through the transition.
+DEPRECATED_CONFIG_ALIASES: Dict[str, str] = {
+    "poi_registry.yaml": "pin_registry.yaml",
+}
+
+# Legacy top-level keys aliased to their canonical names. After load we mirror
+# the two vocabularies so callers reading either key keep working; reading a
+# legacy key warns, exposing the new key back to legacy callers is silent.
+DEPRECATED_KEY_ALIASES: Dict[str, str] = {
+    "poi_taxonomy": "pin_taxonomy",
+    "poi_records": "pin_records",
+}
+
+
+def _resolve_deprecated_path(p: Path) -> Path:
+    """Map a deprecated config path to its canonical file, warning if used."""
+    new_name = DEPRECATED_CONFIG_ALIASES.get(p.name)
+    if new_name is None:
+        return p
+    candidate = p.with_name(new_name)
+    if not p.exists() and candidate.exists():
+        warnings.warn(
+            f"config '{p.name}' is deprecated; loading '{new_name}' instead",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return candidate
+    return p
+
+
+def _normalize_deprecated_keys(data: Dict[str, Any]) -> None:
+    """Mirror legacy/canonical key pairs in-place so either vocabulary resolves."""
+    for old, new in DEPRECATED_KEY_ALIASES.items():
+        if old in data and new not in data:
+            warnings.warn(
+                f"config key '{old}' is deprecated; use '{new}'",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            data[new] = data[old]
+        elif new in data and old not in data:
+            data[old] = data[new]
 
 
 def load_yaml_config(
@@ -35,7 +84,7 @@ def load_yaml_config(
         ConfigError: file missing, not valid YAML, not a mapping, or missing a
             required key.
     """
-    p = Path(path)
+    p = _resolve_deprecated_path(Path(path))
     if not p.exists():
         raise ConfigError(f"config not found: {p}")
 
@@ -53,6 +102,8 @@ def load_yaml_config(
         data = {}
     if not isinstance(data, dict):
         raise ConfigError(f"config {p} must be a mapping, got {type(data).__name__}")
+
+    _normalize_deprecated_keys(data)
 
     if required_keys:
         missing = [k for k in required_keys if k not in data]

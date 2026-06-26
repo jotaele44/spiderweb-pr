@@ -10,7 +10,7 @@ required_registries:
   - configs/airport_registry.yaml
   - configs/hangar_registry.yaml
   - configs/lz_registry.yaml
-  - configs/poi_registry.yaml
+  - configs/pin_registry.yaml
   - configs/operator_registry.yaml
   - configs/facility_operator_registry.yaml
   - configs/aircraft_aliases.yaml

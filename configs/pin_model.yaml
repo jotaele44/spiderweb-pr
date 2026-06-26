@@ -1,0 +1,65 @@
+version: spiderweb_pin_model_v1
+# Canonical definition of the Spiderweb Pin model. Hand-authored reference; the taxonomy
+# (configs/pin_taxonomy.yaml) and the Master Pin Registry (configs/master_pin_registry.yaml)
+# are GENERATED from configs/layer_catalog.yaml by scripts/build_pin_registry.py.
+
+root: SPIDERWEB_PR
+
+# Canonical hierarchy. Visibility class is retained as the TOP folder (project decision);
+# the Pin model's Domain -> Pin Group -> Pin Class -> Pin Layer -> Pin nests beneath it.
+hierarchy:
+  - visibility_class   # top folder / access gate (V3 / V2 / V1)
+  - domain             # highest thematic container (Hydrology, Utilities, ...)
+  - pin_group          # major folder inside a domain
+  - pin_class          # specific category of mapped object
+  - pin_layer          # actual GIS/table layer (one geometry type or schema variant)
+  - pin                # atomic mapped object
+
+definitions:
+  domain: Highest thematic container. Example - Hydrology, Institutional, Airspace, Utilities.
+  pin_group: Major folder inside a domain. Example - Education -> Schools, Universities, Head Start.
+  pin_class: Specific category of mapped object. Example - Public Schools, Private Schools, UPR Campuses.
+  pin_layer: Actual GIS/table layer holding one geometry type or schema variant.
+  pin: Atomic mapped object with location, geometry, source, confidence, and classification.
+  pin_link: Relationship between pins. Example - school operated_by agency; WWTP discharges_to river.
+  master_pin_registry: Islandwide canonical index of every pin.
+
+semantic_rule: >
+  A Pin is any mapped object, place, asset, event location, signal, anomaly, candidate,
+  infrastructure node, or analytic marker that can be spatially referenced and assigned
+  evidence metadata.
+
+# Status of an atomic Pin (schemas/pin.schema.json::status).
+pin_status_enum: [active, deprecated, ghost, planned, review]
+
+# Lifecycle flag assigned to each Pin Layer by the registry builder.
+layer_flags:
+  WIRED: Layer is emitted by the pipeline (in the gis_layers manifest or populate_dataset_layers).
+  GHOST: Catalogued and expected from the pipeline, but not yet emitted.
+  PLANNED: Intentional future layer with no producer yet (name reserved).
+  DEPRECATED: Superseded; retained for lineage, not for new pins.
+  ORPHAN: Served/emitted but absent from the taxonomy. FATAL — the builder fails on any orphan.
+
+# Language rules for the Core Semantic Replacement. Applies to domain vocabulary in code,
+# configs, schemas, and docs that WE own.
+language_rules:
+  avoid_to_use:
+    POI: Pin
+    Entity: Pin
+    Feature: Pin or Pin Geometry
+    Dataset folder: Pin Group
+    Subfolder: Pin Class
+    GIS layer: Pin Layer
+    Master entity table: Master Pin Registry
+    Relationship: Pin Link
+    Graph edge: Pin Link
+    Candidate location: Candidate Pin
+    Confirmed location: Confirmed Pin
+  # Tokens that are NOT renamed because they are externally mandated wire/format constants,
+  # not domain vocabulary. Renaming these breaks interchange formats and third-party tooling.
+  preserve_tokens:
+    - 'GeoJSON "type":"Feature" (RFC 7946)'
+    - 'GeoJSON "type":"FeatureCollection" (RFC 7946)'
+    - 'GeoPackage gpkg_* tables and feature data_type'
+    - 'OGC / GDAL "feature" API surface'
+    - 'SQLite / external schema field names supplied by source datasets'
