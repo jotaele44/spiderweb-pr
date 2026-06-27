@@ -322,7 +322,7 @@
     },
     {
       "workstream": "spiderweb",
-      "artifact_path": "airspace_poi_candidates.geojson",
+      "artifact_path": "airspace_pin_candidates.geojson",
       "schema_name": "spiderweb_observation",
       "schema_file": "schemas/spiderweb_observation.schema.json",
       "format": "geojson",

@@ -76,7 +76,7 @@ SPIDERWEB_SPATIAL_LANE = LayerRegistryEntry(
         "data/normalized/maritime_activity_items.csv",
         "data/normalized/hydro_environment_items.csv",
         "data/normalized/science_dataset_items.csv",
-        "data/exports/poi_candidates.geojson",
+        "data/exports/pin_candidates.geojson",
         "data/exports/aoi_candidates.geojson",
         "data/exports/corridor_candidates.geojson",
         "spiderweb_spatial_lane_report.json",

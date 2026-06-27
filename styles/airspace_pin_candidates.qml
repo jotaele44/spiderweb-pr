@@ -1,5 +1,5 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<!-- QGIS style for airspace_poi_candidates.geojson (T7-61).
+<!-- QGIS style for airspace_pin_candidates.geojson (T7-61).
      Categorizes POI candidates by review_priority (HIGH/MEDIUM/LOW). -->
 <qgis version="3.34" styleCategories="Symbology">
   <renderer-v2 type="categorizedSymbol" attr="review_priority" forceraster="0" enableorderby="0" symbollevels="0">

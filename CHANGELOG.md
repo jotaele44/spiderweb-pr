@@ -77,5 +77,12 @@ GitHub Release using the matching section below (T6-53).
 ### Changed
 - Coverage ratchet floor raised **55 → 64** (`--cov-fail-under` in CI); the core
   suite measures 66.13% TOTAL, leaving ~2pp headroom.
+- **`poi` → `pin` migration (stage 3b):** the spiderweb candidate export artifacts
+  were renamed `airspace_poi_candidates.geojson` → `airspace_pin_candidates.geojson`
+  (+ its `.kml` sibling and `styles/*.qml`) and `poi_candidates.geojson` →
+  `pin_candidates.geojson`, across producers, consumers, `schemas/schema_index.json`,
+  and the export-contract docs. Feature properties (`poi_a`/`poi_b`,
+  `candidate_type: "poi"`) and the deferred RLSM `*_pois` schema family are
+  unchanged.
 
 [Unreleased]: https://github.com/jotaele44/spiderweb-pr/commits/main

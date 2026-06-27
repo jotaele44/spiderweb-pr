@@ -10,7 +10,7 @@ This is the **vocabulary contract** between the OCR/extraction layer and the dow
 
 | Canonical ID | Meaning | Where it's produced |
 |---|---|---|
-| `POI` | Point of interest — a discrete location worth a node. | `airspace_poi_candidates.geojson`; OCR labels promoted to `labeled_pois` table |
+| `POI` | Point of interest — a discrete location worth a node. | `airspace_pin_candidates.geojson`; OCR labels promoted to `labeled_pois` table |
 | `ILAP` | Intra-Lateral Asymmetric Path — a recurring flight track that's notably non-direct (loiter, orbit, hover, off-corridor curves). | `airspace_ilap_candidates.geojson` produced by `integration/ilap_airspace_bridge.py` |
 | `AASB` | Airport-Anchored Surface Bridge — an edge between two known airports derived from flight pairs (`from_node`, `to_node` ∈ {SJU, BQN, PSE, SIG, NRR, MAZ, ARE, CPX, VQS}). | `aasb_airspace_edges.csv` produced by `integration/aasb_airspace_bridge.py` |
 | `corridor` | A repeated air-route pattern between known nodes, scored on recurrence + loiter + infra-alignment. | `airspace_corridor_candidates.geojson` |

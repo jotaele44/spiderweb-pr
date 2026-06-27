@@ -58,7 +58,7 @@ NORMALIZED_TABLES = (
     "maritime_activity_items.csv", "hydro_environment_items.csv", "science_dataset_items.csv",
     "federal_military_activity_items.csv",
 )
-CANDIDATE_GEOJSONS = ("poi_candidates.geojson", "aoi_candidates.geojson", "corridor_candidates.geojson")
+CANDIDATE_GEOJSONS = ("pin_candidates.geojson", "aoi_candidates.geojson", "corridor_candidates.geojson")
 REPORT_FILENAME = "spiderweb_spatial_lane_report.json"
 DEFAULT_TABLE = "spatial_intake_items.csv"
 
@@ -290,7 +290,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
     for name in NORMALIZED_TABLES:
         _write_csv(normalized_dir / name, sorted(tables[name], key=lambda r: r["record_id"]), TABLE_FIELDS)
 
-    _write_geojson(exports_dir / "poi_candidates.geojson", sorted(pin_features, key=lambda f: f["properties"]["record_id"]))
+    _write_geojson(exports_dir / "pin_candidates.geojson", sorted(pin_features, key=lambda f: f["properties"]["record_id"]))
     _write_geojson(exports_dir / "aoi_candidates.geojson", [])
     _write_geojson(exports_dir / "corridor_candidates.geojson", [])
 

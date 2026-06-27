@@ -195,7 +195,7 @@ class AASBAirspaceBridge:
 
     def _inventory_output_files(self) -> List[dict]:
         target_files = [
-            "airspace_poi_candidates.geojson",
+            "airspace_pin_candidates.geojson",
             "airspace_ilap_candidates.geojson",
             "airspace_corridor_candidates.geojson",
             "aasb_airspace_edges.csv",

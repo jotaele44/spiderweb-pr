@@ -136,7 +136,7 @@ def test_manual_geocode_required_and_queue(tmp_path):
 def test_coordinate_record_emits_poi_candidate(tmp_path):
     _write_derivatives(tmp_path, _mixed_rows())
     build_spiderweb_spatial_lane(str(tmp_path), str(tmp_path))
-    poi = json.loads((tmp_path / "data" / "exports" / "poi_candidates.geojson").read_text())
+    poi = json.loads((tmp_path / "data" / "exports" / "pin_candidates.geojson").read_text())
     assert len(poi["features"]) == 1
     assert poi["features"][0]["geometry"]["coordinates"] == [-66.10, 18.45]
     aoi = json.loads((tmp_path / "data" / "exports" / "aoi_candidates.geojson").read_text())

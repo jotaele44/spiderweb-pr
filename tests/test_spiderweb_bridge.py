@@ -15,7 +15,7 @@ def test_ilap_creates_three_geojson_files(populated_db, tmp_output):
     bridge.export_all()
 
     expected = [
-        "airspace_poi_candidates.geojson",
+        "airspace_pin_candidates.geojson",
         "airspace_ilap_candidates.geojson",
         "airspace_corridor_candidates.geojson",
     ]
@@ -26,7 +26,7 @@ def test_ilap_creates_three_geojson_files(populated_db, tmp_output):
 def test_ilap_geojson_are_valid(populated_db, tmp_output):
     ILAPAirspaceBridge(populated_db, str(tmp_output)).export_all()
     for fname in [
-        "airspace_poi_candidates.geojson",
+        "airspace_pin_candidates.geojson",
         "airspace_ilap_candidates.geojson",
         "airspace_corridor_candidates.geojson",
     ]:
@@ -79,7 +79,7 @@ def test_aasb_creates_manifest(populated_db, tmp_output):
 
 def test_ilap_identity_note_in_poi_properties(populated_db, tmp_output):
     ILAPAirspaceBridge(populated_db, str(tmp_output)).export_all()
-    data = json.loads((tmp_output / "airspace_poi_candidates.geojson").read_text())
+    data = json.loads((tmp_output / "airspace_pin_candidates.geojson").read_text())
     for feature in data.get("features", []):
         note = feature["properties"].get("identity_note", "")
         assert "not standalone evidence" in note
@@ -90,7 +90,7 @@ def test_combined_export_produces_five_bridge_files(populated_db, tmp_output):
     AASBAirspaceBridge(populated_db, str(tmp_output)).export_all()
 
     bridge_files = [
-        "airspace_poi_candidates.geojson",
+        "airspace_pin_candidates.geojson",
         "airspace_ilap_candidates.geojson",
         "airspace_corridor_candidates.geojson",
         "aasb_airspace_edges.csv",
@@ -105,7 +105,7 @@ def test_combined_export_produces_five_bridge_files(populated_db, tmp_output):
 def test_ilap_poi_candidates_have_mbil_class(populated_db, tmp_output):
     """Every POI candidate GeoJSON feature must carry a valid mbil_class (T3-26)."""
     ILAPAirspaceBridge(populated_db, str(tmp_output)).export_all()
-    data = json.loads((tmp_output / "airspace_poi_candidates.geojson").read_text())
+    data = json.loads((tmp_output / "airspace_pin_candidates.geojson").read_text())
     valid_classes = {"MBIL-0", "MBIL-1", "MBIL-2", "MBIL-3", "MBIL-X"}
     for feat in data.get("features", []):
         cls = feat["properties"].get("mbil_class")

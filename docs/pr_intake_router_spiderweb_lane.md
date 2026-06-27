@@ -127,7 +127,7 @@ No item may disappear between raw intake and normalized output.
 - `data/normalized/maritime_activity_items.csv`
 - `data/normalized/hydro_environment_items.csv`
 - `data/normalized/science_dataset_items.csv`
-- `data/exports/poi_candidates.geojson`
+- `data/exports/pin_candidates.geojson`
 - `data/exports/aoi_candidates.geojson`
 - `data/exports/corridor_candidates.geojson`
 - `data/review/geocode_queue.csv`
