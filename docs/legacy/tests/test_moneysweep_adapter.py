@@ -5,20 +5,20 @@ from pathlib import Path
 
 import pytest
 
-from federation.hub.adapters.contract_sweeper import (
+from federation.hub.adapters.moneysweep import (
     ContractSweeperAdapterError,
-    export_contract_sweeper_features,
-    load_contract_sweeper_package,
-    normalize_contract_sweeper_records,
+    export_moneysweep_features,
+    load_moneysweep_package,
+    normalize_moneysweep_records,
 )
 
-FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_2"
+FIXTURE = Path(__file__).parent / "fixtures" / "moneysweep_v1_2"
 
 
-def test_load_contract_sweeper_v1_2_fixture():
-    package = load_contract_sweeper_package(FIXTURE, mode="test")
+def test_load_moneysweep_v1_2_fixture():
+    package = load_moneysweep_package(FIXTURE, mode="test")
 
-    assert package.producer == "contract-sweeper"
+    assert package.producer == "moneysweep-pr"
     assert package.version == "1.2.0"
     assert set(package.streams) == {
         "entities",
@@ -30,9 +30,9 @@ def test_load_contract_sweeper_v1_2_fixture():
     assert len(package.streams["funding_awards"]) == 2
 
 
-def test_normalize_contract_sweeper_features():
-    package = load_contract_sweeper_package(FIXTURE, mode="test")
-    normalized = normalize_contract_sweeper_records(package)
+def test_normalize_moneysweep_features():
+    package = load_moneysweep_package(FIXTURE, mode="test")
+    normalized = normalize_moneysweep_records(package)
 
     assert len(normalized["contract_awards"]) == 2
     assert len(normalized["financial_flows"]) == 1
@@ -41,8 +41,8 @@ def test_normalize_contract_sweeper_features():
     assert normalized["municipality_funding_density"][0]["municipality_code"] == "72113"
 
 
-def test_export_contract_sweeper_outputs(tmp_path):
-    report = export_contract_sweeper_features(FIXTURE, tmp_path, mode="test")
+def test_export_moneysweep_outputs(tmp_path):
+    report = export_moneysweep_features(FIXTURE, tmp_path, mode="test")
 
     assert report["export_contract_version"] == "1.2.0"
     assert (tmp_path / "contract_awards.geojson").exists()
@@ -68,4 +68,4 @@ def test_reject_synthetic_record_in_production(tmp_path):
     (package_dir / "transactions.jsonl").write_text(json.dumps(row) + "\n", encoding="utf-8")
 
     with pytest.raises(ContractSweeperAdapterError, match="synthetic"):
-        load_contract_sweeper_package(package_dir, mode="production")
+        load_moneysweep_package(package_dir, mode="production")

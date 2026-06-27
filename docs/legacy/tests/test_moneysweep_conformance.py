@@ -1,11 +1,11 @@
-"""Cross-repo conformance test for the Contract-Sweeper → spiderweb-pr handoff.
+"""Cross-repo conformance test for the moneysweep-pr → spiderweb-pr handoff.
 
 This guards against the contract-drift incident documented in
 ``docs/contracts/CONTRACT_FINANCE_CONNECTIVITY_HEALTH.md``: the two repos had
 independently shipped incompatible "1.1.0" export contracts, so the consumer
 rejected the producer's real package. The shared v1.2.0 conformance package in
-``tests/fixtures/contract_sweeper_v1_2/`` is byte-identical to the copy committed
-in Contract-Sweeper (``exports/conformance/v1_2/``) and is produced by the
+``tests/fixtures/moneysweep_v1_2/`` is byte-identical to the copy committed
+in moneysweep-pr (``exports/conformance/v1_2/``) and is produced by the
 producer's own ``scripts/build_export_package.py``. If either side changes the
 on-wire shape without re-syncing, this test fails.
 """
@@ -14,16 +14,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from federation.hub.adapters.contract_sweeper import (
+from federation.hub.adapters.moneysweep import (
     EXPECTED_VERSION,
-    export_contract_sweeper_features,
-    load_contract_sweeper_package,
+    export_moneysweep_features,
+    load_moneysweep_package,
 )
 from federation.hub.layer_registry import get_layer_entry
 from readiness.contract_finance_layer import build_contract_finance_layer
-from readiness.contract_sweeper_package_gate import assess_contract_sweeper_package
+from readiness.moneysweep_package_gate import assess_moneysweep_package
 
-FIXTURE = Path(__file__).parent / "fixtures" / "contract_sweeper_v1_2"
+FIXTURE = Path(__file__).parent / "fixtures" / "moneysweep_v1_2"
 
 
 def test_version_pins_agree():
@@ -32,8 +32,8 @@ def test_version_pins_agree():
 
 
 def test_producer_package_loads_in_production_mode():
-    package = load_contract_sweeper_package(FIXTURE, mode="production")
-    assert package.producer == "contract-sweeper"
+    package = load_moneysweep_package(FIXTURE, mode="production")
+    assert package.producer == "moneysweep-pr"
     assert package.version == "1.2.0"
     assert set(package.streams) == {
         "entities",
@@ -45,7 +45,7 @@ def test_producer_package_loads_in_production_mode():
 
 
 def test_production_gate_is_ready_not_blocked():
-    report = assess_contract_sweeper_package(FIXTURE)
+    report = assess_moneysweep_package(FIXTURE)
     assert report["status"] == "READY"
     assert report["blockers"] == []
     assert report["export_contract_version"] == "1.2.0"
@@ -57,7 +57,7 @@ def test_production_gate_is_ready_not_blocked():
 def test_full_round_trip_scores(tmp_path):
     adapter_out = tmp_path / "adapter"
     layer_out = tmp_path / "layer"
-    report = export_contract_sweeper_features(FIXTURE, adapter_out, mode="production")
+    report = export_moneysweep_features(FIXTURE, adapter_out, mode="production")
     assert report["counts"]["contract_awards"] == 2
     assert report["counts"]["financial_flows"] == 1
 

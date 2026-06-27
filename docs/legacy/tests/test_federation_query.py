@@ -35,7 +35,7 @@ def test_load_packages_clean(packages):
 
 def test_both_packages_validate(packages):
     result = query_federation("all records", packages, mode="test")
-    assert result["validation"] == {"spiderweb-pr": "PASS", "contract-sweeper": "PASS"}
+    assert result["validation"] == {"spiderweb-pr": "PASS", "moneysweep-pr": "PASS"}
 
 
 def test_missing_manifest_fails_closed(tmp_path, packages):
@@ -79,7 +79,7 @@ def test_mode_d_evidence_bundle_acme_march_2023(packages):
     result = query_federation(
         "records related to ACME in March 2023", packages, mode="test"
     )
-    assert result["validation"] == {"spiderweb-pr": "PASS", "contract-sweeper": "PASS"}
+    assert result["validation"] == {"spiderweb-pr": "PASS", "moneysweep-pr": "PASS"}
     assert result["records"], "ACME records exist in March 2023"
     assert all("entity" in r["matched_on"] for r in result["records"])
     assert all("time_window" in r["matched_on"] for r in result["records"])
@@ -105,6 +105,6 @@ def test_entity_collision_keeps_both_record_ids(tmp_path):
     pairs = {(l["source_record_id"], l["target_record_id"]) for l in links}
     # The spiderweb airspace event and the CS award both name ACME.
     assert any(
-        "spiderweb:event_abc123" in pair and "contract_sweeper:award_abc123" in pair
+        "spiderweb:event_abc123" in pair and "moneysweep:award_abc123" in pair
         for pair in pairs
     )
