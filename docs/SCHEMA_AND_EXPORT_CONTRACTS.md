@@ -46,7 +46,7 @@ The PR Intel adapter emits 8 data artifacts + 2 reports per export.
 | `spiderweb_gap_audit.json` | — | json | gaps, **reproducibility** | reproducibility | — |
 | `spiderweb_ingest_manifest.json` | `spiderweb_intake_manifest` | json | generated_at, db_path, files | reproducibility | — |
 | `aasb_airspace_edges.csv` | `aasb_export` | csv / EPSG:4326 | edge_id, from_node, to_node, from/to_lat/lon, weight, confidence_score | dominant_callsign | `edge_id` |
-| `airspace_poi_candidates.geojson` | `spiderweb_observation` | geojson / EPSG:4326 | candidate_type, confidence | source_zone, raw_excerpt | — |
+| `airspace_pin_candidates.geojson` | `spiderweb_observation` | geojson / EPSG:4326 | candidate_type, confidence | source_zone, raw_excerpt | — |
 | `airspace_ilap_candidates.geojson` | `ilap_corridor_candidate` | geojson / EPSG:4326 | candidate_type, recurrence_score, loiter_score, infra_alignment_score, overall_confidence | — | — |
 | `airspace_corridor_candidates.geojson` | `ilap_corridor_candidate` | geojson / EPSG:4326 | candidate_type, overall_confidence | — | — |
 

@@ -15,7 +15,7 @@ The pipeline emits these GeoJSON artifacts (per [`SCHEMA_AND_EXPORT_CONTRACTS.md
 | `gis_airspace_features.geojson` | `Point` | `gis_feature` | Airport nodes (origin + destination per flight, deduped) |
 | `route_lines.geojson` | `LineString` | `gis_feature` | Origin→destination route lines per flight |
 | `spiderweb_overlay_candidates.geojson` | `Point` | `spiderweb_observation` | Normalized POI / ILAP / corridor / AASB-edge candidates |
-| `airspace_poi_candidates.geojson` | `Point` | `spiderweb_observation` | Raw POI candidates from the producer |
+| `airspace_pin_candidates.geojson` | `Point` | `spiderweb_observation` | Raw POI candidates from the producer |
 | `airspace_ilap_candidates.geojson` | `Point` / `LineString` | `ilap_corridor_candidate` | ILAP track candidates |
 | `airspace_corridor_candidates.geojson` | `LineString` | `ilap_corridor_candidate` | Corridor candidates |
 
@@ -39,7 +39,7 @@ The repo ships QGIS layer styles under [`styles/`](../styles) — load via right
 
 | Layer | Style file | Renders by |
 |---|---|---|
-| `airspace_poi_candidates` | `styles/airspace_poi_candidates.qml` | `review_priority` (HIGH/MEDIUM/LOW) |
+| `airspace_pin_candidates` | `styles/airspace_pin_candidates.qml` | `review_priority` (HIGH/MEDIUM/LOW) |
 | `airspace_corridor_candidates` | `styles/airspace_corridor_candidates.qml` | `corridor_label` (HIGH/MEDIUM/LOW activity) |
 | `aasb_airspace_edges` | `styles/aasb_airspace_edges.qml` | graduated on `weight` (flight count) |
 

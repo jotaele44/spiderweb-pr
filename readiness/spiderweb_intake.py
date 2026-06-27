@@ -25,7 +25,7 @@ from provenance_utils import (
 # ── Producer boundary ─────────────────────────────────────────────────────────
 
 BRIDGE_FILES = [
-    "airspace_poi_candidates.geojson",
+    "airspace_pin_candidates.geojson",
     "airspace_ilap_candidates.geojson",
     "airspace_corridor_candidates.geojson",
     "aasb_airspace_edges.csv",
@@ -219,7 +219,7 @@ class SpiderwebIntake:
         candidates: List[Dict[str, Any]] = []
 
         for geojson_file, ctype in [
-            ("airspace_poi_candidates.geojson", "poi"),
+            ("airspace_pin_candidates.geojson", "poi"),
             ("airspace_ilap_candidates.geojson", "ilap"),
             ("airspace_corridor_candidates.geojson", "corridor"),
         ]:

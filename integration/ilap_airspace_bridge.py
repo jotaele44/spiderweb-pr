@@ -75,12 +75,12 @@ class ILAPAirspaceBridge:
         corridor_features = self._build_corridor_candidates(pin_features, flights)
 
         counts = {
-            "airspace_poi_candidates.geojson": len(pin_features),
+            "airspace_pin_candidates.geojson": len(pin_features),
             "airspace_ilap_candidates.geojson": len(ilap_features),
             "airspace_corridor_candidates.geojson": len(corridor_features),
         }
 
-        self._write_geojson("airspace_poi_candidates.geojson", pin_features)
+        self._write_geojson("airspace_pin_candidates.geojson", pin_features)
         self._write_geojson("airspace_ilap_candidates.geojson", ilap_features)
         self._write_geojson("airspace_corridor_candidates.geojson", corridor_features)
 
@@ -161,7 +161,7 @@ class ILAPAirspaceBridge:
                     "review_priority": priority,
                     "mbil_class": pin_mbil,
                     "identity_note": IDENTITY_NOTE,
-                    "_meta": self._meta("airspace_poi_candidates.geojson"),
+                    "_meta": self._meta("airspace_pin_candidates.geojson"),
                 },
             })
 

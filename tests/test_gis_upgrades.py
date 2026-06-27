@@ -19,7 +19,7 @@ from integration.ilap_airspace_bridge import (
 def test_ilap_features_carry_meta(populated_db, tmp_output):
     ILAPAirspaceBridge(populated_db, str(tmp_output)).export_all()
     for fname in (
-        "airspace_poi_candidates.geojson",
+        "airspace_pin_candidates.geojson",
         "airspace_ilap_candidates.geojson",
         "airspace_corridor_candidates.geojson",
     ):
@@ -35,7 +35,7 @@ def test_ilap_features_carry_meta(populated_db, tmp_output):
 def test_ilap_meta_shares_one_timestamp_per_run(populated_db, tmp_output):
     ILAPAirspaceBridge(populated_db, str(tmp_output)).export_all()
     data = json.loads(
-        (tmp_output / "airspace_poi_candidates.geojson").read_text()
+        (tmp_output / "airspace_pin_candidates.geojson").read_text()
     )
     stamps = {f["properties"]["_meta"]["produced_at"] for f in data["features"]}
     assert len(stamps) <= 1, "all features in a run must share one produced_at"
@@ -46,7 +46,7 @@ def test_ilap_meta_shares_one_timestamp_per_run(populated_db, tmp_output):
 def test_ilap_geojson_has_explicit_epsg(populated_db, tmp_output):
     ILAPAirspaceBridge(populated_db, str(tmp_output)).export_all()
     data = json.loads(
-        (tmp_output / "airspace_poi_candidates.geojson").read_text()
+        (tmp_output / "airspace_pin_candidates.geojson").read_text()
     )
     assert data.get("epsg") == 4326
 
@@ -121,7 +121,7 @@ def test_build_corridor_candidates_counts_both_directions(tmp_output, tmp_path):
 def test_ilap_writes_kml_siblings(populated_db, tmp_output):
     ILAPAirspaceBridge(populated_db, str(tmp_output)).export_all()
     for stem in (
-        "airspace_poi_candidates",
+        "airspace_pin_candidates",
         "airspace_ilap_candidates",
         "airspace_corridor_candidates",
     ):
@@ -210,7 +210,7 @@ def test_qml_style_pack_present_and_wellformed():
 
     styles_dir = Path(__file__).resolve().parents[1] / "styles"
     expected = [
-        "airspace_poi_candidates.qml",
+        "airspace_pin_candidates.qml",
         "airspace_corridor_candidates.qml",
         "aasb_airspace_edges.qml",
     ]
