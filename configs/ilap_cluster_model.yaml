@@ -1,0 +1,104 @@
+version: ilap_distributed_cluster_model_v1
+status: schema_control
+purpose: >-
+  Model Spiderweb pins as subcomponent nodes inside distributed ILAP Areas and ILAP Clusters.
+  This is an analytic grouping method, not proof of subsurface access or covert infrastructure.
+ontology:
+  levels:
+    - id: L0
+      term: spiderweb_domain
+      definition: Islandwide investigative domain.
+    - id: L1
+      term: ilap_area
+      definition: Broader geographic operating zone containing one or more clusters.
+      id_pattern: ILAP_AREA_<REGION>_<NNN>
+    - id: L2
+      term: ilap_cluster
+      definition: Cohesive system of two or more subcomponent nodes with shared spatial, functional, or evidentiary logic.
+      id_pattern: ILAP_CLUSTER_<REGION>_<NNN>
+    - id: L3
+      term: subcomponent_node
+      definition: Atomic Spiderweb Pin assigned a functional role inside the cluster hypothesis.
+    - id: L4
+      term: feature
+      definition: Geometry, record, visual feature, or field observation supporting a subcomponent node.
+node_roles:
+  PRIMARY_NODE: Strongest candidate anchor inside a cluster; requires multi-factor support.
+  SUPPORT_NODE: Reinforces a cluster but does not anchor it.
+  MASK_NODE: Surface activity or land use that can plausibly obscure ordinary infrastructure activity.
+  HYDRO_NODE: Water, drainage, well, reservoir, spring, outfall, or karst-linked component.
+  UTILITY_NODE: Power, water, wastewater, telecom, pipeline, pump, tower, or service node.
+  ACCESS_NODE: Road, service road, gate, ramp, port, landing zone, or maintenance access node.
+  LOGISTICS_NODE: Storage, yard, industrial lot, vehicle cluster, hangar, port, or transfer point.
+  RIDGE_NODE: Ridge, slope, cut, drainage divide, quarry face, bench, or terrain-shielded component.
+  AIRSPACE_LINKED_NODE: Node associated with repeat flight, loiter, low/slow, route, or landing-zone correlation.
+  CONTEXT_NODE: Relevant nearby infrastructure or geography; cannot materially raise confidence alone.
+  UNRESOLVED_NODE: Candidate not yet assignable to a stable function.
+system_functions:
+  hydro_continuity: Water movement, storage, drainage, outfall, karst/spring linkage, or cooling/discharge context.
+  utility_service: Power, telecom, water, wastewater, pump, pipeline, or maintenance support.
+  logistics_access: Movement of personnel, vehicles, goods, aircraft, vessels, or maintenance crews.
+  industrial_masking: Industrial surface use capable of normalizing noise, truck movement, tanks, fenced areas, or restricted yards.
+  terrain_shielding: Terrain, ridge, slope, quarry, or vegetation concealment/screening context.
+  airspace_correlation: Recurrent aircraft route/loiter/landing-zone relationship.
+  institutional_control: Government, civic, public-safety, or regulated facility context.
+  residential_cover_screening: Low-density residential or service cover; weak unless backed by terrain/hydro/utility/records.
+  corridor_continuity: Strengthens a mapped AASB, hydro, utility, or transportation corridor.
+  context_only: Relevant but non-diagnostic background.
+  unknown: Function cannot yet be assigned.
+scoring:
+  max_score: 100
+  rule: >-
+    Cluster coherence is additive but evidence-gated. A single strange Pin should remain low-confidence.
+    Confidence increases when multiple ordinary Pins form a reproducible spatial-functional system.
+  weights:
+    spatial_proximity_and_topology: 15
+    multi_role_complementarity: 20
+    hydro_terrain_utility_convergence: 20
+    record_or_primary_source_support: 15
+    corridor_alignment: 10
+    repeat_observation_or_temporal_persistence: 10
+    contradiction_penalty_clear_conflict: -20
+    contradiction_penalty_weak_or_ambiguous: -10
+  evidence_gates:
+    T1_required_for_confirmed: true
+    T4_can_only_seed: true
+    residential_cover_never_primary_without_T1_T2_support: true
+    two_or_more_domains_required_for_cluster_score_above_70: true
+confidence_bands:
+  0_29: weak_context
+  30_49: candidate_cluster
+  50_69: plausible_cluster
+  70_84: strong_analytic_cluster
+  85_100: high_confidence_cluster_requires_T1_or_T2_anchor
+required_assignment_fields:
+  - pin_uid
+  - ilap_area_id
+  - ilap_cluster_id
+  - node_role
+  - system_function
+  - cluster_coherence_score
+  - contradiction_flags
+  - evidence_tier
+  - confidence
+review_rules:
+  - Any cluster containing only one node remains UNRESOLVED unless explicitly marked context-only.
+  - Any cluster above 70 must contain at least two functional roles and at least two thematic domains.
+  - Any cluster above 85 must include T1 or T2 support and an explicit contradiction review.
+  - Residential-cover nodes must be generalized/buffered for public export and cannot trigger field contact.
+outputs:
+  primary: RESCORED_ILAP_CLUSTER_LEDGER_v1
+  ledger_columns:
+    - ilap_area_id
+    - ilap_cluster_id
+    - cluster_name
+    - node_count
+    - role_mix
+    - system_functions
+    - dominant_evidence_tier
+    - cluster_coherence_score
+    - confidence_band
+    - contradiction_flags
+    - gap_flags
+    - review_status
+    - notes
