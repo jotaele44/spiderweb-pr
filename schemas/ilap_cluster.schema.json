@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ilap_cluster",
+  "title": "Distributed ILAP Cluster Ledger Record",
+  "description": "A system-level analytic record grouping two or more Spiderweb Pins into an ILAP Cluster hypothesis. This schema records coherence, contradictions, and evidence state; it does not assert proof of subsurface access.",
+  "type": "object",
+  "required": [
+    "ilap_area_id",
+    "ilap_cluster_id",
+    "cluster_name",
+    "node_count",
+    "cluster_coherence_score",
+    "confidence_band",
+    "review_status"
+  ],
+  "properties": {
+    "ilap_area_id": {"type": "string", "pattern": "^ILAP_AREA_[A-Z0-9_]+$"},
+    "ilap_cluster_id": {"type": "string", "pattern": "^ILAP_CLUSTER_[A-Z0-9_]+$"},
+    "cluster_name": {"type": "string", "minLength": 1},
+    "cluster_geometry": {"type": ["object", "null"], "description": "Optional GeoJSON envelope, hull, centroid, or multi-geometry."},
+    "node_count": {"type": "integer", "minimum": 0},
+    "pin_uids": {"type": "array", "items": {"type": "string", "pattern": "^PIN_[A-Z0-9]+(_[A-Z0-9]+)*_[0-9]{6}$"}},
+    "role_mix": {"type": "array", "items": {"type": "string"}},
+    "system_functions": {"type": "array", "items": {"type": "string"}},
+    "dominant_evidence_tier": {"type": ["string", "null"], "enum": ["T1", "T2", "T3", "T4", null]},
+    "cluster_coherence_score": {"type": "number", "minimum": 0, "maximum": 100},
+    "confidence_band": {"type": "string", "enum": ["weak_context", "candidate_cluster", "plausible_cluster", "strong_analytic_cluster", "high_confidence_cluster_requires_T1_or_T2_anchor"]},
+    "contradiction_flags": {"type": "array", "items": {"type": "string"}},
+    "gap_flags": {"type": "array", "items": {"type": "string"}},
+    "review_status": {"type": "string", "enum": ["unreviewed", "needs_review", "reviewed", "rejected", "promoted"]},
+    "notes": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}
