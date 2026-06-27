@@ -548,7 +548,7 @@ def main() -> int:
                 })
                 group_counts[grp] = group_counts.get(grp, 0) + 1
         lw.write("consolidated_master_registry", feats, source_file=cons_path.name,
-                 source_layer="features", domain="poi", role="primary",
+                 source_layer="features", domain="pin", role="primary",
                  skipped_no_coords=skipped,
                  notes="Most complete typed POI source (supersedes Spiderweb_POI_Master).")
         print("  pin_records groups:", dict(sorted(group_counts.items())))
