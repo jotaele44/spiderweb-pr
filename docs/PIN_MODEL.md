@@ -89,10 +89,10 @@ tracked follow-up migration on top of this canonical Pin layer.
 
 | Stage | Area | Status |
 |-------|------|--------|
-| 1 | Config / registry (`pin_registry.yaml` + loader alias) | **done** |
+| 1 | Config / registry (`pin_registry.yaml` + loader alias) | **done** (PR #126) |
 | 2 | RLSM validation schemas | **deferred — see below** |
-| 3 | Code (`pipeline/`, `integration/`, `server/`, `scripts/`, …) | pending |
-| 4 | Tests + non-legacy docs | pending |
+| 3a | Internal code identifiers (`poi_features`, `_build_poi_candidates`, `domain=`) | **done** (PR #136) |
+| 3b | Artifact filenames (`*_poi_candidates.geojson`, `.qml`) + tests + docs | **done** (PR #137) |
 
 **Stage 2 deferred (cross-repo coupling).** The `poi`-named schemas — `labeled_pois`,
 `unlabeled_poi_candidates`, `ocr_normalized_labels`, `manual_review` — are dormant,
@@ -104,3 +104,21 @@ names. Renaming only our schema identity (`$id` / filename) would desync the nam
 `poi_*` columns it still describes; renaming the columns/artifacts would make our schemas
 reject the CSVs skywatcher-pr still emits. This schema family therefore **awaits
 coordination with skywatcher-pr** and is intentionally left untouched until then.
+
+## Preserved carve-outs (intentionally NOT renamed)
+
+The tokens below appear in the codebase with `poi` in their name but are **wire/data
+constants**, not internal identifiers. Renaming them would break serialized artifacts,
+cross-module data contracts, or external interchange formats.
+
+| Token | Location | Reason preserved |
+|-------|----------|-----------------|
+| `"poi_a"`, `"poi_b"` | `integration/ilap_airspace_bridge.py` (emitted); `readiness/spiderweb_intake.py` (consumed) | GeoJSON feature-property keys written to disk and read back by the intake parser; changing them would invalidate existing exports |
+| `candidate_type: "poi"` | `readiness/spiderweb_intake.py` (:222, :495, :665) | Routing sentinel value stored in exports; changing it silently drops or misroutes previously-produced candidate records |
+| `ROLE = {"poi": "node", …}` | `readiness/spiderweb_intake.py` (:376) | Dict key matched against `candidate_type`; must stay in sync with the above |
+| `poi_aoi_corridor_candidate` | `readiness/spiderweb_spatial_lane.py` (domain routing key) | Free-form domain tag value propagated from the moneysweep-pr router derivative; renaming would desync with the upstream producer |
+| `poi_group` | `scripts/populate_dataset_layers.py` | GeoJSON property key written to the dataset-layers export; consumed by downstream tooling |
+| `POI_CANDIDATE` | `configs/location_naming_guardrails.yaml` | Enum value in a config schema; a semantic rename here requires coordinated update to any tool that reads the guardrails |
+| `poi_*` config-loader alias keys | `pipeline/config_loader.py` | Backward-compat aliases so old configs referencing `poi_registry` still load; intentional bridge to Stage 2 |
+| `poi_name`, source-field reads | various harvesters | Column names from external source data; cannot be renamed unilaterally |
+| RLSM schema family (`labeled_pois`, `unlabeled_poi_candidates`, …) | `schemas/` | Awaiting Stage 2 / skywatcher-pr coordination (see above) |
