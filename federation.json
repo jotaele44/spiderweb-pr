@@ -29,12 +29,14 @@
     "test_suite": "python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py",
     "validate_schemas": "make validate-schemas",
     "validate_export": "python scripts/validate_export.py --package exports/samples --mode test",
-    "export_canonical": "python3 scripts/federation_export.py --mode test"
+    "export_canonical": "python3 scripts/federation_export.py --mode test",
+    "maintenance": "python3 scripts/run_maintenance.py --repo spiderweb-pr --mode audit"
   },
   "canonical_outputs": {
     "export_sample_manifest": "exports/samples/manifest.sample.json",
     "federation_readiness_doc": "docs/federation_readiness.md",
-    "canonical_export_dir": "exports/federation"
+    "canonical_export_dir": "exports/federation",
+    "maintenance_report": "reports/maintenance/latest.json"
   },
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
