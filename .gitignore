@@ -310,3 +310,6 @@ exports/federation/
 
 # standalone single-file export (build artifact, regenerate via build-export.sh)
 export-standalone/
+
+# generated federation maintenance report (audit artifact, not committed)
+reports/maintenance/
