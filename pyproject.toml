@@ -111,7 +111,7 @@ include = [
 # ---------------------------------------------------------------------------
 # Exact pins for fully reproducible environments (pip install -c constraints.txt)
 # ---------------------------------------------------------------------------
-# numpy==2.4.2          (2.4.0 was yanked — always use 2.4.2)
+# numpy==2.4.6          (2.4.0 was yanked — 2.4.6 is the stable pin)
 # scipy==1.17.1
 # pandas==3.0.1
 # xarray==2026.2.0
