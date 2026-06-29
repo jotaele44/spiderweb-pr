@@ -1,0 +1,119 @@
+"""Guardrails for NOAA/NCEI coastal DEM source registration.
+
+These tests validate source manifests and repo hygiene only. They do not fetch
+or commit NOAA/NCEI raster data.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+MANIFEST_PATH = REPO_ROOT / "data_sources" / "noaa" / "ncei_coastal_dems.yml"
+SCHEMA_PATH = REPO_ROOT / "schemas" / "raster_source_manifest.schema.json"
+SCRIPT_PATH = REPO_ROOT / "scripts" / "acquire" / "noaa_ncei_opendap.py"
+DOC_PATH = REPO_ROOT / "docs" / "sources" / "noaa_ncei_coastal_dems.md"
+
+
+def load_manifest() -> dict:
+    # ncei_coastal_dems.yml is JSON-compatible YAML to avoid adding a parser dependency.
+    return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+
+
+def test_noaa_ncei_required_files_exist() -> None:
+    assert MANIFEST_PATH.exists()
+    assert SCHEMA_PATH.exists()
+    assert SCRIPT_PATH.exists()
+    assert DOC_PATH.exists()
+
+
+def test_manifest_is_json_compatible_yaml() -> None:
+    manifest = load_manifest()
+    assert manifest["source_family"] == "NOAA_NCEI_COASTAL_DEM"
+    assert manifest["evidence_tier"] == "T1"
+    assert isinstance(manifest["datasets"], list)
+    assert len(manifest["datasets"]) >= 8
+
+
+def test_schema_is_valid_json() -> None:
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    assert schema["title"] == "Spiderweb raster source manifest"
+    assert "datasets" in schema["properties"]
+
+
+def test_san_juan_opendap_metadata_registered() -> None:
+    manifest = load_manifest()
+    datasets = {item["dataset_key"]: item for item in manifest["datasets"]}
+    san_juan = datasets["san_juan_19_prvd02_2015"]
+
+    assert san_juan["opendap_url"] == (
+        "https://www.ngdc.noaa.gov/thredds/dodsC/regional/san_juan_19_prvd02_2015.nc"
+    )
+    assert san_juan["vertical_datum"] == "Puerto Rico Vertical Datum of 2002"
+    assert san_juan["horizontal_datum"] == "WGS84"
+    assert san_juan["grid_shape"] == {"lat": 5185, "lon": 10369}
+
+    bounds = san_juan["bounds_wgs84"]
+    assert bounds["min_lat"] == 18.379984568
+    assert bounds["max_lat"] == 18.540014408
+    assert bounds["min_lon"] == -66.230015432
+    assert bounds["max_lon"] == -65.909986616
+
+
+def test_san_juan_actual_range_contradiction_flagged() -> None:
+    manifest = load_manifest()
+    san_juan = next(
+        item for item in manifest["datasets"] if item["dataset_key"] == "san_juan_19_prvd02_2015"
+    )
+    band1 = san_juan["variables"]["Band1"]
+
+    assert band1["actual_range_from_opendap_form"] == [0.0, 0.0]
+    assert band1["actual_range_status"] == "contradiction_flag_requires_live_raster_validation"
+    assert san_juan["validation"]["promotion_status"] == "not_analysis_ready"
+
+
+def test_repo_policy_blocks_raster_artifacts() -> None:
+    manifest = load_manifest()
+    blocked = set(manifest["repo_policy"]["do_not_commit"])
+    assert "*.nc" in blocked
+    assert "*.tif" in blocked
+    assert "*.tiff" in blocked
+    assert "tile_cache/" in blocked
+    assert "outputs/" in blocked
+    assert "cache/" in blocked
+
+
+def test_catalog_coverage_ledger_present() -> None:
+    manifest = load_manifest()
+    coverage = manifest["catalog_coverage"]
+    assert coverage["snapshot_rows_reviewed"] == 150
+    assert coverage["pr_relevant_rows_located"] == 8
+    assert coverage["coverage_percent_against_uploaded_snapshot"] == 100
+    assert coverage["coverage_percent_against_live_ncei_catalog"] is None
+
+
+def test_script_imports_and_metadata_only_report() -> None:
+    spec = importlib.util.spec_from_file_location("noaa_ncei_opendap", SCRIPT_PATH)
+    assert spec is not None and spec.loader is not None
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    report = module.build_report(
+        module.parse_args(
+            [
+                "--manifest",
+                str(MANIFEST_PATH),
+                "--dataset",
+                "san_juan_19_prvd02_2015",
+                "--metadata-only",
+            ]
+        )
+    )
+
+    assert report["manifest_validation"]["status"] == "ok"
+    assert report["dataset_validation"]["dataset_key"] == "san_juan_19_prvd02_2015"
+    assert report["dataset_validation"]["promotion_status"] == "not_analysis_ready"
