@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/federation/schemas/pr_grid_cell.schema.json",
+  "title": "Puerto Rico Baseline Grid Cell",
+  "description": "Canonical cell-level spatial index used by the Puerto Rico federation repos for cross-repo joins.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Cell_ID", "Row_Index", "Column_Index", "Pixel_X_Min", "Pixel_Y_Min", "Pixel_X_Max", "Pixel_Y_Max", "Centroid_X", "Centroid_Y", "Dark_Pixel_Count", "Total_Pixel_Count", "Land_Pixel_Ratio", "Classification"],
+  "properties": {
+    "Cell_ID": {"type": "string", "pattern": "^R\\d{3}_C\\d{3}$"},
+    "Row_Index": {"type": "integer", "minimum": 0, "maximum": 255},
+    "Column_Index": {"type": "integer", "minimum": 0, "maximum": 383},
+    "Pixel_X_Min": {"type": "integer", "minimum": 0},
+    "Pixel_Y_Min": {"type": "integer", "minimum": 0},
+    "Pixel_X_Max": {"type": "integer", "minimum": 0},
+    "Pixel_Y_Max": {"type": "integer", "minimum": 0},
+    "Centroid_X": {"type": "number"},
+    "Centroid_Y": {"type": "number"},
+    "Dark_Pixel_Count": {"type": "integer", "minimum": 0},
+    "Total_Pixel_Count": {"type": "integer", "minimum": 1},
+    "Land_Pixel_Ratio": {"type": "number", "minimum": 0, "maximum": 1},
+    "Classification": {"type": "string", "enum": ["Water_or_Empty", "Gridline_Dominant", "Coastline_or_Land"]}
+  }
+}
