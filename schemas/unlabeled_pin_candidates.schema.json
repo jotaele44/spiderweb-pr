@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "unlabeled_poi_candidates",
+  "$id": "unlabeled_pin_candidates",
   "type": "object",
-  "description": "Single row from outputs/unlabeled_poi_candidates.csv. Visual features detected without labels, ~40-50 per map image, flagged unreviewed.",
+  "description": "Single row from outputs/unlabeled_pin_candidates.csv. Visual features detected without labels, ~40-50 per map image, flagged unreviewed.",
   "required": ["candidate_id", "screenshot_id", "candidate_type"],
   "properties": {
     "candidate_id":      {"type": ["integer", "string"]},
