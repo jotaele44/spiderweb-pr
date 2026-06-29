@@ -1,7 +1,7 @@
 # Exact pins for fully reproducible installs.
 # Usage: pip install -c constraints.txt -e ".[dev]"
 #
-# numpy 2.4.0 was yanked from PyPI due to a backward-compatibility bug; 2.4.2 is required.
+# numpy 2.4.0 was yanked from PyPI due to a backward-compatibility bug; 2.4.6 is the stable pin.
 numpy==2.4.6
 scipy==1.17.1
 pandas==3.0.3
