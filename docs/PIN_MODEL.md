@@ -90,20 +90,17 @@ tracked follow-up migration on top of this canonical Pin layer.
 | Stage | Area | Status |
 |-------|------|--------|
 | 1 | Config / registry (`pin_registry.yaml` + loader alias) | **done** (PR #126) |
-| 2 | RLSM validation schemas | **deferred — see below** |
+| 2 | RLSM validation schemas (`labeled_pins`, `unlabeled_pin_candidates`) | **done** (PR #139) |
 | 3a | Internal code identifiers (`poi_features`, `_build_poi_candidates`, `domain=`) | **done** (PR #136) |
 | 3b | Artifact filenames (`*_poi_candidates.geojson`, `.qml`) + tests + docs | **done** (PR #137) |
 
-**Stage 2 deferred (cross-repo coupling).** The `poi`-named schemas — `labeled_pois`,
-`unlabeled_poi_candidates`, `ocr_normalized_labels`, `manual_review` — are dormant,
-validation-only contracts in this repo. The RLSM pipeline that produced their artifacts
-(`outputs/*_pois.csv` with `poi_id` / `poi_type_guess` columns) **migrated to
-[skywatcher-pr](https://github.com/jotaele44/skywatcher-pr)** (PRs #110/#111), so those
-artifacts are no longer generated here and no in-repo code validates against these schema
-names. Renaming only our schema identity (`$id` / filename) would desync the name from the
-`poi_*` columns it still describes; renaming the columns/artifacts would make our schemas
-reject the CSVs skywatcher-pr still emits. This schema family therefore **awaits
-coordination with skywatcher-pr** and is intentionally left untouched until then.
+**Stage 2 complete (coordinated with skywatcher-pr).** The formerly `poi`-named schemas
+have been fully renamed: `labeled_pois` → `labeled_pins`, `unlabeled_poi_candidates` →
+`unlabeled_pin_candidates`; column names `poi_id` → `pin_id` and `poi_type_guess` →
+`pin_type_guess` updated in all schemas; artifact paths updated to `outputs/labeled_pins.csv`,
+`outputs/unlabeled_pin_candidates.csv`, and `outputs/manual_review_labeled_pins.csv`;
+`labeled_poi_low_conf` enum value in `manual_review.schema.json` updated to
+`labeled_pin_low_conf`. skywatcher-pr must emit the renamed columns and files.
 
 ## Preserved carve-outs (intentionally NOT renamed)
 
@@ -121,4 +118,4 @@ cross-module data contracts, or external interchange formats.
 | `POI_CANDIDATE` | `configs/location_naming_guardrails.yaml` | Enum value in a config schema; a semantic rename here requires coordinated update to any tool that reads the guardrails |
 | `poi_*` config-loader alias keys | `pipeline/config_loader.py` | Backward-compat aliases so old configs referencing `poi_registry` still load; intentional bridge to Stage 2 |
 | `poi_name`, source-field reads | various harvesters | Column names from external source data; cannot be renamed unilaterally |
-| RLSM schema family (`labeled_pois`, `unlabeled_poi_candidates`, …) | `schemas/` | Awaiting Stage 2 / skywatcher-pr coordination (see above) |
+| `labeled_poi_low_conf` in `manual_review` item_kind enum | `schemas/manual_review.schema.json` | Renamed to `labeled_pin_low_conf` in Stage 2 |

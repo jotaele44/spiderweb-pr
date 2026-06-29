@@ -84,5 +84,12 @@ GitHub Release using the matching section below (T6-53).
   and the export-contract docs. Feature properties (`poi_a`/`poi_b`,
   `candidate_type: "poi"`) and the deferred RLSM `*_pois` schema family are
   unchanged.
+- **`poi` → `pin` migration (stage 2 — RLSM schema family):** `labeled_pois` →
+  `labeled_pins`, `unlabeled_poi_candidates` → `unlabeled_pin_candidates` (schema
+  `$id`, filename, `schema_name` in `schema_index.json`, artifact paths); column names
+  `poi_id` → `pin_id`, `poi_type_guess` → `pin_type_guess` across `labeled_pins`,
+  `unlabeled_pin_candidates`, and `ocr_normalized_labels` schemas;
+  `labeled_poi_low_conf` → `labeled_pin_low_conf` in `manual_review.schema.json`
+  enum. Requires coordinated skywatcher-pr update to match output columns and files.
 
 [Unreleased]: https://github.com/jotaele44/spiderweb-pr/commits/main

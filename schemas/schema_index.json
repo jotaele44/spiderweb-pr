@@ -464,11 +464,11 @@
       "format": "csv",
       "crs": null,
       "required_columns_summary": [
-        "poi_id",
+        "pin_id",
         "screenshot_id",
         "raw_label",
         "normalized_label",
-        "poi_type_guess",
+        "pin_type_guess",
         "confidence"
       ],
       "provenance_fields": [
@@ -476,18 +476,18 @@
         "observed_at",
         "review_status"
       ],
-      "dedup_key": "poi_id",
+      "dedup_key": "pin_id",
       "fact_status_default": "observed"
     },
     {
       "workstream": "rlsm",
-      "artifact_path": "outputs/labeled_pois.csv",
-      "schema_name": "labeled_pois",
-      "schema_file": "schemas/labeled_pois.schema.json",
+      "artifact_path": "outputs/labeled_pins.csv",
+      "schema_name": "labeled_pins",
+      "schema_file": "schemas/labeled_pins.schema.json",
       "format": "csv",
       "crs": null,
       "required_columns_summary": [
-        "poi_id",
+        "pin_id",
         "screenshot_id",
         "raw_label",
         "normalized_label",
@@ -495,7 +495,7 @@
         "bbox_y",
         "centroid_x",
         "centroid_y",
-        "poi_type_guess",
+        "pin_type_guess",
         "confidence"
       ],
       "provenance_fields": [
@@ -503,14 +503,14 @@
         "observed_at",
         "review_status"
       ],
-      "dedup_key": "poi_id",
+      "dedup_key": "pin_id",
       "fact_status_default": "observed"
     },
     {
       "workstream": "rlsm",
-      "artifact_path": "outputs/unlabeled_poi_candidates.csv",
-      "schema_name": "unlabeled_poi_candidates",
-      "schema_file": "schemas/unlabeled_poi_candidates.schema.json",
+      "artifact_path": "outputs/unlabeled_pin_candidates.csv",
+      "schema_name": "unlabeled_pin_candidates",
+      "schema_file": "schemas/unlabeled_pin_candidates.schema.json",
       "format": "csv",
       "crs": null,
       "required_columns_summary": [
@@ -588,7 +588,7 @@
     },
     {
       "workstream": "rlsm",
-      "artifact_path": "outputs/manual_review_labeled_pois.csv",
+      "artifact_path": "outputs/manual_review_labeled_pins.csv",
       "schema_name": "manual_review",
       "schema_file": "schemas/manual_review.schema.json",
       "format": "csv",
