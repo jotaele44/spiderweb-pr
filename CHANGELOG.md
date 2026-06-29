@@ -90,6 +90,7 @@ GitHub Release using the matching section below (T6-53).
   `poi_id` → `pin_id`, `poi_type_guess` → `pin_type_guess` across `labeled_pins`,
   `unlabeled_pin_candidates`, and `ocr_normalized_labels` schemas;
   `labeled_poi_low_conf` → `labeled_pin_low_conf` in `manual_review.schema.json`
-  enum. Requires coordinated skywatcher-pr update to match output columns and files.
+  enum. skywatcher-pr updated in parallel to emit the renamed output files and columns
+  (internal skywatcher SQL table/column names are a separate deferred migration).
 
 [Unreleased]: https://github.com/jotaele44/spiderweb-pr/commits/main
