@@ -100,7 +100,9 @@ have been fully renamed: `labeled_pois` → `labeled_pins`, `unlabeled_poi_candi
 `pin_type_guess` updated in all schemas; artifact paths updated to `outputs/labeled_pins.csv`,
 `outputs/unlabeled_pin_candidates.csv`, and `outputs/manual_review_labeled_pins.csv`;
 `labeled_poi_low_conf` enum value in `manual_review.schema.json` updated to
-`labeled_pin_low_conf`. skywatcher-pr must emit the renamed columns and files.
+`labeled_pin_low_conf`. skywatcher-pr now emits the renamed output files and columns.
+Internal skywatcher SQLite table/column names (`labeled_pois`, `poi_id` in SQL) are a
+separate deferred migration outside this stage's scope.
 
 ## Preserved carve-outs (intentionally NOT renamed)
 
