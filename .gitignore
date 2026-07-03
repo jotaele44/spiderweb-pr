@@ -87,6 +87,8 @@ prii_readiness_report.json
 # `git add` can't silently drop them (see the moneysweep_v1_2 CI incident).
 !tests/fixtures/**/*.jsonl
 !exports/**/*.jsonl
+# Federation evidence ledgers are audit artifacts, not generated data.
+!reports/federation/*.jsonl
 *.nc          # NetCDF (GEBCO)
 
 # ── ChromaDB vector index ─────────────────────────────────────────────────────
