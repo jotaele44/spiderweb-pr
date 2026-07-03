@@ -15,24 +15,26 @@ Runtime execution of the `07_SPIDERWEB` acceptance gate. The federation split-co
 
 The spiderweb-owned suite and the export/release checks are green.
 
-## Remaining blocker — production promotion
+## Production promotion — real package built 2026-07-03; flip held
 
-`ready_for_hub_live_execution` stays **false**. Only the synthetic sample package
-(`exports/samples`) exists; `scripts/validate_export.py` rejects `is_synthetic: true` rows in
-`--mode production`. Production promotion requires real (non-synthetic) spatial/operational
-evidence-envelope rows from the retained producer pipeline, then a `--mode production` export.
-No synthetic data was promoted to production to satisfy the gate. (Ref: P1-SPIDERWEB-NON-SYNTHETIC-ROWS.)
+The real-rows blocker is resolved: `scripts/build_real_spatial_streams.py` projects committed
+real data (the georeferenced `SITE_RI_20260522_001` site record and
+`configs/airport_registry.yaml`) into 10 observations + 2 sources with `is_synthetic: false`
+and deterministic ids. `build_export_package.py --source-dir exports/real --mode production`
+plus `validate_export.py --mode production` pass (exit 0), and the parent hub validated the
+production canonical projection (`hub validate-package` → VALID; `hub validate-federation`
+classifies spiderweb-pr as `declared_not_live` with `package_valid=true`).
 
-## Cross-repo handoff finding (no-cross-edit boundary)
+`ready_for_hub_live_execution` stays **false** by operator decision: the first real production
+package is small (1 structure sighting + 9 airport reference locations) and the flip is held
+for operator review. No synthetic data was promoted to production.
+(Ref: P1-SPIDERWEB-NON-SYNTHETIC-ROWS — real-rows half closed.)
 
-`tests/test_spiderweb_spatial_lane.py::test_round_trip_zero_loss_across_the_seam` `pytest.skip`s in
-normal spiderweb CI (it requires a co-located `moneysweep-pr`). When both repos are checked out
-together, it surfaces a producer→consumer **filename drift**:
+## Cross-repo handoff — seam closed 2026-07-03
 
-- `moneysweep-pr/run_pr_intake_router.py` writes `moneysweep_derivatives.csv`
-  (`routing_summary.spiderweb_pr_derivative_count = 2`), but
-- `readiness/spiderweb_spatial_lane.py` (`INPUT_FILENAME = "spiderweb_pr_derivatives.csv"`) reads
-  `spiderweb_pr_derivatives.csv`, raising `SpiderwebSpatialLaneError: missing required input`.
-
-This is a handoff-boundary issue that needs `moneysweep-pr` coordination to reconcile the derivatives
-filename; per the federation no-cross-edit rule it is **not** patched unilaterally from this repo.
+The June-2026 retirement of moneysweep's `spiderweb_pr_derivatives.csv` writer (which left
+`readiness/spiderweb_spatial_lane.py` input-starved) was reversed on the moneysweep side: the
+router writes the stream again, schema-conformant with `schemas/pr_intake_derivative.schema.json`.
+`tests/test_spiderweb_spatial_lane.py::test_round_trip_zero_loss_across_the_seam` now **passes**
+against a co-located moneysweep-pr (zero-loss, empty discrepancy queue); it still `pytest.skip`s
+in spiderweb-only CI.
