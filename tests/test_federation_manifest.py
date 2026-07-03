@@ -25,6 +25,9 @@ def test_federation_manifest_live_execution_blockers_are_current():
     assert gate["ready_for_hub_discovery"] is True
     assert gate["ready_for_hub_live_execution"] is False
     assert gate["blocking_conditions"] == [
-        "live production export requires real (non-synthetic) rows; the mode=test->production gate in docs/federation_readiness.md must pass",
-        "the parent hub (thehub-pr) must validate this producer's canonical package (entities/sources/relationships) before live execution",
+        "operator review of the first real production package (small: 1 site observation + 9 airport reference locations) pending before flipping ready_for_hub_live_execution",
     ]
+    # The former blockers (real rows + hub validation) are resolved, not dropped.
+    resolved = "\n".join(gate["resolved_conditions"])
+    assert "build_real_spatial_streams.py" in resolved
+    assert "hub validate-package" in resolved
