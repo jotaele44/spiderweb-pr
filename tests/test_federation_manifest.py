@@ -23,11 +23,12 @@ def test_federation_manifest_live_execution_blockers_are_current():
     gate = manifest["federation_readiness_gate"]
 
     assert gate["ready_for_hub_discovery"] is True
-    assert gate["ready_for_hub_live_execution"] is False
-    assert gate["blocking_conditions"] == [
-        "operator review of the first real production package (small: 1 site observation + 9 airport reference locations) pending before flipping ready_for_hub_live_execution",
-    ]
-    # The former blockers (real rows + hub validation) are resolved, not dropped.
+    assert gate["ready_for_hub_live_execution"] is True
+    assert gate["blocking_conditions"] == []
+    # The promotion trail (real rows, hub validation, operator approval) is
+    # resolved, not dropped.
     resolved = "\n".join(gate["resolved_conditions"])
     assert "build_real_spatial_streams.py" in resolved
     assert "hub validate-package" in resolved
+    assert "operator approved" in resolved
+    assert manifest["production_status"] == "PRODUCTION"
