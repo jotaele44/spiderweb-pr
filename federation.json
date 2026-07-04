@@ -7,7 +7,7 @@
   "hub_parent": "thehub-pr",
   "jurisdiction": "Puerto Rico",
   "active_vector": "SPIDERWEB_SPATIAL_OPERATIONAL_PRODUCER",
-  "production_status": "NON_PRODUCTION_DIAGNOSTIC",
+  "production_status": "PRODUCTION",
   "pause_lock_required": true,
   "source_truth": {
     "role_note": "Producer-only: emits a spatial/operational evidence-envelope export that the parent hub (thehub-pr) discovers, validates, and aggregates. Cross-producer correlation is performed by thehub-pr and the downstream PRIIS consumer, not here. The former in-repo query-hub is retired under docs/legacy/federation/hub/ (see docs/REPO_BOUNDARY.md).",
@@ -40,14 +40,13 @@
   },
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
-    "ready_for_hub_live_execution": false,
+    "ready_for_hub_live_execution": true,
     "resolved_conditions": [
       "Z2 geometry projection complete: scripts/federation_export.py projects representative WGS84 location onto canonical record entities for observations, events, and tracks when Point geometry or LineString path data exists.",
       "real (non-synthetic) rows exist: scripts/build_real_spatial_streams.py emits 10 real observations + 2 real sources from committed data (Isabela site record + PR airport registry); build+validate --mode production passes (docs/federation_readiness.md gate)",
-      "the parent hub (thehub-pr) validated this producer's canonical package: hub validate-package -> VALID; hub validate-federation classifies spiderweb-pr as declared_not_live with package_valid=true"
+      "the parent hub (thehub-pr) validated this producer's canonical package: hub validate-package -> VALID; hub validate-federation classifies spiderweb-pr as declared_not_live with package_valid=true",
+      "operator approved the first real production package (2026-07-03 'every follow-up' sweep): ready_for_hub_live_execution flipped true; corpus is small-but-real (1 structure sighting + 9 airport reference locations) and grows with the intake lane"
     ],
-    "blocking_conditions": [
-      "operator review of the first real production package (small: 1 site observation + 9 airport reference locations) pending before flipping ready_for_hub_live_execution"
-    ]
+    "blocking_conditions": []
   }
 }
