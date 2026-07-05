@@ -1,0 +1,215 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "GEOID": "72127",
+        "NAME": "San Juan",
+        "NAMELSAD": "San Juan Municipio"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -66.0991,
+              18.3922
+            ],
+            [
+              -66.0391,
+              18.3922
+            ],
+            [
+              -66.0391,
+              18.4522
+            ],
+            [
+              -66.0991,
+              18.4522
+            ],
+            [
+              -66.0991,
+              18.3922
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "GEOID": "72113",
+        "NAME": "Ponce",
+        "NAMELSAD": "Ponce Municipio"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -66.6367,
+              17.9717
+            ],
+            [
+              -66.5767,
+              17.9717
+            ],
+            [
+              -66.5767,
+              18.0317
+            ],
+            [
+              -66.6367,
+              18.0317
+            ],
+            [
+              -66.6367,
+              17.9717
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "GEOID": "72005",
+        "NAME": "Aguadilla",
+        "NAMELSAD": "Aguadilla Municipio"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -67.1738,
+              18.4502
+            ],
+            [
+              -67.1138,
+              18.4502
+            ],
+            [
+              -67.1138,
+              18.5102
+            ],
+            [
+              -67.1738,
+              18.5102
+            ],
+            [
+              -67.1738,
+              18.4502
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "GEOID": "72025",
+        "NAME": "Caguas",
+        "NAMELSAD": "Caguas Municipio"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -66.081,
+              18.181099999999997
+            ],
+            [
+              -66.021,
+              18.181099999999997
+            ],
+            [
+              -66.021,
+              18.2411
+            ],
+            [
+              -66.081,
+              18.2411
+            ],
+            [
+              -66.081,
+              18.181099999999997
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "GEOID": "72021",
+        "NAME": "Bayamón",
+        "NAMELSAD": "Bayamón Municipio"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -66.1986,
+              18.319399999999998
+            ],
+            [
+              -66.1386,
+              18.319399999999998
+            ],
+            [
+              -66.1386,
+              18.3794
+            ],
+            [
+              -66.1986,
+              18.3794
+            ],
+            [
+              -66.1986,
+              18.319399999999998
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "GEOID": "72001",
+        "NAME": "Adjuntas",
+        "NAMELSAD": "Adjuntas Municipio"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -66.7522,
+              18.1327
+            ],
+            [
+              -66.6922,
+              18.1327
+            ],
+            [
+              -66.6922,
+              18.192700000000002
+            ],
+            [
+              -66.7522,
+              18.192700000000002
+            ],
+            [
+              -66.7522,
+              18.1327
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

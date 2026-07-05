@@ -14,7 +14,7 @@ Usage (CLI):
 import hashlib
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -160,7 +160,7 @@ class SatelliteIngest:
     def _write_manifest(self, manifest: Dict, source_path: str) -> str:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         stem = Path(source_path).stem
-        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y%m%d_%H%M%S")
         out = self.output_dir / f"{ts}_{stem}.json"
         out.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         return str(out)

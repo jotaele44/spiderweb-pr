@@ -42,16 +42,16 @@ Do not make spiderweb-pr canonical for records that are primarily:
 - lobbying / political influence / boards / appointees
 - vendor-only or recipient-only chains with no spatial feature
 
-For those, route to Contract-Sweeper. If the same item has spatial or infrastructure data, create a spiderweb-pr derivative and backlink to the Contract-Sweeper canonical record.
+For those, route to moneysweep-pr. If the same item has spatial or infrastructure data, create a spiderweb-pr derivative and backlink to the moneysweep-pr canonical record.
 
 ## Dual-route rules
 
-| Input class | Canonical repo | spiderweb-pr record | Contract-Sweeper derivative |
+| Input class | Canonical repo | spiderweb-pr record | moneysweep-pr derivative |
 |---|---|---|---|
 | GIS dataset with no funding | spiderweb-pr | dataset/layer/POI/AOI | none |
-| Infrastructure location with funding | Contract-Sweeper | spatial derivative | funding/procurement canonical |
-| Environmental grant | Contract-Sweeper | site/dataset derivative | funding/award canonical |
-| USACE physical project with amount | Contract-Sweeper | AOI/federal infrastructure record | agency/funding record |
+| Infrastructure location with funding | moneysweep-pr | spatial derivative | funding/procurement canonical |
+| Environmental grant | moneysweep-pr | site/dataset derivative | funding/award canonical |
+| USACE physical project with amount | moneysweep-pr | AOI/federal infrastructure record | agency/funding record |
 | Aviation/maritime activity with no procurement | spiderweb-pr | operational activity item | none |
 | Aviation/maritime procurement | spiderweb-pr if operational primary | operational record | procurement derivative |
 
@@ -62,7 +62,7 @@ Every spiderweb-pr derivative record must preserve:
 - `record_id`
 - `source_item_id`
 - `canonical_repo = spiderweb-pr`
-- `related_contract_sweeper_record_id`
+- `related_moneysweep_record_id`
 - `source_name`
 - `source_url`
 - `published_at`
@@ -97,7 +97,7 @@ Every spiderweb-pr derivative record must preserve:
 ## Zero-loss status logic
 Every observed item must receive exactly one final intake status:
 
-- `routed_contract_sweeper`
+- `routed_moneysweep`
 - `routed_spiderweb_pr`
 - `dual_routed_contract_primary`
 - `dual_routed_spiderweb_primary`
@@ -127,7 +127,7 @@ No item may disappear between raw intake and normalized output.
 - `data/normalized/maritime_activity_items.csv`
 - `data/normalized/hydro_environment_items.csv`
 - `data/normalized/science_dataset_items.csv`
-- `data/exports/poi_candidates.geojson`
+- `data/exports/pin_candidates.geojson`
 - `data/exports/aoi_candidates.geojson`
 - `data/exports/corridor_candidates.geojson`
 - `data/review/geocode_queue.csv`
@@ -136,5 +136,5 @@ No item may disappear between raw intake and normalized output.
 
 ## Next execution string
 ```text
-EXECUTE_NEXT_VECTOR: IMPLEMENT_SPIDERWEB-PR_SPATIAL_OPERATIONAL_LANE → ADD_DOMAIN_ROUTER → ADD_SPATIAL_INTAKE_TABLES → WIRE_GIS+INFRA+HYDRO+AVIATION+MARITIME+FEDMIL+ENVSCI_CLASSIFIERS → EXPORT_POI/AOI/CORRIDOR_CANDIDATES → ADD_CONTRACT-SWEEPER_BACKLINKS
+EXECUTE_NEXT_VECTOR: IMPLEMENT_SPIDERWEB-PR_SPATIAL_OPERATIONAL_LANE → ADD_DOMAIN_ROUTER → ADD_SPATIAL_INTAKE_TABLES → WIRE_GIS+INFRA+HYDRO+AVIATION+MARITIME+FEDMIL+ENVSCI_CLASSIFIERS → EXPORT_POI/AOI/CORRIDOR_CANDIDATES → ADD_MONEYSWEEP_BACKLINKS
 ```

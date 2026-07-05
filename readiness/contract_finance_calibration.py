@@ -1,7 +1,7 @@
 """Calibration utilities for the SpiderWeb contract/finance layer.
 
 The calibration report is intentionally data-profile based: it can run on real
-Contract-Sweeper adapter outputs without changing score formulas at runtime.
+moneysweep-pr adapter outputs without changing score formulas at runtime.
 """
 
 from __future__ import annotations

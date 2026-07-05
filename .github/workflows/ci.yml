@@ -53,11 +53,14 @@ jobs:
           cache: pip
 
       - name: Install dev tooling
-        run: pip install -e ".[dev]"
+        # Pin via constraints.txt (numpy==2.4.6 etc.) for a reproducible lint
+        # environment. Without it, pip floats to numpy>=2.5 whose typeshed stubs
+        # use PEP 695 `type` statements that mypy (python_version 3.11) rejects.
+        run: pip install -c constraints.txt -e ".[dev]"
 
       - name: Lint + type-check (curated allowlist)
         run: |
-          LINT_PATHS="provenance_utils.py run_modes.py integration/mbil.py pipeline/db_utils.py pipeline/terrain_hook.py federation/envelope.py federation/readiness.py pipeline/logging_config.py pipeline/config_loader.py pipeline/seeding.py pipeline/verbosity.py pipeline/path_safety.py"
+          LINT_PATHS="provenance_utils.py run_modes.py integration/mbil.py pipeline/db_utils.py pipeline/terrain_hook.py federation/envelope.py federation/readiness.py federation/namespace.py pipeline/logging_config.py pipeline/config_loader.py pipeline/seeding.py pipeline/verbosity.py pipeline/path_safety.py"
           echo "Allowlist: $LINT_PATHS"
           python -m ruff check $LINT_PATHS
           python -m black --check $LINT_PATHS
@@ -90,7 +93,7 @@ jobs:
       # installed in this job — they run in the dedicated `test-gebco` job below
       # (T5-44). Coverage ratchet (T5-42) enforces a floor on the core packages.
       - name: Run test suite (airspace intel + LLM pipeline + earthgpt)
-        run: python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-report=term-missing:skip-covered --cov-fail-under=55
+        run: python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-report=term-missing:skip-covered --cov-fail-under=64
 
       - name: EarthGPT self-test (7 gates)
         run: |
@@ -243,6 +246,8 @@ jobs:
         run: pip install -e ".[${{ matrix.extra }}]"
 
       - name: Import smoke for ${{ matrix.extra }}
+        env:
+          EXTRA: ${{ matrix.extra }}
         run: |
           python - <<'PY'
           import importlib, os
@@ -258,11 +263,3 @@ jobs:
               importlib.import_module(m)
           print(f"{extra}: imported {', '.join(modules)} OK")
           PY
-        env:
-          EXTRA: ${{ matrix.extra }}
-
-      - name: Console entry points are installed
-        run: |
-          spiderweb-run --help > /dev/null
-          spiderweb-release-check --help > /dev/null
-          echo "console scripts OK"

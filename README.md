@@ -1,268 +1,82 @@
-# spiderweb-pr — Spatial / Operational Intelligence Producer (PRII federation)
+# spiderweb-pr — Spatial / Operational Producer (PRII federation)
 
 [![CI](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml/badge.svg)](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/badge/coverage-%E2%89%A555%25-brightgreen)](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/badge/coverage-%E2%89%A564%25-brightgreen)](https://github.com/jotaele44/spiderweb-pr/actions/workflows/ci.yml)
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
 
-The **spatial / operational** producer node of the Puerto Rico Integrated Intelligence
-(PRII) federation. It builds a flight/event database, applies GIS correlation, mission
-inference and anomaly detection, and exports a canonical evidence envelope for the
-federation Hub ([thehub-pr](https://github.com/jotaele44/thehub-pr)).
+`spiderweb-pr` is the spatial / operational producer node for the Puerto Rico Integrated Intelligence (PRII) federation. It prepares GIS-linked records, operational context, provenance, confidence metadata, and review outputs for federation aggregation in [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
 
-> **FR24 airspace ingestion moved.** The FlightRadar24 screenshot-processing pipeline
-> (`fr24/`, the RLSM analysis suite) now lives in the airspace producer
-> [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr). This repo retains the
-> flight-analysis pipeline, GIS/integration exports, and the federation producer export.
+> **Boundary update:** FlightRadar24 screenshot ingestion, FR24 route extraction, and the active airspace observation export now belong to [`skywatcher-pr`](https://github.com/jotaele44/skywatcher-pr). Spiderweb keeps legacy spatial bridge logic and retained integration exports, but it is not the active FR24 owner.
 
-> **Integration status**: integration-ready after validation gates pass. Run `--validate` and review `integration_report.json` before treating outputs as production data.
-
-**Extended docs**: [Docs index](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Execution Guide](docs/EXECUTION_GUIDE.md) · [Testing](docs/TESTING.md) · [Data Policy](docs/DATA_POLICY.md) · [Roadmap (Next 100 Tasks V2)](docs/NEXT_100_TASKS_V2.md) · [Task ledger](docs/ROI_TASK_LEDGER.md) · [Changelog](CHANGELOG.md)
+> **Status:** diagnostic / integration-ready only after validation gates pass. Run `--validate` and review `integration_report.json` before promoting outputs.
 
 ## Federation role
 
-spiderweb-pr is a **producer** in the PRII federation:
-- **Producer** — `federation/export_writer.py` + `federation/envelope.py` emit a spatial/operational evidence envelope; `scripts/federation_export.py` projects it to the Hub's canonical `{entities, sources, relationships}` (geometry carried on entities for spatial correlation). Readiness gate: `federation.json` + [`docs/federation_readiness.md`](docs/federation_readiness.md).
+| Field | Value |
+|---|---|
+| Program id | `spiderweb-pr` |
+| Parent hub | [`thehub-pr`](https://github.com/jotaele44/thehub-pr) |
+| Primary function | Spatial / operational export package producer |
+| Airspace producer | [`skywatcher-pr`](https://github.com/jotaele44/skywatcher-pr) |
 
-Cross-producer correlation is owned by the parent hub ([thehub-pr](https://github.com/jotaele44/thehub-pr)) and the downstream PRIIS consumer. The former in-repo query-hub (temporal / normalized-entity / spatial-haversine / external-id correlation) is retired under [`docs/legacy/federation/hub/`](docs/legacy/federation/hub/) — see [`docs/REPO_BOUNDARY.md`](docs/REPO_BOUNDARY.md).
+Cross-producer correlation is owned by the Hub and downstream consumers. Spiderweb should emit clean, reviewable records; it should not duplicate Hub-level correlation authority.
 
-## What it does
+## Scope boundaries
 
-Builds a searchable flight/event database, then applies GIS correlation, mission inference, and anomaly detection to produce actionable spatial/operational intelligence for Puerto Rico, exported for the federation.
-
-## Architecture
-
-| Phase | File | Purpose |
-|-------|------|---------|
-| 0 | `pipeline/flight_analyzer.py` | OCR extraction, coordinate mapping, SQLite database |
-| 0 | `pipeline/aircraft_intelligence.py` | N-number lookup, operator profiles, mission deduction |
-| 1 | `pipeline/ensemble_ocr.py` | 3-engine OCR consensus (Tesseract + PaddleOCR + EasyOCR) |
-| 1 | `pipeline/hardening_layer.py` | Confidence scoring, temporal physics validation, job queue |
-| 1 | `pipeline/hardened_pipeline.py` | Phase 1 orchestration with provenance and checkpointing |
-| 2 | `pipeline/gis_intelligence.py` | Puerto Rico infrastructure graph, corridor analysis, heatmaps |
-| 3 | `pipeline/mission_inference.py` | Multi-factor mission scoring, behavioral clustering, Markov prediction |
-| 4 | `pipeline/operational_intelligence.py` | Alert engine, daily reports, aircraft profiles |
-| 4 | `pipeline/home_base_correlation.py` | Home-base (takeoff/landing) → operator/owner/mission deduction + fleet co-location leads |
-| — | `run_all.py` | Unified CLI for all phases |
-| — | `dashboard/dashboard.jsx` + `dashboard/dashboard.html` | Browser dashboard — 4-tab operational review UI |
-
-### Integration hardening modules
-
-| File | Purpose |
-|------|---------|
-| `integration/schema_validation.py` | JSON Schema (Draft-7) validation; routes invalid rows to `review_queue.csv` |
-| `integration/pr_intel_adapter.py` | Exports 6 parquet files + 2 GeoJSON + `source_manifest.json` + `integration_report.json` |
-| `integration/ilap_airspace_bridge.py` | POI, ILAP, and corridor candidates as GeoJSON for Spiderweb/UGCN |
-| `integration/aasb_airspace_bridge.py` | Airport-node edge CSV and `spiderweb_ingest_manifest.json` |
-| `schemas/` | 10 JSON Schema files covering all exported record types |
-| `configs/georef_anchors.csv` | 5 PR airport anchor points for georeferencing calibration |
-
-> **FR24 screenshot ingestion** (`fr24/`, route extraction, RLSM analysis, registration
-> recovery) migrated to [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr).
+| Domain | Owner |
+|---|---|
+| Spatial bridge records and GIS-linked review exports | `spiderweb-pr` |
+| FR24 ingestion and airspace observations | `skywatcher-pr` |
+| Public-money and procurement records | `moneysweep-pr` / `moneysweep-pr` |
+| Water, wastewater, power, outage, and recovery records | `aguayluz-pr` |
+| Puerto Rico historical case corpus | `OVNIS` / `ovnis-pr` |
+| Producer discovery, validation, aggregation, and cross-producer correlation | `thehub-pr` |
 
 ## Quick start
 
 ```bash
-# Install the airspace subsystem (editable, with its extra)
 pip install -e ".[airspace]"
-# For exact reproducible pins:  pip install -c constraints.txt -e ".[airspace]"
-
-# Install Tesseract OCR (system package)
-# Ubuntu: sudo apt-get install tesseract-ocr
-# macOS:  brew install tesseract
-
-# Place FlightRadar24 screenshots in uploads directory
-# mkdir -p /mnt/user-data/uploads && cp *.jpg /mnt/user-data/uploads/
-
-# Run complete pipeline (all phases)
-python run_all.py
-
-# Test with first 10 images only
-python run_all.py --images 10
-
-# Show database status
 python run_all.py --status
-
-# Generate aircraft intelligence profile
-python run_all.py --aircraft N5854Z
-
-# Run specific phase only
-python run_all.py --phase 2
-
-# Export DB snapshot for the browser dashboard (lands under outputs/, gitignored)
-python run_all.py --export-json outputs/dashboard_data.json
-
-# Open the dashboard (serve from the repo directory so ../outputs/ resolves)
-python -m http.server 8080
-# then open http://localhost:8080/dashboard/dashboard.html
-
-# ── Integration hardening (standalone, runs against existing DB) ──────────────
-
-# Validate all records and route invalids to review_queue.csv
+python run_all.py --images 10
 python run_all.py --db flight_database.db --validate
-
-# Export PR Intel parquet + GeoJSON + integration_report.json
 python run_all.py --db flight_database.db --export-pr-intel ./outputs/pr_intel
-
-# Export Spiderweb/UGCN bridge files
 python run_all.py --db flight_database.db --export-spiderweb ./outputs/spiderweb
-
-# Full integrated run: pipeline + validation + both exports
-python run_all.py --images 10 --validate \
-  --export-pr-intel ./outputs/pr_intel \
-  --export-spiderweb ./outputs/spiderweb
-
-# Check integration gate status
-python -c "
-import json
-r = json.load(open('./outputs/pr_intel/integration_report.json'))
-print(r['overall_status'])
-for gate, info in r['gates'].items():
-    print(f'  {gate}: {info[\"status\"]}')
-"
 ```
 
-## Dependencies & extras
+## Main outputs
 
-Dependencies follow a **two-tier model**:
+| Output | Purpose |
+|---|---|
+| `integration_report.json` | Validation gate report |
+| `source_manifest.json` | File inventory and row counts |
+| `review_queue.csv` | Low-confidence rows requiring review |
+| `*.parquet` | Structured retained records |
+| `*.geojson` | GIS-linked features and bridge candidates |
+| `aasb_airspace_edges.csv` | Airport-node edge list retained for bridge review |
 
-- **Version ranges** live in `pyproject.toml` — a shared scientific stack in
-  `dependencies`, plus one optional-dependency **extra** per subsystem.
-- **Exact reproducible pins** live in `constraints.txt`
-  (`pip install -c constraints.txt -e ".[airspace]"`).
-
-| Extra | Subsystem | Install |
-|---|---|---|
-| `airspace` | GIS / flight-analysis pipeline + integration exports | `pip install -e ".[airspace]"` |
-| `gebco` | GEBCO bathymetry pipeline | `pip install -e ".[gebco]"` |
-| `rag` | LLM/RAG pipeline (heavy ML) | `pip install -e ".[rag]"` |
-| `earthgpt` | EarthGPT iOS anomaly detection | `pip install -e ".[earthgpt]"` |
-| `server` | PRIIS FastAPI backend | `pip install -e ".[server]"` |
-| `federation` | Cross-repo federation hub | `pip install -e ".[federation]"` |
-| `all` | every runtime subsystem | `pip install -e ".[all]"` |
-
-The `requirements-*.txt` files are thin shims over these extras. Installing the
-package exposes two console scripts: `spiderweb-run` (= `run_all.py`) and
-`spiderweb-release-check` (= `release_check.py`).
-
-## Integration outputs
-
-### `--export-pr-intel <DIR>` produces
-
-| File | Description |
-|------|-------------|
-| `airspace_events.parquet` | All flights with provenance columns |
-| `aircraft_profiles.parquet` | Per-callsign profiles |
-| `track_points.parquet` | Track points with provenance |
-| `screenshot_evidence.parquet` | Screenshots with sha256, coordinate method, review status |
-| `mission_inferences.parquet` | Mission scores |
-| `anomaly_index.parquet` | Alerts and anomalies |
-| `gis_airspace_features.geojson` | Airport/POI points (EPSG:4326) |
-| `route_lines.geojson` | Per-flight origin→dest lines (EPSG:4326) |
-| `source_manifest.json` | File list with record counts |
-| `integration_report.json` | 6 gate PASS/FAIL status report |
-
-### `--export-spiderweb <DIR>` produces
-
-| File | Description |
-|------|-------------|
-| `airspace_poi_candidates.geojson` | Recurrence-clustered POI candidates |
-| `airspace_ilap_candidates.geojson` | Corridor alignment flight lines |
-| `airspace_corridor_candidates.geojson` | POI-pair corridor segments |
-| `aasb_airspace_edges.csv` | Airport-node edge list with weights |
-| `spiderweb_ingest_manifest.json` | Bridge file inventory |
-
-Every exported record includes provenance: `screenshot_id`, `source_path`, `sha256`, `ocr_confidence`, `coordinate_method`, `coordinate_confidence`, `review_status`. Low-confidence records are routed to `review_queue.csv`.
-
-## Optional: Phase 1 hardening (higher OCR accuracy)
+## Development gates
 
 ```bash
-# PaddleOCR (adds ~50% accuracy improvement)
-pip install paddlepaddle paddleocr
-
-# EasyOCR (adds further improvement, requires PyTorch)
-pip install torch easyocr
+python -m pytest -q
+python run_all.py --db flight_database.db --validate
 ```
 
-Phase 1 automatically falls back to Tesseract-only if these are not installed.
+## Documentation
 
-## Key aircraft
+[Docs index](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Execution Guide](docs/EXECUTION_GUIDE.md) · [Testing](docs/TESTING.md) · [Data Policy](docs/DATA_POLICY.md) · [Repo boundary](docs/REPO_BOUNDARY.md) · [Roadmap (V2)](docs/NEXT_100_TASKS_V2.md) · [Task Ledger](docs/ROI_TASK_LEDGER.md) · [Changelog](CHANGELOG.md)
 
-| Callsign | Type | Operator | Mission | Home base (resting spot) |
-|----------|------|----------|---------|--------------------------|
-| N5854Z | Airbus H125 | Puerto Rico Electric Power Authority | Power line inspection | Isla Grande / Palo Seco (PREPA) |
-| C6062 | Sikorsky MH-60T | US Coast Guard | Search & Rescue / Maritime Patrol | USCG Air Station Borinquen (NW) |
-| N767PD | Bell 429 | Puerto Rico Police (FURA) | Law enforcement | FURA base, San Juan metro |
-| N684JB | Airbus H130 | Private | Charter operations | Isla Grande GA apron |
+## USGS OFR 98-038 Puerto Rico geology / mineral layers
 
-The **home base** is the strongest single operator/owner signal — a craft's
-takeoff/landing locations are correlated to the facility that operates them, and
-craft that share an apron are operationally linked. See
-[Aircraft Home-Base Intelligence](docs/AIRCRAFT_HOME_BASE_INTELLIGENCE.md).
+Spiderweb tracks the USGS Open-File Report 98-038 Puerto Rico geology/mineral package as a structural-geodata baseline. The source package covers geologic maps, faults, gravity, magnetic, mineral occurrence, terrane, placer drainage, Vieques, Mona, and Puerto Rico outline layers.
 
-```bash
-python run_all.py --home-base C6062        # deduce O/O/M from one craft's resting spot
-python run_all.py --fleet-correlation      # shared-space leads across the fleet
-python run_all.py --export-home-base ./outputs/home_base
-```
+Tracked registry files:
 
-## Database queries
+- `data/usgs_ofr_98_038/registry/usgs_ofr_98_038_manifest.json`
+- `data/usgs_ofr_98_038/registry/usgs_ofr_98_038_layers.csv`
+- `data/usgs_ofr_98_038/docs/README_USGS_OFR_98_038_BUILD.md`
 
-```sql
--- All flights for one aircraft
-SELECT * FROM flights WHERE callsign = 'N5854Z' ORDER BY takeoff_time DESC;
+Normalized lightweight derivative:
 
--- Flight hours by operator
-SELECT callsign, COUNT(*) AS flights,
-       ROUND(SUM(flight_duration_minutes) / 60.0, 1) AS hours
-FROM flights GROUP BY callsign ORDER BY hours DESC;
+- `data/usgs_ofr_98_038/derived/usgs_ofr_98_038_metallic_occurrences_wgs84.geojson`
 
--- Low-confidence extractions (OCR quality check)
-SELECT field_name, AVG(combined_confidence)
-FROM extraction_confidence GROUP BY field_name ORDER BY field_name;
-```
-
-## Processing time estimates
-
-| Images | Tesseract only | With ensemble OCR |
-|--------|---------------|-------------------|
-| 10 | ~1 min | ~3 min |
-| 100 | ~15 min | ~30 min |
-| 1,000 | ~3 h | ~5 h |
-| 15,000 | ~45 h | ~65 h |
-
----
-
-## EarthGPT iOS
-
-Lightweight satellite anomaly detection engine optimized for iOS and a-Shell, co-resident in this repo. See `earthgpt/` for the core package and `scripts/` for 18 single-command pipeline stage runners.
-
-**Pipeline stages**: queue generation → tile sweep → multiscale pass → propagation → seam reconstruction → seam chaining → corridor graph → clustering → cascade refinement → target ranking → GeoJSON export
-
-```bash
-pip install requests python-dotenv folium
-python scripts/01_generate_queue.py   # start pipeline
-```
-
----
-
-## GEBCO Bathymetry Pipeline
-
-Regional subset extraction and terrain-derivative analysis for the GEBCO 2023 global 15 arc-second bathymetry grid. See `gebco/` for the package.
-
-```bash
-pip install numpy scipy xarray netCDF4
-python -c "from gebco import open_gebco, subset_region; help(subset_region)"
-```
-
----
-
-## LLM Pipeline (PRUAP Social Data)
-
-RAG index and local LLM query over Puerto Rico UAP/UFO Reddit data. See `llm/prepare_data.py`, `llm/rag_pipeline.py`, `llm/query_llm.py`.
-
-```bash
-pip install chromadb sentence-transformers transformers torch accelerate
-python llm/prepare_data.py                    # clean + chunk PRUAP_MASTER_SOCIAL.csv
-python llm/rag_pipeline.py --build            # build ChromaDB vector index
-python llm/query_llm.py "UAP sightings near Aguadilla?"
-```
+Raw ARC/INFO `.e00`, GeoPackage, ZIP, and shapefile binaries remain local/ignored unless explicitly force-added for release packaging.

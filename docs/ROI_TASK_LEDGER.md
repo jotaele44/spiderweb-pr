@@ -2,7 +2,7 @@
 
 Running scorecard for all release-readiness work. Each row records: task ID, name, ROI tier, status (`complete` / `partial` / `blocked` / `not_started`), files touched, tests added, validation command, result, blockers, next step.
 
-This is the **planning artifact** operators update as work proceeds. Last updated **2026-06-01**.
+This is the **planning artifact** operators update as work proceeds. Last updated **2026-06-22**.
 
 For backlog beyond this scorecard, see [`NEXT_100_TASKS.md`](NEXT_100_TASKS.md).
 
@@ -130,6 +130,7 @@ Reference points captured after major sweeps so the next change has something co
 
 | Date | Main HEAD | Tests | Release gate | Notes |
 |---|---|---|---|---|
+| 2026-06-22 | `f3b094a` (#130) | 844 passed / 34 skipped / 0 failed | `overall_status: PASS` (demo mode, empty DB) | Captured after the post-V2 civic-data + hardening sweep (#120, #123, #124, #125, #127, #128, #129, #130). Coverage TOTAL **66.13%** (Python 3.11); ratchet floor raised 55→64. Reproduce: `python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-fail-under=64 && python3 release_check.py --db /tmp/baseline.db --output-dir /tmp/baseline_release --skip-tests --demo`. |
 | 2026-06-02 | `ae526fd` | 893 passed / 26 skipped / 0 failed | `overall_status: PASS` (demo mode, empty DB, all 6 stages reported) | Captured after PR #72 (RLSM operational ontology rebase) + PR #73 (gitignore cleanup) merged. Triage sweep complete: PR #39 superseded + closed; `input/` + misplaced `registration_recovery_queue.csv` cleaned. Reproduce with: `/usr/bin/python3 -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py && /usr/bin/python3 release_check.py --db /tmp/baseline.db --output-dir /tmp/baseline_release --skip-tests --demo`. |
 | 2026-06-01 | `5a92c94` | 881 passed / 26 skipped / 0 failed | `overall_status: PASS` (demo mode) | Integration PR #70 just merged. Release-readiness sweep landed (Tier 1–5 + RLSM extraction + Workstream B coverage, 22 commits). |
 
@@ -145,7 +146,7 @@ Executed theme-by-theme, each CI-gated and squash-merged (Themes 2–7) or stack
 | 2 | Schema & validation | ✅ complete | `federation_manifest` schema, `CONTRACT_VERSION`, example-artifact CI gate |
 | 3 | Spiderweb language | ✅ complete | shared `integration/mbil.py`, `aasb_mbil_corridor_flag`, terrain hook |
 | 4 | Performance & scale | ✅ complete | WAL pragmas, hot-col indexes, `executemany`, MBIL `lru_cache`, per-stage timing |
-| 5 | Testing & coverage | ✅ complete | `pytest-cov` ratchet (≥55%), export reproducibility, release-gate coverage |
+| 5 | Testing & coverage | ✅ complete | `pytest-cov` ratchet (≥64%), export reproducibility, release-gate coverage |
 | 6 | CI/CD & DX | ✅ complete | lint/type gate (ruff+black+mypy allowlist), concurrency, dependabot, release tagging, badges, `make bootstrap` |
 | 7 | GIS / export | ✅ complete | GeoJSON `_meta`, CRS/EPSG stamping, corridor labels, centroid CSV hook, native KML, QGIS `.qml` pack |
 | 8 | RLSM pipeline | ✅ complete | `ocr_failures.jsonl`, per-zone/per-engine coverage drift |
@@ -159,3 +160,23 @@ flight-track/geo-anchor v2, #72/#73 OCR recalibration/ensemble, #76 hub rtree,
 #77 version negotiation, #62/#64 contextily/geopandas exports, #81 error
 taxonomy, #84 checkpoint/resume, #89 data-policy redaction lint, #92 LICENSE
 (owner decision).
+
+---
+
+## Post-V2 sweep — civic-data & hardening PRs (2026-06-10 → 2026-06-22)
+
+PRs merged after the Themes 2–12 table above, recorded here so the ledger reflects
+`main` (Theme 12 #100). The civic-data layers (Head Start, missing-persons, geodata)
+are **new** work, not part of the V2 roadmap.
+
+| PR | Scope | Theme / Task | Status | Validation | Result |
+|---|---|---|---|---|---|
+| #120 | Populate dataset layers, POI groups, and ILAP types | new civic-data | ✅ | `pytest tests/` | Layer/POI/ILAP-type definitions seeded |
+| #123 | Missing-persons + geodata source ingestion (harvesters, geocoder, layers) | new civic-data | ✅ | `pytest tests/test_prpb_desaparecidos.py tests/test_geocode_pr.py` | PRPB desaparecidos + geodata harvesters + PR geocoder |
+| #124 | Remove ground-truth track harvest (migrated to skywatcher-pr) | boundary cleanup | ✅ | `pytest tests/` | Boundary realigned to skywatcher-pr |
+| #125 | Contract the Head Start civic layer | new civic-data | ✅ | `pytest tests/test_headstart_schema.py` | Schema-pinned civic layer + CLI export |
+| #127 | Batch flight track-point inserts + index the watchlist scan | T4 perf (extends #25/#26) | ✅ | `pytest tests/test_performance.py` | `executemany` track-points + watchlist-scan index |
+| #128 | Pin the canonical-export contract with a golden test | T9 federation (extends #74) | ✅ | `pytest tests/test_federation_contract_compat.py` | Canonical-export golden + contract-version pin |
+| #129 | Parallel unlabeled-RLSM runner + `run_all --rlsm-status` | T4 #24 / T5 #41 | ✅ | `pytest tests/test_rlsm_unlabeled.py` | Injectable ThreadPool harness + status flag |
+| #130 | Add `federation/namespace.py` to the lint + type allowlist | T6 CI (extends #49/#50) | ✅ | CI `lint` job | Allowlist grows by one clean module |
+| (this PR) | Roadmap/ledger/changelog tidy + coverage ratchet 55→64 + OCR runner OMP pinning & runbook | T12 #100 / T5 #42 / T4 #24·#30 | 🚧 in flight | CI + `pytest -k rlsm_unlabeled` | Closes #100; ratchet floor 64 (TOTAL 66.13%) |

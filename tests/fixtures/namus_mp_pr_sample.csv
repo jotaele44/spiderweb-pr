@@ -1,0 +1,11 @@
+Case Number,First Name,Last Name,Date of Birth,Missing Age,Sex,Status,Date Reported Missing,Date Last Seen,Latitude,Longitude,County,Category of Concern,Circumstances of Disappearance,Photo URL
+MP12345,Maria,Rivera,1995-04-12,28,Female,Missing,2024-03-15,2024-03-14,18.4222,-66.0691,San Juan,Endangered Missing,"Last seen leaving her workplace; family contacted police 12 hours later.",https://namus.example/photos/12345.jpg
+MP12346,Juan,Santos,1958-09-03,65,Male,Resolved – Alive,2023-12-01,2023-11-28,18.0017,-66.6067,Ponce,,Located safe at relative's home.,https://namus.example/photos/12346.jpg
+MP12347,Anibal,Cruz,2014-01-22,9,Male,Missing,2024-01-10,2024-01-10,18.4802,-67.1438,Aguadilla,Endangered Runaway,"Walked away from school; bus driver did not see him board.",https://namus.example/photos/12347.jpg
+MP12348,Sofia,Mendez,2008-06-30,15,Female,Cold,2018-08-15,2018-08-14,18.4222,-66.0691,San Juan,Endangered Runaway,Cold case; last contact August 2018.,https://namus.example/photos/12348.jpg
+MP12349,Luis,Gomez,1985-11-11,38,Male,Resolved – Deceased,2024-05-20,2024-05-18,18.2111,-66.0510,Caguas,,Remains identified by dental records.,https://namus.example/photos/12349.jpg
+MP12350,Ana,Torres,1970-03-22,53,Female,Missing,2024-04-01,2024-03-30,18.3494,-66.1686,Bayamón,Endangered Missing,Pre-existing medical condition; left home without medication.,https://namus.example/photos/12350.jpg
+MP12351,Carlos,Vargas,2002-07-04,21,Male,Missing,2024-02-14,2024-02-12,18.4222,-66.0691,San Juan,,Last seen at downtown bar.,https://namus.example/photos/12351.jpg
+MP12352,Elena,Reyes,1992-12-25,31,Female,Located Alive,2024-03-05,2024-03-01,18.2111,-66.0510,Caguas,,Self-reported well to FBI hotline.,https://namus.example/photos/12352.jpg
+,Unknown,Doe,1999-01-01,25,Male,Missing,2024-06-15,2024-06-10,18.4222,-66.0691,San Juan,,Row with no Case Number; must be dropped by harvest.,https://namus.example/photos/none.jpg
+MP12354,Daniel,Soto,1980-05-15,43,Male,Missing,2024-06-01,2024-05-30,25.7617,-80.1918,Miami-Dade,Endangered Missing,Out-of-PR coordinate; must be dropped by populate bbox filter.,https://namus.example/photos/12354.jpg

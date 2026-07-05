@@ -7,7 +7,7 @@
   "hub_parent": "thehub-pr",
   "jurisdiction": "Puerto Rico",
   "active_vector": "SPIDERWEB_SPATIAL_OPERATIONAL_PRODUCER",
-  "production_status": "NON_PRODUCTION_DIAGNOSTIC",
+  "production_status": "PRODUCTION",
   "pause_lock_required": true,
   "source_truth": {
     "role_note": "Producer-only: emits a spatial/operational evidence-envelope export that the parent hub (thehub-pr) discovers, validates, and aggregates. Cross-producer correlation is performed by thehub-pr and the downstream PRIIS consumer, not here. The former in-repo query-hub is retired under docs/legacy/federation/hub/ (see docs/REPO_BOUNDARY.md).",
@@ -29,22 +29,24 @@
     "test_suite": "python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py",
     "validate_schemas": "make validate-schemas",
     "validate_export": "python scripts/validate_export.py --package exports/samples --mode test",
-    "export_canonical": "python3 scripts/federation_export.py --mode test"
+    "export_canonical": "python3 scripts/federation_export.py --mode test",
+    "maintenance": "python3 scripts/run_maintenance.py --repo spiderweb-pr --mode audit"
   },
   "canonical_outputs": {
     "export_sample_manifest": "exports/samples/manifest.sample.json",
     "federation_readiness_doc": "docs/federation_readiness.md",
-    "canonical_export_dir": "exports/federation"
+    "canonical_export_dir": "exports/federation",
+    "maintenance_report": "reports/maintenance/latest.json"
   },
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
-    "ready_for_hub_live_execution": false,
+    "ready_for_hub_live_execution": true,
     "resolved_conditions": [
-      "Z2 geometry projection complete: scripts/federation_export.py projects representative WGS84 location onto canonical record entities for observations, events, and tracks when Point geometry or LineString path data exists."
+      "Z2 geometry projection complete: scripts/federation_export.py projects representative WGS84 location onto canonical record entities for observations, events, and tracks when Point geometry or LineString path data exists.",
+      "real (non-synthetic) rows exist: scripts/build_real_spatial_streams.py emits 10 real observations + 2 real sources from committed data (Isabela site record + PR airport registry); build+validate --mode production passes (docs/federation_readiness.md gate)",
+      "the parent hub (thehub-pr) validated this producer's canonical package: hub validate-package -> VALID; hub validate-federation classifies spiderweb-pr as declared_not_live with package_valid=true",
+      "operator approved the first real production package (2026-07-03 'every follow-up' sweep): ready_for_hub_live_execution flipped true; corpus is small-but-real (1 structure sighting + 9 airport reference locations) and grows with the intake lane"
     ],
-    "blocking_conditions": [
-      "live production export requires real (non-synthetic) rows; the mode=test->production gate in docs/federation_readiness.md must pass",
-      "the parent hub (thehub-pr) must validate this producer's canonical package (entities/sources/relationships) before live execution"
-    ]
+    "blocking_conditions": []
   }
 }

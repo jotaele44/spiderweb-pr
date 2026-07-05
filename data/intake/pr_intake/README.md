@@ -5,11 +5,11 @@
 > **deleted**, and the normalizer now lives at
 > `docs/legacy/scripts/build_spiderweb_spatial_lane.py` (via
 > `docs/legacy/readiness/spiderweb_spatial_lane.py`). Delivered derivatives are **no
-> longer auto-normalized**. Contract-Sweeper also retired its cross-repo delivery
+> longer auto-normalized**. moneysweep-pr also retired its cross-repo delivery
 > (its `intake-delivery.yml` no longer pushes here). Kept as historical reference;
 > see `docs/REPO_BOUNDARY.md`.
 
-The Contract-Sweeper PR-intake router delivers this repo's lane export here:
+The moneysweep-pr PR-intake router delivers this repo's lane export here:
 
 ```
 data/intake/pr_intake/spiderweb_pr_derivatives.csv
@@ -20,7 +20,7 @@ data/intake/pr_intake/spiderweb_pr_derivatives.csv
 tables under `data/normalized/`, candidate geojsons under `data/exports/`, and
 review queues under `data/review/` — zero-loss.
 
-Delivery into this directory is handled by the Contract-Sweeper
+Delivery into this directory is handled by the moneysweep-pr
 `intake-delivery.yml` workflow (cross-repo PR, gated on a `FEDERATION_DELIVERY_TOKEN`
 PAT); `.github/workflows/intake-normalize.yml` here normalizes a delivered file.
-See `Contract-Sweeper/docs/INTAKE_DELIVERY.md` for the full chain.
+See `moneysweep-pr/docs/INTAKE_DELIVERY.md` for the full chain.

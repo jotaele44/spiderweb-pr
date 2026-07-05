@@ -322,7 +322,7 @@
     },
     {
       "workstream": "spiderweb",
-      "artifact_path": "airspace_poi_candidates.geojson",
+      "artifact_path": "airspace_pin_candidates.geojson",
       "schema_name": "spiderweb_observation",
       "schema_file": "schemas/spiderweb_observation.schema.json",
       "format": "geojson",
@@ -464,11 +464,11 @@
       "format": "csv",
       "crs": null,
       "required_columns_summary": [
-        "poi_id",
+        "pin_id",
         "screenshot_id",
         "raw_label",
         "normalized_label",
-        "poi_type_guess",
+        "pin_type_guess",
         "confidence"
       ],
       "provenance_fields": [
@@ -476,18 +476,18 @@
         "observed_at",
         "review_status"
       ],
-      "dedup_key": "poi_id",
+      "dedup_key": "pin_id",
       "fact_status_default": "observed"
     },
     {
       "workstream": "rlsm",
-      "artifact_path": "outputs/labeled_pois.csv",
-      "schema_name": "labeled_pois",
-      "schema_file": "schemas/labeled_pois.schema.json",
+      "artifact_path": "outputs/labeled_pins.csv",
+      "schema_name": "labeled_pins",
+      "schema_file": "schemas/labeled_pins.schema.json",
       "format": "csv",
       "crs": null,
       "required_columns_summary": [
-        "poi_id",
+        "pin_id",
         "screenshot_id",
         "raw_label",
         "normalized_label",
@@ -495,7 +495,7 @@
         "bbox_y",
         "centroid_x",
         "centroid_y",
-        "poi_type_guess",
+        "pin_type_guess",
         "confidence"
       ],
       "provenance_fields": [
@@ -503,14 +503,14 @@
         "observed_at",
         "review_status"
       ],
-      "dedup_key": "poi_id",
+      "dedup_key": "pin_id",
       "fact_status_default": "observed"
     },
     {
       "workstream": "rlsm",
-      "artifact_path": "outputs/unlabeled_poi_candidates.csv",
-      "schema_name": "unlabeled_poi_candidates",
-      "schema_file": "schemas/unlabeled_poi_candidates.schema.json",
+      "artifact_path": "outputs/unlabeled_pin_candidates.csv",
+      "schema_name": "unlabeled_pin_candidates",
+      "schema_file": "schemas/unlabeled_pin_candidates.schema.json",
       "format": "csv",
       "crs": null,
       "required_columns_summary": [
@@ -588,7 +588,7 @@
     },
     {
       "workstream": "rlsm",
-      "artifact_path": "outputs/manual_review_labeled_pois.csv",
+      "artifact_path": "outputs/manual_review_labeled_pins.csv",
       "schema_name": "manual_review",
       "schema_file": "schemas/manual_review.schema.json",
       "format": "csv",
@@ -787,6 +787,124 @@
       "dedup_key": null,
       "fact_status_default": null,
       "notes": "Cross-repo federation discovery manifest. Validated by scripts/validate_export.py and schema_index coverage test."
+    },
+    {
+      "workstream": "civic_headstart",
+      "artifact_path": "headstart_context_grid.geojson",
+      "schema_name": "headstart_context_grid",
+      "schema_file": "schemas/headstart_context_grid.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "grid_id",
+        "layer_id",
+        "record_count",
+        "funded_slots_total",
+        "public_export",
+        "precision",
+        "suppression"
+      ],
+      "provenance_fields": [],
+      "dedup_key": "grid_id",
+      "fact_status_default": "observed",
+      "notes": "Privacy-safe public grid for the civic Head Start PR layer (spiderweb/exports/headstart_context_grid.py). Precise points are restricted; public export is grid-only. Per-Feature schema; sample-gated via exports/samples and the CI example-artifact gate."
+    },
+    {
+      "workstream": "civic_headstart",
+      "artifact_path": "headstart_locations.geojson",
+      "schema_name": "headstart_service_location",
+      "schema_file": "schemas/headstart_service_location.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "id",
+        "source_id",
+        "layer_id",
+        "node_type",
+        "label",
+        "operator_id",
+        "standalone_confidence",
+        "sensitivity",
+        "public_export"
+      ],
+      "provenance_fields": [
+        "source_id",
+        "operator_id"
+      ],
+      "dedup_key": "id",
+      "fact_status_default": "observed",
+      "notes": "RESTRICTED — precise service-location points (sensitivity=high, public_export=grid_only). NOT in exports/samples; public release uses headstart_context_grid.geojson only."
+    },
+    {
+      "workstream": "federation",
+      "artifact_path": "exports/federation/sources.jsonl",
+      "schema_name": "federation_source",
+      "schema_file": "schemas/federation_source.schema.json",
+      "format": "jsonl",
+      "crs": null,
+      "required_columns_summary": [
+        "source_id",
+        "source_type",
+        "source_name",
+        "confidence",
+        "lineage",
+        "synthetic"
+      ],
+      "provenance_fields": [
+        "lineage"
+      ],
+      "dedup_key": "source_id",
+      "fact_status_default": "observed",
+      "notes": "Hub-facing canonical source stream written by scripts/federation_export.py (referenced by its manifest schema_id). Consumed by thehub-pr."
+    },
+    {
+      "workstream": "federation",
+      "artifact_path": "exports/federation/entities.jsonl",
+      "schema_name": "federation_entity",
+      "schema_file": "schemas/federation_entity.schema.json",
+      "format": "jsonl",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "entity_id",
+        "source_id",
+        "name",
+        "normalized_name",
+        "entity_type",
+        "confidence",
+        "lineage",
+        "synthetic"
+      ],
+      "provenance_fields": [
+        "lineage"
+      ],
+      "dedup_key": "entity_id",
+      "fact_status_default": "observed",
+      "notes": "Hub-facing canonical entity stream written by scripts/federation_export.py. Record entities carry an optional Z2 location {lat, lon}."
+    },
+    {
+      "workstream": "federation",
+      "artifact_path": "exports/federation/relationships.jsonl",
+      "schema_name": "federation_relationship",
+      "schema_file": "schemas/federation_relationship.schema.json",
+      "format": "jsonl",
+      "crs": null,
+      "required_columns_summary": [
+        "relationship_id",
+        "source_entity_id",
+        "target_entity_id",
+        "relationship_type",
+        "evidence_source_id",
+        "confidence",
+        "lineage",
+        "synthetic"
+      ],
+      "provenance_fields": [
+        "lineage",
+        "evidence_source_id"
+      ],
+      "dedup_key": "relationship_id",
+      "fact_status_default": "observed",
+      "notes": "Hub-facing canonical relationship stream written by scripts/federation_export.py."
     }
   ]
 }

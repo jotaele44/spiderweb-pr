@@ -31,7 +31,7 @@ the relevant subsystem below.
 - [CONTRACT_FINANCE_PRODUCTION_FUSION_RECIPE.md](CONTRACT_FINANCE_PRODUCTION_FUSION_RECIPE.md)
 - [CONTRACT_FINANCE_REAL_DATA_CALIBRATION.md](CONTRACT_FINANCE_REAL_DATA_CALIBRATION.md)
 - [pr_intake_router_execution.md](pr_intake_router_execution.md)
-- [pr_intake_router_contract_sweeper_lane.md](pr_intake_router_contract_sweeper_lane.md)
+- [pr_intake_router_moneysweep_lane.md](pr_intake_router_moneysweep_lane.md)
 - [pr_intake_router_spiderweb_lane.md](pr_intake_router_spiderweb_lane.md)
 
 ## RLSM ontology & registry (reference)

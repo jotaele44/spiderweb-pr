@@ -46,7 +46,7 @@ The PR Intel adapter emits 8 data artifacts + 2 reports per export.
 | `spiderweb_gap_audit.json` | — | json | gaps, **reproducibility** | reproducibility | — |
 | `spiderweb_ingest_manifest.json` | `spiderweb_intake_manifest` | json | generated_at, db_path, files | reproducibility | — |
 | `aasb_airspace_edges.csv` | `aasb_export` | csv / EPSG:4326 | edge_id, from_node, to_node, from/to_lat/lon, weight, confidence_score | dominant_callsign | `edge_id` |
-| `airspace_poi_candidates.geojson` | `spiderweb_observation` | geojson / EPSG:4326 | candidate_type, confidence | source_zone, raw_excerpt | — |
+| `airspace_pin_candidates.geojson` | `spiderweb_observation` | geojson / EPSG:4326 | candidate_type, confidence | source_zone, raw_excerpt | — |
 | `airspace_ilap_candidates.geojson` | `ilap_corridor_candidate` | geojson / EPSG:4326 | candidate_type, recurrence_score, loiter_score, infra_alignment_score, overall_confidence | — | — |
 | `airspace_corridor_candidates.geojson` | `ilap_corridor_candidate` | geojson / EPSG:4326 | candidate_type, overall_confidence | — | — |
 
@@ -70,9 +70,9 @@ The RLSM pipeline emits 14 derived artifacts under `outputs/` plus a markdown co
 | `outputs/rlsm_duplicate_report.csv` | csv | dup_group_id, group_size, sha256, filename, rel_path | sha256 | `dup_group_id` |
 | `outputs/rlsm_failed_files.csv` | csv | screenshot_id, filename, rel_path, ingest_status, ingest_error | — | `screenshot_id` |
 | `outputs/ocr_raw_by_zone.jsonl` | jsonl | screenshot_id, zone, raw_text, confidence_mean | run_id, engine, psm, observed_at | — *(append-only)* |
-| `outputs/ocr_normalized_labels.csv` | csv | poi_id, screenshot_id, raw_label, normalized_label, poi_type_guess, confidence | filename, observed_at, review_status | `poi_id` |
-| `outputs/labeled_pois.csv` | csv | poi_id, screenshot_id, raw_label, normalized_label, bbox, centroid, poi_type_guess, confidence | filename, observed_at, review_status | `poi_id` |
-| `outputs/unlabeled_poi_candidates.csv` | csv | candidate_id, screenshot_id, candidate_type, bbox, centroid, confidence | filename, evidence_features, observed_at, review_status | `candidate_id` |
+| `outputs/ocr_normalized_labels.csv` | csv | pin_id, screenshot_id, raw_label, normalized_label, pin_type_guess, confidence | filename, observed_at, review_status | `pin_id` |
+| `outputs/labeled_pins.csv` | csv | pin_id, screenshot_id, raw_label, normalized_label, bbox, centroid, pin_type_guess, confidence | filename, observed_at, review_status | `pin_id` |
+| `outputs/unlabeled_pin_candidates.csv` | csv | candidate_id, screenshot_id, candidate_type, bbox, centroid, confidence | filename, evidence_features, observed_at, review_status | `candidate_id` |
 | `outputs/aircraft_observations.csv` | csv | aircraft_obs_id, screenshot_id, registration, callsign, aircraft_type, altitude_ft, speed_kt, heading_deg, identity_status, confidence | filename, filename_ts, source_zone, raw_excerpt, observed_at | `aircraft_obs_id` |
 | `outputs/flight_track_features.csv` | csv | track_feat_id, screenshot_id, path_shape, has_loop, has_orbit, has_hover, confidence | filename, observed_at | `track_feat_id` |
 | `outputs/manual_review_*.csv` (×5) | csv | review_id, screenshot_id, item_kind, reason, severity, review_status | filename, item_ref_table, item_ref_id, created_at | `review_id` |

@@ -24,6 +24,20 @@ data/*
 data/rlsm/*
 !data/rlsm/schema.sql
 !data/rlsm/HANDOFF.md
+# NamUs missing-persons: allowlist the provenance README; raw + canonical CSVs
+# stay ignored (PII at the source; redacted-but-still-personal at the canonical).
+# The `data/sources/namus/*` re-ignore re-blocks dated snapshot subdirs so
+# `data/sources/namus/2026-06-11/namus_mp_pr.csv` is never tracked even though
+# the parent `data/sources/namus/` is allowlisted for the README.
+!data/sources/
+# Re-block loose source datasets dropped directly under data/sources/ (the
+# .gpkg/.geojson/.csv/.sqlite inputs); like all of data/ these are operator-local
+# inputs per DATA_POLICY.md and must never be committed. Allowlist provenance
+# (READMEs) explicitly below, mirroring the namus pattern.
+data/sources/*
+!data/sources/namus/
+data/sources/namus/*
+!data/sources/namus/README.md
 
 # input/ — operator-local override for recover-tails FAA N-number list +
 # timestamped auto-backups + derived skip-list. The hermetic CI fallback
@@ -70,9 +84,11 @@ prii_readiness_report.json
 *.parquet
 *.jsonl
 # Committed fixtures/samples are not generated data — keep them tracked so a bare
-# `git add` can't silently drop them (see the contract_sweeper_v1_2 CI incident).
+# `git add` can't silently drop them (see the moneysweep_v1_2 CI incident).
 !tests/fixtures/**/*.jsonl
 !exports/**/*.jsonl
+# Federation evidence ledgers are audit artifacts, not generated data.
+!reports/federation/*.jsonl
 *.nc          # NetCDF (GEBCO)
 
 # ── ChromaDB vector index ─────────────────────────────────────────────────────
@@ -291,3 +307,14 @@ exports/federation/
 
 # flight/airspace subsystem stripped to skywatcher-pr (from_spiderweb/) — staging, delete anytime
 .migration_trash_flight/
+
+# Frontend hand-written code lives in server/frontend/src/lib — the Python `lib/`
+# rule above wrongly ignores it. Re-include it.
+!server/frontend/src/lib/
+!server/frontend/src/lib/**
+
+# standalone single-file export (build artifact, regenerate via build-export.sh)
+export-standalone/
+
+# generated federation maintenance report (audit artifact, not committed)
+reports/maintenance/

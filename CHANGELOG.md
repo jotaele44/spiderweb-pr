@@ -10,6 +10,15 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Post-V2 sweep (civic-data & hardening):** dataset layers / POI groups / ILAP
+  types (#120); missing-persons + geodata source ingestion — harvesters, PR
+  geocoder, layers (#123); FR24 ground-truth track harvest removed (migrated to
+  skywatcher-pr) (#124); Head Start civic-layer schema contract (#125); batched
+  flight track-point inserts + watchlist-scan index (#127); canonical-export
+  contract golden test (#128); parallel unlabeled-RLSM runner + `run_all
+  --rlsm-status` (#129); `federation/namespace.py` added to the lint/type
+  allowlist (#130). Roadmap, ledger, and changelog reconciled against `main`
+  (Theme 12 #100).
 - **Theme 12 — Docs & structure:** subsystem-grouped `docs/README.md` index
   (#93); ARCHITECTURE status refresh for federation + RLSM-canonical (#94);
   per-subsystem `gebco`/`earthgpt`/`llm` READMEs (#96); monorepo-split decision
@@ -64,5 +73,24 @@ GitHub Release using the matching section below (T6-53).
   hook (`pipeline/terrain_hook.py`).
 - **Theme 2 — Schema & validation contracts:** `federation_manifest` JSON
   Schema; `CONTRACT_VERSION` constant; example-artifact schema CI gate.
+
+### Changed
+- Coverage ratchet floor raised **55 → 64** (`--cov-fail-under` in CI); the core
+  suite measures 66.13% TOTAL, leaving ~2pp headroom.
+- **`poi` → `pin` migration (stage 3b):** the spiderweb candidate export artifacts
+  were renamed `airspace_poi_candidates.geojson` → `airspace_pin_candidates.geojson`
+  (+ its `.kml` sibling and `styles/*.qml`) and `poi_candidates.geojson` →
+  `pin_candidates.geojson`, across producers, consumers, `schemas/schema_index.json`,
+  and the export-contract docs. Feature properties (`poi_a`/`poi_b`,
+  `candidate_type: "poi"`) and the deferred RLSM `*_pois` schema family are
+  unchanged.
+- **`poi` → `pin` migration (stage 2 — RLSM schema family):** `labeled_pois` →
+  `labeled_pins`, `unlabeled_poi_candidates` → `unlabeled_pin_candidates` (schema
+  `$id`, filename, `schema_name` in `schema_index.json`, artifact paths); column names
+  `poi_id` → `pin_id`, `poi_type_guess` → `pin_type_guess` across `labeled_pins`,
+  `unlabeled_pin_candidates`, and `ocr_normalized_labels` schemas;
+  `labeled_poi_low_conf` → `labeled_pin_low_conf` in `manual_review.schema.json`
+  enum. skywatcher-pr updated in parallel to emit the renamed output files and columns
+  (internal skywatcher SQL table/column names are a separate deferred migration).
 
 [Unreleased]: https://github.com/jotaele44/spiderweb-pr/commits/main

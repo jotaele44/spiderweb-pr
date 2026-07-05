@@ -2,25 +2,25 @@
 
 > **⚠️ Deprecated (2026-06): retired consumer flow.** spiderweb-pr is now a
 > producer-only federation node. The consumer/query-hub steps this runbook
-> describes (`ingest_contract_sweeper_package`, `assess_contract_sweeper_package`,
+> describes (`ingest_moneysweep_package`, `assess_moneysweep_package`,
 > `federation_conformance_check`, and the query-hub) were retired — the scripts
 > named below now live under `docs/legacy/scripts/` and the hub under
 > `docs/legacy/federation/hub/`. Cross-producer correlation moved to thehub-pr.
 > Kept as historical reference; see `docs/REPO_BOUNDARY.md`.
 
-This runbook describes the production handoff from Contract-Sweeper into
+This runbook describes the production handoff from moneysweep-pr into
 SpiderWeb PR.
 
 The intended boundary is file-based:
 
 ```text
-Contract-Sweeper export package -> SpiderWeb package gate -> adapter outputs -> manifest-gated scoring layer -> calibration -> optional fusion -> dashboard
+moneysweep-pr export package -> SpiderWeb package gate -> adapter outputs -> manifest-gated scoring layer -> calibration -> optional fusion -> dashboard
 ```
 
-SpiderWeb must not import Contract-Sweeper code. Contract-Sweeper remains the
+SpiderWeb must not import moneysweep-pr code. moneysweep-pr remains the
 independent producer. SpiderWeb consumes validated package artifacts from disk.
 
-## Required Contract-Sweeper package files
+## Required moneysweep-pr package files
 
 A production handoff package must contain:
 
@@ -37,9 +37,9 @@ relationships.jsonl
 `artifact_manifest.json` is required for production auditability even though the
 adapter can technically parse the five JSONL streams without it.
 
-## Step 0 — Generate package in Contract-Sweeper
+## Step 0 — Generate package in moneysweep-pr
 
-From the Contract-Sweeper repo, prepare uploaded masters if needed:
+From the moneysweep-pr repo, prepare uploaded masters if needed:
 
 ```bash
 python scripts/prepare_uploaded_masters.py \
@@ -54,7 +54,7 @@ Then generate the v1.1 package:
 ```bash
 python scripts/run_export.py \
   --processed-dir data/staging/processed_uploaded_masters \
-  --output-dir exports/contract_sweeper_uploaded_masters_v1_1 \
+  --output-dir exports/moneysweep_uploaded_masters_v1_1 \
   --mode production
 ```
 
@@ -62,7 +62,7 @@ Then write the shared artifact manifest:
 
 ```bash
 python scripts/write_artifact_manifest.py \
-  --package-dir exports/contract_sweeper_uploaded_masters_v1_1 \
+  --package-dir exports/moneysweep_uploaded_masters_v1_1 \
   --source-file /path/to/pr_contracts_master_v2.csv \
   --source-file /path/to/pr_all_awards_master.csv \
   --source-file /path/to/lda_canonical_client_summary_all.csv
@@ -71,15 +71,15 @@ python scripts/write_artifact_manifest.py \
 Copy the resulting package directory into SpiderWeb, for example:
 
 ```text
-data/incoming/contract_sweeper/latest/
+data/incoming/moneysweep/latest/
 ```
 
 ## Step 1 — Run SpiderWeb consumer-boundary package gate
 
 ```bash
-python scripts/assess_contract_sweeper_package.py \
-  --package data/incoming/contract_sweeper/latest \
-  --out outputs/contract_finance/contract_sweeper_package_gate_report.json
+python scripts/assess_moneysweep_package.py \
+  --package data/incoming/moneysweep/latest \
+  --out outputs/contract_finance/moneysweep_package_gate_report.json
 ```
 
 Expected statuses:
@@ -94,11 +94,11 @@ For the first uploaded-master production pass, `DEGRADED` is acceptable when the
 only warning is low point-geometry coverage. The layer is then municipality/entity
 density intelligence, not point-confirmed spatial evidence.
 
-## Step 2 — Convert Contract-Sweeper package into SpiderWeb artifacts
+## Step 2 — Convert moneysweep-pr package into SpiderWeb artifacts
 
 ```bash
-python scripts/ingest_contract_sweeper_package.py \
-  --package data/incoming/contract_sweeper/latest \
+python scripts/ingest_moneysweep_package.py \
+  --package data/incoming/moneysweep/latest \
   --out outputs/contract_finance \
   --mode production
 ```
@@ -115,7 +115,7 @@ outputs/contract_finance/contract_finance_ingest_report.json
 
 ## Step 3 — Build the scored Contract-Finance layer
 
-Production builds must pass the Contract-Sweeper artifact manifest gate before
+Production builds must pass the moneysweep-pr artifact manifest gate before
 scoring starts. The layer builder refuses unsafe manifests before writing the
 scored overlay.
 
@@ -123,7 +123,7 @@ scored overlay.
 python scripts/build_contract_finance_layer.py \
   --input outputs/contract_finance \
   --out outputs/contract_finance \
-  --artifact-manifest data/incoming/contract_sweeper/latest/artifact_manifest.json
+  --artifact-manifest data/incoming/moneysweep/latest/artifact_manifest.json
 ```
 
 Expected outputs:
@@ -210,7 +210,7 @@ cp outputs/contract_finance/contract_finance_scored_overlay.geojson outputs/
 
 | Gate | Required posture |
 |---|---|
-| Contract-Sweeper package validates in production mode | Required |
+| moneysweep-pr package validates in production mode | Required |
 | `artifact_manifest.json` present | Required |
 | package gate status | `READY` or documented `DEGRADED` |
 | artifact manifest gate | `READY` before scoring |

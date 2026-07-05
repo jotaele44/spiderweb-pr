@@ -15,7 +15,7 @@ Usage:
 import argparse
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -56,7 +56,7 @@ def run_phase_1(args):
     print("  " + "─" * 50)
     analyzer = HardenedFlightAnalyzer(args.image_dir, args.db)
     analyzer.process_with_hardening(
-        batch_id=f"run_{datetime.utcnow().strftime('%Y%m%d_%H%M')}",
+        batch_id=f"run_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M')}",
         max_images=args.images,
         checkpoint_interval=50,
     )
@@ -220,7 +220,7 @@ def run_daily_report(args):
     reporter = ReportGenerator(args.db)
     report = reporter.daily_report()
     print(report)
-    report_path = Path(args.db).parent / f"daily_report_{datetime.utcnow().strftime('%Y%m%d')}.txt"
+    report_path = Path(args.db).parent / f"daily_report_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d')}.txt"
     with open(report_path, "w") as f:
         f.write(report)
     print(f"\n  Report saved: {report_path}")
@@ -255,7 +255,7 @@ def export_json(db_path: str, output_path: str):
                 aircraft_profiles_raw = []
 
         data = {
-            "exported_at": datetime.utcnow().isoformat() + "Z",
+            "exported_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "db_path": db_path,
             "flights": rows("flights", "ORDER BY takeoff_time DESC"),
             "aircraft_profiles": aircraft_profiles_raw,
@@ -323,6 +323,36 @@ def print_status(db_path: str):
         print(f"  Database not found or uninitialized: {e}")
 
 
+def print_rlsm_status(db_path: str):
+    """RLSM screenshot-processing status: coverage + low-confidence backlog."""
+    try:
+        conn = sqlite3.connect(db_path)
+
+        print("\n  RLSM STATUS")
+        print("  " + "─" * 45)
+
+        def _count(sql: str):
+            try:
+                return conn.execute(sql).fetchone()[0]
+            except Exception:
+                return None
+
+        rows = [
+            ("Screenshots processed", _count("SELECT COUNT(*) FROM screenshots")),
+            ("Low-confidence (<0.5)",
+             _count("SELECT COUNT(*) FROM screenshots WHERE ocr_confidence < 0.5")),
+            ("No OCR text",
+             _count("SELECT COUNT(*) FROM screenshots WHERE raw_text IS NULL OR raw_text = ''")),
+        ]
+        for label, val in rows:
+            shown = f"{val:,}" if isinstance(val, int) else "N/A"
+            print(f"  {label:<30} {shown:>8}")
+
+        conn.close()
+    except Exception as e:
+        print(f"  Database not found or uninitialized: {e}")
+
+
 def _run_schema_validation(db_path: str):
     print("\n  SCHEMA VALIDATION")
     print("  " + "─" * 50)
@@ -383,6 +413,35 @@ def _run_export_spiderweb(db_path: str, output_dir: str):
         print(f"\n  ✓ Spiderweb exported to: {output_dir}")
     except Exception as e:
         print(f"  Export error: {e}")
+        raise
+
+
+def _run_headstart_export(csv_path: str, output_dir: str, grid_only: bool = False):
+    print("\n  HEAD START CIVIC LAYER EXPORT")
+    print("  " + "─" * 50)
+    if not Path(csv_path).exists():
+        print(f"  Error: Head Start CSV not found: {csv_path}")
+        sys.exit(1)
+    try:
+        from spiderweb.exports.headstart_context_grid import export_context_grid
+        from spiderweb.ingestors.ingest_headstart import export_headstart
+
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        grid_summary = export_context_grid(csv_path, out / "headstart_context_grid.geojson")
+        if grid_only:
+            print(f"  Public grid cells: {grid_summary['grid_cells']}")
+            print(f"\n  ✓ Public grid export written to: {grid_summary['output_path']}")
+            return
+        summary = export_headstart(csv_path, out)
+        print(f"  Records:          {summary['records']}")
+        print(f"  Operators:        {summary['operators']}")
+        print(f"  Edges:            {summary['edges']}")
+        print(f"  Public grid cells: {grid_summary['grid_cells']}")
+        print("  Policy: precise points restricted; public output is grid-only")
+        print(f"\n  ✓ Head Start civic layer exported to: {output_dir}")
+    except Exception as e:
+        print(f"  Head Start export error: {e}")
         raise
 
 
@@ -456,7 +515,7 @@ def _run_assess_readiness(export_dir: str):
             key = b.get("gate") or b.get("flag") or ""
             print(f"  ✗ BLOCKER [{src}:{key}] {b.get('detail', '')}")
         for w in report.get("warnings", []):
-            print(f"  ~ WARNING [{w.get('source')}] {w.get('detail', '')}")
+            print(f"  ~ WARNING [{w.get('source')}] {w.get('detail')}")
         if report.get("missing_inputs"):
             print(f"  Missing inputs: {', '.join(report['missing_inputs'])}")
         print(f"\n  ✓ Readiness report written to: {export_dir}/prii_readiness_report.json")
@@ -517,7 +576,6 @@ Examples:
   python run_all.py --export-json data.json      Export DB snapshot for dashboard
         """
     )
-
     parser.add_argument("--phase", type=int, choices=[0, 1, 2, 3, 4],
                         help="Run only specified phase (0-4)")
     parser.add_argument("--images", type=int, default=None,
@@ -539,6 +597,8 @@ Examples:
                         help="Export home-base report + assignments CSV + shared-space leads JSON")
     parser.add_argument("--status", action="store_true",
                         help="Show database status and exit")
+    parser.add_argument("--rlsm-status", dest="rlsm_status", action="store_true",
+                        help="Show RLSM screenshot processing status and exit")
     parser.add_argument("--export-json", metavar="PATH",
                         help="Export DB snapshot to JSON for dashboard.html")
     parser.add_argument("--validate", action="store_true",
@@ -547,6 +607,12 @@ Examples:
                         help="Export PR Intel parquet/GeoJSON to DIR")
     parser.add_argument("--export-spiderweb", metavar="DIR",
                         help="Export Spiderweb bridge outputs to DIR")
+    parser.add_argument("--headstart-csv", metavar="PATH",
+                        help="Ingest Head Start PR CSV and export civic layer artifacts")
+    parser.add_argument("--export-headstart", metavar="DIR",
+                        help="Directory for Head Start civic layer exports")
+    parser.add_argument("--headstart-grid-only", action="store_true",
+                        help="With --headstart-csv/--export-headstart: write public grid only")
     parser.add_argument("--spiderweb-intake", metavar="DIR",
                         help="Normalize --export-spiderweb output into Spiderweb overlay candidates")
     parser.add_argument("--calibrate-scoring", metavar="DIR",
@@ -589,10 +655,14 @@ Examples:
     print(f"  Database:   {args.db}")
     print(f"  Image dir:  {args.image_dir}")
     print(f"  Max images: {args.images or 'All'}")
-    print(f"  Started:    {datetime.utcnow().isoformat()}\n")
+    print(f"  Started:    {datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}\n")
 
     if args.status:
         print_status(args.db)
+        return
+
+    if args.rlsm_status:
+        print_rlsm_status(args.db)
         return
 
     if args.export_json:
@@ -620,6 +690,13 @@ Examples:
         _run_export_home_base(args.db, args.export_home_base)
         return
 
+    if args.headstart_csv or args.export_headstart:
+        if not (args.headstart_csv and args.export_headstart):
+            print("  Error: --headstart-csv and --export-headstart must be supplied together")
+            sys.exit(1)
+        _run_headstart_export(args.headstart_csv, args.export_headstart, args.headstart_grid_only)
+        return
+
     # Determine whether to run the main pipeline phases.
     # Skip phases when the user only supplied integration-export flags
     # (standalone export mode against an existing DB).
@@ -633,7 +710,7 @@ Examples:
     )
 
     if not new_flags_only:
-        start = datetime.utcnow()
+        start = datetime.now(timezone.utc).replace(tzinfo=None)
 
         if args.phase is None or args.phase == 0:
             run_phase_0(args)
@@ -650,7 +727,7 @@ Examples:
         if args.phase is None or args.phase == 4:
             run_phase_4(args)
 
-        elapsed = (datetime.utcnow() - start).total_seconds()
+        elapsed = (datetime.now(timezone.utc).replace(tzinfo=None) - start).total_seconds()
         print("\n" + "═" * 70)
         print(f"  PIPELINE COMPLETE")
         print(f"  Elapsed: {elapsed:.0f}s ({elapsed/3600:.2f}h)")

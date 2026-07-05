@@ -52,7 +52,7 @@ def test_ilap_export_is_reproducible(populated_db, tmp_path):
     ILAPAirspaceBridge(populated_db, str(out2)).export_all()
 
     names = [
-        "airspace_poi_candidates.geojson",
+        "airspace_pin_candidates.geojson",
         "airspace_ilap_candidates.geojson",
         "airspace_corridor_candidates.geojson",
     ]
@@ -68,9 +68,9 @@ def test_ilap_second_export_same_dir_is_stable(populated_db, tmp_path):
     (ignoring the wall-clock _meta.produced_at emission stamp)."""
     out = tmp_path / "out"
     ILAPAirspaceBridge(populated_db, str(out)).export_all()
-    c1 = _canonical_geojson(out / "airspace_poi_candidates.geojson")
+    c1 = _canonical_geojson(out / "airspace_pin_candidates.geojson")
     ILAPAirspaceBridge(populated_db, str(out)).export_all()
-    c2 = _canonical_geojson(out / "airspace_poi_candidates.geojson")
+    c2 = _canonical_geojson(out / "airspace_pin_candidates.geojson")
     assert c1 == c2
 
 

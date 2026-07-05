@@ -3,7 +3,7 @@
 Conforms the cross-repo consumer to docs/pr_intake_router_spiderweb_lane.md:
 domain->table routing, the 34 normalized fields, manual_geocode_required for
 coordinate-less records, zero-loss accounting, layer-registry registration, and
-a real round-trip against the Contract-Sweeper router.
+a real round-trip against the moneysweep-pr router.
 """
 
 import csv
@@ -22,7 +22,7 @@ from readiness.spiderweb_spatial_lane import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_SWEEPER = REPO_ROOT.parent / "Contract-Sweeper"
+MONEYSWEEP = REPO_ROOT.parent / "moneysweep-pr"
 OUTPUT_SCHEMA = json.loads((REPO_ROOT / "schemas" / "spiderweb_spatial_lane_record.schema.json").read_text())
 
 
@@ -178,22 +178,22 @@ def test_registered_in_layer_registry():
     assert "spiderweb_pr_derivatives.csv" in entry.input_artifacts
 
 
-# ── End-to-end round-trip against the real Contract-Sweeper router ────────────
+# ── End-to-end round-trip against the real moneysweep-pr router ────────────
 
 @pytest.mark.skipif(
-    not (CONTRACT_SWEEPER / "run_pr_intake_router.py").exists(),
-    reason="Contract-Sweeper sibling repo not present",
+    not (MONEYSWEEP / "run_pr_intake_router.py").exists(),
+    reason="moneysweep-pr sibling repo not present",
 )
 def test_round_trip_zero_loss_across_the_seam(tmp_path):
     pytest.importorskip("yaml", reason="router requires PyYAML")
-    fixture = CONTRACT_SWEEPER / "tests" / "fixtures" / "pr_intake_router_sample.jsonl"
+    fixture = MONEYSWEEP / "tests" / "fixtures" / "pr_intake_router_sample.jsonl"
     if not fixture.exists():
         pytest.skip("router sample fixture missing")
 
     export_dir = tmp_path / "export"
     proc = subprocess.run(
         [sys.executable, "run_pr_intake_router.py", "--input", str(fixture), "--out-dir", str(export_dir)],
-        cwd=str(CONTRACT_SWEEPER), capture_output=True, text=True,
+        cwd=str(MONEYSWEEP), capture_output=True, text=True,
     )
     if proc.returncode != 0:
         pytest.skip(f"router export unavailable: {proc.stderr.strip()[:300]}")

@@ -62,18 +62,24 @@ def test_live_execution_ready_when_all_criteria_met():
 
 
 def test_current_manifest_flag_matches_criteria():
-    """federation.json keeps live-execution false — and the criteria agree, since
-    the shipped package is synthetic / diagnostic."""
-    from federation.readiness import evaluate_live_execution_readiness
+    """federation.json declares live-execution true — and the criteria agree:
+    the shipped real package has zero synthetic rows and the hub validated the
+    canonical projection (operator-approved promotion, 2026-07-03)."""
+    from federation.readiness import (
+        REQUIRED_CORRELATIONS,
+        evaluate_live_execution_readiness,
+    )
 
     manifest = json.loads((REPO / "federation.json").read_text())
     gate = manifest["federation_readiness_gate"]
-    assert gate["ready_for_hub_live_execution"] is False
-    # With synthetic diagnostic data, the criteria must also say "not ready".
+    assert gate["ready_for_hub_live_execution"] is True
+    assert gate["blocking_conditions"] == []
+    # With real (non-synthetic) rows and hub-validated correlations, the
+    # criteria must also say "ready" — the flag and the criteria move together.
     verdict = evaluate_live_execution_readiness(
-        has_synthetic_rows=True, validated_correlations=[]
+        has_synthetic_rows=False, validated_correlations=list(REQUIRED_CORRELATIONS)
     )
-    assert verdict["ready"] is False
+    assert verdict["ready"] is True
 
 
 @pytest.fixture
