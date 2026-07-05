@@ -1,15 +1,14 @@
-"""Cross-repo federation for spiderweb-pr.
+"""Federation producer for spiderweb-pr.
 
-Two responsibilities live here:
+This package emits a validated spatial/operational export package (manifest +
+JSONL streams) shaped to the shared evidence envelope, with namespaced IDs,
+guarded by a fail-closed validator
+(``envelope``/``namespace``/``validator``/``export_writer``).
 
-* **Producer** (``envelope``/``namespace``/``validator``/``export_writer``):
-  emit a validated airspace export package (manifest + JSONL streams) shaped to
-  the shared evidence envelope, with namespaced IDs, guarded by a fail-closed
-  validator.
-* **Hub** (``federation.hub``): a deterministic cross-repo query layer that
-  loads BOTH producers' export packages from disk and returns joined evidence
-  with provenance. The hub reads packages as JSONL files; it does not import the
-  other producer's code.
+The parent hub (thehub-pr) discovers, validates, and aggregates this package;
+cross-producer correlation lives there and in the downstream PRIIS consumer.
+The former in-repo query-hub is retired under ``docs/legacy/federation/hub/``
+(see ``docs/REPO_BOUNDARY.md``).
 """
 from __future__ import annotations
 

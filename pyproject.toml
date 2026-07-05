@@ -3,35 +3,115 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gebco-bathymetry-pipeline"
+name = "spiderweb-pr"
 version = "0.1.0"
-description = "Regional subset extraction and terrain analysis for GEBCO 2023 bathymetry"
+description = "Puerto Rico Airspace Intelligence System — FR24 OCR/GIS flight intelligence, federation, and the GEBCO bathymetry pipeline"
 requires-python = ">=3.11"
+# Shared scientific stack. This is the single source of truth for version ranges;
+# requirements*.txt defer to these, and constraints.txt holds the exact pins.
+# Upper bounds intentionally loose (<next-major) to reduce resolver friction.
 dependencies = [
-    "numpy>=2.4,<2.5",
-    "scipy>=1.17,<1.18",
-    "pandas>=3.0,<3.1",
+    "numpy>=2.4,<3",
+    "scipy>=1.17,<2",
+    "pandas>=3.0,<4",
     "xarray>=2026.1,<2027",
-    "netCDF4>=1.7.4,<1.8",
-    "matplotlib>=3.10,<3.11",
-    "shapely>=2.1,<2.2",
-    "scikit-image>=0.26,<0.27",
+    "netCDF4>=1.7.4,<2",
+    "matplotlib>=3.10,<4",
+    "shapely>=2.1,<3",
+    "scikit-image>=0.26,<1",
+    "openpyxl>=3.1,<4",
 ]
 
+# Per-subsystem extras. The shared scientific stack lives in `dependencies` above;
+# each extra adds only what that subsystem needs on top. Install e.g.
+#   pip install -e ".[airspace]"        (ranges)
+#   pip install -c constraints.txt -e ".[airspace]"   (exact pins)
 [project.optional-dependencies]
-dev = [
-    "pytest>=9.0.2,<9.1",
-    "black>=26.3.0,<26.4",
-    "ruff>=0.15.5,<0.16",
+# Puerto Rico Airspace Intelligence System — OCR/vision + export validation.
+airspace = [
+    "opencv-python>=4.8,<5",
+    "pytesseract>=0.3.10,<0.4",
+    "Pillow>=10.0,<13",
+    "pillow-heif>=1.3.0,<2",
+    "jsonschema>=4.17,<5",
+    "pyarrow>=14.0",
+    "PyYAML>=6.0,<7",
 ]
+# GEBCO bathymetry — the rest of the stack (numpy/scipy/xarray/pandas/…) is in base `dependencies`.
+gebco = [
+    "netCDF4>=1.7.4,<2",
+    "scikit-image>=0.26,<1",
+]
+# LLM pipeline (RAG over PRUAP social data). Heavy ML — installs torch + transformers.
+rag = [
+    "praw>=7.8.1,<8",
+    "chromadb>=0.4.0,<2",
+    "sentence-transformers>=2.7.0,<6",
+    "transformers>=4.40.0,<6",
+    "torch>=2.2.0,<3",
+    "accelerate>=0.27.0,<2",
+]
+# EarthGPT iOS satellite anomaly detection (no heavy GIS stack).
+earthgpt = [
+    "requests>=2.31.0,<3",
+    "python-dotenv>=1.0.0,<2",
+    "folium>=0.15.0,<1",
+]
+# PRIIS FastAPI backend (ranges mirror the pinned server/backend/requirements.txt).
+server = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "sse-starlette>=2.1,<4",
+    "aiosqlite>=0.20,<1",
+    "pydantic>=2.7,<3",
+]
+# Cross-repo federation hub.
+federation = [
+    "jsonschema>=4.17,<5",
+]
+# Convenience union of every runtime subsystem (gebco is already in base).
+all = [
+    "spiderweb-pr[airspace,rag,earthgpt,server,federation]",
+]
+dev = [
+    "pytest>=9.0.2,<10",
+    "pytest-cov>=7.0,<8",
+    "black>=26.3.0,<27",
+    "ruff>=0.15.5,<0.16",
+    "mypy>=1.13,<3",
+]
+
+[project.scripts]
+spiderweb-run = "run_all:main"
+spiderweb-release-check = "release_check:main"
+
+[tool.setuptools]
+# Top-level orchestration modules (live at the repo root, not inside a package)
+# so the console-script entry points above can import them post-install.
+py-modules = ["run_all", "release_check", "run_modes", "provenance_utils"]
+
+[tool.setuptools.package-data]
+# Ship PEP 561 typing markers so downstream consumers see this package as typed.
+"*" = ["py.typed"]
 
 [tool.setuptools.packages.find]
-include = ["gebco*"]
+include = [
+    "pipeline*",
+    "fr24*",
+    "integration*",
+    "readiness*",
+    "federation*",
+    "server*",
+    "scripts*",
+    "gebco*",
+    "earthgpt*",
+    "llm*",
+]
 
 # ---------------------------------------------------------------------------
 # Exact pins for fully reproducible environments (pip install -c constraints.txt)
 # ---------------------------------------------------------------------------
-# numpy==2.4.2          (2.4.0 was yanked — always use 2.4.2)
+# numpy==2.4.6          (2.4.0 was yanked — 2.4.6 is the stable pin)
 # scipy==1.17.1
 # pandas==3.0.1
 # xarray==2026.2.0
@@ -39,6 +119,7 @@ include = ["gebco*"]
 # matplotlib==3.10.8
 # shapely==2.1.2
 # scikit-image==0.26.0
+# openpyxl==3.1.5
 # pytest==9.0.2
 # black==26.3.0
 # ruff==0.15.5
@@ -63,3 +144,47 @@ markers = [
     "smoke: tests that depend on generated artifacts (data/*.geojson, manifest) — skip cleanly if missing.",
     "integration: tests that hit live external services (e.g. Census TIGER downloads). Excluded from default runs.",
 ]
+
+# ── Coverage (T5-42) ─────────────────────────────────────────────────────────
+# The CI `test` job runs pytest with --cov and --cov-fail-under to enforce a
+# floor; the ratchet only protects the core production packages exercised by the
+# base (non-gebco) suite. tests/, one-off scripts/, the gebco extra (not
+# installed in the base job), and the server backend (separate test concerns)
+# are omitted so the percentage reflects library code, not unrun tooling.
+[tool.coverage.run]
+branch = true
+source = ["integration", "pipeline", "fr24", "readiness", "federation", "llm",
+          "earthgpt", "provenance_utils", "run_modes", "release_check"]
+omit = [
+    "tests/*",
+    "scripts/*",
+    "gebco/*",
+    "server/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+
+# ── mypy (T6-49) ─────────────────────────────────────────────────────────────
+# Gradual per-package typing. The CI `lint` job type-checks a curated allowlist
+# of already-clean leaf modules (see the LINT_PATHS var in ci.yml) — NOT the
+# whole repo. follow_imports = "silent" keeps the gate scoped to the allowlist:
+# errors in not-yet-typed dependency modules don't fail the check. The allowlist
+# grows as more modules are cleaned in later themes. Config is lenient (no
+# --strict) so the gate stays green while typing coverage expands incrementally.
+# python_version matches the lint runner (Python 3.12 in ci.yml): modern dependency
+# stubs (e.g. numpy 2.5.0+) ship PEP-695 `type` aliases that mypy rejects as a hard
+# syntax error at a 3.11 target. Runtime 3.11 support stays covered by the test matrix.
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+no_implicit_optional = true
+warn_unused_ignores = true
+follow_imports = "silent"
+

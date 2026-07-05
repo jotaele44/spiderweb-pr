@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pin",
+  "title": "Master Pin Registry — Pin record",
+  "description": "One atomic Pin in the Spiderweb-PR Master Pin Registry. A Pin is any mapped object, place, asset, event location, signal, anomaly, candidate, infrastructure node, or analytic marker that can be spatially referenced and assigned evidence metadata. Replaces the legacy POI / Entity / Feature / Location vocabulary (GeoJSON `Feature`/`FeatureCollection` wire constants are NOT renamed — they are the RFC 7946 serialization format, distinct from a Pin). Optional distributed ILAP fields let a Pin act as a subcomponent node inside a broader ILAP Area / ILAP Cluster without treating the Pin as proof of subsurface infrastructure.",
+  "type": "object",
+  "required": ["pin_uid", "pin_name", "domain", "pin_group", "pin_class", "pin_layer", "geometry_type", "status"],
+  "properties": {
+    "pin_uid": {
+      "type": "string",
+      "pattern": "^PIN_[A-Z0-9]+(_[A-Z0-9]+)*_[0-9]{6}$",
+      "description": "Permanent Spiderweb ID, e.g. PIN_EDU_PUBSCH_000001."
+    },
+    "pin_name": {"type": "string", "minLength": 1, "description": "Canonical name."},
+    "pin_aliases": {"type": "array", "items": {"type": "string"}, "description": "Known alternate names."},
+    "domain": {"type": "string", "minLength": 1, "description": "Highest thematic container."},
+    "pin_group": {"type": "string", "minLength": 1, "description": "Major folder inside a domain."},
+    "pin_class": {"type": "string", "minLength": 1, "description": "Specific category of mapped object."},
+    "pin_subclass": {"type": "string", "description": "Optional refinement of pin_class."},
+    "pin_layer": {"type": "string", "minLength": 1, "description": "Source GIS layer / table holding one geometry type or schema variant."},
+    "geometry_type": {"type": "string", "enum": ["point", "line", "polygon", "raster", "table"]},
+    "lat": {"type": ["number", "null"], "minimum": 17.7, "maximum": 18.6, "description": "WGS84 latitude when applicable."},
+    "lon": {"type": ["number", "null"], "minimum": -67.4, "maximum": -65.1, "description": "WGS84 longitude when applicable."},
+    "geometry": {"type": ["object", "null"], "description": "Full GeoJSON geometry when bound."},
+    "source_ref": {"type": ["string", "null"], "description": "Evidence / source reference."},
+    "evidence_tier": {"type": "string", "enum": ["T1", "T2", "T3", "T4"]},
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+    "status": {"type": "string", "enum": ["active", "deprecated", "ghost", "planned", "review"]},
+    "review_flag": {"type": "boolean"},
+    "notes": {"type": ["string", "null"]},
+    "ilap_area_id": {
+      "type": ["string", "null"],
+      "pattern": "^ILAP_AREA_[A-Z0-9_]+$",
+      "description": "Optional broader ILAP Area assignment. The area is a geographic operating zone, not a claim of access."
+    },
+    "ilap_cluster_id": {
+      "type": ["string", "null"],
+      "pattern": "^ILAP_CLUSTER_[A-Z0-9_]+$",
+      "description": "Optional distributed ILAP Cluster assignment. A cluster is a system-level grouping of subcomponent nodes."
+    },
+    "node_role": {
+      "type": ["string", "null"],
+      "enum": ["PRIMARY_NODE", "SUPPORT_NODE", "MASK_NODE", "HYDRO_NODE", "UTILITY_NODE", "ACCESS_NODE", "LOGISTICS_NODE", "RIDGE_NODE", "AIRSPACE_LINKED_NODE", "CONTEXT_NODE", "UNRESOLVED_NODE", null],
+      "description": "Functional role of the Pin inside the cluster hypothesis."
+    },
+    "system_function": {
+      "type": ["string", "null"],
+      "enum": ["hydro_continuity", "utility_service", "logistics_access", "industrial_masking", "terrain_shielding", "airspace_correlation", "institutional_control", "residential_cover_screening", "corridor_continuity", "context_only", "unknown", null],
+      "description": "Inferred system-level function. Use context_only or unknown when evidence is weak."
+    },
+    "cluster_coherence_score": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Cluster-level coherence score copied to or computed for the Pin after rescore."
+    },
+    "contradiction_flags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Source/model conflicts that reduce confidence or force review."
+    }
+  },
+  "additionalProperties": false
+}

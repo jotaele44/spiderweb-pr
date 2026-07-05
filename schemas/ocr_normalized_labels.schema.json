@@ -3,14 +3,14 @@
   "$id": "ocr_normalized_labels",
   "type": "object",
   "description": "Single row from outputs/ocr_normalized_labels.csv. Flattened normalized labels with provenance.",
-  "required": ["poi_id", "screenshot_id", "raw_label"],
+  "required": ["pin_id", "screenshot_id", "raw_label"],
   "properties": {
-    "poi_id":           {"type": ["integer", "string"]},
+    "pin_id":           {"type": ["integer", "string"]},
     "screenshot_id":    {"type": ["integer", "string"]},
     "filename":         {"type": ["string", "null"]},
     "raw_label":        {"type": "string"},
     "normalized_label": {"type": ["string", "null"]},
-    "poi_type_guess":   {"type": ["string", "null"], "enum": ["city", "airport", "water", "mountain", "highway", "neighborhood", "unknown", null]},
+    "pin_type_guess":   {"type": ["string", "null"], "enum": ["city", "airport", "water", "mountain", "highway", "neighborhood", "unknown", null]},
     "confidence":       {"type": ["number", "null"], "minimum": 0, "maximum": 1},
     "review_status":    {"type": ["string", "null"], "enum": ["unreviewed", "reviewing", "approved", "rejected", null]},
     "observed_at":      {"type": "string"}

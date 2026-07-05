@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pin_link",
+  "title": "Master Pin Registry — Pin Link",
+  "description": "A typed relationship between two Pins. Replaces the legacy 'relationship' / 'graph edge' vocabulary. Example: a school operated_by an agency; a WWTP discharges_to a river.",
+  "type": "object",
+  "required": ["from_pin_uid", "to_pin_uid", "relation"],
+  "properties": {
+    "from_pin_uid": {"type": "string", "pattern": "^PIN_[A-Z0-9]+(_[A-Z0-9]+)*_[0-9]{6}$"},
+    "to_pin_uid": {"type": "string", "pattern": "^PIN_[A-Z0-9]+(_[A-Z0-9]+)*_[0-9]{6}$"},
+    "relation": {"type": "string", "minLength": 1, "description": "Relationship verb, e.g. operated_by, discharges_to, administered_from, adjacent_to."},
+    "directionality": {"type": "string", "enum": ["directed", "undirected"], "default": "directed"},
+    "source_ref": {"type": ["string", "null"]},
+    "evidence_tier": {"type": "string", "enum": ["T1", "T2", "T3", "T4"]},
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+    "notes": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

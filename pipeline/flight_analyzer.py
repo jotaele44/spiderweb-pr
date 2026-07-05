@@ -12,9 +12,11 @@ import re
 import sqlite3
 import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+from pipeline.db_utils import configure_connection
 
 
 # ============================================================================
@@ -154,7 +156,7 @@ class FlightRadarOCR:
             mtime = os.path.getmtime(image_path)
             return datetime.utcfromtimestamp(mtime).isoformat()
         except Exception:
-            return datetime.utcnow().isoformat()
+            return datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
     def _extract_callsign(self, text: str) -> str:
         """Extract N-number or ICAO callsign from OCR text."""
@@ -350,6 +352,7 @@ class FlightDatabase:
 
     def _init_tables(self):
         conn = sqlite3.connect(self.db_path)
+        configure_connection(conn)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -423,6 +426,12 @@ class FlightDatabase:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_flights_callsign ON flights(callsign)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_track_flight ON track_points(flight_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenshots_flight ON screenshots(flight_id)")
+        # T4-25: covering indexes for hot bridge and pipeline queries
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_flights_origin ON flights(origin_airport)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_flights_dest ON flights(destination_airport)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_flights_mission ON flights(mission_type)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenshots_conf ON screenshots(ocr_confidence)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_track_coords ON track_points(latitude, longitude)")
 
         # Evidence-chain columns added in integration hardening upgrade
         _NEW_SCREENSHOT_COLS = [
@@ -457,6 +466,7 @@ class FlightDatabase:
                 sha256_hex = None
 
         conn = sqlite3.connect(self.db_path)
+        configure_connection(conn)
         cursor = conn.cursor()
         cursor.execute('''
             INSERT OR REPLACE INTO screenshots
@@ -468,7 +478,7 @@ class FlightDatabase:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             screenshot_id, image_path, None,
-            datetime.utcnow().isoformat(),
+            datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             data.callsign, data.altitude_ft, data.ground_speed_mph,
             data.latitude, data.longitude, data.timestamp,
             data.raw_text[:2000], data.ocr_confidence,
@@ -480,6 +490,7 @@ class FlightDatabase:
 
     def store_flight(self, record: FlightRecord):
         conn = sqlite3.connect(self.db_path)
+        configure_connection(conn)
         cursor = conn.cursor()
         cursor.execute('''
             INSERT OR REPLACE INTO flights
@@ -498,16 +509,19 @@ class FlightDatabase:
             record.mission_type, record.num_screenshots,
         ))
 
-        for pt in record.track_points:
-            cursor.execute('''
-                INSERT INTO track_points
-                (flight_id, timestamp, latitude, longitude, altitude_ft, ground_speed_mph)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
+        track_rows = [
+            (
                 record.flight_id, pt.get("timestamp", ""),
                 pt.get("latitude", 0.0), pt.get("longitude", 0.0),
                 pt.get("altitude_ft", 0), pt.get("ground_speed_mph", 0),
-            ))
+            )
+            for pt in record.track_points
+        ]
+        cursor.executemany('''
+            INSERT INTO track_points
+            (flight_id, timestamp, latitude, longitude, altitude_ft, ground_speed_mph)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', track_rows)
 
         conn.commit()
         conn.close()

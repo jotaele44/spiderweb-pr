@@ -5,7 +5,6 @@ import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline
 import { CommandBar } from "./components/CommandBar";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
-import { Timeline } from "./components/Timeline";
 import { CommandCenter } from "./modules/CommandCenter";
 import { FinanceIntelligence } from "./modules/FinanceIntelligence";
 import { SpatialIntelligence } from "./modules/SpatialIntelligence";
@@ -45,6 +44,14 @@ export default function App() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [pipelineLog, setPipelineLog] = useState<string[]>([]);
 
+  // Collapsible chrome — left rail and right inspector slide out of frame.
+  const [leftCollapsed, setLeftCollapsed] = useState(
+    () => localStorage.getItem("priis_left_collapsed") === "true",
+  );
+  const [rightCollapsed, setRightCollapsed] = useState(
+    () => localStorage.getItem("priis_right_collapsed") === "true",
+  );
+
   // Load real data on mount; fall back to mock if API is down
   useEffect(() => {
     void fetchPriisDataWithFallback().then(({ data: d, live: l }) => {
@@ -78,6 +85,33 @@ export default function App() {
     localStorage.setItem("priis_cursor", cursor);
   }, [cursor]);
 
+  useEffect(() => {
+    localStorage.setItem("priis_left_collapsed", String(leftCollapsed));
+  }, [leftCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem("priis_right_collapsed", String(rightCollapsed));
+  }, [rightCollapsed]);
+
+  // Keyboard chrome toggles: "[" left rail, "]" inspector. Ignore while typing.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+      if (event.key === "[") {
+        event.preventDefault();
+        setLeftCollapsed((value) => !value);
+      } else if (event.key === "]") {
+        event.preventDefault();
+        setRightCollapsed((value) => !value);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   async function handlePipelineRun() {
     if (runState === "running" && jobId) {
       await stopPipeline(jobId);
@@ -106,7 +140,7 @@ export default function App() {
     switch (moduleId) {
       case "command":  return <CommandCenter data={data} setSelection={setSelection} setModule={setModule} />;
       case "finance":  return <FinanceIntelligence data={data} selection={selection} setSelection={setSelection} />;
-      case "spatial":  return <SpatialIntelligence data={data} selection={selection} setSelection={setSelection} />;
+      case "spatial":  return <SpatialIntelligence data={data} selection={selection} setSelection={setSelection} leftCollapsed={leftCollapsed} rightCollapsed={rightCollapsed} />;
       case "anomaly":  return <AnomalyWorkbench data={data} selection={selection} setSelection={setSelection} />;
       case "graph":    return <InvestigationGraph data={data} setSelection={setSelection} />;
       case "query":    return <QueryLayer data={data} setSelection={setSelection} pipelineLog={pipelineLog} />;
@@ -117,7 +151,7 @@ export default function App() {
   return (
     <>
       <div className="classif">UNCLASSIFIED · DEMO · NOT FOR DISTRIBUTION · PR INTEGRATED INTELLIGENCE SYSTEM V1</div>
-      <div className="workbench">
+      <div className="workbench" data-left-collapsed={leftCollapsed} data-right-collapsed={rightCollapsed}>
         <CommandBar
           query={query}
           setQuery={setQuery}
@@ -138,6 +172,15 @@ export default function App() {
         />
         <main className="center">
           <div className="tabstrip">
+            <button
+              className="tab chrome-toggle"
+              data-active={leftCollapsed}
+              onClick={() => setLeftCollapsed((value) => !value)}
+              title="Toggle left rail ([)"
+              aria-label="Toggle left rail"
+            >
+              {leftCollapsed ? "»" : "«"}
+            </button>
             {tabs.map((tab) => (
               <button key={tab.id} className="tab" data-active={moduleId === tab.id} onClick={() => setModule(tab.id)}>
                 {tab.label}
@@ -146,11 +189,19 @@ export default function App() {
             <div className="tab-meta">
               CURSOR <b>{cursor}</b> · SEL <b>{selection ? `${selection.kind}/${selection.id}` : "—"}</b>
             </div>
+            <button
+              className="tab chrome-toggle"
+              data-active={rightCollapsed}
+              onClick={() => setRightCollapsed((value) => !value)}
+              title="Toggle inspector (])"
+              aria-label="Toggle inspector"
+            >
+              {rightCollapsed ? "«" : "»"}
+            </button>
           </div>
           <div className="workspace">{renderModule()}</div>
         </main>
         <Inspector data={data} selection={selection} setSelection={setSelection} />
-        <Timeline events={data.events} cursor={cursor} setCursor={setCursor} setSelection={setSelection} />
       </div>
     </>
   );

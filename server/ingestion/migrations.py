@@ -153,6 +153,31 @@ def ensure_track_points_table(conn: sqlite3.Connection) -> bool:
     return created
 
 
+def _existing_indexes(conn: sqlite3.Connection) -> set[str]:
+    cur = conn.execute("SELECT name FROM sqlite_master WHERE type='index'")
+    return {row[0] for row in cur.fetchall()}
+
+
+def ensure_performance_indexes(conn: sqlite3.Connection) -> dict[str, bool]:
+    """
+    Create hot-path indexes if absent. Idempotent (CREATE INDEX IF NOT EXISTS),
+    so safe on every startup. Keep in sync with server/database/schema_sqlite.sql.
+
+    - idx_events_kind: the registration-watchlist scan
+      (server/ingestion/registration_alerts.py) filters ``events WHERE kind=?``;
+      without this index that query full-scans the events table.
+
+    Returns a dict mapping index name → True if it was created on this call.
+    """
+    if "events" not in _existing_tables(conn):
+        # Fresh DB — schema_sqlite.sql already defines the index.
+        return {"idx_events_kind": False}
+    existed = "idx_events_kind" in _existing_indexes(conn)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_events_kind ON events(kind)")
+    conn.commit()
+    return {"idx_events_kind": not existed}
+
+
 def run_all(conn: sqlite3.Connection) -> dict[str, dict]:
     """Run every registered migration. Safe to call on every startup."""
     return {
@@ -160,6 +185,7 @@ def run_all(conn: sqlite3.Connection) -> dict[str, dict]:
         "events_aircraft": ensure_events_aircraft_columns(conn),
         "alerts_registration": ensure_alerts_registration_column(conn),
         "track_points": {"created": ensure_track_points_table(conn)},
+        "performance_indexes": ensure_performance_indexes(conn),
     }
 
 
@@ -168,5 +194,6 @@ __all__ = [
     "ensure_events_aircraft_columns",
     "ensure_alerts_registration_column",
     "ensure_track_points_table",
+    "ensure_performance_indexes",
     "run_all",
 ]

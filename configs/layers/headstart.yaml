@@ -1,0 +1,42 @@
+layer_id: civic_headstart_pr
+name: Puerto Rico Head Start Service Locations
+family: civic_social_infrastructure
+sensitivity: high
+visibility:
+  default: restricted
+  public_export: grid_only
+source:
+  filename: HeadStart_PR_889_explicit.csv
+  record_count_expected: 889
+schema:
+  id_field: hs_id
+  geometry_fields:
+    latitude: latitude
+    longitude: longitude
+  required_fields:
+    - hs_id
+    - service_location_name
+    - recipient_name
+    - latitude
+    - longitude
+nodes:
+  - headstart_service_location
+  - headstart_operator
+edges:
+  - OPERATED_BY
+  - ADMINISTERED_FROM
+guardrails:
+  precise_points_public: false
+  route_generation_allowed: false
+  field_visit_routing_allowed: false
+  individual_level_inference_allowed: false
+confidence:
+  standalone_cap: 20
+  anomaly_detector: false
+enrichment_hooks:
+  - hydro_region
+  - utility_overlap
+  - corridor_distance
+  - heli_proximity
+  - project_overlap
+  - ilap_context

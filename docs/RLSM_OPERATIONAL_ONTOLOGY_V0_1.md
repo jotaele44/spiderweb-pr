@@ -24,7 +24,7 @@ The normalizer must keep these fields separate:
 - ramp_id
 - hangar_id
 - lz_id
-- poi_id
+- pin_id
 - corridor_id
 - operator_id
 - aircraft_id

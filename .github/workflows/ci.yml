@@ -5,35 +5,95 @@ on:
     branches: ["**"]
   pull_request:
     branches: [main]
+    # Docs-only changes don't affect the build (T6-54).
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+
+# Cancel superseded in-flight runs on the same ref (T6-54).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  # ── Dependency vulnerability scan (advisory, non-gating) ────────────────────
+  # pip-audit reports known CVEs in the resolved dependency set (T11-87). Run as
+  # continue-on-error so a freshly-published advisory surfaces in the logs
+  # without blocking unrelated PRs; promote to gating once the set is clean.
+  security-audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: pip-audit (advisory)
+        run: |
+          pip install pip-audit
+          pip install -e ".[airspace,earthgpt,server]"
+          pip-audit --progress-spinner off || true
+
+  # ── Lint + type check (ruff + black + mypy) on a curated allowlist ──────────
+  # CI parity (T6-50): lint + type + test + release-check all gate. The allowlist
+  # is intentionally small (gradual per-package typing, T6-49) and grows over
+  # time — a repo-wide gate would face ~840 pre-existing ruff findings.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dev tooling
+        # Pin via constraints.txt (numpy==2.4.6 etc.) for a reproducible lint
+        # environment. Without it, pip floats to numpy>=2.5 whose typeshed stubs
+        # use PEP 695 `type` statements that mypy (python_version 3.11) rejects.
+        run: pip install -c constraints.txt -e ".[dev]"
+
+      - name: Lint + type-check (curated allowlist)
+        run: |
+          LINT_PATHS="provenance_utils.py run_modes.py integration/mbil.py pipeline/db_utils.py pipeline/terrain_hook.py federation/envelope.py federation/readiness.py federation/namespace.py pipeline/logging_config.py pipeline/config_loader.py pipeline/seeding.py pipeline/verbosity.py pipeline/path_safety.py"
+          echo "Allowlist: $LINT_PATHS"
+          python -m ruff check $LINT_PATHS
+          python -m black --check $LINT_PATHS
+          python -m mypy $LINT_PATHS
+
   # ── Airspace Intel + LLM pipeline + EarthGPT ────────────────────────────────
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        # Matches requires-python >=3.11 (the scientific stack needs 3.11+).
+        python-version: ["3.11", "3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install core test dependencies
-        run: pip install "jsonschema>=4.17" "pyarrow>=14.0" "pytest>=7.4" "Pillow>=10.0" "numpy>=1.26" "requests>=2.31" "shapely>=2.0"
-
-      - name: Install backend test dependencies
-        run: pip install -r server/backend/requirements.txt "httpx>=0.27"
+      - name: Install package (airspace + earthgpt + server extras)
+        run: pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
 
       - name: Syntax check all Python modules
-        run: find . -path ./.git -prune -o -path ./.claude -prune -o -name "*.py" -print -exec python -m py_compile {} +
+        run: find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
 
+      # test_io / test_terrain need the gebco extra (scipy/xarray), which is NOT
+      # installed in this job — they run in the dedicated `test-gebco` job below
+      # (T5-44). Coverage ratchet (T5-42) enforces a floor on the core packages.
       - name: Run test suite (airspace intel + LLM pipeline + earthgpt)
-        run: python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py
+        run: python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-report=term-missing:skip-covered --cov-fail-under=64
 
       - name: EarthGPT self-test (7 gates)
         run: |
@@ -68,21 +128,63 @@ jobs:
           test -f /tmp/ci_spiderweb/spiderweb_ingest_manifest.json
           test -f /tmp/ci_spiderweb/aasb_airspace_edges.csv
 
+      - name: Example-artifact schema gate (T2-18)
+        run: |
+          python -c "
+          import json, sys
+          from pathlib import Path
+          from integration.schema_validation import SchemaValidator
+
+          v = SchemaValidator()
+
+          # Validate checked-in sample export JSONL files against their schema_id
+          manifest = json.loads(Path('exports/samples/manifest.sample.json').read_text())
+          samples_dir = Path('exports/samples')
+          errors = []
+          for entry in manifest.get('files', []):
+              schema_id = entry.get('schema_id')
+              fname = entry.get('filename')
+              if not schema_id or not fname:
+                  continue
+              fpath = samples_dir / fname
+              if not fpath.exists():
+                  errors.append(f'sample file missing: {fpath}')
+                  continue
+              for i, line in enumerate(fpath.read_text().splitlines()):
+                  line = line.strip()
+                  if not line:
+                      continue
+                  record = json.loads(line)
+                  result = v.validate(record, schema_id)
+                  if not result['valid']:
+                      errors.append(f'{fname}:{i+1} ({schema_id}): {result[\"errors\"]}')
+          # Validate federation.json against federation_manifest schema
+          fed = json.loads(Path('federation.json').read_text())
+          result = v.validate(fed, 'federation_manifest')
+          if not result['valid']:
+              errors.append(f'federation.json: {result[\"errors\"]}')
+          if errors:
+              for e in errors:
+                  print('FAIL:', e)
+              sys.exit(1)
+          print(f'Example-artifact gate: all sample records and federation.json valid.')
+          "
+
   # ── Release-gate smoke (X2) — mirrors `make release-check` locally ──────────
   release-check:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
 
-      - name: Install core dependencies
-        run: pip install "jsonschema>=4.17" "pyarrow>=14.0" "pytest>=7.4" "Pillow>=10.0" "numpy>=1.26" "requests>=2.31" "shapely>=2.0"
+      - name: Install package (airspace + earthgpt extras)
+        run: pip install -e ".[airspace,earthgpt]"
 
       - name: Release gate (skip-tests + demo mode, against empty DB)
         # --skip-tests because the `test` job above already ran the full suite;
@@ -107,16 +209,57 @@ jobs:
         python-version: ["3.11", "3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install GEBCO dependencies
-        run: pip install -r requirements-gebco.txt
+      - name: Install GEBCO dependencies (gebco extra)
+        run: pip install -e ".[gebco,dev]"
 
       - name: Run GEBCO test suite (39 tests)
         run: python -m pytest tests/test_io.py tests/test_terrain.py -v --tb=short
+
+  # ── Packaging: every extra resolves and its subsystem imports cleanly ────────
+  # First real exercise of `pip install .` (packages.find + py-modules + extras).
+  # `rag` is omitted — torch is too heavy/slow for CI.
+  install-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        extra: [airspace, gebco, earthgpt, server, federation]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package with the ${{ matrix.extra }} extra
+        run: pip install -e ".[${{ matrix.extra }}]"
+
+      - name: Import smoke for ${{ matrix.extra }}
+        env:
+          EXTRA: ${{ matrix.extra }}
+        run: |
+          python - <<'PY'
+          import importlib, os
+          extra = os.environ["EXTRA"]
+          modules = {
+              "airspace": ["pipeline", "integration"],
+              "gebco": ["gebco"],
+              "earthgpt": ["earthgpt"],
+              "server": ["aiosqlite", "fastapi"],
+              "federation": ["federation"],
+          }[extra]
+          for m in modules:
+              importlib.import_module(m)
+          print(f"{extra}: imported {', '.join(modules)} OK")
+          PY

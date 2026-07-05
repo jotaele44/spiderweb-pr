@@ -1,0 +1,586 @@
+version: spiderweb_pin_taxonomy_v1
+generated_at: '2026-06-20T06:38:38Z'
+producer_module: scripts.build_pin_registry
+binding: labels_only
+root: SPIDERWEB_PR
+hierarchy:
+- visibility_class
+- domain
+- pin_group
+- pin_class
+- pin_layer
+- pin
+note: Pin-model re-expression of configs/layer_catalog.yaml. Visibility class is the top folder; Domain
+  -> Pin Group -> Pin Class -> Pin Layer nests beneath. No atomic pins bound (labels-only).
+flag_legend:
+  WIRED: Pipeline emits this Pin Layer.
+  GHOST: Catalogued, expected from pipeline, not yet emitted.
+  PLANNED: Reserved name, no producer yet.
+  DEPRECATED: Superseded; retained for lineage.
+visibility_classes:
+- visibility_class: V3
+  label: Public / Shareable
+  access_default: PUBLIC
+  domains:
+  - id: administrative
+    label: Administrative
+    pin_groups:
+    - id: admin_geographies
+      label: Administrative Geographies
+      pin_classes:
+      - id: municipios
+        label: Municipios
+        pin_layers:
+        - pin_layer: municipios
+          label: Municipios
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: tracts
+        label: Tracts
+        pin_layers:
+        - pin_layer: tracts
+          label: Tracts
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: places
+        label: Places
+        pin_layers:
+        - pin_layer: places
+          label: Places
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: barrios
+        label: Barrios
+        pin_layers:
+        - pin_layer: barrios
+          label: Barrios
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+  - id: transportation_airspace
+    label: Transportation & Airspace
+    pin_groups:
+    - id: airports
+      label: Airports & Aerodromes
+      pin_classes:
+      - id: airports
+        label: Airports
+        pin_layers:
+        - pin_layer: airports
+          label: Airports
+          geometry_type: unknown
+          flag: PLANNED
+          status: planned
+  - id: hydrology
+    label: Hydrology
+    pin_groups:
+    - id: hydrology
+      label: Hydrology
+      pin_classes:
+      - id: hydro_points_normalized
+        label: Hydro Points Normalized
+        pin_layers:
+        - pin_layer: hydro_points_normalized
+          label: Hydro Points Normalized
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: hydro_master
+        label: Hydro Master
+        pin_layers:
+        - pin_layer: hydro_master_v3
+          label: Hydro Master v3
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: nid_dams
+        label: NID Dams
+        pin_layers:
+        - pin_layer: nid_dams
+          label: NID Dams
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+  - id: utilities
+    label: Utilities
+    pin_groups:
+    - id: utility_other
+      label: Utility / Other
+      pin_classes:
+      - id: mast
+        label: Mast
+        pin_layers:
+        - pin_layer: mast
+          label: Mast
+          geometry_type: unknown
+          flag: WIRED
+          status: planned
+    - id: petroleum_pipeline
+      label: Petroleum & Pipeline
+      pin_classes:
+      - id: petroleum_site
+        label: Petroleum Site
+        pin_layers:
+        - pin_layer: petroleum_site
+          label: Petroleum Site
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: petroleum_well
+        label: Petroleum Well
+        pin_layers:
+        - pin_layer: petroleum_well
+          label: Petroleum Well
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: pipeline
+        label: Pipeline
+        pin_layers:
+        - pin_layer: pipeline
+          label: Pipeline
+          geometry_type: line
+          flag: GHOST
+          status: planned
+      - id: pipeline_feature
+        label: Pipeline Feature
+        pin_layers:
+        - pin_layer: pipeline_feature
+          label: Pipeline Feature
+          geometry_type: line
+          flag: GHOST
+          status: planned
+    - id: power_grid
+      label: Power Grid
+      pin_classes:
+      - id: power_compensator
+        label: Power Compensator
+        pin_layers:
+        - pin_layer: power_compensator
+          label: Power Compensator
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: power_generator
+        label: Power Generator
+        pin_layers:
+        - pin_layer: power_generator_point
+          label: Power Generator Point
+          geometry_type: point
+          flag: GHOST
+          status: planned
+        - pin_layer: power_generator_polygon
+          label: Power Generator Polygon
+          geometry_type: polygon
+          flag: WIRED
+          status: planned
+      - id: power
+        label: Power
+        pin_layers:
+        - pin_layer: power_line
+          label: Power Line
+          geometry_type: line
+          flag: WIRED
+          status: planned
+      - id: power_plant
+        label: Power Plant
+        pin_layers:
+        - pin_layer: power_plant
+          label: Power Plant
+          geometry_type: unknown
+          flag: WIRED
+          status: planned
+      - id: power_substation
+        label: Power Substation
+        pin_layers:
+        - pin_layer: power_substation_point
+          label: Power Substation Point
+          geometry_type: point
+          flag: GHOST
+          status: planned
+        - pin_layer: power_substation_polygon
+          label: Power Substation Polygon
+          geometry_type: polygon
+          flag: WIRED
+          status: planned
+      - id: power_switch
+        label: Power Switch
+        pin_layers:
+        - pin_layer: power_switch
+          label: Power Switch
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: power_tower
+        label: Power Tower
+        pin_layers:
+        - pin_layer: power_tower
+          label: Power Tower
+          geometry_type: unknown
+          flag: WIRED
+          status: planned
+      - id: power_transformer
+        label: Power Transformer
+        pin_layers:
+        - pin_layer: power_transformer
+          label: Power Transformer
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+    - id: water_sewer
+      label: Water & Sewer
+      pin_classes:
+      - id: pumping_station
+        label: Pumping Station
+        pin_layers:
+        - pin_layer: pumping_station
+          label: Pumping Station
+          geometry_type: unknown
+          flag: WIRED
+          status: planned
+      - id: wastewater_plant
+        label: Wastewater Plant
+        pin_layers:
+        - pin_layer: wastewater_plant
+          label: Wastewater Plant
+          geometry_type: unknown
+          flag: WIRED
+          status: planned
+      - id: water_reservoir
+        label: Water Reservoir
+        pin_layers:
+        - pin_layer: water_reservoir
+          label: Water Reservoir
+          geometry_type: unknown
+          flag: WIRED
+          status: planned
+      - id: water_tower
+        label: Water Tower
+        pin_layers:
+        - pin_layer: water_tower_point
+          label: Water Tower Point
+          geometry_type: point
+          flag: GHOST
+          status: planned
+        - pin_layer: water_tower_polygon
+          label: Water Tower Polygon
+          geometry_type: polygon
+          flag: GHOST
+          status: planned
+      - id: water_treatment_plant
+        label: Water Treatment Plant
+        pin_layers:
+        - pin_layer: water_treatment_plant
+          label: Water Treatment Plant
+          geometry_type: unknown
+          flag: WIRED
+          status: planned
+      - id: water_well
+        label: Water Well
+        pin_layers:
+        - pin_layer: water_well_point
+          label: Water Well Point
+          geometry_type: point
+          flag: GHOST
+          status: planned
+        - pin_layer: water_well_polygon
+          label: Water Well Polygon
+          geometry_type: polygon
+          flag: GHOST
+          status: planned
+    - id: telecom
+      label: Telecom
+      pin_classes:
+      - id: telecom_building
+        label: Telecom Building
+        pin_layers:
+        - pin_layer: telecom_building_point
+          label: Telecom Building Point
+          geometry_type: point
+          flag: GHOST
+          status: planned
+        - pin_layer: telecom_building_polygon
+          label: Telecom Building Polygon
+          geometry_type: polygon
+          flag: GHOST
+          status: planned
+      - id: telecom_cable
+        label: Telecom Cable
+        pin_layers:
+        - pin_layer: telecom_cable
+          label: Telecom Cable
+          geometry_type: line
+          flag: GHOST
+          status: planned
+- visibility_class: V2
+  label: Restricted / Operational
+  access_default: RESTRICTED
+  domains:
+  - id: institutional_civic
+    label: Institutional & Civic
+    pin_groups:
+    - id: civic_social
+      label: Civic / Social Infrastructure
+      pin_classes:
+      - id: civic_headstart_pr
+        label: Civic Headstart PR
+        pin_layers:
+        - pin_layer: civic_headstart_pr
+          label: Head Start Service Locations
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+  - id: transportation_airspace
+    label: Transportation & Airspace
+    pin_groups:
+    - id: landing_zones
+      label: Landing Zones
+      pin_classes:
+      - id: landing_zones_master
+        label: Landing Zones Master
+        pin_layers:
+        - pin_layer: landing_zones_master
+          label: Landing Zones Master
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+    - id: hangars_ramps
+      label: Hangars & Ramps
+      pin_classes:
+      - id: hangar_candidates
+        label: Hangar Candidates
+        pin_layers:
+        - pin_layer: hangar_candidates
+          label: Hangar Candidates
+          geometry_type: unknown
+          flag: PLANNED
+          status: planned
+    - id: flight_activity
+      label: Flight Activity
+      pin_classes:
+      - id: flights
+        label: Flights
+        pin_layers:
+        - pin_layer: flights
+          label: Flights
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+  - id: public_safety_ops
+    label: Public Safety & Operations
+    pin_groups:
+    - id: operational_sites
+      label: Operational Sites
+      pin_classes:
+      - id: sites
+        label: Sites
+        pin_layers:
+        - pin_layer: sites
+          label: Sites
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: fire_stations_consolidated
+        label: Fire Stations Consolidated
+        pin_layers:
+        - pin_layer: fire_stations_consolidated
+          label: Fire Stations Consolidated
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+    - id: public_safety
+      label: Public Safety
+      pin_classes:
+      - id: missing_persons_cases
+        label: Missing Persons Cases
+        pin_layers:
+        - pin_layer: missing_persons_cases
+          label: Missing Persons Cases
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: missing_persons_by_municipio
+        label: Missing Persons By Municipio
+        pin_layers:
+        - pin_layer: missing_persons_by_municipio
+          label: Missing Persons by Municipio
+          geometry_type: polygon
+          flag: GHOST
+          status: planned
+- visibility_class: V1
+  label: Sensitive / Analytic
+  access_default: OBSERVE_ONLY
+  domains:
+  - id: analytic_constructs
+    label: Analytic Constructs
+    pin_groups:
+    - id: ilap_constructs
+      label: ILAP — Infrastructure-Linked Access Points
+      pin_classes:
+      - id: ilap_master
+        label: ILAP Master
+        pin_layers:
+        - pin_layer: ilap_master_nodes
+          label: ILAP Master Nodes
+          geometry_type: point
+          flag: GHOST
+          status: planned
+      - id: ilap_predictions
+        label: ILAP Predictions
+        pin_layers:
+        - pin_layer: ilap_predictions
+          label: ILAP Predictions
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: hydro_candidate
+        label: Hydro Candidate
+        pin_layers:
+        - pin_layer: hydro_candidate_nodes
+          label: Hydro Candidate Nodes
+          geometry_type: point
+          flag: GHOST
+          status: planned
+      - id: water_signals
+        label: Water Signals
+        pin_layers:
+        - pin_layer: water_signals
+          label: Water Signals
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: fic_osap_final_set
+        label: FIC OSAP Final Set
+        pin_layers:
+        - pin_layer: fic_osap_final_set_v3
+          label: FIC OSAP Final Set v3
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: fic_osap_candidates
+        label: FIC OSAP Candidates
+        pin_layers:
+        - pin_layer: fic_osap_candidates_v2
+          label: FIC OSAP Candidates v2
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: fic_osap_ilap_links
+        label: FIC OSAP ILAP Links
+        pin_layers:
+        - pin_layer: fic_osap_ilap_links_v4
+          label: FIC OSAP ILAP Links v4
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: fic_osap_ilap_paths
+        label: FIC OSAP ILAP Paths
+        pin_layers:
+        - pin_layer: fic_osap_ilap_paths_v6
+          label: FIC OSAP ILAP Paths v6
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+    - id: signal_anomaly
+      label: Signal / Anomaly & Shadow
+      pin_classes:
+      - id: anomalies
+        label: Anomalies
+        pin_layers:
+        - pin_layer: anomalies
+          label: Anomalies
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: heatmap
+        label: Heatmap
+        pin_layers:
+        - pin_layer: heatmap
+          label: Heatmap
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+  - id: transportation_airspace
+    label: Transportation & Airspace
+    pin_groups:
+    - id: aasb_corridors
+      label: AASB — Aerial Anomaly Surveillance Bands / Corridors
+      pin_classes:
+      - id: aasb_corridor
+        label: AASB Corridor
+        pin_layers:
+        - pin_layer: aasb_corridor_nodes
+          label: AASB Corridor Nodes
+          geometry_type: point
+          flag: GHOST
+          status: planned
+      - id: corridors
+        label: Corridors
+        pin_layers:
+        - pin_layer: corridors
+          label: Corridors
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: corridor_index
+        label: Corridor Index
+        pin_layers:
+        - pin_layer: corridor_index_v1
+          label: Corridor Index v1
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: subsurface_corridors_master
+        label: Subsurface Corridors Master
+        pin_layers:
+        - pin_layer: subsurface_corridors_master
+          label: Subsurface Corridors Master
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+  - id: hydrology
+    label: Hydrology
+    pin_groups:
+    - id: spiderweb_graph
+      label: Spiderweb Hydro Graph
+      pin_classes:
+      - id: spiderweb_graph
+        label: Spiderweb Graph
+        pin_layers:
+        - pin_layer: spiderweb_graph_nodes_v5
+          label: Spiderweb Graph Nodes v5
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+        - pin_layer: spiderweb_graph_edges_v5
+          label: Spiderweb Graph Edges v5
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: consolidated_master_registry
+        label: Consolidated Master Registry
+        pin_layers:
+        - pin_layer: consolidated_master_registry
+          label: Consolidated Master POI Registry
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+    - id: subsurface_karst
+      label: Subsurface / Karst
+      pin_classes:
+      - id: karst_subsurface
+        label: Karst Subsurface
+        pin_layers:
+        - pin_layer: karst_subsurface_nodes_v2
+          label: Karst Subsurface Nodes v2
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+        - pin_layer: karst_subsurface_edges_v2
+          label: Karst Subsurface Edges v2
+          geometry_type: unknown
+          flag: GHOST
+          status: planned

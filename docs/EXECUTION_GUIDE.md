@@ -67,15 +67,51 @@ python run_all.py --image-dir data/screenshots --db outputs/flights.db --phase 2
 python run_all.py --image-dir data/screenshots --db outputs/flights.db --validate --export-pr-intel outputs/pr_intel --export-spiderweb outputs/spiderweb
 ```
 
-### FR24 screenshot processor
+### RLSM unlabeled — parallel OCR runner
+
+`scripts/rlsm_unlabeled.py` OCRs a directory of **unlabeled** screenshots into the
+local flight DB using this repo's FlightAnalyzer OCR engine. It is a thin parallel
+harness (mini-batch `ThreadPoolExecutor`, thread-safe writes, sha256 dedup) — not
+the FR24 inventory/route/mining pipeline, which migrated to
+[skywatcher-pr](https://github.com/jotaele44/skywatcher-pr).
+
+Prereqs: the system `tesseract` engine (see [Prerequisites](#prerequisites)) plus
+`pip install -e ".[airspace]"`.
 
 ```bash
-# Scan directory: SHA-256, corrupt/dupe report, CSV inventory
-python run_all.py --db outputs/flights.db --scan-inventory data/screenshots
+# Process a directory across 4 workers (OMP is auto-pinned to 1 thread/worker)
+python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --workers 4
 
-# Export screenshot events to DB (inventory + route extraction)
-python run_all.py --db outputs/flights.db --export-fr24-events data/screenshots
+# Smoke on the first 5 images
+python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --limit 5
+
+# Time-box a run (stop dispatching new work after 30s; safe to re-run)
+python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --time-budget 30
+
+# Counts only (no processing)
+python scripts/rlsm_unlabeled.py --status --db outputs/flights.db
 ```
+
+Throughput is ~1.1 s/img effective at 4 workers with OMP pinned; tune `--workers`
+to the core count. Runs are **resumable** — already-stored screenshots are skipped
+via sha256 dedup, so re-running after an interruption picks up where it left off.
+
+Verify a real run end-to-end:
+
+```bash
+python scripts/rlsm_unlabeled.py --image-dir /path/to/shots --limit 5 --db /tmp/rlsm.db
+#   → "processed 5/5  ok:N skip:M err:0"
+python scripts/rlsm_unlabeled.py --status --db /tmp/rlsm.db   # screenshot count climbed
+python run_all.py --db /tmp/rlsm.db --status                  # cross-check via the main CLI
+python run_all.py --db /tmp/rlsm.db --rlsm-status             # RLSM-specific counts (#129)
+```
+
+### FR24 screenshot processor
+
+The FR24 screenshot ingestion pipeline (inventory scan, route extraction, RLSM mining)
+**migrated to [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr)** in 2026-06
+(PRs #110/#111). The `--scan-inventory` / `--export-fr24-events` flags no longer exist
+here; run that pipeline from skywatcher-pr.
 
 ### Reports and profiles
 
@@ -221,7 +257,7 @@ python -m pytest tests/ -q
 python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py
 
 # Module-scoped runs (single line — iOS / a-Shell friendly)
-python -m pytest tests/test_aircraft_intelligence.py tests/test_cli.py tests/test_end_to_end.py tests/test_fr24_bridge.py tests/test_fr24_inventory.py tests/test_geo_calibration.py tests/test_gis_intelligence.py tests/test_mission_inference.py tests/test_ocr_confidence.py tests/test_pr_intel_adapter.py tests/test_route_extractor.py tests/test_schema_validation.py tests/test_screenshot_inventory.py tests/test_spiderweb_bridge.py tests/test_temporal_validator.py -q  # Airspace Intel: 123 tests
+python -m pytest tests/test_aircraft_intelligence.py tests/test_cli.py tests/test_end_to_end.py tests/test_gis_intelligence.py tests/test_mission_inference.py tests/test_ocr_confidence.py tests/test_pr_intel_adapter.py tests/test_schema_validation.py tests/test_screenshot_inventory.py tests/test_spiderweb_bridge.py tests/test_temporal_validator.py -q  # Airspace Intel: 99 tests
 
 python -m pytest tests/test_io.py tests/test_terrain.py -q  # GEBCO: 39 tests
 python -m pytest tests/test_metrics.py tests/test_seams.py tests/test_pipeline.py -q  # EarthGPT: 19 tests

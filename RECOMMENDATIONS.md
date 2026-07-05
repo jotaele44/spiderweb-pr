@@ -33,7 +33,7 @@ correctness, not code quality in the individual modules.
 | 4 | Reorganize | `config/` and `configs/` both exist (one holds `pr_intake_domain_router.yaml`, the other `georef_anchors.csv`) — easy to misread/misplace | Merge into a single `config/` directory; update references | S | Low | P1 |
 | 5 | Remove/Split | Grab-bag monorepo: gebco bathymetry, earthgpt satellite, and llm/RAG are only loosely coupled to the airspace core; embedded node app at `workbench/priis-v1/app` | Evaluate splitting gebco/earthgpt/llm into separate packages/repos, or at minimum isolate them behind extras (#3) with their own READMEs | L | Medium | P2 |
 | 6 | Improve | 28 docs files (many `FR24_*`) with no consolidated index beyond README links | Add `docs/README.md` index grouping by subsystem | S | Low | P2 |
-| 7 | Improve | No pre-commit; CI lighter (2 workflows) than the federated peer | Add `.pre-commit-config.yaml` (ruff + black already configured) and `mypy`; bring CI to parity with Contract-Sweeper | M | Low | P2 |
+| 7 | Improve | No pre-commit; CI lighter (2 workflows) than the federated peer | Add `.pre-commit-config.yaml` (ruff + black already configured) and `mypy`; bring CI to parity with moneysweep-pr | M | Low | P2 |
 
 ## Quick wins (low effort, low risk)
 
@@ -50,10 +50,10 @@ correctness, not code quality in the individual modules.
   products; the answer drives packaging, CI, and docs. Sequence it after #3 so
   each candidate already has a clean extras boundary.
 
-## Cross-repo federation (shared with Contract-Sweeper)
+## Cross-repo federation (shared with moneysweep-pr)
 
-`spiderweb-pr` consumes Contract-Sweeper's versioned "Contract-Finance" export
-contract (currently v1.2.0) via `federation/hub/adapters/contract_sweeper.py`.
+`spiderweb-pr` consumes moneysweep-pr's versioned "Contract-Finance" export
+contract (currently v1.2.0) via `federation/hub/adapters/moneysweep.py`.
 The version is bumped by hand across both repos. **Recommendation:** add an
 automated contract-compatibility test — a golden schema fixture plus an explicit
 version assertion — in both repos so a producer-side change can't silently break

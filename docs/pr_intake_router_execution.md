@@ -4,7 +4,7 @@
 
 The PR intake router is the shared zero-loss routing layer for Puerto Rico raw intake items. It classifies raw observations and emits derivative records for:
 
-- `Contract-Sweeper`: politics, finance, public funding, contracts, procurement, lobbying, budgets, municipal finance.
+- `moneysweep-pr`: politics, finance, public funding, contracts, procurement, lobbying, budgets, municipal finance.
 - `spiderweb-pr`: geography, GIS, infrastructure footprint, subsurface/hydro, aviation, maritime, federal/military activity, environment, weather, science.
 
 ## Primary command
@@ -32,7 +32,7 @@ Use `--strict` only when you want the first invalid record to abort immediately.
 The router writes:
 
 - `route_results.jsonl`
-- `contract_sweeper_derivatives.csv`
+- `moneysweep_derivatives.csv`
 - `spiderweb_pr_derivatives.csv`
 - `manual_review_queue.csv`
 - `routing_summary.json`
@@ -55,7 +55,7 @@ python run_pr_intake_router.py --input data/intake/pr_news/raw_items_latest.json
 
 Every raw item must receive one final status:
 
-- `routed_contract_sweeper`
+- `routed_moneysweep`
 - `routed_spiderweb_pr`
 - `dual_routed_contract_primary`
 - `dual_routed_spiderweb_primary`

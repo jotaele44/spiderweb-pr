@@ -11,10 +11,11 @@ import csv
 import json
 import math
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from pipeline.terrain_hook import get_terrain_context
 from provenance_utils import (
     reproducibility_metadata,
     feature_collection_summary,
@@ -24,7 +25,7 @@ from provenance_utils import (
 # ── Producer boundary ─────────────────────────────────────────────────────────
 
 BRIDGE_FILES = [
-    "airspace_poi_candidates.geojson",
+    "airspace_pin_candidates.geojson",
     "airspace_ilap_candidates.geojson",
     "airspace_corridor_candidates.geojson",
     "aasb_airspace_edges.csv",
@@ -206,7 +207,7 @@ class SpiderwebIntake:
         gap_audit = self._gap_audit(candidates, missing_files, dups_removed)
         self._write_outputs(candidates, gap_audit)
         return {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "total_candidates": len(candidates),
             "output_dir": str(self.output_dir),
             "gap_audit": gap_audit,
@@ -218,7 +219,7 @@ class SpiderwebIntake:
         candidates: List[Dict[str, Any]] = []
 
         for geojson_file, ctype in [
-            ("airspace_poi_candidates.geojson", "poi"),
+            ("airspace_pin_candidates.geojson", "poi"),
             ("airspace_ilap_candidates.geojson", "ilap"),
             ("airspace_corridor_candidates.geojson", "corridor"),
         ]:
@@ -364,19 +365,7 @@ class SpiderwebIntake:
 
     def _score_terrain(self, candidates: List[Dict[str, Any]]) -> None:
         for c in candidates:
-            lat, lon = c["_lat"], c["_lon"]
-            if URBAN_LAT[0] <= lat <= URBAN_LAT[1] and URBAN_LON[0] <= lon <= URBAN_LON[1]:
-                c["terrain_context"] = "urban"
-            elif (PONCE_URBAN_LAT[0] <= lat <= PONCE_URBAN_LAT[1]
-                  and PONCE_URBAN_LON[0] <= lon <= PONCE_URBAN_LON[1]):
-                c["terrain_context"] = "urban"
-            elif (MAYAGUEZ_URBAN_LAT[0] <= lat <= MAYAGUEZ_URBAN_LAT[1]
-                  and MAYAGUEZ_URBAN_LON[0] <= lon <= MAYAGUEZ_URBAN_LON[1]):
-                c["terrain_context"] = "urban"
-            elif lon <= PR_LON_WEST or lon >= PR_LON_EAST:
-                c["terrain_context"] = "coastal"
-            else:
-                c["terrain_context"] = "inland"
+            c["terrain_context"] = get_terrain_context(c["_lat"], c["_lon"])
 
     # ── Evidence tier ─────────────────────────────────────────────────────────
 
@@ -518,7 +507,7 @@ class SpiderwebIntake:
         pct_low = round(mbil_0 / total, 4) if total else 0.0
 
         return {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "total_candidates": total,
             "after_dedup": total,
             "gaps": {

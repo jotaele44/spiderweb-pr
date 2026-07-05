@@ -1,5 +1,10 @@
 # Next 100 Tasks
 
+> **Prior sweep.** This is the first optimization sweep (Tier 1–5 + Workstream B +
+> Cross-workstream, mostly complete). The current roadmap is
+> [`NEXT_100_TASKS_V2.md`](NEXT_100_TASKS_V2.md), which carries the still-open
+> items below forward. New work should be tracked there.
+
 Backlog of release-readiness work beyond the Tier 1–Tier 5 sweep documented in the [main plan](../%2E%2E/%2E%2E/.claude/plans/you-are-claude-code-tingly-salamander.md) and the [ROI Task Ledger](ROI_TASK_LEDGER.md).
 
 Tasks are grouped by impact tier. Within each tier, the **one-line scope** + **estimated effort** + **dependency blockers** are listed so an operator can pick up any item independently.

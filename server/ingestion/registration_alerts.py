@@ -15,7 +15,7 @@ channel is configured.
 
 Usage (from repo root):
     python3 server/ingestion/registration_alerts.py [--db server/priis.db] \
-        [--watchlist config/registration_watchlist.yaml] [--no-notify]
+        [--watchlist configs/registration_watchlist.yaml] [--no-notify]
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from server.ingestion.registration_common import normalize_registration  # noqa:
 from server.notifications.notifier import send_alert  # noqa: E402
 
 DB_DEFAULT = _ROOT / "server" / "priis.db"
-WATCHLIST_DEFAULT = _ROOT / "config" / "registration_watchlist.yaml"
+WATCHLIST_DEFAULT = _ROOT / "configs" / "registration_watchlist.yaml"
 
 SEEN_TIER = "T3"
 MISSING_TIER = "T1"
@@ -132,7 +132,7 @@ def generate_alerts(
     env: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Evaluate both rules, persist new alerts, notify on each new one."""
-    now = now or datetime.utcnow()
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
     today = now.strftime("%Y-%m-%d")
     latest = seen_registrations(conn)
 

@@ -6,11 +6,11 @@ AircraftIntelligence — N-number → owner/operator/mission lookup
 FlightMissionAnalyzer — Pattern-based mission deduction from flight records
 """
 
+import json
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
-from datetime import datetime
 
 
 # ============================================================================
@@ -296,29 +296,35 @@ class AircraftIntelligence:
         except Exception:
             return
 
+        # Build all rows first, then write them in a single connection. Opening
+        # one connection per callsign caused needless connection thrashing.
+        rows = []
         for callsign in callsigns:
             profile = self.lookup_aircraft(callsign)
-            try:
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
-                import json
-                cursor.execute('''
-                    INSERT OR REPLACE INTO aircraft_profiles
-                    (callsign, aircraft_type, owner, operator, primary_mission,
-                     confidence_level, total_flights, first_seen, last_seen,
-                     operational_patterns)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    profile.callsign, profile.aircraft_type, profile.owner,
-                    profile.operator, profile.primary_mission,
-                    profile.confidence_level, profile.total_flights,
-                    profile.first_seen, profile.last_seen,
-                    json.dumps(profile.operational_patterns),
-                ))
-                conn.commit()
-                conn.close()
-            except Exception:
-                pass
+            rows.append((
+                profile.callsign, profile.aircraft_type, profile.owner,
+                profile.operator, profile.primary_mission,
+                profile.confidence_level, profile.total_flights,
+                profile.first_seen, profile.last_seen,
+                json.dumps(profile.operational_patterns),
+            ))
+
+        if not rows:
+            return
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.executemany('''
+                INSERT OR REPLACE INTO aircraft_profiles
+                (callsign, aircraft_type, owner, operator, primary_mission,
+                 confidence_level, total_flights, first_seen, last_seen,
+                 operational_patterns)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', rows)
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
 
 
 # ============================================================================

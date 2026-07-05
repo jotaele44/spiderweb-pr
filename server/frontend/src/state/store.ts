@@ -10,9 +10,16 @@ import { create } from 'zustand';
 interface AppState {
   selected: any | null;
   setSelection: (entity: any) => void;
+  // Per-layer on/off state keyed by catalog layer_id. Populated by the Layer
+  // Catalog pane; consumed by MapPane once geometry/pins are wired in a later pass.
+  layerVisibility: Record<string, boolean>;
+  setLayerVisible: (layerId: string, visible: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   selected: null,
   setSelection: (entity) => set({ selected: entity }),
+  layerVisibility: {},
+  setLayerVisible: (layerId, visible) =>
+    set((s) => ({ layerVisibility: { ...s.layerVisibility, [layerId]: visible } })),
 }));

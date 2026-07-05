@@ -172,7 +172,7 @@ def build_airspace_event(
         geo=_point(lat, lon),
         entities=list(entities or []),
         confidence={"score": confidence_score, "method": "producer_contract"},
-        lineage=list(lineage or [{"stage": "fr24_intake"}]),
+        lineage=list(lineage or [{"stage": "intake"}]),
         payload=dict(payload or {}),
         synthetic=synthetic,
     )

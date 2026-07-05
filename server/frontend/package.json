@@ -5,22 +5,25 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:export": "VITE_OFFLINE=1 vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.84.1",
+    "@tanstack/react-table": "^8.8.6",
+    "maplibre-gl": "^3.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "zustand": "^4.3.5",
-    "maplibre-gl": "^3.3.0",
-    "@tanstack/react-table": "^8.8.6",
-    "zod": "^3.21.4"
+    "zod": "^3.21.4",
+    "zustand": "^4.3.5"
   },
   "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.6",
+    "@vitejs/plugin-react": "^4.0.0",
     "typescript": "^5.1.3",
     "vite": "^4.2.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.6"
+    "vite-plugin-singlefile": "^0.13.5"
   }
 }

@@ -1,26 +1,15 @@
 # Puerto Rico Airspace Intelligence System
-# Install: pip install -r requirements-airspace.txt
-
-# ── Core (Phase 0 baseline) ──────────────────────────────────────────────────
-opencv-python>=4.8
-pytesseract>=0.3.10
-Pillow>=10.0
-pillow-heif>=1.3.0
-numpy>=1.26
-
-# ── Integration hardening ─────────────────────────────────────────────────────
-jsonschema>=4.17
-pyarrow>=14.0
-
-# ── Test suite ────────────────────────────────────────────────────────────────
-pytest>=7.4
-
-# ── Phase 1 ensemble OCR (optional, comment out if not needed) ────────────────
-# paddlepaddle>=2.6
-# paddleocr>=2.7
-# torch>=2.0
-# easyocr>=1.7
-
+# Dependencies are defined as the `airspace` extra in pyproject.toml.
+#
+#   pip install -r requirements-airspace.txt
+#   pip install -c constraints.txt -r requirements-airspace.txt   # exact pins
+#
 # System prerequisite (not pip-installable):
 #   Ubuntu:  sudo apt-get install tesseract-ocr
 #   macOS:   brew install tesseract
+#
+# Optional Phase-1 ensemble OCR engines (large downloads) are intentionally not
+# pinned here; install on demand:
+#   pip install "paddlepaddle>=2.6" "paddleocr>=2.7"
+#   pip install "torch>=2.0" "easyocr>=1.7"
+-e .[airspace]

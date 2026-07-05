@@ -7,31 +7,80 @@ import csv
 import json
 import sqlite3
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from provenance_utils import reproducibility_metadata, feature_collection_summary
+from integration.mbil import is_mbil_high, mbil_class
+from pipeline.config_loader import ConfigError, load_yaml_config
 
 
-# Known PR airport coordinates for node anchoring
-AIRPORT_COORDS: Dict[str, Tuple[float, float]] = {
-    "SJU": (18.4373, -66.0018),
-    "BQN": (18.4948, -67.1294),
-    "PSE": (18.0083, -66.5632),
-    "SIG": (18.4561, -66.0978),
-    "NRR": (18.2453, -65.6435),
-    "MAZ": (18.2557, -67.1489),
+# Canonical airport registry — single source of truth for node coordinates.
+_REGISTRY_PATH = Path(__file__).resolve().parents[1] / "configs" / "airport_registry.yaml"
+
+# Legacy / military codes that appear in flight records but are not civil IATA
+# codes; mapped to the ICAO of their registry entry.
+_LEGACY_IATA: Dict[str, str] = {
+    "NRR": "TJRV",  # Roosevelt Roads (José Aponte de la Torre) — legacy military code
+}
+
+# Used only if the YAML registry cannot be read (e.g. PyYAML absent). Mirrors the
+# registry's IATA-keyed coordinates so the bridge still anchors nodes off-line.
+_AIRPORT_COORDS_FALLBACK: Dict[str, Tuple[float, float]] = {
+    "SJU": (18.4394, -66.0018),
+    "BQN": (18.4949, -67.1294),
+    "PSE": (18.0083, -66.5630),
+    "SIG": (18.4568, -66.0981),
+    "NRR": (18.2453, -65.6434),
+    "MAZ": (18.2557, -67.1485),
     "ARE": (18.4500, -66.6757),
     "CPX": (18.3133, -65.3043),
-    "VQS": (18.1348, -65.4935),
+    "VQS": (18.1348, -65.4936),
 }
+
+
+def _load_airport_coords() -> Dict[str, Tuple[float, float]]:
+    """Build {airport_code: (lat, lon)} from the canonical registry YAML.
+
+    Indexes each entry by its IATA code (when present), then resolves legacy
+    codes (e.g. NRR) via their ICAO. Falls back to a hardcoded mirror if the
+    registry is unreadable.
+    """
+    try:
+        data = load_yaml_config(_REGISTRY_PATH, required_keys=["airports"])
+    except ConfigError:
+        return dict(_AIRPORT_COORDS_FALLBACK)
+
+    by_iata: Dict[str, Tuple[float, float]] = {}
+    by_icao: Dict[str, Tuple[float, float]] = {}
+    for entry in data.get("airports", []):
+        lat, lon = entry.get("lat"), entry.get("lon")
+        if lat is None or lon is None:
+            continue
+        coords = (float(lat), float(lon))
+        if entry.get("iata"):
+            by_iata[entry["iata"]] = coords
+        if entry.get("icao"):
+            by_icao[entry["icao"]] = coords
+
+    coords_by_code = dict(by_iata)
+    for legacy_code, icao in _LEGACY_IATA.items():
+        if icao in by_icao:
+            coords_by_code[legacy_code] = by_icao[icao]
+
+    return coords_by_code or dict(_AIRPORT_COORDS_FALLBACK)
+
+
+# Airport coordinates for node anchoring, loaded from the canonical registry.
+AIRPORT_COORDS: Dict[str, Tuple[float, float]] = _load_airport_coords()
 
 EDGE_FIELDNAMES = [
     "edge_id", "from_node", "to_node",
     "from_lat", "from_lon", "to_lat", "to_lon",
     "weight", "flight_count", "avg_duration_min",
     "dominant_callsign", "confidence_score",
+    "aasb_mbil_corridor_flag",
 ]
 
 
@@ -54,9 +103,12 @@ class AASBAirspaceBridge:
         all_files = self._inventory_output_files()
 
         manifest = {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "db_path": self.db_path,
             "schema_version": "1.0",
+            # Manifest-level CRS so consumers know the datum without opening a file (T7-65).
+            "crs": "EPSG:4326",
+            "epsg": 4326,
             "reproducibility": reproducibility_metadata(
                 command=f"AASBAirspaceBridge.export_all db={self.db_path}",
                 input_paths=[self.db_path],
@@ -107,6 +159,12 @@ class AASBAirspaceBridge:
                 if data["callsign_counts"] else ""
             confidence = min(1.0, flight_count / 5.0)
 
+            # T3-28: flag edges where both endpoints are MBIL-2+ (inner periurban
+            # or closer), indicating the corridor links two high-activity municipal zones.
+            mbil_from = mbil_class(from_lat, from_lon) if (from_lat or from_lon) else "MBIL-X"
+            mbil_to = mbil_class(to_lat, to_lon) if (to_lat or to_lon) else "MBIL-X"
+            corridor_flag = is_mbil_high(mbil_from) and is_mbil_high(mbil_to)
+
             edges.append({
                 "edge_id": f"EDGE_{idx:04d}_{origin}_{dest}",
                 "from_node": origin,
@@ -120,6 +178,7 @@ class AASBAirspaceBridge:
                 "avg_duration_min": round(avg_dur, 2),
                 "dominant_callsign": dominant,
                 "confidence_score": round(confidence, 4),
+                "aasb_mbil_corridor_flag": corridor_flag,
             })
 
         return edges
@@ -136,7 +195,7 @@ class AASBAirspaceBridge:
 
     def _inventory_output_files(self) -> List[dict]:
         target_files = [
-            "airspace_poi_candidates.geojson",
+            "airspace_pin_candidates.geojson",
             "airspace_ilap_candidates.geojson",
             "airspace_corridor_candidates.geojson",
             "aasb_airspace_edges.csv",
@@ -149,6 +208,9 @@ class AASBAirspaceBridge:
                     "filename": fname,
                     "record_count": self._count_records(fpath),
                     "bbox": self._bbox_for(fpath),
+                    # Every geo artifact carries an explicit CRS/EPSG stamp (T7-65).
+                    "crs": "EPSG:4326",
+                    "epsg": 4326,
                 })
         return result
 

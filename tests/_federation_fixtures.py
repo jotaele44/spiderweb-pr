@@ -3,7 +3,7 @@
 Not a test module (no ``test_`` prefix). Builds two on-disk export packages:
 
 * a spiderweb airspace package (this repo's producer output), and
-* a contract-sweeper funding package (the OTHER producer's output, simulated as
+* a moneysweep-pr funding package (the OTHER producer's output, simulated as
   raw envelope dicts — the hub only ever reads JSONL, never imports CS code).
 
 The two packages share anchors so the hub produces links:
@@ -24,8 +24,8 @@ from federation.export_writer import (
 )
 from federation.namespace import namespaced_id
 
-CS_PREFIX = "contract_sweeper"
-CS_PRODUCER = "contract-sweeper"
+CS_PREFIX = "moneysweep"
+CS_PRODUCER = "moneysweep-pr"
 CS_RECORD_TYPES = {
     "funding_awards": "funding_award",
     "transactions": "transaction",
@@ -40,8 +40,14 @@ CS_RECORD_TYPES = {
 # --------------------------------------------------------------------------
 
 
+# Shared external id carried by ACME in BOTH producers — lets the hub correlate
+# them on a stable government identifier (UEI) independent of name spelling (T9-78).
+ACME_UEI = "ACME123UEI4567"
+
+
 def build_spiderweb_streams(*, synthetic: bool = True) -> Dict[str, List[EvidenceEnvelope]]:
     acme = org_entity_ref("op_acme", "ACME CONSTRUCTION INC")
+    acme["external_ids"] = {"uei": ACME_UEI}
     src_fr24 = "src_fr24"
 
     event = build_airspace_event(
@@ -104,7 +110,7 @@ def build_spiderweb_streams(*, synthetic: bool = True) -> Dict[str, List[Evidenc
 
 
 # --------------------------------------------------------------------------
-# contract-sweeper funding producer streams (simulated other producer)
+# moneysweep-pr funding producer streams (simulated other producer)
 # --------------------------------------------------------------------------
 
 
@@ -126,11 +132,12 @@ def _cs_entity(raw_id: str, name: str, synthetic: bool) -> EvidenceEnvelope:
     )
 
 
-def build_contract_sweeper_streams(*, synthetic: bool = True) -> Dict[str, List[EvidenceEnvelope]]:
+def build_moneysweep_streams(*, synthetic: bool = True) -> Dict[str, List[EvidenceEnvelope]]:
     src = "src_usaspending"
     acme = _cs_entity("ent_acme", "ACME CONSTRUCTION INC", synthetic)
     navy = _cs_entity("ent_navy", "Department of the Navy", synthetic)
     acme_ref = acme.entities[0]
+    acme_ref["external_ids"] = {"uei": ACME_UEI}  # same UEI as the spiderweb ACME (T9-78)
     navy_ref = navy.entities[0]
 
     award = EvidenceEnvelope(
@@ -202,10 +209,10 @@ def write_spiderweb_package(out_dir, *, synthetic: bool = True) -> Dict[str, Any
     return write_package(out_dir, build_spiderweb_streams(synthetic=synthetic), synthetic=synthetic)
 
 
-def write_contract_sweeper_package(out_dir, *, synthetic: bool = True) -> Dict[str, Any]:
+def write_moneysweep_package(out_dir, *, synthetic: bool = True) -> Dict[str, Any]:
     return write_package(
         out_dir,
-        build_contract_sweeper_streams(synthetic=synthetic),
+        build_moneysweep_streams(synthetic=synthetic),
         synthetic=synthetic,
         producer=CS_PRODUCER,
         prefix=CS_PREFIX,
@@ -216,7 +223,7 @@ def write_contract_sweeper_package(out_dir, *, synthetic: bool = True) -> Dict[s
 def write_both(base_dir, *, synthetic: bool = True):
     base = Path(base_dir)
     sw = base / "spiderweb_airspace_export"
-    cs = base / "contract_sweeper_export"
+    cs = base / "moneysweep_export"
     write_spiderweb_package(sw, synthetic=synthetic)
-    write_contract_sweeper_package(cs, synthetic=synthetic)
+    write_moneysweep_package(cs, synthetic=synthetic)
     return sw, cs

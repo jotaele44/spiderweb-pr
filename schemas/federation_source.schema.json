@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "federation_source",
+  "title": "PRII Canonical Federation Source",
+  "description": "One sources[] record in the hub-facing canonical package written by scripts/federation_export.py. Consumed by thehub-pr.",
+  "type": "object",
+  "required": ["source_id", "source_type", "source_name", "source_ref", "confidence", "lineage", "synthetic", "created_at", "extracted_at"],
+  "properties": {
+    "source_id": {"type": "string", "pattern": "^src_[0-9a-f]{32}$"},
+    "source_type": {"type": "string"},
+    "source_name": {"type": ["string", "null"]},
+    "source_ref": {"type": ["string", "null"]},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "lineage": {"$ref": "#/definitions/lineage"},
+    "synthetic": {"type": "boolean"},
+    "created_at": {"type": "string", "minLength": 1},
+    "extracted_at": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "lineage": {
+      "type": "object",
+      "required": ["producer_script", "producer_phase", "extraction_method"],
+      "properties": {
+        "producer_script": {"type": "string"},
+        "producer_phase": {"type": "string"},
+        "extraction_method": {"type": "string"},
+        "source_inputs": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  }
+}

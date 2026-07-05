@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import defaultdict
 
 
@@ -758,7 +758,7 @@ class Phase3Pipeline:
         ''', (
             flight_id, score.mission_type.value, score.total_score,
             score.confidence_level, json.dumps(score.signal_scores),
-            json.dumps(score.explanation), datetime.utcnow().isoformat(),
+            json.dumps(score.explanation), datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
         ))
         conn.commit()
         conn.close()
@@ -783,7 +783,7 @@ class Phase3Pipeline:
                 INSERT OR REPLACE INTO cluster_assignments
                 (flight_id, cluster_id, cluster_label, assigned_at)
                 VALUES (?, ?, ?, ?)
-            ''', (fv.flight_id, cluster_id, label, datetime.utcnow().isoformat()))
+            ''', (fv.flight_id, cluster_id, label, datetime.now(timezone.utc).replace(tzinfo=None).isoformat()))
         conn.commit()
         conn.close()
 

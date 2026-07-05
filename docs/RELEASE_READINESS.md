@@ -18,7 +18,7 @@ The gate runs six stages. Five gate the overall verdict; one (`earthgpt_selftest
 
 | Stage | Pass when | Fail mode |
 |---|---|---|
-| `syntax_check` | Every `*.py` in `integration/`, `readiness/`, `fr24/`, `pipeline/`, `earthgpt/`, `llm/`, `federation/` + root compiles cleanly. **Compile-only** — never imports, so optional-dep guards (`paddleocr`, `easyocr`, etc.) don't trip it (Open Risk #1). | One or more files fail `py_compile`. The report lists each file and its error. |
+| `syntax_check` | Every `*.py` in `integration/`, `readiness/`, `pipeline/`, `earthgpt/`, `llm/`, `federation/` + root compiles cleanly. **Compile-only** — never imports, so optional-dep guards (`paddleocr`, `easyocr`, etc.) don't trip it (Open Risk #1). | One or more files fail `py_compile`. The report lists each file and its error. |
 | `core_tests` | `pytest tests/ -q --ignore=test_io --ignore=test_terrain` exits 0 (or 5 — no tests collected). | Any test fails. Subset is the same as the `make test` target (D7 keeps GEBCO io/terrain tests out — they run in their own CI job). |
 | `validate` | `SchemaValidator().run_db_validation()` runs without `_error`. Invalid records are routed to `review_queue.csv` but do **not** fail the stage — they're expected and counted. | DB missing (in normal mode → SKIPPED; in strict → SystemExit 2), or the validator raises. |
 | `export_pr_intel` | `PRIntelAdapter.export_all()` returns `overall_status == "PASS"` (all 6 PR Intel gates green: schema_validation, coordinate_coverage, ocr_confidence_gate, evidence_chain_coverage, export_completeness, temporal_integrity). | Any sub-gate FAIL, or the adapter raises. |
@@ -67,9 +67,9 @@ See [`SCHEMA_AND_EXPORT_CONTRACTS.md`](SCHEMA_AND_EXPORT_CONTRACTS.md) for the c
 
 | Symptom | Probable cause | Fix |
 |---|---|---|
-| `core_tests: FAIL` with `test_exports_reproducible` failing on `rlsm_ingest_manifest.csv` | Stale RLSM exports vs current DB (the test compares on-disk bytes to a fresh export). | Re-run `python -m fr24.rlsm_export && python -m fr24.rlsm_coverage`. Long-term: harden the test to export-twice (Workstream B B7). |
+| ~~`core_tests: FAIL` with `test_exports_reproducible` failing on `rlsm_ingest_manifest.csv`~~ | The RLSM export/coverage pipeline migrated to [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr) (2026-06, PRs #110/#111); this failure mode no longer applies here. | — |
 | `validate: FAIL` with `_error: "no such table: ..."` | Wrong DB path or pipeline not yet run. | Confirm `--db` points at the populated DB; run `python run_all.py --db DB --status` first. |
-| `export_pr_intel: FAIL` with `evidence_chain_coverage < 0.50` | < 50% of screenshots linked to a flight (FK weakness). | Re-run `python run_all.py --scan-inventory <dir> --db DB`, then `--export-fr24-events <dir> --db DB`. |
+| `export_pr_intel: FAIL` with `evidence_chain_coverage < 0.50` | < 50% of screenshots linked to a flight (FK weakness). | Re-run the phase-0 ingest (`python run_all.py --image-dir <dir> --db DB`) so screenshots link to flights. (The standalone FR24 inventory/event-export flags migrated to [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr).) |
 | `export_spiderweb: FAIL` with `sqlite3.OperationalError: database is locked` | Concurrent writer on the same SQLite. | Single-writer discipline; the RLSM lock fix landed in commit `5e3832...` (timeout=30 on rlsm_unlabeled/extractors/ocr). |
 | `earthgpt_selftest: WARNING` | EarthGPT module unavailable or a sub-gate failed. | Non-blocking. Investigate if EarthGPT is required for your release. |
 

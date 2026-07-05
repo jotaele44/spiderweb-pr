@@ -1,6 +1,7 @@
 import React from 'react';
 import { MapPane } from './components/MapPane';
 import { FinancePane } from './components/FinancePane';
+import { LayerCatalogPane } from './components/LayerCatalogPane';
 import { useAppStore } from './state/store';
 
 /**
@@ -28,6 +29,7 @@ const App: React.FC = () => {
         </aside>
         <main className="workspace">
           <MapPane />
+          <LayerCatalogPane />
           <FinancePane />
         </main>
         <aside className="inspector">

@@ -1,17 +1,17 @@
 """Spiderweb-pr spatial/operational intake lane.
 
-Consumes the Contract-Sweeper PR-intake router's spiderweb-pr lane export
+Consumes the moneysweep-pr PR-intake router's spiderweb-pr lane export
 (``spiderweb_pr_derivatives.csv``) and normalizes it into the spatial/operational
 tables, candidate geojsons, and review queues defined by
 ``docs/pr_intake_router_spiderweb_lane.md``. This module does not import
-Contract-Sweeper; it treats the router as an external producer.
+moneysweep-pr; it treats the router as an external producer.
 
 Degrade-gracefully contract: the router derivative does not yet carry
 geometry/location/asset/agency fields (producer enrichment is a held follow-up).
 Those normalized fields are therefore emitted empty, every coordinate-less record
 is marked ``manual_geocode_required`` and listed in the geocode queue, and the
 candidate geojsons stay empty until the producer carries coordinates. Routing,
-Contract-Sweeper backlink, topic domain, layer class, tier, and provenance are
+moneysweep-pr backlink, topic domain, layer class, tier, and provenance are
 populated now and the structure is ready to absorb the richer fields unchanged.
 
 Extension fields beyond the spec's 34 (``final_status``, ``title``,
@@ -39,7 +39,7 @@ EXPORT_CONTRACT_VERSION = "0.1.0"
 
 # The 34 normalized fields mandated by docs/pr_intake_router_spiderweb_lane.md.
 NORMALIZED_FIELDS = (
-    "record_id", "source_item_id", "canonical_repo", "related_contract_sweeper_record_id",
+    "record_id", "source_item_id", "canonical_repo", "related_moneysweep_record_id",
     "source_name", "source_url", "published_at", "discovered_at",
     "topic_domain", "spiderweb_layer_class",
     "municipality_name", "municipality_geoid", "location_text",
@@ -56,8 +56,9 @@ TABLE_FIELDS = NORMALIZED_FIELDS + EXTENSION_FIELDS
 NORMALIZED_TABLES = (
     "spatial_intake_items.csv", "infrastructure_assets.csv", "aviation_activity_items.csv",
     "maritime_activity_items.csv", "hydro_environment_items.csv", "science_dataset_items.csv",
+    "federal_military_activity_items.csv",
 )
-CANDIDATE_GEOJSONS = ("poi_candidates.geojson", "aoi_candidates.geojson", "corridor_candidates.geojson")
+CANDIDATE_GEOJSONS = ("pin_candidates.geojson", "aoi_candidates.geojson", "corridor_candidates.geojson")
 REPORT_FILENAME = "spiderweb_spatial_lane_report.json"
 DEFAULT_TABLE = "spatial_intake_items.csv"
 
@@ -70,7 +71,7 @@ DOMAIN_ROUTING = {
     "environment_weather": ("science_dataset", "science_dataset_items.csv"),
     "science_dataset": ("science_dataset", "science_dataset_items.csv"),
     "geography_gis": ("gis_dataset", "spatial_intake_items.csv"),
-    "federal_military_activity": ("federal_military_activity", "spatial_intake_items.csv"),
+    "federal_military_activity": ("federal_military_activity", "federal_military_activity_items.csv"),
     "physical_observation": ("physical_observation", "spatial_intake_items.csv"),
     "poi_aoi_corridor_candidate": ("candidate", "spatial_intake_items.csv"),
 }
@@ -147,7 +148,7 @@ def _normalize_row(row: dict[str, str], validator: Draft7Validator):
         "record_id": row.get("record_id", ""),
         "source_item_id": row.get("source_item_id", ""),
         "canonical_repo": row.get("canonical_repo", ""),
-        "related_contract_sweeper_record_id": row.get("related_repo_record_id", ""),
+        "related_moneysweep_record_id": row.get("related_repo_record_id", ""),
         "source_name": row.get("source_name", ""),
         "source_url": row.get("source_url", ""),
         "published_at": row.get("published_at", ""),
@@ -225,7 +226,7 @@ def _daily_report(report: dict[str, Any]) -> str:
         f"- geocode_queue (manual_geocode_required): {report['review']['geocode_queue']}",
         f"- discrepancy_queue (schema/gate failures): {report['review']['discrepancy_queue']}",
         "",
-        "Geometry/location/asset fields are empty pending Contract-Sweeper producer "
+        "Geometry/location/asset fields are empty pending moneysweep-pr producer "
         "enrichment; candidate geojsons populate once derivatives carry coordinates.",
         "",
     ]
@@ -252,7 +253,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
     tables: dict[str, list[dict[str, Any]]] = {name: [] for name in NORMALIZED_TABLES}
     geocode_queue: list[dict[str, Any]] = []
     discrepancy_queue: list[dict[str, Any]] = []
-    poi_features: list[dict[str, Any]] = []
+    pin_features: list[dict[str, Any]] = []
     by_tier: Counter = Counter()
     by_layer_class: Counter = Counter()
 
@@ -277,7 +278,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
                 "location_text": record["location_text"],
             })
         elif record["spiderweb_layer_class"] == "candidate":
-            poi_features.append(_point_feature(record))
+            pin_features.append(_point_feature(record))
 
     normalized_dir = out / "data" / "normalized"
     exports_dir = out / "data" / "exports"
@@ -289,7 +290,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
     for name in NORMALIZED_TABLES:
         _write_csv(normalized_dir / name, sorted(tables[name], key=lambda r: r["record_id"]), TABLE_FIELDS)
 
-    _write_geojson(exports_dir / "poi_candidates.geojson", sorted(poi_features, key=lambda f: f["properties"]["record_id"]))
+    _write_geojson(exports_dir / "pin_candidates.geojson", sorted(pin_features, key=lambda f: f["properties"]["record_id"]))
     _write_geojson(exports_dir / "aoi_candidates.geojson", [])
     _write_geojson(exports_dir / "corridor_candidates.geojson", [])
 
@@ -311,7 +312,7 @@ def build_spiderweb_spatial_lane(input_dir: str | Path, output_dir: str | Path |
         "by_table": {name: len(tables[name]) for name in NORMALIZED_TABLES},
         "by_tier": dict(sorted(by_tier.items())),
         "by_layer_class": dict(sorted(by_layer_class.items())),
-        "candidate_features": len(poi_features),
+        "candidate_features": len(pin_features),
         "review": {"geocode_queue": len(geocode_queue), "discrepancy_queue": len(discrepancy_queue)},
         "zero_loss_pass": normalized_count + len(discrepancy_queue) == len(rows),
         "outputs": {

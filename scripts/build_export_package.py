@@ -87,10 +87,16 @@ def build_package(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for stream, src_name in SOURCE_FILENAMES.items():
+        # Sample dirs use *.sample.jsonl; real-stream dirs (e.g. the output of
+        # scripts/build_real_spatial_streams.py) use the package filenames.
         src = source_dir / src_name
+        if not src.exists():
+            src = source_dir / OUT_FILENAMES[stream]
         dst = out_dir / OUT_FILENAMES[stream]
         if not src.exists():
-            raise FileNotFoundError(f"source stream missing: {src}")
+            raise FileNotFoundError(
+                f"source stream missing: {source_dir / src_name} (or {OUT_FILENAMES[stream]})"
+            )
         shutil.copyfile(src, dst)
 
     files = []

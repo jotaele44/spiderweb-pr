@@ -1,12 +1,8 @@
 # EarthGPT iOS — Satellite Anomaly Detection Engine
-# Install: pip install -r requirements-earthgpt.txt
+# Dependencies are defined as the `earthgpt` extra in pyproject.toml.
+#
+#   pip install -r requirements-earthgpt.txt
 #
 # Package: earthgpt/   Stage runners: scripts/
 # Optimized for iOS / a-Shell (no GDAL, no heavy GIS stack).
-
-requests>=2.31.0
-python-dotenv>=1.0.0
-folium>=0.15.0
-
-# Test suite
-pytest>=7.4
+-e .[earthgpt]

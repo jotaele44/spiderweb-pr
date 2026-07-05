@@ -15,7 +15,7 @@ Usage:
 import argparse
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -56,7 +56,7 @@ def run_phase_1(args):
     print("  " + "─" * 50)
     analyzer = HardenedFlightAnalyzer(args.image_dir, args.db)
     analyzer.process_with_hardening(
-        batch_id=f"run_{datetime.utcnow().strftime('%Y%m%d_%H%M')}",
+        batch_id=f"run_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M')}",
         max_images=args.images,
         checkpoint_interval=50,
     )
@@ -160,12 +160,67 @@ def run_aircraft_profile(args):
     print(reporter.aircraft_profile_report(args.aircraft))
 
 
+def run_home_base(args):
+    from pipeline.home_base_correlation import HomeBaseDeducer
+    print(f"\n  HOME-BASE INTELLIGENCE: {args.home_base}\n")
+    print(HomeBaseDeducer(args.db).intelligence_report(args.home_base))
+
+
+def run_fleet_correlation(args):
+    from pipeline.home_base_correlation import FleetColocationAnalyzer
+    print("\n  FLEET HOME-BASE CORRELATION\n")
+    print(FleetColocationAnalyzer(args.db).correlation_report())
+
+
+def _run_export_home_base(db_path: str, output_dir: str):
+    """Write home_base_report.md, home_base_assignments.csv, shared_space_leads.json."""
+    import csv
+    import json
+
+    from pipeline.home_base_correlation import (
+        FleetColocationAnalyzer,
+        HomeBaseDeducer,
+        OPERATOR_MISSION,
+        OPERATOR_OWNER,
+        GENERIC_OPERATORS,
+    )
+
+    print("\n  HOME-BASE EXPORT")
+    print("  " + "─" * 50)
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    fleet = FleetColocationAnalyzer(db_path)
+    deducer = HomeBaseDeducer(db_path)
+    hb = fleet.home_base_map()
+
+    (out / "home_base_report.md").write_text(fleet.correlation_report())
+
+    with open(out / "home_base_assignments.csv", "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["callsign", "lat", "lon", "feature_id", "feature_name",
+                    "operator", "owner", "mission", "confidence"])
+        for cs in sorted(hb):
+            spot = hb[cs]
+            profile = deducer.deduce_profile(cs)
+            op = spot.nearest_operator
+            owner = OPERATOR_OWNER.get(op, "" if op in GENERIC_OPERATORS else op)
+            w.writerow([cs, spot.lat, spot.lon, spot.nearest_feature_id,
+                        spot.nearest_feature_name, op, owner,
+                        OPERATOR_MISSION.get(op, ""), profile.confidence_level])
+
+    leads = {fid: cs for fid, cs in fleet.shared_bases().items() if len(cs) >= 2}
+    (out / "shared_space_leads.json").write_text(json.dumps(leads, indent=2))
+
+    print(f"  ✓ Home-base outputs written to: {output_dir}")
+
+
 def run_daily_report(args):
     from pipeline.operational_intelligence import ReportGenerator
     reporter = ReportGenerator(args.db)
     report = reporter.daily_report()
     print(report)
-    report_path = Path(args.db).parent / f"daily_report_{datetime.utcnow().strftime('%Y%m%d')}.txt"
+    report_path = Path(args.db).parent / f"daily_report_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d')}.txt"
     with open(report_path, "w") as f:
         f.write(report)
     print(f"\n  Report saved: {report_path}")
@@ -200,7 +255,7 @@ def export_json(db_path: str, output_path: str):
                 aircraft_profiles_raw = []
 
         data = {
-            "exported_at": datetime.utcnow().isoformat() + "Z",
+            "exported_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "db_path": db_path,
             "flights": rows("flights", "ORDER BY takeoff_time DESC"),
             "aircraft_profiles": aircraft_profiles_raw,
@@ -268,6 +323,36 @@ def print_status(db_path: str):
         print(f"  Database not found or uninitialized: {e}")
 
 
+def print_rlsm_status(db_path: str):
+    """RLSM screenshot-processing status: coverage + low-confidence backlog."""
+    try:
+        conn = sqlite3.connect(db_path)
+
+        print("\n  RLSM STATUS")
+        print("  " + "─" * 45)
+
+        def _count(sql: str):
+            try:
+                return conn.execute(sql).fetchone()[0]
+            except Exception:
+                return None
+
+        rows = [
+            ("Screenshots processed", _count("SELECT COUNT(*) FROM screenshots")),
+            ("Low-confidence (<0.5)",
+             _count("SELECT COUNT(*) FROM screenshots WHERE ocr_confidence < 0.5")),
+            ("No OCR text",
+             _count("SELECT COUNT(*) FROM screenshots WHERE raw_text IS NULL OR raw_text = ''")),
+        ]
+        for label, val in rows:
+            shown = f"{val:,}" if isinstance(val, int) else "N/A"
+            print(f"  {label:<30} {shown:>8}")
+
+        conn.close()
+    except Exception as e:
+        print(f"  Database not found or uninitialized: {e}")
+
+
 def _run_schema_validation(db_path: str):
     print("\n  SCHEMA VALIDATION")
     print("  " + "─" * 50)
@@ -328,6 +413,35 @@ def _run_export_spiderweb(db_path: str, output_dir: str):
         print(f"\n  ✓ Spiderweb exported to: {output_dir}")
     except Exception as e:
         print(f"  Export error: {e}")
+        raise
+
+
+def _run_headstart_export(csv_path: str, output_dir: str, grid_only: bool = False):
+    print("\n  HEAD START CIVIC LAYER EXPORT")
+    print("  " + "─" * 50)
+    if not Path(csv_path).exists():
+        print(f"  Error: Head Start CSV not found: {csv_path}")
+        sys.exit(1)
+    try:
+        from spiderweb.exports.headstart_context_grid import export_context_grid
+        from spiderweb.ingestors.ingest_headstart import export_headstart
+
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        grid_summary = export_context_grid(csv_path, out / "headstart_context_grid.geojson")
+        if grid_only:
+            print(f"  Public grid cells: {grid_summary['grid_cells']}")
+            print(f"\n  ✓ Public grid export written to: {grid_summary['output_path']}")
+            return
+        summary = export_headstart(csv_path, out)
+        print(f"  Records:          {summary['records']}")
+        print(f"  Operators:        {summary['operators']}")
+        print(f"  Edges:            {summary['edges']}")
+        print(f"  Public grid cells: {grid_summary['grid_cells']}")
+        print("  Policy: precise points restricted; public output is grid-only")
+        print(f"\n  ✓ Head Start civic layer exported to: {output_dir}")
+    except Exception as e:
+        print(f"  Head Start export error: {e}")
         raise
 
 
@@ -401,7 +515,7 @@ def _run_assess_readiness(export_dir: str):
             key = b.get("gate") or b.get("flag") or ""
             print(f"  ✗ BLOCKER [{src}:{key}] {b.get('detail', '')}")
         for w in report.get("warnings", []):
-            print(f"  ~ WARNING [{w.get('source')}] {w.get('detail', '')}")
+            print(f"  ~ WARNING [{w.get('source')}] {w.get('detail')}")
         if report.get("missing_inputs"):
             print(f"  Missing inputs: {', '.join(report['missing_inputs'])}")
         print(f"\n  ✓ Readiness report written to: {export_dir}/prii_readiness_report.json")
@@ -412,33 +526,6 @@ def _run_assess_readiness(export_dir: str):
     except Exception as e:
         print(f"  Assessment error: {e}")
         raise
-
-
-def _run_scan_inventory(images_dir: str, db_path: str):
-    print("\n  SCREENSHOT INVENTORY SCAN")
-    print("  " + "─" * 50)
-    from fr24.screenshot_inventory import ScreenshotInventory
-    from pathlib import Path as _Path
-    inv = ScreenshotInventory(images_dir, db_path=db_path)
-    manifest = inv.scan()
-    out = str(_Path(db_path).parent / "screenshot_inventory.csv")
-    summary = inv.build_report(out)
-    for k, v in summary.items():
-        if k != "output_path":
-            print(f"  {k:<20} {v:>8}")
-    print(f"\n  ✓ Inventory written to: {out}")
-
-
-def _run_export_fr24_events(images_dir: str, db_path: str):
-    print("\n  FR24 EVENT EXPORT")
-    print("  " + "─" * 50)
-    from fr24.event_export import FR24EventExporter
-    exp = FR24EventExporter(db_path)
-    report = exp.export_batch(images_dir)
-    print(f"  Screenshots upserted:  {report['screenshots_upserted']}")
-    print(f"  Track points inserted: {report['track_points_inserted']}")
-    print(f"  Review items added:    {report['review_items_added']}")
-    print(f"\n  ✓ FR24 events exported to DB: {db_path}")
 
 
 def _run_ingest_satellite(manifest_path: str, dry_run: bool = False):
@@ -487,11 +574,8 @@ Examples:
   python run_all.py --aircraft N5854Z            Aircraft intelligence profile
   python run_all.py --status                     Show database status
   python run_all.py --export-json data.json      Export DB snapshot for dashboard
-  python run_all.py --scan-inventory /img/dir    Scan & inventory screenshots
-  python run_all.py --export-fr24-events /img    Export FR24 events to DB
         """
     )
-
     parser.add_argument("--phase", type=int, choices=[0, 1, 2, 3, 4],
                         help="Run only specified phase (0-4)")
     parser.add_argument("--images", type=int, default=None,
@@ -505,8 +589,16 @@ Examples:
                         help="Generate report only")
     parser.add_argument("--aircraft", type=str,
                         help="Generate intelligence profile for callsign")
+    parser.add_argument("--home-base", dest="home_base", metavar="CALLSIGN",
+                        help="Deduce operator/owner/mission from a craft's home base")
+    parser.add_argument("--fleet-correlation", action="store_true",
+                        help="Cross-craft home-base correlation and shared-space leads")
+    parser.add_argument("--export-home-base", metavar="DIR",
+                        help="Export home-base report + assignments CSV + shared-space leads JSON")
     parser.add_argument("--status", action="store_true",
                         help="Show database status and exit")
+    parser.add_argument("--rlsm-status", dest="rlsm_status", action="store_true",
+                        help="Show RLSM screenshot processing status and exit")
     parser.add_argument("--export-json", metavar="PATH",
                         help="Export DB snapshot to JSON for dashboard.html")
     parser.add_argument("--validate", action="store_true",
@@ -515,10 +607,12 @@ Examples:
                         help="Export PR Intel parquet/GeoJSON to DIR")
     parser.add_argument("--export-spiderweb", metavar="DIR",
                         help="Export Spiderweb bridge outputs to DIR")
-    parser.add_argument("--scan-inventory", metavar="DIR",
-                        help="Scan screenshot directory and build inventory CSV")
-    parser.add_argument("--export-fr24-events", metavar="DIR",
-                        help="Export FR24 screenshot events from DIR into DB")
+    parser.add_argument("--headstart-csv", metavar="PATH",
+                        help="Ingest Head Start PR CSV and export civic layer artifacts")
+    parser.add_argument("--export-headstart", metavar="DIR",
+                        help="Directory for Head Start civic layer exports")
+    parser.add_argument("--headstart-grid-only", action="store_true",
+                        help="With --headstart-csv/--export-headstart: write public grid only")
     parser.add_argument("--spiderweb-intake", metavar="DIR",
                         help="Normalize --export-spiderweb output into Spiderweb overlay candidates")
     parser.add_argument("--calibrate-scoring", metavar="DIR",
@@ -537,17 +631,38 @@ Examples:
                         help="Strict mode: missing/empty production inputs fail hard (exit 2)")
     parser.add_argument("--demo", action="store_true",
                         help="Demo mode: stamp outputs with mode=demo and [DEMO] banners")
+    parser.add_argument("--verbose", "-v", action="store_true",
+                        help="Verbose logging (DEBUG level)")
+    parser.add_argument("--quiet", "-q", action="store_true",
+                        help="Quiet logging (WARNING level and above)")
+    parser.add_argument("--log-json", action="store_true",
+                        help="Emit structured JSON log lines")
 
     args = parser.parse_args()
+
+    # Central logging setup (T10-80/82): --verbose/-quiet pick the level.
+    import logging as _logging
+    from pipeline.logging_config import configure_logging
+    from pipeline.verbosity import resolve_log_level
+
+    configure_logging(
+        level=resolve_log_level(verbose=args.verbose, quiet=args.quiet,
+                                default=_logging.INFO),
+        json_format=args.log_json,
+    )
 
     print(BANNER)
     print(f"  Database:   {args.db}")
     print(f"  Image dir:  {args.image_dir}")
     print(f"  Max images: {args.images or 'All'}")
-    print(f"  Started:    {datetime.utcnow().isoformat()}\n")
+    print(f"  Started:    {datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}\n")
 
     if args.status:
         print_status(args.db)
+        return
+
+    if args.rlsm_status:
+        print_rlsm_status(args.db)
         return
 
     if args.export_json:
@@ -563,6 +678,25 @@ Examples:
         run_aircraft_profile(args)
         return
 
+    if args.home_base:
+        run_home_base(args)
+        return
+
+    if args.fleet_correlation:
+        run_fleet_correlation(args)
+        return
+
+    if args.export_home_base:
+        _run_export_home_base(args.db, args.export_home_base)
+        return
+
+    if args.headstart_csv or args.export_headstart:
+        if not (args.headstart_csv and args.export_headstart):
+            print("  Error: --headstart-csv and --export-headstart must be supplied together")
+            sys.exit(1)
+        _run_headstart_export(args.headstart_csv, args.export_headstart, args.headstart_grid_only)
+        return
+
     # Determine whether to run the main pipeline phases.
     # Skip phases when the user only supplied integration-export flags
     # (standalone export mode against an existing DB).
@@ -570,14 +704,13 @@ Examples:
         not args.images
         and args.phase is None
         and (args.validate or args.export_pr_intel or args.export_spiderweb
-             or args.scan_inventory or args.export_fr24_events
              or args.spiderweb_intake or args.calibrate_scoring
              or args.assess_readiness or args.ingest_satellite
              or args.release_check)
     )
 
     if not new_flags_only:
-        start = datetime.utcnow()
+        start = datetime.now(timezone.utc).replace(tzinfo=None)
 
         if args.phase is None or args.phase == 0:
             run_phase_0(args)
@@ -594,7 +727,7 @@ Examples:
         if args.phase is None or args.phase == 4:
             run_phase_4(args)
 
-        elapsed = (datetime.utcnow() - start).total_seconds()
+        elapsed = (datetime.now(timezone.utc).replace(tzinfo=None) - start).total_seconds()
         print("\n" + "═" * 70)
         print(f"  PIPELINE COMPLETE")
         print(f"  Elapsed: {elapsed:.0f}s ({elapsed/3600:.2f}h)")
@@ -611,12 +744,6 @@ Examples:
 
     if args.export_spiderweb:
         _run_export_spiderweb(args.db, args.export_spiderweb)
-
-    if args.scan_inventory:
-        _run_scan_inventory(args.scan_inventory, args.db)
-
-    if args.export_fr24_events:
-        _run_export_fr24_events(args.export_fr24_events, args.db)
 
     if args.spiderweb_intake:
         _run_spiderweb_intake(args.spiderweb_intake)

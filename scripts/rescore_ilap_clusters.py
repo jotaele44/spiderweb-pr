@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+"""Rescore Spiderweb Pins into distributed ILAP clusters.
+
+Input:  configs/master_pin_registry.yaml
+Output: outputs/RESCORED_ILAP_CLUSTER_LEDGER_v1.yaml by default
+
+The script groups atomic Pins by ``ilap_cluster_id`` and computes a bounded coherence score from
+functional-role diversity, domain diversity, evidence tier, contradiction penalties, and cluster
+size. When the registry is still labels-only (``pins: []``), it emits an explicit empty coverage
+ledger instead of inventing cluster assignments.
+"""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter, defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, Iterable, List
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_REGISTRY = REPO_ROOT / "configs" / "master_pin_registry.yaml"
+DEFAULT_OUTPUT = REPO_ROOT / "outputs" / "RESCORED_ILAP_CLUSTER_LEDGER_v1.yaml"
+
+TIER_VALUE = {"T1": 15, "T2": 10, "T3": 5, "T4": 1}
+TIER_ORDER = {"T1": 4, "T2": 3, "T3": 2, "T4": 1, None: 0}
+
+CONFIDENCE_BANDS = [
+    (85, "high_confidence_cluster_requires_T1_or_T2_anchor"),
+    (70, "strong_analytic_cluster"),
+    (50, "plausible_cluster"),
+    (30, "candidate_cluster"),
+    (0, "weak_context"),
+]
+
+
+def confidence_band(score: float) -> str:
+    for floor, label in CONFIDENCE_BANDS:
+        if score >= floor:
+            return label
+    return "weak_context"
+
+
+def dominant_tier(tiers: Iterable[str]) -> str | None:
+    values = [tier for tier in tiers if tier in TIER_ORDER]
+    if not values:
+        return None
+    return sorted(values, key=lambda tier: TIER_ORDER[tier], reverse=True)[0]
+
+
+def bounded(value: float) -> float:
+    return max(0.0, min(100.0, round(value, 2)))
+
+
+def score_cluster(nodes: List[Dict]) -> float:
+    """Score cluster coherence without asserting confirmation."""
+    if not nodes:
+        return 0.0
+
+    roles = {node.get("node_role") for node in nodes if node.get("node_role")}
+    domains = {node.get("domain") for node in nodes if node.get("domain")}
+    functions = {node.get("system_function") for node in nodes if node.get("system_function")}
+    tiers = [node.get("evidence_tier") for node in nodes]
+    contradictions = [flag for node in nodes for flag in node.get("contradiction_flags", [])]
+
+    score = 0.0
+    score += min(len(nodes), 5) * 5                       # cluster size, capped at 25
+    score += min(len(roles), 4) * 7.5                     # role complementarity, capped at 30
+    score += min(len(domains), 3) * 6                     # cross-domain convergence, capped at 18
+    score += min(len(functions), 3) * 4                   # functional coherence, capped at 12
+    score += max(TIER_VALUE.get(tier, 0) for tier in tiers) if tiers else 0
+    score -= min(len(contradictions), 3) * 10
+
+    if len(nodes) < 2:
+        score = min(score, 29)
+    if score > 70 and (len(roles) < 2 or len(domains) < 2):
+        score = 69
+    if score > 85 and not any(tier in {"T1", "T2"} for tier in tiers):
+        score = 84
+    return bounded(score)
+
+
+def build_ledger(registry: Dict) -> Dict:
+    pins = registry.get("pins") or []
+    grouped: Dict[str, List[Dict]] = defaultdict(list)
+    unresolved = []
+
+    for pin in pins:
+        cluster_id = pin.get("ilap_cluster_id")
+        if cluster_id:
+            grouped[cluster_id].append(pin)
+        else:
+            unresolved.append(pin.get("pin_uid"))
+
+    clusters = []
+    for cluster_id, nodes in sorted(grouped.items()):
+        area_ids = sorted({node.get("ilap_area_id") for node in nodes if node.get("ilap_area_id")})
+        roles = Counter(node.get("node_role") or "UNRESOLVED_NODE" for node in nodes)
+        functions = sorted({node.get("system_function") or "unknown" for node in nodes})
+        contradictions = sorted({flag for node in nodes for flag in node.get("contradiction_flags", [])})
+        score = score_cluster(nodes)
+        clusters.append(
+            {
+                "ilap_area_id": area_ids[0] if area_ids else "ILAP_AREA_UNASSIGNED_000",
+                "ilap_cluster_id": cluster_id,
+                "cluster_name": cluster_id.replace("ILAP_CLUSTER_", "").replace("_", " ").title(),
+                "node_count": len(nodes),
+                "pin_uids": [node.get("pin_uid") for node in nodes if node.get("pin_uid")],
+                "role_mix": dict(sorted(roles.items())),
+                "system_functions": functions,
+                "dominant_evidence_tier": dominant_tier(node.get("evidence_tier") for node in nodes),
+                "cluster_coherence_score": score,
+                "confidence_band": confidence_band(score),
+                "contradiction_flags": contradictions,
+                "gap_flags": [] if len(nodes) >= 2 else ["single_node_cluster"],
+                "review_status": "needs_review" if contradictions or len(nodes) < 2 else "unreviewed",
+                "notes": "Generated by scripts/rescore_ilap_clusters.py; analytic cluster, not proof.",
+            }
+        )
+
+    total_expected = len(pins)
+    assigned = sum(len(nodes) for nodes in grouped.values())
+    coverage_pct = round((assigned / total_expected) * 100, 2) if total_expected else 0.0
+
+    return {
+        "version": "RESCORED_ILAP_CLUSTER_LEDGER_v1",
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "producer_module": "scripts.rescore_ilap_clusters",
+        "source_registry": str(DEFAULT_REGISTRY.relative_to(REPO_ROOT)),
+        "coverage_ledger": {
+            "expected_universe": "atomic pins in configs/master_pin_registry.yaml:pins[]",
+            "pin_count": total_expected,
+            "assigned_pin_count": assigned,
+            "unassigned_pin_count": len(unresolved),
+            "cluster_count": len(clusters),
+            "coverage_pct": coverage_pct,
+            "blocker": "registry is labels-only" if total_expected == 0 else None,
+            "unresolved_pin_uids": unresolved,
+        },
+        "clusters": clusters,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    args = parser.parse_args()
+
+    import yaml
+
+    registry = yaml.safe_load(args.registry.read_text(encoding="utf-8")) or {}
+    ledger = build_ledger(registry)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(yaml.safe_dump(ledger, sort_keys=False, allow_unicode=True, width=100), encoding="utf-8")
+    print(f"wrote {args.output.relative_to(REPO_ROOT)}")
+    print(f"clusters={ledger['coverage_ledger']['cluster_count']} coverage={ledger['coverage_ledger']['coverage_pct']}%")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

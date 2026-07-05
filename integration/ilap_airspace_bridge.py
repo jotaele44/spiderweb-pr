@@ -8,10 +8,18 @@ import json
 import math
 import sqlite3
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from integration.mbil import mbil_class, mbil_proximity_weight
+from integration.kml_export import write_kml_for_geojson
+from provenance_utils import geojson_feature_meta
+
+PRODUCER_MODULE = "integration.ilap_airspace_bridge"
+
+# EPSG code for the WGS-84 lat/lon CRS every artifact is emitted in (T7-65).
+EPSG_CODE = 4326
 
 IDENTITY_NOTE = (
     "N/A or weak aircraft identity may increase review priority "
@@ -29,6 +37,23 @@ CONFIDENCE_WEIGHTS = {
 GRID_DEG = 0.05  # ~5 km grid cell size
 
 
+def corridor_activity_label(connecting_flights: int) -> str:
+    """Map a corridor's connecting-flight count to an operator-facing label (T7-59).
+
+    Mirrors the POI review-priority banding so an analyst reads corridor and POI
+    layers with one mental model.
+
+      HIGH    ≥ 5 connecting flights — established, repeatedly-flown corridor
+      MEDIUM  3–4                    — emerging corridor worth monitoring
+      LOW     2                      — minimal evidence (below 2 is not emitted)
+    """
+    if connecting_flights >= 5:
+        return "HIGH"
+    if connecting_flights >= 3:
+        return "MEDIUM"
+    return "LOW"
+
+
 class ILAPAirspaceBridge:
     def __init__(self, db_path: str, output_dir: str):
         self.db_path = db_path
@@ -36,35 +61,46 @@ class ILAPAirspaceBridge:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def export_all(self) -> Dict[str, Any]:
+        # One emission timestamp shared by every feature in this run (T7-57).
+        self._produced_at = datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y-%m-%dT%H:%M:%SZ")
+
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         track_pts = self._safe_query(conn, "SELECT * FROM track_points")
         flights = self._safe_query(conn, "SELECT * FROM flights")
         conn.close()
 
-        poi_features = self._build_poi_candidates(track_pts)
+        pin_features = self._build_pin_candidates(track_pts)
         ilap_features = self._build_ilap_candidates(flights, track_pts)
-        corridor_features = self._build_corridor_candidates(poi_features, flights)
+        corridor_features = self._build_corridor_candidates(pin_features, flights)
 
         counts = {
-            "airspace_poi_candidates.geojson": len(poi_features),
+            "airspace_pin_candidates.geojson": len(pin_features),
             "airspace_ilap_candidates.geojson": len(ilap_features),
             "airspace_corridor_candidates.geojson": len(corridor_features),
         }
 
-        self._write_geojson("airspace_poi_candidates.geojson", poi_features)
+        self._write_geojson("airspace_pin_candidates.geojson", pin_features)
         self._write_geojson("airspace_ilap_candidates.geojson", ilap_features)
         self._write_geojson("airspace_corridor_candidates.geojson", corridor_features)
 
         return {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
             "output_dir": str(self.output_dir),
             "files": counts,
         }
 
+    def _meta(self, source_artifact: str) -> Dict[str, str]:
+        """Standardized GeoJSON Feature `_meta` block for this run (T7-57)."""
+        return geojson_feature_meta(
+            producer_module=PRODUCER_MODULE,
+            source_artifact=source_artifact,
+            produced_at=getattr(self, "_produced_at", None),
+        )
+
     # ------------------------------------------------------------------ POI
 
-    def _build_poi_candidates(self, track_pts: List[dict]) -> List[dict]:
+    def _build_pin_candidates(self, track_pts: List[dict]) -> List[dict]:
         # Cluster by 0.05° grid cell
         cells: Dict[Tuple[int, int], List[dict]] = defaultdict(list)
         for tp in track_pts:
@@ -92,7 +128,8 @@ class ILAPAirspaceBridge:
             loiter = self._loiter_score(points)
             infra_align = 0.3  # placeholder; real impl would cross-ref infra layer
             hydro_utility = 0.2
-            mbil_proximity = 0.1
+            pin_mbil = mbil_class(center_lat, center_lon)
+            mbil_proximity = mbil_proximity_weight(pin_mbil)
 
             overall = (
                 CONFIDENCE_WEIGHTS["recurrence"] * recurrence
@@ -122,7 +159,9 @@ class ILAPAirspaceBridge:
                     "infra_alignment_score": round(infra_align, 4),
                     "overall_confidence": round(overall, 4),
                     "review_priority": priority,
+                    "mbil_class": pin_mbil,
                     "identity_note": IDENTITY_NOTE,
+                    "_meta": self._meta("airspace_pin_candidates.geojson"),
                 },
             })
 
@@ -173,6 +212,7 @@ class ILAPAirspaceBridge:
                     "mission_type": f.get("mission_type", ""),
                     "corridor_alignment_score": corridor_score,
                     "identity_note": IDENTITY_NOTE,
+                    "_meta": self._meta("airspace_ilap_candidates.geojson"),
                 },
             })
 
@@ -180,43 +220,55 @@ class ILAPAirspaceBridge:
 
     # --------------------------------------------------------------- corridors
 
-    def _build_corridor_candidates(self, poi_features: List[dict],
+    def _build_corridor_candidates(self, pin_features: List[dict],
                                    flights: List[dict]) -> List[dict]:
         features = []
-        n = len(poi_features)
+        n = len(pin_features)
         if n < 2:
             return features
 
-        # Build origin→dest flight index
-        route_counts: Dict[Tuple[str, str], int] = defaultdict(int)
+        pin_coords = [(pf["properties"]["lat"], pf["properties"]["lon"]) for pf in pin_features]
+
+        # Pre-index: for each flight, which POIs its origin / destination fall
+        # within 0.1° of. Accumulating connecting-flight counts from these lists
+        # is equivalent to the previous per-pair O(flights) scan (a flight links
+        # POI a→b when its origin is near a and its dest near b, either
+        # direction) but avoids re-scanning every flight for every POI pair —
+        # O(pairs × flights) becomes O(POIs × flights + pairs).
+        pair_counts: Dict[Tuple[int, int], int] = defaultdict(int)
         for f in flights:
-            o = f.get("origin_airport", "")
-            d = f.get("destination_airport", "")
-            if o and d and o != d:
-                key = (min(o, d), max(o, d))
-                route_counts[key] += 1
+            o_lat, o_lon = f.get("origin_lat"), f.get("origin_lon")
+            d_lat, d_lon = f.get("dest_lat"), f.get("dest_lon")
+            origin_near = [
+                k for k, (plat, plon) in enumerate(pin_coords)
+                if self._near(o_lat, o_lon, plat, plon, 0.1)
+            ]
+            if not origin_near:
+                continue
+            dest_near = [
+                k for k, (plat, plon) in enumerate(pin_coords)
+                if self._near(d_lat, d_lon, plat, plon, 0.1)
+            ]
+            for a in origin_near:
+                for b in dest_near:
+                    if a != b:
+                        pair_counts[(min(a, b), max(a, b))] += 1
 
         # Pair POI candidates that have ≥ 2 connecting flights
         for i in range(n):
             for j in range(i + 1, n):
-                p1 = poi_features[i]["properties"]
-                p2 = poi_features[j]["properties"]
-                lat1, lon1 = p1["lat"], p1["lon"]
-                lat2, lon2 = p2["lat"], p2["lon"]
-
-                corridor_flights = sum(
-                    1 for f in flights
-                    if self._near(f.get("origin_lat"), f.get("origin_lon"), lat1, lon1, 0.1)
-                    and self._near(f.get("dest_lat"), f.get("dest_lon"), lat2, lon2, 0.1)
-                ) + sum(
-                    1 for f in flights
-                    if self._near(f.get("origin_lat"), f.get("origin_lon"), lat2, lon2, 0.1)
-                    and self._near(f.get("dest_lat"), f.get("dest_lon"), lat1, lon1, 0.1)
-                )
-
+                corridor_flights = pair_counts.get((i, j), 0)
                 if corridor_flights < 2:
                     continue
 
+                p1 = pin_features[i]["properties"]
+                p2 = pin_features[j]["properties"]
+                lat1, lon1 = p1["lat"], p1["lon"]
+                lat2, lon2 = p2["lat"], p2["lon"]
+
+                mid_lat = (lat1 + lat2) / 2.0
+                mid_lon = (lon1 + lon2) / 2.0
+                corridor_mbil = mbil_class(mid_lat, mid_lon)
                 features.append({
                     "type": "Feature",
                     "geometry": {
@@ -227,7 +279,10 @@ class ILAPAirspaceBridge:
                         "poi_a": f"{lat1},{lon1}",
                         "poi_b": f"{lat2},{lon2}",
                         "connecting_flights": corridor_flights,
+                        "corridor_label": corridor_activity_label(corridor_flights),
+                        "mbil_class": corridor_mbil,
                         "identity_note": IDENTITY_NOTE,
+                        "_meta": self._meta("airspace_corridor_candidates.geojson"),
                     },
                 })
 
@@ -244,9 +299,14 @@ class ILAPAirspaceBridge:
         geojson = {
             "type": "FeatureCollection",
             "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}},
+            # Explicit machine-readable EPSG alongside the OGC URN crs (T7-65).
+            "epsg": EPSG_CODE,
             "features": features,
         }
         (self.output_dir / filename).write_text(json.dumps(geojson, indent=2))
+        # Native KML sibling for Google Earth / QGIS (T7-58) — no ogr2ogr needed.
+        kml_path = (self.output_dir / filename).with_suffix(".kml")
+        write_kml_for_geojson(geojson, kml_path)
 
     def _safe_query(self, conn: sqlite3.Connection, sql: str) -> List[dict]:
         try:

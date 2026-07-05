@@ -9,6 +9,11 @@ on:
     branches:
       - main
 
+# Cancel superseded in-flight runs on the same ref (T6-54).
+concurrency:
+  group: prii-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prii-smoke:
     name: PRII readiness smoke
@@ -16,10 +21,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -36,11 +41,9 @@ jobs:
             readiness/prii_readiness_engine.py \
             integration/pr_intel_adapter.py \
             integration/schema_validation.py \
-            integration/geo_calibration.py \
             pipeline/operational_intelligence.py \
             pipeline/hardening_layer.py \
             readiness/calibrate_scoring.py \
-            fr24/manual_review_queue.py \
             readiness/spiderweb_intake.py \
             readiness/satellite_ingest.py \
             scripts/validate_satellite_batch.py

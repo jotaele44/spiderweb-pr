@@ -49,7 +49,7 @@ from server.ingestion.registration_alerts import (  # noqa: E402
 
 DB_DEFAULT = _ROOT / "server" / "priis.db"
 EVENTS_CSV_DEFAULT = _ROOT / "outputs" / "adsb_archive_events.csv"
-WATCHLIST_DEFAULT = _ROOT / "config" / "registration_watchlist.yaml"
+WATCHLIST_DEFAULT = _ROOT / "configs" / "registration_watchlist.yaml"
 
 # Tail → (aircraft_type, operator) for tails with an accompanying FAA info PDF.
 KNOWN_AIRCRAFT = {

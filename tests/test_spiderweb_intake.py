@@ -22,7 +22,7 @@ def _write_poi(tmp_path: Path, features=None) -> None:
     if features is None:
         features = [_poi_feature(18.35, -66.32)]
     fc = {"type": "FeatureCollection", "crs": CRS, "features": features}
-    (tmp_path / "airspace_poi_candidates.geojson").write_text(json.dumps(fc))
+    (tmp_path / "airspace_pin_candidates.geojson").write_text(json.dumps(fc))
 
 
 def _write_ilap(tmp_path: Path, features=None) -> None:

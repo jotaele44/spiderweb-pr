@@ -13,11 +13,44 @@ outputs.zip
 # data/ — input datasets (screenshots, GEBCO .nc, social CSV, etc.)
 data/*
 !data/.gitkeep
+# PR-intake dropzone (#41): the router delivers spiderweb_pr_derivatives.csv here
+!data/intake/
+!data/intake/pr_intake/
+!data/intake/pr_intake/.gitkeep
+!data/intake/pr_intake/README.md
+!data/intake/pr_intake/spiderweb_pr_derivatives.csv
 # RLSM: track the schema contract and operator handoff doc, keep large DBs ignored
 !data/rlsm/
 data/rlsm/*
 !data/rlsm/schema.sql
 !data/rlsm/HANDOFF.md
+# NamUs missing-persons: allowlist the provenance README; raw + canonical CSVs
+# stay ignored (PII at the source; redacted-but-still-personal at the canonical).
+# The `data/sources/namus/*` re-ignore re-blocks dated snapshot subdirs so
+# `data/sources/namus/2026-06-11/namus_mp_pr.csv` is never tracked even though
+# the parent `data/sources/namus/` is allowlisted for the README.
+!data/sources/
+# Re-block loose source datasets dropped directly under data/sources/ (the
+# .gpkg/.geojson/.csv/.sqlite inputs); like all of data/ these are operator-local
+# inputs per DATA_POLICY.md and must never be committed. Allowlist provenance
+# (READMEs) explicitly below, mirroring the namus pattern.
+data/sources/*
+!data/sources/namus/
+data/sources/namus/*
+!data/sources/namus/README.md
+
+# input/ — operator-local override for recover-tails FAA N-number list +
+# timestamped auto-backups + derived skip-list. The hermetic CI fallback
+# lives at tests/fixtures/regs.txt (already tracked), so the pipeline runs
+# without input/ being present. Operator's local input stays local.
+input/
+
+# registration_recovery_queue.csv — when produced canonically by
+# server/ingestion/reconcile_registrations.py, it writes to
+# outputs/registration_recovery_queue.csv (already covered by outputs/*).
+# A repo-root copy is a misplaced manual snapshot — also ignore so it
+# doesn't get accidentally committed.
+/registration_recovery_queue.csv
 
 # cache/ — intermediate results, model caches
 cache/*
@@ -51,9 +84,11 @@ prii_readiness_report.json
 *.parquet
 *.jsonl
 # Committed fixtures/samples are not generated data — keep them tracked so a bare
-# `git add` can't silently drop them (see the contract_sweeper_v1_2 CI incident).
+# `git add` can't silently drop them (see the moneysweep_v1_2 CI incident).
 !tests/fixtures/**/*.jsonl
 !exports/**/*.jsonl
+# Federation evidence ledgers are audit artifacts, not generated data.
+!reports/federation/*.jsonl
 *.nc          # NetCDF (GEBCO)
 
 # ── ChromaDB vector index ─────────────────────────────────────────────────────
@@ -266,3 +301,17 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# generated canonical export (scripts/federation_export.py)
+exports/federation/
+
+# Frontend hand-written code lives in server/frontend/src/lib — the Python `lib/`
+# rule above wrongly ignores it. Re-include it.
+!server/frontend/src/lib/
+!server/frontend/src/lib/**
+
+# standalone single-file export (build artifact, regenerate via build-export.sh)
+export-standalone/
+
+# generated federation maintenance report (audit artifact, not committed)
+reports/maintenance/
