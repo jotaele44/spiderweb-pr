@@ -1,0 +1,245 @@
+{
+  "dataset_id": "usgs_ofr_98_038",
+  "title": "USGS OFR 98-038 Puerto Rico geology, geochemistry, geophysics, mineral occurrence, and mineral resource assessment package",
+  "source_url": "https://pubs.usgs.gov/of/1998/of98-038/",
+  "source_agency": "U.S. Geological Survey",
+  "repo_route": "spiderweb-pr",
+  "evidence_tier": "T1 technical for export coverages and metadata; T2 operational for source directory/readme; T4 supporting for PDF tables",
+  "generated_utc": "2026-06-11T23:54:12Z",
+  "raw_export_entry_count": 38,
+  "metallic_occurrence_point_count": 364,
+  "gpkg_status": "created",
+  "conversion_note": "Full E00 coverage conversion requires GDAL/AVCE00. This build extracts metallic.e00 LAB point coordinates as a verified derivative and keeps all raw E00 coverages indexed for canonical conversion.",
+  "files": [
+    {
+      "path": "derived/metallic_points_wgs84_shapefile/metallic_points_wgs84.csv",
+      "bytes": 10412,
+      "sha256": "bc97844dd06dfd12ce533ef8464ae9f4ea9bf29293e82d277bec5512f773f77b"
+    },
+    {
+      "path": "derived/metallic_points_wgs84_shapefile/metallic_points_wgs84.dbf",
+      "bytes": 11973,
+      "sha256": "4520aa03b1f373658ce6670db965762866207c90a059b239eef8feb7d437614d"
+    },
+    {
+      "path": "derived/metallic_points_wgs84_shapefile/metallic_points_wgs84.prj",
+      "bytes": 821,
+      "sha256": "4a7c927b3fad4a8b1812ed6e31916cef710c201bb441df8296e4c3efb30a8292"
+    },
+    {
+      "path": "derived/metallic_points_wgs84_shapefile/metallic_points_wgs84.shp",
+      "bytes": 7156,
+      "sha256": "8f8be6faaf766ed4ea2f26e8ff05795ba01e66d5593c28108198a2563346a83c"
+    },
+    {
+      "path": "derived/metallic_points_wgs84_shapefile/metallic_points_wgs84.shx",
+      "bytes": 2116,
+      "sha256": "b22d57d24d6cf4a8a0d5bfa397cead45c93f04eaf8a27011a8a6881c844796be"
+    },
+    {
+      "path": "derived/usgs_ofr_98_038_metallic_occurrences_wgs84.csv",
+      "bytes": 81798,
+      "sha256": "bb0cf45b30d7ab97c3bb49a7d75e4a99a9904cba5bd7d5732c71f4f62cc39aea"
+    },
+    {
+      "path": "derived/usgs_ofr_98_038_metallic_occurrences_wgs84.geojson",
+      "bytes": 224192,
+      "sha256": "b394e3504e9be701725c4a3db78ac5b687a425ab821d375a9a938b43bad87700"
+    },
+    {
+      "path": "derived/usgs_ofr_98_038_metallic_occurrences_wgs84.gpkg",
+      "bytes": 212992,
+      "sha256": "8abe7cd06efe28c822ae5ea7a627ed9980e4aead6f02cc0b82e4aee70cc5fff8"
+    },
+    {
+      "path": "raw/export/centerr.e00",
+      "bytes": 2012681,
+      "sha256": "ede94dbeb356eff046cd1dd18b151b3937e458d5691c435a22e67a1d313e3eee"
+    },
+    {
+      "path": "raw/export/central.e00",
+      "bytes": 12666550,
+      "sha256": "2175358797a5db6fce944db0d4fe19871f1a5fafeac7893229000821d9c4e7f6"
+    },
+    {
+      "path": "raw/export/east.e00",
+      "bytes": 4557416,
+      "sha256": "3b8e4e5279c5c8029497b733d06a43ec627a87dd50e978d64a755f77de1b38bd"
+    },
+    {
+      "path": "raw/export/eastterr.e00",
+      "bytes": 1387711,
+      "sha256": "b9aa7ab96b080f26ddc43f3bf05a16bf9c8ee07a4d7c087c0c53bcdc7e3518ce"
+    },
+    {
+      "path": "raw/export/faultc.e00",
+      "bytes": 58994,
+      "sha256": "ba2d836f6db349fe8c5cb3537270ee5ef337121d08d30caf63abdcba1aed1d1c"
+    },
+    {
+      "path": "raw/export/faultcn.e00",
+      "bytes": 1851486,
+      "sha256": "613e199b9793ec0cdc4483731e7fa44699ce41e7be7ce3ecbf683ebfe3b35413"
+    },
+    {
+      "path": "raw/export/faulte.e00",
+      "bytes": 32201,
+      "sha256": "e163d8af1eec0124a8b846c0e177a190046b3aa0bb5ce651d66b069f1603dae8"
+    },
+    {
+      "path": "raw/export/faulten.e00",
+      "bytes": 703170,
+      "sha256": "7f74f38b9dc6e0a6edf4ffbd89bb5b0457f753a990146a6b3684c17ecd7764ee"
+    },
+    {
+      "path": "raw/export/faultw.e00",
+      "bytes": 30558,
+      "sha256": "3780c5e713a75d9f58a683475bc4de6ab7cc31e7838f631ba9db9c0960f9fa58"
+    },
+    {
+      "path": "raw/export/faultwn.e00",
+      "bytes": 730982,
+      "sha256": "b3ef31c79de2c623858792c67f299f11a4ca98adae57bcabdb6a14d2e55a256f"
+    },
+    {
+      "path": "raw/export/fltintr.e00",
+      "bytes": 362248,
+      "sha256": "032309a9717daffba182cdd2c1cad19f5a70263a8ae868c74e930a1256b18219"
+    },
+    {
+      "path": "raw/export/fnt040.e00",
+      "bytes": 105609,
+      "sha256": "6429d2896dfb9d9d9ec6a7e7f6a209f58f5bd8b3ff720c1c62447aa405f331e4"
+    },
+    {
+      "path": "raw/export/gravity.e00",
+      "bytes": 1226957,
+      "sha256": "06a0bbfb73d92858f420ed1237d8cde23be0bdaab23cb0233b7942a896b0486b"
+    },
+    {
+      "path": "raw/export/gravsta.e00",
+      "bytes": 192698,
+      "sha256": "f8d50de1a0691dd28783029d4156badca299db05c31984efdf55fd75ab9835a3"
+    },
+    {
+      "path": "raw/export/leggeol.e00",
+      "bytes": 99359,
+      "sha256": "804e174f25ccd90a8b231df05a8a9c91c938afcaad86aa1ecd2061daaa5d60a8"
+    },
+    {
+      "path": "raw/export/legprov.e00",
+      "bytes": 29280,
+      "sha256": "9162efd38884acba7fc762a4d3c8a63d737c5eaaf41637b10c22bb1e1b53120e"
+    },
+    {
+      "path": "raw/export/magnetic.e00",
+      "bytes": 1690665,
+      "sha256": "ff1d7a6bf0dbfc94e454a4b6c3f513f65e48b2b331fb91e816876812dc4c9abd"
+    },
+    {
+      "path": "raw/export/metallic.e00",
+      "bytes": 60387,
+      "sha256": "7119f13f549978c86e1e1ff1c5bae1aa3777c0b9fb8073762ad02f7ffd5c0892"
+    },
+    {
+      "path": "raw/export/metanno.e00",
+      "bytes": 54584,
+      "sha256": "16a294f1528e315a2912bba80ff086af46a5aa0610c537d8b3ccc708934db15c"
+    },
+    {
+      "path": "raw/export/mona.e00",
+      "bytes": 20348,
+      "sha256": "f8ce22e31cbbad02d2b37b7a62f164ffd986a7a677a5de026c95fcc0cb02e28b"
+    },
+    {
+      "path": "raw/export/nmetanno.e00",
+      "bytes": 142732,
+      "sha256": "bf08fb8633d4361cdea499d5d4ecd39bcd3fde2a0f7b747fb6fb5931345f4fe8"
+    },
+    {
+      "path": "raw/export/nonmet.e00",
+      "bytes": 108438,
+      "sha256": "2ba0f6cc67337fbf08504bccf268c99022885ea10d991116ce30e2907fb4f27d"
+    },
+    {
+      "path": "raw/export/pd24a.e00",
+      "bytes": 179723,
+      "sha256": "8ea1549b9327e596508df53c59fe6e264976baa38a757768478b90a608b88a53"
+    },
+    {
+      "path": "raw/export/permau.e00",
+      "bytes": 378067,
+      "sha256": "1b6e6e5d408e98f2085679d948a26be233ef0aded4698293a09c8f2df599a97f"
+    },
+    {
+      "path": "raw/export/permsk.e00",
+      "bytes": 2481180,
+      "sha256": "a231474fe4d45b4806170b9571395222393dcb0ed74c031c0d7dc513b8f04eed"
+    },
+    {
+      "path": "raw/export/placer.e00",
+      "bytes": 6565,
+      "sha256": "03bc3d633b3c9d7491925dc003d1d0d01d9682b7ad1573b36d95c98079894fac"
+    },
+    {
+      "path": "raw/export/prcolor.e00",
+      "bytes": 5151,
+      "sha256": "5ab2b698b21221233b2a0393eb0b6f30d3c636355941a77e8781f0e8fc9a7e72"
+    },
+    {
+      "path": "raw/export/prout.e00",
+      "bytes": 607357,
+      "sha256": "5e4e97c0415117b2f788c3d87c3499ac10b2faa5112841e57485c9f209e4f51d"
+    },
+    {
+      "path": "raw/export/prprov.e00",
+      "bytes": 5155,
+      "sha256": "2c34bfe70a31cf0ca39227c948b3d01ff4260eb1b395978e7336092d25c16739"
+    },
+    {
+      "path": "raw/export/prshade.e00",
+      "bytes": 5167,
+      "sha256": "c3d87bd992d6368982968fa651c04497f5fdb22d9c6f32e1c17092d6bbc00ebd"
+    },
+    {
+      "path": "raw/export/readme-export.txt",
+      "bytes": 2597,
+      "sha256": "1e59a79f440d00d834f3d9f8591b01f56ea8ac4f7b0fffb9c32be8fabe022d5c"
+    },
+    {
+      "path": "raw/export/strat.e00",
+      "bytes": 161825,
+      "sha256": "81b388458afe464fa6ee1214dbba69833a324dfa10a610cb89f7f752cddf8bed"
+    },
+    {
+      "path": "raw/export/stratann.e00",
+      "bytes": 78707,
+      "sha256": "c0df53cecd92b2224d63229afd8a03d78a752b4946d3b79882294dfdf49ec545"
+    },
+    {
+      "path": "raw/export/ver256.shd.e00",
+      "bytes": 23760,
+      "sha256": "ae08e34cafd4d32857630b8b2bb074efb2d7fbf8a9e9f9a6c04d33545105c290"
+    },
+    {
+      "path": "raw/export/versatec.shd.e00",
+      "bytes": 78436,
+      "sha256": "42105a53b7bd42e4eae753949cc0dfd3a1c0ed3ec8c8d44eb91e8796ecf963cd"
+    },
+    {
+      "path": "raw/export/vieques.e00",
+      "bytes": 164572,
+      "sha256": "f9e955d03e6648e66402aed14b6d733aa46504d9ce6a368d0184d5080e95b774"
+    },
+    {
+      "path": "raw/export/west.e00",
+      "bytes": 6600466,
+      "sha256": "811347672f49e0872c5d39f91faa3635c57f1fd5d9c497efef32a8d2e4dde45a"
+    },
+    {
+      "path": "raw/export/westterr.e00",
+      "bytes": 2015948,
+      "sha256": "4ab452fa923ad97d033fb5939d4e781fbc380c12165c12b072abe525ae73d9e9"
+    }
+  ]
+}
