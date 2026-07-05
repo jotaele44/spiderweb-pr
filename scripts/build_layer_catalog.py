@@ -60,7 +60,8 @@ ACRONYMS = {
     "Pri": "PRI", "Ilap": "ILAP", "Aasb": "AASB", "Lz": "LZ", "Nid": "NID",
     "Fic": "FIC", "Osap": "OSAP", "Spm": "SPM", "Poi": "POI", "Pr": "PR",
     "Geojson": "GeoJSON", "V1": "v1", "V2": "v2", "V3": "v3", "V4": "v4",
-    "V5": "v5", "V6": "v6", "Uscg": "USCG",
+    "V5": "v5", "V6": "v6", "Uscg": "USCG", "Prepa": "PREPA", "Nwi": "NWI",
+    "Prvi": "PRVI", "Dem": "DEM",
 }
 
 # Per-layer label overrides where titleize() is not enough.
@@ -68,6 +69,7 @@ LABEL_OVERRIDES = {
     "civic_headstart_pr": "Head Start Service Locations",
     "missing_persons_by_municipio": "Missing Persons by Municipio",
     "consolidated_master_registry": "Consolidated Master POI Registry",
+    "public_schools_all": "Public Schools (All)",
 }
 
 
@@ -114,10 +116,16 @@ FAMILY_PLAN: List[Dict] = [
     {"id": "airports", "label": "Airports & Aerodromes", "visibility": "V3",
      "domain": "transportation", "layers": ["airports"]},
     {"id": "hydrology", "label": "Hydrology", "visibility": "V3",
-     "domain": "hydro", "layers": ["hydro_points_normalized", "hydro_master_v3", "nid_dams"]},
+     "domain": "hydro", "layers": ["hydro_points_normalized", "hydro_master_v3", "nid_dams",
+                                   "wetlands_nwi_prvi"]},
+    {"id": "industrial", "label": "Industrial Sites", "visibility": "V3",
+     "domain": "industrial", "layers": ["industrial_master"]},
+    {"id": "reference_gazetteer", "label": "Reference / Gazetteer", "visibility": "V3",
+     "domain": "reference", "layers": ["gazetteer_pr_domestic_names"]},
     # ----- V2: restricted / operational -----
     {"id": "civic_social", "label": "Civic / Social Infrastructure", "visibility": "V2",
-     "domain": "civic_social_infrastructure", "layers": ["civic_headstart_pr"]},
+     "domain": "civic_social_infrastructure", "layers": ["civic_headstart_pr",
+                                                         "public_schools_all"]},
     {"id": "landing_zones", "label": "Landing Zones", "visibility": "V2",
      "domain": "lz", "layers": ["landing_zones_master"]},
     {"id": "hangars_ramps", "label": "Hangars & Ramps", "visibility": "V2",
@@ -126,12 +134,15 @@ FAMILY_PLAN: List[Dict] = [
      "domain": "sites", "layers": ["sites", "fire_stations_consolidated"]},
     {"id": "flight_activity", "label": "Flight Activity", "visibility": "V2",
      "domain": "flights", "layers": ["flights"]},
+    {"id": "military_aviation", "label": "Military & Aviation", "visibility": "V2",
+     "domain": "military", "layers": ["military_aviation"]},
     {"id": "public_safety", "label": "Public Safety", "visibility": "V2",
      "domain": "public_safety", "layers": ["missing_persons_cases", "missing_persons_by_municipio"]},
     # ----- V1: sensitive / theorized ("eye lab" = ILAP, spiderweb) -----
     {"id": "ilap_constructs", "label": "ILAP — Infrastructure-Linked Access Points",
      "visibility": "V1", "domain": "ilap",
-     "layers": ["ilap_master_nodes", "ilap_predictions", "hydro_candidate_nodes",
+     "layers": ["ilap_master_nodes", "ilap_predictions", "ilap_dem_anomalies",
+                "hydro_candidate_nodes",
                 "water_signals", "fic_osap_final_set_v3", "fic_osap_candidates_v2",
                 "fic_osap_ilap_links_v4", "fic_osap_ilap_paths_v6"]},
     {"id": "aasb_corridors", "label": "AASB — Aerial Anomaly Surveillance Bands / Corridors",
@@ -147,6 +158,24 @@ FAMILY_PLAN: List[Dict] = [
      "layers": ["karst_subsurface_nodes_v2", "karst_subsurface_edges_v2"]},
     {"id": "signal_anomaly", "label": "Signal / Anomaly & Shadow", "visibility": "V1",
      "domain": "anomaly", "layers": ["anomalies", "heatmap"]},
+]
+
+# ── Pipeline-emitted derivatives of PRI/warehouse tables ──────────────────────
+# populate_dataset_layers exports these under their own layer_ids (see
+# data/_manifests/gis_layers_manifest.json); each rides along in the family of its
+# source table so the manifest cross-check never finds an uncatalogued layer.
+# Family metadata is spelled out because these families are normally built by the
+# PRI.gpkg scan, which is skipped on a fresh checkout (the gpkg is not in git).
+EMITTED_LAYER_PLAN: List[Dict] = [
+    {"id": "power_grid", "label": "Power Grid", "visibility": "V3", "domain": "power",
+     "layers": ["pri_power_generator_polygons", "pri_power_lines", "pri_power_plants",
+                "pri_power_towers", "pri_substations",
+                "prepa_transmission_lines_2014", "prepa_transmission_structures_2014"]},
+    {"id": "water_sewer", "label": "Water & Sewer", "visibility": "V3", "domain": "water_sewer",
+     "layers": ["pri_pumping_stations", "pri_wastewater_plants", "pri_water_reservoirs",
+                "pri_water_treatment_plants", "waterworks_master_v1"]},
+    {"id": "utility_other", "label": "Utility / Other", "visibility": "V3",
+     "domain": "utility", "layers": ["pri_masts"]},
 ]
 
 
@@ -215,10 +244,20 @@ def build_catalog() -> Tuple[Dict, Dict[str, Dict]]:
     insert_at = next((i for i, f in enumerate(families) if f["id"] == "hydrology"), 0) + 1
     families[insert_at:insert_at] = pri_fams
 
+    # Emitted derivatives join their source table's family; when the PRI scan was
+    # skipped (gpkg absent) the family is created from the plan's own metadata.
+    extra_layers = {p["id"]: list(p["layers"]) for p in EMITTED_LAYER_PLAN}
+    existing_ids = {f["id"] for f in families}
+    missing = [p for p in EMITTED_LAYER_PLAN if p["id"] not in existing_ids]
+    families[insert_at:insert_at] = [
+        {**p, "layers": []} for p in missing  # layers come from extra_layers below
+    ]
+
     catalog_families = []
     for fam in families:
+        layer_ids = list(fam["layers"]) + extra_layers.get(fam["id"], [])
         layers = []
-        for lid in fam["layers"]:
+        for lid in layer_ids:
             entry = {"layer_id": lid, "label": label_for(lid), "status": "deferred"}
             if lid in pri_extra:
                 entry.update(pri_extra[lid])

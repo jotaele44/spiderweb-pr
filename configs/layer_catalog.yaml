@@ -1,5 +1,5 @@
 version: rlsm_layer_catalog_v0_1
-generated_at: '2026-06-19T21:13:55Z'
+generated_at: '2026-07-05T20:36:24Z'
 producer_module: scripts.build_layer_catalog
 binding: labels_only
 note: Folder labels & visibility gate only — no geometry/coordinates bound. Every layer carries status=deferred
@@ -57,6 +57,9 @@ families:
   - layer_id: nid_dams
     label: NID Dams
     status: deferred
+  - layer_id: wetlands_nwi_prvi
+    label: Wetlands NWI PRVI
+    status: deferred
 - id: utility_other
   label: Utility / Other
   visibility: V3
@@ -67,6 +70,9 @@ families:
     status: deferred
     pri_table: true
     pipeline_wired: true
+  - layer_id: pri_masts
+    label: PRI Masts
+    status: deferred
 - id: petroleum_pipeline
   label: Petroleum & Pipeline
   visibility: V3
@@ -147,6 +153,27 @@ families:
     status: deferred
     pri_table: true
     pipeline_wired: false
+  - layer_id: pri_power_generator_polygons
+    label: PRI Power Generator Polygons
+    status: deferred
+  - layer_id: pri_power_lines
+    label: PRI Power Lines
+    status: deferred
+  - layer_id: pri_power_plants
+    label: PRI Power Plants
+    status: deferred
+  - layer_id: pri_power_towers
+    label: PRI Power Towers
+    status: deferred
+  - layer_id: pri_substations
+    label: PRI Substations
+    status: deferred
+  - layer_id: prepa_transmission_lines_2014
+    label: PREPA Transmission Lines 2014
+    status: deferred
+  - layer_id: prepa_transmission_structures_2014
+    label: PREPA Transmission Structures 2014
+    status: deferred
 - id: water_sewer
   label: Water & Sewer
   visibility: V3
@@ -192,6 +219,21 @@ families:
     status: deferred
     pri_table: true
     pipeline_wired: false
+  - layer_id: pri_pumping_stations
+    label: PRI Pumping Stations
+    status: deferred
+  - layer_id: pri_wastewater_plants
+    label: PRI Wastewater Plants
+    status: deferred
+  - layer_id: pri_water_reservoirs
+    label: PRI Water Reservoirs
+    status: deferred
+  - layer_id: pri_water_treatment_plants
+    label: PRI Water Treatment Plants
+    status: deferred
+  - layer_id: waterworks_master_v1
+    label: Waterworks Master v1
+    status: deferred
 - id: telecom
   label: Telecom
   visibility: V3
@@ -212,6 +254,22 @@ families:
     status: deferred
     pri_table: true
     pipeline_wired: false
+- id: industrial
+  label: Industrial Sites
+  visibility: V3
+  domain: industrial
+  layers:
+  - layer_id: industrial_master
+    label: Industrial Master
+    status: deferred
+- id: reference_gazetteer
+  label: Reference / Gazetteer
+  visibility: V3
+  domain: reference
+  layers:
+  - layer_id: gazetteer_pr_domestic_names
+    label: Gazetteer PR Domestic Names
+    status: deferred
 - id: civic_social
   label: Civic / Social Infrastructure
   visibility: V2
@@ -219,6 +277,9 @@ families:
   layers:
   - layer_id: civic_headstart_pr
     label: Head Start Service Locations
+    status: deferred
+  - layer_id: public_schools_all
+    label: Public Schools (All)
     status: deferred
 - id: landing_zones
   label: Landing Zones
@@ -255,6 +316,14 @@ families:
   - layer_id: flights
     label: Flights
     status: deferred
+- id: military_aviation
+  label: Military & Aviation
+  visibility: V2
+  domain: military
+  layers:
+  - layer_id: military_aviation
+    label: Military Aviation
+    status: deferred
 - id: public_safety
   label: Public Safety
   visibility: V2
@@ -276,6 +345,9 @@ families:
     status: deferred
   - layer_id: ilap_predictions
     label: ILAP Predictions
+    status: deferred
+  - layer_id: ilap_dem_anomalies
+    label: ILAP DEM Anomalies
     status: deferred
   - layer_id: hydro_candidate_nodes
     label: Hydro Candidate Nodes

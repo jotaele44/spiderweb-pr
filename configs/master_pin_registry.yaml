@@ -1,18 +1,49 @@
 version: spiderweb_master_pin_registry_v1
-generated_at: '2026-06-20T06:38:38Z'
+generated_at: '2026-07-05T20:38:39Z'
 producer_module: scripts.build_pin_registry
 binding: labels_only
 pin_record_schema: schemas/pin.schema.json
 pin_link_schema: schemas/pin_link.schema.json
+ilap_cluster_schema: schemas/ilap_cluster.schema.json
+ilap_cluster_model: configs/ilap_cluster_model.yaml
 pin_count: 0
-layer_count: 61
+layer_count: 80
 flag_summary:
-  GHOST: 49
+  GHOST: 28
   PLANNED: 2
-  WIRED: 10
+  WIRED: 50
 note: Islandwide canonical Pin index. Zero atomic pins bound (labels-only) — layer_index reserves the
   Domain/Pin Group/Pin Class/Pin Layer path and pin_uid prefix for every layer; pins[] fills in a later
-  pins-pass.
+  pins-pass. Distributed ILAP cluster fields are nullable until rescore.
+distributed_ilap_cluster_model:
+  version: ilap_distributed_cluster_model_v1
+  status: schema_control
+  assignment_fields:
+  - pin_uid
+  - ilap_area_id
+  - ilap_cluster_id
+  - node_role
+  - system_function
+  - cluster_coherence_score
+  - contradiction_flags
+  - evidence_tier
+  - confidence
+  outputs:
+    primary: RESCORED_ILAP_CLUSTER_LEDGER_v1
+    ledger_columns:
+    - ilap_area_id
+    - ilap_cluster_id
+    - cluster_name
+    - node_count
+    - role_mix
+    - system_functions
+    - dominant_evidence_tier
+    - cluster_coherence_score
+    - confidence_band
+    - contradiction_flags
+    - gap_flags
+    - review_status
+    - notes
 layer_index:
 - pin_uid_prefix: PIN_A_MUNICIPIOS
   pin_layer: municipios
@@ -26,6 +57,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_A_TRACTS
   pin_layer: tracts
   label: Tracts
@@ -38,6 +75,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_A_PLACES
   pin_layer: places
   label: Places
@@ -50,6 +93,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_A_BARRIOS
   pin_layer: barrios
   label: Barrios
@@ -62,6 +111,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_TA_AIRPORTS
   pin_layer: airports
   label: Airports
@@ -74,6 +129,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_H_HYDROPOINT
   pin_layer: hydro_points_normalized
   label: Hydro Points Normalized
@@ -82,10 +143,16 @@ layer_index:
   pin_group: hydrology
   pin_class: hydro_points_normalized
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_H_HYDROMASTE
   pin_layer: hydro_master_v3
   label: Hydro Master v3
@@ -94,10 +161,16 @@ layer_index:
   pin_group: hydrology
   pin_class: hydro_master
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_H_NIDDAMS
   pin_layer: nid_dams
   label: NID Dams
@@ -106,10 +179,34 @@ layer_index:
   pin_group: hydrology
   pin_class: nid_dams
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_H_WETLANDSNW
+  pin_layer: wetlands_nwi_prvi
+  label: Wetlands NWI PRVI
+  visibility: V3
+  domain: hydrology
+  pin_group: hydrology
+  pin_class: wetlands_nwi_prvi
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_MAST
   pin_layer: mast
   label: Mast
@@ -122,6 +219,30 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIMASTS
+  pin_layer: pri_masts
+  label: PRI Masts
+  visibility: V3
+  domain: utilities
+  pin_group: utility_other
+  pin_class: pri_masts
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_PETROLEUMS
   pin_layer: petroleum_site
   label: Petroleum Site
@@ -134,6 +255,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_PETROLEUMW
   pin_layer: petroleum_well
   label: Petroleum Well
@@ -146,6 +273,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_PIPELINE
   pin_layer: pipeline
   label: Pipeline
@@ -158,6 +291,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_PIPELINEFE
   pin_layer: pipeline_feature
   label: Pipeline Feature
@@ -170,6 +309,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERCOMPE
   pin_layer: power_compensator
   label: Power Compensator
@@ -182,6 +327,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERGENER
   pin_layer: power_generator_point
   label: Power Generator Point
@@ -194,6 +345,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERGENER
   pin_layer: power_generator_polygon
   label: Power Generator Polygon
@@ -206,6 +363,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWER
   pin_layer: power_line
   label: Power Line
@@ -218,6 +381,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERPLANT
   pin_layer: power_plant
   label: Power Plant
@@ -230,6 +399,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERSUBST
   pin_layer: power_substation_point
   label: Power Substation Point
@@ -242,6 +417,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERSUBST
   pin_layer: power_substation_polygon
   label: Power Substation Polygon
@@ -254,6 +435,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERSWITC
   pin_layer: power_switch
   label: Power Switch
@@ -266,6 +453,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERTOWER
   pin_layer: power_tower
   label: Power Tower
@@ -278,6 +471,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_POWERTRANS
   pin_layer: power_transformer
   label: Power Transformer
@@ -290,6 +489,138 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIPOWERGE
+  pin_layer: pri_power_generator_polygons
+  label: PRI Power Generator Polygons
+  visibility: V3
+  domain: utilities
+  pin_group: power_grid
+  pin_class: pri_power_generator_polygons
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIPOWERLI
+  pin_layer: pri_power_lines
+  label: PRI Power Lines
+  visibility: V3
+  domain: utilities
+  pin_group: power_grid
+  pin_class: pri_power_lines
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIPOWERPL
+  pin_layer: pri_power_plants
+  label: PRI Power Plants
+  visibility: V3
+  domain: utilities
+  pin_group: power_grid
+  pin_class: pri_power_plants
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIPOWERTO
+  pin_layer: pri_power_towers
+  label: PRI Power Towers
+  visibility: V3
+  domain: utilities
+  pin_group: power_grid
+  pin_class: pri_power_towers
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRISUBSTAT
+  pin_layer: pri_substations
+  label: PRI Substations
+  visibility: V3
+  domain: utilities
+  pin_group: power_grid
+  pin_class: pri_substations
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PREPATRANS
+  pin_layer: prepa_transmission_lines_2014
+  label: PREPA Transmission Lines 2014
+  visibility: V3
+  domain: utilities
+  pin_group: power_grid
+  pin_class: prepa_transmission_lines_2014
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PREPATRANS
+  pin_layer: prepa_transmission_structures_2014
+  label: PREPA Transmission Structures 2014
+  visibility: V3
+  domain: utilities
+  pin_group: power_grid
+  pin_class: prepa_transmission_structures_2014
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_PUMPINGSTA
   pin_layer: pumping_station
   label: Pumping Station
@@ -302,6 +633,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_WASTEWATER
   pin_layer: wastewater_plant
   label: Wastewater Plant
@@ -314,6 +651,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_WATERRESER
   pin_layer: water_reservoir
   label: Water Reservoir
@@ -326,6 +669,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_WATERTOWER
   pin_layer: water_tower_point
   label: Water Tower Point
@@ -338,6 +687,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_WATERTOWER
   pin_layer: water_tower_polygon
   label: Water Tower Polygon
@@ -350,6 +705,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_WATERTREAT
   pin_layer: water_treatment_plant
   label: Water Treatment Plant
@@ -362,6 +723,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_WATERWELL
   pin_layer: water_well_point
   label: Water Well Point
@@ -374,6 +741,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_WATERWELL
   pin_layer: water_well_polygon
   label: Water Well Polygon
@@ -386,6 +759,102 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIPUMPING
+  pin_layer: pri_pumping_stations
+  label: PRI Pumping Stations
+  visibility: V3
+  domain: utilities
+  pin_group: water_sewer
+  pin_class: pri_pumping_stations
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIWASTEWA
+  pin_layer: pri_wastewater_plants
+  label: PRI Wastewater Plants
+  visibility: V3
+  domain: utilities
+  pin_group: water_sewer
+  pin_class: pri_wastewater_plants
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIWATERRE
+  pin_layer: pri_water_reservoirs
+  label: PRI Water Reservoirs
+  visibility: V3
+  domain: utilities
+  pin_group: water_sewer
+  pin_class: pri_water_reservoirs
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_PRIWATERTR
+  pin_layer: pri_water_treatment_plants
+  label: PRI Water Treatment Plants
+  visibility: V3
+  domain: utilities
+  pin_group: water_sewer
+  pin_class: pri_water_treatment_plants
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_U_WATERWORKS
+  pin_layer: waterworks_master_v1
+  label: Waterworks Master v1
+  visibility: V3
+  domain: utilities
+  pin_group: water_sewer
+  pin_class: waterworks_master
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_TELECOMBUI
   pin_layer: telecom_building_point
   label: Telecom Building Point
@@ -398,6 +867,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_TELECOMBUI
   pin_layer: telecom_building_polygon
   label: Telecom Building Polygon
@@ -410,6 +885,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_U_TELECOMCAB
   pin_layer: telecom_cable
   label: Telecom Cable
@@ -422,6 +903,48 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_I_INDUSTRIAL
+  pin_layer: industrial_master
+  label: Industrial Master
+  visibility: V3
+  domain: industrial
+  pin_group: industrial
+  pin_class: industrial_master
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_A_GAZETTEERP
+  pin_layer: gazetteer_pr_domestic_names
+  label: Gazetteer PR Domestic Names
+  visibility: V3
+  domain: administrative
+  pin_group: reference_gazetteer
+  pin_class: gazetteer_pr_domestic_names
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_IC_CIVICHEADS
   pin_layer: civic_headstart_pr
   label: Head Start Service Locations
@@ -434,6 +957,30 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_IC_PUBLICSCHO
+  pin_layer: public_schools_all
+  label: Public Schools (All)
+  visibility: V2
+  domain: institutional_civic
+  pin_group: civic_social
+  pin_class: public_schools_all
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_TA_LANDINGZON
   pin_layer: landing_zones_master
   label: Landing Zones Master
@@ -442,10 +989,16 @@ layer_index:
   pin_group: landing_zones
   pin_class: landing_zones_master
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_TA_HANGARCAND
   pin_layer: hangar_candidates
   label: Hangar Candidates
@@ -458,6 +1011,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_PSO_SITES
   pin_layer: sites
   label: Sites
@@ -470,6 +1029,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_PSO_FIRESTATIO
   pin_layer: fire_stations_consolidated
   label: Fire Stations Consolidated
@@ -478,10 +1043,16 @@ layer_index:
   pin_group: operational_sites
   pin_class: fire_stations_consolidated
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_TA_FLIGHTS
   pin_layer: flights
   label: Flights
@@ -494,6 +1065,30 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_TA_MILITARYAV
+  pin_layer: military_aviation
+  label: Military Aviation
+  visibility: V2
+  domain: transportation_airspace
+  pin_group: military_aviation
+  pin_class: military_aviation
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_PSO_MISSINGPER
   pin_layer: missing_persons_cases
   label: Missing Persons Cases
@@ -506,6 +1101,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_PSO_MISSINGPER
   pin_layer: missing_persons_by_municipio
   label: Missing Persons by Municipio
@@ -518,6 +1119,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_ILAPMASTER
   pin_layer: ilap_master_nodes
   label: ILAP Master Nodes
@@ -526,10 +1133,16 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: ilap_master
   geometry_type: point
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_ILAPPREDIC
   pin_layer: ilap_predictions
   label: ILAP Predictions
@@ -538,10 +1151,34 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: ilap_predictions
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_AC_ILAPDEMANO
+  pin_layer: ilap_dem_anomalies
+  label: ILAP DEM Anomalies
+  visibility: V1
+  domain: analytic_constructs
+  pin_group: ilap_constructs
+  pin_class: ilap_dem_anomalies
+  geometry_type: unknown
+  flag: WIRED
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_HYDROCANDI
   pin_layer: hydro_candidate_nodes
   label: Hydro Candidate Nodes
@@ -550,10 +1187,16 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: hydro_candidate
   geometry_type: point
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_WATERSIGNA
   pin_layer: water_signals
   label: Water Signals
@@ -562,10 +1205,16 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: water_signals
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_FICOSAPFIN
   pin_layer: fic_osap_final_set_v3
   label: FIC OSAP Final Set v3
@@ -574,10 +1223,16 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: fic_osap_final_set
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_FICOSAPCAN
   pin_layer: fic_osap_candidates_v2
   label: FIC OSAP Candidates v2
@@ -586,10 +1241,16 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: fic_osap_candidates
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_FICOSAPILA
   pin_layer: fic_osap_ilap_links_v4
   label: FIC OSAP ILAP Links v4
@@ -598,10 +1259,16 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: fic_osap_ilap_links
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_FICOSAPILA
   pin_layer: fic_osap_ilap_paths_v6
   label: FIC OSAP ILAP Paths v6
@@ -610,10 +1277,16 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: fic_osap_ilap_paths
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_TA_AASBCORRID
   pin_layer: aasb_corridor_nodes
   label: AASB Corridor Nodes
@@ -622,10 +1295,16 @@ layer_index:
   pin_group: aasb_corridors
   pin_class: aasb_corridor
   geometry_type: point
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_TA_CORRIDORS
   pin_layer: corridors
   label: Corridors
@@ -638,6 +1317,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_TA_CORRIDORIN
   pin_layer: corridor_index_v1
   label: Corridor Index v1
@@ -646,10 +1331,16 @@ layer_index:
   pin_group: aasb_corridors
   pin_class: corridor_index
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_TA_SUBSURFACE
   pin_layer: subsurface_corridors_master
   label: Subsurface Corridors Master
@@ -658,10 +1349,16 @@ layer_index:
   pin_group: aasb_corridors
   pin_class: subsurface_corridors_master
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_H_SPIDERWEBG
   pin_layer: spiderweb_graph_nodes_v5
   label: Spiderweb Graph Nodes v5
@@ -670,10 +1367,16 @@ layer_index:
   pin_group: spiderweb_graph
   pin_class: spiderweb_graph
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_H_SPIDERWEBG
   pin_layer: spiderweb_graph_edges_v5
   label: Spiderweb Graph Edges v5
@@ -682,10 +1385,16 @@ layer_index:
   pin_group: spiderweb_graph
   pin_class: spiderweb_graph
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_H_CONSOLIDAT
   pin_layer: consolidated_master_registry
   label: Consolidated Master POI Registry
@@ -694,10 +1403,16 @@ layer_index:
   pin_group: spiderweb_graph
   pin_class: consolidated_master_registry
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_H_KARSTSUBSU
   pin_layer: karst_subsurface_nodes_v2
   label: Karst Subsurface Nodes v2
@@ -706,10 +1421,16 @@ layer_index:
   pin_group: subsurface_karst
   pin_class: karst_subsurface
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_H_KARSTSUBSU
   pin_layer: karst_subsurface_edges_v2
   label: Karst Subsurface Edges v2
@@ -718,10 +1439,16 @@ layer_index:
   pin_group: subsurface_karst
   pin_class: karst_subsurface
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_ANOMALIES
   pin_layer: anomalies
   label: Anomalies
@@ -734,6 +1461,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 - pin_uid_prefix: PIN_AC_HEATMAP
   pin_layer: heatmap
   label: Heatmap
@@ -746,5 +1479,12 @@ layer_index:
   status: planned
   evidence_tier: T3
   review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
 pins: []
 pin_links: []
+ilap_clusters: []
