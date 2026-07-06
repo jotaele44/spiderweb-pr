@@ -29,6 +29,7 @@ Defines what is and is not committed to the repository, and how runtime artifact
 - `docs/` — this documentation
 - `.github/workflows/ci.yml` — CI pipeline definition
 - `dashboard/dashboard.html` / `dashboard/dashboard.jsx` — browser dashboard
+- Source-adapter manifests and coverage ledgers when they are small, non-sensitive, and needed for reproducibility
 
 ---
 
@@ -46,6 +47,15 @@ Defines what is and is not committed to the repository, and how runtime artifact
 | Tile PNG cache | `tile_cache/*.png` | Binary, regenerable |
 | JSONL outputs | `outputs/*.jsonl` | Runtime artifact |
 | GeoJSON outputs | `outputs/*.geojson` | Runtime artifact |
+| Raw source downloads | Census ZIPs, extracted shapefiles, temporary batch folders | Regenerable input payloads |
+
+---
+
+## Source adapter policy
+
+Source adapters should prefer on-demand acquisition plus small provenance records over committed raw data dumps.
+
+For the Census Partnership Puerto Rico adapter, commit only documentation, source manifests, SHA256 manifests, coverage ledgers, and promoted normalized GIS outputs. Do not commit raw Census ZIP files, extracted shapefile trees, partial downloads, or temporary batch folders. See `docs/source_adapters/census_partnership_pr.md` for the adapter-specific rule set.
 
 ---
 
@@ -78,29 +88,4 @@ find outputs/ -not -name '.gitkeep' -delete
 
 # Clear tile cache
 find tile_cache/ -name '*.png' -delete
-
-# Clear Airspace Intel DB
-rm -f flight_database.db
-
-# Clear ChromaDB index
-rm -rf outputs/pruap_index/
-
-# Clear GEBCO intermediate files
-rm -f outputs/subset_*.nc
 ```
-
----
-
-## Output file owners (which module writes what)
-
-| Output path | Written by | Notes |
-|-------------|-----------|-------|
-| `outputs/pr_intel/` | `integration/pr_intel_adapter.py` | 6 parquet + 2 GeoJSON + JSON |
-| `outputs/spiderweb/` | `integration/ilap_airspace_bridge.py`, `integration/aasb_airspace_bridge.py` | |
-| `outputs/dashboard_data.json` | `run_all.py --export-json` | |
-| `review_queue.csv` | `integration/schema_validation.py` | schema validation rejects |
-| `chunks.jsonl` / `finetune.jsonl` | `llm/prepare_data.py` | LLM pipeline |
-| `outputs/pruap_index/` | `llm/rag_pipeline.py` | ChromaDB vector store |
-| `outputs/queue.jsonl` | `scripts/make_*.py` | EarthGPT tile queue |
-| `outputs/ranked_targets.geojson` | `scripts/export_ranked_geojson.py` | EarthGPT final output |
-| `tile_cache/*.png` | `earthgpt/tiles.py` | XYZ tile cache |
