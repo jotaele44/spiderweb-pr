@@ -9,7 +9,7 @@ from scripts.source_adapters.census_partnership_pr.fetch import (
     sha256_bytes,
     write_coverage_ledger,
 )
-from scripts.source_adapters.census_partnership_pr.normalize import extract_zip, find_vector_inputs
+from scripts.source_adapters.census_partnership_pr.normalize import extract_zip, extract_zip_tree, find_vector_inputs
 from scripts.source_adapters.census_partnership_pr.parse_form import (
     make_batches,
     parse_partnership_form,
@@ -96,3 +96,19 @@ def test_extract_zip_and_find_shapefiles(tmp_path: Path):
     shapefiles = find_vector_inputs(extracted)
 
     assert [path.name for path in shapefiles] == ["sample.shp"]
+
+
+def test_extract_zip_tree_recurses_into_nested_municipio_zips(tmp_path: Path):
+    nested_zip = tmp_path / "72001.zip"
+    with zipfile.ZipFile(nested_zip, "w") as archive:
+        archive.writestr("72001/edges.shp", b"placeholder")
+        archive.writestr("72001/edges.dbf", b"placeholder")
+
+    outer_zip = tmp_path / "batch.zip"
+    with zipfile.ZipFile(outer_zip, "w") as archive:
+        archive.write(nested_zip, arcname="downloads/72001.zip")
+
+    extracted = extract_zip_tree(outer_zip, tmp_path / "extracted")
+    shapefiles = find_vector_inputs(extracted)
+
+    assert [path.name for path in shapefiles] == ["edges.shp"]
