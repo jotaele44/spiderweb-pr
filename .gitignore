@@ -40,20 +40,10 @@ data/sources/namus/*
 !data/sources/namus/README.md
 
 # Census Partnership source adapter: raw downloads and extracted shapefile trees
-# are runtime-only. Track manifests/docs/promoted normalized outputs, not source payloads.
+# are runtime-only. Directory-level ignores scope shapefile sidecars to Census paths.
 data/raw/census_partnership_pr/
 data/extracted/census_partnership_pr/
 cache/census_partnership_pr/
-*.shp
-*.shx
-*.dbf
-*.prj
-*.cpg
-*.sbn
-*.sbx
-*.qix
-*.zip.part
-*.download
 
 # input/ — operator-local override for recover-tails FAA N-number list +
 # timestamped auto-backups + derived skip-list. The hermetic CI fallback
