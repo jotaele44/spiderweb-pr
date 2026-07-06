@@ -305,6 +305,9 @@ __marimo__/
 # generated canonical export (scripts/federation_export.py)
 exports/federation/
 
+# flight/airspace subsystem stripped to skywatcher-pr (from_spiderweb/) — staging, delete anytime
+.migration_trash_flight/
+
 # Frontend hand-written code lives in server/frontend/src/lib — the Python `lib/`
 # rule above wrongly ignores it. Re-include it.
 !server/frontend/src/lib/
