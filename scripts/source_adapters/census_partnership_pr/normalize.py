@@ -27,6 +27,41 @@ def extract_zip(zip_path: Path, extract_root: Path) -> Path:
     return destination
 
 
+def extract_nested_zips(root: Path) -> list[Path]:
+    """Recursively extract nested ZIP files under an extracted Census bundle.
+
+    The Census batch endpoint can return an outer ZIP containing one ZIP per
+    municipio. This function walks newly extracted directories until no nested
+    ZIP remains unexpanded. Each nested archive is extracted beside itself into a
+    sibling directory named after the archive stem.
+    """
+
+    extracted_dirs: list[Path] = []
+    seen: set[Path] = set()
+
+    while True:
+        nested = [path for path in sorted(root.rglob("*.zip")) if path.resolve() not in seen]
+        if not nested:
+            return extracted_dirs
+        for zip_path in nested:
+            seen.add(zip_path.resolve())
+            if not zipfile.is_zipfile(zip_path):
+                continue
+            destination = zip_path.with_suffix("")
+            destination.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(zip_path) as archive:
+                archive.extractall(destination)
+            extracted_dirs.append(destination)
+
+
+def extract_zip_tree(zip_path: Path, extract_root: Path) -> Path:
+    """Extract an outer ZIP and any nested ZIPs it contains."""
+
+    extracted = extract_zip(zip_path, extract_root)
+    extract_nested_zips(extracted)
+    return extracted
+
+
 def find_vector_inputs(extracted_dir: Path) -> list[Path]:
     """Return shapefile inputs found in an extracted Census bundle."""
 
@@ -51,7 +86,7 @@ def normalize_zip_to_gpkg(zip_path: Path, output_gpkg: Path, extract_root: Path 
 
 
 def _normalize_from_extracted(zip_path: Path, output_gpkg: Path, extract_root: Path, ogr2ogr: str) -> Path:
-    extracted = extract_zip(zip_path, extract_root)
+    extracted = extract_zip_tree(zip_path, extract_root)
     shapefiles = find_vector_inputs(extracted)
     if not shapefiles:
         raise ValueError(f"No shapefiles found in {zip_path}")
