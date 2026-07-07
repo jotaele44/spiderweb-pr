@@ -323,3 +323,8 @@ export-standalone/
 
 # generated federation maintenance report (audit artifact, not committed)
 reports/maintenance/
+
+# Desktop wrapper (see desktop/README.md)
+.venv/
+desktop/.setup-complete
+outputs/dashboard_data.json
