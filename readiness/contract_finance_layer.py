@@ -30,8 +30,34 @@ OUTPUT_OVERLAY = "contract_finance_scored_overlay.geojson"
 OUTPUT_REPORT = "contract_finance_layer_report.json"
 
 
+CENTINELAS_SOURCE_ID = "centinelas-pr"
+
+
 class ContractFinanceLayerError(ValueError):
     """Raised when the contract/finance layer cannot be scored safely."""
+
+
+def _is_centinelas(props: dict[str, Any]) -> bool:
+    """True when a feature's source metadata identifies centinelas-pr.
+
+    Matches the direct ``source_id`` and, defensively, the source-record fields a
+    money row may carry instead (``source_ref`` / ``source_name`` and a nested
+    ``source`` object), so provenance still surfaces if the producer keys the row
+    by a registry id rather than the literal ``centinelas-pr``.
+    """
+    candidates = [
+        props.get("source_id"),
+        props.get("source_ref"),
+        props.get("source_name"),
+    ]
+    source = props.get("source")
+    if isinstance(source, dict):
+        candidates += [
+            source.get("source_id"),
+            source.get("source_ref"),
+            source.get("source_name"),
+        ]
+    return any(CENTINELAS_SOURCE_ID in str(c).lower() for c in candidates if c)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -213,6 +239,25 @@ def _summarize(
         by_muni[code]["total_amount"] += _safe_float(props.get("amount"))
         by_muni[code]["municipality_name"] = props.get("municipality_name") or "UNKNOWN"
 
+    # Centinelas pre-officialization provenance: how much of this overlay derives
+    # from centinelas-pr FINANCIAL/POLITICAL signals routed through the MoneySweep
+    # anchor. Counted directly from the scored features (robust to producer report
+    # drift) and cross-referenced against the producer's own ingest-report block.
+    # Match on any source metadata that identifies centinelas-pr, not just a
+    # literal source_id: the money row may carry a registry-key source_id
+    # (e.g. src_...) with the origin under source_ref / source_name / source.
+    centinelas_features = [f for f in features if _is_centinelas(f.get("properties") or {})]
+    centinelas_located = sum(
+        1 for f in centinelas_features
+        if (f.get("properties") or {}).get("municipality_code")
+    )
+    centinelas_provenance: dict[str, Any] = {
+        "feature_count": len(centinelas_features),
+        "located_feature_count": centinelas_located,
+    }
+    if isinstance(ingest_report.get("centinelas_pre_official"), dict):
+        centinelas_provenance["producer_reported"] = ingest_report["centinelas_pre_official"]
+
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "input_dir": str(input_dir),
@@ -223,6 +268,7 @@ def _summarize(
         "by_tier": dict(sorted(by_tier.items())),
         "by_feature_type": dict(sorted(by_type.items())),
         "by_municipality": dict(sorted(by_muni.items())),
+        "centinelas_pre_official": centinelas_provenance,
         "score_features": ["entity_convergence", "municipal_density", "temporal_funding_pulse"],
         "outputs": {"scored_overlay": OUTPUT_OVERLAY, "layer_report": OUTPUT_REPORT},
     }

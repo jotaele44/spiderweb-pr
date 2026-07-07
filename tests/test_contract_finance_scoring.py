@@ -204,3 +204,38 @@ def test_build_and_calibrate_end_to_end(tmp_path):
     assert calib["records"]["combined_money_features"] == 2
     assert calib["coverage"]["municipality"] == 1.0
     assert calib["score_profile"]["count"] == 2  # scored overlay present
+
+
+def test_centinelas_provenance_surfaced_in_report(tmp_path):
+    # A MoneySweep bundle carrying a centinelas-pr pre-official feature must be
+    # scored like any other and have its provenance surfaced in the layer report.
+    awards = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "geometry": None, "properties": {
+            "record_id": "CS-CENT-fin001", "entity_id": "AAA", "amount": 1500000.0,
+            "municipality_code": "72113", "municipality_name": "Ponce",
+            "feature_type": "contract_award", "source_layer": "contract_finance",
+            "source_id": "centinelas-pr", "date": "2026-05-01T00:00:00Z"}},
+        _feature("official1", amount=1000, muni="72127"),
+    ]}
+    (tmp_path / "contract_awards.geojson").write_text(json.dumps(awards))
+    (tmp_path / "financial_flows.geojson").write_text(
+        json.dumps({"type": "FeatureCollection", "features": []}))
+    (tmp_path / "municipality_funding_density.csv").write_text(
+        "municipality_code,municipality_name,total_amount,record_count\n"
+        "72113,Ponce,1500000,1\n72127,San Juan,1000,1\n")
+    (tmp_path / "contract_finance_ingest_report.json").write_text(json.dumps({
+        "producer": "moneysweep-pr", "export_contract_version": "1.2.0",
+        "centinelas_pre_official": {"candidate_count": 1, "located_count": 1}}))
+
+    report = build_contract_finance_layer(tmp_path)
+    assert report["record_count"] == 2
+    prov = report["centinelas_pre_official"]
+    assert prov["feature_count"] == 1
+    assert prov["located_feature_count"] == 1
+    assert prov["producer_reported"] == {"candidate_count": 1, "located_count": 1}
+    # The centinelas feature is present and scored in the overlay.
+    overlay = json.loads((tmp_path / "contract_finance_scored_overlay.geojson").read_text())
+    cent = [f for f in overlay["features"]
+            if f["properties"].get("source_id") == "centinelas-pr"]
+    assert len(cent) == 1
+    assert 0.0 <= cent[0]["properties"]["spiderweb_score"] <= 1.0
