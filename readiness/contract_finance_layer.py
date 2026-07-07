@@ -213,6 +213,25 @@ def _summarize(
         by_muni[code]["total_amount"] += _safe_float(props.get("amount"))
         by_muni[code]["municipality_name"] = props.get("municipality_name") or "UNKNOWN"
 
+    # Centinelas pre-officialization provenance: how much of this overlay derives
+    # from centinelas-pr FINANCIAL/POLITICAL signals routed through the MoneySweep
+    # anchor. Counted directly from the scored features (robust to producer report
+    # drift) and cross-referenced against the producer's own ingest-report block.
+    centinelas_features = [
+        f for f in features
+        if str((f.get("properties") or {}).get("source_id")) == "centinelas-pr"
+    ]
+    centinelas_located = sum(
+        1 for f in centinelas_features
+        if (f.get("properties") or {}).get("municipality_code")
+    )
+    centinelas_provenance: dict[str, Any] = {
+        "feature_count": len(centinelas_features),
+        "located_feature_count": centinelas_located,
+    }
+    if isinstance(ingest_report.get("centinelas_pre_official"), dict):
+        centinelas_provenance["producer_reported"] = ingest_report["centinelas_pre_official"]
+
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "input_dir": str(input_dir),
@@ -223,6 +242,7 @@ def _summarize(
         "by_tier": dict(sorted(by_tier.items())),
         "by_feature_type": dict(sorted(by_type.items())),
         "by_municipality": dict(sorted(by_muni.items())),
+        "centinelas_pre_official": centinelas_provenance,
         "score_features": ["entity_convergence", "municipal_density", "temporal_funding_pulse"],
         "outputs": {"scored_overlay": OUTPUT_OVERLAY, "layer_report": OUTPUT_REPORT},
     }
