@@ -328,3 +328,4 @@ reports/maintenance/
 .venv/
 desktop/.setup-complete
 outputs/dashboard_data.json
+desktop/.running
