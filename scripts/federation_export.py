@@ -7,7 +7,10 @@ files onto the Hub's canonical contract so the Hub can aggregate spiderweb
 alongside the other producers:
 
   * each source record       -> one `sources` row + a `sensor_source` entity
-  * each event/observation/track -> one `entities` row (airspace_event/observation/track)
+    (or another entity_type, if the row's `kind` is a registered discriminator —
+    see `_ENTITY_TYPE_BY_SOURCE_KIND`)
+  * each event/observation/track -> one `entities` row (airspace_event/observation/track,
+    or another entity_type per `_ENTITY_TYPE_BY_OBSERVATION_TYPE`)
   * each subject (aircraft callsign) -> one `entities` row (entity_type=aircraft)
   * record -[reported_by]-> source
   * record -[observed]-> aircraft  (when subject_id / callsign present)
@@ -45,6 +48,13 @@ RECORD_STREAMS = {
     "observations": "airspace_observation",
     "tracks": "airspace_track",
 }
+# Per-row discriminators that override the stream-level default above (records)
+# or the unconditional "sensor_source" default (sources), for newer non-airspace
+# datasets projected onto the same envelope streams — see
+# build_dataset_catalog_streams.py. Existing rows without a matching
+# observation_type/kind fall through to the prior, unchanged behavior.
+_ENTITY_TYPE_BY_OBSERVATION_TYPE = {"usgs_metallic_occurrence": "mineral_occurrence"}
+_ENTITY_TYPE_BY_SOURCE_KIND = {"gis_layer_reference": "gis_layer_reference"}
 
 
 def _fid(prefix: str, *parts: Any) -> str:
@@ -122,9 +132,10 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
         }
         ent_id = _fid("ent", "source", raw)
         src_entity[raw] = ent_id
+        source_entity_type = _ENTITY_TYPE_BY_SOURCE_KIND.get(s.get("kind"), "sensor_source")
         entities[ent_id] = {
             "entity_id": ent_id, "source_id": sid, "name": raw,
-            "normalized_name": _norm(raw), "entity_type": "sensor_source",
+            "normalized_name": _norm(raw), "entity_type": source_entity_type,
             "jurisdiction": "PR", "confidence": score, "lineage": _lineage("SOURCE_ENTITY"),
             "synthetic": synthetic, "created_at": s.get("first_seen_at") or now, "extracted_at": now,
         }
@@ -138,10 +149,11 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
             when = r.get("observed_at") or r.get("event_time") or now
             rid = r.get("id")
             ent_id = _fid("ent", stream, rid)
+            entity_type = _ENTITY_TYPE_BY_OBSERVATION_TYPE.get(r.get("observation_type"), etype)
             entities[ent_id] = {
                 "entity_id": ent_id, "source_id": sid,
-                "name": f"{etype} {rid[:8]}", "normalized_name": _norm(f"{etype} {rid[:8]}"),
-                "entity_type": etype, "jurisdiction": "PR", "confidence": score,
+                "name": f"{entity_type} {rid[:8]}", "normalized_name": _norm(f"{entity_type} {rid[:8]}"),
+                "entity_type": entity_type, "jurisdiction": "PR", "confidence": score,
                 "lineage": _lineage("RECORD_ENTITY"), "synthetic": synthetic,
                 "created_at": when, "extracted_at": now,
             }

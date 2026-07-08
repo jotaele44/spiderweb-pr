@@ -77,3 +77,45 @@ def test_record_entity_carries_location_from_geometry():
 def test_record_entity_without_geometry_has_no_location():
     s = build_streams(SOURCES, RECORDS, "t")  # fixture records carry no geometry
     assert all("location" not in e for e in s["entities"])
+
+
+def test_observation_type_discriminator_maps_to_new_entity_type():
+    records = {
+        "observations": [{
+            "id": "obsusgs1", "source_id": "src_a", "observation_type": "usgs_metallic_occurrence",
+            "observed_at": "t", "confidence": {"score": 0.65}, "is_synthetic": False,
+            "geometry": {"type": "Point", "coordinates": [-66.46, 18.08]},
+        }],
+        "airspace_events": [], "tracks": [],
+    }
+    s = build_streams(SOURCES, records, "t")
+    occurrences = [e for e in s["entities"] if e["entity_type"] == "mineral_occurrence"]
+    assert len(occurrences) == 1
+    assert occurrences[0]["location"] == {"lat": 18.08, "lon": -66.46}
+    # no aircraft entity should be minted — this record has no subject_id/callsign.
+    assert not any(e["entity_type"] == "aircraft" for e in s["entities"])
+
+
+def test_unmapped_observation_type_keeps_stream_default():
+    # RECORDS' observation row has no observation_type at all -> falls through to
+    # RECORD_STREAMS' default, exactly as before this discriminator was added.
+    s = build_streams(SOURCES, RECORDS, "t")
+    assert any(e["entity_type"] == "airspace_observation" for e in s["entities"])
+    assert not any(e["entity_type"] == "mineral_occurrence" for e in s["entities"])
+
+
+def test_source_kind_discriminator_maps_to_new_entity_type():
+    sources_in = [{
+        "source_id": "src_layer", "kind": "gis_layer_reference", "is_synthetic": False,
+        "confidence": {"score": 0.4}, "first_seen_at": "2026-01-01T00:00:00+00:00",
+    }]
+    s = build_streams(sources_in, {"observations": [], "airspace_events": [], "tracks": []}, "t")
+    assert len(s["entities"]) == 1
+    assert s["entities"][0]["entity_type"] == "gis_layer_reference"
+
+
+def test_unmapped_source_kind_keeps_sensor_source_default():
+    # existing SOURCES fixture's kind ("fr24_screenshot") isn't a registered discriminator
+    # -> unchanged "sensor_source" default.
+    s = build_streams(SOURCES, RECORDS, "t")
+    assert any(e["entity_type"] == "sensor_source" for e in s["entities"])
