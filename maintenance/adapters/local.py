@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..models import MaintenanceFinding
+from prii_maintenance import MaintenanceFinding
 
 _SAMPLE_DIR = "exports/samples"
 _LEGACY_MARKERS = ("legacy", "archive")
