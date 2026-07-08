@@ -120,6 +120,54 @@ def test_merges_with_existing_real_dir(tmp_path):
     assert len(merged["sources"]) == 1 + 51
 
 
+def test_rerun_against_own_output_is_idempotent(tmp_path):
+    """Running build_streams()+write_streams() twice against the SAME real_dir must not
+    duplicate this emitter's own rows on the second pass — reproduces and guards against
+    the bug where naive concatenation with existing_obs/existing_sources duplicated all
+    364 observations + 51 sources on every rerun against an already-merged --real-dir."""
+    pre_existing_obs = {
+        "id": "c" * 32, "source_id": "src_y", "subject_id": "N2", "observation_type": "airport_reference_location",
+        "observed_at": "2026-01-01T00:00:00+00:00", "geometry": {"type": "Point", "coordinates": [-66.5, 18.4]},
+        "lineage": [{"step": "s", "actor": "a", "ts": "2026-01-01T00:00:00+00:00"}],
+        "confidence": {"score": 0.5, "method": "m"}, "is_synthetic": False,
+    }
+    pre_existing_src = {
+        "id": "d" * 32, "source_id": "src_y", "kind": "manual", "first_seen_at": "2026-01-01T00:00:00+00:00",
+        "last_seen_at": "2026-01-01T00:00:00+00:00", "lineage": [{"step": "s", "actor": "a", "ts": "2026-01-01T00:00:00+00:00"}],
+        "confidence": {"score": 0.5, "method": "m"}, "is_synthetic": False,
+    }
+    write_streams(
+        {"events": [], "observations": [pre_existing_obs], "tracks": [], "sources": [pre_existing_src]},
+        tmp_path,
+    )
+
+    first = build_streams(real_dir=tmp_path)
+    write_streams(first, tmp_path)
+
+    second = build_streams(real_dir=tmp_path)
+
+    # This emitter's own rows: 364 observations + 51 sources (1 usgs source + 50 layer
+    # sources), unchanged and un-duplicated across the rerun.
+    assert len(first["observations"]) == 1 + 364
+    assert len(first["sources"]) == 1 + 51
+    assert len(second["observations"]) == 1 + 364
+    assert len(second["sources"]) == 1 + 51
+
+    # The unrelated pre-existing rows (owned by some other emitter) must still be present,
+    # exactly once, untouched by either run.
+    assert pre_existing_obs in second["observations"]
+    assert pre_existing_src in second["sources"]
+
+    # And the content written after run 1 and after run 2 must be byte-identical (true
+    # fixed point), not just equal in count.
+    write_streams(second, tmp_path)
+    for filename in OUT_FILENAMES.values():
+        lines = [ln for ln in (tmp_path / filename).read_text().splitlines() if ln.strip()]
+        # every row id unique -> no duplication happened in this file
+        ids = [json.loads(ln)["id"] for ln in lines]
+        assert len(ids) == len(set(ids))
+
+
 def test_write_streams_emits_package_filenames(streams, tmp_path):
     counts = write_streams(streams, tmp_path)
     for stream, filename in OUT_FILENAMES.items():

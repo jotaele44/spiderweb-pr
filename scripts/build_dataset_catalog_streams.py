@@ -208,11 +208,26 @@ def build_streams(
     existing_obs = _read_existing(real_dir, "observations")
     existing_sources = _read_existing(real_dir, "sources")
 
+    # This emitter owns (and must fully REPLACE, not append to) exactly the rows it
+    # itself writes: usgs_metallic_occurrence observations, and usgs_ofr_98_038_report /
+    # gis_layer_reference sources. Naively concatenating existing_obs/existing_sources
+    # with the freshly-built rows would duplicate everything on every rerun against an
+    # already-merged --real-dir (the whole point of this script, since its output is
+    # committed back into exports/real/). Filtering the owned rows out of "existing"
+    # before concatenating makes reruns a true no-op AND correctly picks up upstream
+    # edits/deletions in the USGS geojson or master_pin_registry.yaml — unlike plain
+    # dedupe-by-id, which would leave a stale row behind whenever its content (and thus
+    # its content-hash id) changes upstream. Rows owned by other emitters (e.g.
+    # build_real_spatial_streams.py's structure_sighting/airport_reference_location
+    # observations) are left untouched.
+    other_obs = [r for r in existing_obs if r.get("observation_type") != "usgs_metallic_occurrence"]
+    other_sources = [r for r in existing_sources if r.get("kind") not in ("usgs_ofr_98_038_report", "gis_layer_reference")]
+
     return {
         "events": _read_existing(real_dir, "events"),
-        "observations": existing_obs + usgs_obs,
+        "observations": other_obs + usgs_obs,
         "tracks": _read_existing(real_dir, "tracks"),
-        "sources": existing_sources + [usgs_source] + layer_sources,
+        "sources": other_sources + [usgs_source] + layer_sources,
     }
 
 
