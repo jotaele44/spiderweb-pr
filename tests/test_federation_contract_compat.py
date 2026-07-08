@@ -120,3 +120,17 @@ def test_manifest_schema_ids_resolve_to_real_schemas():
     for f in _golden()["manifest"]["files"]:
         stem = f["schema_id"].replace(".schema.json", "")
         assert stem in v.available_schemas(), f"dangling schema_id: {f['schema_id']}"
+
+
+def test_manifest_validates_against_canonical_manifest_schema():
+    # write_package()'s own manifest envelope must validate against
+    # schemas/federation_export_manifest.schema.json — this is the Hub-facing
+    # contract, distinct from federation/export_writer.py's legacy manifest
+    # shape (a different producer-side module, out of scope here).
+    pytest.importorskip("jsonschema")
+    from integration.schema_validation import SchemaValidator
+
+    v = SchemaValidator()
+    assert "federation_export_manifest" in v.available_schemas()
+    result = v.validate(_golden()["manifest"], "federation_export_manifest")
+    assert result["valid"], f"manifest invalid: {result['errors']}"

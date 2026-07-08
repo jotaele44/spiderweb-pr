@@ -905,6 +905,27 @@
       "dedup_key": "relationship_id",
       "fact_status_default": "observed",
       "notes": "Hub-facing canonical relationship stream written by scripts/federation_export.py."
+    },
+    {
+      "workstream": "federation",
+      "artifact_path": "exports/federation/manifest.json",
+      "schema_name": "federation_export_manifest",
+      "schema_file": "schemas/federation_export_manifest.schema.json",
+      "format": "json",
+      "crs": null,
+      "required_columns_summary": [
+        "package_id",
+        "producer",
+        "export_contract_version",
+        "mode",
+        "created_at",
+        "federation",
+        "files"
+      ],
+      "provenance_fields": [],
+      "dedup_key": "package_id",
+      "fact_status_default": null,
+      "notes": "Hub-facing package manifest sidecar written by scripts/federation_export.py::write_package(); the schema mirrors thehub-pr's canonical federation_export_manifest.schema.json. Distinct from federation/export_writer.py's legacy manifest shape, which no schema currently governs."
     }
   ]
 }
