@@ -1,7 +1,11 @@
-"""Spiderweb maintenance layer: detection, adapter, corrections, runner.
+"""Spiderweb maintenance adapter: repo-specific checks + shared-package wiring.
 
-Thorough by design — the maintenance package is vendored, and exercising its
-branches keeps it well-covered under the repo's coverage gate.
+Generic detection/runner behavior now lives in thehub-pr's shared
+`prii_maintenance` package (thehub-pr/packages/prii_maintenance/tests/); this
+file keeps only the checks genuinely specific to spiderweb-pr
+(`maintenance/adapters/local.py`) plus a smoke test proving the CLI shim's
+dependency-injection wiring (`prii_maintenance.run_maintenance(...,
+local_checks=local.run_checks)`) actually invokes this repo's adapter.
 """
 
 from __future__ import annotations
@@ -12,8 +16,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from maintenance import REPORT_RELPATH, detect, run_maintenance  # noqa: E402
-from maintenance import state as state_mod  # noqa: E402
+from prii_maintenance import run_maintenance  # noqa: E402
+from prii_maintenance import state as state_mod  # noqa: E402
+
 from maintenance.adapters import local  # noqa: E402
 
 
@@ -29,33 +34,6 @@ def _write_samples(root, *, manifest="{}", streams=None):
     (d / "manifest.sample.json").write_text(manifest, encoding="utf-8")
     for name, rows in (streams or {}).items():
         (d / name).write_text("\n".join(rows) + "\n", encoding="utf-8")
-
-
-# ---- detection ----
-
-
-def test_missing_federation_json_is_critical(tmp_path):
-    state = state_mod.collect_repo_state(tmp_path)
-    findings = detect.detect_missing_required_files("spiderweb-pr", tmp_path, state)
-    assert any(f.category == "manifest" and f.severity == "critical" for f in findings)
-
-
-def test_invalid_json_output_is_error(tmp_path):
-    (tmp_path / "exports").mkdir()
-    (tmp_path / "exports" / "x.json").write_text("{nope", encoding="utf-8")
-    state = _federation(tmp_path, x="exports/x.json")
-    findings = detect.detect_invalid_json("spiderweb-pr", tmp_path, state)
-    assert any(f.category == "schema" and f.severity == "error" for f in findings)
-
-
-def test_duplicate_jsonl_detected(tmp_path):
-    d = tmp_path / "exports" / "federation"
-    d.mkdir(parents=True)
-    (d / "events.jsonl").write_text('{"a":1}\n{"a":1}\n{"a":2}\n', encoding="utf-8")
-    state = _federation(tmp_path, canonical_export_dir="exports/federation")
-    findings = detect.detect_exact_duplicate_jsonl("spiderweb-pr", tmp_path, state)
-    assert len(findings) == 1
-    assert findings[0].category == "duplicate"
 
 
 # ---- adapter: migration remnants ----
@@ -107,33 +85,22 @@ def test_bad_jsonl_row_is_error(tmp_path):
     assert any("unparseable" in f.message for f in findings)
 
 
-# ---- corrections + runner (write path) ----
+# ---- shared-package wiring smoke test ----
 
 
-def test_audit_does_not_mutate_but_safe_correct_does(tmp_path):
-    d = tmp_path / "exports" / "federation"
-    d.mkdir(parents=True)
-    jsonl = d / "events.jsonl"
-    jsonl.write_text('{"a":1}\n{"a":1}\n{"a":2}\n', encoding="utf-8")
-    _federation(tmp_path, canonical_export_dir="exports/federation")
-
-    before = jsonl.read_text(encoding="utf-8")
-    audit = run_maintenance(root=tmp_path, mode="audit", write=False)
-    assert any(f.category == "duplicate" and f.action == "none" for f in audit.findings)
-    assert jsonl.read_text(encoding="utf-8") == before
-
-    fixed = run_maintenance(root=tmp_path, mode="safe-correct", write=False)
-    assert any(f.action == "auto_corrected" for f in fixed.findings)
-    lines = [ln for ln in jsonl.read_text(encoding="utf-8").splitlines() if ln.strip()]
-    assert len(lines) == 2
-
-
-def test_run_maintenance_writes_report_and_review_queue(tmp_path):
-    _write_samples(
-        tmp_path, manifest="{not json"
-    )  # produces an error finding -> review queue
-    _federation(tmp_path, export_sample_manifest="exports/samples/manifest.sample.json")
-    report = run_maintenance(root=tmp_path, mode="audit", write=True)
-    assert (tmp_path / REPORT_RELPATH).exists()
-    assert (tmp_path / "reports" / "maintenance" / "review_queue.json").exists()
-    assert report.promotion_blocked is False  # errors are quarantined, not critical
+def test_run_maintenance_invokes_local_adapter(tmp_path):
+    """Prove the CLI shim's local_checks injection actually reaches this repo's
+    adapter through the shared prii_maintenance package."""
+    (tmp_path / "fr24").mkdir()
+    _federation(tmp_path)
+    report = run_maintenance(
+        root=tmp_path,
+        mode="audit",
+        write=False,
+        program_id="spiderweb-pr",
+        local_checks=local.run_checks,
+    )
+    assert any(
+        f.category == "dependency_drift" and f.severity == "warning"
+        for f in report.findings
+    )

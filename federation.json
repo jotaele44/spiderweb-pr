@@ -25,7 +25,7 @@
     }
   },
   "hub_callable_commands": {
-    "setup": "python -m pip install jsonschema pyarrow pytest shapely numpy",
+    "setup": "python -m pip install jsonschema pyarrow pytest shapely numpy \"prii-maintenance @ git+https://github.com/jotaele44/thehub-pr.git@3c9e51e3de406f8455605a06fabd4823452d9b63#subdirectory=packages/prii_maintenance\"",
     "test_suite": "python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py",
     "validate_schemas": "make validate-schemas",
     "validate_export": "python scripts/validate_export.py --package exports/samples --mode test",
