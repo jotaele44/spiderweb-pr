@@ -33,6 +33,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from prii_export_utils import fid as _fid
+from prii_export_utils import norm as _norm
+from prii_export_utils import sha256 as _sha256
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PRODUCER = "spiderweb-pr"
 CONTRACT_VERSION = "1.0.0"
@@ -55,14 +59,6 @@ RECORD_STREAMS = {
 # observation_type/kind fall through to the prior, unchanged behavior.
 _ENTITY_TYPE_BY_OBSERVATION_TYPE = {"usgs_metallic_occurrence": "mineral_occurrence"}
 _ENTITY_TYPE_BY_SOURCE_KIND = {"gis_layer_reference": "gis_layer_reference"}
-
-
-def _fid(prefix: str, *parts: Any) -> str:
-    return f"{prefix}_{hashlib.sha256('|'.join(str(p) for p in parts).encode()).hexdigest()[:32]}"
-
-
-def _norm(name: str) -> str:
-    return " ".join(str(name).strip().upper().split())
 
 
 def _score(conf: Any) -> float:
@@ -231,10 +227,6 @@ def diff_streams(new_streams: dict[str, list[dict]],
             "added_ids": added, "removed_ids": removed, "changed_ids": changed,
         }
     return report
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _read_stream(pkg: Path, name: str) -> list[dict]:
