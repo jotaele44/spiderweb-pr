@@ -23,6 +23,10 @@ dependencies = [
     # Shared maintenance core (ADR 0001 Phase 3, thehub-pr). Pinned to a commit
     # SHA, not a branch — bump deliberately, one line, one PR.
     "prii-maintenance @ git+https://github.com/jotaele44/thehub-pr.git@3c9e51e3de406f8455605a06fabd4823452d9b63#subdirectory=packages/prii_maintenance",
+    # Shared federation-export helpers (fid/norm/sha256), extracted from the
+    # per-producer federation_export.py duplication. Pinned to a commit SHA —
+    # bump deliberately, one line, one PR.
+    "prii-export-utils @ git+https://github.com/jotaele44/thehub-pr.git@c007a728910128efebcda79bdbe6b9b33212551e#subdirectory=packages/prii_export_utils",
 ]
 
 # Per-subsystem extras. The shared scientific stack lives in `dependencies` above;
