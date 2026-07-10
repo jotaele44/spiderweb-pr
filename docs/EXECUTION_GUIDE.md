@@ -11,7 +11,7 @@ Smoke commands and full workflows for each module. All commands run from the rep
 git clone https://github.com/jotaele44/spiderweb-pr.git
 cd spiderweb-pr
 
-# Install system OCR engine (Airspace Intel only)
+# Install system OCR engine (Spiderweb pipeline only)
 # Ubuntu:  sudo apt-get install tesseract-ocr
 # macOS:   brew install tesseract
 
@@ -24,7 +24,7 @@ pip install -r requirements-earthgpt.txt
 
 ---
 
-## Airspace Intelligence System
+## Spiderweb Pipeline
 
 ### Smoke commands
 
@@ -257,7 +257,7 @@ python -m pytest tests/ -q
 python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py
 
 # Module-scoped runs (single line — iOS / a-Shell friendly)
-python -m pytest tests/test_aircraft_intelligence.py tests/test_cli.py tests/test_end_to_end.py tests/test_gis_intelligence.py tests/test_mission_inference.py tests/test_ocr_confidence.py tests/test_pr_intel_adapter.py tests/test_schema_validation.py tests/test_screenshot_inventory.py tests/test_spiderweb_bridge.py tests/test_temporal_validator.py -q  # Airspace Intel: 99 tests
+python -m pytest tests/test_aircraft_intelligence.py tests/test_cli.py tests/test_end_to_end.py tests/test_gis_intelligence.py tests/test_mission_inference.py tests/test_ocr_confidence.py tests/test_pr_intel_adapter.py tests/test_schema_validation.py tests/test_screenshot_inventory.py tests/test_spiderweb_bridge.py tests/test_temporal_validator.py -q  # Spiderweb: 99 tests
 
 python -m pytest tests/test_io.py tests/test_terrain.py -q  # GEBCO: 39 tests
 python -m pytest tests/test_metrics.py tests/test_seams.py tests/test_pipeline.py -q  # EarthGPT: 19 tests

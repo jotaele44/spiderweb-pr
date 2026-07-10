@@ -10,7 +10,7 @@ Defines what is and is not committed to the repository, and how runtime artifact
 |-----------|-----------|---------|-------|
 | `outputs/` | `.gitkeep` only | All runtime outputs (parquet, GeoJSON, JSON, JSONL, CSV reports) | All modules |
 | `data/` | `.gitkeep` only | Input datasets (screenshots, GEBCO .nc, social CSV) | All modules |
-| `cache/` | Never | Airspace Intel intermediate results, model caches | Airspace Intel |
+| `cache/` | Never | Spiderweb intermediate results, model caches | Spiderweb |
 | `tile_cache/` | `.gitkeep` only | EarthGPT XYZ tile PNGs | EarthGPT iOS |
 
 **Never commit** files in `outputs/`, `data/`, `cache/`, or `tile_cache/`. The `.gitignore` enforces this for `outputs/*.jsonl`, `outputs/*.geojson`, and `tile_cache/*.png`. The `.gitkeep` files preserve directory structure in git.

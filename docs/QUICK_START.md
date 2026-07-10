@@ -4,7 +4,7 @@ A 1-page on-ramp for operators new to the spiderweb-pr pipeline. For deeper docs
 
 ## What this repo produces
 
-A Puerto Rico Airspace Intelligence System (PRIIS) that turns FR24 flight screenshots + supporting reference data into:
+Spiderweb turns FR24 flight screenshots + supporting reference data into:
 
 - **PR Intel exports** — flight events, aircraft profiles, track points, screenshot evidence, mission inferences, anomaly index, GIS overlays. Lives under `<output-dir>/`.
 - **Spiderweb overlay** — POI / ILAP / corridor / AASB-edge candidates fused into a single GeoJSON layer with MBIL classifications + evidence tiers. Lives at `<output-dir>/spiderweb_overlay_candidates.geojson`.

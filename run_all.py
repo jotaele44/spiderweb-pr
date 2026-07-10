@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PUERTO RICO AIRSPACE INTELLIGENCE SYSTEM
+SPIDERWEB
 Complete Unified Pipeline — All Phases
 
 Usage:
@@ -22,7 +22,7 @@ from pathlib import Path
 BANNER = """
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
-║          PUERTO RICO AIRSPACE INTELLIGENCE SYSTEM                             ║
+║          SPIDERWEB                                                            ║
 ║          Unified Pipeline v1.0                                                ║
 ║                                                                               ║
 ║  Phase 0: Image Extraction                                                    ║
@@ -562,7 +562,7 @@ def _run_release_check(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Puerto Rico Airspace Intelligence System — Unified Pipeline",
+        description="Spiderweb — Unified Pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

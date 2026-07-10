@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "spiderweb-pr"
 version = "0.1.0"
-description = "Puerto Rico Airspace Intelligence System — FR24 OCR/GIS flight intelligence, federation, and the GEBCO bathymetry pipeline"
+description = "Spiderweb — FR24 OCR/GIS flight intelligence, federation, and the GEBCO bathymetry pipeline"
 requires-python = ">=3.11"
 # Shared scientific stack. This is the single source of truth for version ranges;
 # requirements*.txt defer to these, and constraints.txt holds the exact pins.
@@ -34,7 +34,7 @@ dependencies = [
 #   pip install -e ".[airspace]"        (ranges)
 #   pip install -c constraints.txt -e ".[airspace]"   (exact pins)
 [project.optional-dependencies]
-# Puerto Rico Airspace Intelligence System — OCR/vision + export validation.
+# Spiderweb — OCR/vision + export validation.
 airspace = [
     "opencv-python>=4.8,<5",
     "pytesseract>=0.3.10,<0.4",

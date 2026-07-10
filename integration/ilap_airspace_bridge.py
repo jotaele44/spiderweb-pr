@@ -1,7 +1,7 @@
 """
 ILAP AIRSPACE BRIDGE
 Exports POI candidates, ILAP corridor candidates, and corridor pair candidates
-as GeoJSON for ingestion into the ILAP/Spiderweb airspace intelligence system.
+as GeoJSON for ingestion into the ILAP/Spiderweb system.
 """
 
 import json
