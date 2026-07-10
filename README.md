@@ -6,6 +6,12 @@
 
 `spiderweb-pr` is the spatial / operational producer node for the Puerto Rico Integrated Intelligence (PRII) federation. It prepares GIS-linked records, operational context, provenance, confidence metadata, and review outputs for federation aggregation in [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
 
+> **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's dashboard is a
+> development and diagnostic tool for this producer only. The supported product
+> surface for the PRII federation is the hub app
+> (`thehub-pr/server/frontend`), which renders this producer's data alongside
+> the other engines. See `thehub-pr/docs/adr/0001-federated-engines-single-hub.md`.
+
 > **Boundary update:** FlightRadar24 screenshot ingestion, FR24 route extraction, and the active airspace observation export now belong to [`skywatcher-pr`](https://github.com/jotaele44/skywatcher-pr). Spiderweb keeps legacy spatial bridge logic and retained integration exports, but it is not the active FR24 owner.
 
 > **Status:** diagnostic / integration-ready only after validation gates pass. Run `--validate` and review `integration_report.json` before promoting outputs.
