@@ -79,7 +79,7 @@ jobs:
             -ov -format UDZO "PRII-SPIDERWEB-macOS.dmg"
           rm -rf "$staging"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: PRII-SPIDERWEB-${{ runner.os }}
           path: |
