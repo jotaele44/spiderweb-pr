@@ -21,7 +21,7 @@ python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain
 
 ## Test file → module mapping
 
-### Airspace Intelligence System (99 tests)
+### Spiderweb Pipeline (99 tests)
 
 > The FR24 screenshot pipeline tests (`test_fr24_bridge`, `test_fr24_inventory`,
 > `test_route_extractor`, `test_fr24_analysis_vector`, `test_fr24_wave_validator`)
@@ -82,7 +82,7 @@ Optional-dependency tests use `pytest.importorskip`; they skip cleanly without `
 
 `.github/workflows/ci.yml` has two independent jobs that run on every push and PR against `main`:
 
-### Job: `test` — Airspace Intel + LLM Pipeline + EarthGPT
+### Job: `test` — Spiderweb + LLM Pipeline + EarthGPT
 
 Python versions: **3.10**, **3.11**, **3.12**  
 Dependencies: `jsonschema>=4.17`, `pyarrow>=14.0`, `pytest>=7.4`, `Pillow>=10.0`, `numpy>=1.26`

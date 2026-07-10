@@ -1,4 +1,4 @@
-# Puerto Rico Airspace Intelligence System — combined runtime dependencies.
+# Spiderweb — combined runtime dependencies.
 #
 # Dependencies are defined as extras in pyproject.toml. This file installs the
 # airspace core plus the optional RAG and EarthGPT subsystems:

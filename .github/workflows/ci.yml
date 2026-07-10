@@ -66,7 +66,7 @@ jobs:
           python -m black --check $LINT_PATHS
           python -m mypy $LINT_PATHS
 
-  # ── Airspace Intel + LLM pipeline + EarthGPT ────────────────────────────────
+  # ── Spiderweb + LLM pipeline + EarthGPT ─────────────────────────────────────
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -95,7 +95,7 @@ jobs:
       # Re-baselined 64 -> 62 by the flight-subsystem strip: the removed modules
       # were disproportionately well-covered, so the repo-wide ratio dropped
       # (62.9% observed) without any surviving line losing coverage.
-      - name: Run test suite (airspace intel + LLM pipeline + earthgpt)
+      - name: Run test suite (spiderweb + LLM pipeline + earthgpt)
         run: python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-report=term-missing:skip-covered --cov-fail-under=62
 
       - name: EarthGPT self-test (7 gates)

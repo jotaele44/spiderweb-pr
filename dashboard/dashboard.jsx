@@ -1,5 +1,5 @@
 /**
- * Puerto Rico Airspace Intelligence Dashboard
+ * Spiderweb Dashboard
  *
  * Reads from window.flightData (JSON export from run_all.py --export-json).
  * Embedded via dashboard.html using Babel standalone + React CDN — no build step.
@@ -687,7 +687,7 @@ const App = ({ data = window.flightData || {}, fr24 = window.fr24DashboardData |
         <div className="flex items-center gap-3">
           <Icon name="shield" size={22} className="text-blue-400" />
           <div>
-            <h1 className="text-base font-bold leading-tight">Puerto Rico Airspace Intelligence</h1>
+            <h1 className="text-base font-bold leading-tight">Spiderweb</h1>
             <p className="text-xs text-gray-400">FlightRadar24 analysis pipeline</p>
           </div>
         </div>

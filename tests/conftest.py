@@ -1,5 +1,5 @@
 """
-Shared pytest fixtures for the PR Airspace Intelligence test suite.
+Shared pytest fixtures for the Spiderweb test suite.
 """
 
 import sqlite3

@@ -1,6 +1,6 @@
 # RLSM Operational Ontology v0.1
 
-This document defines the first controlled vocabulary and registry layer for the Puerto Rico Airspace Intelligence System / RLSM workflow.
+This document defines the first controlled vocabulary and registry layer for the Spiderweb / RLSM workflow.
 
 ## Objective
 

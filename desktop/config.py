@@ -12,7 +12,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Window title of the desktop app.
-APP_TITLE = "Spiderweb — PRII Airspace Intelligence"
+APP_TITLE = "Spiderweb"
 
 # Standalone dashboard and the data it reads.
 DASHBOARD_DIR = REPO_ROOT / "dashboard"
