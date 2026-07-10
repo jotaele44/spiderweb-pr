@@ -54,11 +54,20 @@ python desktop/setup.py          # one-time setup + data snapshot
 
 `PRII-SPIDERWEB.app` is a double-click macOS app (Apple-silicon and Intel). Double-click
 it in Finder and the dashboard opens in its own window — no Terminal. The first
-launch runs the one-time setup (needs internet once, plus Node.js for the
-dashboard build); after that it starts straight away and works offline.
+launch runs the one-time setup (needs internet once; no Node.js — the dashboard
+is the vendored no-build viewer); after that it starts straight away and works
+offline.
 
 Because the app is a small self-locating wrapper around `desktop/launch.py`, it
 must stay at the repo root (it finds the repo from its own location). If macOS
 blocks the first open with an "unidentified developer" notice, right-click the
-app → **Open** once to allow it. No-Python-required standalone builds are still
-produced separately by the `desktop-build` workflow.
+app → **Open** once to allow it.
+
+## Standalone builds (no Python required)
+
+The `desktop-build` workflow (`.github/workflows/desktop-build.yml`) freezes
+`desktop/launch.py` with PyInstaller (`desktop/pyinstaller.spec`) on Linux,
+macOS, and Windows, bundling `dashboard/` (html + jsx + vendored JS) into the
+`PRII-SPIDERWEB` one-folder app. It smoke-tests each frozen build
+(`--smoke`), zips the bundles, packages a macOS `.dmg` via `hdiutil`, and
+attaches everything to the release on `desktop-v*` tags.

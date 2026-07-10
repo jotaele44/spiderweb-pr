@@ -1,0 +1,64 @@
+# PyInstaller spec for the standalone desktop build (Phase 2).
+# Build (on the target OS):
+#   pip install pyinstaller
+#   pyinstaller desktop/pyinstaller.spec --distpath dist-desktop
+# Produces a self-contained one-folder app: dist-desktop/PRII-SPIDERWEB/
+# The bundle mirrors the repo layout so desktop/app_server.py finds dashboard/
+# and outputs/ with its normal relative paths (no Vite build — the UI is the
+# standalone dashboard/dashboard.html viewer with vendored JS).
+
+import os
+from pathlib import Path
+
+REPO_ROOT = Path(SPECPATH).resolve().parent
+APP_NAME = "PRII-SPIDERWEB"
+
+# Windowed by default (no console window for double-click users). CI sets
+# PRII_CONSOLE=1 to build a console binary it can smoke-test with visible stdio.
+CONSOLE = os.environ.get("PRII_CONSOLE") == "1"
+
+datas = [
+    (str(REPO_ROOT / "dashboard"), "dashboard"),
+]
+if (REPO_ROOT / "outputs").exists():
+    datas.append((str(REPO_ROOT / "outputs"), "outputs"))
+
+a = Analysis(
+    [str(REPO_ROOT / "desktop" / "launch.py")],
+    pathex=[str(REPO_ROOT)],
+    datas=datas,
+    hiddenimports=[
+        "uvicorn.logging",
+        "uvicorn.loops.auto",
+        "uvicorn.protocols.http.auto",
+        "uvicorn.protocols.websockets.auto",
+        "uvicorn.lifespan.on",
+        "desktop.app_server",
+    ],
+    noarchive=False,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    exclude_binaries=True,
+    name=APP_NAME,
+    console=CONSOLE,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    name=APP_NAME,
+)
+
+import sys
+
+if sys.platform == "darwin":
+    app = BUNDLE(
+        coll,
+        name=f"{APP_NAME}.app",
+        bundle_identifier="pr.prii.spiderweb",
+    )
