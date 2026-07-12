@@ -112,7 +112,18 @@ class Backend:
     name: str = "abstract"
 
     def geocode(self, address: str) -> Optional[GeocodeResult]:
-        raise NotImplementedError
+        # Explicit extension-point guard. ``Backend`` is the abstract provider
+        # interface; a concrete backend (Census / Nominatim / Google / Fixture)
+        # owns the actual geocoding. Offline-only deployments should use
+        # ``FixtureBackend`` or lean on ``CachedBackend``'s on-disk cache rather
+        # than a live provider. A subclass that forgets to implement geocode()
+        # fails loudly here — naming itself — instead of raising a bare,
+        # message-less NotImplementedError.
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement geocode(address) -> "
+            f"Optional[GeocodeResult]; Backend is the abstract provider "
+            f"interface (see CensusBackend / NominatimBackend / FixtureBackend)."
+        )
 
 
 def _is_offline() -> bool:

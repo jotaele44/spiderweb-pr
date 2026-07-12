@@ -305,7 +305,17 @@ class HarvestBase:
             4. compute ``incident_class`` per source semantics
             5. return ``row``
         """
-        raise NotImplementedError
+        # Explicit extension-point guard. ``normalize_row`` is inherently
+        # source-specific (each source carries a different raw schema), so the
+        # base class has no meaningful generic implementation to provide. A
+        # subclass that forgets to override it fails loudly here — naming the
+        # offending class and pointing at the contract — instead of raising a
+        # bare, message-less NotImplementedError.
+        raise NotImplementedError(
+            f"{type(self).__name__} must override normalize_row(raw, snapshot_date) "
+            f"to return a canonical dict matching CANONICAL_COLUMNS (or None to "
+            f"drop the row). See the HarvestBase docstring for the contract."
+        )
 
     # --- harvest loop ------------------------------------------------------
 
