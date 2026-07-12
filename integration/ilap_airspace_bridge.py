@@ -37,6 +37,66 @@ CONFIDENCE_WEIGHTS = {
 GRID_DEG = 0.05  # ~5 km grid cell size
 
 
+def infra_alignment_score(points: List[dict]) -> float:
+    """Directional-coherence proxy for a POI cluster's alignment with linear
+    infrastructure, in [0, 1].
+
+    The intended signal is "do the loiter/recurrence points sit along a mapped
+    linear feature (road, transmission line, pipeline, coastline) rather than
+    scatter isotropically?" A true implementation cross-references an external
+    infrastructure vector layer; the repo currently ships no such PR
+    infra layer (only the USGS OFR 98-038 mineral-occurrence points and the
+    72-municipality centroid set), so that cross-reference is data-blocked —
+    see docs/ROAD_TO_100.md.
+
+    What IS computable offline, from the points already in hand, is the
+    geometry of the cluster itself: points that trace a linear feature form an
+    elongated (near-collinear) cloud, while points loitering around a single
+    site form an isotropic blob. We quantify that with the eigenvalues of the
+    2x2 spatial covariance matrix:
+
+        linearity = (lambda1 - lambda2) / (lambda1 + lambda2)
+
+    which is 1.0 for a perfectly collinear cluster (lambda2 == 0) and ~0.0 for
+    an isotropic one (lambda1 == lambda2). This is a deterministic, pure-logic
+    proxy — NOT an external infra cross-reference — and is documented as such
+    in the emitted properties and the ledger.
+
+    Degenerate inputs (fewer than 2 usable points, or zero spatial spread)
+    return 0.0: no geometry means no alignment evidence.
+    """
+    coords = [
+        (tp.get("latitude"), tp.get("longitude"))
+        for tp in points
+        if tp.get("latitude") is not None and tp.get("longitude") is not None
+    ]
+    coords = [(lat, lon) for lat, lon in coords if not (lat == 0.0 and lon == 0.0)]
+    n = len(coords)
+    if n < 2:
+        return 0.0
+
+    mean_lat = sum(c[0] for c in coords) / n
+    mean_lon = sum(c[1] for c in coords) / n
+    c_xx = sum((lat - mean_lat) ** 2 for lat, _ in coords) / n
+    c_yy = sum((lon - mean_lon) ** 2 for _, lon in coords) / n
+    c_xy = sum((lat - mean_lat) * (lon - mean_lon) for lat, lon in coords) / n
+
+    trace = c_xx + c_yy
+    if trace <= 0.0:
+        return 0.0  # all points coincide — no spread, no directional signal
+
+    # Eigenvalues of the symmetric 2x2 covariance: (trace/2) +/- sqrt(disc),
+    # where disc = ((c_xx - c_yy)/2)^2 + c_xy^2 >= 0.
+    disc = ((c_xx - c_yy) / 2.0) ** 2 + c_xy ** 2
+    spread = math.sqrt(max(0.0, disc))
+    lambda1 = trace / 2.0 + spread
+    lambda2 = trace / 2.0 - spread
+    denom = lambda1 + lambda2  # == trace, already > 0
+    linearity = (lambda1 - lambda2) / denom
+    # Numerical guard: clamp into [0, 1] against float round-off.
+    return max(0.0, min(1.0, linearity))
+
+
 def corridor_activity_label(connecting_flights: int) -> str:
     """Map a corridor's connecting-flight count to an operator-facing label (T7-59).
 
@@ -126,7 +186,11 @@ class ILAPAirspaceBridge:
 
             recurrence = min(1.0, len(flight_ids) / 10.0)
             loiter = self._loiter_score(points)
-            infra_align = 0.3  # placeholder; real impl would cross-ref infra layer
+            # Geometry-derived alignment proxy (directional coherence of the
+            # cluster). This replaces the former hardcoded 0.3 placeholder; the
+            # external infra-layer cross-reference remains data-blocked — see
+            # infra_alignment_score() and docs/ROAD_TO_100.md.
+            infra_align = infra_alignment_score(points)
             hydro_utility = 0.2
             pin_mbil = mbil_class(center_lat, center_lon)
             mbil_proximity = mbil_proximity_weight(pin_mbil)
@@ -157,6 +221,9 @@ class ILAPAirspaceBridge:
                     "recurrence_score": round(recurrence, 4),
                     "loiter_score": round(loiter, 4),
                     "infra_alignment_score": round(infra_align, 4),
+                    # Honest provenance: this is a geometry-derived directional
+                    # coherence proxy, not an external infra-layer cross-ref.
+                    "infra_alignment_method": "geometry_covariance_proxy",
                     "overall_confidence": round(overall, 4),
                     "review_priority": priority,
                     "mbil_class": pin_mbil,

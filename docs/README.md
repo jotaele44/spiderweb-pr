@@ -12,6 +12,7 @@ the relevant subsystem below.
 - [RELEASE_READINESS.md](RELEASE_READINESS.md) — the release gate
 
 ## Roadmap & planning
+- [ROAD_TO_100.md](ROAD_TO_100.md) — leverage-ordered ledger for the last stretch to 100% (code-closable vs data-blocked)
 - [NEXT_100_TASKS_V2.md](NEXT_100_TASKS_V2.md) — the active 100-task roadmap
 - [ROI_TASK_LEDGER.md](ROI_TASK_LEDGER.md) — completed-work ledger
 - [archive_reuse_triage.md](archive_reuse_triage.md)

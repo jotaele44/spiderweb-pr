@@ -3,6 +3,13 @@
 __pycache__/
 *.pyc
 
+# ── Node / npm dependencies (never commit — reproduced from package-lock) ─────
+# General guard for any nested node_modules anywhere in the tree, plus the
+# specific frontend path that was previously committed in error (~3.6k files).
+**/node_modules/
+node_modules/
+server/frontend/node_modules/
+
 # ── Runtime artifact directories (never commit contents) ─────────────────────
 # outputs/ — all generated files (parquet, GeoJSON, JSON, JSONL, CSV, DB)
 outputs/*
