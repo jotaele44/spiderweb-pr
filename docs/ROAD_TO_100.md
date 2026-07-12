@@ -100,32 +100,54 @@ external layers that cannot be fetched in an offline, no-fabrication run.
   is left as-is here rather than dressed up as a computed value. Tracked for the
   same infra-layer intake.
 - **Second 100-task optimization sweep** (`NEXT_100_TASKS_V2.md`,
-  `ROI_TASK_LEDGER.md`) is functionally landed: the ROI ledger's
+  `ROI_TASK_LEDGER.md`) is largely landed — the ROI ledger's
   *"NEXT_100_TASKS_V2 roadmap — Themes 2–12"* table records every theme as
-  ✅ complete (schema/validation, Spiderweb language, perf, testing, CI, GIS,
-  RLSM, federation, observability, security, docs), and the ledger's *"Deferred"*
-  note enumerates the leftovers that are **not** offline-closable code:
-  - #68 / #69 pixel-CV flight-track + geo-anchor v2 — need labeled screenshot
-    pixels + homography ground truth (live-intake-gated).
-  - #72 / #73 OCR confidence recalibration + multi-engine ensemble — need a
-    labeled ground-truth set and additional OCR engines installed.
-  - #76 hub rtree spatial index + #77 envelope version-negotiation — federation
-    scale/handshake features gated on a live multi-hub deployment.
-  - #62 / #64 contextily / geopandas map-preview + GeoPackage exports — heavy
-    geospatial-stack dependencies not vendored offline.
-  - #81 error taxonomy, #84 checkpoint/resume, #89 data-policy redaction lint —
-    exercised only against live multi-hour runs / real export corpora.
-  - #92 LICENSE / SPDX — an owner (licensing) decision, not a code gap.
+  ✅ complete — **but a genuine re-read against the `Blockers` column of
+  `NEXT_100_TASKS_V2.md` shows the sweep still has offline-closable items open.**
+  Only the items with a **real external / data / dependency blocker** belong in
+  the blocked list below; the ones the V2 doc marks `Blockers = None` are ordinary
+  offline work and are listed under *"remaining — offline-closable"* instead (see
+  that section), so operators are not steered away from actionable robustness /
+  security work.
 
-  After a full re-read of both V2 docs, the **only** remaining concrete
-  offline-closable code item found was a direct unit test for the public
+  **Genuinely blocked (real blocker named in `NEXT_100_TASKS_V2.md`):**
+  - #68 pixel-CV flight-track v2 — `Blockers = #69` (chained on the anchor work).
+  - #72 OCR confidence recalibration — `Blockers = Labeled set` (needs labeled
+    ground truth).
+  - #73 multi-engine ensemble vote — `Blockers = Engines installed` (needs extra
+    OCR engines present).
+  - #76 hub rtree spatial index — `Blockers = rtree` (needs the `rtree`
+    dependency, not vendored offline).
+  - #77 envelope version-negotiation — `Blockers = #14` (chained on the envelope
+    schema work).
+
+  This pass closed one concrete offline item: a direct unit test for the public
   `integration/mbil.is_mbil_high` helper (it gates the `aasb_mbil_corridor_flag`
-  but had only indirect coverage). That test is added in this PR
-  (`tests/test_gis_upgrades.py::test_is_mbil_high_truth_table`). No other
-  non-data, offline-closable code work remains in the V2 sweep — the rest is the
-  data/network-blocked set enumerated above, so no closure is fabricated for it.
+  but had only indirect coverage), added as
+  `tests/test_gis_upgrades.py::test_is_mbil_high_truth_table`. The remaining
+  offline-closable items below are **left open, not fabricated as closed** —
+  implementing them is larger work beyond this surgical audit pass.
 
 ---
+
+## Remaining — offline-closable (V2 sweep, open — NOT blocked)
+
+These V2 tasks carry `Blockers = None` in `NEXT_100_TASKS_V2.md`: they are
+actionable offline **now** and are simply not yet implemented. They are tracked
+here as open work (not data/network-blocked) so nobody skips them under the
+mistaken belief the sweep has zero remaining offline code. Implementing them is
+larger than this audit pass, which deliberately closed only the small
+`is_mbil_high` test gap.
+
+| # | Task | Theme | Effort | Why it is offline-doable |
+|---|---|---|---|---|
+| #81 | Typed error taxonomy (replace bare excepts) | 10 — Observability | 3 h | Pure refactor of in-repo exception handling; no external input. |
+| #84 | Checkpoint / resume files for long runs | 10 — Observability | 3 h | Local checkpoint I/O; exercised on any run, no live corpus required. |
+| #89 | Data-policy redaction lint on exports | 11 — Security | 3 h | Enforces `DATA_POLICY.md` rules over already-exported files; static check. |
+| #62 | Map-preview PNGs per GeoJSON | 7 — GIS | 3 h | Headless matplotlib render of local GeoJSON (skip network basemap tiles). |
+| #64 | GeoPackage (`.gpkg`) export | 7 — GIS | 2 h | Single-file offline geo write from data already in hand. |
+| #69 | Geo-anchors v2 (OCR-matched POIs → homography) | 8 — RLSM | 8 h | `Blockers = None`; runs over screenshots already ingested in the DB. |
+| #92 | `LICENSE` / SPDX headers | 12 — Docs | 1 h | Adding the file is offline; only the license *choice* is an owner decision. |
 
 ## Leverage-ordered checklist
 
@@ -137,12 +159,15 @@ external layers that cannot be fetched in an offline, no-fabrication run.
 | 4 | Source a real PR infrastructure vector layer | High | ⛔ data-blocked |
 | 5 | `hydro_utility` real computation (same layer dep) | Medium | ⛔ data-blocked |
 | 6 | Grow corpus via live intake runs | High | ⛔ intake-gated (by design) |
-| 7 | Finish V2 optimization sweep (non-data items) | Low–Med | ✅ audited — sole offline item (mbil `is_mbil_high` direct test) closed; remainder data/network-blocked |
+| 7 | Finish V2 optimization sweep (non-data items) | Low–Med | ◻ partly open — one offline test gap (`is_mbil_high`) closed this pass; #81/#84/#89/#62/#64/#69/#92 remain offline-closable and open; #68/#72/#73/#76/#77 are genuinely blocked |
 
 **Items 1–3 (the offline code-closable set) closed in the prior merged audit
 PR. Items 4–6 remain data/network-blocked. Item 7: after a full re-read of
-`NEXT_100_TASKS_V2.md` + `ROI_TASK_LEDGER.md`, the V2 sweep's themes are recorded
-complete and its only remaining offline-closable code gap — a direct unit test
-for `mbil.is_mbil_high` — is closed in this PR; every other leftover is
-data/network-blocked (enumerated above) and is deliberately NOT fabricated as
-closed.**
+`NEXT_100_TASKS_V2.md` + `ROI_TASK_LEDGER.md` — checked against each task's
+`Blockers` column — the sweep still has offline-closable robustness/security/GIS
+work open (#81 error taxonomy, #84 checkpoint/resume, #89 data-policy lint, #62
+map-preview, #64 GeoPackage, #69 geo-anchors v2, #92 LICENSE; all `Blockers =
+None`). This pass closes one small offline gap — a direct unit test for
+`mbil.is_mbil_high` — and leaves the larger offline items honestly OPEN. Only
+#68/#72/#73/#76/#77 (real named blockers) are classified blocked. The V2 sweep
+is NOT claimed to have zero remaining offline work.**
