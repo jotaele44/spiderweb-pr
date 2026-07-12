@@ -203,6 +203,25 @@ def test_set_empty_centroids_raises():
         mbil.set_municipal_centroids([])
 
 
+# ── is_mbil_high truth table (drives aasb_mbil_corridor_flag) ─────────────────
+
+def test_is_mbil_high_truth_table():
+    """is_mbil_high gates the AASB corridor flag: only MBIL-2/MBIL-3 (inner
+    periurban or closer) are 'high'. Everything else — including the off-island
+    MBIL-X sentinel and any unknown string — must be False, so a corridor flag
+    can never fire on a rural, remote, or unclassifiable endpoint."""
+    from integration.mbil import is_mbil_high
+
+    assert is_mbil_high("MBIL-3") is True
+    assert is_mbil_high("MBIL-2") is True
+    assert is_mbil_high("MBIL-1") is False
+    assert is_mbil_high("MBIL-0") is False
+    assert is_mbil_high("MBIL-X") is False
+    # Unknown / malformed inputs must not be treated as high.
+    assert is_mbil_high("") is False
+    assert is_mbil_high("MBIL-9") is False
+
+
 # ── T7-61 QGIS style pack ────────────────────────────────────────────────────
 
 def test_qml_style_pack_present_and_wellformed():

@@ -100,8 +100,30 @@ external layers that cannot be fetched in an offline, no-fabrication run.
   is left as-is here rather than dressed up as a computed value. Tracked for the
   same infra-layer intake.
 - **Second 100-task optimization sweep** (`NEXT_100_TASKS_V2.md`,
-  `ROI_TASK_LEDGER.md`) is partly open; remaining items are the
-  data-availability-gated ones above plus lower-leverage polish.
+  `ROI_TASK_LEDGER.md`) is functionally landed: the ROI ledger's
+  *"NEXT_100_TASKS_V2 roadmap — Themes 2–12"* table records every theme as
+  ✅ complete (schema/validation, Spiderweb language, perf, testing, CI, GIS,
+  RLSM, federation, observability, security, docs), and the ledger's *"Deferred"*
+  note enumerates the leftovers that are **not** offline-closable code:
+  - #68 / #69 pixel-CV flight-track + geo-anchor v2 — need labeled screenshot
+    pixels + homography ground truth (live-intake-gated).
+  - #72 / #73 OCR confidence recalibration + multi-engine ensemble — need a
+    labeled ground-truth set and additional OCR engines installed.
+  - #76 hub rtree spatial index + #77 envelope version-negotiation — federation
+    scale/handshake features gated on a live multi-hub deployment.
+  - #62 / #64 contextily / geopandas map-preview + GeoPackage exports — heavy
+    geospatial-stack dependencies not vendored offline.
+  - #81 error taxonomy, #84 checkpoint/resume, #89 data-policy redaction lint —
+    exercised only against live multi-hour runs / real export corpora.
+  - #92 LICENSE / SPDX — an owner (licensing) decision, not a code gap.
+
+  After a full re-read of both V2 docs, the **only** remaining concrete
+  offline-closable code item found was a direct unit test for the public
+  `integration/mbil.is_mbil_high` helper (it gates the `aasb_mbil_corridor_flag`
+  but had only indirect coverage). That test is added in this PR
+  (`tests/test_gis_upgrades.py::test_is_mbil_high_truth_table`). No other
+  non-data, offline-closable code work remains in the V2 sweep — the rest is the
+  data/network-blocked set enumerated above, so no closure is fabricated for it.
 
 ---
 
@@ -115,7 +137,12 @@ external layers that cannot be fetched in an offline, no-fabrication run.
 | 4 | Source a real PR infrastructure vector layer | High | ⛔ data-blocked |
 | 5 | `hydro_utility` real computation (same layer dep) | Medium | ⛔ data-blocked |
 | 6 | Grow corpus via live intake runs | High | ⛔ intake-gated (by design) |
-| 7 | Finish V2 optimization sweep (non-data items) | Low–Med | ◻ partly open |
+| 7 | Finish V2 optimization sweep (non-data items) | Low–Med | ✅ audited — sole offline item (mbil `is_mbil_high` direct test) closed; remainder data/network-blocked |
 
-**This PR closes items 1–3 (the offline code-closable set). Items 4–6 are
-data/network-blocked; item 7 is partly open.**
+**Items 1–3 (the offline code-closable set) closed in the prior merged audit
+PR. Items 4–6 remain data/network-blocked. Item 7: after a full re-read of
+`NEXT_100_TASKS_V2.md` + `ROI_TASK_LEDGER.md`, the V2 sweep's themes are recorded
+complete and its only remaining offline-closable code gap — a direct unit test
+for `mbil.is_mbil_high` — is closed in this PR; every other leftover is
+data/network-blocked (enumerated above) and is deliberately NOT fabricated as
+closed.**
