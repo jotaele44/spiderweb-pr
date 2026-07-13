@@ -38,10 +38,11 @@ button { cursor: pointer; }
   padding-top: 18px;
   display: grid;
   grid-template-columns: var(--rail-w) 1fr var(--inspector-w);
-  grid-template-rows: var(--cmd-h) 1fr;
+  grid-template-rows: var(--cmd-h) 1fr var(--time-h);
   grid-template-areas:
     "cmd cmd cmd"
-    "rail center inspector";
+    "rail center inspector"
+    "time time time";
   transition: grid-template-columns .3s ease;
 }
 
@@ -169,5 +170,15 @@ button { cursor: pointer; }
 .map-shell[data-layer-collapsed="true"] .layer-panel { overflow: hidden; padding: 0; border-left: 0; }
 .graph-surface { position: relative; height: 100%; min-height: 420px; background: radial-gradient(circle at 50% 50%, var(--surface-3), var(--bg)); overflow: hidden; }
 .graph-node { position: absolute; transform: translate(-50%, -50%); border: 1px solid var(--line-hard); background: var(--surface-2); padding: 8px 10px; min-width: 120px; text-align: center; font: 11px var(--font-mono); }
-.query-box { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-.query-box textarea { min-height: 84px; resize: vertical; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); padding: 10px; }
+.query-box { display: grid; gap: 6px; }
+.query-box label { text-transform: uppercase; letter-spacing: .08em; }
+.query-box textarea { min-height: 84px; resize: vertical; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); padding: 10px; font-family: inherit; }
+
+/* Bottom timeline */
+.timeline { grid-area: time; background: var(--surface); border-top: 1px solid var(--line); padding: 8px 12px; display: grid; grid-template-rows: auto 1fr; gap: 6px; overflow: hidden; min-height: 0; }
+.timeline-head { display: flex; justify-content: space-between; font: 10px var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.timeline-track { position: relative; min-height: 40px; background: var(--surface-2); border: 1px solid var(--line-soft); cursor: crosshair; }
+.cursor-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--info); pointer-events: none; }
+.timeline-event { position: absolute; top: 50%; transform: translate(-50%, -50%); }
+.timeline-event button { display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 10px var(--font-mono); padding: 2px 5px; white-space: nowrap; }
+.timeline-event button:hover { border-color: var(--info); }

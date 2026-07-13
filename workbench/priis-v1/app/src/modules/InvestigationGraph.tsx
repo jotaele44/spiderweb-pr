@@ -3,6 +3,16 @@ import { byId } from "../data/mockData";
 
 interface GraphNode { id: string; label: string; kind: Selection["kind"]; x: number; y: number }
 
+function download(filename: string, content: string, mime = "application/json"): void {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function InvestigationGraph({ data, setSelection }: { data: PriisData; setSelection: (selection: Selection) => void }) {
   const anomaly = data.anomalies[0];
   if (!anomaly) {
@@ -17,22 +27,45 @@ export function InvestigationGraph({ data, setSelection }: { data: PriisData; se
   const contract = byId(data.contracts, anomaly.contracts[0]);
   const vendor = contract ? byId(data.vendors, contract.vendor) : undefined;
   const agency = contract ? byId(data.agencies, contract.agency) : undefined;
+
+  // Node positions are defined once here; the SVG connectors below are derived
+  // from these coordinates (no duplicated literals).
   const nodes: GraphNode[] = [
     { id: anomaly.id, label: anomaly.id, kind: "anomaly", x: 50, y: 45 },
     { id: site?.id ?? "S-000", label: site?.name ?? "site", kind: "site", x: 24, y: 28 },
     { id: contract?.id ?? "C-000", label: contract?.id ?? "contract", kind: "contract", x: 72, y: 28 },
     { id: vendor?.id ?? "V-000", label: vendor?.name ?? "vendor", kind: "vendor", x: 72, y: 68 },
-    { id: agency?.id ?? "AG-000", label: agency?.code ?? "agency", kind: "agency", x: 28, y: 68 }
+    { id: agency?.id ?? "AG-000", label: agency?.code ?? "agency", kind: "agency", x: 28, y: 68 },
   ];
+  const nodeById = (id: string) => nodes.find((n) => n.id === id);
+  const edges: [string, string][] = [
+    [nodes[0].id, nodes[1].id],
+    [nodes[0].id, nodes[2].id],
+    [nodes[2].id, nodes[3].id],
+    [nodes[2].id, nodes[4].id],
+  ];
+
+  function exportGraph() {
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      anomaly: anomaly.id,
+      nodes: nodes.map((n) => ({ id: n.id, kind: n.kind, label: n.label })),
+      edges: edges.map(([from, to]) => ({ from, to })),
+    };
+    download(`priis-graph-${anomaly.id}.json`, JSON.stringify(payload, null, 2));
+  }
+
   return (
     <section className="panel">
-      <div className="panel-head"><div><h1>Investigation Graph</h1><span className="subtle">Entity graph scaffold · vendor / agency / site / anomaly</span></div><button className="act">EXPORT GRAPH</button></div>
+      <div className="panel-head"><div><h1>Investigation Graph</h1><span className="subtle">Entity graph scaffold · vendor / agency / site / anomaly</span></div><button className="act" onClick={exportGraph}>EXPORT GRAPH</button></div>
       <div className="graph-surface">
         <svg width="100%" height="100%" style={{ position: "absolute", inset: 0 }}>
-          <line x1="50%" y1="45%" x2="24%" y2="28%" stroke="var(--line-hard)" />
-          <line x1="50%" y1="45%" x2="72%" y2="28%" stroke="var(--line-hard)" />
-          <line x1="72%" y1="28%" x2="72%" y2="68%" stroke="var(--line-hard)" />
-          <line x1="72%" y1="28%" x2="28%" y2="68%" stroke="var(--line-hard)" />
+          {edges.map(([from, to]) => {
+            const a = nodeById(from);
+            const b = nodeById(to);
+            if (!a || !b) return null;
+            return <line key={`${from}-${to}`} x1={`${a.x}%`} y1={`${a.y}%`} x2={`${b.x}%`} y2={`${b.y}%`} stroke="var(--line-hard)" />;
+          })}
         </svg>
         {nodes.map((node) => <button key={node.id} className="graph-node" style={{ left: `${node.x}%`, top: `${node.y}%` }} onClick={() => setSelection({ kind: node.kind, id: node.id })}><b>{node.kind}</b><br />{node.label}</button>)}
       </div>

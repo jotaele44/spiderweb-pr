@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { streamRagQuery } from "../api/client";
 import { runPriisQuery } from "../adapters/queryAdapter";
 import type { PriisData, QueryResponse, Selection } from "../types/priis";
@@ -8,10 +8,16 @@ export function QueryLayer({
   data,
   setSelection,
   pipelineLog = [],
+  incomingQuery,
+  runSignal = 0,
 }: {
   data: PriisData;
   setSelection: (selection: Selection) => void;
   pipelineLog?: string[];
+  /** Query text submitted from the global command bar. */
+  incomingQuery?: string;
+  /** Increments each time the command bar submits, triggering a run. */
+  runSignal?: number;
 }) {
   const [query, setQuery] = useState("vendors with concentration near restricted sites");
   const [result, setResult] = useState<QueryResponse | null>(null);
@@ -20,21 +26,18 @@ export function QueryLayer({
   const [useRag, setUseRag] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
+  const lastSignal = useRef(0);
 
-  function submit() {
-    if (pending) {
-      cancelRef.current?.();
-      setPending(false);
-      return;
-    }
+  function runQuery(text: string) {
     setStreamLines([]);
     setError(null);
+    setResult(null);
     setPending(true);
 
     if (useRag) {
       // Stream from the real backend
       const cancel = streamRagQuery(
-        query,
+        text,
         (token) => setStreamLines((prev) => [...prev, token]),
         () => setPending(false),
         (message) => setError(message),
@@ -42,7 +45,7 @@ export function QueryLayer({
       cancelRef.current = cancel;
     } else {
       // Use the typed adapter stub (local, fast)
-      void runPriisQuery(query, data)
+      void runPriisQuery(text, data)
         .then((r) => {
           setResult(r);
           setPending(false);
@@ -53,6 +56,26 @@ export function QueryLayer({
         });
     }
   }
+
+  function submit() {
+    if (pending) {
+      cancelRef.current?.();
+      setPending(false);
+      return;
+    }
+    runQuery(query);
+  }
+
+  // Run a query handed over from the global command bar.
+  useEffect(() => {
+    if (runSignal && runSignal !== lastSignal.current && incomingQuery !== undefined) {
+      lastSignal.current = runSignal;
+      setQuery(incomingQuery);
+      runQuery(incomingQuery);
+    }
+    // runQuery closes over current state; we intentionally trigger only on a new signal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runSignal, incomingQuery]);
 
   return (
     <section className="panel">
@@ -78,8 +101,8 @@ export function QueryLayer({
 
       <div className="panel-grid">
         <div className="query-box">
-          <textarea value={query} onChange={(event) => setQuery(event.target.value)} />
-          <button className="act primary" onClick={submit}>Execute</button>
+          <label htmlFor="query-input" className="subtle mono">PROMPT</label>
+          <textarea id="query-input" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Query prompt" />
         </div>
 
         {error && (

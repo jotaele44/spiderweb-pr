@@ -6,6 +6,7 @@ import { THEME_STORAGE_KEY, resolveInitialTheme, type Theme } from "./theme";
 import { CommandBar } from "./components/CommandBar";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
+import { Timeline } from "./components/Timeline";
 import { CommandCenter } from "./modules/CommandCenter";
 import { FinanceIntelligence } from "./modules/FinanceIntelligence";
 import { SpatialIntelligence } from "./modules/SpatialIntelligence";
@@ -44,6 +45,10 @@ export default function App() {
   const [runState, setRunState] = useState<RunState>("idle");
   const [jobId, setJobId] = useState<string | null>(null);
   const [pipelineLog, setPipelineLog] = useState<string[]>([]);
+
+  // Bumped each time the command bar submits, so the Query module runs the
+  // global query instead of just switching tabs.
+  const [querySubmitCount, setQuerySubmitCount] = useState(0);
 
   // Collapsible chrome — left rail and right inspector slide out of frame.
   const [leftCollapsed, setLeftCollapsed] = useState(
@@ -155,7 +160,7 @@ export default function App() {
       case "spatial":  return <SpatialIntelligence data={data} selection={selection} setSelection={setSelection} leftCollapsed={leftCollapsed} rightCollapsed={rightCollapsed} />;
       case "anomaly":  return <AnomalyWorkbench data={data} selection={selection} setSelection={setSelection} />;
       case "graph":    return <InvestigationGraph data={data} setSelection={setSelection} />;
-      case "query":    return <QueryLayer data={data} setSelection={setSelection} pipelineLog={pipelineLog} />;
+      case "query":    return <QueryLayer data={data} setSelection={setSelection} pipelineLog={pipelineLog} incomingQuery={query} runSignal={querySubmitCount} />;
       default: return null;
     }
   }
@@ -169,7 +174,7 @@ export default function App() {
           setQuery={setQuery}
           filters={filters}
           removeFilter={(key) => setFilters((current) => current.filter((item) => item.key !== key))}
-          onSubmit={() => setModule("query")}
+          onSubmit={() => { setModule("query"); setQuerySubmitCount((count) => count + 1); }}
           runState={runState}
           onRunPipeline={() => { void handlePipelineRun(); }}
           live={live}
@@ -216,6 +221,7 @@ export default function App() {
           <div className="workspace">{renderModule()}</div>
         </main>
         <Inspector data={data} selection={selection} setSelection={setSelection} />
+        <Timeline events={data.events} cursor={cursor} setCursor={setCursor} setSelection={setSelection} />
       </div>
     </>
   );
