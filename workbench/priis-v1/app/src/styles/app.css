@@ -169,6 +169,16 @@ button { cursor: pointer; }
   background: var(--surface); border: 1px solid var(--alert); color: var(--alert);
   padding: 6px 10px; font-size: 12px; z-index: 5;
 }
+.map-note {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  max-width: calc(100% - 20px);
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--muted);
+  padding: 4px 10px; font-size: 11px; z-index: 5;
+}
+.linklike { border: 0; background: transparent; color: inherit; text-decoration: underline; padding: 0; font: inherit; }
+.navbtn[data-status="error"] > span:last-child { color: var(--alert); }
+.navbtn[data-status="loading"] > span:last-child { color: var(--muted); font-style: italic; }
 .map-shell { display: grid; grid-template-columns: 1fr 280px; height: 100%; transition: grid-template-columns .3s ease; }
 .layer-panel { border-left: 1px solid var(--line); background: var(--surface); padding: 12px; overflow: auto; }
 .map-shell[data-layer-collapsed="true"] .layer-panel { overflow: hidden; padding: 0; border-left: 0; }
