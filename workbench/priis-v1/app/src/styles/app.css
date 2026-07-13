@@ -126,7 +126,11 @@ button { cursor: pointer; }
 .dtable th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font: 10px var(--font-mono); text-transform: uppercase; text-align: left; border-bottom: 1px solid var(--line); padding: 8px; }
 .dtable td { border-bottom: 1px solid var(--line-soft); padding: 8px; }
 .dtable tr:hover { background: var(--surface-2); }
+.dtable tbody tr[role="button"] { cursor: pointer; }
+.dtable tbody tr[role="button"]:focus-visible { outline: 2px solid var(--fd-accent); outline-offset: -2px; }
 .dtable tr[data-active="true"] { outline: 2px solid var(--info); outline-offset: -2px; }
+.th-sort { display: inline-flex; align-items: center; gap: 2px; border: 0; background: transparent; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; padding: 0; cursor: pointer; }
+.table-filter { border: 1px solid var(--line); border-radius: 3px; padding: 2px 6px; background: var(--surface-2); color: inherit; font-size: 0.8rem; }
 
 .row { display: flex; align-items: center; gap: 8px; }
 .col { display: grid; gap: 8px; }

@@ -93,8 +93,8 @@ export function FinanceIntelligence({
         </div>
         <div className="row" style={{ gap: "0.5rem" }}>
           <input
-            className="subtle mono"
-            style={{ border: "1px solid var(--line)", borderRadius: "3px", padding: "2px 6px", background: "var(--surface-2)", color: "inherit", fontSize: "0.8rem" }}
+            className="subtle mono table-filter"
+            aria-label="Filter contracts"
             placeholder="filter…"
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
@@ -117,16 +117,25 @@ export function FinanceIntelligence({
               <thead>
                 {table.getHeaderGroups().map((hg) => (
                   <tr key={hg.id}>
-                    {hg.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        style={{ cursor: header.column.getCanSort() ? "pointer" : undefined }}
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getIsSorted() === "asc" ? " ↑" : header.column.getIsSorted() === "desc" ? " ↓" : ""}
-                      </th>
-                    ))}
+                    {hg.headers.map((header) => {
+                      const sorted = header.column.getIsSorted();
+                      const canSort = header.column.getCanSort();
+                      return (
+                        <th
+                          key={header.id}
+                          aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : canSort ? "none" : undefined}
+                        >
+                          {canSort ? (
+                            <button type="button" className="th-sort" onClick={header.column.getToggleSortingHandler()}>
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                              <span aria-hidden="true">{sorted === "asc" ? " ↑" : sorted === "desc" ? " ↓" : ""}</span>
+                            </button>
+                          ) : (
+                            flexRender(header.column.columnDef.header, header.getContext())
+                          )}
+                        </th>
+                      );
+                    })}
                   </tr>
                 ))}
               </thead>
@@ -138,17 +147,26 @@ export function FinanceIntelligence({
                     </td>
                   </tr>
                 ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <tr
-                      key={row.id}
-                      data-active={selection?.kind === "contract" && selection.id === row.original.id}
-                      onClick={() => setSelection({ kind: "contract", id: row.original.id })}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                      ))}
-                    </tr>
-                  ))
+                  table.getRowModel().rows.map((row) => {
+                    const active = selection?.kind === "contract" && selection.id === row.original.id;
+                    const select = () => setSelection({ kind: "contract", id: row.original.id });
+                    return (
+                      <tr
+                        key={row.id}
+                        data-active={active}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={active}
+                        aria-label={`Contract ${row.original.id}`}
+                        onClick={select}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } }}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                        ))}
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
