@@ -10,6 +10,9 @@
     "lint": "eslint src"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/public-sans": "^5.2.7",
+    "@fontsource/source-serif-4": "^5.2.9",
     "@tanstack/react-table": "^8.21.3",
     "@vitejs/plugin-react": "latest",
     "maplibre-gl": "latest",
@@ -23,8 +26,8 @@
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "eslint": "^9.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^15.0.0",
-    "typescript-eslint": "^8.0.0",
-    "eslint-plugin-react-hooks": "^5.0.0"
+    "typescript-eslint": "^8.0.0"
   }
 }

@@ -1,5 +1,7 @@
 @import url("./tokens.css");
-@import url("https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:wght@400;500;600&display=swap");
+
+/* Fonts are self-hosted via @fontsource (imported in main.tsx) — no runtime
+   network request. */
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
@@ -84,7 +86,9 @@ button { cursor: pointer; }
 .kbd { border: 1px solid var(--line); background: var(--surface-2); padding: 2px 6px; border-radius: 3px; font: 10px var(--font-mono); color: var(--muted); }
 .chips { display: flex; gap: 6px; align-items: center; padding: 0 12px; border-right: 1px solid var(--line); }
 .chip { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); background: var(--surface-2); padding: 3px 8px; font: 10px var(--font-mono); text-transform: uppercase; }
-.runstate { width: 260px; padding: 5px 12px; font: 10px var(--font-mono); color: var(--muted); display: grid; gap: 1px; }
+.runstate { width: 260px; padding: 5px 12px; font: 10px var(--font-mono); color: var(--muted); display: grid; gap: 3px; align-content: center; }
+.runstate-actions { display: flex; gap: 6px; align-items: center; }
+.theme-toggle { font: 10px var(--font-mono); }
 
 .rail { grid-area: rail; background: var(--surface); border-right: 1px solid var(--line); overflow: auto; }
 .rail-section { padding: 12px; border-bottom: 1px solid var(--line); }

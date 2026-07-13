@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ModuleId, PriisData, Selection } from "./types/priis";
 import { priisData as mockData } from "./data/mockData";
 import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline } from "./api/client";
+import { THEME_STORAGE_KEY, resolveInitialTheme, type Theme } from "./theme";
 import { CommandBar } from "./components/CommandBar";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
@@ -52,6 +53,12 @@ export default function App() {
     () => localStorage.getItem("priis_right_collapsed") === "true",
   );
 
+  // Theme — initialized in main.tsx from storage/prefers-color-scheme; mirror it
+  // here so the toggle and persistence live in React.
+  const [theme, setTheme] = useState<Theme>(
+    () => resolveInitialTheme(localStorage.getItem(THEME_STORAGE_KEY)),
+  );
+
   // Load real data on mount; fall back to mock if API is down
   useEffect(() => {
     void fetchPriisDataWithFallback().then(({ data: d, live: l }) => {
@@ -92,6 +99,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("priis_right_collapsed", String(rightCollapsed));
   }, [rightCollapsed]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   // Keyboard chrome toggles: "[" left rail, "]" inspector. Ignore while typing.
   useEffect(() => {
@@ -161,6 +173,8 @@ export default function App() {
           runState={runState}
           onRunPipeline={() => { void handlePipelineRun(); }}
           live={live}
+          theme={theme}
+          onToggleTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))}
         />
         <LeftRail
           data={data}

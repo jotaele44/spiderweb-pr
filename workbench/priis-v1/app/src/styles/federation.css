@@ -1,6 +1,96 @@
-:root{--fd-font-sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--fd-bg:#f8fafc;--fd-surface:#fff;--fd-surface-2:#f1f5f9;--fd-text:#0f172a;--fd-text-muted:#475569;--fd-border:#cbd5e1;--fd-accent:#0d9488;--fd-radius-md:.5rem;--fd-radius-lg:.75rem;--fd-motion-fast:120ms cubic-bezier(.2,.8,.2,1)}
-[data-theme="dark"]{--fd-bg:#070b14;--fd-surface:#0f172a;--fd-surface-2:#172033;--fd-text:#f8fafc;--fd-text-muted:#94a3b8;--fd-border:#334155}
-html,body,#root{min-height:100%}body{background:var(--fd-bg);color:var(--fd-text);font-family:var(--fd-font-sans)}
-:where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:2px solid var(--fd-accent);outline-offset:2px}
-.fd-panel{background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-radius-lg)}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* Federation Design System — canonical token layer for the PRIIS V1 workbench.
+   The --fd-* namespace is the single source of truth. Values preserve the
+   existing paper / GIS visual language (light) and the shipped dark palette, so
+   adopting the FD system is a naming/architecture change, not a restyle.
+   styles/tokens.css aliases the legacy var names onto these tokens while
+   components are migrated over. Theme is driven entirely from here. */
+:root {
+  /* Typography */
+  --fd-font-sans: "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --fd-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --fd-font-serif: "Source Serif 4", Georgia, serif;
+
+  /* Surfaces */
+  --fd-bg: #efece4;
+  --fd-bg-deep: #e6e3da;
+  --fd-surface: #f8f6f0;
+  --fd-surface-2: #fdfbf5;
+  --fd-surface-3: #ffffff;
+
+  /* Ink / text */
+  --fd-text: #14181c;
+  --fd-text-2: #2f343a;
+  --fd-text-muted: #6b7280;
+  --fd-text-muted-2: #8a8f97;
+
+  /* Lines / borders */
+  --fd-border: #c9c5b8;
+  --fd-border-soft: #ddd9ce;
+  --fd-border-hard: #1a1f25;
+
+  /* Evidence tiers */
+  --fd-t1: #0e5a6b;
+  --fd-t2: #8a5a14;
+  --fd-t3: #3b4a78;
+  --fd-t4: #707070;
+
+  /* Status */
+  --fd-alert: #a83a1c;
+  --fd-warn: #b6802a;
+  --fd-ok: #2c6f3e;
+  --fd-info: #1e5fa3;
+
+  /* Accent (focus ring) — evidence T1 teal */
+  --fd-accent: #0e5a6b;
+
+  /* Radius & motion */
+  --fd-radius-md: .5rem;
+  --fd-radius-lg: .75rem;
+  --fd-motion-fast: 120ms cubic-bezier(.2,.8,.2,1);
+
+  /* Layout dimensions */
+  --fd-rail-w: 232px;
+  --fd-inspector-w: 360px;
+  --fd-cmd-h: 44px;
+  --fd-time-h: 104px;
+}
+
+[data-theme="dark"] {
+  --fd-bg: #0e1216;
+  --fd-bg-deep: #07090c;
+  --fd-surface: #141a20;
+  --fd-surface-2: #19212a;
+  --fd-surface-3: #1d2731;
+  --fd-text: #e8e6df;
+  --fd-text-2: #c5c2b8;
+  --fd-text-muted: #8a9099;
+  --fd-text-muted-2: #6c7480;
+  --fd-border: #2b3540;
+  --fd-border-soft: #1f2832;
+  --fd-border-hard: #cdcabf;
+  --fd-t1: #4dc4d6;
+  --fd-t2: #d6a352;
+  --fd-t3: #8197d4;
+  --fd-t4: #9aa0a8;
+  --fd-alert: #e0734f;
+  --fd-warn: #d6a352;
+  --fd-ok: #6fbf83;
+  --fd-info: #5da3e0;
+  --fd-accent: #4dc4d6;
+}
+
+html, body, #root { min-height: 100%; }
+body { background: var(--fd-bg); color: var(--fd-text); font-family: var(--fd-font-sans); }
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+.fd-panel { background: var(--fd-surface); border: 1px solid var(--fd-border); border-radius: var(--fd-radius-lg); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
