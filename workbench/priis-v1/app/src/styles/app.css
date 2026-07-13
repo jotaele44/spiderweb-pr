@@ -145,6 +145,12 @@ button { cursor: pointer; }
 .anom-card[data-band="hi"] { border-left: 4px solid var(--alert); }
 .anom-card[data-band="md"] { border-left: 4px solid var(--warn); }
 .anom-card h4 { margin: 0 0 6px; }
+.anom-meta { margin: 2px 0 4px; text-transform: uppercase; letter-spacing: .04em; }
+.confidence-meter { display: grid; gap: 4px; }
+.confidence-bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.confidence-bar { height: 6px; background: var(--line-soft); }
+.confidence-bar[data-filled="true"] { background: var(--ink); }
+.contradiction-card { border-color: var(--warn); }
 .desc { color: var(--ink-2); line-height: 1.45; }
 .hr { height: 1px; background: var(--line); margin: 10px 0; }
 .empty-state { display: grid; place-items: center; height: 100%; min-height: 120px; padding: 24px; color: var(--muted); font-size: 13px; text-align: center; }

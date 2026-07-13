@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { byId, fmtMoney } from "../data/mockData";
 import type { PriisData, Selection } from "../types/priis";
-import { AnomalyScore, Pill } from "../components/Badges";
+import { Pill } from "../components/Badges";
+import { AnomalyCard } from "../components/AnomalyCard";
 import { API_BASE } from "../config";
 
 const rasterStyle: maplibregl.StyleSpecification = {
@@ -374,23 +375,15 @@ export function SpatialIntelligence({
           <div className="hr" />
           <h3>Top spatial anomalies</h3>
           <div className="col">
-            {data.anomalies.map((anomaly) => {
-              const site = byId(data.sites, anomaly.siteId);
-              return (
-                <button
-                  key={anomaly.id}
-                  className="anom-card"
-                  data-band={anomaly.band}
-                  onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}
-                >
-                  <div className="row" style={{ justifyContent: "space-between" }}>
-                    <b>{anomaly.id}</b>
-                    <AnomalyScore score={anomaly.score} />
-                  </div>
-                  <p className="desc">{site?.name}</p>
-                </button>
-              );
-            })}
+            {data.anomalies.map((anomaly) => (
+              <AnomalyCard
+                key={anomaly.id}
+                anomaly={anomaly}
+                heading={anomaly.id}
+                body={byId(data.sites, anomaly.siteId)?.name}
+                onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}
+              />
+            ))}
           </div>
         </aside>
       </div>

@@ -1,13 +1,12 @@
 import { fmtMoney } from "../data/mockData";
 import type { ModuleId, PriisData, Selection } from "../types/priis";
-import { AnomalyScore, Pill, TierBadge } from "../components/Badges";
-
-function Card({ title, stat, unit, delta }: { title: string; stat: string | number; unit?: string; delta: string }) {
-  return <div className="card"><h3>{title}</h3><div className="stat">{stat}<span className="unit">{unit}</span></div><div className="delta">{delta}</div></div>;
-}
+import { Pill, TierBadge } from "../components/Badges";
+import { Card } from "../components/Card";
+import { AnomalyCard } from "../components/AnomalyCard";
 
 export function CommandCenter({ data, setSelection, setModule }: { data: PriisData; setSelection: (selection: Selection) => void; setModule: (id: ModuleId) => void }) {
   const total = data.contracts.reduce((sum, contract) => sum + contract.amount, 0);
+  const flagged = data.contracts.filter((contract) => contract.status === "flagged").length;
   const high = data.anomalies.filter((anomaly) => anomaly.band === "hi");
   return (
     <section className="panel">
@@ -15,9 +14,9 @@ export function CommandCenter({ data, setSelection, setModule }: { data: PriisDa
       <div className="panel-grid">
         <div className="cards">
           <Card title="Total awarded" stat={fmtMoney(total)} delta={`${data.contracts.length} contracts`} />
-          <Card title="Contracts flagged" stat={data.contracts.filter((contract) => contract.status === "flagged").length} unit=" of 8" delta="requires evidence review" />
+          <Card title="Contracts flagged" stat={flagged} unit={` of ${data.contracts.length}`} delta="requires evidence review" />
           <Card title="High-score clusters" stat={high.length} unit=" ≥0.80" delta="pattern-convergence only" />
-          <Card title="Sources" stat={data.sources.length} unit=" fixtures" delta="1 partial source" />
+          <Card title="Sources" stat={data.sources.length} unit=" fixtures" delta={`${data.sources.filter((s) => s.status !== "online").length} degraded`} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 14 }}>
           <div className="card">
@@ -31,11 +30,14 @@ export function CommandCenter({ data, setSelection, setModule }: { data: PriisDa
           </div>
           <div className="col">
             {data.anomalies.map((anomaly) => (
-              <button key={anomaly.id} className="anom-card" data-band={anomaly.band} onClick={() => { setSelection({ kind: "anomaly", id: anomaly.id }); setModule("anomaly"); }}>
-                <h4>{anomaly.id} · {anomaly.title}</h4>
-                <div className="row"><AnomalyScore score={anomaly.score} /><span className="subtle">{anomaly.category}</span></div>
-                <p className="desc">{anomaly.summary}</p>
-              </button>
+              <AnomalyCard
+                key={anomaly.id}
+                anomaly={anomaly}
+                heading={`${anomaly.id} · ${anomaly.title}`}
+                meta={anomaly.category}
+                body={anomaly.summary}
+                onClick={() => { setSelection({ kind: "anomaly", id: anomaly.id }); setModule("anomaly"); }}
+              />
             ))}
           </div>
         </div>

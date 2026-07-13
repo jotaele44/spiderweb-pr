@@ -10,7 +10,8 @@ import {
 } from "@tanstack/react-table";
 import { byId, fmtMoney } from "../data/mockData";
 import type { Contract, PriisData, Selection } from "../types/priis";
-import { Pill, TierBadge } from "../components/Badges";
+import { Pill, TierBadge, contractStatusTone } from "../components/Badges";
+import { Card } from "../components/Card";
 import { exportContractsCsv } from "../export/csvExport";
 
 const colHelper = createColumnHelper<Contract>();
@@ -62,11 +63,7 @@ export function FinanceIntelligence({
       }),
       colHelper.accessor("status", {
         header: "Status",
-        cell: (i) => (
-          <Pill tone={i.getValue() === "flagged" ? "alert" : i.getValue() === "amended" ? "warn" : "ok"}>
-            {i.getValue()}
-          </Pill>
-        ),
+        cell: (i) => <Pill tone={contractStatusTone(i.getValue())}>{i.getValue()}</Pill>,
       }),
       colHelper.accessor("tier", {
         header: "Tier",
@@ -110,26 +107,10 @@ export function FinanceIntelligence({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", height: "100%", minHeight: 0 }}>
         <div className="panel-grid">
           <div className="cards">
-            <div className="card">
-              <h3>Total awarded</h3>
-              <div className="stat">{fmtMoney(total)}</div>
-              <div className="delta">12m fixture window</div>
-            </div>
-            <div className="card">
-              <h3>Flagged</h3>
-              <div className="stat">{data.contracts.filter((c) => c.status === "flagged").length}</div>
-              <div className="delta">requires contradiction check</div>
-            </div>
-            <div className="card">
-              <h3>Amended</h3>
-              <div className="stat">{data.contracts.filter((c) => c.status === "amended").length}</div>
-              <div className="delta">scope review queue</div>
-            </div>
-            <div className="card">
-              <h3>Top vendor</h3>
-              <div className="stat">{vendorTotals[0]?.vendor.id}</div>
-              <div className="delta">{fmtMoney(vendorTotals[0]?.total ?? 0)}</div>
-            </div>
+            <Card title="Total awarded" stat={fmtMoney(total)} delta="12m fixture window" />
+            <Card title="Flagged" stat={data.contracts.filter((c) => c.status === "flagged").length} delta="requires contradiction check" />
+            <Card title="Amended" stat={data.contracts.filter((c) => c.status === "amended").length} delta="scope review queue" />
+            <Card title="Top vendor" stat={vendorTotals[0]?.vendor.name ?? "—"} delta={fmtMoney(vendorTotals[0]?.total ?? 0)} />
           </div>
           <div className="table-wrap">
             <table className="dtable">
