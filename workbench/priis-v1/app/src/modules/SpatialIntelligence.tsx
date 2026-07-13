@@ -3,8 +3,7 @@ import maplibregl from "maplibre-gl";
 import { byId, fmtMoney } from "../data/mockData";
 import type { PriisData, Selection } from "../types/priis";
 import { AnomalyScore, Pill } from "../components/Badges";
-
-const BASE = "http://localhost:8000";
+import { API_BASE } from "../config";
 
 const rasterStyle: maplibregl.StyleSpecification = {
   version: 8,
@@ -104,7 +103,7 @@ function usePolygonLayer(
       if (map!.getSource(SOURCE_ID)) return;
       map!.addSource(SOURCE_ID, {
         type: "geojson",
-        data: `${BASE}/geo/${key}.geojson`,
+        data: `${API_BASE}/geo/${key}.geojson`,
       });
       map!.addLayer({
         id: FILL_ID,
@@ -131,7 +130,7 @@ function usePolygonLayer(
     if (map.isStyleLoaded()) {
       addPolygon();
     } else {
-      map.once("load", addPolygon);
+      void map.once("load", addPolygon);
     }
 
     return () => {
@@ -257,7 +256,7 @@ export function SpatialIntelligence({
       if (map!.getSource(SOURCE_ID)) return;
       map!.addSource(SOURCE_ID, {
         type: "geojson",
-        data: `${BASE}/geo/flights.geojson`,
+        data: `${API_BASE}/geo/flights.geojson`,
       });
       map!.addLayer({
         id: LAYER_ID,

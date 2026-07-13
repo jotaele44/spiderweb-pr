@@ -4,6 +4,14 @@ import { AnomalyScore, ConfidenceMeter, ContradictionFlag, Pill } from "../compo
 
 export function AnomalyWorkbench({ data, selection, setSelection }: { data: PriisData; selection: Selection | null; setSelection: (selection: Selection) => void }) {
   const active = selection?.kind === "anomaly" ? byId(data.anomalies, selection.id) : data.anomalies[0];
+  if (!data.anomalies.length) {
+    return (
+      <section className="panel">
+        <div className="panel-head"><div><h1>Anomaly Workbench</h1><span className="subtle">Pattern convergence only · no conclusion-first escalation</span></div><Pill tone="warn">T3/T4 are leads</Pill></div>
+        <div className="empty-state">No anomaly clusters in the current dataset.</div>
+      </section>
+    );
+  }
   return (
     <section className="panel">
       <div className="panel-head"><div><h1>Anomaly Workbench</h1><span className="subtle">Pattern convergence only · no conclusion-first escalation</span></div><Pill tone="warn">T3/T4 are leads</Pill></div>

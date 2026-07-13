@@ -5,14 +5,13 @@
  */
 import type { PriisData } from "../types/priis";
 import { priisData } from "../data/mockData";
+import { API_BASE as BASE } from "../config";
 import {
   parseArray,
   AgencySchema, VendorSchema, SiteSchema, ContractSchema,
   EventRecordSchema, AnomalySchema, SourceRecordSchema,
   InvestigationSchema, AlertRecordSchema,
 } from "../schemas/priis";
-
-const BASE = "http://localhost:8000";
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
@@ -35,18 +34,38 @@ export async function fetchPriisData(): Promise<PriisData> {
       get("/alerts"),
     ]);
 
+  const parsedContracts = parseArray(ContractSchema, contracts  as unknown[]);
+  const parsedAnomalies  = parseArray(AnomalySchema,  anomalies  as unknown[]);
+
   return {
     agencies:       parseArray(AgencySchema,       agencies       as unknown[]),
     vendors:        parseArray(VendorSchema,        vendors        as unknown[]),
     sites:          parseArray(SiteSchema,          sites          as unknown[]),
-    contracts:      parseArray(ContractSchema,      contracts      as unknown[]),
+    contracts:      parsedContracts,
     events:         parseArray(EventRecordSchema,   events         as unknown[]),
-    anomalies:      parseArray(AnomalySchema,       anomalies      as unknown[]),
+    anomalies:      parsedAnomalies,
     sources:        parseArray(SourceRecordSchema,  sources        as unknown[]),
     investigations: parseArray(InvestigationSchema, investigations as unknown[]),
     alerts:         parseArray(AlertRecordSchema,   alerts         as unknown[]),
-    watchlist: [],
+    // The backend has no watchlist endpoint yet, so derive one from the data —
+    // otherwise the left-rail watchlist vanishes in live mode. High-band
+    // anomalies and flagged contracts are the review-priority items.
+    watchlist: deriveWatchlist(parsedContracts, parsedAnomalies),
   };
+}
+
+/** Derive a review watchlist from the highest-priority live records. */
+function deriveWatchlist(
+  contracts: PriisData["contracts"],
+  anomalies: PriisData["anomalies"],
+): PriisData["watchlist"] {
+  const fromAnomalies = anomalies
+    .filter((a) => a.band === "hi")
+    .map((a) => ({ kind: "anomaly" as const, id: a.id }));
+  const fromContracts = contracts
+    .filter((c) => c.status === "flagged")
+    .map((c) => ({ kind: "contract" as const, id: c.id }));
+  return [...fromAnomalies, ...fromContracts].slice(0, 8);
 }
 
 /** Fetch PriisData, falling back to the bundled mock when the server is down. */

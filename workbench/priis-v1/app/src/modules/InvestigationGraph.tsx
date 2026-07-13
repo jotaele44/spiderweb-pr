@@ -5,6 +5,14 @@ interface GraphNode { id: string; label: string; kind: Selection["kind"]; x: num
 
 export function InvestigationGraph({ data, setSelection }: { data: PriisData; setSelection: (selection: Selection) => void }) {
   const anomaly = data.anomalies[0];
+  if (!anomaly) {
+    return (
+      <section className="panel">
+        <div className="panel-head"><div><h1>Investigation Graph</h1><span className="subtle">Entity graph scaffold · vendor / agency / site / anomaly</span></div></div>
+        <div className="empty-state">No anomalies in the current dataset to graph.</div>
+      </section>
+    );
+  }
   const site = byId(data.sites, anomaly.siteId);
   const contract = byId(data.contracts, anomaly.contracts[0]);
   const vendor = contract ? byId(data.vendors, contract.vendor) : undefined;
