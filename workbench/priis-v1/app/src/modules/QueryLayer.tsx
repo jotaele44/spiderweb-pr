@@ -18,6 +18,7 @@ export function QueryLayer({
   const [pending, setPending] = useState(false);
   const [streamLines, setStreamLines] = useState<string[]>([]);
   const [useRag, setUseRag] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
 
   function submit() {
@@ -27,6 +28,7 @@ export function QueryLayer({
       return;
     }
     setStreamLines([]);
+    setError(null);
     setPending(true);
 
     if (useRag) {
@@ -35,14 +37,20 @@ export function QueryLayer({
         query,
         (token) => setStreamLines((prev) => [...prev, token]),
         () => setPending(false),
+        (message) => setError(message),
       );
       cancelRef.current = cancel;
     } else {
       // Use the typed adapter stub (local, fast)
-      void runPriisQuery(query, data).then((r) => {
-        setResult(r);
-        setPending(false);
-      });
+      void runPriisQuery(query, data)
+        .then((r) => {
+          setResult(r);
+          setPending(false);
+        })
+        .catch((err: unknown) => {
+          setError(err instanceof Error ? err.message : "Query failed");
+          setPending(false);
+        });
     }
   }
 
@@ -73,6 +81,14 @@ export function QueryLayer({
           <textarea value={query} onChange={(event) => setQuery(event.target.value)} />
           <button className="act primary" onClick={submit}>Execute</button>
         </div>
+
+        {error && (
+          <div className="card" style={{ borderColor: "var(--alert)" }} role="alert">
+            <h3 style={{ color: "var(--alert)" }}>Query failed</h3>
+            <p className="desc">{error}</p>
+            {useRag && <p className="subtle">The RAG backend may be offline — switch to STUB for the local adapter.</p>}
+          </div>
+        )}
 
         {/* RAG streaming output */}
         {useRag && streamLines.length > 0 && (

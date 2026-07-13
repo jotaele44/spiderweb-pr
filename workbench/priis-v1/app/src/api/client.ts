@@ -123,12 +123,14 @@ export function streamPipeline(
 
 /**
  * Stream a RAG query to the backend.
- * Calls onToken for each output line, onDone when the response ends.
+ * Calls onToken for each output line, onDone when the response ends, and onError
+ * (if provided) when the request fails or returns no readable stream.
  */
 export function streamRagQuery(
   query: string,
   onToken: (token: string) => void,
   onDone: () => void,
+  onError?: (message: string) => void,
 ): () => void {
   let cancelled = false;
 
@@ -139,7 +141,16 @@ export function streamRagQuery(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, top_k: 5 }),
       });
-      if (!res.body) return;
+      if (!res.ok) {
+        onError?.(`RAG backend returned ${res.status}`);
+        onDone();
+        return;
+      }
+      if (!res.body) {
+        onError?.("RAG backend returned no response stream");
+        onDone();
+        return;
+      }
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let buf = "";
@@ -159,7 +170,9 @@ export function streamRagQuery(
           }
         }
       }
-    } catch {
+      onDone();
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : "RAG request failed");
       onDone();
     }
   })();

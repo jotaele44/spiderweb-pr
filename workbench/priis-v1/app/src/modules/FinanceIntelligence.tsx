@@ -150,17 +150,25 @@ export function FinanceIntelligence({
                 ))}
               </thead>
               <tbody>
-                {table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-active={selection?.kind === "contract" && selection.id === row.original.id}
-                    onClick={() => setSelection({ kind: "contract", id: row.original.id })}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                    ))}
+                {table.getRowModel().rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length} className="subtle" style={{ padding: 24, textAlign: "center" }}>
+                      {globalFilter ? `No contracts match “${globalFilter}”.` : "No contracts in the current dataset."}
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      data-active={selection?.kind === "contract" && selection.id === row.original.id}
+                      onClick={() => setSelection({ kind: "contract", id: row.original.id })}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                      ))}
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

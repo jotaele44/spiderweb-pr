@@ -38,6 +38,7 @@ export function LeftRail({
 
       <section className="rail-section">
         <div className="rail-title">Investigations</div>
+        {data.investigations.length === 0 && <div className="rail-empty">No investigations</div>}
         {data.investigations.map((inv) => (
           <button key={inv.id} className="navbtn" data-active={inv.id === activeInvestigation} onClick={() => setActiveInvestigation(inv.id)}>
             <span>{inv.id}</span><span>{inv.status}</span>
@@ -47,6 +48,7 @@ export function LeftRail({
 
       <section className="rail-section">
         <div className="rail-title">Sources</div>
+        {data.sources.length === 0 && <div className="rail-empty">No sources reporting</div>}
         {data.sources.map((source) => (
           <div className="source-row" key={source.id}>
             <span>{source.name}</span>
@@ -57,6 +59,7 @@ export function LeftRail({
 
       <section className="rail-section">
         <div className="rail-title">Watchlist</div>
+        {data.watchlist.length === 0 && <div className="rail-empty">Watchlist empty</div>}
         {data.watchlist.map((item) => (
           <button key={`${item.kind}-${item.id}`} className="navbtn" onClick={() => setSelection(item)}>
             <span>{item.kind}</span><span className="mono">{item.id}</span>

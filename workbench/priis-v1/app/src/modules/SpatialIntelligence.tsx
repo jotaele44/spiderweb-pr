@@ -155,6 +155,7 @@ export function SpatialIntelligence({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
     () => localStorage.getItem("priis_layer_collapsed") === "true",
   );
@@ -185,6 +186,12 @@ export function SpatialIntelligence({
       zoom: 8.4,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    // Surface tile / GeoJSON load failures (e.g. backend offline) instead of
+    // failing silently. MapLibre reports both raster tiles and geojson sources
+    // through the "error" event.
+    map.on("error", (e: { error?: { message?: string } }) => {
+      setMapError(e.error?.message ?? "Map resource failed to load");
+    });
     mapRef.current = map;
     return () => {
       markersRef.current.forEach((m) => m.remove());
@@ -342,7 +349,15 @@ export function SpatialIntelligence({
         data-layer-collapsed={layerPanelCollapsed}
         style={{ gridTemplateColumns: layerPanelCollapsed ? "1fr 0px" : "1fr 280px" }}
       >
-        <div ref={hostRef} className="map-host" />
+        <div className="map-col">
+          <div ref={hostRef} className="map-host" />
+          {mapError && (
+            <div className="map-error" role="alert">
+              <span>Map data failed to load — {mapError}</span>
+              <button className="act" onClick={() => setMapError(null)} aria-label="Dismiss map error">Dismiss</button>
+            </div>
+          )}
+        </div>
         <aside className="layer-panel">
           <h3>Layer control</h3>
           {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => (

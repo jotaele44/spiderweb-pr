@@ -24,7 +24,9 @@ export function CommandCenter({ data, setSelection, setModule }: { data: PriisDa
             <h3>Alert feed</h3>
             <table className="dtable">
               <thead><tr><th>Time</th><th>Kind</th><th>Subject</th><th>Tier</th><th>Inv</th></tr></thead>
-              <tbody>{data.alerts.map((alert) => <tr key={alert.id}><td className="mono">{alert.at}</td><td><Pill tone={alert.kind === "anomaly" ? "alert" : alert.kind === "source" ? "warn" : "info"}>{alert.kind}</Pill></td><td>{alert.title}</td><td><TierBadge tier={alert.tier} /></td><td className="mono">{alert.investigation}</td></tr>)}</tbody>
+              <tbody>{data.alerts.length === 0
+                ? <tr><td colSpan={5} className="subtle" style={{ padding: 16, textAlign: "center" }}>No active alerts.</td></tr>
+                : data.alerts.map((alert) => <tr key={alert.id}><td className="mono">{alert.at}</td><td><Pill tone={alert.kind === "anomaly" ? "alert" : alert.kind === "source" ? "warn" : "info"}>{alert.kind}</Pill></td><td>{alert.title}</td><td><TierBadge tier={alert.tier} /></td><td className="mono">{alert.investigation}</td></tr>)}</tbody>
             </table>
           </div>
           <div className="col">
