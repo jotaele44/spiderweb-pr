@@ -134,8 +134,10 @@ function usePolygonLayer(
       void map.once("load", addPolygon);
     }
 
+    // Use the map captured at effect start (not mapRef.current) so cleanup acts
+    // on the same instance the effect added layers to.
     return () => {
-      if (mapRef.current?.isStyleLoaded()) removePolygon();
+      if (map.isStyleLoaded()) removePolygon();
     };
   }, [isOn, key, cfg.fillColor, cfg.fillOpacity, cfg.lineColor, mapRef]);
 }

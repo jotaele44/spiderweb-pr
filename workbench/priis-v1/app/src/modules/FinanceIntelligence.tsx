@@ -28,7 +28,7 @@ export function FinanceIntelligence({
   const [sorting, setSorting] = useState<SortingState>([{ id: "amount", desc: true }]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const total = data.contracts.reduce((sum, c) => sum + c.amount, 0);
+  const total = useMemo(() => data.contracts.reduce((sum, c) => sum + c.amount, 0), [data.contracts]);
   const vendorTotals = useMemo(
     () =>
       data.vendors

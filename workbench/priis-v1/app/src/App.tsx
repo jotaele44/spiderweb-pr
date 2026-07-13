@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import type { ModuleId, PriisData, Selection } from "./types/priis";
 import { priisData as mockData } from "./data/mockData";
 import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline } from "./api/client";
@@ -7,12 +7,15 @@ import { CommandBar } from "./components/CommandBar";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
 import { Timeline } from "./components/Timeline";
-import { CommandCenter } from "./modules/CommandCenter";
-import { FinanceIntelligence } from "./modules/FinanceIntelligence";
-import { SpatialIntelligence } from "./modules/SpatialIntelligence";
-import { AnomalyWorkbench } from "./modules/AnomalyWorkbench";
-import { InvestigationGraph } from "./modules/InvestigationGraph";
-import { QueryLayer } from "./modules/QueryLayer";
+
+// Route-split the modules so heavy dependencies (MapLibre for Spatial, TanStack
+// Table for Finance) load only when their tab is first opened.
+const CommandCenter = lazy(() => import("./modules/CommandCenter").then((m) => ({ default: m.CommandCenter })));
+const FinanceIntelligence = lazy(() => import("./modules/FinanceIntelligence").then((m) => ({ default: m.FinanceIntelligence })));
+const SpatialIntelligence = lazy(() => import("./modules/SpatialIntelligence").then((m) => ({ default: m.SpatialIntelligence })));
+const AnomalyWorkbench = lazy(() => import("./modules/AnomalyWorkbench").then((m) => ({ default: m.AnomalyWorkbench })));
+const InvestigationGraph = lazy(() => import("./modules/InvestigationGraph").then((m) => ({ default: m.InvestigationGraph })));
+const QueryLayer = lazy(() => import("./modules/QueryLayer").then((m) => ({ default: m.QueryLayer })));
 
 const tabs: { id: ModuleId; label: string }[] = [
   { id: "command", label: "Command" },
@@ -218,7 +221,11 @@ export default function App() {
               {rightCollapsed ? "«" : "»"}
             </button>
           </div>
-          <div className="workspace">{renderModule()}</div>
+          <div className="workspace">
+            <Suspense fallback={<div className="empty-state">Loading module…</div>}>
+              {renderModule()}
+            </Suspense>
+          </div>
         </main>
         <Inspector data={data} selection={selection} setSelection={setSelection} />
         <Timeline events={data.events} cursor={cursor} setCursor={setCursor} setSelection={setSelection} />
