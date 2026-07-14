@@ -25,6 +25,8 @@ export function CommandBar({
   runState = "idle",
   onRunPipeline,
   live = false,
+  theme = "dark",
+  onToggleTheme,
 }: {
   query: string;
   setQuery: (value: string) => void;
@@ -34,6 +36,8 @@ export function CommandBar({
   runState?: RunState;
   onRunPipeline?: () => void;
   live?: boolean;
+  theme?: "light" | "dark";
+  onToggleTheme?: () => void;
 }) {
   return (
     <header className="cmdbar">
@@ -58,20 +62,29 @@ export function CommandBar({
         ))}
       </div>
       <div className="runstate">
-        {onRunPipeline && (
-          <button
-            className="act"
-            style={{ color: RUN_COLOR[runState], borderColor: RUN_COLOR[runState], marginRight: "0.5rem" }}
-            onClick={onRunPipeline}
-          >
-            {RUN_LABEL[runState]}
-          </button>
-        )}
+        <div className="runstate-actions">
+          {onToggleTheme && (
+            <button
+              className="act theme-toggle"
+              onClick={onToggleTheme}
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            >
+              {theme === "dark" ? "◐ LIGHT" : "◑ DARK"}
+            </button>
+          )}
+          {onRunPipeline && (
+            <button
+              className="act"
+              style={{ color: RUN_COLOR[runState], borderColor: RUN_COLOR[runState] }}
+              onClick={onRunPipeline}
+            >
+              {RUN_LABEL[runState]}
+            </button>
+          )}
+        </div>
         <span>
           {live ? "LIVE" : "DEMO"} · {runState === "running" ? "PIPELINE ACTIVE" : "STANDBY"}
-        </span>
-        <span style={{ marginLeft: "0.75rem" }}>
-          sources · sync <b style={{ color: live ? "var(--ok)" : "var(--warn)" }}>●</b>
         </span>
       </div>
     </header>

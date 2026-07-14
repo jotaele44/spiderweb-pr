@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { byId, fmtMoney } from "../data/mockData";
 import type { PriisData, Selection } from "../types/priis";
-import { AnomalyScore, Pill } from "../components/Badges";
-
-const BASE = "http://localhost:8000";
+import { Pill } from "../components/Badges";
+import { AnomalyCard } from "../components/AnomalyCard";
+import { API_BASE } from "../config";
 
 const rasterStyle: maplibregl.StyleSpecification = {
   version: 8,
@@ -20,13 +20,11 @@ const rasterStyle: maplibregl.StyleSpecification = {
 };
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
-type LayerKey =
-  | "contracts"
-  | "infrastructure"
-  | "sensitive"
-  | "anomaly"
-  | "flights"
-  | PolygonLayerKey;
+type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
+type BackendLayerKey = PolygonLayerKey | "flights";
+type LayerKey = MarkerLayerKey | BackendLayerKey;
+
+type LayerStatus = "idle" | "loading" | "loaded" | "error";
 
 interface PolygonLayerConfig {
   fillOpacity: number;
@@ -37,107 +35,148 @@ interface PolygonLayerConfig {
 }
 
 const POLYGON_LAYERS: Record<PolygonLayerKey, PolygonLayerConfig> = {
-  municipios: {
-    fillOpacity: 0.08,
-    fillColor: "#4dc4d6",
-    lineColor: "#4dc4d6",
-    defaultOn: true,
-    label: "Municipios",
-  },
-  tracts: {
-    fillOpacity: 0.04,
-    fillColor: "#f4b740",
-    lineColor: "#f4b740",
-    defaultOn: false,
-    label: "Census tracts",
-  },
-  places: {
-    fillOpacity: 0.05,
-    fillColor: "#a07cff",
-    lineColor: "#a07cff",
-    defaultOn: false,
-    label: "Places",
-  },
-  barrios: {
-    fillOpacity: 0.04,
-    fillColor: "#6f7782",
-    lineColor: "#6f7782",
-    defaultOn: false,
-    label: "Barrios",
-  },
+  municipios: { fillOpacity: 0.08, fillColor: "#4dc4d6", lineColor: "#4dc4d6", defaultOn: true, label: "Municipios" },
+  tracts:     { fillOpacity: 0.04, fillColor: "#f4b740", lineColor: "#f4b740", defaultOn: false, label: "Census tracts" },
+  places:     { fillOpacity: 0.05, fillColor: "#a07cff", lineColor: "#a07cff", defaultOn: false, label: "Places" },
+  barrios:    { fillOpacity: 0.04, fillColor: "#6f7782", lineColor: "#6f7782", defaultOn: false, label: "Barrios" },
 };
 
 const POLYGON_LAYER_KEYS = Object.keys(POLYGON_LAYERS) as PolygonLayerKey[];
+const BACKEND_LAYER_KEYS: BackendLayerKey[] = [...POLYGON_LAYER_KEYS, "flights"];
+
+const MARKER_LABELS: Record<MarkerLayerKey | "flights", string> = {
+  contracts: "Contracts",
+  infrastructure: "Infrastructure",
+  sensitive: "Sensitive sites",
+  anomaly: "Anomalies",
+  flights: "Flights",
+};
+
+function isPolygonKey(key: LayerKey): key is PolygonLayerKey {
+  return key in POLYGON_LAYERS;
+}
+function isBackendKey(key: LayerKey): key is BackendLayerKey {
+  return (BACKEND_LAYER_KEYS as string[]).includes(key);
+}
+function layerLabel(key: LayerKey): string {
+  return isPolygonKey(key) ? POLYGON_LAYERS[key].label : MARKER_LABELS[key];
+}
+
+/** Run `fn` once the map style is loaded (immediately if already loaded). */
+function whenStyleReady(map: maplibregl.Map, fn: () => void) {
+  if (map.isStyleLoaded()) { fn(); return; }
+  const handler = () => {
+    if (map.isStyleLoaded()) { map.off("styledata", handler); fn(); }
+  };
+  map.on("styledata", handler);
+}
 
 /**
- * Toggle a TIGER polygon source + (fill, line) layer pair on the MapLibre
- * instance. IDs follow the pattern `geo-${key}` / `geo-${key}-fill` /
- * `geo-${key}-line`. Removal order is line → fill → source (every layer
- * referencing the source must be gone before removeSource).
+ * Load a backend GeoJSON layer with explicit per-layer status. We fetch the
+ * GeoJSON ourselves (rather than handing MapLibre a URL) so we can report
+ * loading/error state to the caller — the source is only added on a successful
+ * fetch. `addLayers` adds the paint layers; source add/remove is handled here so
+ * the removal order (layers before source) stays correct.
  */
-function usePolygonLayer(
-  mapRef: React.MutableRefObject<maplibregl.Map | null>,
-  key: PolygonLayerKey,
-  isOn: boolean,
-) {
-  const cfg = POLYGON_LAYERS[key];
+function useGeoJsonLayer(opts: {
+  mapRef: React.MutableRefObject<maplibregl.Map | null>;
+  ready: boolean;
+  sourceId: string;
+  url: string;
+  isOn: boolean;
+  addLayers: (map: maplibregl.Map, sourceId: string) => void;
+  removeLayers: (map: maplibregl.Map) => void;
+  onStatus: (status: LayerStatus) => void;
+}) {
+  const { mapRef, ready, sourceId, url, isOn } = opts;
+  // Keep callbacks in refs so their identity doesn't re-trigger the effect
+  // (which would tear down and refetch the layer on every render).
+  const addRef = useRef(opts.addLayers);
+  const removeRef = useRef(opts.removeLayers);
+  const statusRef = useRef(opts.onStatus);
+  addRef.current = opts.addLayers;
+  removeRef.current = opts.removeLayers;
+  statusRef.current = opts.onStatus;
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const SOURCE_ID = `geo-${key}`;
-    const FILL_ID = `geo-${key}-fill`;
-    const LINE_ID = `geo-${key}-line`;
 
-    function removePolygon() {
-      // Order matters: every layer must be gone before removeSource.
-      if (map!.getLayer(LINE_ID)) map!.removeLayer(LINE_ID);
-      if (map!.getLayer(FILL_ID)) map!.removeLayer(FILL_ID);
-      if (map!.getSource(SOURCE_ID)) map!.removeSource(SOURCE_ID);
+    function teardown(m: maplibregl.Map) {
+      removeRef.current(m);
+      if (m.getSource(sourceId)) m.removeSource(sourceId);
     }
 
     if (!isOn) {
-      if (map.isStyleLoaded()) removePolygon();
+      if (map.isStyleLoaded()) teardown(map);
+      statusRef.current("idle");
       return;
     }
 
-    function addPolygon() {
-      if (map!.getSource(SOURCE_ID)) return;
-      map!.addSource(SOURCE_ID, {
-        type: "geojson",
-        data: `${BASE}/geo/${key}.geojson`,
-      });
-      map!.addLayer({
-        id: FILL_ID,
-        type: "fill",
-        source: SOURCE_ID,
-        paint: {
-          "fill-color": cfg.fillColor,
-          "fill-opacity": cfg.fillOpacity,
-        },
-      });
-      map!.addLayer({
-        id: LINE_ID,
-        type: "line",
-        source: SOURCE_ID,
-        layout: { "line-join": "round", "line-cap": "round" },
-        paint: {
-          "line-color": cfg.lineColor,
-          "line-width": 0.8,
-          "line-opacity": 0.6,
-        },
-      });
-    }
+    const controller = new AbortController();
+    let cancelled = false;
 
-    if (map.isStyleLoaded()) {
-      addPolygon();
-    } else {
-      map.once("load", addPolygon);
+    async function load() {
+      if (cancelled || map!.getSource(sourceId)) return;
+      // Status is driven by the fetch alone, so it's independent of base-map
+      // readiness — the layer reports "error" even when the OSM tiles are offline.
+      statusRef.current("loading");
+      let geojson: GeoJSON.GeoJSON;
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        geojson = (await res.json()) as GeoJSON.GeoJSON;
+      } catch (err) {
+        if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
+        statusRef.current("error");
+        return;
+      }
+      if (cancelled) return;
+      statusRef.current("loaded");
+      // Rendering needs the style; add the source/layers as soon as it's ready.
+      whenStyleReady(map!, () => {
+        if (cancelled || map!.getSource(sourceId)) return;
+        map!.addSource(sourceId, { type: "geojson", data: geojson });
+        addRef.current(map!, sourceId);
+      });
     }
+    void load();
 
     return () => {
-      if (mapRef.current?.isStyleLoaded()) removePolygon();
+      cancelled = true;
+      controller.abort();
+      if (map.isStyleLoaded()) teardown(map);
     };
-  }, [isOn, key, cfg.fillColor, cfg.fillOpacity, cfg.lineColor, mapRef]);
+    // `ready` re-runs the effect once the map instance exists (the map is created
+    // in a later effect than these layer hooks on first mount).
+  }, [mapRef, ready, sourceId, url, isOn]);
+}
+
+/** Build the useGeoJsonLayer options for a TIGER polygon layer. */
+function polygonLayerOpts(
+  mapRef: React.MutableRefObject<maplibregl.Map | null>,
+  ready: boolean,
+  key: PolygonLayerKey,
+  isOn: boolean,
+  onStatus: (status: LayerStatus) => void,
+) {
+  const cfg = POLYGON_LAYERS[key];
+  return {
+    mapRef,
+    ready,
+    sourceId: `geo-${key}`,
+    url: `${API_BASE}/geo/${key}.geojson`,
+    isOn,
+    onStatus,
+    addLayers: (map: maplibregl.Map, sourceId: string) => {
+      map.addLayer({ id: `${sourceId}-fill`, type: "fill", source: sourceId, paint: { "fill-color": cfg.fillColor, "fill-opacity": cfg.fillOpacity } });
+      map.addLayer({ id: `${sourceId}-line`, type: "line", source: sourceId, layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": cfg.lineColor, "line-width": 0.8, "line-opacity": 0.6 } });
+    },
+    removeLayers: (map: maplibregl.Map) => {
+      if (map.getLayer(`geo-${key}-line`)) map.removeLayer(`geo-${key}-line`);
+      if (map.getLayer(`geo-${key}-fill`)) map.removeLayer(`geo-${key}-fill`);
+    },
+  };
 }
 
 export function SpatialIntelligence({
@@ -156,6 +195,9 @@ export function SpatialIntelligence({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const [mapReady, setMapReady] = useState(false);
+  const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
+  const [tilesFailed, setTilesFailed] = useState(false);
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
     () => localStorage.getItem("priis_layer_collapsed") === "true",
   );
@@ -170,11 +212,31 @@ export function SpatialIntelligence({
     ) as Record<PolygonLayerKey, boolean>),
   }));
 
-  // Polygon overlays — one hook per TIGER layer, all driven by POLYGON_LAYERS config.
-  usePolygonLayer(mapRef, "municipios", layers.municipios);
-  usePolygonLayer(mapRef, "tracts", layers.tracts);
-  usePolygonLayer(mapRef, "places", layers.places);
-  usePolygonLayer(mapRef, "barrios", layers.barrios);
+  const setStatus = (key: BackendLayerKey) => (status: LayerStatus) =>
+    setLayerStatus((prev) => (prev[key] === status ? prev : { ...prev, [key]: status }));
+
+  // Polygon overlays — one hook per TIGER layer (fixed set, called at top level
+  // to satisfy the rules of hooks), all driven by POLYGON_LAYERS config.
+  useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "municipios", layers.municipios, setStatus("municipios")));
+  useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts")));
+  useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "places", layers.places, setStatus("places")));
+  useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios")));
+
+  // Flight lines — same fetch-with-status pipeline as the polygons.
+  useGeoJsonLayer({
+    mapRef,
+    ready: mapReady,
+    sourceId: "flights-source",
+    url: `${API_BASE}/geo/flights.geojson`,
+    isOn: layers.flights,
+    onStatus: setStatus("flights"),
+    addLayers: (map, sourceId) => {
+      map.addLayer({ id: "flights-layer", type: "line", source: sourceId, layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#4dc4d6", "line-width": 1.5, "line-opacity": 0.7 } });
+    },
+    removeLayers: (map) => {
+      if (map.getLayer("flights-layer")) map.removeLayer("flights-layer");
+    },
+  });
 
   // Initialize map
   useEffect(() => {
@@ -186,12 +248,20 @@ export function SpatialIntelligence({
       zoom: 8.4,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    // Only surface base-map (OSM raster) failures here — backend GeoJSON layers
+    // report their own status via useGeoJsonLayer. Scoping to sourceId === "osm"
+    // keeps benign per-tile/abort noise out of the UI.
+    map.on("error", (e: { sourceId?: string }) => {
+      if (e.sourceId === "osm") setTilesFailed(true);
+    });
     mapRef.current = map;
+    setMapReady(true);
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       map.remove();
       mapRef.current = null;
+      setMapReady(false);
     };
   }, []);
 
@@ -236,53 +306,6 @@ export function SpatialIntelligence({
     });
   }, [data, layers, setSelection]);
 
-  // Flight GeoJSON layer — added/removed when toggle changes
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const SOURCE_ID = "flights-source";
-    const LAYER_ID = "flights-layer";
-
-    function removeFlight() {
-      if (map!.getLayer(LAYER_ID)) map!.removeLayer(LAYER_ID);
-      if (map!.getSource(SOURCE_ID)) map!.removeSource(SOURCE_ID);
-    }
-
-    if (!layers.flights) {
-      if (map.isStyleLoaded()) removeFlight();
-      return;
-    }
-
-    function addFlightLayer() {
-      if (map!.getSource(SOURCE_ID)) return;
-      map!.addSource(SOURCE_ID, {
-        type: "geojson",
-        data: `${BASE}/geo/flights.geojson`,
-      });
-      map!.addLayer({
-        id: LAYER_ID,
-        type: "line",
-        source: SOURCE_ID,
-        layout: { "line-join": "round", "line-cap": "round" },
-        paint: {
-          "line-color": "#4dc4d6",
-          "line-width": 1.5,
-          "line-opacity": 0.7,
-        },
-      });
-    }
-
-    if (map.isStyleLoaded()) {
-      addFlightLayer();
-    } else {
-      void map.once("load", addFlightLayer);
-    }
-
-    return () => {
-      if (mapRef.current?.isStyleLoaded()) removeFlight();
-    };
-  }, [layers.flights]);
-
   // Fly to selection
   useEffect(() => {
     const map = mapRef.current;
@@ -319,6 +342,8 @@ export function SpatialIntelligence({
     return () => window.clearTimeout(timer);
   }, [leftCollapsed, rightCollapsed, layerPanelCollapsed]);
 
+  const failedLayers = BACKEND_LAYER_KEYS.filter((k) => layers[k] && layerStatus[k] === "error");
+
   return (
     <section className="panel">
       <div className="panel-head">
@@ -343,40 +368,50 @@ export function SpatialIntelligence({
         data-layer-collapsed={layerPanelCollapsed}
         style={{ gridTemplateColumns: layerPanelCollapsed ? "1fr 0px" : "1fr 280px" }}
       >
-        <div ref={hostRef} className="map-host" />
+        <div className="map-col">
+          <div ref={hostRef} className="map-host" />
+          {failedLayers.length > 0 && (
+            <div className="map-error" role="alert">
+              <span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span>
+            </div>
+          )}
+          {tilesFailed && (
+            <div className="map-note" role="status">
+              <span>Base map tiles unavailable (offline?)</span>
+              <button className="linklike" onClick={() => setTilesFailed(false)} aria-label="Dismiss base map note">dismiss</button>
+            </div>
+          )}
+        </div>
         <aside className="layer-panel">
           <h3>Layer control</h3>
-          {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => (
-            <button
-              key={key}
-              className="navbtn"
-              data-active={value}
-              onClick={() => setLayers((cur) => ({ ...cur, [key]: !cur[key] }))}
-            >
-              <span>{key}</span>
-              <span>{value ? "on" : "off"}</span>
-            </button>
-          ))}
+          {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => {
+            const status = isBackendKey(key) && value ? layerStatus[key] : undefined;
+            const right = status === "loading" ? "loading…" : status === "error" ? "error" : value ? "on" : "off";
+            return (
+              <button
+                key={key}
+                className="navbtn"
+                data-active={value}
+                data-status={status}
+                onClick={() => setLayers((cur) => ({ ...cur, [key]: !cur[key] }))}
+              >
+                <span>{layerLabel(key)}</span>
+                <span>{right}</span>
+              </button>
+            );
+          })}
           <div className="hr" />
           <h3>Top spatial anomalies</h3>
           <div className="col">
-            {data.anomalies.map((anomaly) => {
-              const site = byId(data.sites, anomaly.siteId);
-              return (
-                <button
-                  key={anomaly.id}
-                  className="anom-card"
-                  data-band={anomaly.band}
-                  onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}
-                >
-                  <div className="row" style={{ justifyContent: "space-between" }}>
-                    <b>{anomaly.id}</b>
-                    <AnomalyScore score={anomaly.score} />
-                  </div>
-                  <p className="desc">{site?.name}</p>
-                </button>
-              );
-            })}
+            {data.anomalies.map((anomaly) => (
+              <AnomalyCard
+                key={anomaly.id}
+                anomaly={anomaly}
+                heading={anomaly.id}
+                body={byId(data.sites, anomaly.siteId)?.name}
+                onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}
+              />
+            ))}
           </div>
         </aside>
       </div>

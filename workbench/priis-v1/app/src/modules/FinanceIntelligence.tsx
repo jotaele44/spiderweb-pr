@@ -10,7 +10,8 @@ import {
 } from "@tanstack/react-table";
 import { byId, fmtMoney } from "../data/mockData";
 import type { Contract, PriisData, Selection } from "../types/priis";
-import { Pill, TierBadge } from "../components/Badges";
+import { Pill, TierBadge, contractStatusTone } from "../components/Badges";
+import { Card } from "../components/Card";
 import { exportContractsCsv } from "../export/csvExport";
 
 const colHelper = createColumnHelper<Contract>();
@@ -27,7 +28,7 @@ export function FinanceIntelligence({
   const [sorting, setSorting] = useState<SortingState>([{ id: "amount", desc: true }]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const total = data.contracts.reduce((sum, c) => sum + c.amount, 0);
+  const total = useMemo(() => data.contracts.reduce((sum, c) => sum + c.amount, 0), [data.contracts]);
   const vendorTotals = useMemo(
     () =>
       data.vendors
@@ -62,11 +63,7 @@ export function FinanceIntelligence({
       }),
       colHelper.accessor("status", {
         header: "Status",
-        cell: (i) => (
-          <Pill tone={i.getValue() === "flagged" ? "alert" : i.getValue() === "amended" ? "warn" : "ok"}>
-            {i.getValue()}
-          </Pill>
-        ),
+        cell: (i) => <Pill tone={contractStatusTone(i.getValue())}>{i.getValue()}</Pill>,
       }),
       colHelper.accessor("tier", {
         header: "Tier",
@@ -96,8 +93,8 @@ export function FinanceIntelligence({
         </div>
         <div className="row" style={{ gap: "0.5rem" }}>
           <input
-            className="subtle mono"
-            style={{ border: "1px solid var(--line)", borderRadius: "3px", padding: "2px 6px", background: "var(--surface-2)", color: "inherit", fontSize: "0.8rem" }}
+            className="subtle mono table-filter"
+            aria-label="Filter contracts"
             placeholder="filter…"
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
@@ -110,57 +107,67 @@ export function FinanceIntelligence({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", height: "100%", minHeight: 0 }}>
         <div className="panel-grid">
           <div className="cards">
-            <div className="card">
-              <h3>Total awarded</h3>
-              <div className="stat">{fmtMoney(total)}</div>
-              <div className="delta">12m fixture window</div>
-            </div>
-            <div className="card">
-              <h3>Flagged</h3>
-              <div className="stat">{data.contracts.filter((c) => c.status === "flagged").length}</div>
-              <div className="delta">requires contradiction check</div>
-            </div>
-            <div className="card">
-              <h3>Amended</h3>
-              <div className="stat">{data.contracts.filter((c) => c.status === "amended").length}</div>
-              <div className="delta">scope review queue</div>
-            </div>
-            <div className="card">
-              <h3>Top vendor</h3>
-              <div className="stat">{vendorTotals[0]?.vendor.id}</div>
-              <div className="delta">{fmtMoney(vendorTotals[0]?.total ?? 0)}</div>
-            </div>
+            <Card title="Total awarded" stat={fmtMoney(total)} delta="12m fixture window" />
+            <Card title="Flagged" stat={data.contracts.filter((c) => c.status === "flagged").length} delta="requires contradiction check" />
+            <Card title="Amended" stat={data.contracts.filter((c) => c.status === "amended").length} delta="scope review queue" />
+            <Card title="Top vendor" stat={vendorTotals[0]?.vendor.name ?? "—"} delta={fmtMoney(vendorTotals[0]?.total ?? 0)} />
           </div>
           <div className="table-wrap">
             <table className="dtable">
               <thead>
                 {table.getHeaderGroups().map((hg) => (
                   <tr key={hg.id}>
-                    {hg.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        style={{ cursor: header.column.getCanSort() ? "pointer" : undefined }}
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getIsSorted() === "asc" ? " ↑" : header.column.getIsSorted() === "desc" ? " ↓" : ""}
-                      </th>
-                    ))}
+                    {hg.headers.map((header) => {
+                      const sorted = header.column.getIsSorted();
+                      const canSort = header.column.getCanSort();
+                      return (
+                        <th
+                          key={header.id}
+                          aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : canSort ? "none" : undefined}
+                        >
+                          {canSort ? (
+                            <button type="button" className="th-sort" onClick={header.column.getToggleSortingHandler()}>
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                              <span aria-hidden="true">{sorted === "asc" ? " ↑" : sorted === "desc" ? " ↓" : ""}</span>
+                            </button>
+                          ) : (
+                            flexRender(header.column.columnDef.header, header.getContext())
+                          )}
+                        </th>
+                      );
+                    })}
                   </tr>
                 ))}
               </thead>
               <tbody>
-                {table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-active={selection?.kind === "contract" && selection.id === row.original.id}
-                    onClick={() => setSelection({ kind: "contract", id: row.original.id })}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                    ))}
+                {table.getRowModel().rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length} className="subtle" style={{ padding: 24, textAlign: "center" }}>
+                      {globalFilter ? `No contracts match “${globalFilter}”.` : "No contracts in the current dataset."}
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  table.getRowModel().rows.map((row) => {
+                    const active = selection?.kind === "contract" && selection.id === row.original.id;
+                    const select = () => setSelection({ kind: "contract", id: row.original.id });
+                    return (
+                      <tr
+                        key={row.id}
+                        data-active={active}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={active}
+                        aria-label={`Contract ${row.original.id}`}
+                        onClick={select}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } }}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                        ))}
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

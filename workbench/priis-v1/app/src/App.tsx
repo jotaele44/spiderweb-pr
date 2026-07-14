@@ -1,16 +1,21 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import type { ModuleId, PriisData, Selection } from "./types/priis";
 import { priisData as mockData } from "./data/mockData";
 import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline } from "./api/client";
+import { THEME_STORAGE_KEY, resolveInitialTheme, type Theme } from "./theme";
 import { CommandBar } from "./components/CommandBar";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
-import { CommandCenter } from "./modules/CommandCenter";
-import { FinanceIntelligence } from "./modules/FinanceIntelligence";
-import { SpatialIntelligence } from "./modules/SpatialIntelligence";
-import { AnomalyWorkbench } from "./modules/AnomalyWorkbench";
-import { InvestigationGraph } from "./modules/InvestigationGraph";
-import { QueryLayer } from "./modules/QueryLayer";
+import { Timeline } from "./components/Timeline";
+
+// Route-split the modules so heavy dependencies (MapLibre for Spatial, TanStack
+// Table for Finance) load only when their tab is first opened.
+const CommandCenter = lazy(() => import("./modules/CommandCenter").then((m) => ({ default: m.CommandCenter })));
+const FinanceIntelligence = lazy(() => import("./modules/FinanceIntelligence").then((m) => ({ default: m.FinanceIntelligence })));
+const SpatialIntelligence = lazy(() => import("./modules/SpatialIntelligence").then((m) => ({ default: m.SpatialIntelligence })));
+const AnomalyWorkbench = lazy(() => import("./modules/AnomalyWorkbench").then((m) => ({ default: m.AnomalyWorkbench })));
+const InvestigationGraph = lazy(() => import("./modules/InvestigationGraph").then((m) => ({ default: m.InvestigationGraph })));
+const QueryLayer = lazy(() => import("./modules/QueryLayer").then((m) => ({ default: m.QueryLayer })));
 
 const tabs: { id: ModuleId; label: string }[] = [
   { id: "command", label: "Command" },
@@ -44,12 +49,22 @@ export default function App() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [pipelineLog, setPipelineLog] = useState<string[]>([]);
 
+  // Bumped each time the command bar submits, so the Query module runs the
+  // global query instead of just switching tabs.
+  const [querySubmitCount, setQuerySubmitCount] = useState(0);
+
   // Collapsible chrome — left rail and right inspector slide out of frame.
   const [leftCollapsed, setLeftCollapsed] = useState(
     () => localStorage.getItem("priis_left_collapsed") === "true",
   );
   const [rightCollapsed, setRightCollapsed] = useState(
     () => localStorage.getItem("priis_right_collapsed") === "true",
+  );
+
+  // Theme — initialized in main.tsx from storage/prefers-color-scheme; mirror it
+  // here so the toggle and persistence live in React.
+  const [theme, setTheme] = useState<Theme>(
+    () => resolveInitialTheme(localStorage.getItem(THEME_STORAGE_KEY)),
   );
 
   // Load real data on mount; fall back to mock if API is down
@@ -92,6 +107,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("priis_right_collapsed", String(rightCollapsed));
   }, [rightCollapsed]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   // Keyboard chrome toggles: "[" left rail, "]" inspector. Ignore while typing.
   useEffect(() => {
@@ -143,7 +163,7 @@ export default function App() {
       case "spatial":  return <SpatialIntelligence data={data} selection={selection} setSelection={setSelection} leftCollapsed={leftCollapsed} rightCollapsed={rightCollapsed} />;
       case "anomaly":  return <AnomalyWorkbench data={data} selection={selection} setSelection={setSelection} />;
       case "graph":    return <InvestigationGraph data={data} setSelection={setSelection} />;
-      case "query":    return <QueryLayer data={data} setSelection={setSelection} pipelineLog={pipelineLog} />;
+      case "query":    return <QueryLayer data={data} setSelection={setSelection} pipelineLog={pipelineLog} incomingQuery={query} runSignal={querySubmitCount} />;
       default: return null;
     }
   }
@@ -157,10 +177,12 @@ export default function App() {
           setQuery={setQuery}
           filters={filters}
           removeFilter={(key) => setFilters((current) => current.filter((item) => item.key !== key))}
-          onSubmit={() => setModule("query")}
+          onSubmit={() => { setModule("query"); setQuerySubmitCount((count) => count + 1); }}
           runState={runState}
           onRunPipeline={() => { void handlePipelineRun(); }}
           live={live}
+          theme={theme}
+          onToggleTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))}
         />
         <LeftRail
           data={data}
@@ -199,9 +221,14 @@ export default function App() {
               {rightCollapsed ? "«" : "»"}
             </button>
           </div>
-          <div className="workspace">{renderModule()}</div>
+          <div className="workspace">
+            <Suspense fallback={<div className="empty-state">Loading module…</div>}>
+              {renderModule()}
+            </Suspense>
+          </div>
         </main>
         <Inspector data={data} selection={selection} setSelection={setSelection} />
+        <Timeline events={data.events} cursor={cursor} setCursor={setCursor} setSelection={setSelection} />
       </div>
     </>
   );

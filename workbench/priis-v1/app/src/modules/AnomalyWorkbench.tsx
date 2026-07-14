@@ -1,9 +1,18 @@
 import { byId } from "../data/mockData";
 import type { PriisData, Selection } from "../types/priis";
 import { AnomalyScore, ConfidenceMeter, ContradictionFlag, Pill } from "../components/Badges";
+import { AnomalyCard } from "../components/AnomalyCard";
 
 export function AnomalyWorkbench({ data, selection, setSelection }: { data: PriisData; selection: Selection | null; setSelection: (selection: Selection) => void }) {
   const active = selection?.kind === "anomaly" ? byId(data.anomalies, selection.id) : data.anomalies[0];
+  if (!data.anomalies.length) {
+    return (
+      <section className="panel">
+        <div className="panel-head"><div><h1>Anomaly Workbench</h1><span className="subtle">Pattern convergence only · no conclusion-first escalation</span></div><Pill tone="warn">T3/T4 are leads</Pill></div>
+        <div className="empty-state">No anomaly clusters in the current dataset.</div>
+      </section>
+    );
+  }
   return (
     <section className="panel">
       <div className="panel-head"><div><h1>Anomaly Workbench</h1><span className="subtle">Pattern convergence only · no conclusion-first escalation</span></div><Pill tone="warn">T3/T4 are leads</Pill></div>
@@ -11,7 +20,16 @@ export function AnomalyWorkbench({ data, selection, setSelection }: { data: Prii
         <aside className="layer-panel" style={{ borderLeft: 0, borderRight: "1px solid var(--line)" }}>
           <h3>Cluster queue</h3>
           <div className="col">
-            {data.anomalies.map((anomaly) => <button key={anomaly.id} className="anom-card" data-band={anomaly.band} onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}><h4>{anomaly.id}</h4><div className="row"><AnomalyScore score={anomaly.score} /><span>{anomaly.category}</span></div><p className="desc">{anomaly.title}</p></button>)}
+            {data.anomalies.map((anomaly) => (
+              <AnomalyCard
+                key={anomaly.id}
+                anomaly={anomaly}
+                heading={anomaly.id}
+                meta={anomaly.category}
+                body={anomaly.title}
+                onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}
+              />
+            ))}
           </div>
         </aside>
         <div className="panel-grid">
