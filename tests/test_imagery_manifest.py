@@ -9,6 +9,9 @@ import io
 
 import pytest
 
+# Skip cleanly when the optional `imagery` extra is not installed.
+pytest.importorskip("PIL")
+
 from imagery.manifest import build_manifest
 from imagery.models import ImageryResult
 from readiness.satellite_ingest import SatelliteIngest
