@@ -60,6 +60,15 @@ earthgpt = [
     "python-dotenv>=1.0.0,<2",
     "folium>=0.15.0,<1",
 ]
+# Imagery MCP server — fetch/search/compare satellite imagery over MCP
+# (NASA GIBS, Sentinel Hub, Copernicus/CDSE). jsonschema comes via `airspace`.
+imagery = [
+    "fastmcp>=2.9,<3",
+    "requests>=2.31.0,<3",
+    "python-dotenv>=1.0.0,<2",
+    "Pillow>=10.0,<13",
+    "jsonschema>=4.17,<5",
+]
 # PRIIS FastAPI backend (ranges mirror the pinned server/backend/requirements.txt).
 server = [
     "fastapi>=0.115,<1",
@@ -74,7 +83,7 @@ federation = [
 ]
 # Convenience union of every runtime subsystem (gebco is already in base).
 all = [
-    "spiderweb-pr[airspace,rag,earthgpt,server,federation]",
+    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery]",
 ]
 dev = [
     "pytest>=9.0.2,<10",
@@ -109,6 +118,7 @@ include = [
     "gebco*",
     "earthgpt*",
     "llm*",
+    "imagery*",
 ]
 
 # ---------------------------------------------------------------------------
@@ -157,7 +167,7 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["integration", "pipeline", "fr24", "readiness", "federation", "llm",
-          "earthgpt", "provenance_utils", "run_modes", "release_check"]
+          "earthgpt", "imagery", "provenance_utils", "run_modes", "release_check"]
 omit = [
     "tests/*",
     "scripts/*",
