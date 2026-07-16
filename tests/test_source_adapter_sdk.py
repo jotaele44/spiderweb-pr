@@ -1,4 +1,6 @@
+import json
 from pathlib import Path
+from urllib.parse import parse_qsl, urlsplit
 
 from scripts.source_adapters.sdk import (
     AdapterPolicy,
@@ -9,8 +11,24 @@ from scripts.source_adapters.sdk import (
     SourceAdapterError,
     SourceEndpoint,
 )
+from scripts.source_adapters.sdk.core import normalize_param_pairs
+from scripts.source_adapters.sdk.download import DownloadEngine
 from scripts.source_adapters.sdk.form import parse_first_form
 from scripts.source_adapters.sdk.manifest import ManifestEngine, summarize_coverage
+
+
+class _FakeResponse:
+    status = 200
+    headers = {"Content-Type": "application/json"}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        return False
+
+    def read(self):
+        return b'{"ok": true}'
 
 
 def test_adapter_policy_rejects_raw_commit_permission(tmp_path: Path):
@@ -84,4 +102,96 @@ def test_core_request_and_coverage_contracts():
     summary = CoverageSummary(expected=3, requested=2, acquired=1, failed=1, hold=0, unresolved=1)
 
     assert request.endpoint.source_id == "usgs_demo"
+    assert request.param_pairs() == (("q", "Puerto Rico"),)
     assert summary.coverage_pct == 50.0
+
+
+def test_normalize_param_pairs_preserves_explicit_duplicate_keys():
+    params = (("CNTY", "72001"), ("CNTY", "72003"), ("STATE", 72))
+
+    assert normalize_param_pairs(params) == (
+        ("CNTY", "72001"),
+        ("CNTY", "72003"),
+        ("STATE", "72"),
+    )
+
+
+def test_normalize_param_pairs_expands_mapping_list_values():
+    params = {"CNTY": ["72001", "72003"], "STATE": "72"}
+
+    assert normalize_param_pairs(params) == (
+        ("CNTY", "72001"),
+        ("CNTY", "72003"),
+        ("STATE", "72"),
+    )
+
+
+def test_download_engine_get_preserves_duplicate_keys_and_manifest_parity(tmp_path: Path, monkeypatch):
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["request"] = request
+        captured["timeout"] = timeout
+        return _FakeResponse()
+
+    monkeypatch.setattr("scripts.source_adapters.sdk.download.urlopen", fake_urlopen)
+    request = PayloadRequest(
+        request_id="counties",
+        endpoint=SourceEndpoint(
+            source_id="census",
+            name="Census",
+            url="https://example.gov/download?mode=batch",
+        ),
+        params=(("CNTY", "72001"), ("CNTY", "72003"), ("STATE", "72")),
+        expected_content="json",
+    )
+
+    result = DownloadEngine(tmp_path).download(request)
+
+    query_pairs = parse_qsl(urlsplit(captured["request"].full_url).query, keep_blank_values=True)
+    assert query_pairs == [
+        ("mode", "batch"),
+        ("CNTY", "72001"),
+        ("CNTY", "72003"),
+        ("STATE", "72"),
+    ]
+    assert json.loads(result.request_params) == [
+        ["CNTY", "72001"],
+        ["CNTY", "72003"],
+        ["STATE", "72"],
+    ]
+    assert result.review_status == "raw"
+
+
+def test_download_engine_post_expands_list_values_with_doseq(tmp_path: Path, monkeypatch):
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["request"] = request
+        return _FakeResponse()
+
+    monkeypatch.setattr("scripts.source_adapters.sdk.download.urlopen", fake_urlopen)
+    request = PayloadRequest(
+        request_id="counties",
+        endpoint=SourceEndpoint(
+            source_id="census",
+            name="Census",
+            url="https://example.gov/download",
+            method="POST",
+        ),
+        params={"CNTY": ["72001", "72003"], "STATE": 72},
+        expected_content="json",
+    )
+
+    result = DownloadEngine(tmp_path).download(request)
+
+    assert parse_qsl(captured["request"].data.decode("utf-8"), keep_blank_values=True) == [
+        ("CNTY", "72001"),
+        ("CNTY", "72003"),
+        ("STATE", "72"),
+    ]
+    assert json.loads(result.request_params) == [
+        ["CNTY", "72001"],
+        ["CNTY", "72003"],
+        ["STATE", "72"],
+    ]
