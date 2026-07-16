@@ -60,6 +60,14 @@ visibility_classes:
           geometry_type: unknown
           flag: GHOST
           status: planned
+      - id: puma
+        label: Puma
+        pin_layers:
+        - pin_layer: puma
+          label: PUMAs
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
     - id: reference_gazetteer
       label: Reference / Gazetteer
       pin_classes:
