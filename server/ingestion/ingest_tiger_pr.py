@@ -16,8 +16,9 @@ Layers produced (written to ``--data-dir``/<layer>.geojson):
 
 Provenance manifest is written to ``--data-dir``/tiger/<year>/manifest.json with
 per-layer source (input zip) and output (GeoJSON) SHA256 + byte + feature-count
-records. Raw zips are cached under ``--cache-dir`` and never committed (see
-docs/DATA_POLICY.md).
+records. Output paths are relative to ``--data-dir`` and each output explicitly
+records ``EPSG:4326``. Raw zips are cached under ``--cache-dir`` and never
+committed (see docs/DATA_POLICY.md).
 
 Heavy GIS deps (geopandas/pyogrio) are imported lazily so this module imports
 cleanly without the ``geo`` extra installed; install it with
@@ -257,9 +258,6 @@ def _build_layer_gdf(zip_path: Path, spec: dict[str, Any]):
     if state_filter and "STATEFP" in gdf.columns:
         gdf = gdf[gdf["STATEFP"] == state_filter].copy()
 
-    # Subset to the source GEOID/NAME columns *before* renaming, so a file that
-    # already carries a NAME column (e.g. the county file has both NAME and
-    # NAMELSAD) can't produce a duplicate NAME after the rename.
     geoid_field = spec["geoid_field"]
     name_field = spec["name_field"]
     subset = [col for col in (geoid_field, name_field) if col in gdf.columns] + ["geometry"]
@@ -272,9 +270,7 @@ def _build_layer_gdf(zip_path: Path, spec: dict[str, Any]):
 
 
 def _match_sites(conn, sites_gdf, muni_gdf, tract_gdf, write: bool) -> tuple[int, int]:
-    """Point-in-polygon join sites → municipio/tract GEOIDs. Optionally persist.
-
-    Returns ``(municipio_matched, tract_matched)`` counts."""
+    """Point-in-polygon join sites → municipio/tract GEOIDs. Optionally persist."""
     import geopandas as gpd
 
     if sites_gdf.empty:
@@ -351,7 +347,8 @@ def run(args: argparse.Namespace) -> int:
                     "bytes": src_bytes,
                 },
                 "output": {
-                    "path": str(out_path),
+                    "path": out_path.relative_to(data_dir).as_posix(),
+                    "crs": "EPSG:4326",
                     "sha256": hashlib.sha256(payload).hexdigest(),
                     "bytes": len(payload),
                     "feature_count": int(len(gdf)),
