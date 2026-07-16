@@ -1,0 +1,1 @@
+{"repository":"jotaele44/spiderweb-pr","base_commit":"main","active_task":"example-only","findings":[{"gate":"repository_boundary","passed":true,"severity":"blocker","detail":"No ownership drift detected."}],"certification_state":"IMPLEMENTATION_IN_PROGRESS"}
