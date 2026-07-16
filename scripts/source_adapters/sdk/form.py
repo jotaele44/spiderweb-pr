@@ -29,7 +29,11 @@ class ParsedForm:
 
     @property
     def hidden_fields(self) -> tuple[tuple[str, str], ...]:
-        return tuple((item.name, item.value) for item in self.inputs if item.input_type == "hidden" and item.name)
+        return tuple(
+            (item.name, item.value)
+            for item in self.inputs
+            if item.input_type == "hidden" and item.name
+        )
 
     @property
     def checkboxes(self) -> tuple[InputOption, ...]:
@@ -37,27 +41,39 @@ class ParsedForm:
 
 
 class BasicFormParser(HTMLParser):
-    """Dependency-free parser for legacy government HTML forms."""
+    """Dependency-free parser that captures exactly the first HTML form."""
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.in_form = False
+        self.first_form_started = False
+        self.first_form_complete = False
         self.form_action = ""
         self.form_method = "get"
         self.inputs: list[InputOption] = []
         self._pending_input: InputOption | None = None
         self._pending_text: list[str] = []
 
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        attr = {key.lower(): (value or "") for key, value in attrs}
+    def handle_starttag(
+        self, tag: str, attrs: list[tuple[str, str | None]]
+    ) -> None:
         tag = tag.lower()
+        if self.first_form_complete:
+            return
+
+        attr = {key.lower(): (value or "") for key, value in attrs}
         if tag == "form":
+            if self.first_form_started:
+                return
+            self.first_form_started = True
             self.in_form = True
             self.form_action = attr.get("action", "")
             self.form_method = attr.get("method", "get").lower() or "get"
             return
+
         if not self.in_form or tag != "input":
             return
+
         input_type = attr.get("type", "text").lower()
         option = InputOption(
             input_type=input_type,
@@ -73,19 +89,29 @@ class BasicFormParser(HTMLParser):
             self.inputs.append(option)
 
     def handle_data(self, data: str) -> None:
-        if self._pending_input is not None and data.strip():
+        if self.first_form_complete:
+            return
+        if self.in_form and self._pending_input is not None and data.strip():
             self._pending_text.append(data.strip())
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
+        if self.first_form_complete:
+            return
+        if not self.in_form:
+            return
         if tag in {"label", "li", "tr", "p", "br"}:
             self._flush_pending()
         if tag == "form":
             self._flush_pending()
             self.in_form = False
+            self.first_form_complete = True
 
     def close(self) -> None:
-        self._flush_pending()
+        if self.in_form and not self.first_form_complete:
+            self._flush_pending()
+            self.in_form = False
+            self.first_form_complete = True
         super().close()
 
     def _flush_pending(self) -> None:
@@ -105,7 +131,7 @@ class BasicFormParser(HTMLParser):
 
 
 def parse_first_form(html: str, source_url: str) -> ParsedForm:
-    """Parse the first form in an HTML document."""
+    """Parse only the first form in an HTML document."""
 
     parser = BasicFormParser()
     parser.feed(html)
