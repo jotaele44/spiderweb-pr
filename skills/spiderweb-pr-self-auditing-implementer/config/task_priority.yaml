@@ -1,0 +1,11 @@
+priority_formula:
+  release_blocker: 40
+  dependency_unblock: 25
+  schema_or_contract_risk: 20
+  test_gap: 15
+  documentation_only: 5
+penalties:
+  external_blocker: -100
+  open_pr_collision: -50
+  unbounded_scope: -50
+selection_rule: highest_score_unblocked_atomic_task

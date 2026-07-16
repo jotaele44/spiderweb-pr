@@ -1,0 +1,29 @@
+gates:
+  - id: activation
+    severity: blocker
+  - id: repository_boundary
+    severity: blocker
+  - id: branch_only
+    severity: blocker
+  - id: no_product_code_change_v0_1
+    severity: blocker
+  - id: no_gate_weakening
+    severity: blocker
+  - id: no_false_completion
+    severity: blocker
+  - id: schema_contracts
+    severity: blocker
+  - id: regression_tests
+    severity: blocker
+  - id: documentation_reconciliation
+    severity: major
+  - id: pr_collision
+    severity: major
+completion_requires:
+  - implementation_present
+  - acceptance_tests_pass
+  - regression_tests_pass
+  - schema_contracts_pass
+  - boundary_audit_pass
+  - documentation_reconciled
+  - ci_equivalent_pass

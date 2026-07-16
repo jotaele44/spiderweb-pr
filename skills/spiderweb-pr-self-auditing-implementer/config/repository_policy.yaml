@@ -1,0 +1,25 @@
+repository: jotaele44/spiderweb-pr
+default_branch: main
+write_policy: branch_only
+allowed_package_prefix: skills/spiderweb-pr-self-auditing-implementer/
+product_code_modification: forbidden_in_v0_1
+merge: forbidden
+install: forbidden
+promotion: explicit_authorization_required
+boundaries:
+  spiderweb_owns:
+    - spatial producer logic
+    - GIS-linked records and review exports
+    - provenance and confidence metadata
+    - retained spatial bridges
+  spiderweb_does_not_own:
+    - active FR24 ingestion
+    - Hub-level cross-producer correlation
+    - public-money and procurement production
+    - utility-domain production
+    - historical-case corpus production
+data_policy:
+  raw_payload_commits: forbidden
+  extracted_payload_commits: forbidden
+  secrets: forbidden
+  uncontrolled_large_binaries: forbidden
