@@ -49,7 +49,9 @@ def test_adapter_policy_rejects_raw_commit_permission(tmp_path: Path):
 def test_payload_validator_rejects_html_as_zip():
     assert PayloadValidator.is_zip(b"PK\x03\x04abc", "application/zip")
     assert not PayloadValidator.is_zip(b"<html>Error</html>", "application/zip")
-    assert not PayloadValidator.matches_expected(b"<!doctype html><html></html>", "text/html", "zip")
+    assert not PayloadValidator.matches_expected(
+        b"<!doctype html><html></html>", "text/html", "zip"
+    )
 
 
 def test_parse_first_form_collects_hidden_and_checkboxes():
@@ -67,6 +69,48 @@ def test_parse_first_form_collects_hidden_and_checkboxes():
     assert form.action_url == "https://example.gov/download"
     assert form.hidden_fields == (("state", "72"),)
     assert form.checkboxes[0].label == "Adjuntas"
+
+
+def test_parse_first_form_ignores_later_form_action_method_and_inputs():
+    form = parse_first_form(
+        """
+        <form method="post" action="/first">
+          <input type="hidden" name="state" value="72" />
+          <label><input type="checkbox" name="county" value="72001" /> Adjuntas</label>
+        </form>
+        <form method="get" action="/second">
+          <input type="hidden" name="state" value="99" />
+          <label><input type="checkbox" name="county" value="99999" /> Wrong Form</label>
+        </form>
+        """,
+        "https://example.gov/root/page.html",
+    )
+
+    assert form.method == "post"
+    assert form.action_url == "https://example.gov/first"
+    assert form.hidden_fields == (("state", "72"),)
+    assert [(item.value, item.label) for item in form.checkboxes] == [
+        ("72001", "Adjuntas")
+    ]
+    assert all(item.value != "99999" for item in form.inputs)
+
+
+def test_parse_first_form_flushes_pending_label_before_freezing():
+    form = parse_first_form(
+        """
+        <form action="/first">
+          <input type="checkbox" name="county" value="72003" /> Aguada
+        </form>
+        <form action="/second">
+          <input type="checkbox" name="county" value="99999" /> Later
+        </form>
+        """,
+        "https://example.gov/page.html",
+    )
+
+    assert [(item.value, item.label) for item in form.checkboxes] == [
+        ("72003", "Aguada")
+    ]
 
 
 def test_manifest_engine_writes_ledgers(tmp_path: Path):
@@ -88,7 +132,9 @@ def test_manifest_engine_writes_ledgers(tmp_path: Path):
 
     engine.write_download_ledger([record])
     engine.write_sha256_manifest([record])
-    engine.write_coverage_ledger(summarize_coverage(expected=1, requested=1, records=[record]))
+    engine.write_coverage_ledger(
+        summarize_coverage(expected=1, requested=1, records=[record])
+    )
 
     assert (tmp_path / "download_ledger.csv").exists()
     assert (tmp_path / "sha256_manifest.csv").exists()
@@ -97,9 +143,18 @@ def test_manifest_engine_writes_ledgers(tmp_path: Path):
 
 
 def test_core_request_and_coverage_contracts():
-    endpoint = SourceEndpoint(source_id="usgs_demo", name="USGS Demo", url="https://example.gov")
-    request = PayloadRequest(request_id="r1", endpoint=endpoint, params={"q": "Puerto Rico"}, expected_content="json")
-    summary = CoverageSummary(expected=3, requested=2, acquired=1, failed=1, hold=0, unresolved=1)
+    endpoint = SourceEndpoint(
+        source_id="usgs_demo", name="USGS Demo", url="https://example.gov"
+    )
+    request = PayloadRequest(
+        request_id="r1",
+        endpoint=endpoint,
+        params={"q": "Puerto Rico"},
+        expected_content="json",
+    )
+    summary = CoverageSummary(
+        expected=3, requested=2, acquired=1, failed=1, hold=0, unresolved=1
+    )
 
     assert request.endpoint.source_id == "usgs_demo"
     assert request.param_pairs() == (("q", "Puerto Rico"),)
@@ -126,7 +181,9 @@ def test_normalize_param_pairs_expands_mapping_list_values():
     )
 
 
-def test_download_engine_get_preserves_duplicate_keys_and_manifest_parity(tmp_path: Path, monkeypatch):
+def test_download_engine_get_preserves_duplicate_keys_and_manifest_parity(
+    tmp_path: Path, monkeypatch
+):
     captured = {}
 
     def fake_urlopen(request, timeout):
@@ -134,7 +191,9 @@ def test_download_engine_get_preserves_duplicate_keys_and_manifest_parity(tmp_pa
         captured["timeout"] = timeout
         return _FakeResponse()
 
-    monkeypatch.setattr("scripts.source_adapters.sdk.download.urlopen", fake_urlopen)
+    monkeypatch.setattr(
+        "scripts.source_adapters.sdk.download.urlopen", fake_urlopen
+    )
     request = PayloadRequest(
         request_id="counties",
         endpoint=SourceEndpoint(
@@ -148,7 +207,9 @@ def test_download_engine_get_preserves_duplicate_keys_and_manifest_parity(tmp_pa
 
     result = DownloadEngine(tmp_path).download(request)
 
-    query_pairs = parse_qsl(urlsplit(captured["request"].full_url).query, keep_blank_values=True)
+    query_pairs = parse_qsl(
+        urlsplit(captured["request"].full_url).query, keep_blank_values=True
+    )
     assert query_pairs == [
         ("mode", "batch"),
         ("CNTY", "72001"),
@@ -163,14 +224,18 @@ def test_download_engine_get_preserves_duplicate_keys_and_manifest_parity(tmp_pa
     assert result.review_status == "raw"
 
 
-def test_download_engine_post_expands_list_values_with_doseq(tmp_path: Path, monkeypatch):
+def test_download_engine_post_expands_list_values_with_doseq(
+    tmp_path: Path, monkeypatch
+):
     captured = {}
 
     def fake_urlopen(request, timeout):
         captured["request"] = request
         return _FakeResponse()
 
-    monkeypatch.setattr("scripts.source_adapters.sdk.download.urlopen", fake_urlopen)
+    monkeypatch.setattr(
+        "scripts.source_adapters.sdk.download.urlopen", fake_urlopen
+    )
     request = PayloadRequest(
         request_id="counties",
         endpoint=SourceEndpoint(
@@ -185,7 +250,9 @@ def test_download_engine_post_expands_list_values_with_doseq(tmp_path: Path, mon
 
     result = DownloadEngine(tmp_path).download(request)
 
-    assert parse_qsl(captured["request"].data.decode("utf-8"), keep_blank_values=True) == [
+    assert parse_qsl(
+        captured["request"].data.decode("utf-8"), keep_blank_values=True
+    ) == [
         ("CNTY", "72001"),
         ("CNTY", "72003"),
         ("STATE", "72"),
