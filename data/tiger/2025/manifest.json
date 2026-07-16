@@ -1,0 +1,97 @@
+{
+  "ingestor": "ingest_tiger_pr.py",
+  "year": 2025,
+  "generated_utc": "2026-07-16T15:39:46Z",
+  "tiger_base": "https://www2.census.gov/geo/tiger/TIGER2025/",
+  "layers": [
+    {
+      "layer": "municipios",
+      "source": {
+        "url": "https://www2.census.gov/geo/tiger/TIGER2025/COUNTY/tl_2025_us_county.zip",
+        "filename": "tl_2025_us_county.zip",
+        "sha256": "9c6e9d9076abce2670d1de255de3710c35ecca00a7005d88e012dec52d95f763",
+        "bytes": 83989800
+      },
+      "output": {
+        "path": "/home/user/spiderweb-pr/data/municipios.geojson",
+        "sha256": "adebd4e779e36ca4aecb69291af9e153e430a829cc4ca8a676f7d5f5197a5d76",
+        "bytes": 3020018,
+        "feature_count": 78,
+        "oversized_warning": false,
+        "simplify_tolerance": 0.0
+      }
+    },
+    {
+      "layer": "tracts",
+      "source": {
+        "url": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_72_tract.zip",
+        "filename": "tl_2025_72_tract.zip",
+        "sha256": "6084c6fcab323d6ea371d57d42a04f5659eab58d99fdd6944d03ddabb2664661",
+        "bytes": 3560716
+      },
+      "output": {
+        "path": "/home/user/spiderweb-pr/data/tracts.geojson",
+        "sha256": "5f33354e55932f9563ea508a505aa963e4424ba8c4f710afe7c5751261a03922",
+        "bytes": 9135431,
+        "feature_count": 981,
+        "oversized_warning": false,
+        "simplify_tolerance": 0.0
+      }
+    },
+    {
+      "layer": "places",
+      "source": {
+        "url": "https://www2.census.gov/geo/tiger/TIGER2025/PLACE/tl_2025_72_place.zip",
+        "filename": "tl_2025_72_place.zip",
+        "sha256": "32483d1f41d3852de44afb6d91d6d89c4fa7320c6b010b3766855c013df03d47",
+        "bytes": 761319
+      },
+      "output": {
+        "path": "/home/user/spiderweb-pr/data/places.geojson",
+        "sha256": "20aea2b75393d95dcf5fa1bf9bf76130a7a60c4805855a019fb34089e4953c82",
+        "bytes": 1771522,
+        "feature_count": 292,
+        "oversized_warning": false,
+        "simplify_tolerance": 0.0
+      }
+    },
+    {
+      "layer": "barrios",
+      "source": {
+        "url": "https://www2.census.gov/geo/tiger/TIGER2025/COUSUB/tl_2025_72_cousub.zip",
+        "filename": "tl_2025_72_cousub.zip",
+        "sha256": "6930acc0987823109e570a04507c48991a4e446802648054d3661b104aab989c",
+        "bytes": 3934254
+      },
+      "output": {
+        "path": "/home/user/spiderweb-pr/data/barrios.geojson",
+        "sha256": "5f9e41f5adf1349885fd8824dab6f31097016a74ba242d575b34048ece0eb32c",
+        "bytes": 9723433,
+        "feature_count": 939,
+        "oversized_warning": false,
+        "simplify_tolerance": 0.0
+      }
+    },
+    {
+      "layer": "puma",
+      "source": {
+        "url": "https://www2.census.gov/geo/tiger/TIGER2025/PUMA20/tl_2025_72_puma20.zip",
+        "filename": "tl_2025_72_puma20.zip",
+        "sha256": "f23521704d549795776b02f94e12e7674391f844c348840e906a5228c6b2aa09",
+        "bytes": 621481
+      },
+      "output": {
+        "path": "/home/user/spiderweb-pr/data/puma.geojson",
+        "sha256": "cb58e4ffb5e22e70f31177f9b344e0d867cb9fed01121b2f6bad2caddbd40211",
+        "bytes": 1468573,
+        "feature_count": 24,
+        "oversized_warning": false,
+        "simplify_tolerance": 0.0
+      }
+    }
+  ],
+  "sites": {
+    "municipio_matched": 0,
+    "tract_matched": 0
+  }
+}

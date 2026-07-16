@@ -35,6 +35,9 @@ families:
   - layer_id: barrios
     label: Barrios
     status: deferred
+  - layer_id: puma
+    label: PUMAs
+    status: deferred
 - id: airports
   label: Airports & Aerodromes
   visibility: V3

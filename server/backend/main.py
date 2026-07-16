@@ -310,7 +310,7 @@ _FALLBACK_LAYERS = {
     # Operational overlays
     "flights", "sites", "anomalies", "corridors", "heatmap",
     # PR administrative geographies (TIGER/Line, joined via ingest_tiger_pr.py)
-    "municipios", "tracts", "places", "barrios",
+    "municipios", "tracts", "places", "barrios", "puma",
 }
 
 

@@ -85,9 +85,17 @@ server = [
 federation = [
     "jsonschema>=4.17,<5",
 ]
+# Vector GIS ingest — TIGER/Line administrative geographies (server/ingestion/
+# ingest_tiger_pr.py). shapely is already in base `dependencies`; this adds the
+# GeoDataFrame layer, the shapefile/GeoJSON I/O engine, and the HTTP fetcher.
+geo = [
+    "geopandas>=1.0,<2",
+    "pyogrio>=0.9,<1",
+    "requests>=2.31.0,<3",
+]
 # Convenience union of every runtime subsystem (gebco is already in base).
 all = [
-    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery]",
+    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo]",
 ]
 dev = [
     "pytest>=9.0.2,<10",

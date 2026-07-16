@@ -4,6 +4,17 @@
 
 Use the U.S. Census Bureau Puerto Rico Partnership Shapefile Batch Download page as an on-demand source adapter, not as a committed raw data dump.
 
+## Current vintage
+
+The adapter defaults to the `partnership25v2` vintage
+(`https://www.census.gov/geo/partnerships/pvs/partnership25v2/st72_pr.html`).
+Earlier vintages remain reachable via `--source-url`. When the Census Bureau
+publishes a new vintage, bump `DEFAULT_SOURCE_URL` in
+`scripts/source_adapters/census_partnership_pr/fetch.py`, re-run the adapter in
+`--dry-run`, and confirm the refreshed `manifests/census_partnership_pr/`
+ledgers report the new URL and the expected 78-municipio universe. A changed
+form action or municipio count is a review-blocking event.
+
 ## Decision
 
 Adopt a hybrid on-demand cache model:
