@@ -58,9 +58,12 @@ class DownloadEngine:
         self.runtime_root.mkdir(parents=True, exist_ok=True)
         timestamp = utc_now()
         method = payload_request.endpoint.method.upper()
-        params = {key: str(value) for key, value in payload_request.params.items()}
-        encoded = urlencode(params).encode("utf-8")
-        request_params_json = json.dumps(params, ensure_ascii=False, sort_keys=True)
+        param_pairs = payload_request.param_pairs()
+        encoded_text = urlencode(param_pairs, doseq=True)
+        encoded = encoded_text.encode("utf-8")
+        # Store the exact ordered pairs used for the request. A JSON object would
+        # collapse duplicate keys and could disagree with the submitted payload.
+        request_params_json = json.dumps(param_pairs, ensure_ascii=False)
         filename = self.runtime_root / self._filename(payload_request)
 
         if method == "POST":
@@ -72,7 +75,7 @@ class DownloadEngine:
             )
         else:
             separator = "&" if "?" in payload_request.endpoint.url else "?"
-            url = payload_request.endpoint.url + (separator + encoded.decode("utf-8") if encoded else "")
+            url = payload_request.endpoint.url + (separator + encoded_text if encoded_text else "")
             req = Request(url, headers={"User-Agent": "spiderweb-pr-source-adapter/1.0", **dict(payload_request.headers)}, method="GET")
 
         try:
