@@ -13,7 +13,8 @@
         "bytes": 83989800
       },
       "output": {
-        "path": "/home/user/spiderweb-pr/data/municipios.geojson",
+        "path": "municipios.geojson",
+        "crs": "EPSG:4326",
         "sha256": "adebd4e779e36ca4aecb69291af9e153e430a829cc4ca8a676f7d5f5197a5d76",
         "bytes": 3020018,
         "feature_count": 78,
@@ -30,7 +31,8 @@
         "bytes": 3560716
       },
       "output": {
-        "path": "/home/user/spiderweb-pr/data/tracts.geojson",
+        "path": "tracts.geojson",
+        "crs": "EPSG:4326",
         "sha256": "5f33354e55932f9563ea508a505aa963e4424ba8c4f710afe7c5751261a03922",
         "bytes": 9135431,
         "feature_count": 981,
@@ -47,7 +49,8 @@
         "bytes": 761319
       },
       "output": {
-        "path": "/home/user/spiderweb-pr/data/places.geojson",
+        "path": "places.geojson",
+        "crs": "EPSG:4326",
         "sha256": "20aea2b75393d95dcf5fa1bf9bf76130a7a60c4805855a019fb34089e4953c82",
         "bytes": 1771522,
         "feature_count": 292,
@@ -64,7 +67,8 @@
         "bytes": 3934254
       },
       "output": {
-        "path": "/home/user/spiderweb-pr/data/barrios.geojson",
+        "path": "barrios.geojson",
+        "crs": "EPSG:4326",
         "sha256": "5f9e41f5adf1349885fd8824dab6f31097016a74ba242d575b34048ece0eb32c",
         "bytes": 9723433,
         "feature_count": 939,
@@ -81,7 +85,8 @@
         "bytes": 621481
       },
       "output": {
-        "path": "/home/user/spiderweb-pr/data/puma.geojson",
+        "path": "puma.geojson",
+        "crs": "EPSG:4326",
         "sha256": "cb58e4ffb5e22e70f31177f9b344e0d867cb9fed01121b2f6bad2caddbd40211",
         "bytes": 1468573,
         "feature_count": 24,
