@@ -7,13 +7,40 @@ USDA. It intentionally avoids storing payloads in git-tracked paths.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, TypeAlias
 
 
 class SourceAdapterError(RuntimeError):
     """Raised when a source adapter cannot complete a reproducible step."""
+
+
+ParamScalar: TypeAlias = str | int | float | bool
+ParamValue: TypeAlias = ParamScalar | Sequence[ParamScalar]
+ParamInput: TypeAlias = Mapping[str, ParamValue] | Sequence[tuple[str, ParamScalar]]
+
+
+def normalize_param_pairs(params: ParamInput) -> tuple[tuple[str, str], ...]:
+    """Return an ordered, repeat-preserving parameter sequence.
+
+    Mapping inputs remain backward compatible. Sequence values in a mapping are
+    expanded in insertion order, while an explicit sequence of ``(key, value)``
+    pairs preserves duplicate keys exactly as supplied.
+    """
+
+    if isinstance(params, Mapping):
+        pairs: Iterable[tuple[str, ParamValue]] = params.items()
+        normalized: list[tuple[str, str]] = []
+        for key, value in pairs:
+            if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+                normalized.extend((str(key), str(item)) for item in value)
+            else:
+                normalized.append((str(key), str(value)))
+        return tuple(normalized)
+
+    return tuple((str(key), str(value)) for key, value in params)
 
 
 @dataclass(frozen=True)
@@ -52,10 +79,15 @@ class PayloadRequest:
 
     request_id: str
     endpoint: SourceEndpoint
-    params: Mapping[str, str | int | float | bool] = field(default_factory=dict)
+    params: ParamInput = field(default_factory=dict)
     headers: Mapping[str, str] = field(default_factory=dict)
     expected_content: str = ""
     group_key: str = ""
+
+    def param_pairs(self) -> tuple[tuple[str, str], ...]:
+        """Canonical parameters used by both HTTP encoding and manifests."""
+
+        return normalize_param_pairs(self.params)
 
 
 @dataclass(frozen=True)
