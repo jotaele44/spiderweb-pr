@@ -1,0 +1,8 @@
+# Imagery MCP server — fetch/search/compare satellite imagery over MCP.
+# Dependencies are defined as the `imagery` extra in pyproject.toml.
+#
+#   pip install -r requirements-imagery.txt
+#
+# Package: imagery/   Entry point: python -m imagery.server
+# Providers: NASA GIBS (no auth), Sentinel Hub, Copernicus/CDSE (OAuth2).
+-e .[imagery]
