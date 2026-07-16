@@ -52,6 +52,16 @@ data/raw/census_partnership_pr/
 data/extracted/census_partnership_pr/
 cache/census_partnership_pr/
 
+# TIGER/Line ingest (server/ingestion/ingest_tiger_pr.py): raw zips and the
+# regenerable <layer>.geojson outputs stay runtime-only; track only the small
+# provenance manifest. Re-include nested dirs before allowlisting the file since
+# `data/*` above ignores the whole data/ tree.
+!data/tiger/
+data/tiger/*
+!data/tiger/2025/
+data/tiger/2025/*
+!data/tiger/2025/manifest.json
+
 # input/ — operator-local override for recover-tails FAA N-number list +
 # timestamped auto-backups + derived skip-list. The hermetic CI fallback
 # lives at tests/fixtures/regs.txt (already tracked), so the pipeline runs

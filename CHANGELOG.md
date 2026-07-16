@@ -10,6 +10,15 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Census geo sources wired into the vector pipeline:** implemented the
+  contract-tested TIGER/Line ingestor `server/ingestion/ingest_tiger_pr.py`,
+  producing PR administrative-geography GeoJSON (`municipios` 78, `tracts`,
+  `places`, `barrios`, and a new `puma` layer) from the
+  `www2.census.gov/geo/tiger/TIGER2025/` directory, with a dual-provenance
+  `data/tiger/2025/manifest.json` and a site→municipio/tract GEOID join. Added a
+  `geo` install extra (geopandas/pyogrio/requests), registered `puma` in the
+  layer catalog and `/geo/{layer}.geojson` allowlist, and bumped the Census
+  Partnership shapefile adapter default to the `partnership25v2` vintage.
 - **Post-V2 sweep (civic-data & hardening):** dataset layers / POI groups / ILAP
   types (#120); missing-persons + geodata source ingestion — harvesters, PR
   geocoder, layers (#123); FR24 ground-truth track harvest removed (migrated to

@@ -37,7 +37,7 @@ except ImportError:  # pragma: no cover
         select_municipios,
     )
 
-DEFAULT_SOURCE_URL = "https://www.census.gov/geo/partnerships/pvs/partnership25v1/st72_pr.html"
+DEFAULT_SOURCE_URL = "https://www.census.gov/geo/partnerships/pvs/partnership25v2/st72_pr.html"
 DEFAULT_RUNTIME_ROOT = Path("data/raw/census_partnership_pr")
 DEFAULT_MANIFEST_ROOT = Path("manifests/census_partnership_pr")
 ZIP_MAGIC = b"PK\x03\x04"

@@ -7,9 +7,9 @@ pin_link_schema: schemas/pin_link.schema.json
 ilap_cluster_schema: schemas/ilap_cluster.schema.json
 ilap_cluster_model: configs/ilap_cluster_model.yaml
 pin_count: 0
-layer_count: 80
+layer_count: 81
 flag_summary:
-  GHOST: 28
+  GHOST: 29
   PLANNED: 2
   WIRED: 50
 note: Islandwide canonical Pin index. Zero atomic pins bound (labels-only) — layer_index reserves the
@@ -106,6 +106,24 @@ layer_index:
   domain: administrative
   pin_group: admin_geographies
   pin_class: barrios
+  geometry_type: unknown
+  flag: GHOST
+  status: planned
+  evidence_tier: T3
+  review_flag: false
+  ilap_area_id: null
+  ilap_cluster_id: null
+  node_role: null
+  system_function: null
+  cluster_coherence_score: null
+  contradiction_flags: []
+- pin_uid_prefix: PIN_A_PUMA
+  pin_layer: puma
+  label: PUMAs
+  visibility: V3
+  domain: administrative
+  pin_group: admin_geographies
+  pin_class: puma
   geometry_type: unknown
   flag: GHOST
   status: planned
