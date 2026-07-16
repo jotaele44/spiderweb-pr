@@ -35,9 +35,9 @@ def test_all_four_streams_present(streams):
 
 def test_expected_counts(streams):
     # 364 real USGS metallic-occurrence points; 1 shared USGS source +
-    # 50 WIRED layer-catalog references.
+    # 55 WIRED layer-catalog references.
     assert len(streams["observations"]) == 364
-    assert len(streams["sources"]) == 51
+    assert len(streams["sources"]) == 56
 
 
 def test_no_row_is_synthetic(streams):
@@ -86,7 +86,7 @@ def test_usgs_observations_reference_one_shared_source(streams):
 
 def test_layer_catalog_sources_are_low_confidence_with_no_observation(streams):
     layer_sources = [r for r in streams["sources"] if r["kind"] == "gis_layer_reference"]
-    assert len(layer_sources) == 50
+    assert len(layer_sources) == 55
     for src in layer_sources:
         # T3 evidence_tier -> a documented score under the 0.5 "Low" boundary; these are
         # catalog references, not observed records, and should read that way downstream.
@@ -117,14 +117,14 @@ def test_merges_with_existing_real_dir(tmp_path):
     assert pre_existing_obs in merged["observations"]
     assert pre_existing_src in merged["sources"]
     assert len(merged["observations"]) == 1 + 364
-    assert len(merged["sources"]) == 1 + 51
+    assert len(merged["sources"]) == 1 + 56
 
 
 def test_rerun_against_own_output_is_idempotent(tmp_path):
     """Running build_streams()+write_streams() twice against the SAME real_dir must not
     duplicate this emitter's own rows on the second pass — reproduces and guards against
     the bug where naive concatenation with existing_obs/existing_sources duplicated all
-    364 observations + 51 sources on every rerun against an already-merged --real-dir."""
+    364 observations + 56 sources on every rerun against an already-merged --real-dir."""
     pre_existing_obs = {
         "id": "c" * 32, "source_id": "src_y", "subject_id": "N2", "observation_type": "airport_reference_location",
         "observed_at": "2026-01-01T00:00:00+00:00", "geometry": {"type": "Point", "coordinates": [-66.5, 18.4]},
@@ -146,12 +146,12 @@ def test_rerun_against_own_output_is_idempotent(tmp_path):
 
     second = build_streams(real_dir=tmp_path)
 
-    # This emitter's own rows: 364 observations + 51 sources (1 usgs source + 50 layer
+    # This emitter's own rows: 364 observations + 56 sources (1 usgs source + 55 layer
     # sources), unchanged and un-duplicated across the rerun.
     assert len(first["observations"]) == 1 + 364
-    assert len(first["sources"]) == 1 + 51
+    assert len(first["sources"]) == 1 + 56
     assert len(second["observations"]) == 1 + 364
-    assert len(second["sources"]) == 1 + 51
+    assert len(second["sources"]) == 1 + 56
 
     # The unrelated pre-existing rows (owned by some other emitter) must still be present,
     # exactly once, untouched by either run.
