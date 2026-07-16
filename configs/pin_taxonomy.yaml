@@ -34,7 +34,7 @@ visibility_classes:
         - pin_layer: municipios
           label: Municipios
           geometry_type: unknown
-          flag: GHOST
+          flag: WIRED
           status: planned
       - id: tracts
         label: Tracts
@@ -42,7 +42,7 @@ visibility_classes:
         - pin_layer: tracts
           label: Tracts
           geometry_type: unknown
-          flag: GHOST
+          flag: WIRED
           status: planned
       - id: places
         label: Places
@@ -50,7 +50,7 @@ visibility_classes:
         - pin_layer: places
           label: Places
           geometry_type: unknown
-          flag: GHOST
+          flag: WIRED
           status: planned
       - id: barrios
         label: Barrios
@@ -58,7 +58,7 @@ visibility_classes:
         - pin_layer: barrios
           label: Barrios
           geometry_type: unknown
-          flag: GHOST
+          flag: WIRED
           status: planned
       - id: puma
         label: Puma
@@ -66,7 +66,7 @@ visibility_classes:
         - pin_layer: puma
           label: PUMAs
           geometry_type: unknown
-          flag: GHOST
+          flag: WIRED
           status: planned
     - id: reference_gazetteer
       label: Reference / Gazetteer

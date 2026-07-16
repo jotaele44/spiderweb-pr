@@ -9,9 +9,9 @@ ilap_cluster_model: configs/ilap_cluster_model.yaml
 pin_count: 0
 layer_count: 81
 flag_summary:
-  GHOST: 29
+  GHOST: 24
   PLANNED: 2
-  WIRED: 50
+  WIRED: 55
 note: Islandwide canonical Pin index. Zero atomic pins bound (labels-only) — layer_index reserves the
   Domain/Pin Group/Pin Class/Pin Layer path and pin_uid prefix for every layer; pins[] fills in a later
   pins-pass. Distributed ILAP cluster fields are nullable until rescore.
@@ -53,7 +53,7 @@ layer_index:
   pin_group: admin_geographies
   pin_class: municipios
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -71,7 +71,7 @@ layer_index:
   pin_group: admin_geographies
   pin_class: tracts
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -89,7 +89,7 @@ layer_index:
   pin_group: admin_geographies
   pin_class: places
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -107,7 +107,7 @@ layer_index:
   pin_group: admin_geographies
   pin_class: barrios
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -125,7 +125,7 @@ layer_index:
   pin_group: admin_geographies
   pin_class: puma
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
