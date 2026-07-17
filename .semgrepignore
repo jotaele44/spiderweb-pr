@@ -18,7 +18,9 @@ artifacts/
 exports/
 output/
 outputs/
-data/
+data/raw/
+data/cache/
+data/generated/
 datasets/
 evidence/
 imagery/
