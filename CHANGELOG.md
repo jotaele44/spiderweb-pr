@@ -10,6 +10,11 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Admin geographies promoted to WIRED:** the five TIGER/Line administrative
+  layers (`municipios`, `tracts`, `places`, `barrios`, `puma`) now carry
+  `pipeline_wired: true` in `configs/layer_catalog.yaml` and are flagged `WIRED`
+  in the pin registry + taxonomy (they have a real producer, `ingest_tiger_pr.py`),
+  moving the registry to WIRED 55 / GHOST 24 / PLANNED 2.
 - **Census geo sources wired into the vector pipeline:** implemented the
   contract-tested TIGER/Line ingestor `server/ingestion/ingest_tiger_pr.py`,
   producing PR administrative-geography GeoJSON (`municipios` 78, `tracts`,

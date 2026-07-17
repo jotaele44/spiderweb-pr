@@ -26,18 +26,23 @@ families:
   - layer_id: municipios
     label: Municipios
     status: deferred
+    pipeline_wired: true
   - layer_id: tracts
     label: Tracts
     status: deferred
+    pipeline_wired: true
   - layer_id: places
     label: Places
     status: deferred
+    pipeline_wired: true
   - layer_id: barrios
     label: Barrios
     status: deferred
+    pipeline_wired: true
   - layer_id: puma
     label: PUMAs
     status: deferred
+    pipeline_wired: true
 - id: airports
   label: Airports & Aerodromes
   visibility: V3
