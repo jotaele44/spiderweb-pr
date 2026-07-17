@@ -63,16 +63,20 @@ def test_san_juan_opendap_metadata_registered() -> None:
     assert bounds["max_lon"] == -65.909986616
 
 
-def test_san_juan_actual_range_contradiction_flagged() -> None:
+def test_san_juan_actual_range_contradiction_resolved() -> None:
     manifest = load_manifest()
     san_juan = next(
         item for item in manifest["datasets"] if item["dataset_key"] == "san_juan_19_prvd02_2015"
     )
     band1 = san_juan["variables"]["Band1"]
 
+    # The OPeNDAP-form snapshot value stays recorded as historical fact, but the
+    # contradiction is resolved by a live raster sample (min < 0 < max, not flat zero).
     assert band1["actual_range_from_opendap_form"] == [0.0, 0.0]
-    assert band1["actual_range_status"] == "contradiction_flag_requires_live_raster_validation"
-    assert san_juan["validation"]["promotion_status"] == "not_analysis_ready"
+    assert band1["actual_range_status"] == "resolved_live_raster_sampled_2026-07-16"
+    assert band1["live_sample_min"] < 0 < band1["live_sample_max"]
+    assert san_juan["validation"]["raster_minmax_status"].startswith("validated")
+    assert san_juan["validation"]["promotion_status"] == "source_raster_validated"
 
 
 def test_repo_policy_blocks_raster_artifacts() -> None:
@@ -116,4 +120,4 @@ def test_script_imports_and_metadata_only_report() -> None:
 
     assert report["manifest_validation"]["status"] == "ok"
     assert report["dataset_validation"]["dataset_key"] == "san_juan_19_prvd02_2015"
-    assert report["dataset_validation"]["promotion_status"] == "not_analysis_ready"
+    assert report["dataset_validation"]["promotion_status"] == "source_raster_validated"

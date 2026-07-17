@@ -10,6 +10,15 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **NOAA/NCEI coastal-DEM gaps closed:** resolved all six pending Puerto Rico
+  1/3 arc-second MHW DEMs (Arecibo/Fajardo/Guayama/Mayagüez 2006+2007/Ponce) to
+  live NGDC THREDDS OPeNDAP endpoints in `data_sources/noaa/ncei_coastal_dems.yml`
+  (with `grid_shape` + `elevation_var`), generalized
+  `scripts/acquire/noaa_ncei_opendap.py` to handle the `Band1`-vs-`z` elevation
+  variable, and validated San Juan 2015 via a live raster sample (min -903.33 /
+  max 120.99) — closing GAP_002 and GAP_003 and advancing San Juan to
+  `source_raster_validated`. GAP_001 (PR-wide 2017 DEM) confirmed still
+  unpublished in the live catalog.
 - **Admin geographies promoted to WIRED:** the five TIGER/Line administrative
   layers (`municipios`, `tracts`, `places`, `barrios`, `puma`) now carry
   `pipeline_wired: true` in `configs/layer_catalog.yaml` and are flagged `WIRED`

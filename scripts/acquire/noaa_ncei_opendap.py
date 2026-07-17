@@ -137,16 +137,23 @@ def fetch_text(url: str, timeout: int = 30) -> str:
         return response.read().decode("utf-8", errors="replace")
 
 
-def parse_dds(dds_text: str) -> Dict[str, Any]:
+def parse_dds(dds_text: str, elevation_var: str = "Band1") -> Dict[str, Any]:
+    """Parse a THREDDS ``.dds`` response. The elevation grid variable name varies
+    across NCEI DEM vintages (``Band1`` on the GDAL-exported rasters, ``z`` on the
+    1/3-arc-second MHW DEMs), so it is a parameter rather than hardcoded."""
+
     lat_match = re.search(r"Float64\s+lat\[lat\s*=\s*(\d+)\]", dds_text)
     lon_match = re.search(r"Float64\s+lon\[lon\s*=\s*(\d+)\]", dds_text)
-    band_match = re.search(r"Float32\s+Band1\[lat\s*=\s*(\d+)\]\[lon\s*=\s*(\d+)\]", dds_text)
+    var_match = re.search(
+        rf"Float32\s+{re.escape(elevation_var)}\[lat\s*=\s*(\d+)\]\[lon\s*=\s*(\d+)\]", dds_text
+    )
     return {
         "lat_dim": int(lat_match.group(1)) if lat_match else None,
         "lon_dim": int(lon_match.group(1)) if lon_match else None,
-        "band1_shape": [int(band_match.group(1)), int(band_match.group(2))] if band_match else None,
+        "elevation_var": elevation_var,
+        "var_shape": [int(var_match.group(1)), int(var_match.group(2))] if var_match else None,
         "has_crs_string": "String crs" in dds_text,
-        "has_band1": "Band1" in dds_text,
+        "has_var": elevation_var in dds_text,
     }
 
 
@@ -165,8 +172,9 @@ def validate_live_metadata(dataset: Dict[str, Any]) -> Dict[str, Any]:
     if not url:
         raise ValidationError(f"{dataset.get('dataset_key')} has no opendap_url")
 
+    elevation_var = dataset.get("elevation_var", "Band1")
     dds_text = fetch_text(f"{url}.dds")
-    parsed_dds = parse_dds(dds_text)
+    parsed_dds = parse_dds(dds_text, elevation_var)
     expected = dataset.get("grid_shape", {})
     if expected.get("lat") and parsed_dds["lat_dim"] != int(expected["lat"]):
         raise ValidationError(f"DDS lat mismatch: expected {expected['lat']}, got {parsed_dds['lat_dim']}")
@@ -177,6 +185,7 @@ def validate_live_metadata(dataset: Dict[str, Any]) -> Dict[str, Any]:
         "opendap_url": url,
         "dds_url": f"{url}.dds",
         "das_url": f"{url}.das",
+        "elevation_var": elevation_var,
         "dds_status": "ok",
         "dds": parsed_dds,
         "das_status": "pending",
@@ -184,7 +193,7 @@ def validate_live_metadata(dataset: Dict[str, Any]) -> Dict[str, Any]:
     try:
         das_text = fetch_text(f"{url}.das")
         report["das_status"] = "ok"
-        report["band1_actual_range_from_das"] = parse_actual_range_from_das(das_text, "Band1")
+        report["elevation_actual_range_from_das"] = parse_actual_range_from_das(das_text, elevation_var)
     except Exception as error:  # live metadata can fail without invalidating local manifest
         report["das_status"] = f"unavailable: {error}"
     return report
@@ -203,10 +212,11 @@ def sample_raster(dataset: Dict[str, Any], stride: int) -> Dict[str, Any]:
     if stride < 1:
         raise ValidationError("--stride must be >= 1")
 
+    elevation_var = dataset.get("elevation_var", "Band1")
     ds = xr.open_dataset(url)
-    if "Band1" not in ds:
-        raise ValidationError("Band1 not present in dataset")
-    values = ds["Band1"].isel(lat=slice(None, None, stride), lon=slice(None, None, stride)).load().values
+    if elevation_var not in ds:
+        raise ValidationError(f"{elevation_var} not present in dataset")
+    values = ds[elevation_var].isel(lat=slice(None, None, stride), lon=slice(None, None, stride)).load().values
     finite = np.isfinite(values)
     total = int(values.size)
     finite_count = int(finite.sum())

@@ -55,7 +55,7 @@
       "puerto_rico_2017",
       "san_juan_19_prvd02_2015"
     ],
-    "coverage_status": "snapshot_complete_live_catalog_pending",
+    "coverage_status": "live_catalog_checked_2026-07-16: 7 of 8 PR-relevant DEMs resolved+validated on NGDC THREDDS regional (San Juan 2015 + six 1/3 arc-second MHW DEMs); PR-wide 2017 DEM not yet published",
     "coverage_percent_against_uploaded_snapshot": 100,
     "coverage_percent_against_live_ncei_catalog": null
   },
@@ -108,16 +108,19 @@
             0.0,
             0.0
           ],
-          "actual_range_status": "contradiction_flag_requires_live_raster_validation"
+          "actual_range_status": "resolved_live_raster_sampled_2026-07-16",
+          "live_sample_min": -903.32666015625,
+          "live_sample_max": 120.98625183105469,
+          "live_sample_stride": 60
         }
       },
       "validation": {
         "metadata_status": "registered_from_snapshot",
-        "live_dds_status": "pending",
-        "live_das_status": "pending",
-        "raster_minmax_status": "pending",
-        "nodata_status": "pending",
-        "promotion_status": "not_analysis_ready"
+        "live_dds_status": "ok",
+        "live_das_status": "ok",
+        "raster_minmax_status": "validated_live_sample_2026-07-16",
+        "nodata_status": "validated_no_nodata_in_sample",
+        "promotion_status": "source_raster_validated"
       },
       "spiderweb_layers": [
         "02_HYDROLOGY_KARST",
@@ -144,9 +147,24 @@
       "vertical_datum": "Mean High Water",
       "horizontal_datum": "WGS84",
       "spatial_resolution": "1/3 arc-second",
-      "access_method": "NCEI catalog detail URL pending",
+      "format": "NetCDF",
+      "access_method": "THREDDS/OPeNDAP",
+      "opendap_url": "https://www.ngdc.noaa.gov/thredds/dodsC/regional/arecibo_13_mhw_2007.nc",
+      "elevation_var": "Band1",
+      "grid_shape": {
+        "lat": 4861,
+        "lon": 6481
+      },
+      "spiderweb_layers": [
+        "05_AIRSPACE_MARITIME",
+        "10_REFERENCE"
+      ],
       "validation": {
-        "promotion_status": "source_row_registered_url_pending"
+        "live_dds_status": "ok",
+        "live_das_status": "ok",
+        "raster_minmax_status": "pending",
+        "metadata_status": "live_endpoint_resolved_2026-07-16",
+        "promotion_status": "live_metadata_validated"
       }
     },
     {
@@ -158,9 +176,24 @@
       "vertical_datum": "Mean High Water",
       "horizontal_datum": "WGS84",
       "spatial_resolution": "1/3 arc-second",
-      "access_method": "NCEI catalog detail URL pending",
+      "format": "NetCDF",
+      "access_method": "THREDDS/OPeNDAP",
+      "opendap_url": "https://www.ngdc.noaa.gov/thredds/dodsC/regional/fajardo_13_mhw_2007.nc",
+      "elevation_var": "Band1",
+      "grid_shape": {
+        "lat": 5941,
+        "lon": 5941
+      },
+      "spiderweb_layers": [
+        "05_AIRSPACE_MARITIME",
+        "10_REFERENCE"
+      ],
       "validation": {
-        "promotion_status": "source_row_registered_url_pending"
+        "live_dds_status": "ok",
+        "live_das_status": "ok",
+        "raster_minmax_status": "pending",
+        "metadata_status": "live_endpoint_resolved_2026-07-16",
+        "promotion_status": "live_metadata_validated"
       }
     },
     {
@@ -172,9 +205,24 @@
       "vertical_datum": "Mean High Water",
       "horizontal_datum": "WGS84",
       "spatial_resolution": "1/3 arc-second",
-      "access_method": "NCEI catalog detail URL pending",
+      "format": "NetCDF",
+      "access_method": "THREDDS/OPeNDAP",
+      "opendap_url": "https://www.ngdc.noaa.gov/thredds/dodsC/regional/guayama_13_mhw_2007.nc",
+      "elevation_var": "Band1",
+      "grid_shape": {
+        "lat": 3781,
+        "lon": 7561
+      },
+      "spiderweb_layers": [
+        "05_AIRSPACE_MARITIME",
+        "10_REFERENCE"
+      ],
       "validation": {
-        "promotion_status": "source_row_registered_url_pending"
+        "live_dds_status": "ok",
+        "live_das_status": "ok",
+        "raster_minmax_status": "pending",
+        "metadata_status": "live_endpoint_resolved_2026-07-16",
+        "promotion_status": "live_metadata_validated"
       }
     },
     {
@@ -186,9 +234,24 @@
       "vertical_datum": "Mean High Water",
       "horizontal_datum": "WGS84",
       "spatial_resolution": "1/3 arc-second",
-      "access_method": "NCEI catalog detail URL pending",
+      "format": "NetCDF",
+      "access_method": "THREDDS/OPeNDAP",
+      "opendap_url": "https://www.ngdc.noaa.gov/thredds/dodsC/regional/mayaguez_13_mhw_2006.nc",
+      "elevation_var": "Band1",
+      "grid_shape": {
+        "lat": 7561,
+        "lon": 5401
+      },
+      "spiderweb_layers": [
+        "05_AIRSPACE_MARITIME",
+        "10_REFERENCE"
+      ],
       "validation": {
-        "promotion_status": "source_row_registered_url_pending"
+        "live_dds_status": "ok",
+        "live_das_status": "ok",
+        "raster_minmax_status": "pending",
+        "metadata_status": "live_endpoint_resolved_2026-07-16",
+        "promotion_status": "live_metadata_validated"
       }
     },
     {
@@ -200,9 +263,24 @@
       "vertical_datum": "Mean High Water",
       "horizontal_datum": "WGS84",
       "spatial_resolution": "1/3 arc-second",
-      "access_method": "NCEI catalog detail URL pending",
+      "format": "NetCDF",
+      "access_method": "THREDDS/OPeNDAP",
+      "opendap_url": "https://www.ngdc.noaa.gov/thredds/dodsC/regional/mayaguez_13_mhw_2007.nc",
+      "elevation_var": "Band1",
+      "grid_shape": {
+        "lat": 7561,
+        "lon": 5401
+      },
+      "spiderweb_layers": [
+        "05_AIRSPACE_MARITIME",
+        "10_REFERENCE"
+      ],
       "validation": {
-        "promotion_status": "source_row_registered_url_pending"
+        "live_dds_status": "ok",
+        "live_das_status": "ok",
+        "raster_minmax_status": "pending",
+        "metadata_status": "live_endpoint_resolved_2026-07-16",
+        "promotion_status": "live_metadata_validated"
       }
     },
     {
@@ -214,9 +292,24 @@
       "vertical_datum": "Mean High Water",
       "horizontal_datum": "WGS84",
       "spatial_resolution": "1/3 arc-second",
-      "access_method": "NCEI catalog detail URL pending",
+      "format": "NetCDF",
+      "access_method": "THREDDS/OPeNDAP",
+      "opendap_url": "https://www.ngdc.noaa.gov/thredds/dodsC/regional/ponce_13_mhw_2007.nc",
+      "elevation_var": "z",
+      "grid_shape": {
+        "lat": 3781,
+        "lon": 7561
+      },
+      "spiderweb_layers": [
+        "05_AIRSPACE_MARITIME",
+        "10_REFERENCE"
+      ],
       "validation": {
-        "promotion_status": "source_row_registered_url_pending"
+        "live_dds_status": "ok",
+        "live_das_status": "ok",
+        "raster_minmax_status": "pending",
+        "metadata_status": "live_endpoint_resolved_2026-07-16",
+        "promotion_status": "live_metadata_validated"
       }
     },
     {
@@ -230,6 +323,8 @@
       "spatial_resolution": "1/9 arc-second, 1/3 arc-second",
       "access_method": "NCEI catalog live-status pending",
       "validation": {
+        "live_catalog_checked": "2026-07-16",
+        "live_catalog_result": "not_present_in_thredds_regional_catalog",
         "promotion_status": "planned_in_snapshot_live_status_pending"
       }
     }
@@ -238,17 +333,23 @@
     {
       "gap_id": "NOAA_NCEI_DEM_GAP_001",
       "description": "Live status of broader Puerto Rico 2017 DEM is unresolved from static snapshot.",
-      "closure_action": "Query current NCEI/THREDDS catalog and update manifest."
+      "closure_action": "Query current NCEI/THREDDS catalog and update manifest.",
+      "status": "open",
+      "last_checked": "2026-07-16: PR-wide 2017 DEM not present in the NGDC THREDDS regional catalog; remains unpublished/unavailable."
     },
     {
       "gap_id": "NOAA_NCEI_DEM_GAP_002",
       "description": "Direct OPeNDAP/NetCDF URLs for PR DEM rows other than San Juan are unresolved.",
-      "closure_action": "Resolve detail pages and register direct data endpoints."
+      "closure_action": "Resolve detail pages and register direct data endpoints.",
+      "status": "closed_2026-07-16",
+      "resolution": "All six 1/3 arc-second MHW DEMs (Arecibo, Fajardo, Guayama, Mayaguez 2006+2007, Ponce 2007) resolved to live NGDC THREDDS regional OPeNDAP endpoints and registered with grid_shape + elevation_var; live DDS/DAS validated."
     },
     {
       "gap_id": "NOAA_NCEI_DEM_GAP_003",
       "description": "San Juan Band1 actual_range is 0.0,0.0 in the OPeNDAP snapshot.",
-      "closure_action": "Run live raster sampling or full min/max QA."
+      "closure_action": "Run live raster sampling or full min/max QA.",
+      "status": "closed_2026-07-16",
+      "resolution": "Live strided raster sample (stride 60) returned min -903.33 / max 120.99 with 0% nodata and flat_zero_flag false, confirming the snapshot 0.0,0.0 was an OPeNDAP-form metadata artifact, not the raster. San Juan advanced to source_raster_validated."
     },
     {
       "gap_id": "NOAA_NCEI_DEM_GAP_004",
