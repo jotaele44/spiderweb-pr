@@ -143,7 +143,7 @@ def build_records(rows: list[dict]) -> list[dict]:
         records.append({
             "canonical_id": cid, "gnis_id": s["gnis_id"], "canonical_name": name,
             "normalized_name": norm_name(name), "feature_type": ft, "group": GROUP[ft],
-            "feature_class": fc, "municipality": s["county"],
+            "feature_class": s["feature_class"], "municipality": s["county"],
             "lat": round(s["lat"], 6), "lon": round(s["lon"], 6), "aliases": aliases,
             "source": "USGS GNIS Domestic Names (Puerto Rico)",
         })
@@ -159,6 +159,9 @@ def main() -> int:
 
     rows = load_source_rows(args.gpkg)
     records = build_records(rows)
+    # Guard: feature_class must be the per-record GNIS class, never collapsed or excluded.
+    classes = {r["feature_class"] for r in records}
+    assert len(classes) > 1 and not (EXCLUDE & classes), f"feature_class corrupted: {classes}"
     src_sha = hashlib.sha256(SOURCE_JSON.read_bytes()).hexdigest()
     header = {
         "_schema": SCHEMA_VERSION,

@@ -1,5 +1,5 @@
 version: spiderweb_master_pin_registry_v1
-generated_at: '2026-07-19T14:53:58Z'
+generated_at: '2026-07-05T20:38:39Z'
 producer_module: scripts.build_pin_registry
 binding: labels_only
 pin_record_schema: schemas/pin.schema.json
@@ -7,11 +7,11 @@ pin_link_schema: schemas/pin_link.schema.json
 ilap_cluster_schema: schemas/ilap_cluster.schema.json
 ilap_cluster_model: configs/ilap_cluster_model.yaml
 pin_count: 0
-layer_count: 84
+layer_count: 81
 flag_summary:
-  GHOST: 67
+  GHOST: 24
   PLANNED: 2
-  WIRED: 15
+  WIRED: 55
 note: Islandwide canonical Pin index. Zero atomic pins bound (labels-only) — layer_index reserves the
   Domain/Pin Group/Pin Class/Pin Layer path and pin_uid prefix for every layer; pins[] fills in a later
   pins-pass. Distributed ILAP cluster fields are nullable until rescore.
@@ -161,7 +161,7 @@ layer_index:
   pin_group: hydrology
   pin_class: hydro_points_normalized
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -179,7 +179,7 @@ layer_index:
   pin_group: hydrology
   pin_class: hydro_master
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -197,7 +197,7 @@ layer_index:
   pin_group: hydrology
   pin_class: nid_dams
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -215,7 +215,7 @@ layer_index:
   pin_group: hydrology
   pin_class: wetlands_nwi_prvi
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -251,7 +251,7 @@ layer_index:
   pin_group: utility_other
   pin_class: pri_masts
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -521,7 +521,7 @@ layer_index:
   pin_group: power_grid
   pin_class: pri_power_generator_polygons
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -539,7 +539,7 @@ layer_index:
   pin_group: power_grid
   pin_class: pri_power_lines
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -557,7 +557,7 @@ layer_index:
   pin_group: power_grid
   pin_class: pri_power_plants
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -575,7 +575,7 @@ layer_index:
   pin_group: power_grid
   pin_class: pri_power_towers
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -593,7 +593,7 @@ layer_index:
   pin_group: power_grid
   pin_class: pri_substations
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -611,7 +611,7 @@ layer_index:
   pin_group: power_grid
   pin_class: prepa_transmission_lines_2014
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -629,7 +629,7 @@ layer_index:
   pin_group: power_grid
   pin_class: prepa_transmission_structures_2014
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -791,7 +791,7 @@ layer_index:
   pin_group: water_sewer
   pin_class: pri_pumping_stations
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -809,7 +809,7 @@ layer_index:
   pin_group: water_sewer
   pin_class: pri_wastewater_plants
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -827,7 +827,7 @@ layer_index:
   pin_group: water_sewer
   pin_class: pri_water_reservoirs
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -845,7 +845,7 @@ layer_index:
   pin_group: water_sewer
   pin_class: pri_water_treatment_plants
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -863,7 +863,7 @@ layer_index:
   pin_group: water_sewer
   pin_class: waterworks_master
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -935,7 +935,7 @@ layer_index:
   pin_group: industrial
   pin_class: industrial_master
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -953,7 +953,7 @@ layer_index:
   pin_group: reference_gazetteer
   pin_class: gazetteer_pr_domestic_names
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -989,7 +989,7 @@ layer_index:
   pin_group: civic_social
   pin_class: public_schools_all
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1007,7 +1007,7 @@ layer_index:
   pin_group: landing_zones
   pin_class: landing_zones_master
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1061,7 +1061,7 @@ layer_index:
   pin_group: operational_sites
   pin_class: fire_stations_consolidated
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1097,7 +1097,7 @@ layer_index:
   pin_group: military_aviation
   pin_class: military_aviation
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1151,7 +1151,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: ilap_master
   geometry_type: point
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1169,7 +1169,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: ilap_predictions
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1187,7 +1187,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: ilap_dem_anomalies
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1205,7 +1205,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: hydro_candidate
   geometry_type: point
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1223,7 +1223,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: water_signals
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1241,7 +1241,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: fic_osap_final_set
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1259,7 +1259,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: fic_osap_candidates
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1277,7 +1277,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: fic_osap_ilap_links
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1295,7 +1295,7 @@ layer_index:
   pin_group: ilap_constructs
   pin_class: fic_osap_ilap_paths
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1313,7 +1313,7 @@ layer_index:
   pin_group: aasb_corridors
   pin_class: aasb_corridor
   geometry_type: point
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1349,7 +1349,7 @@ layer_index:
   pin_group: aasb_corridors
   pin_class: corridor_index
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1367,7 +1367,7 @@ layer_index:
   pin_group: aasb_corridors
   pin_class: subsurface_corridors_master
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1385,7 +1385,7 @@ layer_index:
   pin_group: spiderweb_graph
   pin_class: spiderweb_graph
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1403,7 +1403,7 @@ layer_index:
   pin_group: spiderweb_graph
   pin_class: spiderweb_graph
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1421,7 +1421,7 @@ layer_index:
   pin_group: spiderweb_graph
   pin_class: consolidated_master_registry
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1439,7 +1439,7 @@ layer_index:
   pin_group: subsurface_karst
   pin_class: karst_subsurface
   geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false
@@ -1457,61 +1457,7 @@ layer_index:
   pin_group: subsurface_karst
   pin_class: karst_subsurface
   geometry_type: unknown
-  flag: GHOST
-  status: planned
-  evidence_tier: T3
-  review_flag: false
-  ilap_area_id: null
-  ilap_cluster_id: null
-  node_role: null
-  system_function: null
-  cluster_coherence_score: null
-  contradiction_flags: []
-- pin_uid_prefix: PIN_A_NATURALFEA
-  pin_layer: natural_features_hydro
-  label: Natural Features - Hydro (GNIS)
-  visibility: V3
-  domain: administrative
-  pin_group: natural_features
-  pin_class: natural_features_hydro
-  geometry_type: unknown
-  flag: GHOST
-  status: planned
-  evidence_tier: T3
-  review_flag: false
-  ilap_area_id: null
-  ilap_cluster_id: null
-  node_role: null
-  system_function: null
-  cluster_coherence_score: null
-  contradiction_flags: []
-- pin_uid_prefix: PIN_A_NATURALFEA
-  pin_layer: natural_features_terrain
-  label: Natural Features - Terrain (GNIS)
-  visibility: V3
-  domain: administrative
-  pin_group: natural_features
-  pin_class: natural_features_terrain
-  geometry_type: unknown
-  flag: GHOST
-  status: planned
-  evidence_tier: T3
-  review_flag: false
-  ilap_area_id: null
-  ilap_cluster_id: null
-  node_role: null
-  system_function: null
-  cluster_coherence_score: null
-  contradiction_flags: []
-- pin_uid_prefix: PIN_A_NATURALFEA
-  pin_layer: natural_features_coastal
-  label: Natural Features - Coastal (GNIS)
-  visibility: V3
-  domain: administrative
-  pin_group: natural_features
-  pin_class: natural_features_coastal
-  geometry_type: unknown
-  flag: GHOST
+  flag: WIRED
   status: planned
   evidence_tier: T3
   review_flag: false

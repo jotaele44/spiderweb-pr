@@ -57,7 +57,17 @@ and all slices, and open coordinated PRs in every consuming repo (same disciplin
 as moneysweep's `moneysweep_*` exported schemas). Consumers pin the master's
 `_source_sha256` recorded in each slice header.
 
-## Deferred (needs hub coordination)
+## Deferred
+
+- **Map surfacing.** Registering the gazetteer as `layer_catalog.yaml` families +
+  regenerating the Pin registry is deferred: the checked-in
+  `configs/master_pin_registry.yaml` is a curated artifact whose `WIRED` flags come
+  from `data/_manifests/gis_layers_manifest.json` (not in git), so a regen in an
+  environment without that manifest downgrades existing flags. Do that wiring where
+  the manifest is present. The dataset lives under `registry/` and is fully usable
+  without it (like `registry/spatial/`).
+
+### Needs hub coordination
 
 - Registering a `natural_feature` value in the closed `entity_type` enum of
   `schemas/federation_entity.schema.json` (+ the discriminator maps in
