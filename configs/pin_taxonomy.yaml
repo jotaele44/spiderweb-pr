@@ -1,5 +1,5 @@
 version: spiderweb_pin_taxonomy_v1
-generated_at: '2026-07-05T20:38:39Z'
+generated_at: '2026-07-19T14:53:58Z'
 producer_module: scripts.build_pin_registry
 binding: labels_only
 root: SPIDERWEB_PR
@@ -77,7 +77,34 @@ visibility_classes:
         - pin_layer: gazetteer_pr_domestic_names
           label: Gazetteer PR Domestic Names
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
+          status: planned
+    - id: natural_features
+      label: Natural Features (GNIS)
+      pin_classes:
+      - id: natural_features_hydro
+        label: Natural Features Hydro
+        pin_layers:
+        - pin_layer: natural_features_hydro
+          label: Natural Features - Hydro (GNIS)
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: natural_features_terrain
+        label: Natural Features Terrain
+        pin_layers:
+        - pin_layer: natural_features_terrain
+          label: Natural Features - Terrain (GNIS)
+          geometry_type: unknown
+          flag: GHOST
+          status: planned
+      - id: natural_features_coastal
+        label: Natural Features Coastal
+        pin_layers:
+        - pin_layer: natural_features_coastal
+          label: Natural Features - Coastal (GNIS)
+          geometry_type: unknown
+          flag: GHOST
           status: planned
   - id: transportation_airspace
     label: Transportation & Airspace
@@ -105,7 +132,7 @@ visibility_classes:
         - pin_layer: hydro_points_normalized
           label: Hydro Points Normalized
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: hydro_master
         label: Hydro Master
@@ -113,7 +140,7 @@ visibility_classes:
         - pin_layer: hydro_master_v3
           label: Hydro Master v3
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: nid_dams
         label: NID Dams
@@ -121,7 +148,7 @@ visibility_classes:
         - pin_layer: nid_dams
           label: NID Dams
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: wetlands_nwi_prvi
         label: Wetlands Nwi Prvi
@@ -129,7 +156,7 @@ visibility_classes:
         - pin_layer: wetlands_nwi_prvi
           label: Wetlands NWI PRVI
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
   - id: utilities
     label: Utilities
@@ -151,7 +178,7 @@ visibility_classes:
         - pin_layer: pri_masts
           label: PRI Masts
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
     - id: petroleum_pipeline
       label: Petroleum & Pipeline
@@ -271,7 +298,7 @@ visibility_classes:
         - pin_layer: pri_power_generator_polygons
           label: PRI Power Generator Polygons
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: pri_power_lines
         label: PRI Power Lines
@@ -279,7 +306,7 @@ visibility_classes:
         - pin_layer: pri_power_lines
           label: PRI Power Lines
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: pri_power_plants
         label: PRI Power Plants
@@ -287,7 +314,7 @@ visibility_classes:
         - pin_layer: pri_power_plants
           label: PRI Power Plants
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: pri_power_towers
         label: PRI Power Towers
@@ -295,7 +322,7 @@ visibility_classes:
         - pin_layer: pri_power_towers
           label: PRI Power Towers
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: pri_substations
         label: PRI Substations
@@ -303,7 +330,7 @@ visibility_classes:
         - pin_layer: pri_substations
           label: PRI Substations
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: prepa_transmission_lines_2014
         label: Prepa Transmission Lines 2014
@@ -311,7 +338,7 @@ visibility_classes:
         - pin_layer: prepa_transmission_lines_2014
           label: PREPA Transmission Lines 2014
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: prepa_transmission_structures_2014
         label: Prepa Transmission Structures 2014
@@ -319,7 +346,7 @@ visibility_classes:
         - pin_layer: prepa_transmission_structures_2014
           label: PREPA Transmission Structures 2014
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
     - id: water_sewer
       label: Water & Sewer
@@ -388,7 +415,7 @@ visibility_classes:
         - pin_layer: pri_pumping_stations
           label: PRI Pumping Stations
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: pri_wastewater_plants
         label: PRI Wastewater Plants
@@ -396,7 +423,7 @@ visibility_classes:
         - pin_layer: pri_wastewater_plants
           label: PRI Wastewater Plants
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: pri_water_reservoirs
         label: PRI Water Reservoirs
@@ -404,7 +431,7 @@ visibility_classes:
         - pin_layer: pri_water_reservoirs
           label: PRI Water Reservoirs
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: pri_water_treatment_plants
         label: PRI Water Treatment Plants
@@ -412,7 +439,7 @@ visibility_classes:
         - pin_layer: pri_water_treatment_plants
           label: PRI Water Treatment Plants
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: waterworks_master
         label: Waterworks Master
@@ -420,7 +447,7 @@ visibility_classes:
         - pin_layer: waterworks_master_v1
           label: Waterworks Master v1
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
     - id: telecom
       label: Telecom
@@ -458,7 +485,7 @@ visibility_classes:
         - pin_layer: industrial_master
           label: Industrial Master
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
 - visibility_class: V2
   label: Restricted / Operational
@@ -484,7 +511,7 @@ visibility_classes:
         - pin_layer: public_schools_all
           label: Public Schools (All)
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
   - id: transportation_airspace
     label: Transportation & Airspace
@@ -498,7 +525,7 @@ visibility_classes:
         - pin_layer: landing_zones_master
           label: Landing Zones Master
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
     - id: hangars_ramps
       label: Hangars & Ramps
@@ -531,7 +558,7 @@ visibility_classes:
         - pin_layer: military_aviation
           label: Military Aviation
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
   - id: public_safety_ops
     label: Public Safety & Operations
@@ -553,7 +580,7 @@ visibility_classes:
         - pin_layer: fire_stations_consolidated
           label: Fire Stations Consolidated
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
     - id: public_safety
       label: Public Safety
@@ -590,7 +617,7 @@ visibility_classes:
         - pin_layer: ilap_master_nodes
           label: ILAP Master Nodes
           geometry_type: point
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: ilap_predictions
         label: ILAP Predictions
@@ -598,7 +625,7 @@ visibility_classes:
         - pin_layer: ilap_predictions
           label: ILAP Predictions
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: ilap_dem_anomalies
         label: ILAP Dem Anomalies
@@ -606,7 +633,7 @@ visibility_classes:
         - pin_layer: ilap_dem_anomalies
           label: ILAP DEM Anomalies
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: hydro_candidate
         label: Hydro Candidate
@@ -614,7 +641,7 @@ visibility_classes:
         - pin_layer: hydro_candidate_nodes
           label: Hydro Candidate Nodes
           geometry_type: point
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: water_signals
         label: Water Signals
@@ -622,7 +649,7 @@ visibility_classes:
         - pin_layer: water_signals
           label: Water Signals
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: fic_osap_final_set
         label: FIC OSAP Final Set
@@ -630,7 +657,7 @@ visibility_classes:
         - pin_layer: fic_osap_final_set_v3
           label: FIC OSAP Final Set v3
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: fic_osap_candidates
         label: FIC OSAP Candidates
@@ -638,7 +665,7 @@ visibility_classes:
         - pin_layer: fic_osap_candidates_v2
           label: FIC OSAP Candidates v2
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: fic_osap_ilap_links
         label: FIC OSAP ILAP Links
@@ -646,7 +673,7 @@ visibility_classes:
         - pin_layer: fic_osap_ilap_links_v4
           label: FIC OSAP ILAP Links v4
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: fic_osap_ilap_paths
         label: FIC OSAP ILAP Paths
@@ -654,7 +681,7 @@ visibility_classes:
         - pin_layer: fic_osap_ilap_paths_v6
           label: FIC OSAP ILAP Paths v6
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
     - id: signal_anomaly
       label: Signal / Anomaly & Shadow
@@ -687,7 +714,7 @@ visibility_classes:
         - pin_layer: aasb_corridor_nodes
           label: AASB Corridor Nodes
           geometry_type: point
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: corridors
         label: Corridors
@@ -703,7 +730,7 @@ visibility_classes:
         - pin_layer: corridor_index_v1
           label: Corridor Index v1
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: subsurface_corridors_master
         label: Subsurface Corridors Master
@@ -711,7 +738,7 @@ visibility_classes:
         - pin_layer: subsurface_corridors_master
           label: Subsurface Corridors Master
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
   - id: hydrology
     label: Hydrology
@@ -725,12 +752,12 @@ visibility_classes:
         - pin_layer: spiderweb_graph_nodes_v5
           label: Spiderweb Graph Nodes v5
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
         - pin_layer: spiderweb_graph_edges_v5
           label: Spiderweb Graph Edges v5
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
       - id: consolidated_master_registry
         label: Consolidated Master Registry
@@ -738,7 +765,7 @@ visibility_classes:
         - pin_layer: consolidated_master_registry
           label: Consolidated Master POI Registry
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
     - id: subsurface_karst
       label: Subsurface / Karst
@@ -749,10 +776,10 @@ visibility_classes:
         - pin_layer: karst_subsurface_nodes_v2
           label: Karst Subsurface Nodes v2
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned
         - pin_layer: karst_subsurface_edges_v2
           label: Karst Subsurface Edges v2
           geometry_type: unknown
-          flag: WIRED
+          flag: GHOST
           status: planned

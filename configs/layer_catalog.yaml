@@ -417,6 +417,20 @@ families:
   - layer_id: karst_subsurface_edges_v2
     label: Karst Subsurface Edges v2
     status: deferred
+- id: natural_features
+  label: Natural Features (GNIS)
+  visibility: V3
+  domain: reference
+  layers:
+  - layer_id: natural_features_hydro
+    label: Natural Features - Hydro (GNIS)
+    status: deferred
+  - layer_id: natural_features_terrain
+    label: Natural Features - Terrain (GNIS)
+    status: deferred
+  - layer_id: natural_features_coastal
+    label: Natural Features - Coastal (GNIS)
+    status: deferred
 - id: signal_anomaly
   label: Signal / Anomaly & Shadow
   visibility: V1

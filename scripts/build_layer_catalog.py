@@ -70,6 +70,9 @@ LABEL_OVERRIDES = {
     "missing_persons_by_municipio": "Missing Persons by Municipio",
     "consolidated_master_registry": "Consolidated Master POI Registry",
     "public_schools_all": "Public Schools (All)",
+    "natural_features_hydro": "Natural Features - Hydro (GNIS)",
+    "natural_features_terrain": "Natural Features - Terrain (GNIS)",
+    "natural_features_coastal": "Natural Features - Coastal (GNIS)",
 }
 
 
@@ -122,6 +125,9 @@ FAMILY_PLAN: List[Dict] = [
      "domain": "industrial", "layers": ["industrial_master"]},
     {"id": "reference_gazetteer", "label": "Reference / Gazetteer", "visibility": "V3",
      "domain": "reference", "layers": ["gazetteer_pr_domestic_names"]},
+    {"id": "natural_features", "label": "Natural Features (GNIS)", "visibility": "V3",
+     "domain": "reference", "layers": ["natural_features_hydro", "natural_features_terrain",
+                                       "natural_features_coastal"]},
     # ----- V2: restricted / operational -----
     {"id": "civic_social", "label": "Civic / Social Infrastructure", "visibility": "V2",
      "domain": "civic_social_infrastructure", "layers": ["civic_headstart_pr",
