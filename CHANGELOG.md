@@ -10,6 +10,15 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Reproducible live-source adapters for reference geographies:** added
+  `server/ingestion/ingest_reference_geo.py`, fetching `nid_dams` (USACE National
+  Inventory of Dams API), `gazetteer_pr_domestic_names` (USGS GNIS Domestic Names
+  on the National Map S3 bucket), and `wetlands_nwi_prvi` (USFWS NWI ArcGIS
+  service, tiled + paginated) directly from authoritative federal endpoints into
+  servable `data/<layer>.geojson` + provenance manifests. Replaces reliance on
+  undated operator-local GPKG snapshots and makes `wetlands_nwi_prvi` an
+  actually-served layer (previously `reference_only`); registered in the `/geo`
+  allowlist with `pipeline_wired: true`.
 - **NOAA/NCEI coastal-DEM gaps closed:** resolved all six pending Puerto Rico
   1/3 arc-second MHW DEMs (Arecibo/Fajardo/Guayama/Mayagüez 2006+2007/Ponce) to
   live NGDC THREDDS OPeNDAP endpoints in `data_sources/noaa/ncei_coastal_dems.yml`
