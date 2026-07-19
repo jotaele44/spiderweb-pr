@@ -1,0 +1,42 @@
+{
+  "dataset": "pr_natural_features",
+  "version": "pr_natural_feature_v0_1",
+  "source": "USGS GNIS DomesticNames (Puerto Rico)",
+  "source_sha256": "0f54a19daa37316a3ff84c756b49880ec90a1f34300ea107b712b124bb13bf63",
+  "record_count": 1982,
+  "by_group": {
+    "coastal": 616,
+    "hydro": 991,
+    "terrain": 375
+  },
+  "by_feature_type": {
+    "bar": 70,
+    "basin": 8,
+    "bay": 101,
+    "beach": 98,
+    "canal": 37,
+    "cape": 199,
+    "channel": 52,
+    "cliff": 1,
+    "flat": 4,
+    "gap": 3,
+    "gut": 6,
+    "island": 148,
+    "lake": 49,
+    "mountain": 295,
+    "mountain_range": 20,
+    "peak": 12,
+    "plain": 1,
+    "quebrada": 557,
+    "reservoir": 37,
+    "ridge": 19,
+    "river": 227,
+    "spring": 2,
+    "stream": 2,
+    "valley": 19,
+    "waterfall": 5,
+    "wetland": 9,
+    "woods": 1
+  },
+  "schema": "schemas/pr_natural_feature.schema.json"
+}
