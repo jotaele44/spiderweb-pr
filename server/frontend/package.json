@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
     "@tanstack/react-query": "^5.84.1",
     "@tanstack/react-table": "^8.8.6",
     "maplibre-gl": "^3.3.0",
