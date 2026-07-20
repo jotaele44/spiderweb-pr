@@ -82,11 +82,19 @@ the CUDEM is the island-wide base).
 **Access note:** unlike the San Juan and MHW DEMs, this CUDEM is distributed as
 GeoTIFF on S3 rather than through the NGDC THREDDS `regional/*.nc` catalog, so the
 manifest entry carries `source_url` / `s3_prefix` / `url_list` instead of an
-`opendap_url` (the schema's `opendap_url` is optional). Downloaded tiles route through
-the existing rasterio tile-screening tooling (`tools/pr_dem_batch_runner.py`,
-`tools/pr_dem_one_tile_pilot.py`) into ignored `outputs/`; no raster binaries are
+`opendap_url` (the schema's `opendap_url` is optional). No raster binaries are
 committed. Live raster QA (min/max, nodata) is still `pending_live_sample`, so the
 dataset sits at `source_metadata_registered` (not yet `source_raster_validated`).
+
+> **Reprojection required before terrain screening (GAP_005).** These CUDEM tiles are
+> **geographic — EPSG:4269 (NAD83), pixel size ≈ 2.78e-5° (1/9 arc-second)**. The
+> rasterio tile-screening tools (`tools/pr_dem_one_tile_pilot.py`,
+> `tools/pr_dem_batch_runner.py`) currently assume a **projected, metre-based** CRS:
+> they derive the downsample factor from `target_resolution_m / native` (a ~0.25° tile
+> collapses toward 1×1, so `np.gradient` fails), and compute slope and pixel area
+> directly from `src.transform` units. Downloaded CUDEM tiles must therefore be
+> **reprojected to a metric CRS** (e.g. UTM 19N / EPSG:32619) — or those tools made
+> CRS-aware — before being routed through this tooling. Tracked as `NOAA_NCEI_DEM_GAP_005`.
 
 **Higher-resolution alternative (future option, not adopted here):** the NOAA Data
 Access Viewer also lists raw LiDAR **point-cloud** collections for the PR area
@@ -167,6 +175,7 @@ python scripts/acquire/noaa_ncei_opendap.py \
 | `NOAA_NCEI_DEM_GAP_002` | PR regional DEM URLs other than San Juan are not yet resolved into direct OPeNDAP/NetCDF endpoints. | Resolve detail pages and register direct data URLs. | **Closed 2026-07-16** — all six MHW DEMs resolved + live-validated. |
 | `NOAA_NCEI_DEM_GAP_003` | San Juan `Band1 actual_range` contradiction not yet resolved. | Run live raster sampling/full minmax validation. | **Closed 2026-07-16** — live sample min/max confirms real terrain. |
 | `NOAA_NCEI_DEM_GAP_004` | No derived coastal products generated yet. | Build downstream products only after raster QA passes. | Open — source raster QA now passes; derivatives still not generated (out of scope). |
+| `NOAA_NCEI_DEM_GAP_005` | CUDEM `m9525` tiles are geographic (EPSG:4269); the `pr_dem_*` tile-screening tools assume a projected metre-based CRS (downsample factor, slope, pixel area). | Reproject tiles to a metric CRS (e.g. UTM 19N / EPSG:32619) before screening, or make the tools CRS-aware. | Open — flagged 2026-07-20 during CUDEM registration; fix is in the `pr_dem_*` tooling, out of scope for this source-registration change. |
 
 ## Completion state
 

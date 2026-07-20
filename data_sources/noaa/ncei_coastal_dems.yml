@@ -430,6 +430,13 @@
       "gap_id": "NOAA_NCEI_DEM_GAP_004",
       "description": "No derived coastal products are generated in this integration.",
       "closure_action": "Generate derivatives only after source raster validation passes."
+    },
+    {
+      "gap_id": "NOAA_NCEI_DEM_GAP_005",
+      "description": "CUDEM puerto_rico_cudem_ninth_9525 tiles are geographic (EPSG:4269, ~2.78e-5 deg pixels), but tools/pr_dem_one_tile_pilot.py and tools/pr_dem_batch_runner.py assume a projected metre-based CRS: the downsample factor (target_resolution_m / native transform unit), np.gradient slope, and pixel-area math all treat transform units as metres, so a ~0.25 deg tile collapses toward 1x1 (np.gradient fails) and non-collapsed runs yield degree-based slopes/areas.",
+      "closure_action": "Reproject CUDEM tiles to a metric CRS (e.g. UTM 19N / EPSG:32619) before routing them through the pr_dem_* tools, or make those tools CRS-aware. Fix is in the pr_dem tooling and out of scope for this source-registration change.",
+      "status": "open",
+      "raised": "2026-07-20"
     }
   ]
 }
