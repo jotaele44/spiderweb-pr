@@ -4,12 +4,14 @@ SPIDERWEB
 Complete Unified Pipeline — All Phases
 
 Usage:
-  python run_all.py                    # Run all phases
-  python run_all.py --phase 1          # Run specific phase only
-  python run_all.py --images 100       # Test with 100 images
-  python run_all.py --report daily     # Generate daily report only
-  python run_all.py --aircraft N5854Z  # Profile single aircraft
-  python run_all.py --status           # Show database status
+  python run_all.py                        # Run downstream phases (2-4)
+  python run_all.py --phase 2              # Run specific downstream phase only
+  python run_all.py --ingest-skywatcher P  # Ingest a Skywatcher bridge package
+  python run_all.py --report daily         # Generate daily report only
+  python run_all.py --aircraft N5854Z      # Profile single aircraft
+  python run_all.py --status               # Show database status
+
+FR24 screenshot ingestion (former phases 0-1) was migrated to skywatcher-pr.
 """
 
 import argparse
@@ -35,32 +37,37 @@ BANNER = """
 """
 
 
-def run_phase_0(args):
-    from pipeline.flight_analyzer import FlightAnalyzer
-    print("\n  PHASE 0: IMAGE EXTRACTION")
-    print("  " + "─" * 50)
-    analyzer = FlightAnalyzer(args.image_dir, args.db)
-    analyzer.process_all_images(max_images=args.images)
-    analyzer.link_screenshots_to_flights()
-    conn = sqlite3.connect(args.db)
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM flights")
-    count = cursor.fetchone()[0]
-    conn.close()
-    print(f"\n  ✓ Phase 0 complete — {count} flights in database")
+# FR24 screenshot ingestion (former Phase 0) and telemetry hardening (former
+# Phase 1) were REMOVED from Spiderweb: that capability now belongs to
+# skywatcher-pr. Spiderweb no longer processes screenshots. The flights /
+# track_points that downstream phases 2-4 consume are now supplied by the
+# retained Skywatcher bridge consumer below (--ingest-skywatcher).
+# See docs/FR24_MIGRATION_TO_SKYWATCHER.md.
 
 
-def run_phase_1(args):
-    from pipeline.hardened_pipeline import HardenedFlightAnalyzer
-    print("\n  PHASE 1: TELEMETRY HARDENING")
+def run_ingest_skywatcher(args):
+    """Consume a validated Skywatcher hub-canonical export package.
+
+    This is the single retained FR24 integration boundary: it schema-validates
+    the package's spiderweb_bridge records and routes the valid ones into the
+    flights / track_points tables for downstream correlation. No screenshots,
+    no OCR.
+    """
+    from integration.skywatcher_bridge import ingest_package
+
+    print("\n  INGEST SKYWATCHER BRIDGE PACKAGE")
     print("  " + "─" * 50)
-    analyzer = HardenedFlightAnalyzer(args.image_dir, args.db)
-    analyzer.process_with_hardening(
-        batch_id=f"run_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M')}",
-        max_images=args.images,
-        checkpoint_interval=50,
+    summary = ingest_package(
+        Path(args.ingest_skywatcher), args.db, dry_run=getattr(args, "dry_run", False)
     )
-    print(f"\n  ✓ Phase 1 complete")
+    print(f"  package:   {summary['package']}")
+    print(f"  total:     {summary['total']}")
+    print(f"  ingested:  {summary['ingested']}")
+    print(f"  rejected:  {summary['rejected']}")
+    if summary["rejected"]:
+        for r in summary["rejects"][:10]:
+            print(f"    - {r['flight_id']}: {r['errors']}")
+    print(f"\n  ✓ Skywatcher ingest complete ({summary['adapter_version']})")
 
 
 def run_phase_2(args):
@@ -160,59 +167,10 @@ def run_aircraft_profile(args):
     print(reporter.aircraft_profile_report(args.aircraft))
 
 
-def run_home_base(args):
-    from pipeline.home_base_correlation import HomeBaseDeducer
-    print(f"\n  HOME-BASE INTELLIGENCE: {args.home_base}\n")
-    print(HomeBaseDeducer(args.db).intelligence_report(args.home_base))
-
-
-def run_fleet_correlation(args):
-    from pipeline.home_base_correlation import FleetColocationAnalyzer
-    print("\n  FLEET HOME-BASE CORRELATION\n")
-    print(FleetColocationAnalyzer(args.db).correlation_report())
-
-
-def _run_export_home_base(db_path: str, output_dir: str):
-    """Write home_base_report.md, home_base_assignments.csv, shared_space_leads.json."""
-    import csv
-    import json
-
-    from pipeline.home_base_correlation import (
-        FleetColocationAnalyzer,
-        HomeBaseDeducer,
-        OPERATOR_MISSION,
-        OPERATOR_OWNER,
-        GENERIC_OPERATORS,
-    )
-
-    print("\n  HOME-BASE EXPORT")
-    print("  " + "─" * 50)
-    out = Path(output_dir)
-    out.mkdir(parents=True, exist_ok=True)
-
-    fleet = FleetColocationAnalyzer(db_path)
-    deducer = HomeBaseDeducer(db_path)
-    hb = fleet.home_base_map()
-
-    (out / "home_base_report.md").write_text(fleet.correlation_report())
-
-    with open(out / "home_base_assignments.csv", "w", newline="") as fh:
-        w = csv.writer(fh)
-        w.writerow(["callsign", "lat", "lon", "feature_id", "feature_name",
-                    "operator", "owner", "mission", "confidence"])
-        for cs in sorted(hb):
-            spot = hb[cs]
-            profile = deducer.deduce_profile(cs)
-            op = spot.nearest_operator
-            owner = OPERATOR_OWNER.get(op, "" if op in GENERIC_OPERATORS else op)
-            w.writerow([cs, spot.lat, spot.lon, spot.nearest_feature_id,
-                        spot.nearest_feature_name, op, owner,
-                        OPERATOR_MISSION.get(op, ""), profile.confidence_level])
-
-    leads = {fid: cs for fid, cs in fleet.shared_bases().items() if len(cs) >= 2}
-    (out / "shared_space_leads.json").write_text(json.dumps(leads, indent=2))
-
-    print(f"  ✓ Home-base outputs written to: {output_dir}")
+# run_home_base / run_fleet_correlation / _run_export_home_base were REMOVED:
+# they depended on pipeline.home_base_correlation (a screenshot-derived
+# home-base inference module already deleted in the FR24 migration) and are
+# part of the FR24 screenshot-processing capability now owned by skywatcher-pr.
 
 
 def run_daily_report(args):
@@ -282,7 +240,6 @@ def print_status(db_path: str):
         tables = {
             "flights": "Total flight records",
             "track_points": "Track points",
-            "screenshots": "Processed screenshots",
             "alerts": "Total alerts",
             "mission_scores": "Mission scores",
             "cluster_assignments": "Cluster assignments",
@@ -323,34 +280,9 @@ def print_status(db_path: str):
         print(f"  Database not found or uninitialized: {e}")
 
 
-def print_rlsm_status(db_path: str):
-    """RLSM screenshot-processing status: coverage + low-confidence backlog."""
-    try:
-        conn = sqlite3.connect(db_path)
-
-        print("\n  RLSM STATUS")
-        print("  " + "─" * 45)
-
-        def _count(sql: str):
-            try:
-                return conn.execute(sql).fetchone()[0]
-            except Exception:
-                return None
-
-        rows = [
-            ("Screenshots processed", _count("SELECT COUNT(*) FROM screenshots")),
-            ("Low-confidence (<0.5)",
-             _count("SELECT COUNT(*) FROM screenshots WHERE ocr_confidence < 0.5")),
-            ("No OCR text",
-             _count("SELECT COUNT(*) FROM screenshots WHERE raw_text IS NULL OR raw_text = ''")),
-        ]
-        for label, val in rows:
-            shown = f"{val:,}" if isinstance(val, int) else "N/A"
-            print(f"  {label:<30} {shown:>8}")
-
-        conn.close()
-    except Exception as e:
-        print(f"  Database not found or uninitialized: {e}")
+# print_rlsm_status was REMOVED: it reported RLSM screenshot-processing coverage
+# from the `screenshots` table, which is FR24 screenshot state now owned by
+# skywatcher-pr. Spiderweb no longer maintains a screenshots table.
 
 
 def _run_schema_validation(db_path: str):
@@ -566,39 +498,30 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run_all.py                              Run complete pipeline
-  python run_all.py --phase 1                    Hardening only
+  python run_all.py                              Run downstream pipeline (2-4)
   python run_all.py --phase 3                    Mission inference only
-  python run_all.py --images 50                  Test with 50 images
+  python run_all.py --ingest-skywatcher PKG      Ingest Skywatcher bridge package
   python run_all.py --report daily               Daily operational report
   python run_all.py --aircraft N5854Z            Aircraft intelligence profile
   python run_all.py --status                     Show database status
   python run_all.py --export-json data.json      Export DB snapshot for dashboard
         """
     )
-    parser.add_argument("--phase", type=int, choices=[0, 1, 2, 3, 4],
-                        help="Run only specified phase (0-4)")
-    parser.add_argument("--images", type=int, default=None,
-                        help="Max images to process (default: all)")
-    parser.add_argument("--image-dir", dest="image_dir",
-                        default="/mnt/user-data/uploads",
-                        help="Directory containing screenshots")
+    parser.add_argument("--phase", type=int, choices=[2, 3, 4],
+                        help="Run only specified downstream phase (2-4). "
+                             "Phases 0-1 (FR24 screenshot ingest/hardening) were "
+                             "migrated to skywatcher-pr.")
+    parser.add_argument("--ingest-skywatcher", dest="ingest_skywatcher", metavar="PATH",
+                        help="Ingest a validated Skywatcher hub-canonical export "
+                             "package (dir with manifest.json + bridge_records.jsonl)")
     parser.add_argument("--db", default=str(Path.home() / "flight_database.db"),
                         help="Database path")
     parser.add_argument("--report", choices=["daily", "infrastructure", "all"],
                         help="Generate report only")
     parser.add_argument("--aircraft", type=str,
                         help="Generate intelligence profile for callsign")
-    parser.add_argument("--home-base", dest="home_base", metavar="CALLSIGN",
-                        help="Deduce operator/owner/mission from a craft's home base")
-    parser.add_argument("--fleet-correlation", action="store_true",
-                        help="Cross-craft home-base correlation and shared-space leads")
-    parser.add_argument("--export-home-base", metavar="DIR",
-                        help="Export home-base report + assignments CSV + shared-space leads JSON")
     parser.add_argument("--status", action="store_true",
                         help="Show database status and exit")
-    parser.add_argument("--rlsm-status", dest="rlsm_status", action="store_true",
-                        help="Show RLSM screenshot processing status and exit")
     parser.add_argument("--export-json", metavar="PATH",
                         help="Export DB snapshot to JSON for dashboard.html")
     parser.add_argument("--validate", action="store_true",
@@ -653,16 +576,10 @@ Examples:
 
     print(BANNER)
     print(f"  Database:   {args.db}")
-    print(f"  Image dir:  {args.image_dir}")
-    print(f"  Max images: {args.images or 'All'}")
     print(f"  Started:    {datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}\n")
 
     if args.status:
         print_status(args.db)
-        return
-
-    if args.rlsm_status:
-        print_rlsm_status(args.db)
         return
 
     if args.export_json:
@@ -678,16 +595,8 @@ Examples:
         run_aircraft_profile(args)
         return
 
-    if args.home_base:
-        run_home_base(args)
-        return
-
-    if args.fleet_correlation:
-        run_fleet_correlation(args)
-        return
-
-    if args.export_home_base:
-        _run_export_home_base(args.db, args.export_home_base)
+    if args.ingest_skywatcher:
+        run_ingest_skywatcher(args)
         return
 
     if args.headstart_csv or args.export_headstart:
@@ -701,8 +610,7 @@ Examples:
     # Skip phases when the user only supplied integration-export flags
     # (standalone export mode against an existing DB).
     new_flags_only = (
-        not args.images
-        and args.phase is None
+        args.phase is None
         and (args.validate or args.export_pr_intel or args.export_spiderweb
              or args.spiderweb_intake or args.calibrate_scoring
              or args.assess_readiness or args.ingest_satellite
@@ -712,12 +620,9 @@ Examples:
     if not new_flags_only:
         start = datetime.now(timezone.utc).replace(tzinfo=None)
 
-        if args.phase is None or args.phase == 0:
-            run_phase_0(args)
-
-        if args.phase is None or args.phase == 1:
-            run_phase_1(args)
-
+        # Phases 0-1 (FR24 screenshot ingest + hardening) migrated to
+        # skywatcher-pr. Downstream correlation begins at Phase 2 and consumes
+        # flights/track_points supplied via --ingest-skywatcher.
         if args.phase is None or args.phase == 2:
             run_phase_2(args)
 

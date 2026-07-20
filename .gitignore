@@ -347,3 +347,12 @@ reports/maintenance/
 desktop/.setup-complete
 outputs/dashboard_data.json
 desktop/.running
+
+# --- FR24 boundary correction: runtime artifact exclusions ---
+*.db-wal
+*.db-shm
+skywatcher.db
+flight_database.db
+inputs/screenshots/
+# ingested Skywatcher bridge packages are runtime data, never committed
+skywatcher_bridge_ingest/

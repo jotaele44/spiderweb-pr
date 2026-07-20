@@ -34,12 +34,13 @@ dependencies = [
 #   pip install -e ".[airspace]"        (ranges)
 #   pip install -c constraints.txt -e ".[airspace]"   (exact pins)
 [project.optional-dependencies]
-# Spiderweb — OCR/vision + export validation.
+# Spiderweb — export validation + geospatial serialization.
+# NOTE: FR24 screenshot OCR/image dependencies (opencv-python, pytesseract,
+# pillow-heif, Pillow) were REMOVED here — that capability moved to skywatcher-pr
+# (see its [project.optional-dependencies].fr24 group). Spiderweb now only needs
+# schema validation (jsonschema) and columnar export (pyarrow) for the retained
+# downstream/bridge paths.
 airspace = [
-    "opencv-python>=4.8,<5",
-    "pytesseract>=0.3.10,<0.4",
-    "Pillow>=10.0,<13",
-    "pillow-heif>=1.3.0,<2",
     "jsonschema>=4.17,<5",
     "pyarrow>=14.0",
     "PyYAML>=6.0,<7",
