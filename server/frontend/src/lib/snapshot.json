@@ -1,1 +1,1074 @@
-{}
+{
+  "/health": {
+    "status": "ok",
+    "db": "/tmp/priis-demo-snapshot-fxw6ltvr/priis_demo.db",
+    "db_exists": true,
+    "integrity_ok": true,
+    "table_count": 10
+  },
+  "/sites": [
+    {
+      "id": "DEMO-ST-1",
+      "name": "Demo Site 1 — San Juan Port",
+      "kind": "port",
+      "lat": 18.4655,
+      "lng": -66.1057,
+      "sensitive": true,
+      "infrastructure_class": "maritime",
+      "municipio_geoid": null,
+      "tract_geoid": null,
+      "zcta_geoid": null
+    },
+    {
+      "id": "DEMO-ST-2",
+      "name": "Demo Site 2 — Ponce Substation",
+      "kind": "substation",
+      "lat": 18.0111,
+      "lng": -66.6141,
+      "sensitive": false,
+      "infrastructure_class": "power",
+      "municipio_geoid": null,
+      "tract_geoid": null,
+      "zcta_geoid": null
+    },
+    {
+      "id": "DEMO-ST-3",
+      "name": "Demo Site 3 — Mayaguez Depot",
+      "kind": "depot",
+      "lat": 18.2013,
+      "lng": -67.1397,
+      "sensitive": false,
+      "infrastructure_class": "logistics",
+      "municipio_geoid": null,
+      "tract_geoid": null,
+      "zcta_geoid": null
+    },
+    {
+      "id": "DEMO-ST-4",
+      "name": "Demo Site 4 — Caguas Tower",
+      "kind": "tower",
+      "lat": 18.2341,
+      "lng": -66.0356,
+      "sensitive": false,
+      "infrastructure_class": "comms",
+      "municipio_geoid": null,
+      "tract_geoid": null,
+      "zcta_geoid": null
+    },
+    {
+      "id": "DEMO-ST-5",
+      "name": "Demo Site 5 — Arecibo Airfield",
+      "kind": "airfield",
+      "lat": 18.4744,
+      "lng": -66.7157,
+      "sensitive": true,
+      "infrastructure_class": "aviation",
+      "municipio_geoid": null,
+      "tract_geoid": null,
+      "zcta_geoid": null
+    },
+    {
+      "id": "DEMO-ST-6",
+      "name": "Demo Site 6 — Fajardo Marina",
+      "kind": "port",
+      "lat": 18.3258,
+      "lng": -65.6524,
+      "sensitive": false,
+      "infrastructure_class": "maritime",
+      "municipio_geoid": null,
+      "tract_geoid": null,
+      "zcta_geoid": null
+    },
+    {
+      "id": "DEMO-ST-7",
+      "name": "Demo Site 7 — Guayama Plant",
+      "kind": "plant",
+      "lat": 17.9841,
+      "lng": -66.1136,
+      "sensitive": true,
+      "infrastructure_class": "industrial",
+      "municipio_geoid": null,
+      "tract_geoid": null,
+      "zcta_geoid": null
+    },
+    {
+      "id": "DEMO-ST-8",
+      "name": "Demo Site 8 — Aguadilla Hangar",
+      "kind": "airfield",
+      "lat": 18.4277,
+      "lng": -67.1547,
+      "sensitive": false,
+      "infrastructure_class": "aviation",
+      "municipio_geoid": null,
+      "tract_geoid": null,
+      "zcta_geoid": null
+    }
+  ],
+  "/contracts": [
+    {
+      "id": "DEMO-CT-1",
+      "agency": "Demo Agency Alpha",
+      "vendor": "Demo Vendor A",
+      "site": "DEMO-ST-1",
+      "amount": 250000.0,
+      "signed": "2025-01-15",
+      "status": "active",
+      "tier": "T3",
+      "note": "Synthetic demo record — not a real contract/site.",
+      "procurement_method": "open"
+    },
+    {
+      "id": "DEMO-CT-2",
+      "agency": "Demo Agency Alpha",
+      "vendor": "Demo Vendor B",
+      "site": "DEMO-ST-2",
+      "amount": 480000.0,
+      "signed": "2025-02-03",
+      "status": "active",
+      "tier": "T2",
+      "note": "Synthetic demo record — not a real contract/site.",
+      "procurement_method": "sole-source"
+    },
+    {
+      "id": "DEMO-CT-3",
+      "agency": "Demo Agency Bravo",
+      "vendor": "Demo Vendor C",
+      "site": "DEMO-ST-5",
+      "amount": 1200000.0,
+      "signed": "2025-02-20",
+      "status": "review",
+      "tier": "T1",
+      "note": "Synthetic demo record — not a real contract/site.",
+      "procurement_method": "sole-source"
+    },
+    {
+      "id": "DEMO-CT-4",
+      "agency": "Demo Agency Bravo",
+      "vendor": "Demo Vendor A",
+      "site": "DEMO-ST-3",
+      "amount": 90000.0,
+      "signed": "2025-03-11",
+      "status": "closed",
+      "tier": "T4",
+      "note": "Synthetic demo record — not a real contract/site.",
+      "procurement_method": "open"
+    },
+    {
+      "id": "DEMO-CT-5",
+      "agency": "Demo Agency Charlie",
+      "vendor": "Demo Vendor D",
+      "site": "DEMO-ST-7",
+      "amount": 620000.0,
+      "signed": "2025-03-28",
+      "status": "active",
+      "tier": "T2",
+      "note": "Synthetic demo record — not a real contract/site.",
+      "procurement_method": "restricted"
+    },
+    {
+      "id": "DEMO-CT-6",
+      "agency": "Demo Agency Charlie",
+      "vendor": "Demo Vendor B",
+      "site": "DEMO-ST-4",
+      "amount": 150000.0,
+      "signed": "2025-04-09",
+      "status": "active",
+      "tier": "T3",
+      "note": "Synthetic demo record — not a real contract/site.",
+      "procurement_method": "open"
+    },
+    {
+      "id": "DEMO-CT-7",
+      "agency": "Demo Agency Alpha",
+      "vendor": "Demo Vendor C",
+      "site": "DEMO-ST-6",
+      "amount": 340000.0,
+      "signed": "2025-04-22",
+      "status": "review",
+      "tier": "T2",
+      "note": "Synthetic demo record — not a real contract/site.",
+      "procurement_method": "open"
+    }
+  ],
+  "/events": [
+    {
+      "id": "DEMO-EV-1",
+      "kind": "filing",
+      "at": "2025-02-01T14:00:00Z",
+      "label": "Demo filing near San Juan Port",
+      "tier": "T3",
+      "registration": null,
+      "callsign": null,
+      "operator": null,
+      "siteId": "DEMO-ST-1",
+      "refId": "DEMO-CT-1",
+      "aircraftType": null,
+      "originCode": null,
+      "destinationCode": null,
+      "altitudeFt": null,
+      "groundSpeedMph": null,
+      "flightStatus": null,
+      "imagePath": null
+    },
+    {
+      "id": "DEMO-EV-2",
+      "kind": "sighting",
+      "at": "2025-02-18T09:30:00Z",
+      "label": "Demo sighting at Arecibo Airfield",
+      "tier": "T2",
+      "registration": null,
+      "callsign": null,
+      "operator": null,
+      "siteId": "DEMO-ST-5",
+      "refId": null,
+      "aircraftType": null,
+      "originCode": null,
+      "destinationCode": null,
+      "altitudeFt": null,
+      "groundSpeedMph": null,
+      "flightStatus": null,
+      "imagePath": null
+    },
+    {
+      "id": "DEMO-EV-3",
+      "kind": "flight",
+      "at": "2025-03-05T18:45:00Z",
+      "label": "Demo flight DEMO123",
+      "tier": "T2",
+      "registration": "N0DEMO",
+      "callsign": "DEMO123",
+      "operator": "Demo Air",
+      "siteId": "DEMO-ST-5",
+      "refId": null,
+      "aircraftType": "C208",
+      "originCode": "TJIG",
+      "destinationCode": "TJSJ",
+      "altitudeFt": 4500,
+      "groundSpeedMph": 140,
+      "flightStatus": "landed",
+      "imagePath": null
+    },
+    {
+      "id": "DEMO-EV-4",
+      "kind": "flight",
+      "at": "2025-03-19T21:10:00Z",
+      "label": "Demo flight DEMO456",
+      "tier": "T3",
+      "registration": "N1DEMO",
+      "callsign": "DEMO456",
+      "operator": "Demo Air",
+      "siteId": "DEMO-ST-8",
+      "refId": null,
+      "aircraftType": "BE20",
+      "originCode": "TJBQ",
+      "destinationCode": "TJIG",
+      "altitudeFt": 8000,
+      "groundSpeedMph": 210,
+      "flightStatus": "enroute",
+      "imagePath": null
+    },
+    {
+      "id": "DEMO-EV-5",
+      "kind": "filing",
+      "at": "2025-04-02T12:00:00Z",
+      "label": "Demo filing near Guayama Plant",
+      "tier": "T2",
+      "registration": null,
+      "callsign": null,
+      "operator": null,
+      "siteId": "DEMO-ST-7",
+      "refId": "DEMO-CT-5",
+      "aircraftType": null,
+      "originCode": null,
+      "destinationCode": null,
+      "altitudeFt": null,
+      "groundSpeedMph": null,
+      "flightStatus": null,
+      "imagePath": null
+    }
+  ],
+  "/anomalies": [
+    {
+      "id": "DEMO-AN-1",
+      "title": "Demo clustered filings",
+      "category": "temporal",
+      "score": 0.82,
+      "band": "high",
+      "summary": "Synthetic demo anomaly: several demo filings cluster near one site.",
+      "factors": [
+        {
+          "tag": "burst",
+          "note": "Demo factor"
+        }
+      ],
+      "contracts": [
+        "DEMO-CT-1"
+      ],
+      "confidence": 3,
+      "contradictions": [],
+      "siteId": "DEMO-ST-1",
+      "events": [
+        "DEMO-EV-1"
+      ]
+    },
+    {
+      "id": "DEMO-AN-2",
+      "title": "Demo sole-source pattern",
+      "category": "procurement",
+      "score": 0.67,
+      "band": "medium",
+      "summary": "Synthetic demo anomaly: repeated sole-source demo awards.",
+      "factors": [
+        {
+          "tag": "sole-source",
+          "note": "Demo factor"
+        }
+      ],
+      "contracts": [
+        "DEMO-CT-3"
+      ],
+      "confidence": 2,
+      "contradictions": [
+        "Demo contradiction note"
+      ],
+      "siteId": "DEMO-ST-5",
+      "events": []
+    },
+    {
+      "id": "DEMO-AN-3",
+      "title": "Demo flight proximity",
+      "category": "spatial",
+      "score": 0.54,
+      "band": "medium",
+      "summary": "Synthetic demo anomaly: demo flight passes near a sensitive demo site.",
+      "factors": [
+        {
+          "tag": "proximity",
+          "note": "Demo factor"
+        }
+      ],
+      "contracts": [],
+      "confidence": 2,
+      "contradictions": [],
+      "siteId": "DEMO-ST-8",
+      "events": [
+        "DEMO-EV-4"
+      ]
+    },
+    {
+      "id": "DEMO-AN-4",
+      "title": "Demo low-signal note",
+      "category": "misc",
+      "score": 0.31,
+      "band": "low",
+      "summary": "Synthetic demo anomaly with low score.",
+      "factors": [],
+      "contracts": [],
+      "confidence": 1,
+      "contradictions": [],
+      "siteId": null,
+      "events": []
+    }
+  ],
+  "/sources": [
+    {
+      "id": "DEMO-SRC-1",
+      "name": "Demo Registry Feed",
+      "tier": "T2",
+      "kind": "registry",
+      "status": "online"
+    },
+    {
+      "id": "DEMO-SRC-2",
+      "name": "Demo ADS-B Archive",
+      "tier": "T3",
+      "kind": "adsb",
+      "status": "online"
+    },
+    {
+      "id": "DEMO-SRC-3",
+      "name": "Demo Filings Portal",
+      "tier": "T3",
+      "kind": "filings",
+      "status": "degraded"
+    },
+    {
+      "id": "DEMO-SRC-4",
+      "name": "Demo Imagery Provider",
+      "tier": "T1",
+      "kind": "imagery",
+      "status": "offline"
+    },
+    {
+      "id": "DEMO-SRC-5",
+      "name": "Demo OSINT Stream",
+      "tier": "T4",
+      "kind": "osint",
+      "status": "online"
+    }
+  ],
+  "/catalog": {
+    "version": "rlsm_layer_catalog_v0_1",
+    "generated_at": "2026-07-05T20:36:24Z",
+    "producer_module": "scripts.build_layer_catalog",
+    "binding": "labels_only",
+    "note": "Folder labels & visibility gate only — no geometry/coordinates bound. Every layer carries status=deferred until a later pins-pass wires it.",
+    "visibility_classes": {
+      "V3": {
+        "label": "Public / Shareable",
+        "rank": 3,
+        "access_default": "PUBLIC"
+      },
+      "V2": {
+        "label": "Restricted / Operational",
+        "rank": 2,
+        "access_default": "RESTRICTED"
+      },
+      "V1": {
+        "label": "Sensitive / Analytic",
+        "rank": 1,
+        "access_default": "OBSERVE_ONLY"
+      }
+    },
+    "families": [
+      {
+        "id": "admin_geographies",
+        "label": "Administrative Geographies",
+        "visibility": "V3",
+        "domain": "admin",
+        "layers": [
+          {
+            "layer_id": "municipios",
+            "label": "Municipios",
+            "status": "deferred",
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "tracts",
+            "label": "Tracts",
+            "status": "deferred",
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "places",
+            "label": "Places",
+            "status": "deferred",
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "barrios",
+            "label": "Barrios",
+            "status": "deferred",
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "puma",
+            "label": "PUMAs",
+            "status": "deferred",
+            "pipeline_wired": true
+          }
+        ]
+      },
+      {
+        "id": "airports",
+        "label": "Airports & Aerodromes",
+        "visibility": "V3",
+        "domain": "transportation",
+        "layers": [
+          {
+            "layer_id": "airports",
+            "label": "Airports",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "hydrology",
+        "label": "Hydrology",
+        "visibility": "V3",
+        "domain": "hydro",
+        "layers": [
+          {
+            "layer_id": "hydro_points_normalized",
+            "label": "Hydro Points Normalized",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "hydro_master_v3",
+            "label": "Hydro Master v3",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "nid_dams",
+            "label": "NID Dams",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "wetlands_nwi_prvi",
+            "label": "Wetlands NWI PRVI",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "utility_other",
+        "label": "Utility / Other",
+        "visibility": "V3",
+        "domain": "utility",
+        "layers": [
+          {
+            "layer_id": "mast",
+            "label": "Mast",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "pri_masts",
+            "label": "PRI Masts",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "petroleum_pipeline",
+        "label": "Petroleum & Pipeline",
+        "visibility": "V3",
+        "domain": "petroleum",
+        "layers": [
+          {
+            "layer_id": "petroleum_site",
+            "label": "Petroleum Site",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "petroleum_well",
+            "label": "Petroleum Well",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "pipeline",
+            "label": "Pipeline",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "pipeline_feature",
+            "label": "Pipeline Feature",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          }
+        ]
+      },
+      {
+        "id": "power_grid",
+        "label": "Power Grid",
+        "visibility": "V3",
+        "domain": "power",
+        "layers": [
+          {
+            "layer_id": "power_compensator",
+            "label": "Power Compensator",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "power_generator_point",
+            "label": "Power Generator Point",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "power_generator_polygon",
+            "label": "Power Generator Polygon",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "power_line",
+            "label": "Power Line",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "power_plant",
+            "label": "Power Plant",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "power_substation_point",
+            "label": "Power Substation Point",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "power_substation_polygon",
+            "label": "Power Substation Polygon",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "power_switch",
+            "label": "Power Switch",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "power_tower",
+            "label": "Power Tower",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "power_transformer",
+            "label": "Power Transformer",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "pri_power_generator_polygons",
+            "label": "PRI Power Generator Polygons",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "pri_power_lines",
+            "label": "PRI Power Lines",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "pri_power_plants",
+            "label": "PRI Power Plants",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "pri_power_towers",
+            "label": "PRI Power Towers",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "pri_substations",
+            "label": "PRI Substations",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "prepa_transmission_lines_2014",
+            "label": "PREPA Transmission Lines 2014",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "prepa_transmission_structures_2014",
+            "label": "PREPA Transmission Structures 2014",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "water_sewer",
+        "label": "Water & Sewer",
+        "visibility": "V3",
+        "domain": "water_sewer",
+        "layers": [
+          {
+            "layer_id": "pumping_station",
+            "label": "Pumping Station",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "wastewater_plant",
+            "label": "Wastewater Plant",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "water_reservoir",
+            "label": "Water Reservoir",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "water_tower_point",
+            "label": "Water Tower Point",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "water_tower_polygon",
+            "label": "Water Tower Polygon",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "water_treatment_plant",
+            "label": "Water Treatment Plant",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": true
+          },
+          {
+            "layer_id": "water_well_point",
+            "label": "Water Well Point",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "water_well_polygon",
+            "label": "Water Well Polygon",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "pri_pumping_stations",
+            "label": "PRI Pumping Stations",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "pri_wastewater_plants",
+            "label": "PRI Wastewater Plants",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "pri_water_reservoirs",
+            "label": "PRI Water Reservoirs",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "pri_water_treatment_plants",
+            "label": "PRI Water Treatment Plants",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "waterworks_master_v1",
+            "label": "Waterworks Master v1",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "telecom",
+        "label": "Telecom",
+        "visibility": "V3",
+        "domain": "telecom",
+        "layers": [
+          {
+            "layer_id": "telecom_building_point",
+            "label": "Telecom Building Point",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "telecom_building_polygon",
+            "label": "Telecom Building Polygon",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          },
+          {
+            "layer_id": "telecom_cable",
+            "label": "Telecom Cable",
+            "status": "deferred",
+            "pri_table": true,
+            "pipeline_wired": false
+          }
+        ]
+      },
+      {
+        "id": "industrial",
+        "label": "Industrial Sites",
+        "visibility": "V3",
+        "domain": "industrial",
+        "layers": [
+          {
+            "layer_id": "industrial_master",
+            "label": "Industrial Master",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "reference_gazetteer",
+        "label": "Reference / Gazetteer",
+        "visibility": "V3",
+        "domain": "reference",
+        "layers": [
+          {
+            "layer_id": "gazetteer_pr_domestic_names",
+            "label": "Gazetteer PR Domestic Names",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "civic_social",
+        "label": "Civic / Social Infrastructure",
+        "visibility": "V2",
+        "domain": "civic_social_infrastructure",
+        "layers": [
+          {
+            "layer_id": "civic_headstart_pr",
+            "label": "Head Start Service Locations",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "public_schools_all",
+            "label": "Public Schools (All)",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "landing_zones",
+        "label": "Landing Zones",
+        "visibility": "V2",
+        "domain": "lz",
+        "layers": [
+          {
+            "layer_id": "landing_zones_master",
+            "label": "Landing Zones Master",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "hangars_ramps",
+        "label": "Hangars & Ramps",
+        "visibility": "V2",
+        "domain": "aviation_facility",
+        "layers": [
+          {
+            "layer_id": "hangar_candidates",
+            "label": "Hangar Candidates",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "operational_sites",
+        "label": "Operational Sites",
+        "visibility": "V2",
+        "domain": "sites",
+        "layers": [
+          {
+            "layer_id": "sites",
+            "label": "Sites",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "fire_stations_consolidated",
+            "label": "Fire Stations Consolidated",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "flight_activity",
+        "label": "Flight Activity",
+        "visibility": "V2",
+        "domain": "flights",
+        "layers": [
+          {
+            "layer_id": "flights",
+            "label": "Flights",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "military_aviation",
+        "label": "Military & Aviation",
+        "visibility": "V2",
+        "domain": "military",
+        "layers": [
+          {
+            "layer_id": "military_aviation",
+            "label": "Military Aviation",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "public_safety",
+        "label": "Public Safety",
+        "visibility": "V2",
+        "domain": "public_safety",
+        "layers": [
+          {
+            "layer_id": "missing_persons_cases",
+            "label": "Missing Persons Cases",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "missing_persons_by_municipio",
+            "label": "Missing Persons by Municipio",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "ilap_constructs",
+        "label": "ILAP — Infrastructure-Linked Access Points",
+        "visibility": "V1",
+        "domain": "ilap",
+        "layers": [
+          {
+            "layer_id": "ilap_master_nodes",
+            "label": "ILAP Master Nodes",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "ilap_predictions",
+            "label": "ILAP Predictions",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "ilap_dem_anomalies",
+            "label": "ILAP DEM Anomalies",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "hydro_candidate_nodes",
+            "label": "Hydro Candidate Nodes",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "water_signals",
+            "label": "Water Signals",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "fic_osap_final_set_v3",
+            "label": "FIC OSAP Final Set v3",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "fic_osap_candidates_v2",
+            "label": "FIC OSAP Candidates v2",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "fic_osap_ilap_links_v4",
+            "label": "FIC OSAP ILAP Links v4",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "fic_osap_ilap_paths_v6",
+            "label": "FIC OSAP ILAP Paths v6",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "aasb_corridors",
+        "label": "AASB — Aerial Anomaly Surveillance Bands / Corridors",
+        "visibility": "V1",
+        "domain": "corridor",
+        "layers": [
+          {
+            "layer_id": "aasb_corridor_nodes",
+            "label": "AASB Corridor Nodes",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "corridors",
+            "label": "Corridors",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "corridor_index_v1",
+            "label": "Corridor Index v1",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "subsurface_corridors_master",
+            "label": "Subsurface Corridors Master",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "spiderweb_graph",
+        "label": "Spiderweb Hydro Graph",
+        "visibility": "V1",
+        "domain": "hydro_graph",
+        "layers": [
+          {
+            "layer_id": "spiderweb_graph_nodes_v5",
+            "label": "Spiderweb Graph Nodes v5",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "spiderweb_graph_edges_v5",
+            "label": "Spiderweb Graph Edges v5",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "consolidated_master_registry",
+            "label": "Consolidated Master POI Registry",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "subsurface_karst",
+        "label": "Subsurface / Karst",
+        "visibility": "V1",
+        "domain": "subsurface",
+        "layers": [
+          {
+            "layer_id": "karst_subsurface_nodes_v2",
+            "label": "Karst Subsurface Nodes v2",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "karst_subsurface_edges_v2",
+            "label": "Karst Subsurface Edges v2",
+            "status": "deferred"
+          }
+        ]
+      },
+      {
+        "id": "signal_anomaly",
+        "label": "Signal / Anomaly & Shadow",
+        "visibility": "V1",
+        "domain": "anomaly",
+        "layers": [
+          {
+            "layer_id": "anomalies",
+            "label": "Anomalies",
+            "status": "deferred"
+          },
+          {
+            "layer_id": "heatmap",
+            "label": "Heatmap",
+            "status": "deferred"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -347,3 +347,6 @@ reports/maintenance/
 desktop/.setup-complete
 outputs/dashboard_data.json
 desktop/.running
+
+# Generated demo/runtime SQLite DB (built by server/ingestion/seed_demo.py)
+server/priis.db

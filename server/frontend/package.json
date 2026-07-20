@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:export": "VITE_OFFLINE=1 vite build",
+    "build:export": "npm run snapshot && VITE_OFFLINE=1 vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "snapshot": "python3 ../../scripts/gen_snapshot.py"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
