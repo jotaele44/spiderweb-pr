@@ -55,9 +55,16 @@
       "puerto_rico_2017",
       "san_juan_19_prvd02_2015"
     ],
-    "coverage_status": "live_catalog_checked_2026-07-16: 7 of 8 PR-relevant DEMs resolved+validated on NGDC THREDDS regional (San Juan 2015 + six 1/3 arc-second MHW DEMs); PR-wide 2017 DEM not yet published",
+    "coverage_status": "live_catalog_checked_2026-07-16: 7 of 8 PR-relevant DEMs resolved+validated on NGDC THREDDS regional (San Juan 2015 + six 1/3 arc-second MHW DEMs); PR-wide 2017 DEM not yet published. 2026-07-20: PR-wide coverage added via NOAA Coastal LiDAR PDS CUDEM ninth arc-second (m9525, 2022), registered as puerto_rico_cudem_ninth_9525.",
     "coverage_percent_against_uploaded_snapshot": 100,
-    "coverage_percent_against_live_ncei_catalog": null
+    "coverage_percent_against_live_ncei_catalog": null,
+    "live_catalog_additions": [
+      {
+        "dataset_key": "puerto_rico_cudem_ninth_9525",
+        "note": "Beyond the uploaded snapshot universe; located in the NOAA Coastal LiDAR Public Data Set (not the NGDC THREDDS regional catalog). Does not change the snapshot ledger counts above.",
+        "added": "2026-07-20"
+      }
+    ]
   },
   "datasets": [
     {
@@ -327,6 +334,73 @@
         "live_catalog_result": "not_present_in_thredds_regional_catalog",
         "promotion_status": "planned_in_snapshot_live_status_pending"
       }
+    },
+    {
+      "dataset_key": "puerto_rico_cudem_ninth_9525",
+      "name": "Puerto Rico CUDEM (Ninth Arc-Second Topobathy)",
+      "year": 2022,
+      "status_in_snapshot": "not_in_uploaded_snapshot__located_via_noaa_coastal_lidar_pds_2026-07-20",
+      "primary": false,
+      "role": "pr_wide_base_layer",
+      "vertical_datum": "Puerto Rico Vertical Datum of 2002",
+      "horizontal_datum": "NAD83",
+      "horizontal_crs_epsg": 4269,
+      "spatial_resolution": "1/9 arc-second",
+      "resolution_meters_approx": 3.09,
+      "integrated_topobathy": true,
+      "format": "GeoTIFF",
+      "access_method": "AWS S3 (GeoTIFF tiles) + NOAA Coastal bulk download",
+      "source_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_ninth_Topobathy_PuertoRico_9525/index.html",
+      "s3_prefix": "s3://noaa-nos-coastal-lidar-pds/dem/NCEI_ninth_Topobathy_PuertoRico_9525/",
+      "url_list": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_ninth_Topobathy_PuertoRico_9525/urllist9525.txt",
+      "vrt": "NCEI_ninth_Topobathy_PuertoRico_EPSG-4269.vrt",
+      "tile_index": "tileindex_NCEI_ninth_Topobathy_PuertoRico.zip",
+      "tile_naming_pattern": "ncei19_n<lat>_w<lon>_2022v<version>.tif",
+      "tile_count": 25,
+      "download_size_approx": "4.7 GB",
+      "bounds_wgs84": {
+        "min_lat": 17.75,
+        "max_lat": 18.75,
+        "min_lon": -68.0,
+        "max_lon": -65.25
+      },
+      "bounds_note": "Native horizontal CRS is NAD83 (EPSG:4269); at this scale NAD83 and WGS84 bounds are equivalent to sub-meter. Values taken verbatim from provider metadata (cudem_ninth_pr_m9525_met_forHumans.html).",
+      "provenance": {
+        "provider": "NOAA NCEI / NOS Coastal LiDAR Public Data Set",
+        "dataset_id": "m9525",
+        "created": "2022-06-03",
+        "published": "2022-06-11",
+        "citation": "Amante et al. 2023 (CUDEM) - CUDEM_Amante_et_al_2023.pdf",
+        "metadata_files": [
+          "cudem_ninth_pr_m9525_met.xml",
+          "cudem_ninth_pr_m9525_met_forHumans.html"
+        ],
+        "resolved_from_live_catalog": "2026-07-20"
+      },
+      "selection_rationale": "PR-wide 1/9 arc-second CUDEM chosen over the 1/3 arc-second product (m9524): the ninth arc-second tier fully integrates land topography with bathymetry (the third arc-second tier is bathymetry-leaning), and its PRVD02 vertical datum matches the existing primary san_juan_19_prvd02_2015. Provides the PR-wide coverage that puerto_rico_2017 / NOAA_NCEI_DEM_GAP_001 was awaiting.",
+      "spiderweb_layers": [
+        "02_HYDROLOGY_KARST",
+        "05_AIRSPACE_MARITIME",
+        "10_REFERENCE"
+      ],
+      "allowed_inference": [
+        "coastal_bathy_topo_context",
+        "coastal_outlet_gradient_context",
+        "maritime_terrain_context",
+        "island_wide_terrain_context"
+      ],
+      "disallowed_inference_without_additional_evidence": [
+        "subsurface_access",
+        "covert_infrastructure",
+        "UAP_or_USO_claim_confirmation"
+      ],
+      "validation": {
+        "metadata_status": "registered_from_provider_metadata_2026-07-20",
+        "live_catalog_checked": "2026-07-20",
+        "raster_minmax_status": "pending_live_sample",
+        "nodata_status": "pending_live_sample",
+        "promotion_status": "source_metadata_registered"
+      }
     }
   ],
   "gaps": [
@@ -334,8 +408,9 @@
       "gap_id": "NOAA_NCEI_DEM_GAP_001",
       "description": "Live status of broader Puerto Rico 2017 DEM is unresolved from static snapshot.",
       "closure_action": "Query current NCEI/THREDDS catalog and update manifest.",
-      "status": "open",
-      "last_checked": "2026-07-16: PR-wide 2017 DEM not present in the NGDC THREDDS regional catalog; remains unpublished/unavailable."
+      "status": "mitigated_2026-07-20",
+      "last_checked": "2026-07-16: PR-wide 2017 DEM not present in the NGDC THREDDS regional catalog; remains unpublished/unavailable.",
+      "mitigation": "2026-07-20: PR-wide 1/9 arc-second coverage now provided by the NOAA Coastal LiDAR PDS CUDEM ninth arc-second product (m9525, 2022), registered as dataset puerto_rico_cudem_ninth_9525 (PRVD02 / NAD83, GeoTIFF via S3). The specific 2017 THREDDS-regional DEM remains unpublished, so the gap is mitigated (PR-wide coverage available) rather than fully closed against the original 2017 product."
     },
     {
       "gap_id": "NOAA_NCEI_DEM_GAP_002",
@@ -355,6 +430,13 @@
       "gap_id": "NOAA_NCEI_DEM_GAP_004",
       "description": "No derived coastal products are generated in this integration.",
       "closure_action": "Generate derivatives only after source raster validation passes."
+    },
+    {
+      "gap_id": "NOAA_NCEI_DEM_GAP_005",
+      "description": "CUDEM puerto_rico_cudem_ninth_9525 tiles are geographic (EPSG:4269, ~2.78e-5 deg pixels), but tools/pr_dem_one_tile_pilot.py and tools/pr_dem_batch_runner.py assume a projected metre-based CRS: the downsample factor (target_resolution_m / native transform unit), np.gradient slope, and pixel-area math all treat transform units as metres, so a ~0.25 deg tile collapses toward 1x1 (np.gradient fails) and non-collapsed runs yield degree-based slopes/areas.",
+      "closure_action": "Reproject CUDEM tiles to a metric CRS (e.g. UTM 19N / EPSG:32619) before routing them through the pr_dem_* tools, or make those tools CRS-aware. Fix is in the pr_dem tooling and out of scope for this source-registration change.",
+      "status": "open",
+      "raised": "2026-07-20"
     }
   ]
 }
