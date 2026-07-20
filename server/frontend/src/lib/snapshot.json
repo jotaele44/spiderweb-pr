@@ -1,7 +1,7 @@
 {
   "/health": {
     "status": "ok",
-    "db": "/home/user/spiderweb-pr/server/priis.db",
+    "db": "/tmp/priis-demo-snapshot-fxw6ltvr/priis_demo.db",
     "db_exists": true,
     "integrity_ok": true,
     "table_count": 10

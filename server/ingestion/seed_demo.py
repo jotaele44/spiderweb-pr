@@ -181,9 +181,10 @@ def _seed(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def main() -> None:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+def main(db_path: "Path | str | None" = None) -> None:
+    target = Path(db_path) if db_path else DB_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(target)
     try:
         conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
         migrations.run_all(conn)
@@ -193,7 +194,7 @@ def main() -> None:
         }
     finally:
         conn.close()
-    print(f"seeded {DB_PATH}  {counts}")
+    print(f"seeded {target}  {counts}")
 
 
 if __name__ == "__main__":
