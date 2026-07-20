@@ -58,13 +58,16 @@ def ensure_sites_geoid_columns(conn: sqlite3.Connection) -> dict[str, bool]:
     if "sites" not in _existing_tables(conn):
         # Fresh DB — schema_sqlite.sql will be applied separately. Nothing to
         # migrate yet; the schema file itself already defines the columns.
-        return {"municipio_geoid": False, "tract_geoid": False}
+        return {"municipio_geoid": False, "tract_geoid": False, "zcta_geoid": False}
     added = {
         "municipio_geoid": _add_column_if_missing(
             conn, "sites", "municipio_geoid", "TEXT"
         ),
         "tract_geoid": _add_column_if_missing(
             conn, "sites", "tract_geoid", "TEXT"
+        ),
+        "zcta_geoid": _add_column_if_missing(
+            conn, "sites", "zcta_geoid", "TEXT"
         ),
     }
     conn.commit()
