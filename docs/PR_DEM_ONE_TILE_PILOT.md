@@ -52,6 +52,21 @@ outputs/pr_dem_one_tile_pilot/pr_dem_one_tile_candidates.geojson
 outputs/pr_dem_one_tile_pilot/pr_dem_one_tile_manifest.json
 ```
 
+### CRS handling
+
+The downsample, slope, and pixel-area math assume the tile's `transform` units are
+**metres**. Geographic tiles — e.g. the NOAA CUDEM tiles in **EPSG:4269 (NAD83)** — are
+therefore **reprojected on the fly** to **NAD83 UTM** (EPSG:26919 / 26920, chosen from the
+tile centroid) via a `WarpedVRT` before that math; already-projected tiles are read
+unchanged. The manifest records `dem_metadata.source_crs`, `reprojected_to`, and
+`processing_crs`. Options:
+
+- `--target-crs EPSG:26920` — force a specific metric CRS instead of the `auto` UTM pick.
+- `--assume-source-crs EPSG:4269` — assume a CRS for tiles with no embedded CRS.
+- `--no-reproject` — process pixels in their native CRS (only safe for already-projected tiles).
+
+Requires the `dem` extra: `pip install -e ".[dem]"` (rasterio).
+
 ## 5. Verify output files exist and are non-empty
 
 ```bash
