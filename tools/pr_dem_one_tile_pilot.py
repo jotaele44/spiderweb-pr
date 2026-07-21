@@ -20,8 +20,10 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import rasterio
+from rasterio.crs import CRS
 from rasterio.enums import Resampling
 from rasterio.transform import Affine
+from rasterio.vrt import WarpedVRT
 from rasterio.warp import transform as crs_transform
 
 try:
@@ -71,25 +73,88 @@ def fill_nodata(arr: np.ndarray, nodata: Optional[float]) -> np.ndarray:
     return np.where(np.isfinite(data), data, float(np.nanmedian(data)))
 
 
-def read_dem(path: Path, target_resolution_m: float) -> Tuple[np.ndarray, Affine, str, Dict[str, object]]:
+def pick_utm_epsg(lon: float) -> int:
+    """NAD83 UTM EPSG code for a Puerto Rico longitude.
+
+    EPSG:269NN encodes NAD83 / UTM zone NN North (NN = ``26900 + zone``). For PR
+    this resolves to 26919 (zone 19N, west of -66 deg) or 26920 (zone 20N,
+    Vieques/Culebra and the eastern edge) — the two zones the geodata integrity
+    audit expects (``tools/pr_geodata_integrity_audit.py`` EXPECTED_DEM_CRS).
+    """
+
+    zone = int((lon + 180.0) / 6.0) + 1
+    return 26900 + zone
+
+
+def read_dem(
+    path: Path,
+    target_resolution_m: float,
+    *,
+    reproject: bool = True,
+    target_crs: str = "auto",
+    assume_source_crs: Optional[str] = None,
+) -> Tuple[np.ndarray, Affine, str, Dict[str, object]]:
+    """Read a DEM tile, downsampling to roughly ``target_resolution_m`` metres.
+
+    The downsample factor, slope, and pixel-area math all assume ``transform``
+    units are metres. A geographic tile (e.g. the EPSG:4269 NAD83 CUDEM) is
+    therefore reprojected on the fly to a metre-based CRS (NAD83 UTM, per
+    ``pick_utm_epsg``) via a WarpedVRT before that math runs; already-projected
+    tiles are read unchanged. Pass ``reproject=False`` to opt out.
+    """
+
     with rasterio.open(path) as src:
-        native = max(abs(float(src.transform.a)), abs(float(src.transform.e)))
-        scale = max(1.0, float(target_resolution_m) / native)
-        out_width = max(1, int(round(src.width / scale)))
-        out_height = max(1, int(round(src.height / scale)))
-        arr = src.read(1, out_shape=(out_height, out_width), resampling=Resampling.bilinear, masked=False)
-        transform = src.transform * Affine.scale(src.width / out_width, src.height / out_height)
-        crs = src.crs.to_string() if src.crs else "UNKNOWN"
+        source_crs = src.crs
+        if source_crs is None and assume_source_crs:
+            source_crs = CRS.from_user_input(assume_source_crs)
+        if source_crs is None:
+            raise SystemExit(
+                f"DEM tile has no CRS and --assume-source-crs was not given: {path}"
+            )
+
+        reprojected_to: Optional[str] = None
+        vrt: Optional[WarpedVRT] = None
+        try:
+            dataset: object = src
+            if reproject and source_crs.is_geographic:
+                if target_crs and target_crs != "auto":
+                    dst_crs = CRS.from_user_input(target_crs)
+                else:
+                    bounds = src.bounds
+                    center_lon = (float(bounds.left) + float(bounds.right)) / 2.0
+                    dst_crs = CRS.from_epsg(pick_utm_epsg(center_lon))
+                vrt = WarpedVRT(src, crs=dst_crs, resampling=Resampling.bilinear)
+                dataset = vrt
+                reprojected_to = dst_crs.to_string()
+
+            native = max(abs(float(dataset.transform.a)), abs(float(dataset.transform.e)))
+            scale = max(1.0, float(target_resolution_m) / native)
+            out_width = max(1, int(round(dataset.width / scale)))
+            out_height = max(1, int(round(dataset.height / scale)))
+            arr = dataset.read(
+                1, out_shape=(out_height, out_width), resampling=Resampling.bilinear, masked=False
+            )
+            transform = dataset.transform * Affine.scale(
+                dataset.width / out_width, dataset.height / out_height
+            )
+            crs = dataset.crs.to_string() if dataset.crs else "UNKNOWN"
+            nodata = dataset.nodata
+        finally:
+            if vrt is not None:
+                vrt.close()
+
         meta = {
             "source_width": src.width,
             "source_height": src.height,
-            "source_crs": crs,
+            "source_crs": source_crs.to_string(),
+            "reprojected_to": reprojected_to,
+            "processing_crs": crs,
             "output_width": out_width,
             "output_height": out_height,
             "output_resolution_x": abs(float(transform.a)),
             "output_resolution_y": abs(float(transform.e)),
         }
-        return fill_nodata(arr, src.nodata), transform, crs, meta
+        return fill_nodata(arr, nodata), transform, crs, meta
 
 
 def slope_deg(dem: np.ndarray, transform: Affine) -> np.ndarray:
@@ -247,6 +312,24 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--ring-pixels", type=int, default=5)
     p.add_argument("--tpi-window-pixels", type=int, default=21)
     p.add_argument("--max-candidates", type=int, default=500)
+    p.add_argument(
+        "--no-reproject",
+        dest="reproject",
+        action="store_false",
+        help="Do not reproject geographic tiles; process pixels in their native CRS.",
+    )
+    p.set_defaults(reproject=True)
+    p.add_argument(
+        "--target-crs",
+        default="auto",
+        help="Metre-based CRS to reproject geographic tiles to (e.g. EPSG:26919). "
+        "'auto' picks NAD83 UTM 19N/20N from the tile centroid.",
+    )
+    p.add_argument(
+        "--assume-source-crs",
+        default=None,
+        help="CRS to assume when a tile has no embedded CRS (e.g. EPSG:4269).",
+    )
     return p
 
 
@@ -258,7 +341,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not dem_tile.exists() or dem_tile.stat().st_size == 0:
         raise SystemExit(f"DEM tile missing or empty: {dem_tile}")
 
-    dem, transform, crs, meta = read_dem(dem_tile, args.target_resolution_m)
+    dem, transform, crs, meta = read_dem(
+        dem_tile,
+        args.target_resolution_m,
+        reproject=args.reproject,
+        target_crs=args.target_crs,
+        assume_source_crs=args.assume_source_crs,
+    )
     rows = extract_rows(dem, transform, crs, dem_tile, args)
 
     csv_path = output_dir / "pr_dem_one_tile_candidates.csv"

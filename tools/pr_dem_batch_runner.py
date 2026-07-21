@@ -167,7 +167,13 @@ def run_one_tile(repo_root: Path, tile_path: Path, output_dir: Path, args: argpa
         str(args.tpi_window_pixels),
         "--max-candidates",
         str(args.max_candidates_per_tile),
+        "--target-crs",
+        str(args.target_crs),
     ]
+    if not args.reproject:
+        cmd.append("--no-reproject")
+    if args.assume_source_crs:
+        cmd += ["--assume-source-crs", str(args.assume_source_crs)]
     proc = subprocess.run(cmd, text=True)
     return int(proc.returncode)
 
@@ -266,6 +272,24 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--ring-pixels", type=int, default=5)
     p.add_argument("--tpi-window-pixels", type=int, default=21)
     p.add_argument("--max-candidates-per-tile", type=int, default=500)
+    p.add_argument(
+        "--no-reproject",
+        dest="reproject",
+        action="store_false",
+        help="Forwarded to the pilot: do not reproject geographic tiles.",
+    )
+    p.set_defaults(reproject=True)
+    p.add_argument(
+        "--target-crs",
+        default="auto",
+        help="Forwarded to the pilot: metre-based CRS for geographic tiles "
+        "('auto' picks NAD83 UTM 19N/20N per tile).",
+    )
+    p.add_argument(
+        "--assume-source-crs",
+        default=None,
+        help="Forwarded to the pilot: CRS to assume when a tile has no embedded CRS.",
+    )
     return p
 
 

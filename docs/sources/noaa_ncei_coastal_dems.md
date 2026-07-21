@@ -86,15 +86,17 @@ manifest entry carries `source_url` / `s3_prefix` / `url_list` instead of an
 committed. Live raster QA (min/max, nodata) is still `pending_live_sample`, so the
 dataset sits at `source_metadata_registered` (not yet `source_raster_validated`).
 
-> **Reprojection required before terrain screening (GAP_005).** These CUDEM tiles are
-> **geographic — EPSG:4269 (NAD83), pixel size ≈ 2.78e-5° (1/9 arc-second)**. The
-> rasterio tile-screening tools (`tools/pr_dem_one_tile_pilot.py`,
-> `tools/pr_dem_batch_runner.py`) currently assume a **projected, metre-based** CRS:
-> they derive the downsample factor from `target_resolution_m / native` (a ~0.25° tile
-> collapses toward 1×1, so `np.gradient` fails), and compute slope and pixel area
-> directly from `src.transform` units. Downloaded CUDEM tiles must therefore be
-> **reprojected to a metric CRS** (e.g. UTM 19N / EPSG:32619) — or those tools made
-> CRS-aware — before being routed through this tooling. Tracked as `NOAA_NCEI_DEM_GAP_005`.
+> **CRS handling — automatic reprojection (GAP_005, resolved 2026-07-21).** These CUDEM
+> tiles are **geographic — EPSG:4269 (NAD83), pixel size ≈ 2.78e-5° (1/9 arc-second)**,
+> while the rasterio tile-screening tools assume a **projected, metre-based** CRS
+> (downsample factor `target_resolution_m / native`, `np.gradient` slope, pixel area from
+> `src.transform` units). `tools/pr_dem_one_tile_pilot.py` (`read_dem`) now **reprojects
+> geographic tiles on the fly** via a `WarpedVRT` to **NAD83 UTM** (`pick_utm_epsg` →
+> EPSG:26919 / 26920, matching the geodata integrity audit's `EXPECTED_DEM_CRS`) before
+> that math; already-projected tiles are read unchanged. Flags (also forwarded by
+> `pr_dem_batch_runner.py`): `--target-crs` (default `auto`), `--assume-source-crs` (for
+> tiles with no embedded CRS), and `--no-reproject` to opt out. Requires the `dem` extra
+> (`pip install -e ".[dem]"`, rasterio).
 
 **Higher-resolution alternative (future option, not adopted here):** the NOAA Data
 Access Viewer also lists raw LiDAR **point-cloud** collections for the PR area
@@ -175,7 +177,7 @@ python scripts/acquire/noaa_ncei_opendap.py \
 | `NOAA_NCEI_DEM_GAP_002` | PR regional DEM URLs other than San Juan are not yet resolved into direct OPeNDAP/NetCDF endpoints. | Resolve detail pages and register direct data URLs. | **Closed 2026-07-16** — all six MHW DEMs resolved + live-validated. |
 | `NOAA_NCEI_DEM_GAP_003` | San Juan `Band1 actual_range` contradiction not yet resolved. | Run live raster sampling/full minmax validation. | **Closed 2026-07-16** — live sample min/max confirms real terrain. |
 | `NOAA_NCEI_DEM_GAP_004` | No derived coastal products generated yet. | Build downstream products only after raster QA passes. | Open — source raster QA now passes; derivatives still not generated (out of scope). |
-| `NOAA_NCEI_DEM_GAP_005` | CUDEM `m9525` tiles are geographic (EPSG:4269); the `pr_dem_*` tile-screening tools assume a projected metre-based CRS (downsample factor, slope, pixel area). | Reproject tiles to a metric CRS (e.g. UTM 19N / EPSG:32619) before screening, or make the tools CRS-aware. | Open — flagged 2026-07-20 during CUDEM registration; fix is in the `pr_dem_*` tooling, out of scope for this source-registration change. |
+| `NOAA_NCEI_DEM_GAP_005` | CUDEM `m9525` tiles are geographic (EPSG:4269); the `pr_dem_*` tile-screening tools assume a projected metre-based CRS (downsample factor, slope, pixel area). | Reproject tiles to a metric CRS (NAD83 UTM 19N/20N) before screening, or make the tools CRS-aware. | **Closed 2026-07-21** — `pr_dem_one_tile_pilot.py` auto-reprojects geographic tiles to NAD83 UTM via `WarpedVRT`; batch runner forwards `--target-crs`/`--assume-source-crs`/`--no-reproject`; rasterio added to the `dem` extra; regression tests in `tests/test_pr_dem_reproject.py`. |
 
 ## Completion state
 
