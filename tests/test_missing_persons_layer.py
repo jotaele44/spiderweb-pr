@@ -275,6 +275,74 @@ def test_municipio_aggregate_conservation_accounting(emitted) -> None:
     assert f"{assigned} of {in_pr} in-PR cases assigned" in muni_fc["meta"]["notes"]
 
 
+# ---------------------------------------------------------------- consolidation
+
+@pytest.fixture
+def consolidate_module():
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    import consolidate_missing_persons
+    return consolidate_missing_persons
+
+
+def _write_canonical(path: Path, rows: list[dict]) -> None:
+    from scripts._harvest_base import CANONICAL_COLUMNS
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=CANONICAL_COLUMNS)
+        w.writeheader()
+        for r in rows:
+            w.writerow({c: r.get(c, "") for c in CANONICAL_COLUMNS})
+
+
+def test_consolidate_merges_sources_and_dedups_within_source(tmp_path, snapshot, consolidate_module):
+    from scripts import namus_harvest
+
+    sources = tmp_path / "sources"
+    # NamUs canonical via the real harvester.
+    ns = sources / "namus" / "2026-06-11"
+    ns.mkdir(parents=True)
+    shutil.copy(FIXTURE_CSV, ns / "namus_mp_pr.csv")
+    namus_harvest.harvest(ns)
+
+    # A PRPB source canonical with a within-source duplicate case_id_hash.
+    row = {"case_id_hash": "amber0001", "source_id": "prpb_alertas_amber", "status": "active",
+           "last_seen_lat": "18.2", "last_seen_lon": "-66.1", "snapshot_date": "2026-06-12"}
+    _write_canonical(
+        sources / "prpb_alertas_amber" / "2026-06-12" / "prpb_alertas_amber_pr_canonical.csv",
+        [row, dict(row)],  # duplicate collapses
+    )
+
+    rows, per_source = consolidate_module.consolidate(sources)
+    src_ids = {r["source_id"] for r in rows}
+    assert {"namus", "prpb_alertas_amber"} <= src_ids
+    assert per_source["prpb_alertas_amber"] == 1  # duplicate deduped within source
+    assert per_source["namus"] > 0
+
+    out = consolidate_module.write_consolidated(rows, sources / "_consolidated" / "2026-06-12")
+    assert out.name == "missing_persons_pr_canonical.csv"
+    # Header is exactly the canonical contract.
+    with out.open(encoding="utf-8") as fh:
+        header = next(csv.reader(fh))
+    from scripts._harvest_base import CANONICAL_COLUMNS
+    assert header == CANONICAL_COLUMNS
+
+
+def test_populate_prefers_consolidated_over_namus(tmp_path, populate_module):
+    sources = tmp_path / "sources"
+    _write_canonical(
+        sources / "namus" / "2026-06-11" / "namus_mp_pr_canonical.csv",
+        [{"case_id_hash": "n1", "source_id": "namus", "snapshot_date": "2026-06-11"}],
+    )
+    # No consolidated yet → falls back to NamUs.
+    assert populate_module._latest_consolidated_canonical(sources) is None
+    _write_canonical(
+        sources / "_consolidated" / "2026-06-12" / "missing_persons_pr_canonical.csv",
+        [{"case_id_hash": "c1", "source_id": "namus", "snapshot_date": "2026-06-12"}],
+    )
+    got = populate_module._latest_consolidated_canonical(sources)
+    assert got is not None and got.name == "missing_persons_pr_canonical.csv"
+
+
 def test_municipio_aggregate_surfaces_unassigned(tmp_path: Path, populate_module, capsys) -> None:
     """An in-PR case that falls in no municipio polygon (ocean point inside the
     bbox) is surfaced as unassigned, not silently dropped from the aggregate."""

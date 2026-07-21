@@ -343,9 +343,11 @@ families:
   - layer_id: missing_persons_cases
     label: Missing Persons Cases
     status: deferred
+    pipeline_wired: true
   - layer_id: missing_persons_by_municipio
     label: Missing Persons by Municipio
     status: deferred
+    pipeline_wired: true
 - id: ilap_constructs
   label: ILAP — Infrastructure-Linked Access Points
   visibility: V1
