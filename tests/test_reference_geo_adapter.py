@@ -56,6 +56,49 @@ def test_build_parser_defaults():
     assert args.dry_run is False
 
 
+def _poly(oid, wtype):
+    return {
+        "type": "Feature",
+        "properties": {
+            "Wetlands.OBJECTID": oid, "Wetlands.ATTRIBUTE": "X",
+            "Wetlands.WETLAND_TYPE": wtype, "Wetlands.ACRES": 1.0,
+        },
+        "geometry": {"type": "Polygon", "coordinates": [
+            [[-66.1, 18.4], [-66.09, 18.4], [-66.09, 18.41], [-66.1, 18.41], [-66.1, 18.4]]
+        ]},
+    }
+
+
+def test_simplify_polygon_rounds_and_drops_degenerate():
+    geom = {"type": "Polygon", "coordinates": [
+        [[-66.123456, 18.987654], [-66.09, 18.4], [-66.09, 18.41], [-66.123456, 18.987654]]
+    ]}
+    out = m._simplify_polygon(geom, 0.0001)
+    assert out is None or out["type"] == "Polygon"
+    # tol<=0 → plain rounding, geometry preserved
+    rounded = m._simplify_polygon(geom, 0)
+    assert rounded["coordinates"][0][0] == [-66.12346, 18.98765]
+    assert m._simplify_polygon(None, 0.0001) is None
+
+
+def test_fetch_nwi_drops_deepwater_by_default(monkeypatch):
+    def fake_query(cell, offset, timeout):
+        return [_poly(1, "Freshwater Emergent Wetland"),
+                _poly(2, m.NWI_DEEPWATER_TYPE)] if offset == 0 else []
+    monkeypatch.setattr(m, "_nwi_query", fake_query)
+
+    feats, meta = m.fetch_nwi(Path("/tmp"), timeout=1, tile_deg=0.1,
+                              bbox=(-66.1, -66.0, 18.4, 18.5))
+    assert [f["properties"]["objectid"] for f in feats] == [1]  # deepwater dropped
+    assert meta["dropped_deepwater"] == 1
+    assert meta["include_deepwater"] is False
+
+    feats2, meta2 = m.fetch_nwi(Path("/tmp"), timeout=1, include_deepwater=True,
+                                tile_deg=0.1, bbox=(-66.1, -66.0, 18.4, 18.5))
+    assert {f["properties"]["objectid"] for f in feats2} == {1, 2}
+    assert meta2["dropped_deepwater"] == 0
+
+
 @pytest.mark.integration
 def test_nid_fetch_live(tmp_path):
     feats, meta = m.fetch_nid(tmp_path, timeout=200)

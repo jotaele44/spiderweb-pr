@@ -20,11 +20,15 @@ The GNIS/NWI download systems moved from their older direct-download URLs (the
 old `geonames.usgs.gov` state zip and `fws.gov/wetlands/Data/State-Downloads`
 paths are now 503/404); the endpoints above are the current live locations.
 
-**NWI size caveat:** the full PR NWI layer is ~16.5k polygons and the raw
-GeoJSON is large (~110 MB, dominated by very large offshore
-Estuarine/Marine-Deepwater polygons). It is a git-ignored runtime artifact;
-before wiring it into the dashboard it should be simplified and/or vector-tiled
-(and likely filtered to true wetland classes) — tracked as a serving follow-up.
+**NWI serving size:** the raw NWI layer is ~16.5k polygons and huge (~110 MB),
+dominated by very large offshore *Estuarine and Marine Deepwater* polygons. The
+adapter therefore, by default, **drops the deepwater class** and **topologically
+simplifies** each kept polygon (`shapely`, ~0.0001° ≈ 11 m) on top of 5-dp
+coordinate rounding — an ~89% size reduction on coastal samples, bringing the
+served layer well under ~20 MB while keeping the true wetland footprints. Opt out
+with `--nwi-include-deepwater` and tune with `--nwi-simplify-tol` (0 disables).
+The `wetlands_nwi_prvi` manifest records `dropped_deepwater`, `simplify_tol`, and
+`include_deepwater`.
 
 ## Scope note
 
