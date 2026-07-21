@@ -116,6 +116,7 @@ def read_dem(
         vrt: Optional[WarpedVRT] = None
         try:
             dataset: object = src
+            effective_crs = source_crs
             if reproject and source_crs.is_geographic:
                 if target_crs and target_crs != "auto":
                     dst_crs = CRS.from_user_input(target_crs)
@@ -123,8 +124,13 @@ def read_dem(
                     bounds = src.bounds
                     center_lon = (float(bounds.left) + float(bounds.right)) / 2.0
                     dst_crs = CRS.from_epsg(pick_utm_epsg(center_lon))
-                vrt = WarpedVRT(src, crs=dst_crs, resampling=Resampling.bilinear)
+                # Pass src_crs explicitly so an --assume-source-crs tile (whose
+                # src.crs is None) still has a source CRS to warp from.
+                vrt = WarpedVRT(
+                    src, src_crs=source_crs, crs=dst_crs, resampling=Resampling.bilinear
+                )
                 dataset = vrt
+                effective_crs = dst_crs
                 reprojected_to = dst_crs.to_string()
 
             native = max(abs(float(dataset.transform.a)), abs(float(dataset.transform.e)))
@@ -137,7 +143,9 @@ def read_dem(
             transform = dataset.transform * Affine.scale(
                 dataset.width / out_width, dataset.height / out_height
             )
-            crs = dataset.crs.to_string() if dataset.crs else "UNKNOWN"
+            # Use the effective source/target CRS, not dataset.crs — the latter is
+            # None for a CRS-less tile read with --assume-source-crs.
+            crs = effective_crs.to_string()
             nodata = dataset.nodata
         finally:
             if vrt is not None:

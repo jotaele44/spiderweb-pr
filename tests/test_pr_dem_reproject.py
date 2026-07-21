@@ -130,6 +130,31 @@ def test_reprojected_tile_yields_metre_scale_candidates(tmp_path: Path) -> None:
     assert top["lon"] is not None and -67.5 < top["lon"] < -65.0
 
 
+def test_assume_source_crs_recovers_crsless_tile(tmp_path: Path) -> None:
+    # A GeoTIFF with NO embedded CRS + degree spacing: --assume-source-crs must
+    # let the WarpedVRT reproject it (src_crs is threaded through, not just a local).
+    data = _mesa_dem()
+    transform = from_origin(-66.6, 18.42, 1e-4, 1e-4)
+    tile = tmp_path / "dem_no_crs.tif"
+    with rasterio.open(
+        tile, "w", driver="GTiff", height=data.shape[0], width=data.shape[1],
+        count=1, dtype=data.dtype, transform=transform,  # no crs=
+    ) as dst:
+        dst.write(data, 1)
+
+    with rasterio.open(tile) as chk:
+        assert chk.crs is None  # precondition: genuinely CRS-less
+
+    dem, out_transform, crs, meta = pilot.read_dem(
+        tile, target_resolution_m=5.0, assume_source_crs="EPSG:4269"
+    )
+    assert meta["source_crs"] == "EPSG:4269"
+    assert meta["reprojected_to"] is not None and meta["reprojected_to"].startswith("EPSG:269")
+    assert crs.startswith("EPSG:269")
+    assert 1.0 < abs(out_transform.a) < 60.0
+    assert meta["output_width"] > 10 and meta["output_height"] > 10
+
+
 def test_projected_tile_passes_through_unchanged(tmp_path: Path) -> None:
     # A 5 m NAD83 UTM 19N tile is already metric: no reprojection, math works.
     data = _mesa_dem()
