@@ -35,9 +35,9 @@ def test_all_four_streams_present(streams):
 
 def test_expected_counts(streams):
     # 364 real USGS metallic-occurrence points; 1 shared USGS source +
-    # 55 WIRED layer-catalog references.
+    # 57 WIRED layer-catalog references.
     assert len(streams["observations"]) == 364
-    assert len(streams["sources"]) == 56
+    assert len(streams["sources"]) == 58
 
 
 def test_no_row_is_synthetic(streams):
@@ -86,7 +86,7 @@ def test_usgs_observations_reference_one_shared_source(streams):
 
 def test_layer_catalog_sources_are_low_confidence_with_no_observation(streams):
     layer_sources = [r for r in streams["sources"] if r["kind"] == "gis_layer_reference"]
-    assert len(layer_sources) == 55
+    assert len(layer_sources) == 57
     for src in layer_sources:
         # T3 evidence_tier -> a documented score under the 0.5 "Low" boundary; these are
         # catalog references, not observed records, and should read that way downstream.
@@ -117,7 +117,7 @@ def test_merges_with_existing_real_dir(tmp_path):
     assert pre_existing_obs in merged["observations"]
     assert pre_existing_src in merged["sources"]
     assert len(merged["observations"]) == 1 + 364
-    assert len(merged["sources"]) == 1 + 56
+    assert len(merged["sources"]) == 1 + 58
 
 
 def test_rerun_against_own_output_is_idempotent(tmp_path):
@@ -146,12 +146,12 @@ def test_rerun_against_own_output_is_idempotent(tmp_path):
 
     second = build_streams(real_dir=tmp_path)
 
-    # This emitter's own rows: 364 observations + 56 sources (1 usgs source + 55 layer
+    # This emitter's own rows: 364 observations + 58 sources (1 usgs source + 57 layer
     # sources), unchanged and un-duplicated across the rerun.
     assert len(first["observations"]) == 1 + 364
-    assert len(first["sources"]) == 1 + 56
+    assert len(first["sources"]) == 1 + 58
     assert len(second["observations"]) == 1 + 364
-    assert len(second["sources"]) == 1 + 56
+    assert len(second["sources"]) == 1 + 58
 
     # The unrelated pre-existing rows (owned by some other emitter) must still be present,
     # exactly once, untouched by either run.

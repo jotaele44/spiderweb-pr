@@ -10,6 +10,17 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Missing-persons layers wired + multi-source consolidation:** promoted
+  `missing_persons_cases` + `missing_persons_by_municipio` to `WIRED` (the
+  NamUs producer/emitter and its 15-test contract already existed), and added
+  `scripts/consolidate_missing_persons.py` to merge the landed per-source
+  redacted canonicals (NamUs + PRPB Amber/Rosa/Silver/Ashanti + Desaparecidos —
+  all sharing `_harvest_base.CANONICAL_COLUMNS`) into a combined
+  `data/sources/_consolidated/<date>/missing_persons_pr_canonical.csv`.
+  `populate_dataset_layers.main()` now prefers the consolidated canonical over
+  NamUs-only. Concat + within-source dedup by `case_id_hash`; cross-source
+  identity linkage left for a later pass; raw PII stays git-ignored and only the
+  municipio aggregate is federation-safe (`docs/DATA_POLICY.md`).
 - **Reproducible live-source adapters for reference geographies:** added
   `server/ingestion/ingest_reference_geo.py`, fetching `nid_dams` (USACE National
   Inventory of Dams API), `gazetteer_pr_domestic_names` (USGS GNIS Domestic Names
