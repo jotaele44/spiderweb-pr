@@ -33,8 +33,11 @@ jobs:
           cache: pip
       - name: pip-audit (advisory)
         run: |
-          pip install pip-audit
-          pip install -e ".[airspace,earthgpt,server]"
+          # PRII_FETCH_HUB: ensure shared federation libs resolve
+          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system pip-audit
+          uv pip install --system -e ".[airspace,earthgpt,server]"
           pip-audit --progress-spinner off || true
 
   # ── Lint + type check (ruff + black + mypy) on a curated allowlist ──────────
@@ -56,7 +59,11 @@ jobs:
         # Pin via constraints.txt (numpy==2.4.6 etc.) for a reproducible lint
         # environment. Without it, pip floats to numpy>=2.5 whose typeshed stubs
         # use PEP 695 `type` statements that mypy (python_version 3.11) rejects.
-        run: pip install -c constraints.txt -e ".[dev]"
+        run: |
+          # PRII_FETCH_HUB: ensure shared federation libs resolve
+          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[dev]"
 
       - name: Lint + type-check (curated allowlist)
         run: |
@@ -84,7 +91,11 @@ jobs:
           cache: pip
 
       - name: Install package (airspace + earthgpt + server extras)
-        run: pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
+        run: |
+          # PRII_FETCH_HUB: ensure shared federation libs resolve
+          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
 
       - name: Syntax check all Python modules
         run: find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
@@ -187,7 +198,11 @@ jobs:
           cache: pip
 
       - name: Install package (airspace + earthgpt extras)
-        run: pip install -e ".[airspace,earthgpt]"
+        run: |
+          # PRII_FETCH_HUB: ensure shared federation libs resolve
+          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -e ".[airspace,earthgpt]"
 
       - name: Release gate (skip-tests + demo mode, against empty DB)
         # --skip-tests because the `test` job above already ran the full suite;
@@ -221,7 +236,11 @@ jobs:
           cache: pip
 
       - name: Install GEBCO dependencies (gebco extra)
-        run: pip install -e ".[gebco,dev]"
+        run: |
+          # PRII_FETCH_HUB: ensure shared federation libs resolve
+          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -e ".[gebco,dev]"
 
       - name: Run GEBCO test suite (39 tests)
         run: python -m pytest tests/test_io.py tests/test_terrain.py -v --tb=short
@@ -246,7 +265,11 @@ jobs:
           cache: pip
 
       - name: Install package with the ${{ matrix.extra }} extra
-        run: pip install -e ".[${{ matrix.extra }}]"
+        run: |
+          # PRII_FETCH_HUB: ensure shared federation libs resolve
+          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -e ".[${{ matrix.extra }}]"
 
       - name: Import smoke for ${{ matrix.extra }}
         env:
