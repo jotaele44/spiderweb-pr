@@ -20,6 +20,10 @@ dependencies = [
     "shapely>=2.1,<3",
     "scikit-image>=0.26,<1",
     "openpyxl>=3.1,<4",
+    # Bridge runtime: the default `--ingest-skywatcher` entry point validates
+    # Skywatcher packages against schemas/spiderweb_bridge.schema.json, so
+    # jsonschema is a base (not optional) dependency.
+    "jsonschema>=4.17,<5",
     # Shared maintenance core (ADR 0001 Phase 3, thehub-pr). Pinned to a commit
     # SHA, not a branch — bump deliberately, one line, one PR.
     "prii-maintenance @ git+https://github.com/jotaele44/thehub-pr.git@3c9e51e3de406f8455605a06fabd4823452d9b63#subdirectory=packages/prii_maintenance",
@@ -41,7 +45,6 @@ dependencies = [
 # schema validation (jsonschema) and columnar export (pyarrow) for the retained
 # downstream/bridge paths.
 airspace = [
-    "jsonschema>=4.17,<5",
     "pyarrow>=14.0",
     "PyYAML>=6.0,<7",
 ]

@@ -81,12 +81,43 @@ def load_schema() -> Dict[str, Any]:
     return json.loads(BRIDGE_SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
+def _iso_ok(value: Any) -> bool:
+    if value is None:
+        return True
+    if not isinstance(value, str):
+        return False
+    try:
+        from datetime import datetime
+
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return True
+    except ValueError:
+        return False
+
+
+def _datetime_problems(record: Dict[str, Any]) -> List[str]:
+    """Deterministic ISO-8601 checks (jsonschema `format` is advisory and needs a
+    backing lib, so timing fields are verified explicitly)."""
+    problems: List[str] = []
+    if not _iso_ok(record.get("generated_at_utc")):
+        problems.append("generated_at_utc: not an ISO-8601 datetime")
+    interval = record.get("validated_time_interval") or {}
+    for k in ("start", "end"):
+        if not _iso_ok(interval.get(k)):
+            problems.append(f"validated_time_interval.{k}: not an ISO-8601 datetime")
+    return problems
+
+
 def validate_record(record: Dict[str, Any], schema: Optional[Dict[str, Any]] = None) -> List[str]:
     """Return a list of validation errors for one bridge record (empty == valid)."""
     from jsonschema import Draft202012Validator  # lazy: declared dependency
 
     schema = schema or load_schema()
-    errors = [f"{list(e.path)}: {e.message}" for e in Draft202012Validator(schema).iter_errors(record)]
+    # format_checker enables `format` assertions where a backing lib exists;
+    # _datetime_problems guarantees date-time enforcement regardless.
+    validator = Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
+    errors = [f"{list(e.path)}: {e.message}" for e in validator.iter_errors(record)]
+    errors += _datetime_problems(record)
     if _has_prohibited_label(record):
         errors.append("prohibited terminal-accept label present")
     return errors
@@ -106,19 +137,49 @@ def _has_prohibited_label(record: Dict[str, Any]) -> bool:
 
 
 def read_package(package_dir: Path) -> List[Dict[str, Any]]:
-    """Read bridge records from a hub-canonical package directory."""
+    """Read bridge records from a hub-canonical package directory.
+
+    Requires the package `manifest.json` and verifies its identity/counts against
+    the records — so a hand-assembled or mixed-`export_id` JSONL is rejected
+    rather than silently accepted as a canonical Skywatcher package.
+    """
     package_dir = Path(package_dir)
     records_path = package_dir / "bridge_records.jsonl"
+    manifest_path = package_dir / "manifest.json"
     if not records_path.is_file():
         raise BridgeValidationError(
             f"package missing bridge_records.jsonl: {records_path}. "
             f"Expected a Skywatcher --export-spiderweb package directory."
         )
+    if not manifest_path.is_file():
+        raise BridgeValidationError(
+            f"package missing manifest.json: {manifest_path}. "
+            f"A hub-canonical Skywatcher package must include its manifest."
+        )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
     records: List[Dict[str, Any]] = []
     for line in records_path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line:
             records.append(json.loads(line))
+
+    # Verify the manifest's declared count matches the records present.
+    declared = (manifest.get("record_counts") or {}).get("flights")
+    if declared is not None and declared != len(records):
+        raise BridgeValidationError(
+            f"manifest record_counts.flights={declared} != {len(records)} records present"
+        )
+    # Verify every record belongs to the manifest's package (single export_id).
+    manifest_export_id = manifest.get("export_id")
+    if manifest_export_id:
+        # Only records that declare an export_id are checked here; records
+        # missing it fail per-record schema validation downstream.
+        stray = {r.get("export_id") for r in records if r.get("export_id")} - {manifest_export_id}
+        if stray:
+            raise BridgeValidationError(
+                f"records carry export_id(s) {sorted(stray)} not matching manifest {manifest_export_id!r}"
+            )
     return records
 
 

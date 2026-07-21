@@ -86,3 +86,23 @@ def test_missing_package_raises(tmp_path):
     import pytest
     with pytest.raises(bridge.BridgeValidationError):
         bridge.ingest_package(tmp_path / "does_not_exist", str(tmp_path / "sw.db"))
+
+
+def test_missing_manifest_raises(tmp_path):
+    import pytest
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "bridge_records.jsonl").write_text(json.dumps(_valid_record()) + "\n")
+    with pytest.raises(bridge.BridgeValidationError):
+        bridge.ingest_package(pkg, str(tmp_path / "sw.db"))
+
+
+def test_rejects_bad_datetime(tmp_path):
+    pkg = tmp_path / "pkg"
+    rec = _valid_record()
+    rec["validated_time_interval"] = {"start": "not-a-date", "end": None}
+    _write_package(pkg, [rec])
+    summary = bridge.ingest_package(pkg, str(tmp_path / "sw.db"))
+    assert summary["ingested"] == 0
+    assert summary["rejected"] == 1
+    assert any("datetime" in e for e in summary["rejects"][0]["errors"])
