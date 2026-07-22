@@ -97,9 +97,15 @@ geo = [
     "pyogrio>=0.9,<1",
     "requests>=2.31.0,<3",
 ]
+# Raster DEM terrain-screening tooling (tools/pr_dem_*). rasterio drives tile
+# read, downsample, and on-the-fly reprojection of geographic (EPSG:4269) DEMs
+# to NAD83 UTM. 1.4+ for numpy-2 compatibility (base pins numpy>=2.4).
+dem = [
+    "rasterio>=1.4,<2",
+]
 # Convenience union of every runtime subsystem (gebco is already in base).
 all = [
-    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo]",
+    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo,dem]",
 ]
 dev = [
     "pytest>=9.0.2,<10",

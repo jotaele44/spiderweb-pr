@@ -46,15 +46,16 @@ def test_ensure_sites_geoid_columns_is_idempotent(tmp_path):
     )
 
     first = ensure_sites_geoid_columns(conn)
-    assert first == {"municipio_geoid": True, "tract_geoid": True}
+    assert first == {"municipio_geoid": True, "tract_geoid": True, "zcta_geoid": True}
 
     second = ensure_sites_geoid_columns(conn)
-    assert second == {"municipio_geoid": False, "tract_geoid": False}
+    assert second == {"municipio_geoid": False, "tract_geoid": False, "zcta_geoid": False}
 
     # Verify the columns actually exist after migration.
     cols = {r[1] for r in conn.execute("PRAGMA table_info(sites)")}
     assert "municipio_geoid" in cols
     assert "tract_geoid" in cols
+    assert "zcta_geoid" in cols
 
     conn.close()
 
@@ -66,7 +67,7 @@ def test_ensure_sites_geoid_columns_handles_fresh_db(tmp_path):
     db_path = tmp_path / "empty.db"
     conn = sqlite3.connect(db_path)
     result = ensure_sites_geoid_columns(conn)
-    assert result == {"municipio_geoid": False, "tract_geoid": False}
+    assert result == {"municipio_geoid": False, "tract_geoid": False, "zcta_geoid": False}
     conn.close()
 
 
