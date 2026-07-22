@@ -1,32 +1,39 @@
-"""Terrain-elevation lookup hook — stub interface (T3-30 / T5-45).
+"""Terrain-elevation lookup hook (T3-30 / T5-45).
 
 This module defines the canonical interface for terrain-context classification.
-All pipeline code calls ``get_terrain_context()`` exclusively; real DEM-backed
-implementations replace only this module's body.
+All pipeline code calls ``get_terrain_context()`` exclusively.
 
-Stub contract
--------------
+Contract
+--------
 Returns one of the following string labels:
 
   'urban'     — inside a known metro urban bounding box (SJU, Ponce, Mayagüez)
-  'coastal'   — lon ≤ PR_LON_WEST+0.1 or lon ≥ PR_LON_EAST-0.1 and lat in PR
-  'inland'    — on-island, not urban, not coastal
-  'offshore'  — outside Puerto Rico bounding box
+  'coastal'   — near sea level (DEM) or lon on the island fringe (fallback)
+  'inland'    — on-island, elevated, not urban
+  'offshore'  — submerged (DEM) or outside the Puerto Rico latitude band
   'unknown'   — coordinates missing or unparseable
 
-Upgrade path
-------------
-To wire in the GEBCO/SRTM DEM:
-
-1. Install the ``gebco`` extra: ``pip install -e ".[gebco]"``
-2. Call ``gebco.terrain.classify_point(lat, lon)`` in the function body below,
-   returning its 'terrain_class' value (same vocabulary).
-3. Remove or re-purpose the bounding-box fallback.
-
-The interface itself must not change — callers depend on the five-value enum above.
+DEM-backed classification
+-------------------------
+When a GEBCO NetCDF file is available — path in the ``SPIDERWEB_GEBCO_NC``
+environment variable — the coastal/inland/offshore distinction is derived from
+actual GEBCO elevation via :func:`gebco.terrain.classify_point`. The ``urban``
+overlay (a land-use classification, not derivable from elevation) is always
+applied first, and if no DEM is configured/available the original bounding-box
+heuristic is used. Install the DEM stack with ``pip install -e ".[gebco]"`` and
+point ``SPIDERWEB_GEBCO_NC`` at ``GEBCO_2023.nc``. The five-value vocabulary
+above is stable — callers depend on it.
 """
 
 from __future__ import annotations
+
+import os
+
+# Environment variable pointing at a GEBCO_2023.nc (or compatible) NetCDF file.
+_GEBCO_ENV = "SPIDERWEB_GEBCO_NC"
+
+# Cache of opened GEBCO datasets, keyed by resolved path (None = load failed).
+_gebco_ds_cache: dict[str, object | None] = {}
 
 # Puerto Rico bounding box constants (shared with mbil.py).
 # Latitude range is slightly generous so coastal/border points don't get
@@ -46,11 +53,34 @@ _URBAN_BOXES = (
 )
 
 
+def _get_gebco_dataset():
+    """Return an open GEBCO dataset if ``SPIDERWEB_GEBCO_NC`` points at a file.
+
+    ``xarray`` / :func:`gebco.io.open_gebco` are imported lazily so this module
+    has no hard dependency on the DEM stack; returns ``None`` when the env var is
+    unset, the file is missing, or the open fails. Opened datasets are cached by
+    path so the file is not re-read per call.
+    """
+    path = os.environ.get(_GEBCO_ENV)
+    if not path or not os.path.isfile(path):
+        return None
+    if path not in _gebco_ds_cache:
+        try:
+            from gebco.io import open_gebco
+
+            _gebco_ds_cache[path] = open_gebco(path)
+        except Exception:
+            _gebco_ds_cache[path] = None
+    return _gebco_ds_cache[path]
+
+
 def get_terrain_context(lat: float, lon: float) -> str:
     """Return the terrain context label for the given point.
 
-    This is the canonical hook. Replace the body when a real DEM is available;
-    the caller contract (five-label vocabulary above) must remain stable.
+    Uses GEBCO elevation for the coastal/inland/offshore distinction when a DEM
+    is configured (see module docstring); otherwise falls back to the
+    bounding-box heuristic. The caller contract (five-label vocabulary above) is
+    stable.
 
     Args:
         lat: Latitude in decimal degrees (WGS-84).
@@ -70,14 +100,27 @@ def get_terrain_context(lat: float, lon: float) -> str:
     if not (_PR_LAT_MIN <= lat <= _PR_LAT_MAX):
         return "offshore"
 
-    # Urban metro check before coastal so metro-edge points stay 'urban'.
+    # Urban metro check first — a land-use overlay, not derivable from elevation,
+    # so metro-edge points stay 'urban' regardless of the DEM.
     for lat_min, lat_max, lon_min, lon_max in _URBAN_BOXES:
         if lat_min <= lat <= lat_max and lon_min <= lon <= lon_max:
             return "urban"
 
-    # Points outside the island's lon range but still in-lat are treated as
-    # 'coastal' (sea approach / offshore island fringe), matching the original
-    # bbox-based classifier in readiness/spiderweb_intake.py.
+    # DEM-backed classification when a GEBCO file is configured and loadable.
+    dataset = _get_gebco_dataset()
+    if dataset is not None:
+        try:
+            from gebco.terrain import classify_point
+
+            terrain_class = classify_point(lat, lon, dataset=dataset)
+            if terrain_class in ("offshore", "coastal", "inland"):
+                return terrain_class
+        except Exception:
+            pass  # fall through to the bbox heuristic below
+
+    # Fallback: points outside the island's lon range but still in-lat are
+    # treated as 'coastal' (sea approach / offshore island fringe), matching the
+    # original bbox-based classifier in readiness/spiderweb_intake.py.
     if lon <= _PR_LON_WEST or lon >= _PR_LON_EAST:
         return "coastal"
 

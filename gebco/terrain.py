@@ -28,8 +28,19 @@ NaN at masked locations (plus a one-pixel dilation to flag unreliable edges).
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
-from scipy import ndimage
+
+try:
+    # scipy is a base dependency (used by the slope/roughness/rugosity math
+    # below). It is imported at module load when available, but kept optional so
+    # the lightweight point classifier (classify_point) can be imported in
+    # environments without scipy — the heavy derivative functions simply require
+    # it at call time.
+    from scipy import ndimage
+except ModuleNotFoundError:  # pragma: no cover - exercised only without scipy
+    ndimage = None
 
 
 # ---------------------------------------------------------------------------
@@ -121,6 +132,79 @@ def cell_size_meters(
     dy = res_deg * 111_320.0
     dx = res_deg * 111_320.0 * np.cos(np.radians(lat_deg))
     return dx, dy
+
+
+# ---------------------------------------------------------------------------
+# Point terrain classification (DEM-backed upgrade path for terrain_hook)
+# ---------------------------------------------------------------------------
+
+
+# Elevation bands (metres) separating the terrain classes. GEBCO elevation is
+# metres relative to mean sea level: negative = submerged.
+_OFFSHORE_MAX_M: float = -10.0   # at/below this depth -> submerged -> offshore
+_COASTAL_MAX_M: float = 10.0     # between offshore and this -> coastal transition
+
+
+def classify_elevation(elevation_m: float | None) -> str:
+    """Map an elevation in metres to a terrain-context class.
+
+    Returns ``'offshore'`` (elevation <= -10 m), ``'coastal'`` (-10 m to 10 m),
+    ``'inland'`` (>= 10 m), or ``'unknown'`` (missing / non-finite). The class
+    vocabulary matches ``pipeline.terrain_hook.get_terrain_context``.
+    """
+    try:
+        value = float(elevation_m)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return "unknown"
+    if not math.isfinite(value):
+        return "unknown"
+    if value <= _OFFSHORE_MAX_M:
+        return "offshore"
+    if value < _COASTAL_MAX_M:
+        return "coastal"
+    return "inland"
+
+
+def _sample_elevation(lat: float, lon: float, *, gebco_path=None, dataset=None):
+    """Return the nearest GEBCO ``elevation`` (metres) at (lat, lon), or None.
+
+    ``xarray`` / :func:`gebco.io.open_gebco` are imported lazily so this module
+    stays importable without them; any failure (missing deps, file, or coverage)
+    returns ``None`` rather than raising.
+    """
+    try:
+        ds = dataset
+        if ds is None:
+            if not gebco_path:
+                return None
+            from gebco.io import open_gebco
+
+            ds = open_gebco(gebco_path)
+        value = ds["elevation"].sel(lat=float(lat), lon=float(lon), method="nearest").values
+        return float(value)
+    except Exception:
+        return None
+
+
+def classify_point(
+    lat: float,
+    lon: float,
+    *,
+    elevation_m: float | None = None,
+    gebco_path=None,
+    dataset=None,
+) -> str:
+    """Terrain-context class for a point, derived from GEBCO elevation.
+
+    Supply a pre-sampled ``elevation_m`` for a pure (I/O-free) mapping, or a
+    GEBCO source — an open ``dataset`` (from :func:`gebco.io.open_gebco`) or a
+    ``gebco_path`` to a ``GEBCO_2023.nc`` file — to sample the nearest cell.
+    Returns ``'offshore'`` / ``'coastal'`` / ``'inland'`` / ``'unknown'``; any
+    sampling failure yields ``'unknown'`` so callers can fall back cleanly.
+    """
+    if elevation_m is None:
+        elevation_m = _sample_elevation(lat, lon, gebco_path=gebco_path, dataset=dataset)
+    return classify_elevation(elevation_m)
 
 
 # ---------------------------------------------------------------------------
