@@ -1,0 +1,19 @@
+{
+  "ingestor": "ingest_reference_geo.py",
+  "generated_utc": "2026-07-19T17:59:53Z",
+  "layer": "nid_dams",
+  "source": {
+    "url": "https://nid.sec.usace.army.mil/api/nation/csv",
+    "filename": "nid_nation.csv",
+    "sha256": "0dee05ab8a105938c5a6f32c084c507a82b45140bacb1a1f39635d561666e6d9",
+    "bytes": 67330479,
+    "skipped": 0
+  },
+  "output": {
+    "path": "/home/user/spiderweb-pr/data/nid_dams.geojson",
+    "sha256": "2531014045ed5ebfbe8c1970b9b9f96d81d8ccd0293602edf1c316fe6f4db2a1",
+    "bytes": 10153,
+    "feature_count": 36,
+    "geometry_type": "point"
+  }
+}

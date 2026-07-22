@@ -62,6 +62,13 @@ data/tiger/*
 data/tiger/2025/*
 !data/tiger/2025/manifest.json
 
+# Reference-geo ingest (server/ingestion/ingest_reference_geo.py): raw source
+# caches and the regenerable <layer>.geojson outputs stay runtime-only; track
+# only the small per-layer provenance manifests.
+!data/reference_geo/
+data/reference_geo/*
+!data/reference_geo/*_manifest.json
+
 # input/ — operator-local override for recover-tails FAA N-number list +
 # timestamped auto-backups + derived skip-list. The hermetic CI fallback
 # lives at tests/fixtures/regs.txt (already tracked), so the pipeline runs
@@ -347,3 +354,6 @@ reports/maintenance/
 desktop/.setup-complete
 outputs/dashboard_data.json
 desktop/.running
+
+# Generated demo/runtime SQLite DB (built by server/ingestion/seed_demo.py)
+server/priis.db

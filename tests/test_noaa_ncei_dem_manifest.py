@@ -79,6 +79,58 @@ def test_san_juan_actual_range_contradiction_resolved() -> None:
     assert san_juan["validation"]["promotion_status"] == "source_raster_validated"
 
 
+def test_pr_wide_cudem_ninth_registered() -> None:
+    manifest = load_manifest()
+    datasets = {item["dataset_key"]: item for item in manifest["datasets"]}
+    cudem = datasets["puerto_rico_cudem_ninth_9525"]
+
+    # PR-wide 1/9 arc-second CUDEM sourced from the NOAA Coastal LiDAR PDS.
+    assert cudem["year"] == 2022
+    assert cudem["spatial_resolution"] == "1/9 arc-second"
+    assert cudem["integrated_topobathy"] is True
+    # PRVD02 vertical datum matches the existing primary so the layers compose.
+    assert cudem["vertical_datum"] == "Puerto Rico Vertical Datum of 2002"
+    assert cudem["horizontal_datum"] == "NAD83"
+    assert cudem["horizontal_crs_epsg"] == 4269
+
+    # Distributed as GeoTIFF via S3 (not the THREDDS regional .nc catalog), so it
+    # carries source_url/s3_prefix instead of an opendap_url.
+    assert cudem["format"] == "GeoTIFF"
+    assert "opendap_url" not in cudem
+    assert cudem["s3_prefix"].startswith("s3://noaa-nos-coastal-lidar-pds/")
+    assert cudem["url_list"].endswith("urllist9525.txt")
+    assert cudem["tile_count"] == 25
+
+    bounds = cudem["bounds_wgs84"]
+    assert bounds["min_lat"] == 17.75
+    assert bounds["max_lat"] == 18.75
+    assert bounds["min_lon"] == -68.0
+    assert bounds["max_lon"] == -65.25
+    assert bounds["min_lat"] < bounds["max_lat"]
+    assert bounds["min_lon"] < bounds["max_lon"]
+
+    # Registered from provider metadata; live raster QA still pending.
+    assert cudem["validation"]["promotion_status"] == "source_metadata_registered"
+
+
+def test_pr_wide_gap_mitigated_without_disturbing_snapshot_ledger() -> None:
+    manifest = load_manifest()
+
+    gaps = {gap["gap_id"]: gap for gap in manifest["gaps"]}
+    gap_001 = gaps["NOAA_NCEI_DEM_GAP_001"]
+    assert gap_001["status"] == "mitigated_2026-07-20"
+    assert "puerto_rico_cudem_ninth_9525" in gap_001["mitigation"]
+
+    # The CUDEM is a live-catalog addition beyond the uploaded snapshot, so the
+    # snapshot-scoped ledger counts must stay untouched.
+    coverage = manifest["catalog_coverage"]
+    assert coverage["pr_relevant_rows_located"] == 8
+    assert len(coverage["located_dataset_keys"]) == 8
+    assert "puerto_rico_cudem_ninth_9525" not in coverage["located_dataset_keys"]
+    additions = {item["dataset_key"] for item in coverage["live_catalog_additions"]}
+    assert "puerto_rico_cudem_ninth_9525" in additions
+
+
 def test_repo_policy_blocks_raster_artifacts() -> None:
     manifest = load_manifest()
     blocked = set(manifest["repo_policy"]["do_not_commit"])

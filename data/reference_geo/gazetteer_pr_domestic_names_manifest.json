@@ -1,0 +1,19 @@
+{
+  "ingestor": "ingest_reference_geo.py",
+  "generated_utc": "2026-07-19T17:59:53Z",
+  "layer": "gazetteer_pr_domestic_names",
+  "source": {
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_PR_Text.zip",
+    "filename": "DomesticNames_PR_Text.zip",
+    "sha256": "04bbb818744b76bc1ff75bbde57168ed299ef657e3e8b95fcfbde6665f25484f",
+    "bytes": 224083,
+    "skipped": 1
+  },
+  "output": {
+    "path": "/home/user/spiderweb-pr/data/gazetteer_pr_domestic_names.geojson",
+    "sha256": "5bcb0e884dcf53f12dd56c08b580795e277fce23231c1cd8d7f72459549d1e17",
+    "bytes": 1264559,
+    "feature_count": 5816,
+    "geometry_type": "point"
+  }
+}

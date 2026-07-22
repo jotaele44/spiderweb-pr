@@ -65,9 +65,11 @@ families:
   - layer_id: nid_dams
     label: NID Dams
     status: deferred
+    pipeline_wired: true
   - layer_id: wetlands_nwi_prvi
     label: Wetlands NWI PRVI
     status: deferred
+    pipeline_wired: true
 - id: utility_other
   label: Utility / Other
   visibility: V3
@@ -278,6 +280,7 @@ families:
   - layer_id: gazetteer_pr_domestic_names
     label: Gazetteer PR Domestic Names
     status: deferred
+    pipeline_wired: true
 - id: civic_social
   label: Civic / Social Infrastructure
   visibility: V2
@@ -340,9 +343,11 @@ families:
   - layer_id: missing_persons_cases
     label: Missing Persons Cases
     status: deferred
+    pipeline_wired: true
   - layer_id: missing_persons_by_municipio
     label: Missing Persons by Municipio
     status: deferred
+    pipeline_wired: true
 - id: ilap_constructs
   label: ILAP — Infrastructure-Linked Access Points
   visibility: V1

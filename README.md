@@ -41,7 +41,10 @@ Cross-producer correlation is owned by the Hub and downstream consumers. Spiderw
 ## Quick start
 
 ```bash
-pip install -e ".[airspace]"
+# thehub-pr must be a sibling checkout; the shared prii-* libs resolve from
+# ../thehub-pr/packages via [tool.uv.sources], so install with uv:
+[ -d ../thehub-pr ] || git clone https://github.com/jotaele44/thehub-pr.git ../thehub-pr
+pip install uv && uv pip install -e ".[airspace]"
 python run_all.py --status
 python run_all.py --images 10
 python run_all.py --db flight_database.db --validate

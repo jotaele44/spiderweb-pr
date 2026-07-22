@@ -311,6 +311,8 @@ _FALLBACK_LAYERS = {
     "flights", "sites", "anomalies", "corridors", "heatmap",
     # PR administrative geographies (TIGER/Line, joined via ingest_tiger_pr.py)
     "municipios", "tracts", "places", "barrios", "puma",
+    # PR reference / environmental geographies (via ingest_reference_geo.py)
+    "nid_dams", "gazetteer_pr_domestic_names", "wetlands_nwi_prvi",
 }
 
 

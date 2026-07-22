@@ -10,6 +10,26 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Missing-persons layers wired + multi-source consolidation:** promoted
+  `missing_persons_cases` + `missing_persons_by_municipio` to `WIRED` (the
+  NamUs producer/emitter and its 15-test contract already existed), and added
+  `scripts/consolidate_missing_persons.py` to merge the landed per-source
+  redacted canonicals (NamUs + PRPB Amber/Rosa/Silver/Ashanti + Desaparecidos —
+  all sharing `_harvest_base.CANONICAL_COLUMNS`) into a combined
+  `data/sources/_consolidated/<date>/missing_persons_pr_canonical.csv`.
+  `populate_dataset_layers.main()` now prefers the consolidated canonical over
+  NamUs-only. Concat + within-source dedup by `case_id_hash`; cross-source
+  identity linkage left for a later pass; raw PII stays git-ignored and only the
+  municipio aggregate is federation-safe (`docs/DATA_POLICY.md`).
+- **Reproducible live-source adapters for reference geographies:** added
+  `server/ingestion/ingest_reference_geo.py`, fetching `nid_dams` (USACE National
+  Inventory of Dams API), `gazetteer_pr_domestic_names` (USGS GNIS Domestic Names
+  on the National Map S3 bucket), and `wetlands_nwi_prvi` (USFWS NWI ArcGIS
+  service, tiled + paginated) directly from authoritative federal endpoints into
+  servable `data/<layer>.geojson` + provenance manifests. Replaces reliance on
+  undated operator-local GPKG snapshots and makes `wetlands_nwi_prvi` an
+  actually-served layer (previously `reference_only`); registered in the `/geo`
+  allowlist with `pipeline_wired: true`.
 - **NOAA/NCEI coastal-DEM gaps closed:** resolved all six pending Puerto Rico
   1/3 arc-second MHW DEMs (Arecibo/Fajardo/Guayama/Mayagüez 2006+2007/Ponce) to
   live NGDC THREDDS OPeNDAP endpoints in `data_sources/noaa/ncei_coastal_dems.yml`

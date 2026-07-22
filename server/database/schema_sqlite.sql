@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS sites (
     sensitive            INTEGER DEFAULT 0,
     infrastructure_class TEXT,
     municipio_geoid      TEXT,   -- TIGER county GEOID (STATEFP=72), joined by ingest_tiger_pr.py
-    tract_geoid          TEXT    -- TIGER tract GEOID, joined by ingest_tiger_pr.py
+    tract_geoid          TEXT,   -- TIGER tract GEOID, joined by ingest_tiger_pr.py
+    zcta_geoid           TEXT    -- TIGER ZCTA GEOID, joined by ingest_tiger_pr.py
 );
 
 CREATE TABLE IF NOT EXISTS contracts (

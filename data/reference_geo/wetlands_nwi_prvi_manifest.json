@@ -1,0 +1,20 @@
+{
+  "ingestor": "ingest_reference_geo.py",
+  "generated_utc": "2026-07-19T17:59:53Z",
+  "layer": "wetlands_nwi_prvi",
+  "source": {
+    "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query",
+    "filename": null,
+    "sha256": null,
+    "bytes": null,
+    "tiles_queried": 96,
+    "tile_deg": 0.25
+  },
+  "output": {
+    "path": "/home/user/spiderweb-pr/data/wetlands_nwi_prvi.geojson",
+    "sha256": "c9bb48249e2513b70e49ae5ab5608e9db4c244c7dd4758625173e8d48a2127f7",
+    "bytes": 113797000,
+    "feature_count": 16468,
+    "geometry_type": "polygon"
+  }
+}

@@ -322,6 +322,23 @@ def _latest_namus_canonical(sources_root: Path) -> Optional[Path]:
     return None
 
 
+def _latest_consolidated_canonical(sources_root: Path) -> Optional[Path]:
+    """Most recent ``_consolidated/<date>/missing_persons_pr_canonical.csv`` — the
+    multi-source merge written by scripts/consolidate_missing_persons.py."""
+    base = sources_root / "_consolidated"
+    if not base.exists():
+        return None
+    snaps = sorted(
+        (p for p in base.iterdir() if p.is_dir() and _is_iso_date_dirname(p.name)),
+        reverse=True,
+    )
+    for snap in snaps:
+        cand = snap / "missing_persons_pr_canonical.csv"
+        if cand.exists():
+            return cand
+    return None
+
+
 def emit_missing_persons_layers(
     lw: "LayerWriter",
     *,
@@ -871,17 +888,20 @@ def main() -> int:
         lw.reference_only(name, source_file=sf, source_layer=sl, feature_count=cnt,
                           domain=dom, reason=why)
 
-    # ── 7b. Missing persons (NamUs) — case-level points + municipio aggregate ──
-    namus_canonical = _latest_namus_canonical(REPO_ROOT / "data" / "sources")
-    if namus_canonical is not None:
+    # ── 7b. Missing persons — case-level points + municipio aggregate ──
+    # Prefer the multi-source consolidated canonical (scripts/consolidate_missing_persons.py)
+    # when present; fall back to the NamUs-only canonical otherwise.
+    mp_canonical = _latest_consolidated_canonical(REPO_ROOT / "data" / "sources") or \
+        _latest_namus_canonical(REPO_ROOT / "data" / "sources")
+    if mp_canonical is not None:
         emit_missing_persons_layers(
             lw,
-            canonical_csv=namus_canonical,
+            canonical_csv=mp_canonical,
             municipios_geojson=REPO_ROOT / "data" / "municipios.geojson",
         )
     else:
-        print("  MISSING data/sources/namus/<date>/namus_mp_pr_canonical.csv "
-              "— skipped missing_persons layers (run scripts/namus_harvest.py first)")
+        print("  MISSING missing-persons canonical CSV — skipped missing_persons layers "
+              "(run scripts/namus_harvest.py and/or scripts/consolidate_missing_persons.py first)")
 
     lw.flush()
 
