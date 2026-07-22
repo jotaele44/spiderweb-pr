@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "adjudication_event",
+  "title": "Adjudication Event",
+  "description": "A single, reversible decision applied to one remote observation. Captures previous_status and new_status plus the supporting/contradicting observations and the responsible rule or analyst, so any candidate-to-confirmed transition is auditable and reversible.",
+  "type": "object",
+  "required": [
+    "adjudication_uid",
+    "observation_uid",
+    "decision",
+    "previous_status",
+    "new_status",
+    "analyst_or_rule",
+    "decision_datetime"
+  ],
+  "properties": {
+    "adjudication_uid":  {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "observation_uid":   {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "decision":          {"type": "string", "enum": ["promote", "downgrade", "confirm", "reject", "hold"]},
+    "previous_status":   {"type": "string", "enum": ["candidate", "supported_candidate", "confirmed", "rejected"]},
+    "new_status":        {"type": "string", "enum": ["candidate", "supported_candidate", "confirmed", "rejected"]},
+    "supporting_observations":    {"type": "array", "items": {"type": "string"}},
+    "contradicting_observations": {"type": "array", "items": {"type": "string"}},
+    "analyst_or_rule":   {"type": "string", "minLength": 1},
+    "rule_version":      {"type": "string"},
+    "decision_reason":   {"type": "string"},
+    "decision_datetime": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": true
+}

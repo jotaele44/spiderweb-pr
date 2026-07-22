@@ -59,6 +59,9 @@ the relevant subsystem below.
   [PR_DEM_QGIS_QUEUE_STYLE_GUIDE.md](PR_DEM_QGIS_QUEUE_STYLE_GUIDE.md),
   [PR_DEM_QGIS_REVIEW_GUIDE.md](PR_DEM_QGIS_REVIEW_GUIDE.md)
 
+## Remote-sensing monitoring
+- [remote_monitoring/ARCHITECTURE.md](remote_monitoring/ARCHITECTURE.md) — `spiderweb.remote_monitoring` Phase-0 provenance backbone
+
 ## Dashboard & UI
 - [STATIC_DASHBOARD_MODE.md](STATIC_DASHBOARD_MODE.md)
 
