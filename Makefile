@@ -18,7 +18,7 @@ help:  ## Show this help
 
 bootstrap:  ## Create a venv, install dev extras, install pre-commit hooks
 	python -m venv .venv
-	. .venv/bin/activate && pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27" && pre-commit install
+	. .venv/bin/activate && { [ -d ../thehub-pr ] || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; } && pip install uv && uv pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27" && pre-commit install
 	@echo "Bootstrap complete. Activate with: . .venv/bin/activate"
 
 # ── Test targets ──────────────────────────────────────────────────────────────
