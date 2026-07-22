@@ -9,6 +9,18 @@ GitHub Release using the matching section below (T6-53).
 
 ## [Unreleased]
 
+### Added
+- **Cross-source missing-persons linkage (annotate-only):**
+  `consolidate_missing_persons.py` now flags likely cross-source duplicates —
+  rows sharing a deterministic blocking key (`sex|age_band|last_seen_municipio|
+  last_seen_date`) across ≥2 sources get a stable `linkage_group_id` plus
+  `linkage_keys_json` and a haversine `coord_disagreement_km`. Annotates rather
+  than collapses (no fuzzy name matching; names are dropped at harvest), so the
+  municipio aggregate's counts are unchanged and a distinct-people count can be
+  layered on later. `linkage_group_id` is a consolidation-only output column
+  (`CONSOLIDATED_COLUMNS`); the per-source harvester `CANONICAL_COLUMNS` contract
+  is untouched.
+
 ### Changed
 - **NWI wetlands layer made servable:** `ingest_reference_geo.py` now, by default,
   drops the huge offshore *Estuarine and Marine Deepwater* polygons and
