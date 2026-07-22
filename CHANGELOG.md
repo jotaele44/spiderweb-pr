@@ -9,6 +9,14 @@ GitHub Release using the matching section below (T6-53).
 
 ## [Unreleased]
 
+### Changed
+- **NWI wetlands layer made servable:** `ingest_reference_geo.py` now, by default,
+  drops the huge offshore *Estuarine and Marine Deepwater* polygons and
+  topologically simplifies (`shapely`, ~0.0001°) each kept NWI polygon — ~89% size
+  reduction on coastal samples, bringing `wetlands_nwi_prvi` well under ~20 MB.
+  New `--nwi-include-deepwater` / `--nwi-simplify-tol` flags; the manifest records
+  `dropped_deepwater` / `simplify_tol` / `include_deepwater`.
+
 ### Added
 - **Missing-persons layers wired + multi-source consolidation:** promoted
   `missing_persons_cases` + `missing_persons_by_municipio` to `WIRED` (the

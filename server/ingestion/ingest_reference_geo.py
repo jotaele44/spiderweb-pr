@@ -226,15 +226,47 @@ def _nwi_query(bbox: tuple[float, float, float, float], offset: int, timeout: in
         return []
 
 
-def fetch_nwi(cache_dir: Path, timeout: int, tile_deg: float = 0.25,
+# The single biggest size driver in the raw NWI layer: very large offshore
+# open-water polygons that are not land wetlands. Excluded by default so the
+# served layer stays wetland-focused and practically sized.
+NWI_DEEPWATER_TYPE = "Estuarine and Marine Deepwater"
+NWI_SIMPLIFY_TOL = 0.0001  # ~11 m Douglas-Peucker tolerance in degrees
+
+
+def _simplify_polygon(geom: Any, tol: float) -> Any:
+    """Topologically simplify a polygon geometry (shapely, a base dep) and round
+    coordinates. Returns None for empty/degenerate results so callers can drop
+    them; falls back to plain rounding when tol<=0 or shapely errors."""
+    if not geom:
+        return None
+    if tol <= 0:
+        return _round_geometry(geom, 5)
+    try:
+        from shapely.geometry import mapping, shape
+        simplified = shape(geom).simplify(tol, preserve_topology=True)
+    except Exception:  # noqa: BLE001 - malformed geometry → keep the rounded original
+        return _round_geometry(geom, 5)
+    if simplified.is_empty:
+        return None
+    return _round_geometry(mapping(simplified), 5)
+
+
+def fetch_nwi(cache_dir: Path, timeout: int, *, include_deepwater: bool = False,
+              simplify_tol: float = NWI_SIMPLIFY_TOL, tile_deg: float = 0.25,
               bbox: tuple[float, float, float, float] = PR_BBOX) -> tuple[list[dict], dict]:
     """Tiled + paginated fetch. The service is slow on the full-PR envelope, so
     the bbox is split into ``tile_deg`` cells; each tile paginates to exhaustion
-    and features are de-duplicated across tile boundaries by OBJECTID."""
+    and features are de-duplicated across tile boundaries by OBJECTID.
+
+    For a practically servable layer, offshore ``Estuarine and Marine Deepwater``
+    polygons are dropped by default (``include_deepwater`` to keep them) and each
+    kept polygon is topologically simplified (``simplify_tol``)."""
     lon_min, lon_max, lat_min, lat_max = bbox
     seen: set[Any] = set()
     feats: list[dict] = []
     tiles = 0
+    dropped_deepwater = 0
+    dropped_degenerate = 0
     lat = lat_min
     while lat < lat_max:
         lon = lon_min
@@ -247,14 +279,21 @@ def fetch_nwi(cache_dir: Path, timeout: int, tile_deg: float = 0.25,
                 if not page:
                     break
                 for f in page:
-                    oid = (f.get("properties") or {}).get("Wetlands.OBJECTID")
+                    props = f.get("properties") or {}
+                    oid = props.get("Wetlands.OBJECTID")
                     if oid in seen:
                         continue
                     seen.add(oid)
-                    props = f.get("properties") or {}
+                    if not include_deepwater and props.get("Wetlands.WETLAND_TYPE") == NWI_DEEPWATER_TYPE:
+                        dropped_deepwater += 1
+                        continue
+                    geom = _simplify_polygon(f.get("geometry"), simplify_tol)
+                    if geom is None:
+                        dropped_degenerate += 1
+                        continue
                     feats.append({
                         "type": "Feature",
-                        "geometry": _round_geometry(f.get("geometry"), 5),
+                        "geometry": geom,
                         "properties": {
                             "objectid": oid,
                             "attribute": props.get("Wetlands.ATTRIBUTE"),
@@ -268,7 +307,9 @@ def fetch_nwi(cache_dir: Path, timeout: int, tile_deg: float = 0.25,
             lon += tile_deg
         lat += tile_deg
     meta = {"url": NWI_QUERY_URL, "filename": None, "sha256": None, "bytes": None,
-            "tiles_queried": tiles, "tile_deg": tile_deg}
+            "tiles_queried": tiles, "tile_deg": tile_deg,
+            "include_deepwater": include_deepwater, "simplify_tol": simplify_tol,
+            "dropped_deepwater": dropped_deepwater, "dropped_degenerate": dropped_degenerate}
     return feats, meta
 
 
@@ -300,7 +341,11 @@ def run(args: argparse.Namespace) -> int:
         spec = SOURCES[key]
         layer = spec["layer"]
         log.info("fetching %s → %s", key, layer)
-        feats, src_meta = spec["fetch"](cache_dir, args.timeout)
+        extra: dict[str, Any] = {}
+        if key == "nwi":
+            extra = {"include_deepwater": args.nwi_include_deepwater,
+                     "simplify_tol": args.nwi_simplify_tol}
+        feats, src_meta = spec["fetch"](cache_dir, args.timeout, **extra)
         payload, out_sha = _write_layer(layer, feats, data_dir, args.dry_run)
         summary["layers"][layer] = {"features": len(feats), "bytes": len(payload)}
         manifest_layers.append({
@@ -343,6 +388,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--dry-run", action="store_true",
                         help="fetch and build but write no GeoJSON/manifest")
+    parser.add_argument("--nwi-include-deepwater", action="store_true",
+                        help="keep NWI 'Estuarine and Marine Deepwater' polygons (dropped by default)")
+    parser.add_argument("--nwi-simplify-tol", type=float, default=NWI_SIMPLIFY_TOL,
+                        help="NWI polygon simplify tolerance in degrees (0 disables)")
     return parser
 
 
