@@ -133,6 +133,7 @@ include = [
     "federation*",
     "server*",
     "scripts*",
+    "source_adapters*",
     "gebco*",
     "earthgpt*",
     "llm*",
@@ -218,4 +219,3 @@ ignore_missing_imports = true
 no_implicit_optional = true
 warn_unused_ignores = true
 follow_imports = "silent"
-
