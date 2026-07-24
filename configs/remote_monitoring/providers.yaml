@@ -1,0 +1,66 @@
+version: rm_providers_v0_1
+generated_at: '2026-07-22T00:00:00Z'
+producer_module: spiderweb.remote_monitoring
+note: >-
+  Data-provider capability registry. `enabled: true` sources are adopted for the
+  backbone; access-restricted or unverified sources sit behind a capability flag
+  and are never a baseline dependency. Nothing here fetches data by itself.
+
+providers:
+  sentinel_2_l2a:
+    enabled: true
+    role: optical_confirmation
+    sensor: MSI
+    bands: [B02, B03, B04, B08, B11, B12]
+    products: [ndvi, nbr, ndwi, bare_soil]
+    license_class: copernicus_open
+    discovery: stac
+
+  sentinel_1_grd:
+    enabled: true
+    role: sar_amplitude_candidate
+    sensor: C-SAR
+    # Revisit cadence is computed from actual catalog results, never assumed.
+    revisit_policy: observed_from_catalog
+    license_class: copernicus_open
+    discovery: stac
+
+  landsat_archive:
+    enabled: true
+    role: historical_baseline
+    license_class: usgs_public
+    discovery: stac
+
+  naip_aerial:
+    enabled: true
+    role: high_resolution_adjudication
+    license_class: usda_public
+    coverage: coverage_dependent
+
+  usgs_3dep_lidar:
+    enabled: true
+    role: terrain_reference
+    # Single epoch supports geomorphometry only; volumetric change needs two
+    # compatible, datum-reconciled epochs plus a level-of-detection threshold.
+    volume_change_requires_two_epochs: true
+    license_class: usgs_public
+
+  nwis_hydrology:
+    enabled: true
+    role: hydrologic_context
+    license_class: usgs_public
+
+  usgs_reservoir_bathymetry:
+    enabled: true
+    role: independent_capacity_evidence
+    license_class: usgs_public
+
+  planet_nicfi:
+    enabled: false
+    status: entitlement_required
+    redistribution: unresolved
+    role: optional_high_cadence_optical
+    note: >-
+      Optional only. Do not make a baseline dependency until PR coverage,
+      temporal coverage, licensing, research eligibility, redistribution rights
+      and catalog access are verified for the specific account and dataset.

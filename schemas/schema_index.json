@@ -833,7 +833,7 @@
       ],
       "dedup_key": "id",
       "fact_status_default": "observed",
-      "notes": "RESTRICTED — precise service-location points (sensitivity=high, public_export=grid_only). NOT in exports/samples; public release uses headstart_context_grid.geojson only."
+      "notes": "RESTRICTED \u2014 precise service-location points (sensitivity=high, public_export=grid_only). NOT in exports/samples; public release uses headstart_context_grid.geojson only."
     },
     {
       "workstream": "federation",
@@ -926,6 +926,123 @@
       "dedup_key": "package_id",
       "fact_status_default": null,
       "notes": "Hub-facing package manifest sidecar written by scripts/federation_export.py::write_package(); the schema mirrors thehub-pr's canonical federation_export_manifest.schema.json. Distinct from federation/export_writer.py's legacy manifest shape, which no schema currently governs."
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_monitoring_aois.geojson",
+      "schema_name": "monitoring_aoi",
+      "schema_file": "schemas/monitoring_aoi.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "aoi_uid",
+        "name",
+        "geometry",
+        "aoi_class",
+        "monitoring_objective"
+      ],
+      "provenance_fields": [
+        "source_ref",
+        "created_at",
+        "review_status"
+      ],
+      "dedup_key": "aoi_uid",
+      "fact_status_default": "seed"
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_source_scenes.jsonl",
+      "schema_name": "source_scene",
+      "schema_file": "schemas/source_scene.schema.json",
+      "format": "jsonl",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "scene_uid",
+        "provider",
+        "collection",
+        "platform",
+        "sensor",
+        "acquisition_start",
+        "crs"
+      ],
+      "provenance_fields": [
+        "source_checksum",
+        "catalog_query_hash",
+        "processing_datetime",
+        "ingest_status"
+      ],
+      "dedup_key": "scene_uid",
+      "fact_status_default": "discovered"
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_observations.geojson",
+      "schema_name": "remote_observation",
+      "schema_file": "schemas/remote_observation.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "observation_uid",
+        "aoi_uid",
+        "scene_uids",
+        "detector_name",
+        "detector_version",
+        "evidence_tier",
+        "geometry",
+        "candidate_status"
+      ],
+      "provenance_fields": [
+        "scene_uids",
+        "baseline_scene_uid",
+        "detector_version",
+        "review_status"
+      ],
+      "dedup_key": "observation_uid",
+      "fact_status_default": "candidate"
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_adjudications.jsonl",
+      "schema_name": "adjudication_event",
+      "schema_file": "schemas/adjudication_event.schema.json",
+      "format": "jsonl",
+      "crs": null,
+      "required_columns_summary": [
+        "adjudication_uid",
+        "observation_uid",
+        "decision",
+        "previous_status",
+        "new_status",
+        "analyst_or_rule",
+        "decision_datetime"
+      ],
+      "provenance_fields": [
+        "analyst_or_rule",
+        "rule_version",
+        "decision_datetime"
+      ],
+      "dedup_key": "adjudication_uid",
+      "fact_status_default": "decided"
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_contract_crosswalk.jsonl",
+      "schema_name": "physical_contract_crosswalk",
+      "schema_file": "schemas/physical_contract_crosswalk.schema.json",
+      "format": "jsonl",
+      "crs": null,
+      "required_columns_summary": [
+        "crosswalk_uid",
+        "contract_node_uid",
+        "observation_uid",
+        "reconciliation_status"
+      ],
+      "provenance_fields": [
+        "observation_uid",
+        "contract_node_uid"
+      ],
+      "dedup_key": "crosswalk_uid",
+      "fact_status_default": "not_assessable"
     }
   ]
 }

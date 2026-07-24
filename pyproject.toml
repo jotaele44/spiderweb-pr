@@ -78,6 +78,14 @@ imagery = [
     "Pillow>=10.0,<13",
     "jsonschema>=4.17,<5",
 ]
+# Remote-sensing monitoring backbone (spiderweb.remote_monitoring). The Phase-0
+# core is stdlib-only; PyYAML loads the AOI/provider registries and jsonschema
+# validates the emitted records. Live STAC discovery reuses the `imagery` extra;
+# a later GPKG sink reuses `geo`.
+remote_monitoring = [
+    "PyYAML>=6.0,<7",
+    "jsonschema>=4.17,<5",
+]
 # PRIIS FastAPI backend (ranges mirror the pinned server/backend/requirements.txt).
 server = [
     "fastapi>=0.115,<1",
@@ -106,7 +114,7 @@ dem = [
 ]
 # Convenience union of every runtime subsystem (gebco is already in base).
 all = [
-    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo,dem]",
+    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo,dem,remote_monitoring]",
 ]
 dev = [
     "pytest>=9.0.2,<10",
