@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { federationTone } from '@pr-federation/react';
 import { getCatalog, LayerCatalog, CatalogFamily } from '../lib/api';
 
 /**
@@ -79,16 +80,26 @@ const FamilyFolder: React.FC<{ family: CatalogFamily }> = ({ family }) => {
             <li key={l.layer_id} style={layerRow} title="Geometry not yet wired (deferred)">
               <input type="checkbox" disabled />
               <span>{l.label}</span>
-              {l.pri_table && (
-                <span style={badge(l.pipeline_wired)}>
-                  {l.pipeline_wired ? 'wired' : 'pending'}
-                </span>
-              )}
+              {l.pri_table && <PipelineBadge wired={l.pipeline_wired} />}
             </li>
           ))}
         </ul>
       )}
     </div>
+  );
+};
+
+/**
+ * PipelineBadge shows whether a layer's PRI table pipeline is wired. Colors come
+ * from the shared federation status vocabulary (.fd-status) via federationTone —
+ * "wired" reads as success, "pending" as warning. Only right-alignment is local.
+ */
+const PipelineBadge: React.FC<{ wired?: boolean }> = ({ wired }) => {
+  const { className, ...toneAttrs } = federationTone(wired ? 'success' : 'warning');
+  return (
+    <span className={className} {...toneAttrs} style={{ marginLeft: 'auto' }}>
+      {wired ? 'wired' : 'pending'}
+    </span>
   );
 };
 
@@ -108,7 +119,3 @@ const layerList: React.CSSProperties = { listStyle: 'none', margin: 0, paddingLe
 const layerRow: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, padding: '1px 0', color: '#555',
 };
-const badge = (wired?: boolean): React.CSSProperties => ({
-  fontSize: 9, padding: '0 4px', borderRadius: 8, marginLeft: 'auto',
-  background: wired ? '#e3f3e3' : '#f3ece3', color: wired ? '#2a7' : '#a72',
-});
