@@ -16,7 +16,7 @@ Scope: this repository only. Cross-repo comparisons live in
 |---|---|---|---|
 | D1 | Functional completeness | **4** | 53.8k LOC; SSE streaming, GeoJSON layer service, RAG, contract-finance scoring — all real and serving |
 | D2 | Data reality | **3** | Declares `PRODUCTION` with hub-validated first real package (1 site observation + 9 airport reference locations); modest but genuine |
-| D3 | UI craft | **0** | **Three parallel frontends, none complete.** The TypeScript one has 0 pages, 483 LOC, 3 `aria-*`, 0 loading states, 0 empty states, 0 `ErrorBoundary`, and no ESLint config. |
+| D3 | UI craft | **1** | **Three parallel frontends, none complete.** The TypeScript one has 0 routed pages, 483 LOC, 3 `aria-*`, no `ErrorBoundary` and no ESLint config — though its panes do handle loading/empty/error inline (`FinancePane.tsx:53-54`, `LayerCatalogPane.tsx:35-36`). |
 | D4 | Test coverage | **4** | **`989 passed, 31 skipped`** in 33.0s; 86 test files, 13.9k LOC of tests; CI enforces `--cov-fail-under=62` |
 | D5 | Engineering hygiene | **2** | ruff+black+mypy are configured and clean — but CI runs them against a **13-file allowlist out of 311 Python files (4%)** |
 | D6 | Doc accuracy | **4** | 83 markdown files; `federation.json` accurately describes the module set and provenance |
@@ -70,7 +70,7 @@ never extending it, and that is what happened here.
 
 | Item | Why |
 |---|---|
-| `server/frontend/` | 10 source files, 483 LOC, **0 pages**. `App.tsx` + three panes (`MapPane`, `FinancePane`, `LayerCatalogPane`). No router, no ESLint config, no `lint` script. |
+| `server/frontend/` | 10 source files, 483 LOC, **0 routed pages**. `App.tsx` + three panes (`MapPane`, `FinancePane`, `LayerCatalogPane`), which do handle their own loading/empty/error branches. No router, no ESLint config, no `lint` script. |
 | `dashboard/` | a separate vanilla-JSX app (`dashboard.jsx`, `dashboard_contract_finance.jsx`, `dashboard_temporal_waves.jsx`) with vendored libraries |
 | `workbench/priis-v1/app/` | a third Vite app with its own `package.json`, `eslint.config.js`, and tsconfigs |
 
@@ -84,7 +84,7 @@ issue affecting `thehub-pr` and `skywatcher-pr` does not apply here in the same 
 
 | Frontend | Pages | LOC | Lint | Tests | Verdict |
 |---|---|---|---|---|---|
-| `server/frontend/` (TypeScript, Vite) | 0 | 483 | **no config, no script** | 0 | **Scaffold** — builds, renders three panes, no routing |
+| `server/frontend/` (TypeScript, Vite) | 0 routed | 483 | **no config, no script** | 0 | **Scaffold** — builds, renders three panes with inline loading/empty/error states, no routing |
 | `dashboard/` (vanilla JSX + vendored libs) | n/a | — | — | 0 | **Parallel legacy** |
 | `workbench/priis-v1/app/` (Vite + TS) | — | — | own eslint config | 0 | **Third parallel app** |
 
@@ -93,8 +93,9 @@ issue affecting `thehub-pr` and `skywatcher-pr` does not apply here in the same 
 `/sites`, `/contracts`, `/events`, `/anomalies`, `/sources`, `/catalog` for offline export
 builds. The client is ready; there is no application on top of it.
 
-Three frontends, zero pages, zero tests, one missing lint config — for the second-largest
-backend in the federation.
+Three frontends, zero routed pages, zero tests, one missing lint config — for the
+second-largest backend in the federation. The per-pane state handling that does exist is
+inline and duplicated rather than shared, which is the real gap.
 
 ---
 
@@ -119,10 +120,10 @@ clean (964 KB JS).
 | # | Item | Effort | Why it matters |
 |---|---|---|---|
 | 1 | Pick one frontend and retire the other two | **L** | Three parallel UIs, none complete, is worse than one unfinished UI. `server/frontend` has the best API client and the populated snapshot — it is the natural survivor. |
-| 2 | Extend the lint allowlist beyond 13 files | **M** | 96% of the codebase is unchecked. Extend by directory (`pipeline/`, `federation/`, `integration/` are already clean) rather than attempting all 1,870 findings at once. |
+| 2 | Extend the lint allowlist beyond 13 files | **M** | 96% of the codebase is unchecked. Extend incrementally — but note the parent directories of the allowlisted files are **not** clean: `ruff check pipeline federation integration` reports findings in all three (unused imports/variables in `pipeline/aircraft_intelligence.py`, `integration/aasb_airspace_bridge.py`, `integration/schema_validation.py`, plus formatting). Adding a whole directory at once would break the gate; add file-by-file, or fix-then-add. |
 | 3 | Add ESLint config + `lint` script to `server/frontend` | **S** | The only frontend in the federation with no linter at all. |
 | 4 | Give `server/frontend` a router and real pages | **L** | 53.8k LOC of backend including SSE and GeoJSON services, surfaced through zero pages. |
-| 5 | Add loading, empty, and error states | **M** | Currently 0 of each. `skywatcher-pr`'s `LoadingState`/`EmptyState` components are an in-house pattern to copy. |
+| 5 | Share the loading/empty/error states instead of inlining them per pane | **S** | Each pane rolls its own; `centinelas-pr/frontend/src/components/ListState.jsx` and `skywatcher-pr`'s `LoadingState`/`EmptyState` are in-house patterns to copy. |
 | 6 | Add a frontend test runner | **M** | Zero tests across all three UIs. |
 | 7 | Move reusable `scripts/` logic into `spiderweb/` | **L** | 11,987 LOC in scripts vs 1,592 in the package. |
 
