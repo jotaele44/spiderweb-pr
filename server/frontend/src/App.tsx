@@ -3,6 +3,7 @@ import { MapPane } from './components/MapPane';
 import { FinancePane } from './components/FinancePane';
 import { LayerCatalogPane } from './components/LayerCatalogPane';
 import { useAppStore } from './state/store';
+import ErrorBoundary from './components/ErrorBoundary';
 
 /**
  * Root component for the PRIIS V1.5 workbench. It composes the
@@ -15,6 +16,7 @@ const App: React.FC = () => {
   const selected = useAppStore((s) => s.selected);
 
   return (
+    <ErrorBoundary>
     <div className="app-container">
       <header className="command-bar">PRIIS V1.5 Workbench</header>
       <div className="body">
@@ -41,6 +43,7 @@ const App: React.FC = () => {
         </aside>
       </div>
     </div>
+    </ErrorBoundary>
   );
 };
 
