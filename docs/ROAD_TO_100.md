@@ -171,3 +171,21 @@ None`). This pass closes one small offline gap — a direct unit test for
 `mbil.is_mbil_high` — and leaves the larger offline items honestly OPEN. Only
 #68/#72/#73/#76/#77 (real named blockers) are classified blocked. The V2 sweep
 is NOT claimed to have zero remaining offline work.**
+
+---
+
+## Two completion numbers, and why they differ
+
+This ledger says **~85%**. [`MATURITY_AUDIT.md`](MATURITY_AUDIT.md) says **56%**.
+Both are correct; they measure different things and should be read together.
+
+| | Measures | Counts a thing "done" when |
+|---|---|---|
+| **`ROAD_TO_100.md`** (~85%) | code completeness against intended scope | the code exists and works, with data- and network-blocked items called out separately |
+| **`MATURITY_AUDIT.md`** (56%) | maturity of the repo as an engineering artifact | a **CI gate** keeps it working |
+
+The spread is largely **enforcement rather than implementation**. Concretely, what this
+repo is missing on the audit's axis: no frontend tests; no JS lint script; ruff/black/mypy cover a 13-file allowlist out of 311. The `--cov-fail-under=62` floor is real.
+
+Neither number supersedes the other. Use this ledger to answer "what is left to build";
+use the audit to answer "what would a reviewer refuse to merge".
