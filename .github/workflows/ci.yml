@@ -43,7 +43,7 @@ jobs:
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system pip-audit
-          uv pip install --system -e ".[airspace,earthgpt,server]"
+          uv pip install --system -c constraints.txt -e ".[airspace,earthgpt,server]"
           pip-audit --progress-spinner off || true
 
   # ── Lint + type check (ruff + black + mypy) on a curated allowlist ──────────
@@ -101,7 +101,7 @@ jobs:
           # PRII_FETCH_HUB: ensure shared federation libs resolve
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
-          uv pip install --system -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
+          uv pip install --system -c constraints.txt -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
 
       - name: Syntax check all Python modules
         run: find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
@@ -208,7 +208,7 @@ jobs:
           # PRII_FETCH_HUB: ensure shared federation libs resolve
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
-          uv pip install --system -e ".[airspace,earthgpt]"
+          uv pip install --system -c constraints.txt -e ".[airspace,earthgpt]"
 
       - name: Release gate (skip-tests + demo mode, against empty DB)
         # --skip-tests because the `test` job above already ran the full suite;
@@ -246,7 +246,7 @@ jobs:
           # PRII_FETCH_HUB: ensure shared federation libs resolve
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
-          uv pip install --system -e ".[gebco,dev]"
+          uv pip install --system -c constraints.txt -e ".[gebco,dev]"
 
       - name: Run GEBCO test suite (39 tests)
         run: python -m pytest tests/test_io.py tests/test_terrain.py -v --tb=short
@@ -271,6 +271,9 @@ jobs:
           cache: pip
 
       - name: Install package with the ${{ matrix.extra }} extra
+        # Deliberately NOT constrained by constraints.txt: this job exists to
+        # prove each extra resolves from pyproject.toml on its own. Pinning it
+        # would mask exactly the resolution failure it is here to catch.
         run: |
           # PRII_FETCH_HUB: ensure shared federation libs resolve
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
