@@ -7,24 +7,11 @@ import { AnomalyCard } from "../components/AnomalyCard";
 import {
   API_BASE,
   MUNICIPIOS_DELIVERY,
-  TILE_ATTRIBUTION,
-  TILE_URL,
   martinTileJsonUrl,
   martinTileUrlTemplate,
 } from "../config";
-
-const rasterStyle: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: "raster",
-      tiles: [TILE_URL],
-      tileSize: 256,
-      attribution: TILE_ATTRIBUTION,
-    },
-  },
-  layers: [{ id: "osm", type: "raster", source: "osm" }],
-};
+import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
+import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
@@ -296,12 +283,10 @@ export function SpatialIntelligence({
   leftCollapsed?: boolean;
   rightCollapsed?: boolean;
 }) {
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const { hostRef, mapRef, runtimeRef, ready: mapReady, tilesFailed, setTilesFailed } =
+    useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG);
   const markersRef = useRef<maplibregl.Marker[]>([]);
-  const [mapReady, setMapReady] = useState(false);
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
-  const [tilesFailed, setTilesFailed] = useState(false);
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
     () => localStorage.getItem("spiderweb_layer_collapsed") === "true",
   );
@@ -342,26 +327,12 @@ export function SpatialIntelligence({
   usePolygonLayer(mapRef, mapReady, "places", layers.places, setStatus("places"));
   usePolygonLayer(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios"));
 
+  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime now;
+  // this effect only handles the marker-specific part of unmount cleanup.
   useEffect(() => {
-    if (!hostRef.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: hostRef.current,
-      style: rasterStyle,
-      center: [-66.35, 18.22],
-      zoom: 8.4,
-    });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
-    map.on("error", (e: { sourceId?: string }) => {
-      if (e.sourceId === "osm") setTilesFailed(true);
-    });
-    mapRef.current = map;
-    setMapReady(true);
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
-      map.remove();
-      mapRef.current = null;
-      setMapReady(false);
     };
   }, []);
 
@@ -406,14 +377,14 @@ export function SpatialIntelligence({
         .addTo(map);
       markersRef.current.push(marker);
     });
-  }, [data, layers, setSelection]);
+  }, [data, layers, setSelection, mapRef]);
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || selection?.kind !== "site") return;
+    const runtime = runtimeRef.current;
+    if (!runtime || selection?.kind !== "site") return;
     const site = byId(data.sites, selection.id);
-    if (site) map.flyTo({ center: [site.lng, site.lat], zoom: 11, speed: 0.8 });
-  }, [data.sites, selection]);
+    if (site) runtime.setView({ center: [site.lng, site.lat], zoom: 11 }, { animate: true, speed: 0.8 });
+  }, [data.sites, selection, runtimeRef]);
 
   useEffect(() => {
     localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
@@ -433,9 +404,9 @@ export function SpatialIntelligence({
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => mapRef.current?.resize(), 320);
+    const timer = window.setTimeout(() => runtimeRef.current?.resize(), 320);
     return () => window.clearTimeout(timer);
-  }, [leftCollapsed, rightCollapsed, layerPanelCollapsed]);
+  }, [leftCollapsed, rightCollapsed, layerPanelCollapsed, runtimeRef]);
 
   const failedLayers = BACKEND_LAYER_KEYS.filter((k) => layers[k] && layerStatus[k] === "error");
 
