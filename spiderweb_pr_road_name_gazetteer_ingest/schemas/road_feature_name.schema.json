@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spiderweb Road Feature Name",
+  "type": "object",
+  "required": [
+    "spiderweb_road_id",
+    "name_value",
+    "normalized_name",
+    "name_type",
+    "source_rank"
+  ],
+  "properties": {
+    "spiderweb_road_id": {
+      "type": "string",
+      "pattern": "^road:"
+    },
+    "name_value": {
+      "type": "string"
+    },
+    "normalized_name": {
+      "type": "string"
+    },
+    "name_type": {
+      "type": "string",
+      "enum": [
+        "canonical",
+        "route_ref",
+        "alias",
+        "osm_name",
+        "tiger_fullname",
+        "dtop_name",
+        "generated_variant",
+        "historic",
+        "manual"
+      ]
+    },
+    "language": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "route_number": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_rank": {
+      "type": "string",
+      "enum": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    }
+  }
+}
