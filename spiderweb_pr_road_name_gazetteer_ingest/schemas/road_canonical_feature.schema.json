@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spiderweb Road Canonical Feature",
+  "type": "object",
+  "required": [
+    "spiderweb_road_id",
+    "source_family",
+    "canonical_name",
+    "normalized_name",
+    "source_rank",
+    "review_status"
+  ],
+  "properties": {
+    "spiderweb_road_id": {
+      "type": "string",
+      "pattern": "^road:"
+    },
+    "source_family": {
+      "type": "string",
+      "enum": [
+        "DTOP_ROUTE_DATA",
+        "TIGER_ROADS",
+        "OSM_ROADS",
+        "MANUAL_ROAD_REVIEW"
+      ]
+    },
+    "source_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_record_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "canonical_name": {
+      "type": "string"
+    },
+    "normalized_name": {
+      "type": "string"
+    },
+    "route_number": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "route_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "road_class": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "mtfcc": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "municipio_geoid": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^(72[0-9]{3})?$"
+    },
+    "municipio_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "geometry_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "geometry_wkt": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_rank": {
+      "type": "string",
+      "enum": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "string",
+        "null"
+      ]
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}

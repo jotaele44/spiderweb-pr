@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spiderweb Road Source Conflict",
+  "type": "object",
+  "required": [
+    "conflict_id",
+    "conflict_type",
+    "severity",
+    "resolution_status"
+  ],
+  "properties": {
+    "conflict_id": {
+      "type": "string",
+      "pattern": "^road_conflict:"
+    },
+    "conflict_type": {
+      "type": "string"
+    },
+    "normalized_key": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "route_number": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "municipio_geoid": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "municipio_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_a": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_b": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "value_a": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "value_b": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "resolution_status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "RESOLVED",
+        "DEFERRED",
+        "FALSE_POSITIVE"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
