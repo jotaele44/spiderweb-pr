@@ -42,7 +42,7 @@ job and in `pyproject.toml`, not hidden.
 | Types | `python -m mypy` |
 | Tests | `pytest -q` |
 | Coverage | `pytest -q --cov` — must stay at or above the `fail_under` floor in `pyproject.toml` |
-| Lockfile | `(none — constraints.txt is hand-maintained; see RECOMMENDATIONS.md #3)` |
+| Lockfile | `uv lock --check` |
 | Template drift | `python3 ../thehub-pr/tools/render_federation_templates.py --repo spiderweb-pr --check` |
 
 ### Coverage is a ratchet

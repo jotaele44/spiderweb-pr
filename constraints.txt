@@ -1,18 +1,36 @@
-# Exact pins for fully reproducible installs.
-# Usage: pip install -c constraints.txt -e ".[dev]"
+# Exact pins for the lint/test install:  uv pip install -c constraints.txt -e ".[dev]"
 #
-# numpy 2.4.0 was yanked from PyPI due to a backward-compatibility bug; 2.4.6 is the stable pin.
+# Relationship to uv.lock (added alongside this change):
+#   uv.lock is the reproducibility record for the whole dependency graph, and the
+#   `lock` job in .github/workflows/ci.yml fails if it drifts from pyproject.toml.
+#   THIS file is a narrower overlay for the lint/test environment. Most pins below
+#   simply match what the lock resolves; where they deliberately do not, the
+#   reason is stated. If you change a dependency: run `uv lock`, then update the
+#   matching pin here.
+#
+# DELIBERATE DIVERGENCE — numpy and scipy are held below the versions uv.lock
+# resolves for Python 3.12+ (numpy 2.5.1, scipy 1.18.0). numpy >=2.5 ships
+# typeshed stubs using PEP 695 `type` statements, which broke the gating
+# mypy step on the curated allowlist; holding 2.4.x is the documented workaround
+# and predates this file's alignment pass. Do not "fix" this to match the lock
+# without re-running the lint job — that is the failure it prevents.
+#
+# uv.lock is a *universal* lock and legitimately carries two versions of each of
+# these (2.4.6 for <3.12, 2.5.1 for >=3.12), so the difference here is a narrower
+# choice, not a contradiction.
 numpy==2.4.6
 scipy==1.17.1
-pandas==3.0.3
-xarray==2026.4.0
+# The rest match uv.lock exactly. Verified against the gating allowlist
+# (ruff + black + mypy) before landing.
+pandas==3.0.5
+xarray==2026.7.0
 netCDF4==1.7.4
-matplotlib==3.10.9
+matplotlib==3.11.1
 shapely==2.1.2
 scikit-image==0.26.0
-pytest==9.0.3
+pytest==9.1.1
 pytest-cov==7.1.0
 black==26.5.1
-ruff==0.15.16
-mypy==2.1.0
+ruff==0.15.22
+mypy==2.3.0
 jsonschema==4.26.0
