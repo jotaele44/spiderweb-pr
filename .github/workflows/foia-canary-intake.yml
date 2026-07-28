@@ -33,7 +33,7 @@ jobs:
           if finding.get("entity_collision", False):
               assert decision["disposition"] == "review"
           PY
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.client_payload.canary_branch }}
       - name: Persist namespaced receipt only
