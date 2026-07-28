@@ -18,7 +18,10 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
     <div className="app-container">
-      <header className="command-bar">PRIIS V1.5 Workbench</header>
+      <header className="command-bar">
+        <img src={`${import.meta.env.BASE_URL}icon-64.png`} alt="" aria-hidden="true" className="command-bar-mark" />
+        PRIIS V1.5 Workbench
+      </header>
       <div className="body">
         <aside className="sidebar">
           <nav>

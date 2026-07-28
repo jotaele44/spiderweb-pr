@@ -5,6 +5,11 @@
   "repository_legacy_name": "spiderweb-pr",
   "federation_role": "spatial_operational_producer",
   "hub_parent": "thehub-pr",
+  "branding": {
+    "icon": "assets/branding/icon.png",
+    "icon_dir": "assets/branding",
+    "accent_color": "#ca0c02"
+  },
   "jurisdiction": "Puerto Rico",
   "active_vector": "SPIDERWEB_SPATIAL_OPERATIONAL_PRODUCER",
   "production_status": "PRODUCTION",

@@ -28,6 +28,12 @@ body {
   background: var(--fd-surface);
   border-bottom: 1px solid var(--fd-border);
 }
+.command-bar-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  flex: 0 0 auto;
+}
 .command-bar::before {
   content: "";
   width: 10px; height: 10px; border-radius: 9999px;
