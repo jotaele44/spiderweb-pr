@@ -5,6 +5,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { FederationEmptyState } from '@pr-federation/react';
 import { getContracts, Contract } from '../lib/api';
 import { useAppStore } from '../state/store';
 
@@ -51,7 +52,10 @@ export const FinancePane: React.FC = () => {
 
   const body = useMemo(() => {
     if (loading) return <p className="pane__empty">Loading contracts…</p>;
-    if (contracts.length === 0) return <p className="pane__empty">No contracts available.</p>;
+    // Shared federation empty state, `inline` variant — sized to sit beside the
+    // loading line above rather than as a full centered block, so the pane's two
+    // status messages stay visually matched.
+    if (contracts.length === 0) return <FederationEmptyState inline title="No contracts available." />;
     return (
       <table className="fin-table">
         <thead>
