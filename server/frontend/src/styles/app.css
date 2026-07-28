@@ -115,4 +115,9 @@ body {
 .fin-table tbody tr:hover { background: var(--fd-surface-2); }
 .fin-num { text-align: right; font-variant-numeric: tabular-nums; }
 
-.pane__empty { color: var(--fd-text-muted); font-size: 13px; padding: 0.5rem 0; }
+/* margin:0 is explicit, not incidental: nothing resets <p>, so without it this
+   paragraph carries the UA default 1em block margins while the shared
+   FederationEmptyState (margin-normalized title in a wrapper) carries none —
+   making the pane's height jump when the loading line swaps to the empty one.
+   Both states now derive their spacing from this padding alone. */
+.pane__empty { color: var(--fd-text-muted); font-size: 13px; padding: 0.5rem 0; margin: 0; }
