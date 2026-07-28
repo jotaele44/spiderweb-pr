@@ -43,7 +43,7 @@ jobs:
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system pip-audit
-          uv pip install --system -e ".[airspace,earthgpt,server]"
+          uv pip install --system -c constraints.txt -e ".[airspace,earthgpt,server]"
           pip-audit --progress-spinner off || true
 
   # ── Lint + type check (ruff + black + mypy) on a curated allowlist ──────────
@@ -101,7 +101,7 @@ jobs:
           # PRII_FETCH_HUB: ensure shared federation libs resolve
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
-          uv pip install --system -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
+          uv pip install --system -c constraints.txt -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
 
       - name: Syntax check all Python modules
         run: find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
@@ -208,7 +208,7 @@ jobs:
           # PRII_FETCH_HUB: ensure shared federation libs resolve
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
-          uv pip install --system -e ".[airspace,earthgpt]"
+          uv pip install --system -c constraints.txt -e ".[airspace,earthgpt]"
 
       - name: Release gate (skip-tests + demo mode, against empty DB)
         # --skip-tests because the `test` job above already ran the full suite;
@@ -246,7 +246,7 @@ jobs:
           # PRII_FETCH_HUB: ensure shared federation libs resolve
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
-          uv pip install --system -e ".[gebco,dev]"
+          uv pip install --system -c constraints.txt -e ".[gebco,dev]"
 
       - name: Run GEBCO test suite (39 tests)
         run: python -m pytest tests/test_io.py tests/test_terrain.py -v --tb=short
@@ -271,6 +271,9 @@ jobs:
           cache: pip
 
       - name: Install package with the ${{ matrix.extra }} extra
+        # Deliberately NOT constrained by constraints.txt: this job exists to
+        # prove each extra resolves from pyproject.toml on its own. Pinning it
+        # would mask exactly the resolution failure it is here to catch.
         run: |
           # PRII_FETCH_HUB: ensure shared federation libs resolve
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
@@ -323,3 +326,22 @@ jobs:
         run: npm run typecheck
       - name: Build
         run: npm run build
+
+  # Reproducible installs: fails when uv.lock no longer satisfies pyproject.toml,
+  # so a dependency edit cannot merge without its lockfile update. Mirrors the
+  # `lock` job in thehub-pr/.github/workflows/ci.yml.
+  #
+  # This repo was the last in the federation without a lock-drift gate. It was
+  # previously blocked on consolidating the dependency manifests, but that work
+  # has since landed — requirements*.txt are now one-line shims deferring to the
+  # pyproject extras — so `uv lock` resolves directly.
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+      - name: Lock file is up to date
+        run: |
+          # PRII_FETCH_HUB: uv.lock resolves ../thehub-pr path sources
+          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
+          uv lock --check
