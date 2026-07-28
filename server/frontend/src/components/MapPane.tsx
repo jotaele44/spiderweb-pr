@@ -52,7 +52,7 @@ export const MapPane: React.FC = () => {
         el.setAttribute('aria-label', site.name || site.id);
         el.style.cssText =
           'width:12px;height:12px;border-radius:9999px;border:2px solid #fff;cursor:pointer;' +
-          `background:${site.sensitive ? '#ef4444' : '#0d9488'};`;
+          `background:${site.sensitive ? '#ef4444' : '#DC1606'};`;
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           setSelection(site);

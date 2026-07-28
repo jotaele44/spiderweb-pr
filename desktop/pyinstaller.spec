@@ -27,6 +27,7 @@ EXE_ICON = str(BRANDING / "icon.ico") if sys.platform == "win32" else None
 CONSOLE = os.environ.get("PRII_CONSOLE") == "1"
 
 datas = [
+    (str(BRANDING), "assets/branding"),
     (str(REPO_ROOT / "dashboard"), "dashboard"),
 ]
 if (REPO_ROOT / "outputs").exists():
@@ -43,6 +44,11 @@ a = Analysis(
         "uvicorn.protocols.websockets.auto",
         "uvicorn.lifespan.on",
         "desktop.app_server",
+        "prii_desktop",
+        "prii_desktop.launcher",
+        "prii_desktop.appserver",
+        "prii_desktop.config",
+        "prii_desktop.setup_ui",
     ],
     noarchive=False,
 )
@@ -70,4 +76,9 @@ if sys.platform == "darwin":
         name=f"{APP_NAME}.app",
         icon=str(BRANDING / "AppIcon.icns"),
         bundle_identifier="pr.prii.spiderweb",
+        info_plist={
+            "CFBundleDisplayName": "Spiderweb",
+            "CFBundleName": "Spiderweb",
+            "NSHighResolutionCapable": True,
+        },
     )

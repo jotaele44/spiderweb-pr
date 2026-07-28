@@ -1,4 +1,14 @@
-:root { color-scheme: dark; }
+:root {
+  color-scheme: dark;
+  --fd-accent: #DC1606;
+  --fd-accent-foreground: #ffffff;
+  --fd-bg: #0d0505;
+  --fd-surface: #180909;
+  --fd-surface-2: #261010;
+  --fd-border: #51201d;
+  --fd-text: #fff7f6;
+  --fd-text-muted: #d3aaa7;
+}
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }

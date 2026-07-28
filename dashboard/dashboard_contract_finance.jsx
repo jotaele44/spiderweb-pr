@@ -30,7 +30,7 @@ const ContractFinancePanel = ({ data }) => {
       <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
         <button
           onClick={() => setVisible(!visible)}
-          className="w-full px-4 py-3 bg-gray-900 text-white flex items-center justify-between text-sm font-semibold"
+          className="w-full px-4 py-3 bg-red-950 text-white flex items-center justify-between text-sm font-semibold"
         >
           <span>Contract-Finance Layer</span>
           <span className="text-xs text-gray-300">{visible ? "hide" : "show"}</span>
@@ -56,7 +56,7 @@ const ContractFinancePanel = ({ data }) => {
               <h3 className="text-xs font-semibold text-gray-700 mb-2">Feature mix</h3>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(byType).map(([k, v]) => (
-                  <span key={k} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                  <span key={k} className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs">
                     {k}: {v}
                   </span>
                 ))}
@@ -74,7 +74,7 @@ const ContractFinancePanel = ({ data }) => {
                   return (
                     <div key={p.record_id || i} className="border border-gray-100 rounded-lg p-2 text-xs">
                       <div className="flex gap-2 items-center mb-1">
-                        <span className="font-mono text-blue-700">{p.record_id || "—"}</span>
+                        <span className="font-mono text-red-700">{p.record_id || "—"}</span>
                         <span className="ml-auto font-semibold text-gray-700">score {p.spiderweb_score ?? "—"}</span>
                       </div>
                       <div className="text-gray-700 truncate">{entity.normalized_name || p.entity_id || "Unknown entity"}</div>

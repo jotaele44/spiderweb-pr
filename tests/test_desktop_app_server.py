@@ -33,3 +33,8 @@ def test_index_serves_dashboard_html():
     r = client.get("/")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
+
+
+def test_setup_selected_outputs_are_resolved_after_environment(monkeypatch, tmp_path):
+    monkeypatch.setenv("PRII_SPIDERWEB_DATA_HOME", str(tmp_path))
+    assert app_server._mutable_outputs_dir() == tmp_path / "outputs"

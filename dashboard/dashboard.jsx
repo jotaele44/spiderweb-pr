@@ -63,7 +63,7 @@ const ConfidenceBar = ({ value }) => {
 
 const StatCard = ({ label, value, sub, icon }) => (
   <div className="bg-white rounded-lg shadow p-4 flex items-start gap-3">
-    <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+    <div className="p-2 bg-red-50 rounded-lg text-red-700">
       <Icon name={icon} size={20} />
     </div>
     <div>
@@ -78,7 +78,7 @@ const TabButton = ({ label, active, onClick }) => (
   <button onClick={onClick}
     className={`px-4 py-2 text-sm font-medium rounded-t border-b-2 transition-colors ${
       active
-        ? "border-blue-600 text-blue-600 bg-white"
+        ? "border-red-700 text-red-700 bg-white"
         : "border-transparent text-gray-500 hover:text-gray-700"
     }`}>
     {label}
@@ -105,7 +105,7 @@ const SearchInput = ({ value, onChange, placeholder }) => (
       placeholder={placeholder}
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+      className="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300"
     />
     {value && (
       <button onClick={() => onChange("")} className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
@@ -225,7 +225,7 @@ const AircraftCatalogTab = ({ data }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {profiles.map(p => (
-            <div key={p.callsign || p.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+            <div key={p.callsign || p.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-red-600">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-lg font-bold text-gray-800">{p.callsign}</span>
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{p.aircraft_type || "—"}</span>
@@ -363,7 +363,7 @@ const IntelligenceTab = ({ data }) => {
         {SEVERITY_ORDER.map(s => (
           <button key={s} onClick={() => setSeverityFilter(s)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              severityFilter === s ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              severityFilter === s ? "bg-red-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}>
             {s}{s !== "ALL" && alertCounts[s] ? ` (${alertCounts[s]})` : ""}
           </button>
@@ -577,7 +577,7 @@ const ReviewQueueTab = ({ fr24 }) => {
             {tierValues.map(t => (
               <button key={`tier-${t}`} onClick={() => setTierFilter(t)}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                  tierFilter === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  tierFilter === t ? "bg-red-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}>
                 {t === "ALL" ? "ALL" : `T${t} · ${FR24_TIER_LABEL[Number(t)] || t}`}
               </button>
@@ -590,7 +590,7 @@ const ReviewQueueTab = ({ fr24 }) => {
             {sourceValues.map(s => (
               <button key={`src-${s}`} onClick={() => setSourceFilter(s)}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                  sourceFilter === s ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  sourceFilter === s ? "bg-red-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}>
                 {s}
               </button>
@@ -682,8 +682,8 @@ const App = ({ data = window.flightData || {}, fr24 = window.fr24DashboardData |
   const ActiveTab = TABS.find(t => t.id === tab)?.Component || OverviewTab;
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
-      <header className="bg-gray-900 text-white px-6 py-3 flex items-center justify-between shadow">
+    <div className="min-h-screen bg-red-50 font-sans">
+      <header className="bg-red-950 text-white px-6 py-3 flex items-center justify-between shadow">
         <div className="flex items-center gap-3">
           <img src="./icon-64.png" alt="" aria-hidden="true" className="h-6 w-6 rounded-md" />
           <div>
@@ -694,7 +694,7 @@ const App = ({ data = window.flightData || {}, fr24 = window.fr24DashboardData |
         <span className="text-xs text-gray-500">Exported: {exportedAt}</span>
       </header>
 
-      <div className="bg-gray-50 border-b border-gray-200 px-6 flex gap-1">
+      <div className="bg-red-50 border-b border-red-100 px-6 flex gap-1">
         {TABS.map(t => (
           <TabButton key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
         ))}

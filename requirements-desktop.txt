@@ -2,3 +2,5 @@
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
 pywebview>=5.0
+# Shared native setup/repair/diagnostics and local-app lifecycle.
+-e ../thehub-pr/packages/prii_desktop
