@@ -685,7 +685,7 @@ const App = ({ data = window.flightData || {}, fr24 = window.fr24DashboardData |
     <div className="min-h-screen bg-gray-100 font-sans">
       <header className="bg-gray-900 text-white px-6 py-3 flex items-center justify-between shadow">
         <div className="flex items-center gap-3">
-          <Icon name="shield" size={22} className="text-blue-400" />
+          <img src="./icon-64.png" alt="" aria-hidden="true" className="h-6 w-6 rounded-md" />
           <div>
             <h1 className="text-base font-bold leading-tight">Spiderweb</h1>
             <p className="text-xs text-gray-400">FlightRadar24 analysis pipeline</p>
