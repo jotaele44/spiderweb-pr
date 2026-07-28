@@ -30,6 +30,10 @@ OPTIONAL_OUTPUTS = (
 DASHBOARD_ASSETS = (
     "dashboard.jsx",
     "dashboard_contract_finance.jsx",
+    # Branding referenced by dashboard.html / dashboard.jsx. Without these the
+    # header mark and the apple-touch-icon 404 in a static / GitHub Pages export.
+    "icon-64.png",
+    "icon-180.png",
 )
 
 

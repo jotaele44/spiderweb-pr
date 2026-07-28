@@ -4,6 +4,7 @@ import { FinancePane } from './components/FinancePane';
 import { LayerCatalogPane } from './components/LayerCatalogPane';
 import { useAppStore } from './state/store';
 import ErrorBoundary from './components/ErrorBoundary';
+import brandMark from "./assets/icon-64.png?inline";
 
 /**
  * Root component for the PRIIS V1.5 workbench. It composes the
@@ -19,7 +20,7 @@ const App: React.FC = () => {
     <ErrorBoundary>
     <div className="app-container">
       <header className="command-bar">
-        <img src={`${import.meta.env.BASE_URL}icon-64.png`} alt="" aria-hidden="true" className="command-bar-mark" />
+        <img src={brandMark} alt="" aria-hidden="true" className="command-bar-mark" />
         PRIIS V1.5 Workbench
       </header>
       <div className="body">
