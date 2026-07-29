@@ -300,7 +300,8 @@ jobs:
           PY
 
   # Canonical GIS frontend gate: static checks, unit coverage, product-boundary
-  # enforcement, production build, and browser acceptance tests.
+  # enforcement, production build, and browser acceptance tests. Its local
+  # TypeScript ESLint config also covers root build/test configuration.
   frontend:
     runs-on: ubuntu-latest
     defaults:
