@@ -1,0 +1,143 @@
+{
+  "schema_version": "prii.gui-capability/v1",
+  "repository": "jotaele44/spiderweb-pr",
+  "policy": {
+    "mode": "ratchet",
+    "baseline": ".federation/gui-parity-baseline.json",
+    "require_discoverable_gui": true,
+    "require_e2e": true,
+    "terminal_free_user_path": true
+  },
+  "discovery": {
+    "backend_roots": [
+      "server/backend",
+      "desktop"
+    ],
+    "production_roots": [
+      "spiderweb",
+      "fr24",
+      "integration",
+      "federation",
+      "readiness",
+      "server/ingestion",
+      "desktop"
+    ],
+    "analysis_roots": [
+      "pipeline",
+      "earthgpt",
+      "imagery",
+      "gebco",
+      "scripts",
+      "tools"
+    ],
+    "frontend_roots": [
+      "server/frontend/src"
+    ],
+    "frontend_capability_roots": [
+      "server/frontend/src/components"
+    ],
+    "frontend_api_roots": [
+      "server/frontend/src/lib/api.ts"
+    ],
+    "route_files": [],
+    "navigation_files": [
+      "server/frontend/src/App.tsx"
+    ],
+    "implicit_routes": [
+      {
+        "path": "/",
+        "file": "server/frontend/src/App.tsx"
+      }
+    ],
+    "exclude": [
+      "**/tests/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "scripts/check_gui_parity.py",
+      "tools/site_confidence/vendor/**"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "spatial-financial-workbench",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /agencies",
+          "GET /vendors",
+          "GET /sites",
+          "GET /contracts",
+          "GET /events",
+          "GET /events/{flight_id}/track",
+          "GET /anomalies",
+          "GET /sources",
+          "GET /investigations",
+          "GET /alerts",
+          "GET /geo/{layer}.geojson",
+          "GET /catalog"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/"
+        ],
+        "e2e_routes": [
+          "/"
+        ],
+        "components": [
+          "server/frontend/src/App.tsx",
+          "server/frontend/src/lib/api.ts",
+          "server/frontend/src/components/FinancePane.tsx",
+          "server/frontend/src/components/MapPane.tsx",
+          "server/frontend/src/components/LayerCatalogPane.tsx"
+        ],
+        "discoverability": [
+          "server/frontend/src/App.tsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_priis_api.py",
+          "tests/test_geo_routes.py",
+          "tests/test_layer_catalog.py"
+        ],
+        "contract": [
+          "tests/test_static_dashboard_export.py",
+          "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "server/frontend/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "dashboard-host-health",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Health and shell-serving endpoints support launch and readiness; they do not represent a separate user workflow.",
+      "backend": {
+        "files": [
+          "server/backend/main.py",
+          "desktop/app_server.py"
+        ],
+        "endpoints": [
+          "GET /health",
+          "GET /"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_server_smoke.py",
+          "tests/test_desktop_app_server.py"
+        ]
+      }
+    }
+  ],
+  "exceptions": []
+}

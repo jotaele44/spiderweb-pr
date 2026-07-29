@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:gui-parity": "playwright test -c gui-parity.playwright.config.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint src vite.config.ts vitest.config.ts",
@@ -27,6 +28,7 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "1.56.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "latest",
