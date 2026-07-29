@@ -58,4 +58,27 @@ export default tseslint.config(
       "react-hooks/rules-of-hooks": "error",
     },
   },
+  {
+    // vite.config.ts sits outside src/, so it is covered by neither the block
+    // above nor tsconfig.json (whose `include` is just ["src"]) — an unused or
+    // misspelled import in the build config would escape lint and typecheck
+    // alike, despite CI running `eslint .` over the whole package. It runs in
+    // Node, not the browser, so it needs its own globals.
+    files: ["*.ts", "*.mts"],
+    extends: [...tseslint.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: globals.node,
+    },
+    plugins: { "unused-imports": pluginUnusedImports },
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
+        "warn",
+        { vars: "all", varsIgnorePattern: "^_", args: "after-used", argsIgnorePattern: "^_" },
+      ],
+    },
+  },
 );
