@@ -1,6 +1,6 @@
 export type Theme = "light" | "dark";
 
-export const THEME_STORAGE_KEY = "priis_theme";
+export const THEME_STORAGE_KEY = "spiderweb_theme";
 
 /**
  * Resolve the theme to use at startup: an explicit stored choice wins, otherwise

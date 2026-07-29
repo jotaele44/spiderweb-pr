@@ -58,7 +58,7 @@ export function Timeline({
   return (
     <footer className="timeline">
       <div className="timeline-head">
-        <span>TIMELINE · finance / imagery / flight / reports</span>
+        <span>TIMELINE · finance / imagery / reports</span>
         <span>cursor <b>{cursor}</b></span>
       </div>
       <div

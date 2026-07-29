@@ -54,7 +54,7 @@ export interface Contract {
 
 export interface EventRecord {
   id: string;
-  kind: "contract" | "imagery" | "flight" | "report" | "outage" | "permit" | "field" | "other";
+  kind: "contract" | "imagery" | "report" | "outage" | "permit" | "field" | "other";
   at: string;
   siteId: string;
   refId?: string;
@@ -63,14 +63,14 @@ export interface EventRecord {
 }
 
 export interface AnomalyFactor {
-  tag: "finance" | "spatial" | "temporal" | "infra" | "report" | "imagery" | "flight" | "source";
+  tag: "finance" | "spatial" | "temporal" | "infra" | "report" | "imagery" | "source";
   note: string;
 }
 
 export interface Anomaly {
   id: string;
   title: string;
-  category: "financial" | "spatial" | "temporal" | "infrastructure" | "flight" | "imagery" | "report" | "cross-domain";
+  category: "financial" | "spatial" | "temporal" | "infrastructure" | "imagery" | "report" | "cross-domain";
   score: number;
   band: "lo" | "md" | "hi";
   siteId: string;

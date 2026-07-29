@@ -10,7 +10,7 @@ export function CommandCenter({ data, setSelection, setModule }: { data: PriisDa
   const high = data.anomalies.filter((anomaly) => anomaly.band === "hi");
   return (
     <section className="panel">
-      <div className="panel-head"><div><h1>Command Center</h1><span className="subtle">PRIIS operational view · Puerto Rico integrated intelligence</span></div><button className="act primary" onClick={() => setModule("query")}>OPEN QUERY LAYER</button></div>
+      <div className="panel-head"><div><h1>Command Center</h1><span className="subtle">Spiderweb spatial / operational producer · PRII federation</span></div><button className="act primary" onClick={() => setModule("query")}>OPEN QUERY LAYER</button></div>
       <div className="panel-grid">
         <div className="cards">
           <Card title="Total awarded" stat={fmtMoney(total)} delta={`${data.contracts.length} contracts`} />

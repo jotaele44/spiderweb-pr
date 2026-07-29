@@ -304,10 +304,9 @@ jobs:
   # build could merge unnoticed — this repo was the only one in the federation
   # with an unbuilt frontend.
   #
-  # Gates what this package actually defines: `typecheck` and `build`. thehub-pr's
-  # equivalent job also runs lint and unit tests, but this package.json has no
-  # `lint` or `test` script and no eslint config; adding that tooling is a
-  # separate change from closing the CI gap.
+  # Gates what this package defines: `typecheck`, `lint` and `build`. It ships an
+  # eslint config, so lint is gated here too. There is still no `test` script and
+  # no frontend unit tests; adding that tooling is a separate change.
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -324,6 +323,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Typecheck
         run: npm run typecheck
+      - name: Lint
+        run: npm run lint
       - name: Build
         run: npm run build
 

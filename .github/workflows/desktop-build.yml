@@ -2,8 +2,8 @@ name: desktop-build
 
 # Builds the standalone double-click desktop app (PyInstaller) for each OS.
 # Runs on demand, and attaches the bundles to the release on desktop-v* tags.
-# No frontend build step: the UI is the standalone dashboard/dashboard.html
-# viewer with vendored JS under dashboard/vendor/ (no Node.js needed).
+# Includes a frontend build step: the UI is the Vite SPA under server/frontend,
+# and desktop/pyinstaller.spec refuses to package without server/frontend/dist.
 
 on:
   workflow_dispatch:
@@ -14,6 +14,7 @@ on:
     branches: [main]
     paths:
       - "desktop/**"
+      - "server/frontend/**"
       - "requirements-desktop.txt"
       - ".github/workflows/desktop-build.yml"
 
@@ -41,6 +42,24 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: server/frontend/package-lock.json
+
+      # pyinstaller.spec hard-fails without dist/, so build the UI first. The
+      # blank VITE_API_BASE keeps the bundle same-origin against whichever
+      # ephemeral port the wrapper binds (mirrors desktop/config.py).
+      - name: Build frontend
+        shell: bash
+        working-directory: server/frontend
+        env:
+          VITE_API_BASE: ""
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
 
       - name: Install Python dependencies
         shell: bash
