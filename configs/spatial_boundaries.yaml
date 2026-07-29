@@ -1,0 +1,88 @@
+version: spatial_boundary_v0_1
+generated_at: "2026-07-29T00:00:00Z"
+
+boundaries:
+  - boundary_id: PR_CORE_BOUNDARY
+    kind: core
+    label: Puerto Rico terrestrial and insular core
+    status: unresolved
+    source_authority: ""
+    retrieval_date: ""
+    edition_date: ""
+    source_crs: ""
+    normalized_crs: ""
+    geometry_hash: ""
+    source_url: ""
+    notes: >
+      No authoritative PR terrestrial/insular coastline file exists anywhere in
+      this repo today. Candidate sources to evaluate before resolving this
+      entry: US Census TIGER/Line COASTLINE or AREAWATER shapefiles (this repo
+      already ingests other TIGER/Line PR layers — municipios, tracts, places,
+      barrios — via server/ingestion/ingest_tiger_pr.py, so reusing the same
+      vintage would keep a consistent source lineage), or a NOAA shoreline
+      product. Do not populate `geometry` with invented coordinates — leave
+      unresolved until a real source is selected and ingested.
+    geometry: null
+
+  - boundary_id: PR_EEZ_LEGAL_BOUNDARY
+    kind: eez_legal
+    label: Puerto Rico Exclusive Economic Zone (legal maritime reference)
+    status: unresolved
+    source_authority: ""
+    retrieval_date: ""
+    edition_date: ""
+    source_crs: ""
+    normalized_crs: ""
+    geometry_hash: ""
+    source_url: ""
+    notes: >
+      Legal maritime boundary — not sourced. Candidate authoritative sources:
+      NOAA Office of Coast Survey maritime limits and boundaries, or the
+      Flanders Marine Institute (VLIZ) Maritime Boundaries / World EEZ dataset
+      (its redistribution license must be confirmed before any geometry from
+      it is committed to this repo). This is a legal document, not a rendering
+      convenience — do not approximate it with a bounding box.
+    geometry: null
+
+  - boundary_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    kind: analytical_domain
+    label: Spiderweb technical research and rendering extent
+    status: provisional
+    source_authority: "spiderweb-pr internal design proposal (DESIGN_SPIDERWEB_PUERTO_RICO_REGIONAL_3D_SCENE_v0_2), not an authoritative geographic source"
+    retrieval_date: "2026-07-29"
+    edition_date: ""
+    source_crs: "EPSG:4326"
+    normalized_crs: "EPSG:4326"
+    geometry_hash: ""
+    source_url: ""
+    notes: >
+      Provisional technical bounding box, not a legal boundary — must never be
+      presented as one. Final coordinates should be regenerated from
+      PR_CORE_BOUNDARY and PR_EEZ_LEGAL_BOUNDARY once both are resolved, plus
+      any operationally justified cross-boundary areas (shelf/trench/passage
+      coverage). Center is a working reference point, not a boundary vertex.
+    geometry:
+      type: bbox
+      center: [-66.45, 18.15]
+      west: -71.0
+      south: 14.5
+      east: -62.0
+      north: 22.5
+
+context_buffer:
+  default_km: 100
+  min_km: 50
+  max_km: 250
+  overrides:
+    - label: Municipal and terrestrial infrastructure
+      km_note: "0-10 km"
+    - label: Watersheds and hydrography
+      km_note: "25 km"
+    - label: Faults and tectonic structures
+      km_note: "100-250 km"
+    - label: Bathymetry and submarine canyons
+      km_note: "100-250 km"
+    - label: Weather or oceanographic context
+      km_note: "250 km"
+    - label: Federation point overlays
+      km_note: "50-100 km"

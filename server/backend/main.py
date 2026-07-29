@@ -389,6 +389,72 @@ async def layer_catalog():
         raise HTTPException(503, "layer catalog unavailable")
     return _LAYER_CATALOG
 
+# ─── Spatial scene registry ─────────────────────────────────────────────────────
+# Read-only exposure of configs/spatial_boundaries.yaml and
+# configs/spatial_layer_bindings.yaml — additive to /geo/{layer}.geojson and
+# /catalog, neither of which this touches. See schemas/spatial_boundary.schema.json
+# and schemas/spatial_layer_binding.schema.json for the shape of each file.
+
+BOUNDARY_REGISTRY_PATH = ROOT / "configs" / "spatial_boundaries.yaml"
+LAYER_BINDING_REGISTRY_PATH = ROOT / "configs" / "spatial_layer_bindings.yaml"
+
+
+def _load_spatial_yaml(path: Path) -> dict:
+    try:
+        import yaml
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except FileNotFoundError:
+        log.warning("spatial registry not found at %s", path)
+        return {}
+    except Exception as exc:  # noqa: BLE001 — malformed YAML must never take the API offline
+        log.warning("failed to load spatial registry %s (%s)", path, exc)
+        return {}
+
+
+_BOUNDARY_REGISTRY = _load_spatial_yaml(BOUNDARY_REGISTRY_PATH)
+_LAYER_BINDING_REGISTRY = _load_spatial_yaml(LAYER_BINDING_REGISTRY_PATH)
+
+
+@app.get("/spatial/capabilities")
+async def spatial_capabilities():
+    """What the spatial runtime can actually do right now — not aspirational.
+
+    cesium is reported False unconditionally: no Cesium runtime exists in
+    either frontend today (workbench/priis-v1/app has a MapLibre-only
+    spatial/runtime seam as of Phase 0). Flip this only once a CesiumRegionalRuntime
+    actually ships.
+    """
+    return {
+        "runtimes": {"maplibre": True, "cesium": False},
+        "boundary_registry_loaded": bool(_BOUNDARY_REGISTRY),
+        "layer_binding_registry_loaded": bool(_LAYER_BINDING_REGISTRY),
+    }
+
+
+@app.get("/spatial/scene")
+async def spatial_scene():
+    """The regional scene descriptor: boundary registry + context-buffer policy.
+
+    Boundary entries carry their own `status` (unresolved/provisional/resolved)
+    and `geometry` (null when unresolved) — callers must check `status` rather
+    than assume `geometry` is populated. Source: configs/spatial_boundaries.yaml.
+    """
+    if not _BOUNDARY_REGISTRY:
+        raise HTTPException(503, "spatial boundary registry unavailable")
+    return _BOUNDARY_REGISTRY
+
+
+@app.get("/spatial/layers")
+async def spatial_layer_bindings():
+    """Rendering metadata for layers named in the Layer Catalog.
+
+    Source of truth: configs/spatial_layer_bindings.yaml. Does not replace
+    /catalog (labels only) or /geo/{layer}.geojson (actual features).
+    """
+    if not _LAYER_BINDING_REGISTRY:
+        raise HTTPException(503, "spatial layer binding registry unavailable")
+    return _LAYER_BINDING_REGISTRY
+
 # ─── RAG / Query ───────────────────────────────────────────────────────────────
 
 class RagQueryRequest(BaseModel):
