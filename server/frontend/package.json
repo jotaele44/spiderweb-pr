@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
     "build:export": "npm run snapshot && VITE_OFFLINE=1 vite build",
+    "dev": "vite",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
-    "snapshot": "python3 ../../scripts/gen_snapshot.py"
+    "snapshot": "python3 ../../scripts/gen_snapshot.py",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@pr-federation/react": "https://github.com/jotaele44/thehub-pr/releases/download/federation-design-v0.3.1/pr-federation-react-0.3.1.tgz",
@@ -25,7 +27,12 @@
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.6",
     "@vitejs/plugin-react": "^4.0.0",
+    "eslint": "^9.19.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "globals": "^15.14.0",
     "typescript": "^5.1.3",
+    "typescript-eslint": "^8.0.0",
     "vite": "^4.2.0",
     "vite-plugin-singlefile": "^0.13.5"
   }

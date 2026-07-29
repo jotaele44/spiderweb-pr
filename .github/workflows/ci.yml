@@ -304,10 +304,11 @@ jobs:
   # build could merge unnoticed — this repo was the only one in the federation
   # with an unbuilt frontend.
   #
-  # Gates what this package actually defines: `typecheck` and `build`. thehub-pr's
-  # equivalent job also runs lint and unit tests, but this package.json has no
-  # `lint` or `test` script and no eslint config; adding that tooling is a
-  # separate change from closing the CI gap.
+  # Gates lint, typecheck and build. The eslint config is local rather than
+  # rendered from thehub-pr's federation templates: that shared config is
+  # JSX-flavoured and globs src/pages/** and src/Layout.jsx, neither of which
+  # exists here, so it would lint zero files and report a passing gate over
+  # nothing. Unit tests are still absent and remain a separate change.
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -322,6 +323,8 @@ jobs:
           cache-dependency-path: server/frontend/package-lock.json
       - name: Install
         run: npm ci --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
       - name: Typecheck
         run: npm run typecheck
       - name: Build
