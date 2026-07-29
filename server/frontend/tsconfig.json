@@ -10,8 +10,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": false,
+    "strict": true,
     "allowJs": false
   },
-  "include": ["src"]
+  "include": ["src", "tests", "playwright.config.ts"]
 }

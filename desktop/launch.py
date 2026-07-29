@@ -9,7 +9,7 @@ Flags:
   --no-window   serve only; print the URL and block (Ctrl+C to stop)
   --browser     skip pywebview and open the default browser
   --route PATH  open the window/browser on a client route (e.g. /launcher)
-  --smoke       start, verify health, exit 0 (used by CI and setup checks)
+  --smoke       verify health and canonical GIS HTML, then exit (CI)
 """
 
 from __future__ import annotations
@@ -193,6 +193,16 @@ def wait_healthy(url: str, timeout: float = 30.0) -> None:
     raise SystemExit(f"Backend did not become healthy at {url}: {last_error}")
 
 
+def verify_frontend(url: str) -> None:
+    """Require the packaged root to be the canonical Spiderweb GIS application."""
+    with urllib.request.urlopen(url, timeout=5) as response:
+        body = response.read().decode("utf-8")
+    required = ("Spiderweb", "Spatial Intelligence", 'id="root"')
+    missing = [marker for marker in required if marker not in body]
+    if missing:
+        raise SystemExit(f"canonical frontend markers missing: {missing}")
+
+
 # Kept as short pieces so every source line stays within strict line-length lints.
 _FONT = "-apple-system,Segoe UI,Roboto,sans-serif"
 _PAGE_CSS = (
@@ -295,7 +305,8 @@ def main() -> None:
         # fails — so a frozen build can never hang CI on lingering threads.
         try:
             wait_healthy(base + HEALTH_PATH)
-            log(f"smoke ok: {base}{HEALTH_PATH}")
+            verify_frontend(base)
+            log(f"smoke ok: {base}{HEALTH_PATH} + canonical GIS frontend")
             code = 0
         except BaseException as exc:  # noqa: BLE001 - report and exit non-zero
             log(f"smoke failed: {exc}")

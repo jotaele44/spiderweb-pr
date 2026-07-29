@@ -1,18 +1,23 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { viteSingleFile } from 'vite-plugin-singlefile';
-
-// Vite configuration for the PRIIS frontend. This config enables React support
-// and sets a default development port.
-// VITE_OFFLINE=1 produces a single self-contained index.html (data baked in) that
-// opens directly via file:// — see `npm run build:export`.
-const offline = process.env.VITE_OFFLINE === '1';
 
 export default defineConfig({
-  base: offline ? './' : '/',
-  plugins: [react(), ...(offline ? [viteSingleFile()] : [])],
-  build: offline ? { outDir: 'export-standalone' } : {},
+  plugins: [react()],
   server: {
     port: 5173,
+    proxy: {
+      '/health': 'http://127.0.0.1:8000',
+      '/sites': 'http://127.0.0.1:8000',
+      '/events': 'http://127.0.0.1:8000',
+      '/anomalies': 'http://127.0.0.1:8000',
+      '/sources': 'http://127.0.0.1:8000',
+      '/catalog': 'http://127.0.0.1:8000',
+      '/geo': 'http://127.0.0.1:8000',
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 });

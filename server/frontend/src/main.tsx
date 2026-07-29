@@ -1,15 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// Self-hosted font (bundled; offline-safe).
 import '@fontsource-variable/inter';
-import App from './App';
-// Shared federation design layer (single-sourced from @pr-federation/react),
-// then this app's own styles.
+import 'maplibre-gl/dist/maplibre-gl.css';
 import '@pr-federation/react/styles.css';
 import './styles/app.css';
+import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>,
 );

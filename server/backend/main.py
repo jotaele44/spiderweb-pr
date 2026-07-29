@@ -94,6 +94,11 @@ def _parse_json_fields(row: dict, fields: list[str]) -> dict:
 
 
 async def _rows(query: str, params: tuple = ()) -> list[dict[str, Any]]:
+    if not DB_PATH.exists():
+        raise HTTPException(
+            503,
+            "PRIIS database is unavailable; no synthetic records were substituted",
+        )
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(query, params) as cur:
@@ -334,7 +339,6 @@ _ALLOWED_LAYERS = {
     for fam in _LAYER_CATALOG.get("families", [])
     for layer in fam.get("layers", [])
 } or _FALLBACK_LAYERS
-_EMPTY_FC: dict = {"type": "FeatureCollection", "features": []}
 
 
 def _find_geojson(layer: str) -> Optional[Path]:
@@ -393,20 +397,67 @@ async def geo_layer(layer: str):
     if path is not None:
         return FileResponse(str(path), media_type="application/geo+json")
     if layer == "sites":
+        if not DB_PATH.exists():
+            raise HTTPException(503, "sites geometry unavailable: PRIIS database missing")
         return JSONResponse(await _sites_from_db(), media_type="application/geo+json")
     if layer == "anomalies":
+        if not DB_PATH.exists():
+            raise HTTPException(
+                503, "anomaly geometry unavailable: PRIIS database missing"
+            )
         return JSONResponse(await _anomalies_from_db(), media_type="application/geo+json")
-    return JSONResponse(_EMPTY_FC, media_type="application/geo+json")
+    raise HTTPException(
+        404,
+        f"layer '{layer}' is catalogued but its geometry has not been materialized",
+    )
 
 
 @app.get("/catalog")
 async def layer_catalog():
-    """Layer Catalog: the visibility-class → family → layer folder tree (labels only,
-    no geometry). The frontend renders this as the layer-toggle tree ahead of any
-    pin/coordinate data. Source of truth: configs/layer_catalog.yaml."""
+    """Return the catalog enriched with truthful runtime geometry availability."""
     if not _LAYER_CATALOG:
         raise HTTPException(503, "layer catalog unavailable")
-    return _LAYER_CATALOG
+    catalog = json.loads(json.dumps(_LAYER_CATALOG))
+    database_counts: dict[str, int] = {}
+    if DB_PATH.exists():
+        for layer, table in (("sites", "sites"), ("anomalies", "anomalies")):
+            try:
+                rows = await _rows(f"SELECT COUNT(*) AS n FROM {table}")
+                database_counts[layer] = rows[0]["n"] if rows else 0
+            except Exception as exc:  # noqa: BLE001 - availability remains explicit
+                log.warning("could not count %s geometry: %s", layer, exc)
+
+    for family in catalog.get("families", []):
+        for layer in family.get("layers", []):
+            layer_id = layer["layer_id"]
+            path = _find_geojson(layer_id)
+            endpoint = f"/geo/{layer_id}.geojson"
+            if path is not None:
+                runtime_status = "live"
+                geometry_source = "exported_geojson"
+                feature_count = None
+            elif layer_id in database_counts:
+                feature_count = database_counts[layer_id]
+                runtime_status = "live" if feature_count else "empty"
+                geometry_source = "sqlite"
+            else:
+                runtime_status = (
+                    "unavailable" if layer.get("pipeline_wired") else "deferred"
+                )
+                geometry_source = "not_materialized"
+                feature_count = None
+            layer.update(
+                {
+                    "runtime_status": runtime_status,
+                    "feature_count": feature_count,
+                    "endpoint": endpoint,
+                    "provenance": {
+                        "catalog": "configs/layer_catalog.yaml",
+                        "geometry_source": geometry_source,
+                    },
+                }
+            )
+    return catalog
 
 # ─── RAG / Query ───────────────────────────────────────────────────────────────
 

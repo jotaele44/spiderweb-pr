@@ -1,4 +1,4 @@
-# spiderweb-pr frontend
+# Spiderweb canonical GIS frontend
 
 > **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's frontend is a
 > development and diagnostic tool for this producer only. The supported product
@@ -6,8 +6,39 @@
 > (`thehub-pr/server/frontend`), which renders this producer's data alongside
 > the other engines. See `thehub-pr/docs/adr/0001-federated-engines-single-hub.md`.
 
-This is the local diagnostic UI for the `spiderweb-pr` spatial / operational
-producer. It is useful for inspecting this engine's own exports in isolation
-during development; it is not the federation's product surface and is not
-required for the producer's `federation.json` + export-package contract with the
-Hub.
+This is the canonical local UI for the `spiderweb-pr` spatial producer. It
+provides a catalog-driven map, feature inspector, evidence-aware timeline,
+filters, provenance-preserving GeoJSON/CSV exports, and explicit source or
+geometry error states. It is useful for inspecting this engine's own exports in
+isolation; it is not the federation's cross-engine product surface.
+
+The UI consumes only Spiderweb's same-origin API:
+
+- `/catalog` describes all available layer families and runtime status.
+- `/geo/{layer}.geojson` supplies materialized catalog geometry.
+- `/sites`, `/events`, `/anomalies`, and `/sources` populate the workbench.
+- `/health` reports backend and database readiness.
+
+Unavailable data is never replaced with demo records. Missing databases,
+endpoints, and geometry are visible in the workbench as explicit errors.
+
+## Development
+
+```bash
+npm ci
+npm run dev
+```
+
+The Vite development server proxies the API to `http://127.0.0.1:8000`.
+
+## Verification
+
+```bash
+npm run verify
+npx playwright install chromium
+npm run test:e2e
+```
+
+`verify` runs lint, TypeScript, unit tests, the Skywatcher boundary guard, and a
+production build. The boundary guard rejects flight-review product concepts and
+direct imports from the separate Skywatcher application.

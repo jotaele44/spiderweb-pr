@@ -1,6 +1,6 @@
-# Run Spiderweb as a desktop app
+# Run Spiderweb as a desktop GIS app
 
-Double-click the launcher for your system in the repo root:
+Double-click the launcher for your system in the repository root:
 
 | System | File |
 |---|---|
@@ -8,90 +8,47 @@ Double-click the launcher for your system in the repo root:
 | Windows | `PRII-SPIDERWEB.bat` |
 | Linux | `PRII-SPIDERWEB.sh` |
 
-The **first run** needs an internet connection once: it creates a private
-`.venv` and installs the small server dependencies (requires
-[Python 3.10+](https://www.python.org/downloads/); **no Node.js needed** —
-the UI is the standalone `dashboard/dashboard.html` viewer with vendored
-React/Tailwind under `dashboard/vendor/`). Every later run starts instantly
-and **works fully offline**.
+The first source-checkout run creates a private `.venv`, installs the desktop
+server dependencies, and builds `server/frontend`. It therefore requires
+Python 3.11+, Node.js 22+, and a one-time internet connection. Packaged
+PyInstaller releases already contain the built frontend and do not require
+Python or Node.js.
 
 ## What it shows
 
-The dashboard reads a JSON snapshot of your local flight database
-(`~/flight_database.db`, exported to `outputs/dashboard_data.json` during
-setup via `run_all.py --export-json`). Without a database the app opens with
-empty metrics and a source-status panel — run the spiderweb pipeline
-(`python run_all.py …`) to populate it, then re-run
-`python desktop/setup.py --force` (or export manually) to refresh the
-snapshot. Optional layers (`fr24_dashboard_review_queue.json`,
-`contract_finance_layer_report.json`) appear automatically when the
-corresponding exports exist in `outputs/`.
+The desktop root is the same canonical spatial-intelligence workbench served by
+the backend: catalog-driven map layers, site/event/anomaly inspection,
+provenance, temporal filters, and GeoJSON/CSV exports.
 
-The heavy analysis extras (`rag` LLM stack, geospatial ingest) are **not**
-part of the desktop install; they remain the documented developer CLI paths.
+Data availability is explicit. If `server/priis.db` or a catalogued geometry
+artifact is absent, the application reports the unavailable endpoint or layer;
+it does not manufacture a demo dataset.
 
 ## How it works
 
-- `desktop/config.py` — per-repo settings (title, dashboard/outputs paths).
-- `desktop/app_server.py` — FastAPI serving `dashboard/` and `outputs/`
-  from one local port (replaces the `python -m http.server` step from the
-  dashboard header docs).
-- `desktop/launch.py` — picks a free port, starts uvicorn, opens a native
-  [pywebview](https://pywebview.flowrl.com/) window (falls back to the
-  default browser). Flags: `--no-window`, `--browser`, `--smoke`.
-- `desktop/setup.py` — idempotent one-time setup (`--force` to redo).
+- `desktop/config.py` points to `server/frontend/dist/index.html`.
+- `desktop/app_server.py` combines the canonical FastAPI backend and built SPA
+  on one local origin.
+- `desktop/launch.py` starts uvicorn and opens a native pywebview window, with a
+  browser fallback. `--smoke` verifies both backend health and canonical HTML.
+- `desktop/setup.py` installs dependencies and builds the frontend when needed.
+- `desktop/pyinstaller.spec` bundles the frontend, catalog, backend, and optional
+  local spatial data.
 
-## Command line
+## Source-checkout commands
 
 ```bash
-python desktop/setup.py          # one-time setup + data snapshot
-.venv/bin/python desktop/launch.py            # native window
-.venv/bin/python desktop/launch.py --browser  # browser tab instead
-.venv/bin/python desktop/launch.py --no-window  # server only
+python desktop/setup.py
+.venv/bin/python desktop/launch.py
+.venv/bin/python desktop/launch.py --browser
+.venv/bin/python desktop/launch.py --no-window
 ```
 
-## macOS app icon
+Use `.venv\Scripts\python.exe` instead on Windows.
 
-`PRII-SPIDERWEB.app` is a double-click macOS app (Apple-silicon and Intel). Double-click
-it in Finder and the dashboard opens in its own window — no Terminal. The first
-launch runs the one-time setup (needs internet once; no Node.js — the dashboard
-is the vendored no-build viewer); after that it starts straight away and works
-offline.
+## Packaged builds
 
-Because the app is a small self-locating wrapper around `desktop/launch.py`, it
-must stay at the repo root (it finds the repo from its own location). If macOS
-blocks the first open, see **If macOS won't open the app** below.
-
-## If macOS won't open the app
-
-The app is safe — it's an open-source launcher script you can read in
-`Contents/MacOS/`. macOS blocks it only because it isn't signed with a paid
-Apple Developer ID or notarized by Apple, so the first open may show *"cannot be
-opened because Apple cannot check it for malicious software"* or an
-*"unidentified developer"* notice. That's macOS quarantining files downloaded
-from the internet (it happens especially with GitHub's **Download ZIP**). Any
-one of the following clears it — you only do this once per download:
-
-- **Easiest — run the helper.** Double-click **`Fix-Gatekeeper.command`** in the
-  repo root, then open the app normally. If the helper is itself blocked,
-  right-click it → **Open** to run it once.
-- **Terminal (always works).** Paste this into Terminal (pasting a command is
-  never blocked), then press Return:
-  ```bash
-  xattr -dr com.apple.quarantine "/path/to/spiderweb-pr/PRII-SPIDERWEB.app"
-  ```
-  Tip: type `xattr -dr com.apple.quarantine ` (with a trailing space) and drag
-  the app onto the Terminal window to fill in its path.
-- **System Settings.** Double-click the app, let macOS block it, then open
-  **System Settings → Privacy & Security**, scroll to the message naming the app,
-  and click **Open Anyway**. On macOS Sequoia 15 and later this replaces the old
-  right-click → **Open** trick.
-
-## Standalone builds (no Python required)
-
-The `desktop-build` workflow (`.github/workflows/desktop-build.yml`) freezes
-`desktop/launch.py` with PyInstaller (`desktop/pyinstaller.spec`) on Linux,
-macOS, and Windows, bundling `dashboard/` (html + jsx + vendored JS) into the
-`PRII-SPIDERWEB` one-folder app. It smoke-tests each frozen build
-(`--smoke`), zips the bundles, packages a macOS `.dmg` via `hdiutil`, and
-attaches everything to the release on `desktop-v*` tags.
+The `desktop-build` workflow verifies and builds the canonical frontend, freezes
+the app on Linux, macOS, and Windows, and runs `desktop/launch.py --smoke`
+against each frozen bundle. Release tags matching `desktop-v*` also receive the
+zipped bundles and macOS disk image.

@@ -79,6 +79,56 @@ def test_unknown_layer_rejected(client):
     assert resp.status_code == 400
 
 
+def test_catalogued_missing_geometry_is_explicit(client, monkeypatch):
+    """Catalog membership never implies a fabricated empty geometry payload."""
+    from server.backend import main
+
+    monkeypatch.setattr(main, "_find_geojson", lambda _layer: None)
+    layer = next(
+        layer_id
+        for layer_id in sorted(main._ALLOWED_LAYERS)
+        if layer_id not in {"sites", "anomalies"}
+    )
+    resp = client.get(f"/geo/{layer}.geojson")
+    assert resp.status_code == 404
+    assert "has not been materialized" in resp.json()["detail"]
+
+
+def test_database_geometry_missing_is_explicit(client, monkeypatch, tmp_path):
+    from server.backend import main
+
+    monkeypatch.setattr(main, "DB_PATH", tmp_path / "missing.db")
+    monkeypatch.setattr(main, "_find_geojson", lambda _layer: None)
+    resp = client.get("/geo/sites.geojson")
+    assert resp.status_code == 503
+    assert "database missing" in resp.json()["detail"]
+
+
+def test_catalog_reports_runtime_status_and_provenance(client):
+    resp = client.get("/catalog")
+    assert resp.status_code == 200
+    layers = [
+        layer
+        for family in resp.json()["families"]
+        for layer in family["layers"]
+    ]
+    assert layers
+    for layer in layers:
+        assert layer["runtime_status"] in {
+            "live",
+            "empty",
+            "unavailable",
+            "deferred",
+        }
+        assert layer["endpoint"] == f"/geo/{layer['layer_id']}.geojson"
+        assert layer["provenance"]["catalog"] == "configs/layer_catalog.yaml"
+        assert layer["provenance"]["geometry_source"] in {
+            "exported_geojson",
+            "sqlite",
+            "not_materialized",
+        }
+
+
 @pytest.mark.smoke
 def test_content_type_is_json_or_geojson(client):
     """The route declares media_type='application/geo+json' but middleware

@@ -1,9 +1,4 @@
-"""Same-origin ASGI app for the spiderweb-pr desktop wrapper.
-
-Serves the standalone dashboard (dashboard/dashboard.html + vendored JS) and
-the JSON exports under outputs/ from one local port, replacing the
-"python -m http.server 8080" step from the dashboard header docs.
-"""
+"""Same-origin API and canonical GIS frontend for the Spiderweb desktop app."""
 
 from __future__ import annotations
 
@@ -12,29 +7,44 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from fastapi import FastAPI  # noqa: E402
+from fastapi import HTTPException  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
-from desktop.config import DASHBOARD_DATA, DASHBOARD_DIR, OUTPUTS_DIR  # noqa: E402
+from desktop.config import FRONTEND_DIR, FRONTEND_ENTRY  # noqa: E402
+from server.backend.main import app  # noqa: E402
 
-app = FastAPI(title="Spiderweb Dashboard Server")
+assets = FRONTEND_DIR / "assets"
+if assets.is_dir():
+    app.mount("/assets", StaticFiles(directory=assets), name="frontend-assets")
 
 
-@app.get("/health")
-def health() -> dict:
-    return {
-        "status": "ok",
-        "dashboard": (DASHBOARD_DIR / "dashboard.html").is_file(),
-        "dashboard_data": DASHBOARD_DATA.is_file(),
-    }
+def require_frontend() -> None:
+    """Fail explicitly when a source checkout has not built the canonical UI."""
+    if not FRONTEND_ENTRY.is_file():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"canonical frontend missing at {FRONTEND_ENTRY}; "
+                "run npm ci && npm run build in server/frontend"
+            ),
+        )
 
 
 @app.get("/", include_in_schema=False)
-def index() -> FileResponse:
-    return FileResponse(DASHBOARD_DIR / "dashboard.html")
+async def index() -> FileResponse:
+    require_frontend()
+    return FileResponse(FRONTEND_ENTRY)
 
 
-OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/outputs", StaticFiles(directory=OUTPUTS_DIR), name="outputs")
-app.mount("/", StaticFiles(directory=DASHBOARD_DIR, html=True), name="dashboard")
+@app.get("/{client_path:path}", include_in_schema=False)
+async def spa_fallback(client_path: str) -> FileResponse:
+    require_frontend()
+    candidate = (FRONTEND_DIR / client_path).resolve()
+    try:
+        candidate.relative_to(FRONTEND_DIR.resolve())
+    except ValueError:
+        return FileResponse(FRONTEND_ENTRY)
+    if candidate.is_file():
+        return FileResponse(candidate)
+    return FileResponse(FRONTEND_ENTRY)

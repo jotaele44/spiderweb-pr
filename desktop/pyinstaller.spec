@@ -3,9 +3,8 @@
 #   pip install pyinstaller
 #   pyinstaller desktop/pyinstaller.spec --distpath dist-desktop
 # Produces a self-contained one-folder app: dist-desktop/PRII-SPIDERWEB/
-# The bundle mirrors the repo layout so desktop/app_server.py finds dashboard/
-# and outputs/ with its normal relative paths (no Vite build — the UI is the
-# standalone dashboard/dashboard.html viewer with vendored JS).
+# The bundle mirrors the repo layout so desktop/app_server.py finds the built
+# canonical GIS frontend, layer catalog, and optional spatial outputs.
 
 import os
 import sys
@@ -27,8 +26,11 @@ EXE_ICON = str(BRANDING / "icon.ico") if sys.platform == "win32" else None
 CONSOLE = os.environ.get("PRII_CONSOLE") == "1"
 
 datas = [
-    (str(REPO_ROOT / "dashboard"), "dashboard"),
+    (str(REPO_ROOT / "server" / "frontend" / "dist"), "server/frontend/dist"),
+    (str(REPO_ROOT / "configs"), "configs"),
 ]
+if (REPO_ROOT / "server" / "priis.db").exists():
+    datas.append((str(REPO_ROOT / "server" / "priis.db"), "server"))
 if (REPO_ROOT / "outputs").exists():
     datas.append((str(REPO_ROOT / "outputs"), "outputs"))
 
@@ -43,6 +45,10 @@ a = Analysis(
         "uvicorn.protocols.websockets.auto",
         "uvicorn.lifespan.on",
         "desktop.app_server",
+        "server.backend.main",
+        "aiosqlite",
+        "sse_starlette.sse",
+        "yaml",
     ],
     noarchive=False,
 )

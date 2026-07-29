@@ -299,15 +299,8 @@ jobs:
           print(f"{extra}: imported {', '.join(modules)} OK")
           PY
 
-  # Frontend gate. server/frontend has shipped with a package.json and a
-  # committed package-lock.json but no CI job at all, so a change that broke the
-  # build could merge unnoticed — this repo was the only one in the federation
-  # with an unbuilt frontend.
-  #
-  # Gates what this package actually defines: `typecheck` and `build`. thehub-pr's
-  # equivalent job also runs lint and unit tests, but this package.json has no
-  # `lint` or `test` script and no eslint config; adding that tooling is a
-  # separate change from closing the CI gap.
+  # Canonical GIS frontend gate: static checks, unit coverage, product-boundary
+  # enforcement, production build, and browser acceptance tests.
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -322,10 +315,12 @@ jobs:
           cache-dependency-path: server/frontend/package-lock.json
       - name: Install
         run: npm ci --no-audit --no-fund
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Build
-        run: npm run build
+      - name: Verify frontend
+        run: npm run verify
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: GIS browser acceptance
+        run: npm run test:e2e
 
   # Reproducible installs: fails when uv.lock no longer satisfies pyproject.toml,
   # so a dependency edit cannot merge without its lockfile update. Mirrors the
