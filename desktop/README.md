@@ -27,13 +27,13 @@ it does not manufacture a demo dataset.
 ## How it works
 
 - `desktop/config.py` points to `server/frontend/dist/index.html`.
-- `desktop/app_server.py` combines the canonical FastAPI backend and built SPA
-  on one local origin.
+- `desktop/app_server.py` combines the dedicated GIS-only FastAPI runtime and
+  built SPA on one local origin.
 - `desktop/launch.py` starts uvicorn and opens a native pywebview window, with a
   browser fallback. `--smoke` verifies both backend health and canonical HTML.
 - `desktop/setup.py` installs dependencies and builds the frontend when needed.
-- `desktop/pyinstaller.spec` bundles the frontend, catalog, backend, and optional
-  local spatial data.
+- `desktop/pyinstaller.spec` bundles the frontend, GIS catalog/runtime, and only
+  materialized geometry named by that catalog.
 
 ## Source-checkout commands
 

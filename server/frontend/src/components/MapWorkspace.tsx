@@ -5,6 +5,7 @@ import type {
   Anomaly,
   CatalogLayer,
   EventRecord,
+  GeoJsonFeatureCollection,
   LayerCatalog,
   LayerRuntimeStatus,
   Selection,
@@ -13,15 +14,12 @@ import type {
 
 const style: StyleSpecification = {
   version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+  sources: {},
+  layers: [{
+    id: 'operational-background',
+    type: 'background',
+    paint: { 'background-color': '#0b1016' },
+  }],
 };
 
 type LayerLoadStatus = LayerRuntimeStatus | 'loading' | 'error';
@@ -88,6 +86,7 @@ export function MapWorkspace({
   catalog,
   enabledLayers,
   onLayerStatus,
+  onLayerData,
   onSelect,
 }: {
   sites: Site[];
@@ -96,6 +95,7 @@ export function MapWorkspace({
   catalog: LayerCatalog | null;
   enabledLayers: Set<string>;
   onLayerStatus: (layerId: string, status: LayerLoadStatus, message?: string) => void;
+  onLayerData: (layerId: string, collection: GeoJsonFeatureCollection | null) => void;
   onSelect: (selection: Selection) => void;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -104,6 +104,7 @@ export function MapWorkspace({
   const loadedRef = useRef<Set<string>>(new Set());
   const [ready, setReady] = useState(false);
   const [baseMapError, setBaseMapError] = useState(false);
+  const [loadedLayerCount, setLoadedLayerCount] = useState(0);
 
   const catalogById = useMemo(
     () => new Map(
@@ -124,9 +125,22 @@ export function MapWorkspace({
       attributionControl: true,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
-    map.on('load', () => setReady(true));
     map.on('error', (event) => {
       if ((event as { sourceId?: string }).sourceId === 'osm') setBaseMapError(true);
+    });
+    map.on('load', () => {
+      setReady(true);
+      try {
+        map.addSource('osm', {
+          type: 'raster',
+          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '© OpenStreetMap contributors',
+        });
+        map.addLayer({ id: 'osm', type: 'raster', source: 'osm' });
+      } catch {
+        setBaseMapError(true);
+      }
     });
     map.on('click', (event) => {
       const feature = map.queryRenderedFeatures(event.point)
@@ -150,6 +164,7 @@ export function MapWorkspace({
       map.remove();
       mapRef.current = null;
       loadedLayers.clear();
+      setLoadedLayerCount(0);
     };
   }, [onSelect]);
 
@@ -162,6 +177,8 @@ export function MapWorkspace({
       if (enabledLayers.has(layerId)) continue;
       removeGeoLayer(map, layerId);
       loadedRef.current.delete(layerId);
+      onLayerData(layerId, null);
+      setLoadedLayerCount(loadedRef.current.size);
       onLayerStatus(layerId, catalogById.get(layerId)?.runtime_status ?? 'deferred');
     }
 
@@ -178,6 +195,8 @@ export function MapWorkspace({
           if (cancelled || !mapRef.current) return;
           addGeoLayer(mapRef.current, layerId, collection as GeoJSON.FeatureCollection);
           loadedRef.current.add(layerId);
+          onLayerData(layerId, collection);
+          setLoadedLayerCount(loadedRef.current.size);
           onLayerStatus(layerId, collection.features.length ? 'live' : 'empty');
         })
         .catch((error: unknown) => {
@@ -193,7 +212,7 @@ export function MapWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [catalogById, enabledLayers, onLayerStatus, ready]);
+  }, [catalogById, enabledLayers, onLayerData, onLayerStatus, ready]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -253,7 +272,12 @@ export function MapWorkspace({
 
   return (
     <section className="map-region" aria-label="Puerto Rico spatial intelligence map">
-      <div ref={hostRef} className="map-host" data-testid="gis-map" />
+      <div
+        ref={hostRef}
+        className="map-host"
+        data-testid="gis-map"
+        data-operational-layer-count={loadedLayerCount}
+      />
       {!sites.length && (
         <div className="map-notice" role="status">
           Map ready. No site geometry is available from the current data source.

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import logging
 import sqlite3
-from typing import Iterable
 
 log = logging.getLogger(__name__)
 
@@ -97,6 +96,29 @@ _EVENTS_AIRCRAFT_COLUMNS = {
     "image_path":       "TEXT",
 }
 
+_PROVENANCE_COLUMNS = {
+    "sites": {
+        "source_ids": "TEXT",
+        "lineage": "TEXT",
+    },
+    "events": {
+        "source_ids": "TEXT",
+        "lineage": "TEXT",
+    },
+    "anomalies": {
+        "source_ids": "TEXT",
+        "lineage": "TEXT",
+    },
+    "sources": {
+        "publisher": "TEXT",
+        "url": "TEXT",
+        "captured_at": "TEXT",
+        "hash": "TEXT",
+        "lineage": "TEXT",
+        "provenance_note": "TEXT",
+    },
+}
+
 
 def ensure_events_aircraft_columns(conn: sqlite3.Connection) -> dict[str, bool]:
     """
@@ -124,6 +146,22 @@ def ensure_alerts_registration_column(conn: sqlite3.Connection) -> dict[str, boo
     if "alerts" not in _existing_tables(conn):
         return {"registration": False}
     added = {"registration": _add_column_if_missing(conn, "alerts", "registration", "TEXT")}
+    conn.commit()
+    return added
+
+
+def ensure_provenance_columns(conn: sqlite3.Connection) -> dict[str, dict[str, bool]]:
+    """Add the nullable provenance envelope without rewriting existing records."""
+    tables = _existing_tables(conn)
+    added: dict[str, dict[str, bool]] = {}
+    for table, columns in _PROVENANCE_COLUMNS.items():
+        if table not in tables:
+            added[table] = {column: False for column in columns}
+            continue
+        added[table] = {
+            column: _add_column_if_missing(conn, table, column, column_type)
+            for column, column_type in columns.items()
+        }
     conn.commit()
     return added
 
@@ -186,6 +224,7 @@ def run_all(conn: sqlite3.Connection) -> dict[str, dict]:
     return {
         "sites_geoid": ensure_sites_geoid_columns(conn),
         "events_aircraft": ensure_events_aircraft_columns(conn),
+        "provenance": ensure_provenance_columns(conn),
         "alerts_registration": ensure_alerts_registration_column(conn),
         "track_points": {"created": ensure_track_points_table(conn)},
         "performance_indexes": ensure_performance_indexes(conn),
@@ -195,6 +234,7 @@ def run_all(conn: sqlite3.Connection) -> dict[str, dict]:
 __all__ = [
     "ensure_sites_geoid_columns",
     "ensure_events_aircraft_columns",
+    "ensure_provenance_columns",
     "ensure_alerts_registration_column",
     "ensure_track_points_table",
     "ensure_performance_indexes",

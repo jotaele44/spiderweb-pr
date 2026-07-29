@@ -25,6 +25,12 @@ endpoints, and geometry are visible in the workbench as explicit errors.
 ## Development
 
 ```bash
+python -m uvicorn server.backend.gis_app:app --reload --port 8000
+```
+
+In a second terminal:
+
+```bash
 npm ci
 npm run dev
 ```
@@ -39,6 +45,6 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-`verify` runs lint, TypeScript, unit tests, the Skywatcher boundary guard, and a
-production build. The boundary guard rejects flight-review product concepts and
-direct imports from the separate Skywatcher application.
+`verify` runs lint, TypeScript, unit tests, the Spiderweb runtime-boundary guard,
+and a production build. The guard checks frontend source and JSON, desktop
+wiring, the dedicated backend, and the catalog source/generator.

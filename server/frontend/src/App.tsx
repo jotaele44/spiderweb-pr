@@ -18,6 +18,7 @@ import {
 } from './lib/export';
 import type {
   EvidenceTier,
+  GeoJsonFeatureCollection,
   LoadIssue,
   Selection,
   TemporalWindow,
@@ -51,6 +52,9 @@ export default function App() {
   const [cursor, setCursor] = useState(window.end);
   const [enabledLayers, setEnabledLayers] = useState<Set<string>>(new Set());
   const [layerStates, setLayerStates] = useState<Record<string, LayerState>>({});
+  const [layerCollections, setLayerCollections] = useState<
+    Record<string, GeoJsonFeatureCollection>
+  >({});
   const [layersCollapsed, setLayersCollapsed] = useState(false);
   const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -64,6 +68,7 @@ export default function App() {
     setWindow(nextWindow);
     setCursor(nextWindow.end);
     setEnabledLayers(initialLayerSelection(result.data.catalog));
+    setLayerCollections({});
     setLoading(false);
   }, []);
 
@@ -102,10 +107,40 @@ export default function App() {
       [layerId]: { status, message },
     }));
   }, []);
+  const onLayerData = useCallback((
+    layerId: string,
+    collection: GeoJsonFeatureCollection | null,
+  ) => {
+    setLayerCollections((current) => {
+      if (collection) return { ...current, [layerId]: collection };
+      const next = { ...current };
+      delete next[layerId];
+      return next;
+    });
+  }, []);
 
   const exportCollection = useMemo(
-    () => buildVisibleFeatureCollection(visibleSites, visibleEvents, visibleAnomalies),
-    [visibleAnomalies, visibleEvents, visibleSites],
+    () => buildVisibleFeatureCollection(
+      visibleSites,
+      visibleEvents,
+      visibleAnomalies,
+      data.sources,
+      layers
+        .filter((layer) => enabledLayers.has(layer.layer_id))
+        .flatMap((layer) => {
+          const collection = layerCollections[layer.layer_id];
+          return collection ? [{ layer, collection }] : [];
+        }),
+    ),
+    [
+      data.sources,
+      enabledLayers,
+      layerCollections,
+      layers,
+      visibleAnomalies,
+      visibleEvents,
+      visibleSites,
+    ],
   );
 
   function toggleTier(tier: EvidenceTier): void {
@@ -147,6 +182,7 @@ export default function App() {
       className="app-shell"
       data-layers-collapsed={layersCollapsed}
       data-inspector-collapsed={inspectorCollapsed}
+      data-export-feature-count={exportCollection.features.length}
     >
       <header className="topbar">
         <div className="brand">
@@ -303,6 +339,7 @@ export default function App() {
           catalog={data.catalog}
           enabledLayers={enabledLayers}
           onLayerStatus={onLayerStatus}
+          onLayerData={onLayerData}
           onSelect={setSelection}
         />
       </main>

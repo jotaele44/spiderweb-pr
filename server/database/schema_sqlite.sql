@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS sites (
     infrastructure_class TEXT,
     municipio_geoid      TEXT,   -- TIGER county GEOID (STATEFP=72), joined by ingest_tiger_pr.py
     tract_geoid          TEXT,   -- TIGER tract GEOID, joined by ingest_tiger_pr.py
-    zcta_geoid           TEXT    -- TIGER ZCTA GEOID, joined by ingest_tiger_pr.py
+    zcta_geoid           TEXT,   -- TIGER ZCTA GEOID, joined by ingest_tiger_pr.py
+    source_ids           TEXT,   -- JSON array of source IDs
+    lineage              TEXT    -- JSON array of provenance steps
 );
 
 CREATE TABLE IF NOT EXISTS contracts (
@@ -59,7 +61,9 @@ CREATE TABLE IF NOT EXISTS events (
     altitude_ft      INTEGER,
     ground_speed_mph INTEGER,
     flight_status    TEXT,
-    image_path       TEXT
+    image_path       TEXT,
+    source_ids       TEXT,       -- JSON array of source IDs
+    lineage          TEXT        -- JSON array of provenance steps
 );
 
 -- Index the registration-watchlist scan in server/ingestion/registration_alerts.py
@@ -94,15 +98,23 @@ CREATE TABLE IF NOT EXISTS anomalies (
     contracts       TEXT,        -- JSON array of contract IDs
     event_ids       TEXT,        -- JSON array of event IDs
     confidence      INTEGER DEFAULT 1,
-    contradictions  TEXT         -- JSON array of strings
+    contradictions  TEXT,        -- JSON array of strings
+    source_ids       TEXT,        -- JSON array of source IDs
+    lineage          TEXT         -- JSON array of provenance steps
 );
 
 CREATE TABLE IF NOT EXISTS sources (
-    id     TEXT PRIMARY KEY,
-    name   TEXT NOT NULL,
-    tier   TEXT DEFAULT 'T4',
-    kind   TEXT NOT NULL,
-    status TEXT DEFAULT 'offline'
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    tier            TEXT DEFAULT 'T4',
+    kind            TEXT NOT NULL,
+    status          TEXT DEFAULT 'offline',
+    publisher       TEXT,
+    url             TEXT,
+    captured_at     TEXT,
+    hash            TEXT,
+    lineage         TEXT,        -- JSON array of provenance steps
+    provenance_note TEXT
 );
 
 CREATE TABLE IF NOT EXISTS investigations (

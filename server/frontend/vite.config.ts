@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // A packaged runtime must never retain unreferenced bundles from an older
+    // product build, even when developers reuse a local ignored dist folder.
+    emptyOutDir: true,
+  },
   server: {
     port: 5173,
     proxy: {

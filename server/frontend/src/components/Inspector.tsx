@@ -1,11 +1,47 @@
 import type { Selection, WorkspaceData } from '../types/gis';
 
 function Field({ label, value }: { label: string; value: unknown }) {
+  const display = value == null || value === ''
+    ? 'Not supplied'
+    : typeof value === 'object'
+      ? JSON.stringify(value)
+      : String(value);
   return (
     <div className="inspector-field">
       <dt>{label}</dt>
-      <dd>{value == null || value === '' ? 'Not supplied' : String(value)}</dd>
+      <dd>{display}</dd>
     </div>
+  );
+}
+
+function ProvenanceFields({
+  sourceIds,
+  data,
+  lineage,
+}: {
+  sourceIds?: string[];
+  data: WorkspaceData;
+  lineage?: unknown[];
+}) {
+  const sources = (sourceIds ?? [])
+    .map((sourceId) => data.sources.find((source) => source.id === sourceId))
+    .filter((source) => Boolean(source));
+  return (
+    <>
+      <Field label="Source IDs" value={sourceIds} />
+      <Field label="Source URL" value={sources.find((source) => source?.url)?.url} />
+      <Field
+        label="Captured at"
+        value={sources.find((source) => source?.capturedAt)?.capturedAt}
+      />
+      <Field label="Hash" value={sources.find((source) => source?.hash)?.hash} />
+      <Field
+        label="Lineage"
+        value={lineage?.length
+          ? lineage
+          : sources.flatMap((source) => source?.lineage ?? [])}
+      />
+    </>
   );
 }
 
@@ -45,6 +81,11 @@ export function Inspector({
           <Field label="Evidence tier" value={null} />
           <Field label="Confidence" value={null} />
           <Field label="Source" value="/sites" />
+          <ProvenanceFields
+            sourceIds={site?.sourceIds}
+            lineage={site?.lineage}
+            data={data}
+          />
           <Field label="Provenance" value={`spiderweb-pr:/sites/${selection.id}`} />
         </dl>
       </aside>
@@ -64,6 +105,11 @@ export function Inspector({
           <Field label="Confidence" value={null} />
           <Field label="Linked site" value={event?.siteId} />
           <Field label="Source" value="/events" />
+          <ProvenanceFields
+            sourceIds={event?.sourceIds}
+            lineage={event?.lineage}
+            data={data}
+          />
           <Field label="Provenance" value={`spiderweb-pr:/events/${selection.id}`} />
         </dl>
       </aside>
@@ -85,6 +131,11 @@ export function Inspector({
           <Field label="Contradictions" value={anomaly?.contradictions?.join(' · ')} />
           <Field label="Linked site" value={anomaly?.siteId} />
           <Field label="Source" value="/anomalies" />
+          <ProvenanceFields
+            sourceIds={anomaly?.sourceIds}
+            lineage={anomaly?.lineage}
+            data={data}
+          />
           <Field label="Provenance" value={`spiderweb-pr:/anomalies/${selection.id}`} />
         </dl>
       </aside>
@@ -104,6 +155,11 @@ export function Inspector({
         <Field label="Source" value={`/geo/${selection.layerId}.geojson`} />
         <Field label="Catalog provenance" value={catalogLayer?.provenance?.catalog} />
         <Field label="Geometry source" value={catalogLayer?.provenance?.geometry_source} />
+        <Field label="Source IDs" value={selection.properties.source_ids ?? catalogLayer?.provenance?.source_ids} />
+        <Field label="Source URL" value={selection.properties.source_url ?? catalogLayer?.provenance?.url} />
+        <Field label="Captured at" value={selection.properties.captured_at ?? catalogLayer?.provenance?.captured_at} />
+        <Field label="Hash" value={selection.properties.hash ?? catalogLayer?.provenance?.hash} />
+        <Field label="Lineage" value={selection.properties.lineage ?? catalogLayer?.provenance?.lineage} />
         <Field label="Provenance" value={`spiderweb-pr:/geo/${selection.layerId}/${selection.id}`} />
       </dl>
     </aside>

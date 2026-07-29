@@ -10,6 +10,8 @@ import os
 import sys
 from pathlib import Path
 
+import yaml
+
 REPO_ROOT = Path(SPECPATH).resolve().parent
 APP_NAME = "PRII-SPIDERWEB"
 
@@ -27,12 +29,24 @@ CONSOLE = os.environ.get("PRII_CONSOLE") == "1"
 
 datas = [
     (str(REPO_ROOT / "server" / "frontend" / "dist"), "server/frontend/dist"),
-    (str(REPO_ROOT / "configs"), "configs"),
+    (str(REPO_ROOT / "configs" / "layer_catalog.yaml"), "configs"),
 ]
 if (REPO_ROOT / "server" / "priis.db").exists():
     datas.append((str(REPO_ROOT / "server" / "priis.db"), "server"))
-if (REPO_ROOT / "outputs").exists():
-    datas.append((str(REPO_ROOT / "outputs"), "outputs"))
+catalog = yaml.safe_load(
+    (REPO_ROOT / "configs" / "layer_catalog.yaml").read_text(encoding="utf-8")
+)
+catalog_layers = {
+    layer["layer_id"]
+    for family in catalog.get("families", [])
+    for layer in family.get("layers", [])
+}
+for folder in ("outputs", "data"):
+    source_dir = REPO_ROOT / folder
+    for layer_id in catalog_layers:
+        geometry = source_dir / f"{layer_id}.geojson"
+        if geometry.is_file():
+            datas.append((str(geometry), folder))
 
 a = Analysis(
     [str(REPO_ROOT / "desktop" / "launch.py")],
@@ -45,7 +59,7 @@ a = Analysis(
         "uvicorn.protocols.websockets.auto",
         "uvicorn.lifespan.on",
         "desktop.app_server",
-        "server.backend.main",
+        "server.backend.gis_app",
         "aiosqlite",
         "sse_starlette.sse",
         "yaml",

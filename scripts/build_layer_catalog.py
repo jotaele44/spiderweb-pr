@@ -112,7 +112,7 @@ PRI_FAMILY_BY_PREFIX = [
 FAMILY_PLAN: List[Dict] = [
     # ----- V3: public / mundane -----
     {"id": "admin_geographies", "label": "Administrative Geographies", "visibility": "V3",
-     "domain": "admin", "layers": ["municipios", "tracts", "places", "barrios"]},
+     "domain": "admin", "layers": ["municipios", "tracts", "places", "barrios", "puma"]},
     {"id": "airports", "label": "Airports & Aerodromes", "visibility": "V3",
      "domain": "transportation", "layers": ["airports"]},
     {"id": "hydrology", "label": "Hydrology", "visibility": "V3",
@@ -132,8 +132,6 @@ FAMILY_PLAN: List[Dict] = [
      "domain": "aviation_facility", "layers": ["hangar_candidates"]},
     {"id": "operational_sites", "label": "Operational Sites", "visibility": "V2",
      "domain": "sites", "layers": ["sites", "fire_stations_consolidated"]},
-    {"id": "flight_activity", "label": "Flight Activity", "visibility": "V2",
-     "domain": "flights", "layers": ["flights"]},
     {"id": "military_aviation", "label": "Military & Aviation", "visibility": "V2",
      "domain": "military", "layers": ["military_aviation"]},
     {"id": "public_safety", "label": "Public Safety", "visibility": "V2",

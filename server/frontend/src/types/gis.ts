@@ -7,7 +7,21 @@ export interface Health {
   table_count?: number;
 }
 
-export interface Site {
+export interface LineageStep {
+  actor?: string;
+  step?: string;
+  at?: string | null;
+  source?: string | null;
+  output?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ProvenanceLinked {
+  sourceIds?: string[];
+  lineage?: LineageStep[];
+}
+
+export interface Site extends ProvenanceLinked {
   id: string;
   name: string;
   kind: string;
@@ -20,7 +34,7 @@ export interface Site {
   zcta_geoid?: string | null;
 }
 
-export interface EventRecord {
+export interface EventRecord extends ProvenanceLinked {
   id: string;
   kind: string;
   at: string;
@@ -30,12 +44,12 @@ export interface EventRecord {
   tier?: EvidenceTier | null;
 }
 
-export interface AnomalyFactor {
+export interface AnomalyFactor extends ProvenanceLinked {
   tag: string;
   note: string;
 }
 
-export interface Anomaly {
+export interface Anomaly extends ProvenanceLinked {
   id: string;
   title: string;
   category: string;
@@ -54,6 +68,12 @@ export interface SourceRecord {
   tier?: EvidenceTier | null;
   kind?: string | null;
   status?: string | null;
+  publisher?: string | null;
+  url?: string | null;
+  capturedAt?: string | null;
+  hash?: string | null;
+  lineage?: LineageStep[];
+  provenanceNote?: string | null;
 }
 
 export type LayerRuntimeStatus = 'live' | 'empty' | 'unavailable' | 'deferred';
@@ -69,6 +89,13 @@ export interface CatalogLayer {
   provenance?: {
     catalog: string;
     geometry_source: string;
+    source_ids?: string[];
+    url?: string | null;
+    captured_at?: string | null;
+    hash?: string | null;
+    lineage?: LineageStep[];
+    manifest?: string | null;
+    geometry_path?: string | null;
   };
 }
 

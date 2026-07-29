@@ -11,6 +11,7 @@ Start: uvicorn server.backend.main:app --reload --port 8000
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import sqlite3
@@ -18,6 +19,8 @@ import subprocess
 import sys
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, AsyncGenerator, Optional
 
@@ -93,6 +96,16 @@ def _parse_json_fields(row: dict, fields: list[str]) -> dict:
     return row
 
 
+def _camel_provenance(row: dict[str, Any]) -> dict[str, Any]:
+    _parse_json_fields(row, ["source_ids", "lineage"])
+    row["sourceIds"] = row.pop("source_ids", [])
+    if "captured_at" in row:
+        row["capturedAt"] = row.pop("captured_at", None)
+    if "provenance_note" in row:
+        row["provenanceNote"] = row.pop("provenance_note", None)
+    return row
+
+
 async def _rows(query: str, params: tuple = ()) -> list[dict[str, Any]]:
     if not DB_PATH.exists():
         raise HTTPException(
@@ -158,10 +171,11 @@ async def list_vendors():
 async def list_sites():
     rows = await _rows(
         "SELECT id, name, kind, lat, lng, sensitive, infrastructure_class, "
-        "municipio_geoid, tract_geoid, zcta_geoid FROM sites"
+        "municipio_geoid, tract_geoid, zcta_geoid, source_ids, lineage FROM sites"
     )
     for r in rows:
         r["sensitive"] = bool(r["sensitive"])
+        _camel_provenance(r)
     return rows
 
 
@@ -179,9 +193,10 @@ async def list_events():
         "SELECT id, kind, at, site_id, ref_id, label, tier, "
         "registration, callsign, aircraft_type, operator, origin_code, "
         "destination_code, altitude_ft, ground_speed_mph, flight_status, "
-        "image_path FROM events"
+        "image_path, source_ids, lineage FROM events"
     )
     for r in rows:
+        _camel_provenance(r)
         r["siteId"] = r.pop("site_id", None)
         r["refId"] = r.pop("ref_id", None)
         r["aircraftType"] = r.pop("aircraft_type", None)
@@ -215,9 +230,11 @@ async def event_track(flight_id: str):
 async def list_anomalies():
     rows = await _rows(
         "SELECT id, title, category, score, band, site_id, summary, "
-        "factors, contracts, event_ids, confidence, contradictions FROM anomalies"
+        "factors, contracts, event_ids, confidence, contradictions, "
+        "source_ids, lineage FROM anomalies"
     )
     for r in rows:
+        _camel_provenance(r)
         r["siteId"] = r.pop("site_id", None)
         r["events"] = json.loads(r.pop("event_ids") or "[]")
         _parse_json_fields(r, ["factors", "contracts", "contradictions"])
@@ -226,7 +243,11 @@ async def list_anomalies():
 
 @app.get("/sources")
 async def list_sources():
-    return await _rows("SELECT id, name, tier, kind, status FROM sources")
+    rows = await _rows(
+        "SELECT id, name, tier, kind, status, publisher, url, captured_at, "
+        "hash, lineage, provenance_note FROM sources"
+    )
+    return [_camel_provenance(row) for row in rows]
 
 
 @app.get("/investigations")
@@ -313,7 +334,7 @@ async def pipeline_stop(job_id: str):
 CATALOG_PATH = ROOT / "configs" / "layer_catalog.yaml"
 _FALLBACK_LAYERS = {
     # Operational overlays
-    "flights", "sites", "anomalies", "corridors", "heatmap",
+    "sites", "anomalies", "corridors", "heatmap",
     # PR administrative geographies (TIGER/Line, joined via ingest_tiger_pr.py)
     "municipios", "tracts", "places", "barrios", "puma",
     # PR reference / environmental geographies (via ingest_reference_geo.py)
@@ -350,9 +371,127 @@ def _find_geojson(layer: str) -> Optional[Path]:
     return next((p for p in candidates if p.exists()), None)
 
 
+@lru_cache(maxsize=64)
+def _sha256_file(path: str, mtime_ns: int, size: int) -> str:
+    """Hash a stable file identity; mtime/size make the cache self-invalidating."""
+    del mtime_ns, size
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _file_identity(path: Optional[Path]) -> tuple[Optional[str], Optional[str]]:
+    if path is None or not path.exists():
+        return None, None
+    stat = path.stat()
+    captured_at = datetime.fromtimestamp(
+        stat.st_mtime,
+        timezone.utc,
+    ).isoformat().replace("+00:00", "Z")
+    return _sha256_file(str(path), stat.st_mtime_ns, stat.st_size), captured_at
+
+
+def _manifest_provenance(layer_id: str) -> dict[str, Any]:
+    tiger_layers = {"municipios", "tracts", "places", "barrios", "puma"}
+    if layer_id in tiger_layers:
+        manifest_path = ROOT / "data" / "tiger" / "2025" / "manifest.json"
+    else:
+        manifest_path = (
+            ROOT / "data" / "reference_geo" / f"{layer_id}_manifest.json"
+        )
+    if not manifest_path.exists():
+        return {}
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        log.warning("could not read provenance manifest %s: %s", manifest_path, exc)
+        return {}
+
+    if "layers" in manifest:
+        entry = next(
+            (
+                candidate
+                for candidate in manifest.get("layers", [])
+                if candidate.get("layer") == layer_id
+            ),
+            {},
+        )
+    elif manifest.get("layer") == layer_id:
+        entry = manifest
+    else:
+        entry = {}
+    if not entry:
+        return {}
+
+    source = entry.get("source", {})
+    output = entry.get("output", {})
+    generated_at = manifest.get("generated_utc")
+    manifest_rel = str(manifest_path.relative_to(ROOT))
+    return {
+        "source_ids": [f"catalog:{layer_id}", f"manifest:{manifest_rel}"],
+        "url": source.get("url"),
+        "captured_at": generated_at,
+        "hash": output.get("sha256") or source.get("sha256"),
+        "lineage": [
+            {
+                "actor": manifest.get("ingestor", "unknown"),
+                "step": "capture",
+                "at": generated_at,
+                "source": source.get("filename") or source.get("url"),
+            },
+            {
+                "actor": manifest.get("ingestor", "unknown"),
+                "step": "materialize",
+                "at": generated_at,
+                "output": output.get("path"),
+            },
+        ],
+        "manifest": manifest_rel,
+    }
+
+
+def _layer_provenance(
+    layer_id: str,
+    geometry_path: Optional[Path],
+    geometry_source: str,
+) -> dict[str, Any]:
+    manifest = _manifest_provenance(layer_id)
+    identity_path = geometry_path
+    if geometry_source == "sqlite":
+        identity_path = DB_PATH
+    file_hash, captured_at = _file_identity(identity_path)
+    relative_path = None
+    if identity_path is not None:
+        try:
+            relative_path = str(identity_path.relative_to(ROOT))
+        except ValueError:
+            relative_path = str(identity_path)
+    fallback_lineage = [
+        {
+            "actor": "spiderweb-pr",
+            "step": "serve",
+            "source": relative_path,
+        }
+    ]
+    return {
+        "catalog": "configs/layer_catalog.yaml",
+        "geometry_source": geometry_source,
+        "source_ids": manifest.get("source_ids", [f"catalog:{layer_id}"]),
+        "url": manifest.get("url"),
+        "captured_at": manifest.get("captured_at") or captured_at,
+        "hash": manifest.get("hash") or file_hash,
+        "lineage": manifest.get("lineage") or fallback_lineage,
+        "manifest": manifest.get("manifest"),
+        "geometry_path": relative_path,
+    }
+
+
 async def _sites_from_db() -> dict:
     rows = await _rows(
-        "SELECT id, name, kind, lat, lng, sensitive, infrastructure_class FROM sites"
+        "SELECT id, name, kind, lat, lng, sensitive, infrastructure_class, "
+        "source_ids, lineage FROM sites"
     )
     features = [
         {
@@ -364,6 +503,8 @@ async def _sites_from_db() -> dict:
                 "kind": r["kind"],
                 "sensitive": bool(r["sensitive"]),
                 "infrastructure_class": r.get("infrastructure_class"),
+                "source_ids": json.loads(r["source_ids"] or "[]"),
+                "lineage": json.loads(r["lineage"] or "[]"),
             },
         }
         for r in rows
@@ -375,13 +516,21 @@ async def _sites_from_db() -> dict:
 async def _anomalies_from_db() -> dict:
     rows = await _rows(
         "SELECT a.id, a.title, a.score, a.band, a.category, "
-        "s.lat, s.lng FROM anomalies a LEFT JOIN sites s ON a.site_id = s.id"
+        "a.source_ids, a.lineage, s.lat, s.lng "
+        "FROM anomalies a LEFT JOIN sites s ON a.site_id = s.id"
     )
     features = [
         {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [r["lng"], r["lat"]]},
-            "properties": {"id": r["id"], "title": r["title"], "score": r["score"], "band": r["band"]},
+            "properties": {
+                "id": r["id"],
+                "title": r["title"],
+                "score": r["score"],
+                "band": r["band"],
+                "source_ids": json.loads(r["source_ids"] or "[]"),
+                "lineage": json.loads(r["lineage"] or "[]"),
+            },
         }
         for r in rows
         if r.get("lat") is not None and r.get("lng") is not None
@@ -451,10 +600,11 @@ async def layer_catalog():
                     "runtime_status": runtime_status,
                     "feature_count": feature_count,
                     "endpoint": endpoint,
-                    "provenance": {
-                        "catalog": "configs/layer_catalog.yaml",
-                        "geometry_source": geometry_source,
-                    },
+                    "provenance": _layer_provenance(
+                        layer_id,
+                        path,
+                        geometry_source,
+                    ),
                 }
             )
     return catalog

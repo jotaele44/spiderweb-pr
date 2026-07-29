@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from desktop.config import FRONTEND_DIR, FRONTEND_ENTRY  # noqa: E402
-from server.backend.main import app  # noqa: E402
+from server.backend.gis_app import app  # noqa: E402
 
 assets = FRONTEND_DIR / "assets"
 if assets.is_dir():

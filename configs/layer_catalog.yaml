@@ -319,14 +319,6 @@ families:
   - layer_id: fire_stations_consolidated
     label: Fire Stations Consolidated
     status: deferred
-- id: flight_activity
-  label: Flight Activity
-  visibility: V2
-  domain: flights
-  layers:
-  - layer_id: flights
-    label: Flights
-    status: deferred
 - id: military_aviation
   label: Military & Aviation
   visibility: V2

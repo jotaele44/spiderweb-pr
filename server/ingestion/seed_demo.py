@@ -4,9 +4,7 @@
 The PRIIS backend (server/backend/main.py) is SQLite-backed and skips startup
 migrations when priis.db is missing; several places (scripts/priis_smoke.sh,
 server/ingestion/migrations.py, the backend lifespan) expect THIS module to
-create the DB and apply the schema. It also backs the offline dashboard export:
-scripts/gen_snapshot.py seeds via this module, then dumps the endpoints into
-server/frontend/src/lib/snapshot.json.
+create the DB and apply the schema.
 
 All rows are clearly-fake demo data (names like "Demo Vendor A", round amounts,
 a note marking each record synthetic) — nothing here is a real contract, site,
