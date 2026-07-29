@@ -2,21 +2,12 @@
 <!--
   Spiderweb Dashboard
   ===================
-  Standalone browser dashboard — no build step required.
-
-  Usage:
-    1. Export a DB snapshot:
-         python run_all.py --db ~/flight_database.db --export-json dashboard_data.json
-
-    2. Open this file in a browser:
-         open dashboard.html          # macOS
-         xdg-open dashboard.html      # Linux
-         # or serve with: python -m http.server 8080
+  Bundled no-build dashboard for the self-contained Spiderweb desktop app.
 
   The page loads dashboard_data.json plus optional FR24 and Contract-Finance
   exports from ../outputs/ via fetch(). Optional layers degrade gracefully.
-  If served from a local file:// URL, use --allow-file-access-from-files (Chrome)
-  or simply run the python http.server one-liner above.
+  First launch and repair prepare dashboard_data.json through the native
+  Setup & Diagnostics UI.
 -->
 <html lang="en">
 <head>
@@ -185,13 +176,8 @@
           <p style="margin-top:8px;font-size:12px">${escapeHtml(message)}</p>
           ${validationBlock}
           <p style="margin-top:12px;font-size:12px">
-            Generate it with:<br/>
-            <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">
-              python run_all.py --db ~/flight_database.db --export-json dashboard_data.json
-            </code>
-          </p>
-          <p style="margin-top:8px;font-size:12px">Then serve this directory:<br/>
-            <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">python -m http.server 8080</code>
+            Open <strong>Setup &amp; Diagnostics</strong> from the gear button,
+            then select <strong>Repair Configuration</strong>. Your data is preserved.
           </p>
         </div>`;
     };

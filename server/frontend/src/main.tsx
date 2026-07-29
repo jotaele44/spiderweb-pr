@@ -8,6 +8,8 @@ import App from './App';
 import '@pr-federation/react/styles.css';
 import './styles/app.css';
 
+document.documentElement.dataset.repo = 'spiderweb-pr';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

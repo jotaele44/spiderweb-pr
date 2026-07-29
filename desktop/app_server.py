@@ -7,16 +7,28 @@ the JSON exports under outputs/ from one local port, replacing the
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from fastapi import FastAPI  # noqa: E402
-from fastapi.responses import FileResponse  # noqa: E402
+from fastapi.responses import HTMLResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
+from prii_desktop import DesktopConfig, desktop_controls_script  # noqa: E402
 
-from desktop.config import DASHBOARD_DATA, DASHBOARD_DIR, OUTPUTS_DIR  # noqa: E402
+from desktop import config  # noqa: E402
+from desktop.config import DASHBOARD_DIR  # noqa: E402
+
+_workspace = os.environ.get("SPIDERWEB_DATA_HOME", "").strip()
+OUTPUTS_DIR = (
+    Path(_workspace) / "exports"
+    if _workspace
+    else config.REPO_ROOT / "outputs"
+)
+DASHBOARD_DATA = OUTPUTS_DIR / "dashboard_data.json"
+_desktop_config = DesktopConfig.from_module(config)
 
 app = FastAPI(title="Spiderweb Dashboard Server")
 
@@ -31,8 +43,11 @@ def health() -> dict:
 
 
 @app.get("/", include_in_schema=False)
-def index() -> FileResponse:
-    return FileResponse(DASHBOARD_DIR / "dashboard.html")
+def index() -> HTMLResponse:
+    document = (DASHBOARD_DIR / "dashboard.html").read_text(encoding="utf-8")
+    control = desktop_controls_script(_desktop_config)
+    document = document.replace("</body>", f"{control}</body>", 1)
+    return HTMLResponse(document)
 
 
 OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
