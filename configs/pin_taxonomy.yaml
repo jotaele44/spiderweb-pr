@@ -1,5 +1,5 @@
 version: spiderweb_pin_taxonomy_v1
-generated_at: '2026-07-05T20:38:39Z'
+generated_at: '2026-07-29T14:12:06Z'
 producer_module: scripts.build_pin_registry
 binding: labels_only
 root: SPIDERWEB_PR
@@ -510,17 +510,6 @@ visibility_classes:
           label: Hangar Candidates
           geometry_type: unknown
           flag: PLANNED
-          status: planned
-    - id: flight_activity
-      label: Flight Activity
-      pin_classes:
-      - id: flights
-        label: Flights
-        pin_layers:
-        - pin_layer: flights
-          label: Flights
-          geometry_type: unknown
-          flag: GHOST
           status: planned
     - id: military_aviation
       label: Military & Aviation

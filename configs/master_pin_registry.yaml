@@ -1,5 +1,5 @@
 version: spiderweb_master_pin_registry_v1
-generated_at: '2026-07-05T20:38:39Z'
+generated_at: '2026-07-29T14:12:06Z'
 producer_module: scripts.build_pin_registry
 binding: labels_only
 pin_record_schema: schemas/pin.schema.json
@@ -7,9 +7,9 @@ pin_link_schema: schemas/pin_link.schema.json
 ilap_cluster_schema: schemas/ilap_cluster.schema.json
 ilap_cluster_model: configs/ilap_cluster_model.yaml
 pin_count: 0
-layer_count: 81
+layer_count: 80
 flag_summary:
-  GHOST: 22
+  GHOST: 21
   PLANNED: 2
   WIRED: 57
 note: Islandwide canonical Pin index. Zero atomic pins bound (labels-only) — layer_index reserves the
@@ -1062,24 +1062,6 @@ layer_index:
   pin_class: fire_stations_consolidated
   geometry_type: unknown
   flag: WIRED
-  status: planned
-  evidence_tier: T3
-  review_flag: false
-  ilap_area_id: null
-  ilap_cluster_id: null
-  node_role: null
-  system_function: null
-  cluster_coherence_score: null
-  contradiction_flags: []
-- pin_uid_prefix: PIN_TA_FLIGHTS
-  pin_layer: flights
-  label: Flights
-  visibility: V2
-  domain: transportation_airspace
-  pin_group: flight_activity
-  pin_class: flights
-  geometry_type: unknown
-  flag: GHOST
   status: planned
   evidence_tier: T3
   review_flag: false

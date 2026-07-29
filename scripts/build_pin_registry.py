@@ -37,7 +37,6 @@ DOMAIN_ROLLUP: Dict[str, Tuple[str, str]] = {
     "transportation": ("transportation_airspace", "Transportation & Airspace"),
     "lz": ("transportation_airspace", "Transportation & Airspace"),
     "aviation_facility": ("transportation_airspace", "Transportation & Airspace"),
-    "flights": ("transportation_airspace", "Transportation & Airspace"),
     "corridor": ("transportation_airspace", "Transportation & Airspace"),
     "hydro": ("hydrology", "Hydrology"),
     "hydro_graph": ("hydrology", "Hydrology"),
