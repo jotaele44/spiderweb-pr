@@ -197,7 +197,7 @@ export function MapWorkspace({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    if (!map) return;
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
     const anomalySites = new Map(
@@ -245,7 +245,7 @@ export function MapWorkspace({
           .addTo(map),
       );
     }
-  }, [anomalies, events, onSelect, ready, sites]);
+  }, [anomalies, events, onSelect, sites]);
 
   useEffect(() => {
     window.setTimeout(() => mapRef.current?.resize(), 120);
