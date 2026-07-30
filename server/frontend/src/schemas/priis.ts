@@ -54,7 +54,7 @@ export const ContractSchema = z.object({
 
 export const EventRecordSchema = z.object({
   id: z.string(),
-  kind: z.enum(["contract", "imagery", "report", "outage", "permit", "field", "other"]),
+  kind: z.enum(["contract", "imagery", "report", "outage", "permit", "field", "filing", "sighting", "other"]),
   at: z.string(),
   siteId: z.string().nullish().transform((v) => v ?? ""),
   refId: z.string().nullish().transform((v) => v ?? undefined),

@@ -211,7 +211,7 @@ async def list_investigations():
 @app.get("/alerts")
 async def list_alerts():
     return await _rows(
-        "SELECT id, at, kind, title, tier, investigation, registration FROM alerts"
+        "SELECT id, at, kind, title, tier, investigation FROM alerts"
     )
 
 # ─── Pipeline ──────────────────────────────────────────────────────────────────

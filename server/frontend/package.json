@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "lint": "eslint src"
+    "lint": "eslint src vite.config.ts",
+    "lint:fix": "eslint src vite.config.ts --fix"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",

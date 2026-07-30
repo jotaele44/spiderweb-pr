@@ -102,6 +102,7 @@ jobs:
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system -c constraints.txt -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
+          uv pip install --system -e ../thehub-pr/packages/prii_desktop
 
       - name: Syntax check all Python modules
         run: find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
@@ -304,9 +305,11 @@ jobs:
   # build could merge unnoticed — this repo was the only one in the federation
   # with an unbuilt frontend.
   #
-  # Gates what this package defines: `typecheck`, `lint` and `build`. It ships an
-  # eslint config, so lint is gated here too. There is still no `test` script and
-  # no frontend unit tests; adding that tooling is a separate change.
+  # Gates lint, typecheck and build. The eslint config is local rather than
+  # rendered from thehub-pr's federation templates: that shared config is
+  # JSX-flavoured and globs src/pages/** and src/Layout.jsx, neither of which
+  # exists here, so it would lint zero files and report a passing gate over
+  # nothing. Unit tests are still absent and remain a separate change.
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -321,6 +324,8 @@ jobs:
           cache-dependency-path: server/frontend/package-lock.json
       - name: Install
         run: npm ci --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
       - name: Typecheck
         run: npm run typecheck
       - name: Lint

@@ -54,7 +54,7 @@ export interface Contract {
 
 export interface EventRecord {
   id: string;
-  kind: "contract" | "imagery" | "report" | "outage" | "permit" | "field" | "other";
+  kind: "contract" | "imagery" | "report" | "outage" | "permit" | "field" | "filing" | "sighting" | "other";
   at: string;
   siteId: string;
   refId?: string;
