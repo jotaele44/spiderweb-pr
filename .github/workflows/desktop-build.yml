@@ -74,7 +74,7 @@ jobs:
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system --upgrade pip
-          uv pip install --system -r requirements-desktop.txt -r ../thehub-pr/tools/requirements-icons.txt pyinstaller pytest httpx
+          uv pip install --system -c constraints.txt -r requirements-desktop.txt -r ../thehub-pr/tools/requirements-icons.txt -e ".[server]" pyinstaller pytest httpx
 
       # The branding validator ships with thehub-pr. It is invoked by whichever
       # name that repo actually provides, and skipped with a notice when neither
