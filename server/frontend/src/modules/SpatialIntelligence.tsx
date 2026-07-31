@@ -12,6 +12,7 @@ import {
 } from "../config";
 import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
 import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
+import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
@@ -283,8 +284,19 @@ export function SpatialIntelligence({
   leftCollapsed?: boolean;
   rightCollapsed?: boolean;
 }) {
-  const { hostRef, mapRef, runtimeRef, ready: mapReady, tilesFailed, setTilesFailed } =
-    useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG);
+  const [spatialMode, setSpatialMode] = useState<SpatialRuntimeMode>(
+    () => (localStorage.getItem("priis_spatial_mode") === "cesium" ? "cesium" : "maplibre"),
+  );
+  const {
+    hostRef,
+    mapRef,
+    runtimeRef,
+    ready: mapReady,
+    tilesFailed,
+    setTilesFailed,
+    activeMode,
+    fallbackReason,
+  } = useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG, spatialMode);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
@@ -390,6 +402,15 @@ export function SpatialIntelligence({
     localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
   }, [layerPanelCollapsed]);
 
+  // Persist the requested 2D/3D mode. Note this is the *requested* mode
+  // (spatialMode), not activeMode — if Cesium fails and useSpatialRuntime
+  // falls back to MapLibre, we still remember "cesium" was requested so the
+  // next visit retries it rather than silently sticking on the fallback.
+  useEffect(() => {
+    localStorage.setItem("priis_spatial_mode", spatialMode);
+  }, [spatialMode]);
+
+  // "L" toggles the layer panel. Ignore while typing in an input/textarea.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -427,9 +448,22 @@ export function SpatialIntelligence({
           >
             {layerPanelCollapsed ? "Show layers" : "Hide layers"}
           </button>
-          <Pill tone="info">MapLibre GL JS</Pill>
+          <button
+            className="act"
+            data-on={spatialMode === "cesium"}
+            onClick={() => setSpatialMode((m) => (m === "cesium" ? "maplibre" : "cesium"))}
+            title="Toggle 2D/3D scene"
+          >
+            {spatialMode === "cesium" ? "3D (regional preview)" : "2D"}
+          </button>
+          <Pill tone="info">{activeMode === "cesium" ? "Cesium (regional)" : "MapLibre GL JS"}</Pill>
         </div>
       </div>
+      {fallbackReason && (
+        <div className="map-note" role="status">
+          <span>3D scene unavailable ({fallbackReason}) — showing 2D instead.</span>
+        </div>
+      )}
       <div
         className="map-shell"
         data-layer-collapsed={layerPanelCollapsed}
@@ -437,7 +471,7 @@ export function SpatialIntelligence({
       >
         <div className="map-col">
           <div ref={hostRef} className="map-host" />
-          {failedLayers.length > 0 && (
+          {activeMode === "maplibre" && failedLayers.length > 0 && (
             <div className="map-error" role="alert">
               <span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span>
             </div>

@@ -74,12 +74,40 @@ def test_unresolved_boundaries_carry_no_geometry():
 
 
 def test_resolved_or_provisional_boundaries_carry_geometry():
+    """Geometry lives either inline (small cases, e.g. a provisional bbox) or
+    in a referenced data/ file (real sourced boundaries) — never neither."""
     reg = _boundaries()
     for b in reg["boundaries"]:
         if b["status"] in ("provisional", "resolved"):
-            assert (
-                b["geometry"] is not None
-            ), f"{b['boundary_id']} is {b['status']} but has no geometry"
+            assert b["geometry"] is not None or b.get("geometry_ref"), (
+                f"{b['boundary_id']} is {b['status']} but has neither geometry "
+                f"nor geometry_ref"
+            )
+
+
+def test_geometry_ref_points_at_real_data_when_present():
+    """geometry_ref is a promise about where regenerated data lands — when the
+    file exists (ingestion has been run), it must actually be valid GeoJSON
+    with at least one feature. Skips gracefully on a fresh checkout where
+    data/ hasn't been populated yet (matches tests/test_geo_routes.py)."""
+    reg = _boundaries()
+    checked = 0
+    for b in reg["boundaries"]:
+        ref = b.get("geometry_ref")
+        if not ref:
+            continue
+        path = REPO / ref
+        if not path.exists():
+            continue
+        checked += 1
+        payload = json.loads(path.read_text())
+        assert payload.get("type") == "FeatureCollection"
+        assert payload.get("features"), f"{b['boundary_id']}: {ref} has no features"
+    if checked == 0:
+        pytest.skip(
+            "no boundary geometry_ref files populated — run "
+            "server/ingestion/ingest_pr_boundaries.py"
+        )
 
 
 def test_analytical_domain_is_not_marked_as_a_legal_boundary():
@@ -123,14 +151,16 @@ def test_every_binding_layer_id_is_catalogued():
     )
 
 
-def test_no_binding_claims_cesium_support_yet():
-    """No CesiumRegionalRuntime exists in either frontend yet (Phase 0 shipped a
-    MapLibre-only runtime seam) — a binding claiming cesium_enabled=true here
-    would be aspirational, not descriptive."""
+def test_no_binding_claims_cesium_layer_rendering_yet():
+    """The Phase 2 Cesium runtime is a globe *shell* — it renders no layers at
+    all yet (layer adapters are Phase 3). A binding claiming cesium_enabled=true
+    would therefore be aspirational, not descriptive, even though the Cesium
+    runtime itself now ships."""
     for b in _bindings()["bindings"]:
-        assert (
-            b["runtime"]["cesium_enabled"] is False
-        ), f"{b['layer_id']} claims cesium_enabled=true but no Cesium runtime ships yet"
+        assert b["runtime"]["cesium_enabled"] is False, (
+            f"{b['layer_id']} claims cesium_enabled=true but the Cesium runtime "
+            f"renders no layers yet"
+        )
 
 
 def test_binding_validates_against_json_schema_if_available():
@@ -156,11 +186,13 @@ def client():
 
 
 @pytest.mark.smoke
-def test_spatial_capabilities_reports_cesium_false(client):
+def test_spatial_capabilities_reports_both_runtimes(client):
+    """Both runtimes ship as of Phase 2 (lazily-loaded CesiumRegionalRuntime
+    behind the SpatialRuntime seam in workbench/priis-v1/app)."""
     resp = client.get("/spatial/capabilities")
     assert resp.status_code == 200
     body = resp.json()
-    assert body["runtimes"] == {"maplibre": True, "cesium": False}
+    assert body["runtimes"] == {"maplibre": True, "cesium": True}
 
 
 @pytest.mark.smoke
@@ -189,3 +221,21 @@ def test_existing_geo_and_catalog_routes_still_work(client):
     assert client.get("/catalog").status_code == 200
     resp = client.get("/geo/not_a_real_layer.geojson")
     assert resp.status_code == 400
+
+
+@pytest.mark.smoke
+def test_spatial_boundary_geometry_route(client):
+    """PR_CORE_BOUNDARY has a geometry_ref — serves 200 if ingested, 503 (not
+    404) if the data/ file hasn't been generated on this checkout yet, since
+    the boundary itself is real and resolved, just not locally materialized."""
+    resp = client.get("/spatial/boundaries/PR_CORE_BOUNDARY.geojson")
+    assert resp.status_code in (200, 503), resp.text
+    if resp.status_code == 200:
+        body = resp.json()
+        assert body["type"] == "FeatureCollection"
+        assert body["features"]
+
+
+def test_spatial_boundary_geometry_route_404s_unknown_id(client):
+    resp = client.get("/spatial/boundaries/NOT_A_REAL_BOUNDARY.geojson")
+    assert resp.status_code == 404

@@ -5,44 +5,49 @@ boundaries:
   - boundary_id: PR_CORE_BOUNDARY
     kind: core
     label: Puerto Rico terrestrial and insular core
-    status: unresolved
-    source_authority: ""
-    retrieval_date: ""
-    edition_date: ""
-    source_crs: ""
-    normalized_crs: ""
-    geometry_hash: ""
-    source_url: ""
+    status: resolved
+    source_authority: "U.S. Census Bureau, TIGER/Line"
+    retrieval_date: "2026-07-29T21:10:39Z"
+    edition_date: "2025"
+    source_crs: "EPSG:4269 (NAD83, as published)"
+    normalized_crs: "EPSG:4326"
+    geometry_hash: "sha256:6f1e0f9e4ce2d69aa5faf1c550a5c9a5598deecb28aeb3f18e36d8e819bd3440"
+    source_url: "https://www2.census.gov/geo/tiger/TIGER2025/STATE/tl_2025_us_state.zip"
     notes: >
-      No authoritative PR terrestrial/insular coastline file exists anywhere in
-      this repo today. Candidate sources to evaluate before resolving this
-      entry: US Census TIGER/Line COASTLINE or AREAWATER shapefiles (this repo
-      already ingests other TIGER/Line PR layers — municipios, tracts, places,
-      barrios — via server/ingestion/ingest_tiger_pr.py, so reusing the same
-      vintage would keep a consistent source lineage), or a NOAA shoreline
-      product. Do not populate `geometry` with invented coordinates — leave
-      unresolved until a real source is selected and ingested.
+      TIGER/Line national STATE file filtered to STATEFP=72, matching the
+      vintage and source lineage of the other TIGER/Line PR layers already
+      ingested via server/ingestion/ingest_tiger_pr.py (municipios, tracts,
+      places, barrios). One feature, MultiPolygon with 3 parts (Census's
+      generalized state boundary — main island plus its largest near-shore
+      pieces; this is Census's own simplification level, not something this
+      ingest chose). Regenerate via
+      `python server/ingestion/ingest_pr_boundaries.py --core-only`.
     geometry: null
+    geometry_ref: data/pr_core_boundary.geojson
 
   - boundary_id: PR_EEZ_LEGAL_BOUNDARY
     kind: eez_legal
     label: Puerto Rico Exclusive Economic Zone (legal maritime reference)
-    status: unresolved
-    source_authority: ""
-    retrieval_date: ""
-    edition_date: ""
-    source_crs: ""
-    normalized_crs: ""
-    geometry_hash: ""
-    source_url: ""
+    status: resolved
+    source_authority: "NOAA Office of Coast Survey — U.S. Maritime Limits and Boundaries"
+    retrieval_date: "2026-07-29T21:10:40Z"
+    edition_date: "2003-12-01 approved / 2006-01-01 published (per PUB_DATE/APPRV_DATE fields)"
+    source_crs: "EPSG:4326 (as published)"
+    normalized_crs: "EPSG:4326"
+    geometry_hash: "sha256:bc8878967c1a619a063d154b1e40026b1860ef88cc16f84250a08140dfeefd91"
+    source_url: "https://maritimeboundaries.noaa.gov/arcgis/rest/services/MaritimeBoundaries/US_Maritime_Limits_Boundaries/MapServer/3/query?where=REGION%3D%27Puerto+Rico+and+U.S.+Virgin+Islands%27&outFields=%2A&returnGeometry=true&f=geojson"
     notes: >
-      Legal maritime boundary — not sourced. Candidate authoritative sources:
-      NOAA Office of Coast Survey maritime limits and boundaries, or the
-      Flanders Marine Institute (VLIZ) Maritime Boundaries / World EEZ dataset
-      (its redistribution license must be confirmed before any geometry from
-      it is committed to this repo). This is a legal document, not a rendering
-      convenience — do not approximate it with a bounding box.
+      14 LineString features (REGION='Puerto Rico and U.S. Virgin Islands')
+      from NOAA's "200NM EEZ and Maritime Boundaries" layer (MapServer/3):
+      the EEZ limit itself (Presidential Proclamation No. 5030, March 1983)
+      plus adjacent bilateral treaty boundary lines (US/UK British Virgin
+      Islands and Anguilla, US/Venezuela). Geometry is polyline — the
+      boundary itself, matching NOAA's authoritative representation — not a
+      filled polygon; do not treat it as one without an explicit closure
+      step. Regenerate via
+      `python server/ingestion/ingest_pr_boundaries.py --eez-only`.
     geometry: null
+    geometry_ref: data/pr_eez_legal_boundary.geojson
 
   - boundary_id: SPIDERWEB_ANALYTICAL_DOMAIN
     kind: analytical_domain

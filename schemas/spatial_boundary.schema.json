@@ -34,13 +34,17 @@
         "source_url": {"type": "string"},
         "notes": {"type": "string", "minLength": 1},
         "geometry": {
-          "description": "GeoJSON bbox/polygon when status is provisional or resolved; must be null when status is unresolved.",
+          "description": "Small inline GeoJSON (e.g. a bbox) for simple/provisional cases. For real sourced boundary data, use geometry_ref instead — large geometry belongs in a regenerable data/ file, not this committed config (see docs/DATA_POLICY.md). Must be null when status is unresolved.",
           "type": ["object", "null"]
+        },
+        "geometry_ref": {
+          "description": "Repo-relative path to a GeoJSON file (under data/, gitignored, produced by an ingestion script — see server/ingestion/) holding the actual boundary geometry. Must be null when status is unresolved.",
+          "type": ["string", "null"]
         }
       },
       "additionalProperties": false,
       "if": {"properties": {"status": {"const": "unresolved"}}},
-      "then": {"properties": {"geometry": {"const": null}}}
+      "then": {"properties": {"geometry": {"const": null}, "geometry_ref": {"const": null}}}
     },
     "contextBuffer": {
       "type": "object",
