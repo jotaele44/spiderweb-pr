@@ -32,6 +32,14 @@
   --ok: var(--fd-ok);
   --info: var(--fd-info);
 
+  /* Spiderweb program brand. Kept deliberately separate from --fd-accent (the
+     shared Federation focus/evidence accent) so program identity is red without
+     redefining design-system semantics. Values must match BRAND_ACCENT /
+     BRAND_ACCENT_STRONG in desktop/config.py, which drive the native window and
+     setup UI. Both are AA against white (5.89:1 and 8.34:1). */
+  --brand-accent: #ca0c02;
+  --brand-accent-strong: #9f0a02;
+
   --rail-w: var(--fd-rail-w);
   --inspector-w: var(--fd-inspector-w);
   --cmd-h: var(--fd-cmd-h);

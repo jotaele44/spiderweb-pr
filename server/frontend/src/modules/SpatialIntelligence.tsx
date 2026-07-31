@@ -21,7 +21,7 @@ const rasterStyle: maplibregl.StyleSpecification = {
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
-type BackendLayerKey = PolygonLayerKey | "flights";
+type BackendLayerKey = PolygonLayerKey;
 type LayerKey = MarkerLayerKey | BackendLayerKey;
 
 type LayerStatus = "idle" | "loading" | "loaded" | "error";
@@ -42,14 +42,13 @@ const POLYGON_LAYERS: Record<PolygonLayerKey, PolygonLayerConfig> = {
 };
 
 const POLYGON_LAYER_KEYS = Object.keys(POLYGON_LAYERS) as PolygonLayerKey[];
-const BACKEND_LAYER_KEYS: BackendLayerKey[] = [...POLYGON_LAYER_KEYS, "flights"];
+const BACKEND_LAYER_KEYS: BackendLayerKey[] = [...POLYGON_LAYER_KEYS];
 
-const MARKER_LABELS: Record<MarkerLayerKey | "flights", string> = {
+const MARKER_LABELS: Record<MarkerLayerKey, string> = {
   contracts: "Contracts",
   infrastructure: "Infrastructure",
   sensitive: "Sensitive sites",
   anomaly: "Anomalies",
-  flights: "Flights",
 };
 
 function isPolygonKey(key: LayerKey): key is PolygonLayerKey {
@@ -199,14 +198,13 @@ export function SpatialIntelligence({
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
   const [tilesFailed, setTilesFailed] = useState(false);
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
-    () => localStorage.getItem("priis_layer_collapsed") === "true",
+    () => localStorage.getItem("spiderweb_layer_collapsed") === "true",
   );
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>(() => ({
     contracts: true,
     infrastructure: true,
     sensitive: true,
     anomaly: true,
-    flights: false,
     ...(Object.fromEntries(
       POLYGON_LAYER_KEYS.map((k) => [k, POLYGON_LAYERS[k].defaultOn]),
     ) as Record<PolygonLayerKey, boolean>),
@@ -221,22 +219,6 @@ export function SpatialIntelligence({
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts")));
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "places", layers.places, setStatus("places")));
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios")));
-
-  // Flight lines — same fetch-with-status pipeline as the polygons.
-  useGeoJsonLayer({
-    mapRef,
-    ready: mapReady,
-    sourceId: "flights-source",
-    url: `${API_BASE}/geo/flights.geojson`,
-    isOn: layers.flights,
-    onStatus: setStatus("flights"),
-    addLayers: (map, sourceId) => {
-      map.addLayer({ id: "flights-layer", type: "line", source: sourceId, layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#4dc4d6", "line-width": 1.5, "line-opacity": 0.7 } });
-    },
-    removeLayers: (map) => {
-      if (map.getLayer("flights-layer")) map.removeLayer("flights-layer");
-    },
-  });
 
   // Initialize map
   useEffect(() => {
@@ -316,7 +298,7 @@ export function SpatialIntelligence({
 
   // Persist the layer-panel collapse preference.
   useEffect(() => {
-    localStorage.setItem("priis_layer_collapsed", String(layerPanelCollapsed));
+    localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
   }, [layerPanelCollapsed]);
 
   // "L" toggles the layer panel. Ignore while typing in an input/textarea.

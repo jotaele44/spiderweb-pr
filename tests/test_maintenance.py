@@ -14,6 +14,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from prii_maintenance import run_maintenance  # noqa: E402
@@ -50,6 +52,49 @@ def test_fr24_dir_is_warning(tmp_path):
     findings = local.check_migration_remnants("spiderweb-pr", tmp_path, state)
     assert len(findings) == 1
     assert findings[0].severity == "warning"
+
+
+# The 2026-07 audit found airspace remnants in the dashboard UI, server/ingestion,
+# scripts/*adsb* and the RLSM schemas/configs while this check was green, because
+# it only looked at fr24/ and {pipeline,scripts}/fr24_*.py. Each case below is one
+# of those blind spots.
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "pipeline/fr24_ingest.py",
+        "scripts/fr24_vision_ingest.py",
+        "scripts/rlsm_unlabeled.py",
+        "pipeline/rlsm_ontology_gate.py",
+        "scripts/parse_adsb_archive.py",
+        "server/ingestion/registration_alerts.py",
+        "server/ingestion/reconcile_registrations.py",
+        "dashboard/dashboard_fr24_queue.jsx",
+        "schemas/rlsm_ingest_manifest.schema.json",
+        "configs/rlsm_operational_ontology.yaml",
+    ],
+)
+def test_airspace_remnant_paths_are_flagged(tmp_path, rel):
+    path = tmp_path / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("# remnant\n", encoding="utf-8")
+    state = _federation(tmp_path)
+    findings = local.check_migration_remnants("spiderweb-pr", tmp_path, state)
+    assert len(findings) == 1, f"{rel} should be flagged as a migration remnant"
+    assert rel in findings[0].detail["paths"]
+
+
+def test_legacy_parked_remnants_are_exempt(tmp_path):
+    """Retired code lives under docs/legacy/ — it must not re-trigger the check."""
+    for rel in (
+        "docs/legacy/scripts/parse_adsb_archive.py",
+        "docs/legacy/pipeline/rlsm_ontology_gate.py",
+        "docs/legacy/schemas/rlsm_ingest_manifest.schema.json",
+    ):
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# retired\n", encoding="utf-8")
+    state = _federation(tmp_path)
+    assert local.check_migration_remnants("spiderweb-pr", tmp_path, state) == []
 
 
 # ---- adapter: GIS artifact integrity ----

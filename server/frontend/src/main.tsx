@@ -1,17 +1,33 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-// Self-hosted font (bundled; offline-safe).
-import '@fontsource-variable/inter';
-import App from './App';
-// Shared federation design layer (single-sourced from @pr-federation/react),
-// then this app's own styles.
-import '@pr-federation/react/styles.css';
-import './styles/app.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "maplibre-gl/dist/maplibre-gl.css";
 
-document.documentElement.dataset.repo = 'spiderweb-pr';
+// Self-hosted fonts (bundled by Vite — no runtime network request). Latin subset
+// only; the UI is English-language, so other subsets would just bloat the build.
+import "@fontsource/public-sans/latin-400.css";
+import "@fontsource/public-sans/latin-500.css";
+import "@fontsource/public-sans/latin-600.css";
+import "@fontsource/public-sans/latin-700.css";
+import "@fontsource/jetbrains-mono/latin-400.css";
+import "@fontsource/jetbrains-mono/latin-500.css";
+import "@fontsource/jetbrains-mono/latin-600.css";
+import "@fontsource/source-serif-4/latin-400.css";
+import "@fontsource/source-serif-4/latin-500.css";
+import "@fontsource/source-serif-4/latin-600.css";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+import "./styles/federation.css";
+import "./styles/app.css";
+import App from "./App";
+import { THEME_STORAGE_KEY, resolveInitialTheme } from "./theme";
+
+document.documentElement.dataset.repo = "spiderweb-pr";
+// Set the initial theme before first paint to avoid a flash of the wrong theme.
+document.documentElement.dataset.theme = resolveInitialTheme(
+  localStorage.getItem(THEME_STORAGE_KEY),
+);
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
+  </React.StrictMode>
 );

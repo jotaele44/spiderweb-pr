@@ -1,10 +1,8 @@
 """One-time setup for the spiderweb-pr desktop wrapper (stdlib only).
 
-Creates a private .venv with the small server dependencies and produces a
-dashboard data snapshot from the local flight database via run_all.py
---export-json (an empty-but-valid snapshot when no database exists). No
-Node/npm build is needed: the dashboard is the standalone
-dashboard/dashboard.html viewer with vendored JS.
+Creates a private .venv with the small server dependencies and builds the Vite
+single-page app under server/frontend, which the wrapper then serves from the
+same origin as the backend. Node/npm is required for that build.
 
 Usage:
   python desktop/setup.py            run setup (skips when already complete)
@@ -15,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import venv
@@ -22,7 +21,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from desktop.config import DASHBOARD_DATA, DEFAULT_DB, REPO_ROOT  # noqa: E402
+from desktop.config import (  # noqa: E402
+    DIST_DIR,
+    EXTRA_BUILD_ENV,
+    FRONTEND_DIR,
+    REPO_ROOT,
+)
 
 VENV_DIR = REPO_ROOT / ".venv"
 MARKER = Path(__file__).resolve().parent / ".setup-complete"
@@ -37,13 +41,21 @@ def venv_python() -> Path:
     return VENV_DIR / "bin" / "python"
 
 
-def run(cmd: list[str], cwd: Path | None = None) -> None:
+def run(
+    cmd: list[str],
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> None:
     print(f"$ {' '.join(cmd)}")
-    subprocess.run(cmd, cwd=cwd, check=True)
+    subprocess.run(cmd, cwd=cwd, check=True, env=env)
 
 
 def is_complete() -> bool:
-    return MARKER.exists() and venv_python().exists() and DASHBOARD_DATA.exists()
+    return (
+        MARKER.exists()
+        and venv_python().exists()
+        and (DIST_DIR / "index.html").is_file()
+    )
 
 
 def setup_python() -> None:
@@ -58,20 +70,25 @@ def setup_python() -> None:
     )
 
 
-def export_dashboard_data() -> None:
-    """Snapshot the local flight DB for the dashboard (empty DB → empty snapshot)."""
-    DASHBOARD_DATA.parent.mkdir(parents=True, exist_ok=True)
-    run(
-        [
-            str(venv_python()),
-            str(REPO_ROOT / "run_all.py"),
-            "--db",
-            str(DEFAULT_DB),
-            "--export-json",
-            str(DASHBOARD_DATA),
-        ],
-        cwd=REPO_ROOT,
-    )
+def npm_command() -> str:
+    """npm is a .cmd shim on Windows, which subprocess needs spelled out."""
+    return "npm.cmd" if os.name == "nt" else "npm"
+
+
+def build_frontend() -> None:
+    """Install and build the SPA that the wrapper serves."""
+    npm = npm_command()
+    if not shutil.which(npm):
+        raise SystemExit(
+            "Node.js/npm is required to build the desktop UI "
+            f"({FRONTEND_DIR.relative_to(REPO_ROOT)}). Install Node 22+ and re-run."
+        )
+    lock = FRONTEND_DIR / "package-lock.json"
+    run([npm, "ci" if lock.exists() else "install", "--no-audit", "--no-fund"],
+        cwd=FRONTEND_DIR)
+    # Blank the API base so the bundle talks to whichever port the wrapper binds.
+    env = {**os.environ, **EXTRA_BUILD_ENV}
+    run([npm, "run", "build"], cwd=FRONTEND_DIR, env=env)
 
 
 def main() -> None:
@@ -83,7 +100,7 @@ def main() -> None:
             print("Setup already complete (use --force to redo).")
         return
     setup_python()
-    export_dashboard_data()
+    build_frontend()
     MARKER.write_text("ok\n", encoding="utf-8")
     print("Desktop setup complete.")
 

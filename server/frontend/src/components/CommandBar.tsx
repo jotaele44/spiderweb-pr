@@ -44,13 +44,13 @@ export function CommandBar({
       <div className="brand">
         <div className="seal">PR</div>
         <div>
-          <div className="brand-name">PRIIS V1</div>
-          <div className="brand-sub">INTEGRATED INTEL</div>
+          <div className="brand-name">Spiderweb</div>
+          <div className="brand-sub">SPATIAL / OPERATIONAL</div>
         </div>
       </div>
       <form className="query" onSubmit={(event) => { event.preventDefault(); onSubmit(query); }}>
         <span className="subtle mono">QUERY</span>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Global PRIIS query" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Global Spiderweb query" />
         <span className="kbd">ENTER</span>
       </form>
       <div className="chips">
