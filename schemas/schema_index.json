@@ -14,7 +14,7 @@
       "review_status"
     ],
     "fact_status_default": "observed for primary-extractor outputs; inferred for derived/scored outputs; null for reports/manifests",
-    "schema_name_null_means": "no JSON Schema registered yet \u2014 see NEXT_100_TASKS"
+    "schema_name_null_means": "no JSON Schema registered yet — see NEXT_100_TASKS"
   },
   "artifacts": [
     {
@@ -373,68 +373,6 @@
     },
     {
       "workstream": "rlsm",
-      "artifact_path": "outputs/rlsm_ingest_manifest.csv",
-      "schema_name": "rlsm_ingest_manifest",
-      "schema_file": "schemas/rlsm_ingest_manifest.schema.json",
-      "format": "csv",
-      "crs": null,
-      "required_columns_summary": [
-        "screenshot_id",
-        "sha256",
-        "filename",
-        "rel_path",
-        "month_bucket",
-        "ingest_status",
-        "ocr_status"
-      ],
-      "provenance_fields": [
-        "sha256",
-        "ingested_at"
-      ],
-      "dedup_key": "sha256",
-      "fact_status_default": "observed",
-      "notes": "11,926-row inventory of every baseline screenshot."
-    },
-    {
-      "workstream": "rlsm",
-      "artifact_path": "outputs/rlsm_duplicate_report.csv",
-      "schema_name": "rlsm_duplicate_report",
-      "schema_file": "schemas/rlsm_duplicate_report.schema.json",
-      "format": "csv",
-      "crs": null,
-      "required_columns_summary": [
-        "dup_group_id",
-        "group_size",
-        "sha256",
-        "filename",
-        "rel_path"
-      ],
-      "provenance_fields": [
-        "sha256"
-      ],
-      "dedup_key": "dup_group_id",
-      "fact_status_default": "observed"
-    },
-    {
-      "workstream": "rlsm",
-      "artifact_path": "outputs/rlsm_failed_files.csv",
-      "schema_name": "rlsm_failed_files",
-      "schema_file": "schemas/rlsm_failed_files.schema.json",
-      "format": "csv",
-      "crs": null,
-      "required_columns_summary": [
-        "screenshot_id",
-        "filename",
-        "rel_path",
-        "ingest_status",
-        "ingest_error"
-      ],
-      "provenance_fields": [],
-      "dedup_key": "screenshot_id",
-      "fact_status_default": "observed"
-    },
-    {
-      "workstream": "rlsm",
       "artifact_path": "outputs/ocr_raw_by_zone.jsonl",
       "schema_name": "ocr_raw_by_zone",
       "schema_file": "schemas/ocr_raw_by_zone.schema.json",
@@ -560,7 +498,7 @@
       ],
       "dedup_key": "aircraft_obs_id",
       "fact_status_default": "observed",
-      "notes": "identity_status \u2208 {confirmed, partial, conflicting, unknown, recovered}; 'recovered' is the raw-text-rescue tier."
+      "notes": "identity_status ∈ {confirmed, partial, conflicting, unknown, recovered}; 'recovered' is the raw-text-rescue tier."
     },
     {
       "workstream": "rlsm",
@@ -584,7 +522,7 @@
       ],
       "dedup_key": "track_feat_id",
       "fact_status_default": "inferred",
-      "notes": "Deferred placeholder \u2014 no extractor yet (Workstream B follow-up)."
+      "notes": "Deferred placeholder — no extractor yet (Workstream B follow-up)."
     },
     {
       "workstream": "rlsm",
@@ -718,7 +656,7 @@
       "provenance_fields": [],
       "dedup_key": null,
       "fact_status_default": null,
-      "notes": "Human-readable coverage report \u2014 not validated."
+      "notes": "Human-readable coverage report — not validated."
     },
     {
       "workstream": "readiness",
@@ -833,7 +771,7 @@
       ],
       "dedup_key": "id",
       "fact_status_default": "observed",
-      "notes": "RESTRICTED \u2014 precise service-location points (sensitivity=high, public_export=grid_only). NOT in exports/samples; public release uses headstart_context_grid.geojson only."
+      "notes": "RESTRICTED — precise service-location points (sensitivity=high, public_export=grid_only). NOT in exports/samples; public release uses headstart_context_grid.geojson only."
     },
     {
       "workstream": "federation",

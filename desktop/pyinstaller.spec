@@ -3,9 +3,10 @@
 #   pip install pyinstaller
 #   pyinstaller desktop/pyinstaller.spec --distpath dist-desktop
 # Produces a self-contained one-folder app: dist-desktop/PRII-SPIDERWEB/
-# The bundle mirrors the repo layout so desktop/app_server.py finds dashboard/
-# and outputs/ with its normal relative paths (no Vite build — the UI is the
-# standalone dashboard/dashboard.html viewer with vendored JS).
+# The bundle mirrors the repo layout so desktop/app_server.py finds the built
+# frontend and outputs/ with its normal relative paths. Run the Vite build
+# (desktop/setup.py, or `npm run build` in server/frontend) before packaging —
+# server/frontend/dist must exist or the app ships without a UI.
 
 import os
 import sys
@@ -26,8 +27,15 @@ EXE_ICON = str(BRANDING / "icon.ico") if sys.platform == "win32" else None
 # PRII_CONSOLE=1 to build a console binary it can smoke-test with visible stdio.
 CONSOLE = os.environ.get("PRII_CONSOLE") == "1"
 
+DIST_DIR = REPO_ROOT / "server" / "frontend" / "dist"
+if not (DIST_DIR / "index.html").is_file():
+    raise SystemExit(
+        "server/frontend/dist/index.html is missing — run `python desktop/setup.py` "
+        "(or `npm run build` in server/frontend) before packaging."
+    )
+
 datas = [
-    (str(REPO_ROOT / "dashboard"), "dashboard"),
+    (str(DIST_DIR), "server/frontend/dist"),
     (str(BRANDING / "icon-256.png"), "assets/branding"),
 ]
 if (REPO_ROOT / "outputs").exists():
@@ -49,6 +57,10 @@ a = Analysis(
         "prii_desktop.launcher",
         "prii_desktop.appserver",
         "prii_desktop.config",
+        # Pulls the shared setup runtime into the frozen bundle. PyInstaller
+        # cannot see it: it is reached only through DesktopConfig, never imported
+        # by name here. thehub-pr's validate_desktop_branding.py also asserts
+        # this string is present.
         "prii_desktop.setup_center",
     ],
     noarchive=False,

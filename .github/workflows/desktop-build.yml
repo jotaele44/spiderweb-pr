@@ -2,8 +2,8 @@ name: desktop-build
 
 # Builds the standalone double-click desktop app (PyInstaller) for each OS.
 # Runs on demand, and attaches the bundles to the release on desktop-v* tags.
-# No frontend build step: the UI is the standalone dashboard/dashboard.html
-# viewer with vendored JS under dashboard/vendor/ (no Node.js needed).
+# Includes a frontend build step: the UI is the Vite SPA under server/frontend,
+# and desktop/pyinstaller.spec refuses to package without server/frontend/dist.
 
 on:
   workflow_dispatch:
@@ -15,7 +15,6 @@ on:
     paths:
       - "desktop/**"
       - "assets/branding/**"
-      - "dashboard/**"
       - "server/frontend/**"
       - "requirements-desktop.txt"
       - ".github/workflows/desktop-build.yml"
@@ -45,10 +44,28 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      # Node is needed on every OS now, not just Linux: pyinstaller.spec
+      # hard-fails without server/frontend/dist, and the Linux-only visual/a11y
+      # harness below also needs it.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        if: runner.os == 'Linux'
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: server/frontend/package-lock.json
+
+      # Build the UI before packaging. Doing it here — rather than in
+      # desktop/setup.py on the user's machine — is what keeps the zero-Terminal
+      # contract: the frozen bundle carries dist/, so end users need no Node.
+      # The blank VITE_API_BASE keeps the bundle same-origin against whichever
+      # ephemeral port the wrapper binds (mirrors desktop/config.py).
+      - name: Build frontend
+        shell: bash
+        working-directory: server/frontend
+        env:
+          VITE_API_BASE: ""
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
 
       - name: Install Python dependencies
         shell: bash
@@ -57,24 +74,51 @@ jobs:
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system --upgrade pip
-          uv pip install --system -r requirements-desktop.txt -r ../thehub-pr/tools/requirements-icons.txt pyinstaller pytest httpx
+          uv pip install --system -c constraints.txt -r requirements-desktop.txt -r ../thehub-pr/tools/requirements-icons.txt -e ".[server]" pyinstaller pytest httpx
 
+      # The branding validator ships with thehub-pr. It is invoked by whichever
+      # name that repo actually provides, and skipped with a notice when neither
+      # is present: this workflow resolves thehub-pr by matching branch name and
+      # falls back to its main, where the validator does not exist yet — so a
+      # hard call fails every branch that isn't the one introducing it. The icon
+      # check and the shared runtime's own tests exist on main and always run.
       - name: Verify supplied artwork, AA palette, and fresh-machine setup
+        shell: bash
         run: |
           python ../thehub-pr/tools/build_program_icons.py --repo . --check
-          python ../thehub-pr/tools/validate_desktop_branding.py --repo .
+          validator=""
+          for candidate in verify_desktop_branding validate_desktop_branding; do
+            if [ -f "../thehub-pr/tools/$candidate.py" ]; then
+              validator="../thehub-pr/tools/$candidate.py"
+              break
+            fi
+          done
+          if [ -n "$validator" ]; then
+            python "$validator" --repo .
+          else
+            echo "::notice::thehub-pr provides no desktop-branding validator; skipping."
+          fi
           python -m pytest ../thehub-pr/packages/prii_desktop/tests -q
 
+      # Same conditional reasoning as the branding validator above: the renderer
+      # and the Playwright harness live in thehub-pr, which resolves to main on
+      # most branches and does not carry them yet.
       - name: Visual and accessibility smoke for native setup
         if: runner.os == 'Linux'
+        shell: bash
         env:
           PRII_REPO_SLUG: spiderweb-pr
           PRII_SETUP_FIXTURE: ${{ github.workspace }}/desktop-ui-artifacts/setup.html
           PRII_VISUAL_DIR: ${{ github.workspace }}/desktop-ui-artifacts
         run: |
-          python ../thehub-pr/tools/render_desktop_setup.py \
-            --repo . --output desktop-ui-artifacts/setup.html
-          cd ../thehub-pr/federation-design/test-harness
+          renderer="../thehub-pr/tools/render_desktop_setup.py"
+          harness="../thehub-pr/federation-design/test-harness"
+          if [ ! -f "$renderer" ] || [ ! -d "$harness" ]; then
+            echo "::notice::thehub-pr provides no desktop-setup renderer/harness; skipping."
+            exit 0
+          fi
+          python "$renderer" --repo . --output desktop-ui-artifacts/setup.html
+          cd "$harness"
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
           npx playwright test tests/desktop-setup.spec.js \

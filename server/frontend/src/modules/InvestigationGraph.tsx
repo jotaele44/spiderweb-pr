@@ -52,7 +52,7 @@ export function InvestigationGraph({ data, setSelection }: { data: PriisData; se
       nodes: nodes.map((n) => ({ id: n.id, kind: n.kind, label: n.label })),
       edges: edges.map(([from, to]) => ({ from, to })),
     };
-    download(`priis-graph-${anomaly.id}.json`, JSON.stringify(payload, null, 2));
+    download(`spiderweb-graph-${anomaly.id}.json`, JSON.stringify(payload, null, 2));
   }
 
   return (

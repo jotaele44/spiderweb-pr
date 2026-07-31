@@ -1,78 +1,49 @@
-"""Idempotent Spiderweb workspace preparation for the native setup UI."""
+"""Idempotent Spiderweb workspace preparation for the native setup UI.
+
+Invoked by the shared desktop runtime via ``desktop/config.py::SETUP_ACTION``.
+
+This used to export a ``dashboard_data.json`` snapshot of ``flights`` and
+``aircraft_profiles`` for the standalone dashboard viewer. That viewer is gone
+and the airspace surface is owned by skywatcher-pr (see
+``docs/REPO_BOUNDARY.md``); the SPA reads the live backend instead. So setup now
+prepares the two things the app actually needs: a writable exports directory to
+serve at ``/outputs``, and a database for the backend to read.
+"""
 
 from __future__ import annotations
 
-import json
 import os
-import shutil
-import sqlite3
-from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-
-def _rows(connection: sqlite3.Connection, table: str, order: str = "") -> list[dict]:
-    try:
-        statement = f"SELECT * FROM {table} {order} LIMIT 5000"
-        return [dict(row) for row in connection.execute(statement)]
-    except sqlite3.Error:
-        return []
+#: Where the backend looks for its database (server/backend/main.py::DB_PATH).
+BACKEND_DB = REPO_ROOT / "server" / "priis.db"
 
 
-def _export_database(database: Path, output: Path) -> None:
-    connection = sqlite3.connect(database)
-    connection.row_factory = sqlite3.Row
-    try:
-        profiles = _rows(connection, "aircraft_profiles")
-        payload = {
-            "exported_at": datetime.now(UTC).isoformat(),
-            "db_path": str(database),
-            "flights": _rows(connection, "flights", "ORDER BY takeoff_time DESC"),
-            "aircraft_profiles": profiles,
-            "alerts": _rows(connection, "alerts", "ORDER BY triggered_at DESC"),
-            "anomalies": _rows(
-                connection, "gis_anomalies", "ORDER BY detected_at DESC"
-            ),
-        }
-    finally:
-        connection.close()
-    output.write_text(json.dumps(payload, default=str) + "\n", encoding="utf-8")
+def _workspace() -> Path:
+    """The writable data home chosen by the setup UI, or the repo as a fallback."""
+    configured = os.environ.get("SPIDERWEB_DATA_HOME", "").strip()
+    return Path(configured) if configured else REPO_ROOT
 
 
 def prepare_workspace() -> None:
-    workspace = Path(os.environ["SPIDERWEB_DATA_HOME"])
-    output = workspace / "exports" / "dashboard_data.json"
-    if output.exists():
-        return
-    output.parent.mkdir(parents=True, exist_ok=True)
+    """Create the writable exports dir and seed a demo DB if none exists.
 
-    bundled = REPO_ROOT / "outputs" / "dashboard_data.json"
-    if bundled.is_file():
-        shutil.copy2(bundled, output)
-        return
+    Both steps are idempotent and non-fatal: the backend already degrades to
+    empty-but-valid responses when ``priis.db`` is absent (and reports
+    ``db_exists`` on ``/health``), so a read-only install directory must leave
+    setup reporting success rather than raising.
+    """
+    (_workspace() / "exports").mkdir(parents=True, exist_ok=True)
 
-    candidates = [
-        workspace / "data" / "flight_database.db",
-        Path.home() / "flight_database.db",
-    ]
-    database = next((path for path in candidates if path.is_file()), None)
-    if database is not None:
-        _export_database(database, output)
+    if BACKEND_DB.exists():
         return
+    try:
+        from server.ingestion import seed_demo
 
-    output.write_text(
-        json.dumps(
-            {
-                "exported_at": datetime.now(UTC).isoformat(),
-                "db_path": None,
-                "flights": [],
-                "aircraft_profiles": [],
-                "alerts": [],
-                "anomalies": [],
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
+        seed_demo.main(BACKEND_DB)
+    except Exception:
+        # Read-only install, or the optional seed deps are unavailable. The app
+        # still starts; the UI surfaces the empty state.
+        return

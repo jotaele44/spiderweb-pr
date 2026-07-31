@@ -54,7 +54,7 @@ export const ContractSchema = z.object({
 
 export const EventRecordSchema = z.object({
   id: z.string(),
-  kind: z.enum(["contract", "imagery", "flight", "report", "outage", "permit", "field", "other"]),
+  kind: z.enum(["contract", "imagery", "report", "outage", "permit", "field", "filing", "sighting", "other"]),
   at: z.string(),
   siteId: z.string().nullish().transform((v) => v ?? ""),
   refId: z.string().nullish().transform((v) => v ?? undefined),
@@ -63,7 +63,7 @@ export const EventRecordSchema = z.object({
 });
 
 export const AnomalyFactorSchema = z.object({
-  tag: z.enum(["finance", "spatial", "temporal", "infra", "report", "imagery", "flight", "source"]),
+  tag: z.enum(["finance", "spatial", "temporal", "infra", "report", "imagery", "source"]),
   note: z.string(),
 });
 
@@ -71,7 +71,7 @@ export const AnomalySchema = z.object({
   id: z.string(),
   title: z.string(),
   category: z.enum([
-    "financial", "spatial", "temporal", "infrastructure", "flight",
+    "financial", "spatial", "temporal", "infrastructure",
     "imagery", "report", "cross-domain",
   ]),
   score: z.number(),

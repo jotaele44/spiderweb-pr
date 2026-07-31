@@ -5,7 +5,7 @@ document fixes what the repo owns and what it deliberately does not, so the boun
 doesn't drift back into split authority with the hub.
 
 ## This repo owns
-- The spatial/operational **flight-analysis pipeline** (`pipeline/`), GIS correlation,
+- The spatial/operational **analysis pipeline** (`pipeline/`), GIS correlation,
   mission inference, anomaly detection, and the integration/export surfaces
   (`integration/`, `schemas/`). This includes spiderweb's **own** ILAP/AASB airspace
   bridges (`integration/{ilap,aasb}_airspace_bridge.py`), which are the producer flavor
@@ -16,6 +16,35 @@ doesn't drift back into split authority with the hub.
   emit a validated evidence envelope; `scripts/federation_export.py` projects it to the
   Hub's canonical `{entities, sources, relationships}` (geometry carried on entities).
   Validated by `scripts/validate_export.py`; declared in `federation.json`.
+
+## Retired airspace surface (2026-07-29)
+The FR24/RLSM **ingestion** subsystem migrated to skywatcher-pr in 2026-06, but
+remnants stayed behind and kept this repo looking like an airspace product. They
+are now retired to `docs/legacy/`:
+
+| Retired | Was |
+|---|---|
+| `server_ingestion/{registration_alerts,reconcile_registrations}.py` | aircraft registration watchlist + FR24 CSV reconcile |
+| `scripts/parse_adsb_archive.py` | ADS-B archive → `events` + `track_points` |
+| `ingest_data.ingest_fr24_csv` / `ingest_track_points` | read `outputs/fr24_selected_export.csv`, a file **no code here produced** |
+| `migrations.ensure_{events_aircraft_columns,alerts_registration_column,track_points_table}` | aircraft-detail columns, ADS-B track table |
+| `GET /events/{flight_id}/track` + `/events` aircraft columns | per-point flight track playback |
+| `pipeline/rlsm_ontology_gate.py`, `scripts/rlsm_unlabeled.py`, `configs/rlsm_operational_ontology.yaml`, `schemas/rlsm_*.json` | RLSM route-line-segment mining (skywatcher owns RLSM) |
+| `dashboard/` (whole viewer) + `scripts/{export_static_dashboard,gen_snapshot}.py` | Aircraft Catalog / Flight Log / **FR24 Review Queue** tabs |
+
+`/events` survives as a **generic** spatial/operational event stream (contract,
+imagery, report, outage, permit, field). It no longer carries aircraft fields.
+
+**The old FR24 handoff was broken on both ends** and is not being rebuilt here:
+skywatcher's documented adapter (`fr24/spiderweb_adapter.py` →
+`fr24_spiderweb_intake_candidates.jsonl`) had no consumer in this repo, while the
+live path read a CSV nothing here produced — a bespoke connector of exactly the
+kind `docs/ADR_SKYWATCHER_SPIDERWEB_INTEGRATION.md` rejects. Any future intake
+must follow that ADR's canonical-package route, after its four preconditions.
+
+`maintenance/adapters/local.py::check_migration_remnants` now covers the
+dashboard, `server/ingestion/`, `scripts/*adsb*` and the RLSM schemas/configs, so
+this drift fails a maintenance audit instead of accumulating silently.
 
 ## This repo does NOT own
 - **Federation orchestration** (producer discovery, conformance validation, cross-domain

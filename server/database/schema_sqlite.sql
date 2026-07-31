@@ -48,39 +48,15 @@ CREATE TABLE IF NOT EXISTS events (
     ref_id  TEXT,
     label   TEXT NOT NULL,
     tier    TEXT,
-    -- FR24 aircraft detail (extracted by scripts/fr24_vision_ingest.py).
-    -- Persisted here so registrations are not dropped at ingest.
-    registration     TEXT,
-    callsign         TEXT,
-    aircraft_type    TEXT,
-    operator         TEXT,
-    origin_code      TEXT,
-    destination_code TEXT,
-    altitude_ft      INTEGER,
-    ground_speed_mph INTEGER,
-    flight_status    TEXT,
     image_path       TEXT
 );
 
--- Index the registration-watchlist scan in server/ingestion/registration_alerts.py
--- ("SELECT ... FROM events WHERE kind='flight'"), which otherwise full-scans events.
+-- /events consumers filter by kind, which would otherwise full-scan events.
 CREATE INDEX IF NOT EXISTS idx_events_kind ON events(kind);
 
--- Per-point ADS-B tracks for flight events (ingested by
--- scripts/parse_adsb_archive.py). One row per position report; flight_id
--- references events.id. The composite primary key makes re-ingest idempotent
--- (INSERT OR IGNORE) and indexes lookups by flight.
-CREATE TABLE IF NOT EXISTS track_points (
-    flight_id    TEXT    NOT NULL,   -- → events.id (e.g. 'adsb-3aadc81d')
-    ts           INTEGER NOT NULL,   -- epoch seconds
-    at           TEXT,               -- UTC ISO-8601 timestamp
-    lat          REAL,
-    lng          REAL,
-    altitude_ft  INTEGER,
-    speed        INTEGER,            -- knots, as exported
-    direction    INTEGER,            -- heading degrees
-    PRIMARY KEY (flight_id, ts)
-);
+-- The FR24 aircraft-detail columns and the per-point ADS-B `track_points` table
+-- were retired with the airspace surface; airspace observations are owned by
+-- skywatcher-pr. See docs/REPO_BOUNDARY.md.
 
 CREATE TABLE IF NOT EXISTS anomalies (
     id              TEXT PRIMARY KEY,
@@ -118,6 +94,5 @@ CREATE TABLE IF NOT EXISTS alerts (
     kind           TEXT NOT NULL,
     title          TEXT NOT NULL,
     tier           TEXT NOT NULL,
-    investigation  TEXT,
-    registration   TEXT    -- aircraft registration, for kind='aircraft' watchlist alerts
+    investigation  TEXT
 );

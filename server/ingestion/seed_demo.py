@@ -76,25 +76,16 @@ CONTRACTS = [
     ("DEMO-CT-7", "Demo Agency Alpha",   "Demo Vendor C", "DEMO-ST-6", 340000.0, "2025-04-22", "review",   "T2", "open"),
 ]
 
-# (id, kind, at, site_id, ref_id, label, tier, aircraft fields...)
+# (id, kind, at, site_id, ref_id, label, tier). The aircraft-detail columns and
+# the ADS-B track_points table were retired with the airspace surface, so no
+# kind='flight' rows are seeded — the frontend's event-kind enum no longer
+# models them and would silently drop them.
 EVENTS = [
-    ("DEMO-EV-1", "filing",   "2025-02-01T14:00:00Z", "DEMO-ST-1", "DEMO-CT-1", "Demo filing near San Juan Port",  "T3",
-     None, None, None, None, None, None, None, None, None),
-    ("DEMO-EV-2", "sighting", "2025-02-18T09:30:00Z", "DEMO-ST-5", None,        "Demo sighting at Arecibo Airfield", "T2",
-     None, None, None, None, None, None, None, None, None),
-    ("DEMO-EV-3", "flight",   "2025-03-05T18:45:00Z", "DEMO-ST-5", None,        "Demo flight DEMO123",             "T2",
-     "N0DEMO", "DEMO123", "C208", "Demo Air", "TJIG", "TJSJ", 4500, 140, "landed"),
-    ("DEMO-EV-4", "flight",   "2025-03-19T21:10:00Z", "DEMO-ST-8", None,        "Demo flight DEMO456",             "T3",
-     "N1DEMO", "DEMO456", "BE20", "Demo Air", "TJBQ", "TJIG", 8000, 210, "enroute"),
-    ("DEMO-EV-5", "filing",   "2025-04-02T12:00:00Z", "DEMO-ST-7", "DEMO-CT-5", "Demo filing near Guayama Plant",   "T2",
-     None, None, None, None, None, None, None, None, None),
-]
-
-# (flight_id, ts, at, lat, lng, altitude_ft, speed, direction)
-TRACK_POINTS = [
-    ("DEMO-EV-3", 1741200000, "2025-03-05T18:40:00Z", 18.34, -66.99, 4500, 140, 95),
-    ("DEMO-EV-3", 1741200120, "2025-03-05T18:42:00Z", 18.40, -66.85, 3800, 135, 92),
-    ("DEMO-EV-3", 1741200240, "2025-03-05T18:44:00Z", 18.46, -66.72, 1200, 110, 90),
+    ("DEMO-EV-1", "filing",   "2025-02-01T14:00:00Z", "DEMO-ST-1", "DEMO-CT-1", "Demo filing near San Juan Port",  "T3"),
+    ("DEMO-EV-2", "sighting", "2025-02-18T09:30:00Z", "DEMO-ST-5", None,        "Demo sighting at Arecibo Airfield", "T2"),
+    ("DEMO-EV-3", "report",   "2025-03-05T18:45:00Z", "DEMO-ST-5", None,        "Demo field report near Arecibo",  "T2"),
+    ("DEMO-EV-4", "permit",   "2025-03-19T21:10:00Z", "DEMO-ST-8", None,        "Demo permit issued at Vieques",   "T3"),
+    ("DEMO-EV-5", "filing",   "2025-04-02T12:00:00Z", "DEMO-ST-7", "DEMO-CT-5", "Demo filing near Guayama Plant",   "T2"),
 ]
 
 # (id, title, category, score, band, site_id, summary, factors, contracts, event_ids, confidence, contradictions)
@@ -105,8 +96,8 @@ ANOMALIES = [
     ("DEMO-AN-2", "Demo sole-source pattern", "procurement", 0.67, "medium", "DEMO-ST-5",
      "Synthetic demo anomaly: repeated sole-source demo awards.",
      [{"tag": "sole-source", "note": "Demo factor"}], ["DEMO-CT-3"], [], 2, ["Demo contradiction note"]),
-    ("DEMO-AN-3", "Demo flight proximity", "spatial", 0.54, "medium", "DEMO-ST-8",
-     "Synthetic demo anomaly: demo flight passes near a sensitive demo site.",
+    ("DEMO-AN-3", "Demo site proximity", "spatial", 0.54, "medium", "DEMO-ST-8",
+     "Synthetic demo anomaly: a demo permit falls near a sensitive demo site.",
      [{"tag": "proximity", "note": "Demo factor"}], [], ["DEMO-EV-4"], 2, []),
     ("DEMO-AN-4", "Demo low-signal note", "misc", 0.31, "low", None,
      "Synthetic demo anomaly with low score.", [], [], [], 1, []),
@@ -126,11 +117,11 @@ INVESTIGATIONS = [
 ]
 
 ALERTS = [
-    ("DEMO-AL-1", "2025-03-05T18:46:00Z", "aircraft", "Demo watchlist aircraft seen", "T2", "DEMO-INV-1", "N0DEMO"),
-    ("DEMO-AL-2", "2025-04-02T12:05:00Z", "filing",   "Demo filing threshold crossed", "T3", "DEMO-INV-2", None),
+    ("DEMO-AL-1", "2025-03-05T18:46:00Z", "spatial", "Demo proximity threshold crossed", "T2", "DEMO-INV-1"),
+    ("DEMO-AL-2", "2025-04-02T12:05:00Z", "filing",  "Demo filing threshold crossed",    "T3", "DEMO-INV-2"),
 ]
 
-_TABLES = ["alerts", "investigations", "sources", "anomalies", "track_points",
+_TABLES = ["alerts", "investigations", "sources", "anomalies",
            "events", "contracts", "sites", "vendors", "agencies"]
 
 
@@ -151,14 +142,9 @@ def _seed(conn: sqlite3.Connection) -> None:
         [(*c, DEMO_NOTE) for c in CONTRACTS],
     )
     cur.executemany(
-        "INSERT INTO events (id, kind, at, site_id, ref_id, label, tier, registration, "
-        "callsign, aircraft_type, operator, origin_code, destination_code, altitude_ft, "
-        "ground_speed_mph, flight_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO events (id, kind, at, site_id, ref_id, label, tier) "
+        "VALUES (?,?,?,?,?,?,?)",
         EVENTS,
-    )
-    cur.executemany(
-        "INSERT INTO track_points (flight_id, ts, at, lat, lng, altitude_ft, speed, direction) "
-        "VALUES (?,?,?,?,?,?,?,?)", TRACK_POINTS,
     )
     cur.executemany(
         "INSERT INTO anomalies (id, title, category, score, band, site_id, summary, factors, "
@@ -175,8 +161,8 @@ def _seed(conn: sqlite3.Connection) -> None:
         INVESTIGATIONS,
     )
     cur.executemany(
-        "INSERT INTO alerts (id, at, kind, title, tier, investigation, registration) "
-        "VALUES (?,?,?,?,?,?,?)", ALERTS,
+        "INSERT INTO alerts (id, at, kind, title, tier, investigation) "
+        "VALUES (?,?,?,?,?,?)", ALERTS,
     )
     conn.commit()
 

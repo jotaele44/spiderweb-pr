@@ -45,11 +45,9 @@ export const priisData: PriisData = {
     { id: "E-001", kind: "contract", at: "2024-05-02", siteId: "S-001", refId: "C-9301", label: "C-9301 signed", tier: "T2" },
     { id: "E-002", kind: "contract", at: "2024-06-19", siteId: "S-001", refId: "C-9382", label: "C-9382 amend", tier: "T2" },
     { id: "E-003", kind: "imagery", at: "2024-08-12", siteId: "S-001", label: "New clearing — 4.1 ha", tier: "T1" },
-    { id: "E-004", kind: "flight", at: "2024-08-14", siteId: "S-001", label: "Unscheduled C-130 loiter", tier: "T1" },
     { id: "E-005", kind: "report", at: "2024-08-17", siteId: "S-001", label: "Local sighting — Ceiba", tier: "T3" },
     { id: "E-006", kind: "contract", at: "2024-10-22", siteId: "S-010", refId: "C-9620", label: "C-9620 signed", tier: "T2" },
     { id: "E-007", kind: "imagery", at: "2024-11-04", siteId: "S-010", label: "Access road extended", tier: "T1" },
-    { id: "E-008", kind: "flight", at: "2024-11-07", siteId: "S-010", label: "Rotary-wing approach", tier: "T1" },
     { id: "E-009", kind: "outage", at: "2024-11-07", siteId: "S-010", label: "Local grid outage 32m", tier: "T2" },
     { id: "E-011", kind: "imagery", at: "2025-02-22", siteId: "S-010", label: "Concrete pad — 18×24m", tier: "T1" },
     { id: "E-012", kind: "report", at: "2025-02-25", siteId: "S-010", label: "Witness — light formation", tier: "T3" }
@@ -57,16 +55,16 @@ export const priisData: PriisData = {
   anomalies: [
     {
       id: "A-014",
-      title: "Ceiba contract concentration with imagery + flight overlap",
+      title: "Ceiba contract concentration with imagery overlap",
       category: "cross-domain",
       score: 0.91,
       band: "hi",
       siteId: "S-001",
-      summary: "Four awards to two vendors converge on Roosevelt Roads inside a 9-month window. Imagery shows new clearing near the contract-amendment window; flight activity and a local report appear in the same period.",
+      summary: "Four awards to two vendors converge on Roosevelt Roads inside a 9-month window. Imagery shows new clearing near the contract-amendment window; a local report appears in the same period.",
       factors: [
         { tag: "finance", note: "Vendor concentration across linked awards" },
         { tag: "spatial", note: "Contracts converge near sensitive infrastructure" },
-        { tag: "temporal", note: "Imagery and flight events cluster inside one week" },
+        { tag: "temporal", note: "Imagery and report events cluster inside one week" },
         { tag: "report", note: "One T3 local report remains uncorroborated" }
       ],
       contracts: ["C-9301", "C-9382", "C-9802"],
@@ -81,7 +79,7 @@ export const priisData: PriisData = {
       score: 0.84,
       band: "hi",
       siteId: "S-010",
-      summary: "Two awards converge on Vieques western reserve with imagery, flight, and outage events in close sequence. Pattern is operationally significant but not dispositive without additional records.",
+      summary: "Two awards converge on Vieques western reserve with imagery and outage events in close sequence. Pattern is operationally significant but not dispositive without additional records.",
       factors: [
         { tag: "finance", note: "Large vendor concentration on restricted-adjacent site" },
         { tag: "infra", note: "New construction signature needs permit reconciliation" },
@@ -111,7 +109,7 @@ export const priisData: PriisData = {
     }
   ],
   sources: [
-    { id: "SRC-ADS-B", name: "ADS-B flight log fixture", tier: "T1", kind: "technical", status: "online" },
+    { id: "SRC-TIGER", name: "TIGER boundary layer fixture", tier: "T1", kind: "technical", status: "online" },
     { id: "SRC-IMAGERY", name: "Imagery change-detection fixture", tier: "T1", kind: "technical", status: "online" },
     { id: "SRC-CONTRACTS", name: "Procurement contract fixture", tier: "T2", kind: "operational", status: "online" },
     { id: "SRC-OUTAGE", name: "Grid outage fixture", tier: "T2", kind: "operational", status: "partial" },
