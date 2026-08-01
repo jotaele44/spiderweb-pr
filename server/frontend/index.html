@@ -13,10 +13,12 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <!-- Paired with the in-app theme toggle so the browser chrome follows the
-         active theme instead of pinning to the brand red in both. -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#efece4" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14181c" />
+    <!-- Must stay the brand accent and unconditional: thehub-pr's
+         tools/build_program_icons.py --check validates this against
+         assets/branding/icon.png, and desktop-build.yml gates on it. Splitting it
+         into prefers-color-scheme variants fails that check, so the browser
+         chrome does not follow the in-app theme toggle. -->
+    <meta name="theme-color" content="#ca0c02" />
   </head>
   <body>
     <div id="root"></div>

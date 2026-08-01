@@ -5,6 +5,7 @@ import {
   fetchWithTimeout,
   getPipelineStatus,
   startPipeline,
+  streamPipeline,
 } from "./client";
 
 // These cover the failure paths that previously had no exit: a backend that
@@ -68,6 +69,89 @@ describe("startPipeline", () => {
   it("returns the job on success", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse({ job_id: "j-1", status: "running" }))));
     await expect(startPipeline()).resolves.toEqual({ job_id: "j-1", status: "running" });
+  });
+});
+
+describe("streamPipeline after a dropped stream", () => {
+  // A stream error is not a dead job — the subprocess in pipeline_run keeps
+  // going. Abandoning it here would strand a job the operator can no longer stop
+  // or monitor, so the stream falls back to polling and keeps reporting running.
+  class FakeEventSource {
+    static last: FakeEventSource | null = null;
+    onmessage: ((ev: MessageEvent<string>) => void) | null = null;
+    onerror: (() => void) | null = null;
+    closed = false;
+    constructor(public url: string) {
+      FakeEventSource.last = this;
+    }
+    // The 'done' event never fires in these cases; the drop is the scenario.
+    addEventListener(): void { return undefined; }
+    close() {
+      this.closed = true;
+    }
+  }
+
+  function useFakeEventSource() {
+    FakeEventSource.last = null;
+    vi.stubGlobal("EventSource", FakeEventSource);
+  }
+
+  it("keeps polling and does not report failure while the job is still running", async () => {
+    vi.useFakeTimers();
+    useFakeEventSource();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(jsonResponse({ job_id: "j-1", status: "running" }))),
+    );
+    const onDone = vi.fn();
+    const onError = vi.fn();
+    const onDegraded = vi.fn();
+
+    const stream = streamPipeline("j-1", () => undefined, onDone, onError, onDegraded);
+    FakeEventSource.last!.onerror!();
+
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(onDegraded).toHaveBeenCalledOnce();
+    expect(onError).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+
+    // close() must stop the polling loop, not just the socket.
+    stream.close();
+    const callsAfterClose = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+    await vi.advanceTimersByTimeAsync(6000);
+    expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsAfterClose);
+  });
+
+  it("resolves the run once polling sees a terminal state", async () => {
+    vi.useFakeTimers();
+    useFakeEventSource();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(jsonResponse({ job_id: "j-1", status: "done", returncode: 0 }))),
+    );
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    streamPipeline("j-1", () => undefined, onDone, onError);
+    FakeEventSource.last!.onerror!();
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(onDone).toHaveBeenCalledWith(0);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("reports failure only after the status endpoint stays unreachable", async () => {
+    vi.useFakeTimers();
+    useFakeEventSource();
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("connection refused"))));
+    const onError = vi.fn();
+
+    streamPipeline("j-1", () => undefined, vi.fn(), onError);
+    FakeEventSource.last!.onerror!();
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError.mock.calls[0][0]).toMatch(/unreachable/);
   });
 });
 

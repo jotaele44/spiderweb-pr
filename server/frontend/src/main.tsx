@@ -31,7 +31,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {/* Outer boundary catches throws in the chrome itself (command bar, rail,
         inspector, timeline) — the per-module boundary lives inside App. */}
-    <ErrorBoundary>
+    <ErrorBoundary recoverBy="reload">
       <App />
     </ErrorBoundary>
   </React.StrictMode>

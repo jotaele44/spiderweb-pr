@@ -141,44 +141,100 @@ export async function getPipelineStatus(jobId: string): Promise<PipelineJob> {
   return (await res.json()) as PipelineJob;
 }
 
+/** Handle for an open pipeline subscription. `close()` stops stream and polling. */
+export interface PipelineStream {
+  close: () => void;
+}
+
+/** How long to keep polling a job whose stream dropped but which is still alive. */
+const STATUS_POLL_INTERVAL_MS = 2000;
+const STATUS_POLL_MAX_FAILURES = 5;
+
 /**
- * Open an SSE stream for a running pipeline job.
- * Calls onLine for each stdout line, onDone when the job exits, and onError if
- * the stream itself fails.
+ * Subscribe to a running pipeline job.
+ * Calls onLine for each stdout line, onDone when the job exits, and onError only
+ * once the job can no longer be tracked at all.
  *
  * EventSource reconnects silently on transport failure, so without an `onerror`
- * handler a backend that dies mid-run leaves the caller waiting on a `done`
- * event that will never arrive — the UI stays "running" with no way back.
+ * handler a backend that dies mid-run leaves the caller waiting on a `done` event
+ * that will never arrive — the UI stays "running" with no way back.
+ *
+ * A dropped stream is not the same as a dead job, though: the subprocess in
+ * `pipeline_run` keeps going. So on a stream error we fall back to polling
+ * `GET /pipeline/status/{job_id}` and keep reporting "running" until the job
+ * actually reaches a terminal state. Giving up here would strand a live
+ * subprocess the operator can no longer stop or monitor.
  */
 export function streamPipeline(
   jobId: string,
   onLine: (line: string) => void,
   onDone: (returncode: number) => void,
   onError?: (message: string) => void,
-): EventSource {
+  onDegraded?: (message: string) => void,
+): PipelineStream {
+  let closed = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let consecutiveFailures = 0;
+
   const es = new EventSource(`${BASE}/pipeline/events/${jobId}`);
-  es.onmessage = (ev) => onLine(ev.data as string);
+
+  function close() {
+    closed = true;
+    if (timer !== undefined) clearTimeout(timer);
+    es.close();
+  }
+
+  function finish(returncode: number) {
+    if (closed) return;
+    close();
+    onDone(returncode);
+  }
+
+  function fail(message: string) {
+    if (closed) return;
+    close();
+    onError?.(message);
+  }
+
+  function pollStatus() {
+    if (closed) return;
+    void getPipelineStatus(jobId)
+      .then((job) => {
+        if (closed) return;
+        consecutiveFailures = 0;
+        if (job.status === "running") {
+          timer = setTimeout(pollStatus, STATUS_POLL_INTERVAL_MS);
+          return;
+        }
+        finish(job.returncode ?? (job.status === "done" ? 0 : 1));
+      })
+      .catch(() => {
+        if (closed) return;
+        consecutiveFailures += 1;
+        if (consecutiveFailures >= STATUS_POLL_MAX_FAILURES) {
+          fail("Pipeline stream lost and the backend is unreachable");
+          return;
+        }
+        timer = setTimeout(pollStatus, STATUS_POLL_INTERVAL_MS);
+      });
+  }
+
+  es.onmessage = (ev) => { if (!closed) onLine(ev.data as string); };
   es.addEventListener("done", (ev) => {
     const msgEv = ev as MessageEvent<string>;
     const payload = JSON.parse(msgEv.data) as { returncode: number };
-    onDone(payload.returncode);
-    es.close();
+    finish(payload.returncode);
   });
   es.onerror = () => {
+    if (closed) return;
+    // Stop the browser's own silent reconnect loop and take over with polling,
+    // keeping the job tracked rather than abandoning it.
     es.close();
-    // The stream may have dropped after the job already finished, so ask the
-    // backend for the real outcome before reporting a failure.
-    void getPipelineStatus(jobId)
-      .then((job) => {
-        if (job.status === "running") {
-          onError?.("Pipeline stream lost while the job was still running");
-        } else {
-          onDone(job.returncode ?? (job.status === "done" ? 0 : 1));
-        }
-      })
-      .catch(() => onError?.("Pipeline stream lost and the backend is unreachable"));
+    onDegraded?.("Pipeline log stream dropped — still tracking the job by status.");
+    pollStatus();
   };
-  return es;
+
+  return { close };
 }
 
 // ─── RAG ───────────────────────────────────────────────────────────────────────

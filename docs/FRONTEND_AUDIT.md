@@ -59,8 +59,21 @@ this change** unless marked otherwise.
 | D7 | `URL.revokeObjectURL` was called synchronously after `.click()` in **four** duplicated copies of the same download helper. Firefox and Safari resolve blob downloads asynchronously, so the revoke can land first and the file arrives empty. | `export/csvExport.ts`, `export/sessionLog.ts`, `export/evidenceBrief.ts`, `modules/InvestigationGraph.tsx` |
 
 D4 is now resolved against `GET /pipeline/status/{job_id}` — a backend route that
-already existed and had no caller. A dropped stream now asks the backend for the
-real outcome before reporting failure.
+already existed and had no caller. A dropped stream is not a dead job, though:
+the subprocess in `pipeline_run` keeps going, so abandoning the stream would
+strand a job the operator can neither stop nor monitor while the UI offered to
+start a second one. `streamPipeline` therefore takes over with status polling and
+keeps reporting "running" until the job actually reaches a terminal state,
+returning a handle whose `close()` tears down both the socket and the polling.
+For the same reason a failed `DELETE /pipeline/{job_id}` now keeps the job id and
+stays in "running" rather than resetting the button.
+
+The `ErrorBoundary` distinguishes the two places it is mounted. Inside the
+workbench it offers RETRY, which is meaningful because the boundary is keyed on
+the module and switching tabs remounts the subtree. At the root it offers RELOAD:
+a soft reset there re-renders the same children with the same props, so a
+deterministic render error would land straight back on a fallback that has
+replaced all navigation.
 
 ### 1.1b The live path was broken, and failed silently
 
@@ -272,6 +285,13 @@ is a defect today — each is documented as intentional in
   the offline hardening; tiles were not. Bundling or caching tiles is the
   remaining offline gap.
 - **`/catalog` has no UI.** The backend serves it; nothing in the app calls it.
+- **Browser chrome cannot follow the theme toggle.** `index.html` gained a
+  description, a `<noscript>` fallback and a web manifest for the previously
+  unreferenced `public/icon-512.png`, but its `theme-color` must stay the
+  unconditional brand accent: `thehub-pr`'s `tools/build_program_icons.py --check`
+  validates it against `assets/branding/icon.png` and `desktop-build.yml` gates on
+  it, so `prefers-color-scheme` variants fail the branding check. Making the
+  browser chrome theme-aware needs a change in `thehub-pr` first.
 - **`dashboard/`** retains two generated PNGs solely to satisfy `thehub-pr`'s
   `build_program_icons.py --check`. Its README records the follow-up (drop the
   `STANDALONE` entry there, then delete the directory) — owned by `thehub-pr`.

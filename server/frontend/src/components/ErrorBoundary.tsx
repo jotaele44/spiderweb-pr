@@ -4,6 +4,14 @@ interface Props {
   children: ReactNode;
   /** Shown instead of the default panel. Receives the error and a reset callback. */
   fallback?: (error: Error, reset: () => void) => ReactNode;
+  /**
+   * Offer a full page reload rather than a soft reset. Set this on a boundary
+   * whose fallback replaces the whole app: a soft reset re-renders the same
+   * children with the same props, so a deterministic render error throws again
+   * and lands straight back on the fallback. Inside the workbench a soft reset
+   * is the right action, because switching modules remounts the subtree anyway.
+   */
+  recoverBy?: "reset" | "reload";
 }
 
 interface State {
@@ -37,13 +45,19 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!error) return this.props.children;
     if (this.props.fallback) return this.props.fallback(error, this.reset);
 
+    const reload = this.props.recoverBy === "reload";
     return (
       <section className="panel">
         <div className="empty-state" role="alert">
           <h2>Something went wrong</h2>
           <p className="desc">{error.message}</p>
-          <button className="act" onClick={this.reset}>
-            RETRY
+          <p className="subtle">
+            {reload
+              ? "The workbench could not render. Reloading starts a clean session."
+              : "Retry re-renders this module; switching tabs also clears the error."}
+          </p>
+          <button className="act" onClick={reload ? () => window.location.reload() : this.reset}>
+            {reload ? "RELOAD" : "RETRY"}
           </button>
         </div>
       </section>

@@ -32,6 +32,19 @@ describe("ErrorBoundary", () => {
     expect(screen.getByRole("button", { name: "RETRY" })).toBeTruthy();
   });
 
+  it("offers a reload, not a soft reset, when the fallback replaces the whole app", () => {
+    // A soft reset re-renders the same children, so a deterministic throw lands
+    // straight back on the fallback. At the root that leaves the user with a
+    // button that cannot recover, so the root boundary reloads instead.
+    render(
+      <ErrorBoundary recoverBy="reload">
+        <Boom />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByRole("button", { name: "RELOAD" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "RETRY" })).toBeNull();
+  });
+
   it("passes the error and a reset callback to a custom fallback", () => {
     render(
       <ErrorBoundary fallback={(error) => <p>caught: {error.message}</p>}>

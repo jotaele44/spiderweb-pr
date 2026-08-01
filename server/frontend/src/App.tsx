@@ -1,6 +1,7 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { ModuleId, PriisData, Selection } from "./types/priis";
 import { priisData as mockData } from "./data/mockData";
+import type { PipelineStream } from "./api/client";
 import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline } from "./api/client";
 import { THEME_STORAGE_KEY, resolveInitialTheme, type Theme } from "./theme";
 import { CommandBar } from "./components/CommandBar";
@@ -51,6 +52,10 @@ export default function App() {
   const [runState, setRunState] = useState<RunState>("idle");
   const [jobId, setJobId] = useState<string | null>(null);
   const [pipelineLog, setPipelineLog] = useState<string[]>([]);
+  // Held so a stop (or unmount) can tear down the stream and its status polling.
+  const streamRef = useRef<PipelineStream | null>(null);
+
+  useEffect(() => () => streamRef.current?.close(), []);
 
   // Bumped each time the command bar submits, so the Query module runs the
   // global query instead of just switching tabs.
@@ -140,8 +145,14 @@ export default function App() {
       try {
         await stopPipeline(jobId);
       } catch (err) {
-        setPipelineLog((prev) => [...prev, `stop failed: ${errorText(err)}`]);
+        // The job is probably still alive, so keep the handle and stay in
+        // "running" — clearing it here would strand a live subprocess while the
+        // UI offered to start a second one.
+        setPipelineLog((prev) => [...prev, `stop failed, job still running: ${errorText(err)}`]);
+        return;
       }
+      streamRef.current?.close();
+      streamRef.current = null;
       setRunState("idle");
       setJobId(null);
       return;
@@ -159,18 +170,23 @@ export default function App() {
       return;
     }
     setJobId(job.job_id);
-    streamPipeline(
+    streamRef.current = streamPipeline(
       job.job_id,
       (line) => setPipelineLog((prev) => [...prev, line]),
       (rc) => {
+        streamRef.current = null;
         setRunState(rc === 0 ? "done" : "error");
         setJobId(null);
       },
       (message) => {
+        streamRef.current = null;
         setPipelineLog((prev) => [...prev, message]);
         setRunState("error");
         setJobId(null);
       },
+      // Degraded, not failed: the log stream dropped but the job is still
+      // tracked by status polling, so stay in "running" and keep the handle.
+      (message) => setPipelineLog((prev) => [...prev, message]),
     );
   }
 
