@@ -20,7 +20,7 @@ case "$HERE" in
 esac
 
 if [ ! -f "$REPO/desktop/setup.py" ]; then
-  notify "This app must stay inside the Spiderweb folder — desktop/setup.py was not found next to it.\n\nLooked in: $REPO\n\nMove PRII-SPIDERWEB.app back into the moneysweep-pr folder and open it from there."
+  notify "This app must stay inside the Spiderweb checkout — desktop/setup.py was not found next to it.\n\nLooked in: $REPO\n\nMove PRII-SPIDERWEB.app back beside the desktop, server and pipeline folders of the checkout, and open it from there."
   exit 1
 fi
 
