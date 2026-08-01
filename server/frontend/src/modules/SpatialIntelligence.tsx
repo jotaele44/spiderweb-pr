@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
-import { byId, fmtMoney } from "../data/mockData";
+import { byId, fmtMoney } from "../lib/format";
 import type { PriisData, Selection } from "../types/priis";
 import { Pill } from "../components/Badges";
 import { AnomalyCard } from "../components/AnomalyCard";
-import { API_BASE } from "../config";
+import { API_BASE, TILE_ATTRIBUTION, TILE_URL } from "../config";
 
 const rasterStyle: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
     osm: {
       type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tiles: [TILE_URL],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
+      attribution: TILE_ATTRIBUTION,
     },
   },
   layers: [{ id: "osm", type: "raster", source: "osm" }],
@@ -265,6 +265,7 @@ export function SpatialIntelligence({
         (layers.anomaly && !!anomaly);
       if (!visible) return;
       const el = document.createElement("button");
+      el.type = "button";
       el.className = "map-marker";
       const size = `${Math.max(14, Math.sqrt(contractTotal / 1_000_000) * 5)}px`;
       Object.assign(el.style, {
@@ -275,7 +276,11 @@ export function SpatialIntelligence({
         background: anomaly ? "var(--alert)" : site.sensitive ? "var(--warn)" : "var(--t1)",
         boxShadow: "0 0 0 1px var(--ink)",
       });
-      el.title = `${site.name} · ${fmtMoney(contractTotal)} · ${anomaly?.id ?? "no anomaly"}`;
+      // The marker is a bare coloured circle, so `title` alone leaves it
+      // unnamed to assistive tech — give it the same text as an accessible name.
+      const markerLabel = `${site.name} · ${fmtMoney(contractTotal)} · ${anomaly?.id ?? "no anomaly"}`;
+      el.title = markerLabel;
+      el.setAttribute("aria-label", markerLabel);
       el.onclick = () =>
         setSelection({
           kind: anomaly && layers.anomaly ? "anomaly" : "site",
@@ -337,6 +342,7 @@ export function SpatialIntelligence({
           <button
             className="act"
             data-on={!layerPanelCollapsed}
+            aria-pressed={!layerPanelCollapsed}
             onClick={() => setLayerPanelCollapsed((value) => !value)}
             title="Toggle layer panel (L)"
           >
@@ -365,7 +371,7 @@ export function SpatialIntelligence({
           )}
         </div>
         <aside className="layer-panel">
-          <h3>Layer control</h3>
+          <h2>Layer control</h2>
           {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => {
             const status = isBackendKey(key) && value ? layerStatus[key] : undefined;
             const right = status === "loading" ? "loading…" : status === "error" ? "error" : value ? "on" : "off";
@@ -375,6 +381,7 @@ export function SpatialIntelligence({
                 className="navbtn"
                 data-active={value}
                 data-status={status}
+                aria-pressed={value}
                 onClick={() => setLayers((cur) => ({ ...cur, [key]: !cur[key] }))}
               >
                 <span>{layerLabel(key)}</span>
@@ -383,7 +390,7 @@ export function SpatialIntelligence({
             );
           })}
           <div className="hr" />
-          <h3>Top spatial anomalies</h3>
+          <h2>Top spatial anomalies</h2>
           <div className="col">
             {data.anomalies.map((anomaly) => (
               <AnomalyCard

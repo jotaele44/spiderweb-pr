@@ -5,7 +5,8 @@ export interface EntityLink {
   label: ReactNode;
   value?: ReactNode;
   mono?: boolean;
-  onClick: () => void;
+  /** Omit for reference-only rows; they render as static text, not buttons. */
+  onClick?: () => void;
 }
 
 /**
@@ -25,16 +26,23 @@ export function EntityLinkList({
 }) {
   return (
     <div className="card">
-      <h3>{title}</h3>
+      <h2>{title}</h2>
       {items.length === 0 ? (
         <div className="rail-empty">{empty}</div>
       ) : (
-        items.map((item) => (
-          <button key={item.key} className="navbtn" onClick={item.onClick}>
-            <span>{item.label}</span>
-            <span className={item.mono ? "mono" : undefined}>{item.value}</span>
-          </button>
-        ))
+        items.map((item) =>
+          item.onClick ? (
+            <button key={item.key} className="navbtn" onClick={item.onClick}>
+              <span>{item.label}</span>
+              <span className={item.mono ? "mono" : undefined}>{item.value}</span>
+            </button>
+          ) : (
+            <div key={item.key} className="navbtn navbtn-static">
+              <span>{item.label}</span>
+              <span className={item.mono ? "mono" : undefined}>{item.value}</span>
+            </div>
+          ),
+        )
       )}
     </div>
   );

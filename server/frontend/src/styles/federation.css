@@ -20,8 +20,13 @@
   /* Ink / text */
   --fd-text: #14181c;
   --fd-text-2: #2f343a;
-  --fd-text-muted: #6b7280;
+  /* Contrast-checked against --fd-surface (#f8f6f0): 5.10:1, AA for body text.
+     The previous #6b7280 sat at 4.47:1 and failed on every muted label. */
+  --fd-text-muted: #636975;
   --fd-text-muted-2: #8a8f97;
+  /* Muted text on an --fd-text background (.brand-sub). The ordinary muted
+     token is tuned for muted-on-surface and inverts to 3.69:1 there. */
+  --fd-text-on-ink-muted: #9aa3ad;
 
   /* Lines / borders */
   --fd-border: #c9c5b8;
@@ -32,11 +37,11 @@
   --fd-t1: #0e5a6b;
   --fd-t2: #8a5a14;
   --fd-t3: #3b4a78;
-  --fd-t4: #707070;
+  --fd-t4: #6a6a6a;  /* 4.58:1 on --fd-bg; #707070 was 4.19:1 */
 
   /* Status */
   --fd-alert: #a83a1c;
-  --fd-warn: #b6802a;
+  --fd-warn: #8a6010;  /* 5.17:1 on --fd-surface; #b6802a was 3.18:1 */
   --fd-ok: #2c6f3e;
   --fd-info: #1e5fa3;
 
@@ -65,6 +70,7 @@
   --fd-text-2: #c5c2b8;
   --fd-text-muted: #8a9099;
   --fd-text-muted-2: #6c7480;
+  --fd-text-on-ink-muted: #5a6068;  /* 5.08:1 on the light ink bg */
   --fd-border: #2b3540;
   --fd-border-soft: #1f2832;
   --fd-border-hard: #cdcabf;

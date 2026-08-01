@@ -1,9 +1,11 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { ModuleId, PriisData, Selection } from "./types/priis";
 import { priisData as mockData } from "./data/mockData";
+import type { PipelineStream } from "./api/client";
 import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline } from "./api/client";
 import { THEME_STORAGE_KEY, resolveInitialTheme, type Theme } from "./theme";
 import { CommandBar } from "./components/CommandBar";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
 import { Timeline } from "./components/Timeline";
@@ -28,26 +30,41 @@ const tabs: { id: ModuleId; label: string }[] = [
 
 type RunState = "idle" | "running" | "done" | "error";
 
+const errorText = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+
+/** Newest event date in the dataset, as YYYY-MM-DD; today's date if there are none. */
+function latestEventDate(data: PriisData): string {
+  const times = data.events
+    .map((event) => new Date(event.at).getTime())
+    .filter((ms) => !Number.isNaN(ms));
+  const ms = times.length ? Math.max(...times) : Date.now();
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
 export default function App() {
   const [data, setData] = useState<PriisData>(mockData);
   const [live, setLive] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [moduleId, setModule] = useState<ModuleId>("command");
-  const [selection, setSelection] = useState<Selection | null>({ kind: "anomaly", id: "A-014" });
-  const [activeInvestigation, setActiveInvestigation] = useState("INV-007");
+  // Seeded defaults used to be fixture ids (anomaly A-014, INV-007, cursor
+  // 2024-08-14). Against live data none of them resolve, so the app opened on
+  // "Missing record", blanked the Anomaly detail pane, and parked the temporal
+  // cursor outside the dataset. Start empty and derive from whatever loads.
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const [activeInvestigation, setActiveInvestigation] = useState("");
   const [query, setQuery] = useState("vendors with concentration near restricted sites");
-  const [cursor, setCursor] = useState("2024-08-14");
-  const [filters, setFilters] = useState([
-    { key: "inv", label: "INV-007", color: "var(--t1)" },
-    { key: "time", label: "12m window", color: "var(--t2)" },
-    { key: "tier", label: "T1+T2 priority" },
-  ]);
+  const [cursor, setCursor] = useState("");
+  const [filters, setFilters] = useState<{ key: string; label: string; color?: string }[]>([]);
 
   // Pipeline state
   const [runState, setRunState] = useState<RunState>("idle");
   const [jobId, setJobId] = useState<string | null>(null);
   const [pipelineLog, setPipelineLog] = useState<string[]>([]);
+  // Held so a stop (or unmount) can tear down the stream and its status polling.
+  const streamRef = useRef<PipelineStream | null>(null);
+
+  useEffect(() => () => streamRef.current?.close(), []);
 
   // Bumped each time the command bar submits, so the Query module runs the
   // global query instead of just switching tabs.
@@ -73,6 +90,10 @@ export default function App() {
       setData(d);
       setLive(l);
       setLoading(false);
+      // Anchor the temporal cursor in the data that actually loaded, rather than
+      // a literal that drifts from every dataset but the original fixture.
+      setCursor((current) => current || latestEventDate(d));
+      setActiveInvestigation((current) => current || (d.investigations[0]?.id ?? ""));
     });
   }, []);
 
@@ -134,22 +155,51 @@ export default function App() {
 
   async function handlePipelineRun() {
     if (runState === "running" && jobId) {
-      await stopPipeline(jobId);
+      try {
+        await stopPipeline(jobId);
+      } catch (err) {
+        // The job is probably still alive, so keep the handle and stay in
+        // "running" — clearing it here would strand a live subprocess while the
+        // UI offered to start a second one.
+        setPipelineLog((prev) => [...prev, `stop failed, job still running: ${errorText(err)}`]);
+        return;
+      }
+      streamRef.current?.close();
+      streamRef.current = null;
       setRunState("idle");
       setJobId(null);
       return;
     }
     setPipelineLog([]);
     setRunState("running");
-    const job = await startPipeline();
+    let job;
+    try {
+      job = await startPipeline();
+    } catch (err) {
+      // Without this the rejection was unhandled and runState stayed "running",
+      // leaving the button stuck on STOP with no job to stop.
+      setPipelineLog([`pipeline failed to start: ${errorText(err)}`]);
+      setRunState("error");
+      return;
+    }
     setJobId(job.job_id);
-    streamPipeline(
+    streamRef.current = streamPipeline(
       job.job_id,
       (line) => setPipelineLog((prev) => [...prev, line]),
       (rc) => {
+        streamRef.current = null;
         setRunState(rc === 0 ? "done" : "error");
         setJobId(null);
       },
+      (message) => {
+        streamRef.current = null;
+        setPipelineLog((prev) => [...prev, message]);
+        setRunState("error");
+        setJobId(null);
+      },
+      // Degraded, not failed: the log stream dropped but the job is still
+      // tracked by status polling, so stay in "running" and keep the handle.
+      (message) => setPipelineLog((prev) => [...prev, message]),
     );
   }
 
@@ -200,16 +250,28 @@ export default function App() {
               onClick={() => setLeftCollapsed((value) => !value)}
               title="Toggle left rail ([)"
               aria-label="Toggle left rail"
+              aria-pressed={leftCollapsed}
             >
               {leftCollapsed ? "»" : "«"}
             </button>
-            {tabs.map((tab) => (
-              <button key={tab.id} className="tab" data-active={moduleId === tab.id} onClick={() => setModule(tab.id)}>
-                {tab.label}
-              </button>
-            ))}
+            <div className="tabs" role="tablist" aria-label="Workbench modules">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  className="tab"
+                  role="tab"
+                  id={`tab-${tab.id}`}
+                  aria-selected={moduleId === tab.id}
+                  aria-controls="module-panel"
+                  data-active={moduleId === tab.id}
+                  onClick={() => setModule(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
             <div className="tab-meta">
-              CURSOR <b>{cursor}</b> · SEL <b>{selection ? `${selection.kind}/${selection.id}` : "—"}</b>
+              CURSOR <b>{cursor || "—"}</b> · SEL <b>{selection ? `${selection.kind}/${selection.id}` : "—"}</b>
             </div>
             <button
               className="tab chrome-toggle"
@@ -217,14 +279,19 @@ export default function App() {
               onClick={() => setRightCollapsed((value) => !value)}
               title="Toggle inspector (])"
               aria-label="Toggle inspector"
+              aria-pressed={rightCollapsed}
             >
               {rightCollapsed ? "«" : "»"}
             </button>
           </div>
-          <div className="workspace">
-            <Suspense fallback={<div className="empty-state">Loading module…</div>}>
-              {renderModule()}
-            </Suspense>
+          <div className="workspace" id="module-panel" role="tabpanel" aria-labelledby={`tab-${moduleId}`}>
+            {/* Keyed on the module so switching tabs clears a caught error and
+                one broken module never takes the rest of the workbench down. */}
+            <ErrorBoundary key={moduleId}>
+              <Suspense fallback={<div className="empty-state">Loading module…</div>}>
+                {renderModule()}
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
         <Inspector data={data} selection={selection} setSelection={setSelection} />

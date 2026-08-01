@@ -10,3 +10,18 @@
  */
 export const API_BASE: string =
   import.meta.env.VITE_API_BASE ?? (import.meta.env.PROD ? "" : "http://localhost:8000");
+
+/**
+ * Raster base-map tile template for the Spatial module.
+ *
+ * Defaults to public OpenStreetMap tiles. Override with `VITE_TILE_URL` to point
+ * a packaged desktop build at a local or self-hosted tile source — the app is
+ * otherwise fully offline-capable (fonts are bundled, the fixture dataset is the
+ * fallback), and this is the one runtime asset that still requires the network.
+ */
+export const TILE_URL: string =
+  import.meta.env.VITE_TILE_URL ?? "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+/** Attribution shown on the base map. Override alongside `VITE_TILE_URL`. */
+export const TILE_ATTRIBUTION: string =
+  import.meta.env.VITE_TILE_ATTRIBUTION ?? "© OpenStreetMap contributors";

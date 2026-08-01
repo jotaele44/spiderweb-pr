@@ -1,4 +1,5 @@
 import type { Anomaly, PriisData } from "../types/priis";
+import { download } from "./download";
 
 function fmtDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -63,12 +64,9 @@ export function buildEvidenceBrief(anomalyId: string, data: PriisData): string {
 }
 
 export function downloadBrief(anomalyId: string, data: PriisData): void {
-  const content = buildEvidenceBrief(anomalyId, data);
-  const blob = new Blob([content], { type: "text/markdown" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `priis-brief-${anomalyId}-${new Date().toISOString().slice(0, 10)}.md`;
-  a.click();
-  URL.revokeObjectURL(url);
+  download(
+    `priis-brief-${anomalyId}-${fmtDate()}.md`,
+    buildEvidenceBrief(anomalyId, data),
+    "text/markdown",
+  );
 }

@@ -17,6 +17,7 @@
   --ink-2: var(--fd-text-2);
   --muted: var(--fd-text-muted);
   --muted-2: var(--fd-text-muted-2);
+  --muted-on-ink: var(--fd-text-on-ink-muted);
 
   --line: var(--fd-border);
   --line-soft: var(--fd-border-soft);

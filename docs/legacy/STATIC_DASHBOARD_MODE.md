@@ -1,4 +1,14 @@
-# Static-first dashboard mode
+# Static-first dashboard mode (RETIRED)
+
+> **Retired — kept for reference only.** The static dashboard was removed with
+> the rest of the no-build `dashboard/` surface (commit `fcb658b`). The
+> `scripts/export_static_dashboard.py` and `tests/test_static_dashboard_export.py`
+> referenced below no longer exist at those paths; the script is parked beside
+> this file at `docs/legacy/scripts/export_static_dashboard.py`. This document
+> also predates the FR24/ADS-B boundary handover to `skywatcher-pr`.
+>
+> Spiderweb's only interface is the Vite SPA under `server/frontend`, served by
+> `desktop/`. See `docs/FRONTEND_AUDIT.md`.
 
 The static dashboard mode lets operators review Spiderweb/FR24/Contract-Finance outputs without hosting the FastAPI server.
 

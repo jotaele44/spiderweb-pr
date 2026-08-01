@@ -14,7 +14,7 @@ export function Card({
 }) {
   return (
     <div className="card">
-      <h3>{title}</h3>
+      <h2>{title}</h2>
       <div className="stat">{stat}{unit && <span className="unit">{unit}</span>}</div>
       {delta && <div className="delta">{delta}</div>}
     </div>
