@@ -4,6 +4,7 @@ import { priisData as mockData } from "./data/mockData";
 import { fetchPriisDataWithFallback, startPipeline, stopPipeline, streamPipeline } from "./api/client";
 import { THEME_STORAGE_KEY, resolveInitialTheme, type Theme } from "./theme";
 import { CommandBar } from "./components/CommandBar";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
 import { Timeline } from "./components/Timeline";
@@ -27,6 +28,8 @@ const tabs: { id: ModuleId; label: string }[] = [
 ];
 
 type RunState = "idle" | "running" | "done" | "error";
+
+const errorText = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 export default function App() {
   const [data, setData] = useState<PriisData>(mockData);
@@ -134,20 +137,38 @@ export default function App() {
 
   async function handlePipelineRun() {
     if (runState === "running" && jobId) {
-      await stopPipeline(jobId);
+      try {
+        await stopPipeline(jobId);
+      } catch (err) {
+        setPipelineLog((prev) => [...prev, `stop failed: ${errorText(err)}`]);
+      }
       setRunState("idle");
       setJobId(null);
       return;
     }
     setPipelineLog([]);
     setRunState("running");
-    const job = await startPipeline();
+    let job;
+    try {
+      job = await startPipeline();
+    } catch (err) {
+      // Without this the rejection was unhandled and runState stayed "running",
+      // leaving the button stuck on STOP with no job to stop.
+      setPipelineLog([`pipeline failed to start: ${errorText(err)}`]);
+      setRunState("error");
+      return;
+    }
     setJobId(job.job_id);
     streamPipeline(
       job.job_id,
       (line) => setPipelineLog((prev) => [...prev, line]),
       (rc) => {
         setRunState(rc === 0 ? "done" : "error");
+        setJobId(null);
+      },
+      (message) => {
+        setPipelineLog((prev) => [...prev, message]);
+        setRunState("error");
         setJobId(null);
       },
     );
@@ -200,14 +221,26 @@ export default function App() {
               onClick={() => setLeftCollapsed((value) => !value)}
               title="Toggle left rail ([)"
               aria-label="Toggle left rail"
+              aria-pressed={leftCollapsed}
             >
               {leftCollapsed ? "»" : "«"}
             </button>
-            {tabs.map((tab) => (
-              <button key={tab.id} className="tab" data-active={moduleId === tab.id} onClick={() => setModule(tab.id)}>
-                {tab.label}
-              </button>
-            ))}
+            <div className="tabs" role="tablist" aria-label="Workbench modules">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  className="tab"
+                  role="tab"
+                  id={`tab-${tab.id}`}
+                  aria-selected={moduleId === tab.id}
+                  aria-controls="module-panel"
+                  data-active={moduleId === tab.id}
+                  onClick={() => setModule(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
             <div className="tab-meta">
               CURSOR <b>{cursor}</b> · SEL <b>{selection ? `${selection.kind}/${selection.id}` : "—"}</b>
             </div>
@@ -217,14 +250,19 @@ export default function App() {
               onClick={() => setRightCollapsed((value) => !value)}
               title="Toggle inspector (])"
               aria-label="Toggle inspector"
+              aria-pressed={rightCollapsed}
             >
               {rightCollapsed ? "«" : "»"}
             </button>
           </div>
-          <div className="workspace">
-            <Suspense fallback={<div className="empty-state">Loading module…</div>}>
-              {renderModule()}
-            </Suspense>
+          <div className="workspace" id="module-panel" role="tabpanel" aria-labelledby={`tab-${moduleId}`}>
+            {/* Keyed on the module so switching tabs clears a caught error and
+                one broken module never takes the rest of the workbench down. */}
+            <ErrorBoundary key={moduleId}>
+              <Suspense fallback={<div className="empty-state">Loading module…</div>}>
+                {renderModule()}
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
         <Inspector data={data} selection={selection} setSelection={setSelection} />

@@ -1,17 +1,8 @@
 import type { PriisData, Selection } from "../types/priis";
-import { byId } from "../data/mockData";
+import { byId } from "../lib/format";
+import { downloadJson } from "../export/download";
 
 interface GraphNode { id: string; label: string; kind: Selection["kind"]; x: number; y: number }
-
-function download(filename: string, content: string, mime = "application/json"): void {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 export function InvestigationGraph({ data, setSelection }: { data: PriisData; setSelection: (selection: Selection) => void }) {
   const anomaly = data.anomalies[0];
@@ -52,7 +43,7 @@ export function InvestigationGraph({ data, setSelection }: { data: PriisData; se
       nodes: nodes.map((n) => ({ id: n.id, kind: n.kind, label: n.label })),
       edges: edges.map(([from, to]) => ({ from, to })),
     };
-    download(`spiderweb-graph-${anomaly.id}.json`, JSON.stringify(payload, null, 2));
+    downloadJson(`spiderweb-graph-${anomaly.id}.json`, payload);
   }
 
   return (

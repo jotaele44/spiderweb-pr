@@ -99,10 +99,17 @@ button { cursor: pointer; }
 .navbtn { width: 100%; display: flex; justify-content: space-between; border: 1px solid transparent; background: transparent; padding: 7px 8px; text-align: left; color: var(--ink); }
 .navbtn[data-active="true"] { background: var(--ink); color: var(--surface-2); }
 .source-row, .watch-row { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; font-size: 11px; }
+/* Source rows are buttons (they open the inspector); strip the button chrome. */
+button.source-row { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; font-size: 11px; text-align: left; }
+/* Reference-only EntityLinkList rows — same geometry as .navbtn, not clickable. */
+.navbtn-static { cursor: default; color: var(--ink-2); }
 .rail-empty { color: var(--muted); font-size: 11px; font-style: italic; padding: 2px 0; }
 
 .center { grid-area: center; min-width: 0; display: grid; grid-template-rows: 34px 1fr; overflow: hidden; }
 .tabstrip { display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+/* The tabs sit in their own role="tablist" wrapper; keep them laid out inline
+   with the chrome toggles and the meta readout that flank it. */
+.tabs { display: flex; align-items: center; gap: 4px; }
 .tab { border: 1px solid transparent; background: transparent; padding: 5px 10px; font-size: 12px; }
 .tab[data-active="true"] { border-color: var(--line); background: var(--surface); }
 .tab-meta { margin-left: auto; color: var(--muted); font: 10px var(--font-mono); }
@@ -119,7 +126,11 @@ button { cursor: pointer; }
 .panel-grid { padding: 16px; display: grid; gap: 14px; overflow: auto; }
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--line); padding: 12px; }
-.card h3 { margin: 0 0 6px; font: 10px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.card h2 { margin: 0 0 6px; font: 10px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+/* Aside section titles (layer control, cluster queue, vendor concentration).
+   These are h2 rather than h3 so the document has no heading-level gap under
+   the module h1 — the axe gate in src/a11y.test.tsx enforces it. */
+.layer-panel > h2 { margin: 0 0 8px; font-size: 12px; }
 .stat { font-size: 24px; font-weight: 700; }
 .unit { margin-left: 4px; color: var(--muted); font-size: 12px; }
 .delta { margin-top: 4px; font: 10px var(--font-mono); color: var(--muted); }
@@ -128,8 +139,8 @@ button { cursor: pointer; }
 .dtable th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font: 10px var(--font-mono); text-transform: uppercase; text-align: left; border-bottom: 1px solid var(--line); padding: 8px; }
 .dtable td { border-bottom: 1px solid var(--line-soft); padding: 8px; }
 .dtable tr:hover { background: var(--surface-2); }
-.dtable tbody tr[role="button"] { cursor: pointer; }
-.dtable tbody tr[role="button"]:focus-visible { outline: 2px solid var(--fd-accent); outline-offset: -2px; }
+.dtable[role="grid"] tbody tr { cursor: pointer; }
+.dtable[role="grid"] tbody tr:focus-visible { outline: 2px solid var(--fd-accent); outline-offset: -2px; }
 .dtable tr[data-active="true"] { outline: 2px solid var(--info); outline-offset: -2px; }
 .th-sort { display: inline-flex; align-items: center; gap: 2px; border: 0; background: transparent; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; padding: 0; cursor: pointer; }
 .table-filter { border: 1px solid var(--line); border-radius: 3px; padding: 2px 6px; background: var(--surface-2); color: inherit; font-size: 0.8rem; }
@@ -148,10 +159,14 @@ button { cursor: pointer; }
 .pill[data-tone="warn"] { color: var(--warn); border-color: var(--warn); }
 .pill[data-tone="alert"] { color: var(--alert); border-color: var(--alert); }
 .pill[data-tone="info"] { color: var(--info); border-color: var(--info); }
-.anom-card { border: 1px solid var(--line); background: var(--surface); padding: 12px; cursor: pointer; }
+.anom-card { display: block; width: 100%; text-align: left; color: inherit; font: inherit; border: 1px solid var(--line); background: var(--surface); padding: 12px; cursor: pointer; }
 .anom-card[data-band="hi"] { border-left: 4px solid var(--alert); }
 .anom-card[data-band="md"] { border-left: 4px solid var(--warn); }
-.anom-card h4 { margin: 0 0 6px; }
+/* Card internals are spans (a button may only contain phrasing content), so
+   they need explicit block display to keep the original stacked layout. */
+.anom-card > .row, .anom-card > .anom-meta, .anom-card > .desc { display: flex; }
+.anom-card > .anom-meta, .anom-card > .desc { display: block; }
+.anom-heading { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
 .anom-meta { margin: 2px 0 4px; text-transform: uppercase; letter-spacing: .04em; }
 .confidence-meter { display: grid; gap: 4px; }
 .confidence-bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
@@ -193,7 +208,12 @@ button { cursor: pointer; }
 /* Bottom timeline */
 .timeline { grid-area: time; background: var(--surface); border-top: 1px solid var(--line); padding: 8px 12px; display: grid; grid-template-rows: auto 1fr; gap: 6px; overflow: hidden; min-height: 0; }
 .timeline-head { display: flex; justify-content: space-between; font: 10px var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-.timeline-track { position: relative; min-height: 40px; background: var(--surface-2); border: 1px solid var(--line-soft); cursor: crosshair; }
+/* Slider track and event markers are stacked siblings so the markers' buttons
+   are not nested inside the role="slider" element. */
+.timeline-stack { position: relative; min-height: 40px; }
+.timeline-track { position: absolute; inset: 0; background: var(--surface-2); border: 1px solid var(--line-soft); cursor: crosshair; }
+.timeline-events { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; pointer-events: none; }
+.timeline-events > li { pointer-events: auto; }
 .cursor-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--info); pointer-events: none; }
 .timeline-event { position: absolute; top: 50%; transform: translate(-50%, -50%); }
 .timeline-event button { display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 10px var(--font-mono); padding: 2px 5px; white-space: nowrap; }

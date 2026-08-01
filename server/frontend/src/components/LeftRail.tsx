@@ -38,7 +38,13 @@ export function LeftRail({
 
       <RailSection title="Investigations" isEmpty={data.investigations.length === 0} empty="No investigations">
         {data.investigations.map((inv) => (
-          <button key={inv.id} className="navbtn" data-active={inv.id === activeInvestigation} onClick={() => setActiveInvestigation(inv.id)}>
+          <button
+            key={inv.id}
+            className="navbtn"
+            data-active={inv.id === activeInvestigation}
+            aria-pressed={inv.id === activeInvestigation}
+            onClick={() => { setActiveInvestigation(inv.id); setSelection({ kind: "investigation", id: inv.id }); }}
+          >
             <span>{inv.id}</span><span>{inv.status}</span>
           </button>
         ))}
@@ -46,10 +52,10 @@ export function LeftRail({
 
       <RailSection title="Sources" isEmpty={data.sources.length === 0} empty="No sources reporting">
         {data.sources.map((source) => (
-          <div className="source-row" key={source.id}>
+          <button className="source-row" key={source.id} onClick={() => setSelection({ kind: "source", id: source.id })}>
             <span>{source.name}</span>
             <span className="row"><TierBadge tier={source.tier} /><Pill tone={sourceStatusTone(source.status)}>{source.status}</Pill></span>
-          </div>
+          </button>
         ))}
       </RailSection>
 

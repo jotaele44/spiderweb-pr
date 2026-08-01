@@ -18,6 +18,7 @@ import "@fontsource/source-serif-4/latin-600.css";
 import "./styles/federation.css";
 import "./styles/app.css";
 import App from "./App";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { THEME_STORAGE_KEY, resolveInitialTheme } from "./theme";
 
 document.documentElement.dataset.repo = "spiderweb-pr";
@@ -28,6 +29,10 @@ document.documentElement.dataset.theme = resolveInitialTheme(
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    {/* Outer boundary catches throws in the chrome itself (command bar, rail,
+        inspector, timeline) — the per-module boundary lives inside App. */}
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 );

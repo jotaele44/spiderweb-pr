@@ -63,7 +63,8 @@ the relevant subsystem below.
 - [remote_monitoring/ARCHITECTURE.md](remote_monitoring/ARCHITECTURE.md) — `spiderweb.remote_monitoring` Phase-0 provenance backbone
 
 ## Dashboard & UI
-- [STATIC_DASHBOARD_MODE.md](STATIC_DASHBOARD_MODE.md)
+- [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md) — state of the `server/frontend` SPA:
+  defects, inert controls, intentional stubs, and the product-grade delta
 
 ## Policy & structure
 - [DATA_POLICY.md](DATA_POLICY.md)

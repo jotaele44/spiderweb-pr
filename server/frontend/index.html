@@ -4,14 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spiderweb</title>
+    <meta
+      name="description"
+      content="Spiderweb — spatial / operational diagnostic workbench for the PRII federation."
+    />
     <!-- Generated from assets/branding/icon.png by thehub-pr's
          tools/build_program_icons.py; do not edit by hand. -->
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-180.png" />
-    <meta name="theme-color" content="#ca0c02" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Paired with the in-app theme toggle so the browser chrome follows the
+         active theme instead of pinning to the brand red in both. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#efece4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14181c" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      Spiderweb is a JavaScript application. Enable JavaScript to load the
+      workbench, or use the Python CLI (<code>run_all.py</code>) for headless runs.
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

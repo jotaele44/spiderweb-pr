@@ -35,7 +35,8 @@ spiderweb-pr/
 │   └── federation_export.py      Hub-compatible canonical projection
 │
 ├── schemas/                      JSON Schema files for retained export records
-├── dashboard/                    Static browser dashboard for local review
+├── server/frontend/              The interface — Vite SPA, served by desktop/
+├── dashboard/                    Generated branding derivatives only (no UI)
 ├── docs/                         Runbooks, data policy, boundary docs
 ├── gebco/                        Optional bathymetry / terrain package
 ├── earthgpt/                     Optional satellite anomaly-detection package

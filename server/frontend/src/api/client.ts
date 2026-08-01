@@ -13,8 +13,37 @@ import {
   InvestigationSchema, AlertRecordSchema,
 } from "../schemas/priis";
 
+/**
+ * How long any single backend call may hang before we give up and fall back.
+ * Without this a backend that accepts the connection but never answers — a
+ * half-open socket after a laptop sleeps, or a wedged worker in the packaged
+ * desktop app — leaves the caller pending forever, so the offline fixture
+ * fallback never fires and the UI sits on "Loading PRIIS data…".
+ */
+export const REQUEST_TIMEOUT_MS = 8000;
+
+/** `fetch` with a timeout, so a hung backend rejects instead of hanging. */
+export async function fetchWithTimeout(
+  input: string,
+  init: RequestInit = {},
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`${input} → timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetchWithTimeout(`${BASE}${path}`);
   if (!res.ok) throw new Error(`${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -83,30 +112,49 @@ export async function fetchPriisDataWithFallback(): Promise<{ data: PriisData; l
 export interface PipelineJob {
   job_id: string;
   status: "running" | "done" | "error";
+  /** Present once the job has exited (GET /pipeline/status/{job_id}). */
+  returncode?: number;
 }
 
 export async function startPipeline(phase?: number): Promise<PipelineJob> {
-  const res = await fetch(`${BASE}/pipeline/run`, {
+  const res = await fetchWithTimeout(`${BASE}/pipeline/run`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phase: phase ?? null }),
   });
-  const json: unknown = await res.json();
-  return json as PipelineJob;
+  // Without this check a 5xx body is cast straight to PipelineJob, yielding
+  // `job_id: undefined` and an SSE subscription to `/pipeline/events/undefined`.
+  if (!res.ok) throw new Error(`/pipeline/run → ${res.status}`);
+  const job = (await res.json()) as Partial<PipelineJob>;
+  if (!job.job_id) throw new Error("/pipeline/run returned no job_id");
+  return job as PipelineJob;
 }
 
 export async function stopPipeline(jobId: string): Promise<void> {
-  await fetch(`${BASE}/pipeline/${jobId}`, { method: "DELETE" });
+  await fetchWithTimeout(`${BASE}/pipeline/${jobId}`, { method: "DELETE" });
+}
+
+/** Poll a job's terminal state. Used to resolve a run whose SSE stream dropped. */
+export async function getPipelineStatus(jobId: string): Promise<PipelineJob> {
+  const res = await fetchWithTimeout(`${BASE}/pipeline/status/${jobId}`);
+  if (!res.ok) throw new Error(`/pipeline/status/${jobId} → ${res.status}`);
+  return (await res.json()) as PipelineJob;
 }
 
 /**
  * Open an SSE stream for a running pipeline job.
- * Calls onLine for each stdout line, onDone when the job exits.
+ * Calls onLine for each stdout line, onDone when the job exits, and onError if
+ * the stream itself fails.
+ *
+ * EventSource reconnects silently on transport failure, so without an `onerror`
+ * handler a backend that dies mid-run leaves the caller waiting on a `done`
+ * event that will never arrive — the UI stays "running" with no way back.
  */
 export function streamPipeline(
   jobId: string,
   onLine: (line: string) => void,
   onDone: (returncode: number) => void,
+  onError?: (message: string) => void,
 ): EventSource {
   const es = new EventSource(`${BASE}/pipeline/events/${jobId}`);
   es.onmessage = (ev) => onLine(ev.data as string);
@@ -116,6 +164,20 @@ export function streamPipeline(
     onDone(payload.returncode);
     es.close();
   });
+  es.onerror = () => {
+    es.close();
+    // The stream may have dropped after the job already finished, so ask the
+    // backend for the real outcome before reporting a failure.
+    void getPipelineStatus(jobId)
+      .then((job) => {
+        if (job.status === "running") {
+          onError?.("Pipeline stream lost while the job was still running");
+        } else {
+          onDone(job.returncode ?? (job.status === "done" ? 0 : 1));
+        }
+      })
+      .catch(() => onError?.("Pipeline stream lost and the backend is unreachable"));
+  };
   return es;
 }
 
@@ -136,7 +198,7 @@ export function streamRagQuery(
 
   void (async () => {
     try {
-      const res = await fetch(`${BASE}/rag/query`, {
+      const res = await fetchWithTimeout(`${BASE}/rag/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, top_k: 5 }),

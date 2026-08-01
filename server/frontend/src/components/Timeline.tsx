@@ -61,30 +61,38 @@ export function Timeline({
         <span>TIMELINE · finance / imagery / reports</span>
         <span>cursor <b>{cursor}</b></span>
       </div>
-      <div
-        className="timeline-track"
-        role="slider"
-        tabIndex={0}
-        aria-label="Temporal cursor — arrow keys to move, shift for a week"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(cursorPct)}
-        aria-valuetext={cursor}
-        onKeyDown={onKeyDown}
-        onClick={(event) => setCursorFromClientX(event.clientX, event.currentTarget.getBoundingClientRect())}
-      >
-        <div className="cursor-line" style={{ left: `${cursorPct}%` }} />
-        {events.map((item) => (
-          <div key={item.id} className="timeline-event" style={{ left: `${pct(new Date(item.at).getTime())}%` }}>
-            <button
-              onClick={(event) => { event.stopPropagation(); setSelection({ kind: "event", id: item.id }); }}
-              title={`${item.id} · ${item.label} · ${item.at}`}
-              aria-label={`Event ${item.id}: ${item.label} on ${item.at}`}
-            >
-              {item.tier ? <TierBadge tier={item.tier} /> : null} {item.id}
-            </button>
-          </div>
-        ))}
+      {/* The slider and the event markers are siblings, not nested: focusable
+          buttons inside a role="slider" are a nested-interactive violation and
+          are unreachable to screen readers driving the slider. Both layers are
+          absolutely positioned over .timeline-stack, so the visual is unchanged. */}
+      <div className="timeline-stack">
+        <div
+          className="timeline-track"
+          role="slider"
+          tabIndex={0}
+          aria-label="Temporal cursor — arrow keys to move, shift for a week"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(cursorPct)}
+          aria-valuetext={cursor}
+          onKeyDown={onKeyDown}
+          onClick={(event) => setCursorFromClientX(event.clientX, event.currentTarget.getBoundingClientRect())}
+        >
+          <div className="cursor-line" style={{ left: `${cursorPct}%` }} />
+        </div>
+        <ul className="timeline-events" aria-label="Timeline events">
+          {events.map((item) => (
+            <li key={item.id} className="timeline-event" style={{ left: `${pct(new Date(item.at).getTime())}%` }}>
+              <button
+                onClick={() => setSelection({ kind: "event", id: item.id })}
+                title={`${item.id} · ${item.label} · ${item.at}`}
+                aria-label={`Event ${item.id}: ${item.label} on ${item.at}`}
+              >
+                {item.tier ? <TierBadge tier={item.tier} /> : null} {item.id}
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </footer>
   );

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Anomaly, Confidence, Contract, EvidenceTier, SourceRecord, Vendor } from "../types/priis";
+import type { Anomaly, Confidence, Contract, EvidenceTier, Investigation, SourceRecord, Vendor } from "../types/priis";
 
 export type Tone = "ok" | "warn" | "alert" | "info";
 
@@ -26,6 +26,12 @@ export function riskTone(risk: Vendor["risk"]): Tone {
 
 export function bandTone(band: Anomaly["band"]): Tone {
   return band === "hi" ? "alert" : "warn";
+}
+
+export function investigationStatusTone(status: Investigation["status"]): Tone {
+  if (status === "active") return "ok";
+  if (status === "needs_review") return "alert";
+  return status === "paused" ? "warn" : "info";
 }
 
 // ── Primitives ───────────────────────────────────────────────────────────────

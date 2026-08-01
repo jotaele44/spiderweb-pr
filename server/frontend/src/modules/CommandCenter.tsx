@@ -1,4 +1,4 @@
-import { fmtMoney } from "../data/mockData";
+import { fmtMoney } from "../lib/format";
 import type { ModuleId, PriisData, Selection } from "../types/priis";
 import { Pill, TierBadge } from "../components/Badges";
 import { Card } from "../components/Card";
@@ -20,7 +20,7 @@ export function CommandCenter({ data, setSelection, setModule }: { data: PriisDa
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 14 }}>
           <div className="card">
-            <h3>Alert feed</h3>
+            <h2>Alert feed</h2>
             <table className="dtable">
               <thead><tr><th>Time</th><th>Kind</th><th>Subject</th><th>Tier</th><th>Inv</th></tr></thead>
               <tbody>{data.alerts.length === 0

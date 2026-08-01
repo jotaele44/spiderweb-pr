@@ -21,13 +21,15 @@ export function AnomalyCard({
   onClick: () => void;
 }) {
   return (
+    // A <button>'s content model is phrasing content only, so the heading and
+    // body are spans styled to match rather than <h4>/<p>.
     <button className="anom-card" data-band={anomaly.band} onClick={onClick}>
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <h4>{heading}</h4>
+      <span className="row" style={{ justifyContent: "space-between" }}>
+        <span className="anom-heading">{heading}</span>
         <AnomalyScore score={anomaly.score} />
-      </div>
-      {meta && <div className="subtle mono anom-meta">{meta}</div>}
-      {body && <p className="desc">{body}</p>}
+      </span>
+      {meta && <span className="subtle mono anom-meta">{meta}</span>}
+      {body && <span className="desc">{body}</span>}
     </button>
   );
 }

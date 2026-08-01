@@ -130,11 +130,3 @@ export const priisData: PriisData = {
     { kind: "vendor", id: "V-1024" }
   ]
 };
-
-export const fmtMoney = (value: number): string => {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`;
-  return `$${value.toFixed(0)}`;
-};
-
-export const byId = <T extends { id: string }>(items: T[], id: string): T | undefined => items.find((item) => item.id === id);

@@ -8,7 +8,7 @@ import {
   useReactTable,
   type SortingState,
 } from "@tanstack/react-table";
-import { byId, fmtMoney } from "../data/mockData";
+import { byId, fmtMoney } from "../lib/format";
 import type { Contract, PriisData, Selection } from "../types/priis";
 import { Pill, TierBadge, contractStatusTone } from "../components/Badges";
 import { Card } from "../components/Card";
@@ -113,7 +113,7 @@ export function FinanceIntelligence({
             <Card title="Top vendor" stat={vendorTotals[0]?.vendor.name ?? "—"} delta={fmtMoney(vendorTotals[0]?.total ?? 0)} />
           </div>
           <div className="table-wrap">
-            <table className="dtable">
+            <table className="dtable" role="grid" aria-label="Contracts">
               <thead>
                 {table.getHeaderGroups().map((hg) => (
                   <tr key={hg.id}>
@@ -151,12 +151,16 @@ export function FinanceIntelligence({
                     const active = selection?.kind === "contract" && selection.id === row.original.id;
                     const select = () => setSelection({ kind: "contract", id: row.original.id });
                     return (
+                      // The row keeps its implicit `row` role. `role="button"`
+                      // here replaced it, so the cells lost their row ancestor
+                      // and screen readers lost table navigation over the grid.
+                      // Selection is expressed with aria-selected under the
+                      // table's grid role instead.
                       <tr
                         key={row.id}
                         data-active={active}
-                        role="button"
                         tabIndex={0}
-                        aria-pressed={active}
+                        aria-selected={active}
                         aria-label={`Contract ${row.original.id}`}
                         onClick={select}
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } }}
@@ -173,7 +177,7 @@ export function FinanceIntelligence({
           </div>
         </div>
         <aside className="layer-panel">
-          <h3>Vendor concentration</h3>
+          <h2>Vendor concentration</h2>
           <div className="col">
             {vendorTotals.map(({ vendor, total: vt }) => (
               <button key={vendor.id} className="navbtn" onClick={() => setSelection({ kind: "vendor", id: vendor.id })}>
