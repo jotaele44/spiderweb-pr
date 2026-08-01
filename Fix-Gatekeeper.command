@@ -29,11 +29,6 @@ done
 # Also clear the double-click launchers (and this helper itself).
 xattr -dr com.apple.quarantine *.command *.sh 2>/dev/null || true
 
-# And the rest of the folder: an unzipped download carries the quarantine flag
-# on every file, which is what makes macOS run the .app from a throwaway
-# read-only copy (App Translocation) where the repo beside it is missing.
-xattr -dr com.apple.quarantine . 2>/dev/null || true
-
 echo
 echo "Done. Double-click the app (or its .command launcher) to start it."
 [ -t 0 ] && read -r -p "Press Enter to close…" _ || true
