@@ -171,6 +171,19 @@ export function QueryLayer({
           </div>
         )}
 
+        {/* Nothing run yet — say so rather than leaving the panel blank. */}
+        {!pending && !error && !result && streamLines.length === 0 && (
+          <div className="card">
+            <h2>No query run yet</h2>
+            <p className="desc">
+              Edit the prompt and press RUN QUERY, or submit from the command bar.
+              {useRag
+                ? " RAG LIVE streams from the backend."
+                : " STUB answers locally from the loaded dataset."}
+            </p>
+          </div>
+        )}
+
         {/* Pipeline log passthrough */}
         {pipelineLog.length > 0 && (
           <div className="card">

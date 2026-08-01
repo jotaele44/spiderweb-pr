@@ -158,6 +158,60 @@ verified empirically by reintroducing the pattern and observing a clean axe run.
 It is a genuine ARIA semantics defect, but it is not one an automated gate will
 catch, so it is recorded here rather than relied on being caught in future.
 
+### 1.3b Found only by rendering the app
+
+The static and jsdom passes above missed all of the following. They were found by
+driving the built app in Chromium against a seeded backend and screenshotting all
+six modules in both themes — worth remembering when weighing what a browser gate
+is worth here.
+
+**D10 — the app booted onto "Missing record".** The initial state was seeded with
+fixture ids (`selection` = anomaly `A-014`, `activeInvestigation` = `INV-007`,
+`cursor` = `2024-08-14`, plus three filter chips naming `INV-007`). None resolve
+against live data, so a first load showed the Inspector's missing-record pane, the
+temporal cursor sat outside the dataset entirely, and the chips referenced an
+investigation that did not exist. Initial state is now empty and anchored to
+whatever loads — the cursor to the newest event, the investigation to the first
+one returned.
+
+**D11 — a stale selection blanked the Anomaly Workbench.** `AnomalyWorkbench`
+resolved `selection` to an anomaly or fell through to `undefined`, and its only
+guard was for an empty dataset. With D10's `A-014` selected the entire detail
+pane rendered nothing — indistinguishable from a broken module. It now falls back
+to the head of the cluster queue.
+
+**D12 — WCAG AA contrast failed systematically in both themes.** jsdom cannot
+resolve CSS custom properties, so `src/a11y.test.tsx` disables `color-contrast`
+and this was entirely uncovered. A real-browser axe run found violations on every
+module:
+
+| Element | Was | Cause |
+|---|---|---|
+| `.tab` (primary nav) | 1.29:1 dark | never set `color`, so it inherited the UA `buttontext` black onto a dark strip |
+| `.graph-node` ×10 | 1.29:1 dark | same — a button with no `color` |
+| `.brand-sub` | 2.57 / 3.69:1 | `--muted` is tuned for muted-on-surface; `.brand` inverts the background to `--ink` |
+| every muted label | 4.47:1 light | `--fd-text-muted` `#6b7280` sat just under 4.5 |
+| `.pill[data-tone="warn"]` | 3.18:1 light | `--fd-warn` `#b6802a` |
+| `.badge[data-tier="T4"]` | 4.19:1 light | `--fd-t4` `#707070` on `--fd-bg` |
+| MapLibre attribution | 2.02:1 both | third-party CSS; links at `rgba(0,0,0,.75)` on black |
+
+All fixed: two missing `color` declarations, four token values re-picked against
+computed ratios, a new `--fd-text-on-ink-muted` token for text on an `--ink`
+background, and an attribution restyle that underlines links so they are
+distinguished without relying on colour. The suite now reports **zero** serious
+or moderate WCAG 2 A/AA violations across all six modules in both themes.
+
+**D13 — smaller rendering defects.** The Query Layer's `.query-box` stretched its
+two grid rows to full panel height, stranding the PROMPT label at the top and the
+textarea at the bottom; it also showed a blank panel before the first run.
+Disabled buttons were visually identical to enabled ones (EXPORT BRIEF with no
+anomaly selected). Two cards read "fixture"/"fixtures" regardless of live mode —
+the same copy defect as the Inspector's "not present in the fixture dataset".
+
+Not reproducible here: the base map renders blank in this sandbox, but zero tile
+requests failed, so the proxy is intercepting them rather than the app mishandling
+an error. True offline tile behaviour remains untested.
+
 ### 1.4 Dead code
 
 - `export/sessionLog.ts` had **zero** importers and no test. Deleted.
@@ -232,8 +286,11 @@ Two limits worth stating plainly:
 - **`SpatialIntelligence` is not in the a11y gate.** It constructs a MapLibre GL
   map on mount, which needs WebGL; jsdom has none. Covering it needs a real
   browser (Playwright), which this repo does not run for the SPA.
-- **Colour contrast is not checked.** jsdom does not compute layout or resolve CSS
-  custom properties, so axe cannot evaluate it. That check also needs a browser.
+- **Colour contrast is not checked *in CI*.** jsdom does not compute layout or
+  resolve CSS custom properties, so the committed gate cannot evaluate it. A
+  real-browser scan was run by hand and every violation it found is fixed
+  (§1.3b, D12), but nothing stops contrast regressing — promoting that scan to a
+  CI gate is the single highest-value follow-up in §5.
 
 ---
 

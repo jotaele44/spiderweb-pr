@@ -6,7 +6,12 @@ import { exportAnomaliesCsv } from "../export/csvExport";
 import { downloadBrief } from "../export/evidenceBrief";
 
 export function AnomalyWorkbench({ data, selection, setSelection }: { data: PriisData; selection: Selection | null; setSelection: (selection: Selection) => void }) {
-  const active = selection?.kind === "anomaly" ? byId(data.anomalies, selection.id) : data.anomalies[0];
+  // Falls back to the head of the queue when the selection names an anomaly this
+  // dataset does not contain — a stale selection used to blank the whole detail
+  // pane, which reads as a broken module rather than a bad id.
+  const active =
+    (selection?.kind === "anomaly" ? byId(data.anomalies, selection.id) : undefined) ??
+    data.anomalies[0];
   if (!data.anomalies.length) {
     return (
       <section className="panel">

@@ -28,7 +28,12 @@ export function Timeline({
   const times = events
     .map((e) => new Date(e.at).getTime())
     .filter((n) => !Number.isNaN(n));
-  const cursorMs = new Date(cursor).getTime();
+  // The cursor is empty until the dataset loads and App anchors it, so fall back
+  // to the newest event rather than propagating NaN into the track geometry.
+  const parsedCursor = new Date(cursor).getTime();
+  const cursorMs = Number.isNaN(parsedCursor)
+    ? (times.length ? Math.max(...times) : Date.now())
+    : parsedCursor;
   const rawMin = times.length ? Math.min(...times) : cursorMs - 180 * DAY;
   const rawMax = times.length ? Math.max(...times) : cursorMs + 180 * DAY;
   const span = Math.max(rawMax - rawMin, DAY);
@@ -59,7 +64,7 @@ export function Timeline({
     <footer className="timeline">
       <div className="timeline-head">
         <span>TIMELINE · finance / imagery / reports</span>
-        <span>cursor <b>{cursor}</b></span>
+        <span>cursor <b>{cursor || toISODate(cursorMs)}</b></span>
       </div>
       {/* The slider and the event markers are siblings, not nested: focusable
           buttons inside a role="slider" are a nested-interactive violation and

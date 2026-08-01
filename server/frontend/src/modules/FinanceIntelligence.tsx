@@ -107,7 +107,7 @@ export function FinanceIntelligence({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", height: "100%", minHeight: 0 }}>
         <div className="panel-grid">
           <div className="cards">
-            <Card title="Total awarded" stat={fmtMoney(total)} delta="12m fixture window" />
+            <Card title="Total awarded" stat={fmtMoney(total)} delta={`${data.contracts.length} contracts`} />
             <Card title="Flagged" stat={data.contracts.filter((c) => c.status === "flagged").length} delta="requires contradiction check" />
             <Card title="Amended" stat={data.contracts.filter((c) => c.status === "amended").length} delta="scope review queue" />
             <Card title="Top vendor" stat={vendorTotals[0]?.vendor.name ?? "—"} delta={fmtMoney(vendorTotals[0]?.total ?? 0)} />
