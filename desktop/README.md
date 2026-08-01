@@ -26,6 +26,19 @@ Open **System Settings → Privacy & Security**, find the message naming
 Spiderweb, and select **Open Anyway**. This is the complete UI-only recovery
 path for an unnotarized development release.
 
+## If the app reports that first-run setup could not finish
+
+Opening `PRII-SPIDERWEB.app` straight out of an unzipped download makes macOS
+run it from a throwaway read-only copy under
+`/private/var/folders/…/AppTranslocation/…`, where the rest of the checkout is
+not present and no `.venv` can be written. Move the folder somewhere else (your
+home folder is fine), double-click `Fix-Gatekeeper.command` once, then open the
+app again. Running `PRII-SPIDERWEB.command` instead also avoids it — only `.app`
+bundles are translocated.
+
+Genuine setup failures write their output to
+`$TMPDIR/prii-spiderweb-setup.log`, and the failure message names that file.
+
 ## Architecture
 
 `desktop/config.py` and `desktop/app_server.py` are the thin Spiderweb adapters
