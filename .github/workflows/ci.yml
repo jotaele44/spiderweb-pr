@@ -305,11 +305,16 @@ jobs:
   # build could merge unnoticed — this repo was the only one in the federation
   # with an unbuilt frontend.
   #
-  # Gates lint, typecheck and build. The eslint config is local rather than
-  # rendered from thehub-pr's federation templates: that shared config is
+  # Gates lint, typecheck, test and build. The eslint config is local rather
+  # than rendered from thehub-pr's federation templates: that shared config is
   # JSX-flavoured and globs src/pages/** and src/Layout.jsx, neither of which
   # exists here, so it would lint zero files and report a passing gate over
-  # nothing. Unit tests are still absent and remain a separate change.
+  # nothing. The `lint` script enumerates paths rather than linting the tree, so
+  # vitest.config.ts is passed explicitly for the same reason.
+  #
+  # `test` runs vitest over src/**/*.test.ts. Tests are co-located under src/ so
+  # that lint and typecheck cover them too — tsconfig.app.json includes only
+  # "src", so a top-level tests/ directory would be checked by neither.
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -328,8 +333,8 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Lint
-        run: npm run lint
+      - name: Tests
+        run: npm run test
       - name: Build
         run: npm run build
 
