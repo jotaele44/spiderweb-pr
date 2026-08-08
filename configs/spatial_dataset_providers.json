@@ -1,0 +1,22 @@
+{
+  "schema_version": "spiderweb.spatial_dataset_providers.v0.1",
+  "providers": {
+    "PRVI_1m_DEM_2018": {
+      "dataset_class": "bare_earth_dem",
+      "label": "2018 Puerto Rico / U.S. Virgin Islands 1 m DEM",
+      "catalog_type": "vrt",
+      "catalog_path": "data/providers/PRVI_1m_DEM_2018.vrt",
+      "catalog_crs_expected": "EPSG:26920",
+      "native_resolution_m": 1.0,
+      "source_url_template": null,
+      "fetch_enabled_when_source_url_resolved": true,
+      "preserve_authoritative_bytes": true,
+      "require_complete_default": true,
+      "cell_binding": {
+        "canonical_grid": "registry/spatial/pr_grid_full_cell_index_saturated.csv",
+        "status": "blocked_pending_certified_georeference",
+        "reason": "canonical grid currently stores pixel-space bounds and centroids without a certified geographic transform"
+      }
+    }
+  }
+}
