@@ -2,8 +2,8 @@ name: desktop-build
 
 # Builds the standalone double-click desktop app (PyInstaller) for each OS.
 # Runs on demand, and attaches the bundles to the release on desktop-v* tags.
-# Includes a frontend build step: the UI is the Vite SPA under server/frontend,
-# and desktop/pyinstaller.spec refuses to package without server/frontend/dist.
+# Includes a frontend build step because desktop/pyinstaller.spec packages the
+# Vite SPA under server/frontend/dist.
 
 on:
   workflow_dispatch:
@@ -22,9 +22,6 @@ on:
 permissions:
   contents: write
 
-# Serialise runs on the same ref without cancelling. This workflow can
-# publish, write data, or hand off to another repo, and killing it
-# mid-flight risks leaving that work half-done.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -36,28 +33,71 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      PRII_TOOLING_REF: f2b81769924689b4d959554928810b1d7b7ef3d6
+      PRII_FORBIDDEN_SIBLING: thehub-pr
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Enforce isolated desktop-build policy
+        shell: bash
+        run: |
+          test ! -e "$GITHUB_WORKSPACE/../$PRII_FORBIDDEN_SIBLING"
+          python - <<'PY'
+          from pathlib import Path
+          needles = (
+              "../" + "thehub-pr",
+              "ensure_" + "hub_sibling",
+              "HUB_" + "CLONE_URL",
+              "HUB_" + "SIBLING",
+              "REPO_ROOT.parent / " + '"thehub-pr"',
+          )
+          violations = []
+          for path in Path(".").rglob("*"):
+              if not path.is_file():
+                  continue
+              rel = path.as_posix()
+              if rel.startswith((".git/", ".venv/", "node_modules/", "dist/", "build/")):
+                  continue
+              executable = rel == ".github/workflows/desktop-build.yml"
+              executable = executable or rel.startswith(("desktop/", "scripts/", "tools/"))
+              executable = executable or path.name.startswith("requirements")
+              executable = executable or path.name in {"pyproject.toml", "Makefile"}
+              if not executable:
+                  continue
+              try:
+                  text = path.read_text(encoding="utf-8")
+              except UnicodeDecodeError:
+                  continue
+              for needle in needles:
+                  if needle in text:
+                      violations.append(f"{rel}: {needle}")
+          if violations:
+              raise SystemExit("mandatory sibling coupling found:\n" + "\n".join(violations))
+          PY
+
+      - name: Fetch pinned federation tooling outside workspace
+        shell: bash
+        run: |
+          tooling_root="$RUNNER_TEMP/prii-thehub-tooling"
+          rm -rf "$tooling_root"
+          git clone --filter=blob:none --no-checkout https://github.com/jotaele44/thehub-pr.git "$tooling_root"
+          git -C "$tooling_root" checkout --detach "$PRII_TOOLING_REF"
+          test "$(git -C "$tooling_root" rev-parse HEAD)" = "$PRII_TOOLING_REF"
+          echo "PRII_TOOLING_ROOT=$tooling_root" >> "$GITHUB_ENV"
+          test ! -e "$GITHUB_WORKSPACE/../$PRII_FORBIDDEN_SIBLING"
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # Node is needed on every OS now, not just Linux: pyinstaller.spec
-      # hard-fails without server/frontend/dist, and the Linux-only visual/a11y
-      # harness below also needs it.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: server/frontend/package-lock.json
 
-      # Build the UI before packaging. Doing it here — rather than in
-      # desktop/setup.py on the user's machine — is what keeps the zero-Terminal
-      # contract: the frozen bundle carries dist/, so end users need no Node.
-      # The blank VITE_API_BASE keeps the bundle same-origin against whichever
-      # ephemeral port the wrapper binds (mirrors desktop/config.py).
       - name: Build frontend
         shell: bash
         working-directory: server/frontend
@@ -70,39 +110,19 @@ jobs:
       - name: Install Python dependencies
         shell: bash
         run: |
-          # PRII_FETCH_HUB: ensure shared federation libs resolve
-          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
+          test ! -e "$GITHUB_WORKSPACE/../$PRII_FORBIDDEN_SIBLING"
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system --upgrade pip
-          uv pip install --system -c constraints.txt -r requirements-desktop.txt -r ../thehub-pr/tools/requirements-icons.txt -e ".[server]" pyinstaller pytest httpx
+          uv pip install --system -c constraints.txt -r requirements-desktop.txt -r "$PRII_TOOLING_ROOT/tools/requirements-icons.txt" -e ".[server]" pyinstaller pytest httpx
+          test ! -e "$GITHUB_WORKSPACE/../$PRII_FORBIDDEN_SIBLING"
 
-      # The branding validator ships with thehub-pr. It is invoked by whichever
-      # name that repo actually provides, and skipped with a notice when neither
-      # is present: this workflow resolves thehub-pr by matching branch name and
-      # falls back to its main, where the validator does not exist yet — so a
-      # hard call fails every branch that isn't the one introducing it. The icon
-      # check and the shared runtime's own tests exist on main and always run.
       - name: Verify supplied artwork, AA palette, and fresh-machine setup
         shell: bash
         run: |
-          python ../thehub-pr/tools/build_program_icons.py --repo . --check
-          validator=""
-          for candidate in verify_desktop_branding validate_desktop_branding; do
-            if [ -f "../thehub-pr/tools/$candidate.py" ]; then
-              validator="../thehub-pr/tools/$candidate.py"
-              break
-            fi
-          done
-          if [ -n "$validator" ]; then
-            python "$validator" --repo .
-          else
-            echo "::notice::thehub-pr provides no desktop-branding validator; skipping."
-          fi
-          python -m pytest ../thehub-pr/packages/prii_desktop/tests -q
+          python "$PRII_TOOLING_ROOT/tools/build_program_icons.py" --repo . --check
+          python "$PRII_TOOLING_ROOT/tools/validate_desktop_branding.py" --repo .
+          python -m pytest "$PRII_TOOLING_ROOT/packages/prii_desktop/tests" -q
 
-      # Same conditional reasoning as the branding validator above: the renderer
-      # and the Playwright harness live in thehub-pr, which resolves to main on
-      # most branches and does not carry them yet.
       - name: Visual and accessibility smoke for native setup
         if: runner.os == 'Linux'
         shell: bash
@@ -111,14 +131,9 @@ jobs:
           PRII_SETUP_FIXTURE: ${{ github.workspace }}/desktop-ui-artifacts/setup.html
           PRII_VISUAL_DIR: ${{ github.workspace }}/desktop-ui-artifacts
         run: |
-          renderer="../thehub-pr/tools/render_desktop_setup.py"
-          harness="../thehub-pr/federation-design/test-harness"
-          if [ ! -f "$renderer" ] || [ ! -d "$harness" ]; then
-            echo "::notice::thehub-pr provides no desktop-setup renderer/harness; skipping."
-            exit 0
-          fi
-          python "$renderer" --repo . --output desktop-ui-artifacts/setup.html
-          cd "$harness"
+          python "$PRII_TOOLING_ROOT/tools/render_desktop_setup.py" \
+            --repo . --output desktop-ui-artifacts/setup.html
+          cd "$PRII_TOOLING_ROOT/federation-design/test-harness"
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
           npx playwright test tests/desktop-setup.spec.js \

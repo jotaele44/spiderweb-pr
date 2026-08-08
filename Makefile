@@ -18,7 +18,7 @@ help:  ## Show this help
 
 bootstrap:  ## Create a venv, install dev extras, install pre-commit hooks
 	python -m venv .venv
-	. .venv/bin/activate && { [ -d ../thehub-pr ] || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; } && pip install uv && uv pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27" && pre-commit install
+	. .venv/bin/activate && pip install uv && uv pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27" && pre-commit install
 	@echo "Bootstrap complete. Activate with: . .venv/bin/activate"
 
 # ── Test targets ──────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ preflight: validate-schemas test-prii  ## Schema validation + PRII tests
 release-check:  ## Run the umbrella release gate
 	python run_all.py --release-check
 
-# ── Syntax check ─────────────────────────────────────────────────────────────
+# ── Syntax check ──────────────────────────────────────────────────────────────
 
 syntax-check:  ## Compile every Python module (no import)
 	find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
