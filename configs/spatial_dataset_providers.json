@@ -5,7 +5,7 @@
       "dataset_class": "bare_earth_dem",
       "label": "2018 Puerto Rico / U.S. Virgin Islands 1 m DEM",
       "catalog_type": "vrt",
-      "catalog_path": "data/providers/PRVI_1m_DEM_2018.vrt",
+      "catalog_path": null,
       "catalog_crs_expected": "EPSG:26920",
       "native_resolution_m": 1.0,
       "source_url_template": null,
