@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 
@@ -8,12 +9,13 @@ MODULE_PATH = Path(__file__).resolve().parents[1] / "tools" / "spatial_aoi_fetch
 spec = importlib.util.spec_from_file_location("spatial_aoi_fetcher", MODULE_PATH)
 assert spec and spec.loader
 mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod
 spec.loader.exec_module(mod)
 
 
 def _write_vrt(path: Path) -> None:
     path.write_text(
-        """<VRTDataset rasterXSize=\"200\" rasterYSize=\"100\">\n"
+        "<VRTDataset rasterXSize=\"200\" rasterYSize=\"100\">\n"
         "<SRS>AUTHORITY[\"EPSG\",\"26920\"]</SRS>\n"
         "<GeoTransform>1000,1,0,2000,0,-1</GeoTransform>\n"
         "<VRTRasterBand dataType=\"Float32\" band=\"1\">\n"
@@ -23,7 +25,7 @@ def _write_vrt(path: Path) -> None:
         "<ComplexSource><SourceFilename relativeToVRT=\"1\">./tiles/b.tif</SourceFilename>"
         "<SourceProperties RasterXSize=\"100\" RasterYSize=\"100\" DataType=\"Float32\" BlockXSize=\"16\" BlockYSize=\"16\"/>"
         "<DstRect xOff=\"100\" yOff=\"0\" xSize=\"100\" ySize=\"100\"/></ComplexSource>\n"
-        "</VRTRasterBand></VRTDataset>""",
+        "</VRTRasterBand></VRTDataset>",
         encoding="utf-8",
     )
 
