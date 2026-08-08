@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Provider-agnostic AOI -> source-tile planner/fetcher.
 
-The authoritative source-tile index resolves the AOI.  The federation Cell_ID
+The authoritative source-tile index resolves the AOI. The federation Cell_ID
 ledger is deliberately downstream: the current canonical PR grid is pixel-space
 and has no certified geographic transform, so this module will not fabricate
 AOI -> Cell_ID bindings.
 
-v0.1 supports GDAL VRT catalogs such as PRVI_1m_DEM_2018.vrt.  A provider may
-supply a ``source_url_template`` to enable byte acquisition.  Without a URL
+v0.1 supports GDAL VRT catalogs such as PRVI_1m_DEM_2018.vrt. A provider may
+supply a ``source_url_template`` to enable byte acquisition. Without a URL
 binding, planning still works and fetch fails closed with UNRESOLVED_SOURCE_URL.
 """
 
@@ -23,7 +23,7 @@ import subprocess
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
@@ -78,7 +78,6 @@ def intersects(a: Sequence[float], b: Sequence[float]) -> bool:
 
 
 def _epsg_from_srs_text(srs_text: str) -> str:
-    # VRT SRS commonly ends with AUTHORITY["EPSG","26920"].
     marker = 'AUTHORITY["EPSG","'
     pos = srs_text.rfind(marker)
     if pos >= 0:
@@ -127,7 +126,12 @@ def parse_vrt_catalog(
         top = origin_y + yoff * pixel_y
         right = left + xspan * pixel_x
         bottom = top + yspan * pixel_y
-        bbox = (min(left, right), min(bottom, top), max(left, right), max(bottom, top))
+        bbox = (
+            min(left, right),
+            min(bottom, top),
+            max(left, right),
+            max(bottom, top),
+        )
         url = source_url_template.format(filename=filename) if source_url_template else None
         tiles.append(
             SourceTile(
@@ -171,23 +175,53 @@ def transform_aoi(
 def cache_state(tile: SourceTile, cache_dir: Path) -> dict[str, Any]:
     path = cache_dir / tile.tile_id
     if not path.exists():
-        return {"status": "ABSENT", "path": str(path), "sha256": None, "size_bytes": None}
+        return {
+            "status": "ABSENT",
+            "path": str(path),
+            "sha256": None,
+            "size_bytes": None,
+        }
     size = path.stat().st_size
     if size <= 0:
-        return {"status": "INVALID_EMPTY", "path": str(path), "sha256": None, "size_bytes": size}
+        return {
+            "status": "INVALID_EMPTY",
+            "path": str(path),
+            "sha256": None,
+            "size_bytes": size,
+        }
     digest = sha256_file(path)
     if tile.expected_size_bytes is not None and size != tile.expected_size_bytes:
-        return {"status": "INVALID_SIZE", "path": str(path), "sha256": digest, "size_bytes": size}
+        return {
+            "status": "INVALID_SIZE",
+            "path": str(path),
+            "sha256": digest,
+            "size_bytes": size,
+        }
     if tile.expected_sha256 and digest.lower() != tile.expected_sha256.lower():
-        return {"status": "INVALID_HASH", "path": str(path), "sha256": digest, "size_bytes": size}
+        return {
+            "status": "INVALID_HASH",
+            "path": str(path),
+            "sha256": digest,
+            "size_bytes": size,
+        }
     if rasterio is not None:
         try:
             with rasterio.open(path) as src:
                 _ = src.width, src.height, src.crs
         except Exception:
-            return {"status": "INVALID_RASTER", "path": str(path), "sha256": digest, "size_bytes": size}
+            return {
+                "status": "INVALID_RASTER",
+                "path": str(path),
+                "sha256": digest,
+                "size_bytes": size,
+            }
     status = "LOCAL_HASH_VALID" if tile.expected_sha256 else "LOCAL_VALID_UNPINNED"
-    return {"status": status, "path": str(path), "sha256": digest, "size_bytes": size}
+    return {
+        "status": status,
+        "path": str(path),
+        "sha256": digest,
+        "size_bytes": size,
+    }
 
 
 def plan_for_aoi(
@@ -198,7 +232,9 @@ def plan_for_aoi(
     cache_dir: Path,
 ) -> dict[str, Any]:
     native_aoi = transform_aoi(aoi_bbox, aoi_crs, catalog["source_crs"])
-    selected = [tile for tile in catalog["tiles"] if intersects(tile.bbox_native, native_aoi)]
+    selected = [
+        tile for tile in catalog["tiles"] if intersects(tile.bbox_native, native_aoi)
+    ]
     rows = []
     cached_valid = 0
     unresolved_urls = 0
@@ -211,7 +247,9 @@ def plan_for_aoi(
             unresolved_urls += 1
         if state["status"] == "ABSENT" and tile.expected_size_bytes:
             expected_bytes += tile.expected_size_bytes
-        rows.append({**asdict(tile), "bbox_native": list(tile.bbox_native), "cache": state})
+        rows.append(
+            {**asdict(tile), "bbox_native": list(tile.bbox_native), "cache": state}
+        )
     return {
         "generated_at_utc": utc_now(),
         "dataset_id": catalog["dataset_id"],
@@ -241,8 +279,6 @@ def _download_resumable(url: str, destination: Path, timeout: int = 120) -> None
         with urllib.request.urlopen(request, timeout=timeout) as response:
             status = getattr(response, "status", 200)
             mode = "ab" if offset and status == 206 else "wb"
-            if mode == "wb":
-                offset = 0
             with part.open(mode) as fh:
                 shutil.copyfileobj(response, fh, length=1024 * 1024)
     except urllib.error.HTTPError as exc:
@@ -250,7 +286,9 @@ def _download_resumable(url: str, destination: Path, timeout: int = 120) -> None
     os.replace(part, destination)
 
 
-def fetch_plan(plan: dict[str, Any], cache_dir: Path, *, require_complete: bool = True) -> dict[str, Any]:
+def fetch_plan(
+    plan: dict[str, Any], cache_dir: Path, *, require_complete: bool = True
+) -> dict[str, Any]:
     results: list[dict[str, Any]] = []
     failures = 0
     for row in plan["tiles"]:
@@ -268,11 +306,19 @@ def fetch_plan(plan: dict[str, Any], cache_dir: Path, *, require_complete: bool 
         )
         before = cache_state(tile, cache_dir)
         if before["status"] in {"LOCAL_HASH_VALID", "LOCAL_VALID_UNPINNED"}:
-            results.append({"tile_id": tile.tile_id, "action": "REUSE", "state": before})
+            results.append(
+                {"tile_id": tile.tile_id, "action": "REUSE", "state": before}
+            )
             continue
         if not tile.source_url:
             failures += 1
-            results.append({"tile_id": tile.tile_id, "action": "BLOCKED", "reason": "UNRESOLVED_SOURCE_URL"})
+            results.append(
+                {
+                    "tile_id": tile.tile_id,
+                    "action": "BLOCKED",
+                    "reason": "UNRESOLVED_SOURCE_URL",
+                }
+            )
             continue
         target = cache_dir / tile.tile_id
         try:
@@ -280,10 +326,14 @@ def fetch_plan(plan: dict[str, Any], cache_dir: Path, *, require_complete: bool 
             after = cache_state(tile, cache_dir)
             if after["status"] not in {"LOCAL_HASH_VALID", "LOCAL_VALID_UNPINNED"}:
                 raise RuntimeError(after["status"])
-            results.append({"tile_id": tile.tile_id, "action": "FETCH", "state": after})
+            results.append(
+                {"tile_id": tile.tile_id, "action": "FETCH", "state": after}
+            )
         except Exception as exc:
             failures += 1
-            results.append({"tile_id": tile.tile_id, "action": "FAILED", "reason": str(exc)})
+            results.append(
+                {"tile_id": tile.tile_id, "action": "FAILED", "reason": str(exc)}
+            )
     complete = failures == 0
     receipt = {
         "generated_at_utc": utc_now(),
@@ -307,12 +357,28 @@ def build_task_vrt(tile_paths: Iterable[Path], output_vrt: Path) -> dict[str, An
         raise ValueError("no tile paths supplied")
     exe = shutil.which("gdalbuildvrt")
     if not exe:
-        return {"status": "BLOCKED_GDALBUILDVRT_UNAVAILABLE", "output": str(output_vrt)}
+        return {
+            "status": "BLOCKED_GDALBUILDVRT_UNAVAILABLE",
+            "output": str(output_vrt),
+        }
     output_vrt.parent.mkdir(parents=True, exist_ok=True)
-    proc = subprocess.run([exe, str(output_vrt), *[str(p) for p in paths]], capture_output=True, text=True)
+    proc = subprocess.run(
+        [exe, str(output_vrt), *[str(p) for p in paths]],
+        capture_output=True,
+        text=True,
+    )
     if proc.returncode != 0:
-        return {"status": "FAILED", "returncode": proc.returncode, "stderr": proc.stderr, "output": str(output_vrt)}
-    return {"status": "READY", "output": str(output_vrt), "sha256": sha256_file(output_vrt)}
+        return {
+            "status": "FAILED",
+            "returncode": proc.returncode,
+            "stderr": proc.stderr,
+            "output": str(output_vrt),
+        }
+    return {
+        "status": "READY",
+        "output": str(output_vrt),
+        "sha256": sha256_file(output_vrt),
+    }
 
 
 def load_provider(path: Path, dataset_id: str) -> dict[str, Any]:
@@ -324,11 +390,18 @@ def load_provider(path: Path, dataset_id: str) -> dict[str, Any]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Plan/fetch source raster tiles for a task AOI.")
+    p = argparse.ArgumentParser(
+        description="Plan/fetch source raster tiles for a task AOI."
+    )
     p.add_argument("--providers", default="configs/spatial_dataset_providers.json")
     p.add_argument("--dataset", default="PRVI_1m_DEM_2018")
-    p.add_argument("--catalog", help="Override provider catalog path (e.g. PRVI_1m_DEM_2018.vrt)")
-    p.add_argument("--bbox", required=True, type=parse_bbox, help="west,south,east,north")
+    p.add_argument(
+        "--catalog",
+        help="Provider catalog path (e.g. PRVI_1m_DEM_2018.vrt); overrides config",
+    )
+    p.add_argument(
+        "--bbox", required=True, type=parse_bbox, help="west,south,east,north"
+    )
     p.add_argument("--aoi-crs", default="EPSG:4326")
     p.add_argument("--cache-dir", default="data/cache/spatial")
     p.add_argument("--output-dir", default="outputs/spatial_aoi_fetch")
@@ -340,7 +413,14 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     provider = load_provider(Path(args.providers), args.dataset)
-    catalog_path = Path(args.catalog or provider["catalog_path"])
+    catalog_value = args.catalog or provider.get("catalog_path")
+    if not catalog_value:
+        raise SystemExit(
+            f"provider {args.dataset} has no bound catalog_path; pass --catalog"
+        )
+    catalog_path = Path(catalog_value)
+    if not catalog_path.exists() or catalog_path.stat().st_size == 0:
+        raise SystemExit(f"catalog missing or empty: {catalog_path}")
     cache_dir = Path(args.cache_dir) / args.dataset
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -351,16 +431,31 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         dataset_id=args.dataset,
         source_url_template=provider.get("source_url_template"),
     )
-    plan = plan_for_aoi(catalog, aoi_bbox=args.bbox, aoi_crs=args.aoi_crs, cache_dir=cache_dir)
+    expected_crs = provider.get("catalog_crs_expected")
+    if expected_crs and catalog["source_crs"] != expected_crs:
+        raise SystemExit(
+            f"catalog CRS {catalog['source_crs']} does not match provider contract "
+            f"{expected_crs}"
+        )
+    plan = plan_for_aoi(
+        catalog,
+        aoi_bbox=args.bbox,
+        aoi_crs=args.aoi_crs,
+        cache_dir=cache_dir,
+    )
     plan_path = output_dir / "acquisition_plan.json"
     plan_path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in plan.items() if k != "tiles"}, indent=2))
     if not args.fetch:
         return 0
-    receipt = fetch_plan(plan, cache_dir, require_complete=not args.allow_partial)
+    receipt = fetch_plan(
+        plan, cache_dir, require_complete=not args.allow_partial
+    )
     receipt_path = output_dir / "acquisition_receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2), encoding="utf-8")
-    print(json.dumps({k: v for k, v in receipt.items() if k != "results"}, indent=2))
+    print(
+        json.dumps({k: v for k, v in receipt.items() if k != "results"}, indent=2)
+    )
     return 0 if receipt["analysis_gate"] == "READY" else 2
 
 
