@@ -68,7 +68,7 @@ earthgpt = [
 # Imagery MCP server — fetch/search/compare satellite imagery over MCP
 # (NASA GIBS, Sentinel Hub, Copernicus/CDSE). jsonschema comes via `airspace`.
 imagery = [
-    "fastmcp>=2.9,<3",
+    "fastmcp>=2.9,<4",
     "requests>=2.31.0,<3",
     "python-dotenv>=1.0.0,<2",
     "Pillow>=10.0,<13",
