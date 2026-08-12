@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from pipeline.errors import BatchInputChangedError, UnknownBatchError
+
 
 # ============================================================================
 # EXTRACTED FIELD (PROBABILISTIC VALUE)
@@ -492,7 +494,9 @@ class ResumableJobQueue:
         ).fetchone()
         if existing is not None and existing[0] != input_digest:
             conn.close()
-            raise ValueError(f"batch {batch_id!r} inputs changed; create a new batch to resume")
+            raise BatchInputChangedError(
+                f"batch {batch_id!r} inputs changed; create a new batch to resume"
+            )
         cursor.execute(
             "INSERT OR IGNORE INTO job_batches (batch_id, input_digest, created_at) VALUES (?, ?, ?)",
             (batch_id, input_digest, datetime.now(timezone.utc).replace(tzinfo=None).isoformat()),
@@ -568,7 +572,7 @@ class ResumableJobQueue:
         ).fetchone()
         if batch is None:
             conn.close()
-            raise ValueError(f"cannot checkpoint unknown batch {batch_id!r}")
+            raise UnknownBatchError(f"cannot checkpoint unknown batch {batch_id!r}")
         checkpoint_id = f"{batch_id}_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M%S')}"
         cursor.execute('''
             INSERT OR REPLACE INTO job_checkpoints
@@ -595,9 +599,11 @@ class ResumableJobQueue:
         ]
         conn.close()
         if batch is None:
-            raise ValueError(f"cannot resume unknown batch {batch_id!r}")
+            raise UnknownBatchError(f"cannot resume unknown batch {batch_id!r}")
         if _input_digest(paths) != batch[0]:
-            raise ValueError(f"batch {batch_id!r} inputs changed; refusing unsafe resume")
+            raise BatchInputChangedError(
+                f"batch {batch_id!r} inputs changed; refusing unsafe resume"
+            )
         return self.get_pending_jobs(batch_id)
 
     def store_extraction_confidence(self, image_filename: str, fields: Dict[str, ExtractedField]):
