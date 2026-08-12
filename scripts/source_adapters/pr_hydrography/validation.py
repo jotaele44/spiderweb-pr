@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any, Iterable, Sequence
 
 
@@ -20,12 +20,7 @@ class GeometryAudit:
 
 
 def detect_csv_header(payload: bytes, required_fields: Sequence[str], *, max_scan_lines: int = 25) -> tuple[int, list[str], list[str]]:
-    """Detect a CSV header without assuming line zero.
-
-    Returns (header_line_index, preamble_lines, header_fields). Exact source bytes
-    are untouched; decoding uses replacement only for inspection.
-    """
-
+    """Detect a CSV header without assuming line zero."""
     text = payload.decode("utf-8-sig", errors="replace")
     lines = text.splitlines()
     required = {field.strip() for field in required_fields}
@@ -56,34 +51,42 @@ def csv_dict_rows(payload: bytes, required_fields: Sequence[str]) -> tuple[list[
     }
 
 
-def audit_geojson_geometry(geometry: dict[str, Any]) -> GeometryAudit:
-    """Create a valid analysis geometry while proving source geometry is untouched."""
-
+def analysis_geometry(source: Any) -> tuple[Any, dict[str, Any]]:
+    """Return an analysis-only valid geometry plus an immutable-source audit."""
     try:
         from shapely import make_valid
-        from shapely.geometry import shape
-    except ImportError as exc:  # pragma: no cover - base project depends on shapely
+    except ImportError as exc:  # pragma: no cover
         raise RuntimeError("shapely is required for geometry validation") from exc
 
-    source = shape(geometry)
     source_wkb = source.wkb
     source_valid = bool(source.is_valid)
     analysis = source if source_valid else make_valid(source)
     analysis_valid = bool(analysis.is_valid)
     if not analysis_valid:
         raise RuntimeError("analysis geometry remains invalid after make_valid")
-    source_mutated = source.wkb != source_wkb
-    return GeometryAudit(
+    audit = GeometryAudit(
         source_valid=source_valid,
         analysis_valid=analysis_valid,
         source_geometry_type=source.geom_type,
         analysis_geometry_type=analysis.geom_type,
-        source_mutated=source_mutated,
+        source_mutated=source.wkb != source_wkb,
         repair_applied=not source_valid,
         hausdorff_distance=float(source.hausdorff_distance(analysis)),
         source_area=float(source.area),
         analysis_area=float(analysis.area),
     )
+    if audit.source_mutated:
+        raise RuntimeError("source geometry mutated during analysis repair")
+    return analysis, asdict(audit)
+
+
+def audit_geojson_geometry(geometry: dict[str, Any]) -> GeometryAudit:
+    try:
+        from shapely.geometry import shape
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError("shapely is required for geometry validation") from exc
+    _analysis, audit = analysis_geometry(shape(geometry))
+    return GeometryAudit(**audit)
 
 
 def classify_geometries(features: Iterable[dict[str, Any]]) -> dict[str, Any]:
