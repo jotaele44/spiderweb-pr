@@ -211,7 +211,7 @@ class TemporalValidator:
             t0 = datetime.fromisoformat(prev.get("timestamp", ""))
             t1 = datetime.fromisoformat(curr.get("timestamp", ""))
             dt_sec = (t1 - t0).total_seconds()
-        except Exception:
+        except (TypeError, ValueError):
             return results
 
         # Monotonicity check
@@ -317,7 +317,7 @@ class StatefulTrackHypothesis:
         """
         try:
             ts = datetime.fromisoformat(timestamp)
-        except Exception:
+        except (TypeError, ValueError):
             ts = datetime.now(timezone.utc).replace(tzinfo=None)
 
         if callsign not in self.states:
