@@ -292,9 +292,20 @@ class CoordinateMapper:
         self.map_top_fraction = 0.15     # header
         self.map_bottom_fraction = 0.75  # map ends here
         self.bounds = map_bounds or PR_BOUNDS
+        self.derived_fit = None
+
+    def fit_derived_anchors(self, anchors):
+        """Adopt a bounded per-screenshot fit when OCR-matched anchors support it."""
+        from pipeline.geo_anchors import fit_homography
+
+        self.derived_fit = fit_homography(anchors)
+        return self.derived_fit
 
     def pixel_to_latlon(self, px: int, py: int) -> Tuple[float, float]:
         """Convert pixel (px, py) to (latitude, longitude)."""
+        if self.derived_fit is not None:
+            lon, lat = self.derived_fit.project(px, py)
+            return lat, lon
         map_top_px = self.image_height * self.map_top_fraction
         map_bottom_px = self.image_height * self.map_bottom_fraction
         map_height_px = map_bottom_px - map_top_px
