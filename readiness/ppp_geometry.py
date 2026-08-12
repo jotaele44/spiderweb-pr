@@ -38,7 +38,7 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AIRPORT_REGISTRY = REPO_ROOT / "configs" / "airport_registry.yaml"
 LAYER_ID = "ppp_geometry"
-EXPORT_CONTRACT_VERSION = "0.2.0"
+EXPORT_CONTRACT_VERSION = "0.3.0"
 EXPECTED_PRODUCER = "moneysweep-pr"
 
 RESOLVER_CONFIDENCE = {"airport_registry": 0.95}
@@ -193,6 +193,17 @@ def _match(project: dict[str, Any], candidates: Iterable[dict[str, Any]]) -> dic
     return None
 
 
+def _producer_provenance(package_meta: dict[str, Any]) -> dict[str, Any]:
+    """Canonical immutable dependency identity copied onto every PPP result row."""
+    return {
+        "producer_package_id": package_meta.get("package_id"),
+        "producer_manifest_sha256": package_meta["manifest_sha256"],
+        "producer_entities_filename": package_meta["entities_filename"],
+        "producer_entities_sha256": package_meta["entities_sha256"],
+        "producer_entities_record_count": package_meta["entities_record_count"],
+    }
+
+
 def resolve_projects(
     package_dir: Path | str | None = None, registry_path: Path | None = None
 ) -> dict[str, Any]:
@@ -200,6 +211,7 @@ def resolve_projects(
     package_meta = verify_moneysweep_package(package_dir)
     projects = read_producer_projects(package_dir, verified_package=package_meta)
     candidates = load_airport_index(registry_path)
+    producer_provenance = _producer_provenance(package_meta)
 
     resolved: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
@@ -213,6 +225,7 @@ def resolve_projects(
                     "name": project.get("name", ""),
                     "municipality": location.get("municipality", ""),
                     "reason": "no committed reference geography matched this project",
+                    **producer_provenance,
                 }
             )
             continue
@@ -231,8 +244,7 @@ def resolve_projects(
                 "geometry_confidence": RESOLVER_CONFIDENCE[match["resolver"]],
                 "producer_municipality": location.get("municipality", ""),
                 "producer_attribution_confidence": location.get("attribution_confidence"),
-                "producer_package_id": package_meta.get("package_id"),
-                "producer_entities_sha256": package_meta["entities_sha256"],
+                **producer_provenance,
             }
         )
 
