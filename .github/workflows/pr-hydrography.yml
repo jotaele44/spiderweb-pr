@@ -6,6 +6,7 @@ on:
       - 'scripts/source_adapters/pr_hydrography/**'
       - 'manifests/pr_hydrography/**'
       - 'tests/test_pr_hydrography_acquisition.py'
+      - 'tests/test_pr_hydrography_resolver.py'
       - '.github/workflows/pr-hydrography.yml'
   workflow_dispatch:
     inputs:
@@ -35,8 +36,9 @@ jobs:
           python -m py_compile scripts/source_adapters/pr_hydrography/core.py
           python -m py_compile scripts/source_adapters/pr_hydrography/validation.py
           python -m py_compile scripts/source_adapters/pr_hydrography/cli.py
+          python -m py_compile scripts/source_adapters/pr_hydrography/resolver.py
       - name: Run offline certification regressions
-        run: pytest -q tests/test_pr_hydrography_acquisition.py
+        run: pytest -q tests/test_pr_hydrography_acquisition.py tests/test_pr_hydrography_resolver.py
 
   freshness-probe:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.probe_live_sources)
