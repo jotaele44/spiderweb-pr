@@ -12,14 +12,14 @@ Components:
   ResumableJobQueue      — Fault-tolerant, checkpoint-based job queue
 """
 
-import sqlite3
+import hashlib
 import math
-import json
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+import sqlite3
 from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
 
 # ============================================================================
@@ -436,9 +436,21 @@ class ResumableJobQueue:
                 batch_id TEXT,
                 completed INTEGER,
                 failed INTEGER,
-                checkpoint_time TEXT
+                checkpoint_time TEXT,
+                input_digest TEXT
             )
         ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS job_batches (
+                batch_id TEXT PRIMARY KEY,
+                input_digest TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        ''')
+        columns = {row[1] for row in cursor.execute("PRAGMA table_info(job_checkpoints)")}
+        if "input_digest" not in columns:
+            cursor.execute("ALTER TABLE job_checkpoints ADD COLUMN input_digest TEXT")
 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS extraction_confidence (
@@ -474,6 +486,17 @@ class ResumableJobQueue:
         """Add images to the queue. Skips images already in the queue."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        input_digest = _input_digest(image_paths)
+        existing = cursor.execute(
+            "SELECT input_digest FROM job_batches WHERE batch_id = ?", (batch_id,)
+        ).fetchone()
+        if existing is not None and existing[0] != input_digest:
+            conn.close()
+            raise ValueError(f"batch {batch_id!r} inputs changed; create a new batch to resume")
+        cursor.execute(
+            "INSERT OR IGNORE INTO job_batches (batch_id, input_digest, created_at) VALUES (?, ?, ?)",
+            (batch_id, input_digest, datetime.now(timezone.utc).replace(tzinfo=None).isoformat()),
+        )
 
         for path in image_paths:
             job_id = _make_job_id(path)
@@ -540,14 +563,42 @@ class ResumableJobQueue:
     def save_checkpoint(self, batch_id: str, completed: int, failed: int):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        batch = cursor.execute(
+            "SELECT input_digest FROM job_batches WHERE batch_id = ?", (batch_id,)
+        ).fetchone()
+        if batch is None:
+            conn.close()
+            raise ValueError(f"cannot checkpoint unknown batch {batch_id!r}")
         checkpoint_id = f"{batch_id}_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M%S')}"
         cursor.execute('''
             INSERT OR REPLACE INTO job_checkpoints
-            (checkpoint_id, batch_id, completed, failed, checkpoint_time)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (checkpoint_id, batch_id, completed, failed, datetime.now(timezone.utc).replace(tzinfo=None).isoformat()))
+            (checkpoint_id, batch_id, completed, failed, checkpoint_time, input_digest)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (checkpoint_id, batch_id, completed, failed,
+              datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), batch[0]))
         conn.commit()
         conn.close()
+
+    def resume_batch(self, batch_id: str) -> List[Dict]:
+        """Return resumable jobs only when their current content matches the checkpoint."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        batch = cursor.execute(
+            "SELECT input_digest FROM job_batches WHERE batch_id = ?", (batch_id,)
+        ).fetchone()
+        paths = [
+            row[0]
+            for row in cursor.execute(
+                "SELECT image_path FROM processing_jobs WHERE batch_id = ? ORDER BY image_path",
+                (batch_id,),
+            )
+        ]
+        conn.close()
+        if batch is None:
+            raise ValueError(f"cannot resume unknown batch {batch_id!r}")
+        if _input_digest(paths) != batch[0]:
+            raise ValueError(f"batch {batch_id!r} inputs changed; refusing unsafe resume")
+        return self.get_pending_jobs(batch_id)
 
     def store_extraction_confidence(self, image_filename: str, fields: Dict[str, ExtractedField]):
         conn = sqlite3.connect(self.db_path)
@@ -686,8 +737,20 @@ def _bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def _make_job_id(path: str) -> str:
-    import hashlib
     return hashlib.md5(path.encode()).hexdigest()
+
+
+def _input_digest(paths: List[str]) -> str:
+    """Hash sorted input paths and bytes so resume cannot silently mix batches."""
+    digest = hashlib.sha256()
+    for raw_path in sorted(paths):
+        path = Path(raw_path)
+        digest.update(raw_path.encode("utf-8"))
+        digest.update(b"\0")
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(65536), b""):
+                digest.update(chunk)
+    return digest.hexdigest()
 
 
 if __name__ == "__main__":

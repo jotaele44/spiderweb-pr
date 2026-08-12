@@ -89,3 +89,17 @@ find outputs/ -not -name '.gitkeep' -delete
 # Clear tile cache
 find tile_cache/ -name '*.png' -delete
 ```
+
+## Enforcement
+
+CI runs `python scripts/check_data_policy.py` against tracked files. The check
+rejects runtime content under `outputs/`, `cache/`, and `tile_cache/`, database,
+Parquet, NetCDF, and raw-imagery artifacts, unapproved JSONL outputs, and named
+root export artifacts. It permits documented `.gitkeep` placeholders,
+provenance-bound data artifacts, and committed test/export fixtures.
+
+Run the same gate locally with:
+
+```bash
+make data-policy-lint
+```
