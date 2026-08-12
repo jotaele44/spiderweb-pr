@@ -166,6 +166,7 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
                 "lineage": _lineage("RECORD_ENTITY"), "synthetic": synthetic,
                 "created_at": when, "extracted_at": now,
             }
+            # Z2: project a representative point from source geometry into the canonical entity.
             loc = _point(r)
             if loc:
                 entities[ent_id]["location"] = loc
@@ -422,13 +423,14 @@ def main() -> int:
 
             resolution = resolve_projects(args.moneysweep_package)
         except Exception as exc:  # noqa: BLE001 - optional lane is fail-closed and isolated
-            print(f"PPP geometry lane skipped: {exc}")
+            print(f"PPP geometry lane skipped: {exc}", file=sys.stderr)
         else:
             merge_ppp_geometry(streams, build_ppp_geometry_streams(resolution, now))
             if resolution["unresolved_count"]:
                 print(
                     f"PPP geometry: {resolution['resolved_count']} resolved, "
-                    f"{resolution['unresolved_count']} left in the geocode queue"
+                    f"{resolution['unresolved_count']} left in the geocode queue",
+                    file=sys.stderr,
                 )
 
     if args.mode == "production":
