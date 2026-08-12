@@ -148,6 +148,56 @@ def _write_geopackage(path: Path, layer_id: str, features: List[Dict[str, Any]])
     )
 
 
+def _write_preview(path: Path, layers: Dict[str, List[Dict[str, Any]]]) -> None:
+    """Render a deterministic local SVG preview of exported point/polygon layers."""
+
+    geometries = [
+        feature["geometry"]
+        for features in layers.values()
+        for feature in features
+        if feature.get("geometry") is not None
+    ]
+    coords = []
+    for geometry in geometries:
+        if geometry["type"] == "Point":
+            coords.append(geometry["coordinates"])
+        elif geometry["type"] == "Polygon":
+            coords.extend(geometry["coordinates"][0])
+    if not coords:
+        path.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"/>')
+        return
+    lons, lats = zip(*coords)
+    min_lon, max_lon = min(lons), max(lons)
+    min_lat, max_lat = min(lats), max(lats)
+    span_lon, span_lat = max(max_lon - min_lon, 1e-9), max(max_lat - min_lat, 1e-9)
+
+    def project(point: list[float]) -> str:
+        x = 20 + (point[0] - min_lon) / span_lon * 760
+        y = 480 - (point[1] - min_lat) / span_lat * 460
+        return f"{x:.2f},{y:.2f}"
+
+    shapes = []
+    for layer_id in sorted(layers):
+        for feature in layers[layer_id]:
+            geometry = feature.get("geometry")
+            if not geometry:
+                continue
+            if geometry["type"] == "Point":
+                x, y = project(geometry["coordinates"]).split(",")
+                shapes.append(f'<circle cx="{x}" cy="{y}" r="4" data-layer="{layer_id}"/>')
+            elif geometry["type"] == "Polygon":
+                points = " ".join(project(point) for point in geometry["coordinates"][0])
+                shapes.append(f'<polygon points="{points}" data-layer="{layer_id}"/>')
+    path.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" '
+        'viewBox="0 0 800 500"><rect width="800" height="500" fill="#f8fafc"/>'
+        '<g fill="#2563eb" fill-opacity=".25" stroke="#1d4ed8" stroke-width="1">'
+        + "".join(shapes)
+        + "</g></svg>",
+        encoding="utf-8",
+    )
+
+
 def export_layers(
     output_dir: str,
     *,
@@ -158,6 +208,7 @@ def export_layers(
     crosswalks: Optional[Iterable[Any]] = None,
     command: Optional[str] = None,
     geopackage_path: Optional[str] = None,
+    preview_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Write the requested ``rm_*`` layers + ``rm_manifest.json`` to ``output_dir``.
 
@@ -212,6 +263,10 @@ def export_layers(
     }
     if geopackage_path is not None:
         manifest["geopackage_path"] = str(Path(geopackage_path))
+    if preview_path is not None:
+        preview_layers = {name: feats for name, feats in layer_features.items() if feats}
+        _write_preview(Path(preview_path), preview_layers)
+        manifest["preview_path"] = str(Path(preview_path))
     attach_to_manifest(
         manifest, command=command or "spiderweb.remote_monitoring.export_layers"
     )

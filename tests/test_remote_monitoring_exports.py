@@ -100,3 +100,14 @@ def test_export_writes_requested_geopackage_layers(tmp_path):
 
     assert result["geopackage_path"] == str(gpkg)
     assert set(gpd.list_layers(gpkg).name) == {"rm_monitoring_aois", "rm_observations"}
+
+
+def test_export_writes_deterministic_svg_preview(tmp_path):
+    obs = _observation()
+    preview = tmp_path / "preview.svg"
+    result = exports.export_layers(
+        str(tmp_path), observations=[obs], preview_path=str(preview)
+    )
+
+    assert result["preview_path"] == str(preview)
+    assert "<circle" in preview.read_text()
