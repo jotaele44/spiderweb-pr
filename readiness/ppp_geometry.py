@@ -8,8 +8,10 @@ geographies, so the Hub can join a public-money project to a place on the map.
 
 This module does not import moneysweep-pr and does not discover or read sibling
 checkouts implicitly. The caller must pass an explicit moneysweep canonical
-export package path. That keeps repository runtime isolation intact and makes the
-producer artifact an explicit dependency rather than a filesystem convention.
+export package path. Before any row is consumed, the package manifest, producer
+identity, entities artifact hash, and declared record count are verified. That
+keeps repository runtime isolation intact and makes the producer artifact a
+content-addressed, fail-closed dependency rather than a filesystem convention.
 
 Resolution is reference-backed or it does not happen:
 
@@ -21,15 +23,11 @@ municipality centroid is deliberately **not** used as a fallback point: a
 concession's asset is not at the geographic middle of its municipality, and
 emitting that as a location would manufacture precision moneysweep declined to
 manufacture one repo earlier.
-
-Only ``site``-extent projects are candidates at all. moneysweep withholds
-locations from island-wide and corridor concessions because their municipality
-records an administrative seat, so those never arrive here with a location to
-upgrade.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import unicodedata
 from pathlib import Path
@@ -40,12 +38,9 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AIRPORT_REGISTRY = REPO_ROOT / "configs" / "airport_registry.yaml"
 LAYER_ID = "ppp_geometry"
-EXPORT_CONTRACT_VERSION = "0.1.0"
+EXPORT_CONTRACT_VERSION = "0.2.0"
+EXPECTED_PRODUCER = "moneysweep-pr"
 
-# Confidence in a resolved point, by what resolved it. An FAA-derived airport
-# location is a surveyed coordinate for a named facility; it should outrank
-# moneysweep's 0.7 municipality attribution so a consumer picking the
-# highest-confidence location picks the real point.
 RESOLVER_CONFIDENCE = {"airport_registry": 0.95}
 
 
@@ -53,13 +48,12 @@ class PPPGeometryError(ValueError):
     """Raised when the PPP geometry lane cannot be built safely."""
 
 
-def _fold(value: str) -> str:
-    """Accent- and case-insensitive comparison key.
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
-    'Luis Muñoz Marín' and 'Luis Munoz Marin' name the same airport; the
-    registry carries both spellings as aliases but a project title may use
-    either, so folding is what makes the match reliable.
-    """
+
+def _fold(value: str) -> str:
+    """Accent- and case-insensitive comparison key."""
     text = unicodedata.normalize("NFKD", value or "")
     text = "".join(c for c in text if not unicodedata.combining(c))
     return " ".join(text.upper().split())
@@ -88,21 +82,88 @@ def load_airport_index(path: Path | None = None) -> list[dict[str, Any]]:
     return candidates
 
 
-def read_producer_projects(package_dir: Path | str | None = None) -> list[dict[str, Any]]:
-    """Project entities from an explicit moneysweep canonical export package.
+def verify_moneysweep_package(package_dir: Path | str | None) -> dict[str, Any]:
+    """Verify the explicit producer package before consuming any project row.
 
-    ``package_dir`` is mandatory. Implicit ``../moneysweep-pr`` discovery is
-    intentionally forbidden so Spiderweb never couples runtime behavior to a
-    sibling checkout layout.
+    Required invariants:
+    * explicit package path;
+    * manifest.json exists and parses;
+    * manifest producer is exactly ``moneysweep-pr``;
+    * one ``entities`` file entry exists;
+    * declared SHA-256 equals the artifact bytes;
+    * declared record_count equals the number of nonblank JSONL records.
+
+    Returns immutable provenance metadata suitable for propagation downstream.
     """
     if package_dir is None:
         raise PPPGeometryError(
             "explicit moneysweep export package required; sibling checkout discovery is disabled"
         )
-    package_dir = Path(package_dir)
-    entities = package_dir / "entities.jsonl"
+    package = Path(package_dir)
+    manifest_path = package / "manifest.json"
+    if not manifest_path.exists():
+        raise PPPGeometryError(f"missing moneysweep manifest: {manifest_path}")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise PPPGeometryError(f"invalid moneysweep manifest JSON: {exc}") from exc
+
+    producer = manifest.get("producer")
+    if producer != EXPECTED_PRODUCER:
+        raise PPPGeometryError(
+            f"unexpected producer identity: expected {EXPECTED_PRODUCER!r}, got {producer!r}"
+        )
+
+    matches = [entry for entry in manifest.get("files", []) if entry.get("stream") == "entities"]
+    if len(matches) != 1:
+        raise PPPGeometryError(
+            f"expected exactly one entities artifact in manifest, found {len(matches)}"
+        )
+    entry = matches[0]
+    filename = entry.get("filename")
+    if not isinstance(filename, str) or not filename:
+        raise PPPGeometryError("entities manifest entry is missing filename")
+    entities = package / filename
     if not entities.exists():
-        return []
+        raise PPPGeometryError(f"declared entities artifact missing: {entities}")
+
+    declared_sha = entry.get("sha256")
+    if not isinstance(declared_sha, str) or len(declared_sha) != 64:
+        raise PPPGeometryError("entities manifest entry is missing a valid sha256")
+    actual_sha = _sha256(entities)
+    if actual_sha != declared_sha:
+        raise PPPGeometryError(
+            f"entities sha256 mismatch: declared {declared_sha}, actual {actual_sha}"
+        )
+
+    actual_count = sum(1 for line in entities.read_text(encoding="utf-8").splitlines() if line.strip())
+    declared_count = entry.get("record_count")
+    if not isinstance(declared_count, int) or declared_count != actual_count:
+        raise PPPGeometryError(
+            f"entities record_count mismatch: declared {declared_count!r}, actual {actual_count}"
+        )
+
+    return {
+        "producer": producer,
+        "package_id": manifest.get("package_id"),
+        "manifest_sha256": _sha256(manifest_path),
+        "entities_filename": filename,
+        "entities_sha256": actual_sha,
+        "entities_record_count": actual_count,
+    }
+
+
+def read_producer_projects(
+    package_dir: Path | str | None = None,
+    *,
+    verified_package: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Project entities from a verified explicit Moneysweep export package."""
+    metadata = verified_package or verify_moneysweep_package(package_dir)
+    if package_dir is None:
+        raise PPPGeometryError("explicit package path required")
+    package = Path(package_dir)
+    entities = package / metadata["entities_filename"]
     projects: list[dict[str, Any]] = []
     for line in entities.read_text(encoding="utf-8").splitlines():
         if not line.strip():
@@ -118,13 +179,7 @@ def read_producer_projects(package_dir: Path | str | None = None) -> list[dict[s
 
 
 def _match(project: dict[str, Any], candidates: Iterable[dict[str, Any]]) -> dict[str, Any] | None:
-    """First reference candidate whose name appears in the project's, in the
-    same municipality.
-
-    The municipality guard is what stops a name collision from placing a project
-    in the wrong town: a candidate only wins if moneysweep and the reference
-    geography independently agree on where it is.
-    """
+    """Match project name and municipality against committed reference geography."""
     title = _fold(project.get("name", ""))
     muni = _fold((project.get("location") or {}).get("municipality", ""))
     if not title:
@@ -133,9 +188,6 @@ def _match(project: dict[str, Any], candidates: Iterable[dict[str, Any]]) -> dic
         if muni and _fold(candidate["municipality"]) != muni:
             continue
         for name in candidate["names"]:
-            # Substring in either direction: a project titled "Luis Munoz Marin
-            # Airport" and a registry entry named "Luis Munoz Marin
-            # International Airport" are the same facility.
             if name and (name in title or title in name):
                 return candidate
     return None
@@ -144,8 +196,9 @@ def _match(project: dict[str, Any], candidates: Iterable[dict[str, Any]]) -> dic
 def resolve_projects(
     package_dir: Path | str | None = None, registry_path: Path | None = None
 ) -> dict[str, Any]:
-    """Resolve producer project locations to points. Pure — no writes."""
-    projects = read_producer_projects(package_dir)
+    """Resolve producer project locations to points after package verification."""
+    package_meta = verify_moneysweep_package(package_dir)
+    projects = read_producer_projects(package_dir, verified_package=package_meta)
     candidates = load_airport_index(registry_path)
 
     resolved: list[dict[str, Any]] = []
@@ -176,10 +229,10 @@ def resolve_projects(
                 "reference_id": match["reference_id"],
                 "reference_path": match["reference_path"],
                 "geometry_confidence": RESOLVER_CONFIDENCE[match["resolver"]],
-                # What moneysweep asserted, kept so a reviewer can see the two
-                # producers agreed before the point was accepted.
                 "producer_municipality": location.get("municipality", ""),
                 "producer_attribution_confidence": location.get("attribution_confidence"),
+                "producer_package_id": package_meta.get("package_id"),
+                "producer_entities_sha256": package_meta["entities_sha256"],
             }
         )
 
@@ -188,6 +241,7 @@ def resolve_projects(
     return {
         "layer_id": LAYER_ID,
         "export_contract_version": EXPORT_CONTRACT_VERSION,
+        "producer_package": package_meta,
         "producer_projects": len(projects),
         "resolved": resolved,
         "unresolved": unresolved,
