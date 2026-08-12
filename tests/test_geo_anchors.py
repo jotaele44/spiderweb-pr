@@ -1,4 +1,4 @@
-from pipeline.geo_anchors import GeoAnchor, fit_homography
+from pipeline.geo_anchors import GeoAnchor, fit_homography, match_ocr_anchors
 from pipeline.flight_analyzer import CoordinateMapper
 
 
@@ -28,3 +28,11 @@ def test_coordinate_mapper_uses_derived_fit_only_when_evidence_is_sufficient():
     ]
     assert mapper.fit_derived_anchors(anchors) is not None
     assert mapper.pixel_to_latlon(50, 50) == (18.5, -65.5)
+
+
+def test_ocr_anchor_matching_is_normalized_and_exact():
+    anchors = match_ocr_anchors(
+        [("San-Juan!", 20, 30), ("unrecognized", 1, 2)],
+        {"San Juan": (-66.1, 18.4)},
+    )
+    assert anchors == [GeoAnchor(20, 30, -66.1, 18.4)]

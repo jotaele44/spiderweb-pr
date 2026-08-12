@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 import cv2
 import numpy as np
@@ -49,3 +50,20 @@ def fit_homography(
     if rms_error > max_rms_error_px:
         return None
     return HomographyFit(matrix=matrix, rms_error_px=rms_error, anchor_count=int(inliers.sum()))
+
+
+def match_ocr_anchors(
+    labels: list[tuple[str, float, float]],
+    catalog: dict[str, tuple[float, float]],
+) -> list[GeoAnchor]:
+    """Match OCR labels to a normalized POI catalog without fuzzy promotion."""
+
+    def normalize(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+    normalized_catalog = {normalize(name): coordinates for name, coordinates in catalog.items()}
+    return [
+        GeoAnchor(pixel_x, pixel_y, *normalized_catalog[normalize(label)])
+        for label, pixel_x, pixel_y in labels
+        if normalize(label) in normalized_catalog
+    ]
