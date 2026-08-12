@@ -5,8 +5,7 @@ on:
     paths:
       - 'scripts/source_adapters/pr_hydrography/**'
       - 'manifests/pr_hydrography/**'
-      - 'tests/test_pr_hydrography_acquisition.py'
-      - 'tests/test_pr_hydrography_resolver.py'
+      - 'tests/test_pr_hydrography_*.py'
       - '.github/workflows/pr-hydrography.yml'
   workflow_dispatch:
     inputs:
@@ -37,8 +36,10 @@ jobs:
           python -m py_compile scripts/source_adapters/pr_hydrography/validation.py
           python -m py_compile scripts/source_adapters/pr_hydrography/cli.py
           python -m py_compile scripts/source_adapters/pr_hydrography/resolver.py
+          python -m py_compile scripts/source_adapters/pr_hydrography/control_plane.py
+          python -m py_compile scripts/source_adapters/pr_hydrography/certifiers.py
       - name: Run offline certification regressions
-        run: pytest -q tests/test_pr_hydrography_acquisition.py tests/test_pr_hydrography_resolver.py
+        run: pytest -q tests/test_pr_hydrography_acquisition.py tests/test_pr_hydrography_resolver.py tests/test_pr_hydrography_max_vector.py
 
   freshness-probe:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.probe_live_sources)
@@ -83,7 +84,8 @@ jobs:
                   results.append({'source_id': source_id, 'url': url, 'state': 'UNREACHABLE', 'error': str(exc)})
           report = {
               'generated_utc': datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
-              'notice': 'Freshness probe only. This artifact is not a canonical raw-byte snapshot.',
+              'notice': 'Freshness probe only. This artifact is not a canonical raw-byte snapshot and cannot promote canonical state.',
+              'canonical_promotion_permitted': False,
               'results': results,
           }
           with open('pr_hydrography_freshness_probe.json', 'w', encoding='utf-8') as handle:
