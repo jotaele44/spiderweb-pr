@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+import hashlib
 from dataclasses import replace
 from pathlib import Path
 
@@ -31,6 +31,7 @@ from scripts.source_adapters.pr_hydrography.core import (
     matching_text,
     request_signature,
 )
+from scripts.source_adapters.pr_hydrography.spine import build_spine
 from scripts.source_adapters.pr_hydrography.validation import analysis_geometry
 
 
@@ -73,7 +74,6 @@ def test_remote_change_matrix():
 def test_historical_byte_binding_exact_and_mismatch(tmp_path: Path):
     path = tmp_path / "raw.bin"
     path.write_bytes(b"abc")
-    import hashlib
     digest = hashlib.sha256(b"abc").hexdigest()
     exact = bind_historical_file(path, source_id="X", expected_sha256=digest, media_type="application/octet-stream", original_certification="C")
     assert exact.binding_state == "EXACT_HASH_MATCH"
@@ -81,29 +81,33 @@ def test_historical_byte_binding_exact_and_mismatch(tmp_path: Path):
     assert mismatch.binding_state == "HASH_MISMATCH_UNRESOLVED"
 
 
-def test_nid_header_shift_preamble_column_reorder_and_mojibake():
+def test_nid_header_shift_preamble_column_reorder_mojibake_and_duplicates():
     payload = (
         "Data Last Updated:,2026-8-10\n"
         "noise,metadata\n"
         "State,Dam Name,NID ID,Other Names\n"
         "PR,Ana Mariaâ\u00a0Ii Dam,PR00029,Ana Maria II Dam\n"
         "PR,Rio Â\u00a0Blanco Dam,PR00078,Rio Blanco Offstream Dam\n"
+        "PR,Rio Blanco duplicate,PR00078,Rio Blanco Offstream Dam\n"
     ).encode("utf-8")
     cert = certify_nid_csv(payload)
     assert cert["header_line_index"] == 2
-    assert cert["pr_prefix_count"] == 2
+    assert cert["pr_prefix_count"] == 3
+    assert cert["pr_prefix_unique"] == 2
+    assert cert["duplicate_pr_nid_ids"] == 1
     assert cert["prefix_state_set_equal"] is True
     assert matching_text("Ana Mariaâ\u00a0Ii Dam") == "ana maria ii dam"
     assert matching_text("Rio Â\u00a0Blanco Dam") == "rio blanco dam"
 
 
-def test_nhd_duplicate_pid_and_arithmetic():
+def test_nhd_duplicate_pid_arithmetic_and_jurisdiction_gate():
     page = [
         {"PERMANENT_IDENTIFIER": "1", "FTYPE": 390},
         {"PERMANENT_IDENTIFIER": "2", "FTYPE": 436},
     ]
-    cert = certify_nhd_pages([page])
+    cert = certify_nhd_pages([page], jurisdiction_states={"1": "WITHIN_PR", "2": "WITHIN_PR"})
     assert cert["arithmetic_closure"] is True
+    assert cert["jurisdiction_unclassified"] == 0
     duplicate = certify_nhd_pages([page + [{"PERMANENT_IDENTIFIER": "1", "FTYPE": 390}]])
     assert duplicate["duplicate_pid_count"] == 1
 
@@ -142,7 +146,6 @@ def test_snapshot_store_crash_restart_does_not_overwrite(tmp_path: Path):
     spec = SOURCE_SPECS["USGS_NHD_WATERBODY"]
     first = store.write(spec, b"abc", request_sig=request_signature(spec.source_id, "GET", {}), schema_fp="s")
     assert Path(first.payload_path).read_bytes() == b"abc"
-    # A second run creates a distinct immutable snapshot; it cannot overwrite first.
     second = store.write(spec, b"abcd", request_sig=request_signature(spec.source_id, "GET", {}), schema_fp="s", parent_snapshot=first.snapshot_id)
     assert first.snapshot_id != second.snapshot_id
     assert Path(first.payload_path).read_bytes() == b"abc"
@@ -180,6 +183,22 @@ def test_certification_gate_fail_closed():
         canonical_overwrites=0,
         unbound_parent_snapshots=0,
     )["state"] == "BLOCKED"
+
+
+def test_spine_refuses_unresolved_relationships():
+    rows = [{"source_universe": "RESERVOIR_ENTITY_2004", "canonical_entity_id": "E1", "canonical_name": "Carite", "temporal_state": "OPERATIONAL"}]
+    with pytest.raises(RuntimeError):
+        build_spine(rows, [{"nid_id": "PR00021", "relationship_status": "RELATIONSHIP_TOP_EVIDENCE_TIE_REVIEW"}])
+
+
+def test_spine_builds_only_from_closed_relationships():
+    rows = [
+        {"source_universe": "RESERVOIR_ENTITY_2004", "canonical_entity_id": "E1", "canonical_name": "Carite", "temporal_state": "OPERATIONAL", "valid_from": "2004"},
+        {"source_universe": "NID_DAM_ASSET", "canonical_entity_id": "E1", "canonical_name": "Carite", "nid_id": "PR00021", "temporal_state": "OPERATIONAL", "valid_from": "2026"},
+    ]
+    result = build_spine(rows, [{"nid_id": "PR00021", "relationship_status": "RELATIONSHIP_CONFIRMED_AUTHORITATIVE"}])
+    assert result["entity_count"] == 1
+    assert result["unresolved_relationship_rows"] == 0
 
 
 def test_logical_fingerprint_deterministic():
