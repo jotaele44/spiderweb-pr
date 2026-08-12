@@ -4,12 +4,13 @@ import argparse
 import json
 import mimetypes
 import shutil
+import tempfile
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from .control_plane import bind_historical_file
-from .core import SOURCE_SPECS, ImmutableSnapshotStore, request_signature, sha256_file
+from .core import sha256_file
 
 KNOWN_INPUTS = {
     "USGS_NHD_WATERBODY": {
@@ -30,10 +31,11 @@ KNOWN_INPUTS = {
 }
 
 TIGER_PATTERNS = (
-    "_DENOMINATOR/NHD_PR_2026_08_11/*boundary*.gpkg",
-    "_DENOMINATOR/NHD_PR_2026_08_11/*boundary*.geojson",
-    "_DENOMINATOR/NHD_PR_2026_08_11/*state*.gpkg",
-    "_DENOMINATOR/NHD_PR_2026_08_11/*state*.geojson",
+    "_DENOMINATOR/NHD_PR_2026_08_11/boundary/tl_2025_us_state.zip",
+    "_DENOMINATOR/NHD_PR_2026_08_11/boundary/*boundary*.gpkg",
+    "_DENOMINATOR/NHD_PR_2026_08_11/boundary/*boundary*.geojson",
+    "_DENOMINATOR/NHD_PR_2026_08_11/boundary/*state*.gpkg",
+    "_DENOMINATOR/NHD_PR_2026_08_11/boundary/*state*.geojson",
 )
 
 MANIFEST_PATTERNS = (
@@ -73,11 +75,37 @@ def discover(root: Path) -> dict[str, Any]:
     }
 
 
-def migrate(root: Path, snapshot_root: Path, manifest_output: Path, *, tiger_path: Path | None = None, tiger_expected_sha256: str = "") -> dict[str, Any]:
+def _copy_verified(source: Path, target: Path, expected_sha256: str) -> dict[str, Any]:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    actual = sha256_file(target)
+    if actual != expected_sha256:
+        raise RuntimeError(
+            f"post-copy hash mismatch: {target}; expected={expected_sha256}; actual={actual}"
+        )
+    return {
+        "source_path": str(source),
+        "copied_path": str(target),
+        "bytes": target.stat().st_size,
+        "sha256": actual,
+        "media_type": _media(source),
+    }
+
+
+def migrate(
+    root: Path,
+    snapshot_root: Path,
+    manifest_output: Path,
+    *,
+    tiger_path: Path | None = None,
+    tiger_expected_sha256: str = "",
+) -> dict[str, Any]:
+    root = Path(root).expanduser().resolve()
     discovery = discover(root)
     bindings = []
+
     for source_id, spec in KNOWN_INPUTS.items():
-        path = Path(root).expanduser().resolve() / spec["relative_path"]
+        path = root / spec["relative_path"]
         record = bind_historical_file(
             path,
             source_id=source_id,
@@ -90,66 +118,116 @@ def migrate(root: Path, snapshot_root: Path, manifest_output: Path, *, tiger_pat
     if any(row["binding_state"] != "EXACT_HASH_MATCH" for row in bindings):
         raise RuntimeError("historical migration blocked: one or more frozen hashes do not match")
 
-    tiger_binding = None
-    if tiger_path is not None:
-        tiger_path = Path(tiger_path).expanduser().resolve()
-        if not tiger_expected_sha256:
-            raise RuntimeError("TIGER migration requires --tiger-expected-sha256; no silent trust-on-first-use")
-        tiger_binding = asdict(bind_historical_file(
+    if tiger_path is None:
+        raise RuntimeError("historical migration requires TIGER source binding; use --tiger-path")
+    tiger_path = Path(tiger_path).expanduser().resolve()
+    if not tiger_expected_sha256:
+        raise RuntimeError("TIGER migration requires --tiger-expected-sha256; no silent trust-on-first-use")
+
+    tiger_binding = asdict(
+        bind_historical_file(
             tiger_path,
             source_id="TIGER_PR_BOUNDARY",
             expected_sha256=tiger_expected_sha256,
             media_type=_media(tiger_path),
             original_certification="TIGER_PR_BOUNDARY_2026_08_11",
-        ))
-        if tiger_binding["binding_state"] != "EXACT_HASH_MATCH":
-            raise RuntimeError("historical migration blocked: TIGER hash mismatch")
+        )
+    )
+    if tiger_binding["binding_state"] != "EXACT_HASH_MATCH":
+        raise RuntimeError("historical migration blocked: TIGER hash mismatch")
 
-    # Import bytes only after every supplied binding has passed. Historical
-    # derivatives are preserved under a migration namespace; they do not pretend
-    # to be fresh raw-source downloads.
-    migration_root = Path(snapshot_root) / "historical_2026_08_11"
+    manifest_sources = [Path(path) for path in discovery["relevant_manifests"]]
+    if not manifest_sources:
+        raise RuntimeError("historical migration blocked: no certification/SHA manifests discovered")
+
+    snapshot_root = Path(snapshot_root)
+    migration_root = snapshot_root / "historical_2026_08_11"
     if migration_root.exists():
         raise FileExistsError(f"historical migration destination already exists: {migration_root}")
-    migration_root.mkdir(parents=True, exist_ok=False)
-    for row in bindings + ([tiger_binding] if tiger_binding else []):
-        source = Path(row["source_path"])
-        target_dir = migration_root / row["source_id"]
-        target_dir.mkdir(parents=True, exist_ok=False)
-        target = target_dir / source.name
-        shutil.copyfile(source, target)
-        if sha256_file(target) != row["sha256"]:
-            raise RuntimeError(f"post-copy hash mismatch: {target}")
-        (target_dir / "binding.json").write_text(json.dumps(row, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    output = {
-        "schema": "spiderweb.pr_hydrography.historical_migration.v0_1",
-        "source_root": str(Path(root).expanduser().resolve()),
-        "destination": str(migration_root),
-        "bindings": bindings,
-        "tiger_binding": tiger_binding,
-        "discovery": discovery,
-        "historical_bytes_reencoded": False,
-        "canonical_history_superseded": False,
-        "state": "PASS_KNOWN_BYTES_BOUND" if tiger_binding else "PARTIAL_TIGER_BINDING_OPEN",
-    }
+    snapshot_root.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=".historical_2026_08_11-", dir=snapshot_root))
+
+    copied_bindings: list[dict[str, Any]] = []
+    copied_manifests: list[dict[str, Any]] = []
+    try:
+        for row in bindings + [tiger_binding]:
+            source = Path(row["source_path"])
+            target_dir = staging / row["source_id"]
+            target = target_dir / source.name
+            copied = _copy_verified(source, target, row["sha256"])
+            copied.update({
+                "source_id": row["source_id"],
+                "original_certification": row["original_certification"],
+                "binding_state": row["binding_state"],
+            })
+            copied_bindings.append(copied)
+            target_dir.mkdir(parents=True, exist_ok=True)
+            (target_dir / "binding.json").write_text(
+                json.dumps(row, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+
+        manifest_root = staging / "provenance_manifests"
+        for source in manifest_sources:
+            relative = source.relative_to(root)
+            target = manifest_root / relative
+            digest = sha256_file(source)
+            copied = _copy_verified(source, target, digest)
+            copied["relative_source_path"] = str(relative)
+            copied_manifests.append(copied)
+
+        migration_manifest = {
+            "schema": "spiderweb.pr_hydrography.historical_migration.v0_2",
+            "source_root": str(root),
+            "destination": str(migration_root),
+            "bindings": bindings,
+            "tiger_binding": tiger_binding,
+            "copied_bindings": copied_bindings,
+            "copied_manifests": copied_manifests,
+            "discovery": discovery,
+            "historical_bytes_reencoded": False,
+            "manifest_bytes_reencoded": False,
+            "canonical_history_superseded": False,
+            "state": "PASS_HISTORICAL_BYTES_AND_MANIFESTS_BOUND",
+        }
+        (staging / "migration_manifest.json").write_text(
+            json.dumps(migration_manifest, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        staging.replace(migration_root)
+    except Exception:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+
+    manifest_output = Path(manifest_output)
     manifest_output.parent.mkdir(parents=True, exist_ok=True)
-    manifest_output.write_text(json.dumps(output, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return output
+    manifest_output.write_text(
+        json.dumps(migration_manifest, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return migration_manifest
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Bind certified PR_RESERVOIR_DATA bytes into Spiderweb historical snapshot storage")
+    parser = argparse.ArgumentParser(
+        description="Bind certified PR_RESERVOIR_DATA bytes and provenance manifests into Spiderweb historical snapshot storage"
+    )
     parser.add_argument("root", nargs="?", default="/Users/jotaele/Downloads/PR_RESERVOIR_DATA")
     parser.add_argument("--snapshot-root", default="data/raw/pr_hydrography")
-    parser.add_argument("--manifest-output", default="manifests/pr_hydrography/runtime/historical_2026_08_11_migration.json")
+    parser.add_argument(
+        "--manifest-output",
+        default="manifests/pr_hydrography/runtime/historical_2026_08_11_migration.json",
+    )
     parser.add_argument("--tiger-path")
     parser.add_argument("--tiger-expected-sha256", default="")
     parser.add_argument("--discover-only", action="store_true")
     args = parser.parse_args()
+
     if args.discover_only:
         print(json.dumps(discover(Path(args.root)), indent=2, ensure_ascii=False))
         return 0
+
     result = migrate(
         Path(args.root),
         Path(args.snapshot_root),
@@ -158,7 +236,7 @@ def main() -> int:
         tiger_expected_sha256=args.tiger_expected_sha256,
     )
     print(json.dumps(result, indent=2, ensure_ascii=False))
-    return 0 if result["state"] == "PASS_KNOWN_BYTES_BOUND" else 6
+    return 0 if result["state"] == "PASS_HISTORICAL_BYTES_AND_MANIFESTS_BOUND" else 6
 
 
 if __name__ == "__main__":
