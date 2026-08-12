@@ -20,7 +20,7 @@ The former ~85% figure did not consistently discount the explicit offline V2 bac
 ## State reconciliation
 
 - Core analytical, GIS, ingestion, federation and tested frontend capabilities are on `main`.
-- PR #243 is the isolated-clone candidate.
+- PR #243 is merged; standalone packaging still needs current-main certification.
 - PR #237 is an older unmergeable GUI-parity candidate with a 1,016-signal legacy baseline; it requires current-main reconciliation or supersession.
 - The roadmap’s offline tasks remain real implementation gaps: typed errors, checkpoint/resume, export redaction lint, map previews, GeoPackage, geo-anchors v2 and licensing/SPDX.
 - Real infrastructure/hydrology cross-references and corpus growth remain data or operator constrained.
@@ -28,8 +28,8 @@ The former ~85% figure did not consistently discount the explicit offline V2 bac
 
 ## Priority exit sequence
 
-1. Implement checkpoint/resume and typed error taxonomy.
-2. Add export redaction lint before expanding live ingestion.
+1. Merge the validated checkpoint/resume and export redaction-lint worktree increments, then implement typed error taxonomy.
+2. Add typed error taxonomy before expanding live ingestion.
 3. Add GeoPackage and map-preview outputs.
 4. Implement geo-anchors v2 and then adjudicate dependent pixel-CV work.
 5. Reconcile GUI parity against current main and reduce or explicitly classify legacy gaps.
