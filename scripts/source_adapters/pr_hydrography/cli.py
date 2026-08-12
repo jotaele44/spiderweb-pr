@@ -7,6 +7,12 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from .control_plane import (
+    bind_historical_file,
+    certification_gate,
+    compare_replays,
+    rebuild_from_snapshot_store,
+)
 from .core import (
     SOURCE_SPECS,
     ImmutableSnapshotStore,
@@ -22,6 +28,7 @@ from .core import (
     sha256_bytes,
     write_source_registry,
 )
+from .resolver import resolve_document
 
 DEFAULT_RUNTIME_ROOT = Path("data/raw/pr_hydrography")
 DEFAULT_MANIFEST_ROOT = Path("manifests/pr_hydrography/runtime")
@@ -58,7 +65,6 @@ def _snapshot_payload(
     previous = None
     if previous_data:
         from .core import SnapshotRecord
-
         previous = SnapshotRecord(**previous_data)
     digest = sha256_bytes(payload)
     decision = decide_refresh(
@@ -99,17 +105,7 @@ def pull_tiger(runtime_root: Path, manifest_root: Path, refresh: bool) -> dict[s
     with zipfile.ZipFile(__import__("io").BytesIO(payload)) as zf:
         names = sorted(zf.namelist())
     schema_fp = sha256_bytes(json.dumps(names, separators=(",", ":")).encode())
-    return _snapshot_payload(
-        spec.source_id,
-        payload,
-        params={},
-        runtime_root=runtime_root,
-        manifest_root=manifest_root,
-        extension=".zip",
-        schema_fp=schema_fp,
-        source_update_date=headers.get("Last-Modified", ""),
-        refresh=refresh,
-    )
+    return _snapshot_payload(spec.source_id, payload, params={}, runtime_root=runtime_root, manifest_root=manifest_root, extension=".zip", schema_fp=schema_fp, source_update_date=headers.get("Last-Modified", ""), refresh=refresh)
 
 
 def pull_nhd(runtime_root: Path, manifest_root: Path, refresh: bool) -> dict[str, Any]:
@@ -134,23 +130,9 @@ def pull_nhd(runtime_root: Path, manifest_root: Path, refresh: bool) -> dict[str
         row = dict(feature.get("properties") or {})
         row["__geometry__"] = feature.get("geometry")
         rows.append(row)
-    bundle = {
-        "source_id": spec.source_id,
-        "query": nhd_query_params(offset=0),
-        "pages": pages,
-        "feature_count": len(all_features),
-    }
+    bundle = {"source_id": spec.source_id, "query": nhd_query_params(offset=0), "pages": pages, "feature_count": len(all_features)}
     payload = json.dumps(bundle, ensure_ascii=False, separators=(",", ":")).encode()
-    return _snapshot_payload(
-        spec.source_id,
-        payload,
-        params=nhd_query_params(offset=0),
-        runtime_root=runtime_root,
-        manifest_root=manifest_root,
-        extension=".json",
-        schema_fp=schema_fingerprint(rows),
-        refresh=refresh,
-    )
+    return _snapshot_payload(spec.source_id, payload, params=nhd_query_params(offset=0), runtime_root=runtime_root, manifest_root=manifest_root, extension=".json", schema_fp=schema_fingerprint(rows), refresh=refresh)
 
 
 def pull_nid(runtime_root: Path, manifest_root: Path, refresh: bool) -> dict[str, Any]:
@@ -158,17 +140,7 @@ def pull_nid(runtime_root: Path, manifest_root: Path, refresh: bool) -> dict[str
     params = nid_query_params()
     payload, headers = fetch_bytes(spec.endpoint, params=params)
     rows = geojson_feature_rows(payload)
-    return _snapshot_payload(
-        spec.source_id,
-        payload,
-        params=params,
-        runtime_root=runtime_root,
-        manifest_root=manifest_root,
-        extension=".geojson",
-        schema_fp=schema_fingerprint(rows),
-        source_update_date=headers.get("Last-Modified", ""),
-        refresh=refresh,
-    )
+    return _snapshot_payload(spec.source_id, payload, params=params, runtime_root=runtime_root, manifest_root=manifest_root, extension=".geojson", schema_fp=schema_fingerprint(rows), source_update_date=headers.get("Last-Modified", ""), refresh=refresh)
 
 
 def pull_bathy(runtime_root: Path, manifest_root: Path, refresh: bool) -> dict[str, Any]:
@@ -176,40 +148,23 @@ def pull_bathy(runtime_root: Path, manifest_root: Path, refresh: bool) -> dict[s
     item_payload, headers = fetch_bytes(spec.endpoint)
     item = json.loads(item_payload.decode("utf-8"))
     file_url = sciencebase_file_url(item)
-    payload, file_headers = fetch_bytes(file_url)
+    payload, _file_headers = fetch_bytes(file_url)
     if not payload.startswith(b"PK\x03\x04"):
         raise RuntimeError("ScienceBase canonical v4 file is not a ZIP archive")
     with zipfile.ZipFile(__import__("io").BytesIO(payload)) as zf:
         names = sorted(zf.namelist())
     schema_fp = sha256_bytes(json.dumps(names, separators=(",", ":")).encode())
-    return _snapshot_payload(
-        spec.source_id,
-        payload,
-        params={"sciencebase_item": spec.endpoint, "resolved_file_url": file_url},
-        runtime_root=runtime_root,
-        manifest_root=manifest_root,
-        extension=".zip",
-        schema_fp=schema_fp,
-        source_update_date=str(item.get("dates", headers.get("Last-Modified", ""))),
-        refresh=refresh,
-    )
+    return _snapshot_payload(spec.source_id, payload, params={"sciencebase_item": spec.endpoint, "resolved_file_url": file_url}, runtime_root=runtime_root, manifest_root=manifest_root, extension=".zip", schema_fp=schema_fp, source_update_date=str(item.get("dates", headers.get("Last-Modified", ""))), refresh=refresh)
 
 
-PULLERS = {
-    "tiger": pull_tiger,
-    "nhd": pull_nhd,
-    "nid": pull_nid,
-    "inland-bathy": pull_bathy,
-}
+PULLERS = {"tiger": pull_tiger, "nhd": pull_nhd, "nid": pull_nid, "inland-bathy": pull_bathy}
 
 
 def _run_pull(args: argparse.Namespace, *, refresh: bool) -> int:
     runtime_root = Path(args.runtime_root)
     manifest_root = Path(args.manifest_root)
     sources = list(PULLERS) if args.source == "all" else [args.source]
-    results = []
-    for source in sources:
-        results.append(PULLERS[source](runtime_root, manifest_root, refresh))
+    results = [PULLERS[source](runtime_root, manifest_root, refresh) for source in sources]
     print(json.dumps(results, indent=2, ensure_ascii=False))
     return 2 if any(row.get("decision") == "BLOCKED_SCHEMA_DRIFT" for row in results) else 0
 
@@ -224,11 +179,7 @@ def _load_json_rows(path: Path) -> list[dict[str, Any]]:
 
 
 def _certify(args: argparse.Namespace) -> int:
-    result = certify_baselines(
-        nhd_rows=_load_json_rows(Path(args.nhd_rows)),
-        nid_rows=_load_json_rows(Path(args.nid_rows)),
-        v4_rows=_load_json_rows(Path(args.v4_rows)),
-    )
+    result = certify_baselines(nhd_rows=_load_json_rows(Path(args.nhd_rows)), nid_rows=_load_json_rows(Path(args.nid_rows)), v4_rows=_load_json_rows(Path(args.v4_rows)))
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
@@ -236,8 +187,45 @@ def _certify(args: argparse.Namespace) -> int:
     return 0 if result["pass"] else 3
 
 
+def _resolve(args: argparse.Namespace) -> int:
+    document = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    result = resolve_document(document)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 0
+
+
+def _audit(args: argparse.Namespace) -> int:
+    gate = certification_gate(
+        unclassified_source_changes=args.unclassified_source_changes,
+        unaccounted_bytes=args.unaccounted_bytes,
+        schema_role_violations=args.schema_role_violations,
+        proximity_only_identities=args.proximity_only_identities,
+        hidden_ties=args.hidden_ties,
+        unexplained_denominator_drift=args.unexplained_denominator_drift,
+        canonical_overwrites=args.canonical_overwrites,
+        unbound_parent_snapshots=args.unbound_parent_snapshots,
+    )
+    print(json.dumps(gate, indent=2))
+    return 0 if gate["state"] == "PASS" else 4
+
+
+def _reproduce(args: argparse.Namespace) -> int:
+    report = rebuild_from_snapshot_store(Path(args.snapshot_root), Path(args.output_root))
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    return 0
+
+
+def _bind_historical(args: argparse.Namespace) -> int:
+    record = bind_historical_file(Path(args.path), source_id=args.source_id, expected_sha256=args.expected_sha256, media_type=args.media_type, original_certification=args.original_certification)
+    print(json.dumps(asdict(record), indent=2))
+    return 0 if record.binding_state == "EXACT_HASH_MATCH" else 5
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Spiderweb PR authoritative hydrography acquisition plane v0.1")
+    parser = argparse.ArgumentParser(description="Spiderweb PR authoritative hydrography control plane")
     parser.add_argument("--runtime-root", default=str(DEFAULT_RUNTIME_ROOT))
     parser.add_argument("--manifest-root", default=str(DEFAULT_MANIFEST_ROOT))
     sub = parser.add_subparsers(dest="command", required=True)
@@ -245,12 +233,9 @@ def build_parser() -> argparse.ArgumentParser:
     registry = sub.add_parser("write-source-registry")
     registry.add_argument("--output", default="manifests/pr_hydrography/source_registry.csv")
 
-    for name in ("pull-source", "refresh-changed"):
+    for name in ("pull-source", "refresh-changed", "pull-hydrography"):
         cmd = sub.add_parser(name)
         cmd.add_argument("--source", choices=[*PULLERS, "all"], default="all")
-
-    hydro = sub.add_parser("pull-hydrography")
-    hydro.add_argument("--source", choices=[*PULLERS, "all"], default="all")
 
     certify = sub.add_parser("certify-snapshot")
     certify.add_argument("--nhd-rows", required=True)
@@ -259,13 +244,37 @@ def build_parser() -> argparse.ArgumentParser:
     certify.add_argument("--output", default="manifests/pr_hydrography/runtime/baseline_certification.json")
 
     resolve = sub.add_parser("resolve-relationships")
-    resolve.add_argument("--input", required=True, help="Reserved v0.1 contract input; relationship resolution is library-first")
+    resolve.add_argument("--input", required=True)
+    resolve.add_argument("--output", required=True)
+
+    reproduce = sub.add_parser("reproduce")
+    reproduce.add_argument("--snapshot-root", required=True)
+    reproduce.add_argument("--output-root", required=True)
+
+    bind = sub.add_parser("bind-historical")
+    bind.add_argument("--path", required=True)
+    bind.add_argument("--source-id", required=True)
+    bind.add_argument("--expected-sha256", required=True)
+    bind.add_argument("--media-type", required=True)
+    bind.add_argument("--original-certification", required=True)
+
+    audit = sub.add_parser("audit-hydrography")
+    for field in (
+        "unclassified-source-changes",
+        "unaccounted-bytes",
+        "schema-role-violations",
+        "proximity-only-identities",
+        "hidden-ties",
+        "unexplained-denominator-drift",
+        "canonical-overwrites",
+        "unbound-parent-snapshots",
+    ):
+        audit.add_argument(f"--{field}", type=int, default=0)
     return parser
 
 
 def main() -> int:
-    parser = build_parser()
-    args = parser.parse_args()
+    args = build_parser().parse_args()
     if args.command == "write-source-registry":
         print(write_source_registry(Path(args.output)))
         return 0
@@ -276,9 +285,14 @@ def main() -> int:
     if args.command == "certify-snapshot":
         return _certify(args)
     if args.command == "resolve-relationships":
-        raise SystemExit("Use scripts.source_adapters.pr_hydrography.core select_candidates/rank_candidates in v0.1; file-contract resolver lands after baseline fixtures are certified")
-    parser.error("unknown command")
-    return 2
+        return _resolve(args)
+    if args.command == "reproduce":
+        return _reproduce(args)
+    if args.command == "bind-historical":
+        return _bind_historical(args)
+    if args.command == "audit-hydrography":
+        return _audit(args)
+    raise RuntimeError(f"unknown command: {args.command}")
 
 
 if __name__ == "__main__":
