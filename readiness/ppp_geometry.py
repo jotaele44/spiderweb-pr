@@ -6,10 +6,10 @@ other half of that split: it reads the municipality moneysweep federated and
 resolves it to a real WGS84 point using spiderweb's committed reference
 geographies, so the Hub can join a public-money project to a place on the map.
 
-This module does not import moneysweep-pr. It reads that producer's **canonical
-export package** — the same artifact the Hub consumes — from a sibling checkout,
-treating it as an external producer exactly as ``spiderweb_spatial_lane`` treats
-the intake router.
+This module does not import moneysweep-pr and does not discover or read sibling
+checkouts implicitly. The caller must pass an explicit moneysweep canonical
+export package path. That keeps repository runtime isolation intact and makes the
+producer artifact an explicit dependency rather than a filesystem convention.
 
 Resolution is reference-backed or it does not happen:
 
@@ -39,9 +39,6 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AIRPORT_REGISTRY = REPO_ROOT / "configs" / "airport_registry.yaml"
-DEFAULT_MONEYSWEEP_PACKAGE = (
-    REPO_ROOT.parent / "moneysweep-pr" / "data" / "exports" / "canonical_v1_federation"
-)
 LAYER_ID = "ppp_geometry"
 EXPORT_CONTRACT_VERSION = "0.1.0"
 
@@ -91,9 +88,18 @@ def load_airport_index(path: Path | None = None) -> list[dict[str, Any]]:
     return candidates
 
 
-def read_producer_projects(package_dir: Path | None = None) -> list[dict[str, Any]]:
-    """Project entities carrying a municipality, from moneysweep's export package."""
-    package_dir = Path(package_dir or DEFAULT_MONEYSWEEP_PACKAGE)
+def read_producer_projects(package_dir: Path | str | None = None) -> list[dict[str, Any]]:
+    """Project entities from an explicit moneysweep canonical export package.
+
+    ``package_dir`` is mandatory. Implicit ``../moneysweep-pr`` discovery is
+    intentionally forbidden so Spiderweb never couples runtime behavior to a
+    sibling checkout layout.
+    """
+    if package_dir is None:
+        raise PPPGeometryError(
+            "explicit moneysweep export package required; sibling checkout discovery is disabled"
+        )
+    package_dir = Path(package_dir)
     entities = package_dir / "entities.jsonl"
     if not entities.exists():
         return []
@@ -136,7 +142,7 @@ def _match(project: dict[str, Any], candidates: Iterable[dict[str, Any]]) -> dic
 
 
 def resolve_projects(
-    package_dir: Path | None = None, registry_path: Path | None = None
+    package_dir: Path | str | None = None, registry_path: Path | None = None
 ) -> dict[str, Any]:
     """Resolve producer project locations to points. Pure — no writes."""
     projects = read_producer_projects(package_dir)
