@@ -1,4 +1,4 @@
-"""Emit the ``rm_*`` output layers as GeoJSON with provenance.
+"""Emit the ``rm_*`` output layers as GeoJSON or GeoPackage with provenance.
 
 The backbone writes compact GeoJSON FeatureCollections (not GPKG) so the core
 stays geopandas-free and the emitted layers are diff-friendly and testable. Each
@@ -127,6 +127,27 @@ def _write_collection(path: Path, name: str, features: List[Dict[str, Any]]) -> 
     path.write_text(json.dumps(fc, indent=2), encoding="utf-8")
 
 
+def _write_geopackage(path: Path, layer_id: str, features: List[Dict[str, Any]]) -> None:
+    """Write one canonical feature collection to a named GeoPackage layer."""
+
+    try:
+        import geopandas as gpd
+    except ImportError as exc:  # pragma: no cover - exercised without geo extra
+        raise RuntimeError(
+            "GeoPackage export requires the 'geo' extra: pip install -e '.[geo]'"
+        ) from exc
+
+    normalized = []
+    for feature in features:
+        properties = dict(feature["properties"])
+        if "_meta" in properties:
+            properties["_meta"] = json.dumps(properties["_meta"], sort_keys=True)
+        normalized.append({"geometry": feature["geometry"], "properties": properties})
+    gpd.GeoDataFrame.from_features(normalized, crs="EPSG:4326").to_file(
+        path, layer=layer_id, driver="GPKG", mode="a" if path.exists() else "w"
+    )
+
+
 def export_layers(
     output_dir: str,
     *,
@@ -136,6 +157,7 @@ def export_layers(
     adjudications: Optional[Iterable[Any]] = None,
     crosswalks: Optional[Iterable[Any]] = None,
     command: Optional[str] = None,
+    geopackage_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Write the requested ``rm_*`` layers + ``rm_manifest.json`` to ``output_dir``.
 
@@ -179,6 +201,8 @@ def export_layers(
         _write_collection(path, layer_id, feats)
         written[layer_id] = str(path)
         counts[layer_id] = len(feats)
+        if geopackage_path is not None:
+            _write_geopackage(Path(geopackage_path), layer_id, feats)
 
     manifest: Dict[str, Any] = {
         "subsystem": schemas.SUBSYSTEM,
@@ -186,6 +210,8 @@ def export_layers(
         "layers_written": written,
         "feature_counts": counts,
     }
+    if geopackage_path is not None:
+        manifest["geopackage_path"] = str(Path(geopackage_path))
     attach_to_manifest(
         manifest, command=command or "spiderweb.remote_monitoring.export_layers"
     )

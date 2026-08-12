@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from spiderweb.remote_monitoring import (
     RemoteObservation,
     active_aois,
@@ -81,3 +83,20 @@ def test_adjudication_and_crosswalk_layers_export(tmp_path):
     assert set(res["layers_written"]) == {"rm_adjudications", "rm_contract_crosswalk"}
     adj = json.loads((tmp_path / "rm_adjudications.geojson").read_text())
     assert adj["features"][0]["properties"]["decision"] == "confirm"
+
+
+def test_export_writes_requested_geopackage_layers(tmp_path):
+    pytest.importorskip("geopandas")
+    obs = _observation()
+    gpkg = tmp_path / "monitoring.gpkg"
+    result = exports.export_layers(
+        str(tmp_path),
+        aois=active_aois(),
+        observations=[obs],
+        geopackage_path=str(gpkg),
+    )
+
+    import geopandas as gpd
+
+    assert result["geopackage_path"] == str(gpkg)
+    assert set(gpd.list_layers(gpkg).name) == {"rm_monitoring_aois", "rm_observations"}
