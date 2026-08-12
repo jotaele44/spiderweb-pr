@@ -7,12 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from .control_plane import (
-    bind_historical_file,
-    certification_gate,
-    compare_replays,
-    rebuild_from_snapshot_store,
-)
+from .control_plane import bind_historical_file, certification_gate, rebuild_from_snapshot_store
 from .core import (
     SOURCE_SPECS,
     ImmutableSnapshotStore,
@@ -29,6 +24,7 @@ from .core import (
     write_source_registry,
 )
 from .resolver import resolve_document
+from .spine import build_spine
 
 DEFAULT_RUNTIME_ROOT = Path("data/raw/pr_hydrography")
 DEFAULT_MANIFEST_ROOT = Path("manifests/pr_hydrography/runtime")
@@ -48,18 +44,7 @@ def _write_latest(manifest_root: Path, record: object) -> None:
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
-def _snapshot_payload(
-    source_id: str,
-    payload: bytes,
-    *,
-    params: dict[str, Any],
-    runtime_root: Path,
-    manifest_root: Path,
-    extension: str,
-    schema_fp: str,
-    source_update_date: str = "",
-    refresh: bool = False,
-) -> dict[str, Any]:
+def _snapshot_payload(source_id: str, payload: bytes, *, params: dict[str, Any], runtime_root: Path, manifest_root: Path, extension: str, schema_fp: str, source_update_date: str = "", refresh: bool = False) -> dict[str, Any]:
     spec = SOURCE_SPECS[source_id]
     previous_data = _load_latest(manifest_root, source_id)
     previous = None
@@ -67,32 +52,14 @@ def _snapshot_payload(
         from .core import SnapshotRecord
         previous = SnapshotRecord(**previous_data)
     digest = sha256_bytes(payload)
-    decision = decide_refresh(
-        previous,
-        remote_sha256=digest,
-        remote_schema_fingerprint=schema_fp,
-        source_update_date=source_update_date,
-    )
+    decision = decide_refresh(previous, remote_sha256=digest, remote_schema_fingerprint=schema_fp, source_update_date=source_update_date)
     if refresh and decision.startswith("NO_CHANGE"):
         return {"source_id": source_id, "decision": decision, "snapshot": previous_data}
     if decision == "BLOCKED_SCHEMA_DRIFT":
-        return {
-            "source_id": source_id,
-            "decision": decision,
-            "previous_schema": previous.schema_fingerprint if previous else "",
-            "remote_schema": schema_fp,
-        }
+        return {"source_id": source_id, "decision": decision, "previous_schema": previous.schema_fingerprint if previous else "", "remote_schema": schema_fp}
     store = ImmutableSnapshotStore(runtime_root)
     sig = request_signature(source_id, "GET", params)
-    record = store.write(
-        spec,
-        payload,
-        request_sig=sig,
-        schema_fp=schema_fp,
-        source_update_date=source_update_date,
-        parent_snapshot=previous.snapshot_id if previous else "",
-        extension=extension,
-    )
+    record = store.write(spec, payload, request_sig=sig, schema_fp=schema_fp, source_update_date=source_update_date, parent_snapshot=previous.snapshot_id if previous else "", extension=extension)
     _write_latest(manifest_root, record)
     return {"source_id": source_id, "decision": decision, "snapshot": asdict(record)}
 
@@ -197,6 +164,17 @@ def _resolve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _build_spine(args: argparse.Namespace) -> int:
+    entities = json.loads(Path(args.entities).read_text(encoding="utf-8"))
+    relationships = json.loads(Path(args.relationships).read_text(encoding="utf-8"))
+    result = build_spine(entities, relationships)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 0
+
+
 def _audit(args: argparse.Namespace) -> int:
     gate = certification_gate(
         unclassified_source_changes=args.unclassified_source_changes,
@@ -247,6 +225,11 @@ def build_parser() -> argparse.ArgumentParser:
     resolve.add_argument("--input", required=True)
     resolve.add_argument("--output", required=True)
 
+    spine = sub.add_parser("build-reservoir-spine")
+    spine.add_argument("--entities", required=True)
+    spine.add_argument("--relationships", required=True)
+    spine.add_argument("--output", required=True)
+
     reproduce = sub.add_parser("reproduce")
     reproduce.add_argument("--snapshot-root", required=True)
     reproduce.add_argument("--output-root", required=True)
@@ -286,6 +269,8 @@ def main() -> int:
         return _certify(args)
     if args.command == "resolve-relationships":
         return _resolve(args)
+    if args.command == "build-reservoir-spine":
+        return _build_spine(args)
     if args.command == "reproduce":
         return _reproduce(args)
     if args.command == "bind-historical":
