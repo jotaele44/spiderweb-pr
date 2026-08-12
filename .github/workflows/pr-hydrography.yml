@@ -40,6 +40,7 @@ jobs:
           python -m py_compile scripts/source_adapters/pr_hydrography/certifiers.py
           python -m py_compile scripts/source_adapters/pr_hydrography/spine.py
           python -m py_compile scripts/source_adapters/pr_hydrography/transport.py
+          python -m py_compile scripts/source_adapters/pr_hydrography/migrate_local.py
       - name: Run offline certification regressions
         run: pytest -q tests/test_pr_hydrography_acquisition.py tests/test_pr_hydrography_resolver.py tests/test_pr_hydrography_max_vector.py
 
