@@ -8,7 +8,6 @@ import pytest
 from shapely.geometry import Polygon
 
 from scripts.source_adapters.pr_hydrography.certifiers import (
-    certify_inland_bathy_archive,
     certify_nhd_pages,
     certify_nid_csv,
     certify_tiger_pr,
@@ -32,6 +31,7 @@ from scripts.source_adapters.pr_hydrography.core import (
     request_signature,
 )
 from scripts.source_adapters.pr_hydrography.spine import build_spine
+from scripts.source_adapters.pr_hydrography.transport import classify_transport_outcome
 from scripts.source_adapters.pr_hydrography.validation import analysis_geometry
 
 
@@ -69,6 +69,19 @@ def test_remote_change_matrix():
     assert classify_remote_change(prev, media_expected=False) == "UNEXPECTED_MEDIA"
     assert classify_remote_change(prev, payload_bytes=0) == "SOURCE_EMPTY"
     assert classify_remote_change(prev, contradiction=True) == "TRUE_CONTRADICTION"
+
+
+def test_transport_adversarial_matrix():
+    assert classify_transport_outcome(status=200, content_type="application/json", payload=b'{"ok":1}', expected_content="json") == "OK"
+    assert classify_transport_outcome(status=302, content_type="text/plain", payload=b"redirect", expected_content="json") == "HTTP_REDIRECT"
+    assert classify_transport_outcome(status=429, content_type="text/plain", payload=b"slow", expected_content="json") == "RATE_LIMITED"
+    assert classify_transport_outcome(status=200, content_type="application/json", payload=b"", expected_content="json") == "EMPTY_RESPONSE"
+    assert classify_transport_outcome(status=200, content_type="text/html", payload=b"<html>error</html>", expected_content="zip") == "UNEXPECTED_HTML"
+    assert classify_transport_outcome(status=200, content_type="application/json", payload=b'{"broken"', expected_content="json") == "TRUNCATED_JSON"
+    assert classify_transport_outcome(status=200, content_type="application/octet-stream", payload=b"PK\x03\x04abc", expected_content="zip", expected_bytes=100) == "PARTIAL_DOWNLOAD"
+    assert classify_transport_outcome(status=200, content_type="application/octet-stream", payload=b"notzip", expected_content="zip") == "UNEXPECTED_MEDIA"
+    assert classify_transport_outcome(status=None, content_type="", payload=b"", expected_content="json", timed_out=True) == "TIMEOUT"
+    assert classify_transport_outcome(status=None, content_type="", payload=b"", expected_content="json", network_error=True) == "SOURCE_UNAVAILABLE"
 
 
 def test_historical_byte_binding_exact_and_mismatch(tmp_path: Path):
