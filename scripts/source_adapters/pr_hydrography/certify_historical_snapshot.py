@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from .certifiers import certify_nid_csv
+from .certifiers import certify_nid_csv, normalize_nid_jurisdiction
 from .core import EXPECTED_V4_HARD_BINDINGS, sha256_file
 
 EXPECTED = {
@@ -95,26 +95,36 @@ def _certify_nhd(path: Path) -> dict[str, Any]:
 def _certify_nid(path: Path) -> dict[str, Any]:
     payload = path.read_bytes()
     cert = certify_nid_csv(payload)
-    # The historical frozen source is the national CSV; certify the PR subset independently.
     text = payload.decode("utf-8-sig", errors="replace")
     lines = text.splitlines()
     header = cert["header_line_index"]
     rows = list(csv.DictReader(io.StringIO("\n".join(lines[header:]))))
+
     def nid(row: dict[str, str]) -> str:
         return str(row.get("NID ID") or row.get("NID_ID") or "").strip()
-    def state(row: dict[str, str]) -> str:
+
+    def raw_state(row: dict[str, str]) -> str:
         return str(row.get("State") or row.get("STATE") or "").strip()
+
     pr_prefix = [row for row in rows if nid(row).startswith("PR")]
-    pr_state = [row for row in rows if state(row) == "PR"]
+    pr_state = [row for row in rows if normalize_nid_jurisdiction(raw_state(row)) == "PR"]
     prefix_ids = [nid(row) for row in pr_prefix]
     state_ids = [nid(row) for row in pr_state]
+    raw_pr_states = sorted({raw_state(row) for row in pr_prefix})
+    normalized_pr_states = sorted({normalize_nid_jurisdiction(raw_state(row)) for row in pr_prefix})
+    exact = set(prefix_ids) == set(state_ids)
+    unrecognized = sorted(v for v in raw_pr_states if normalize_nid_jurisdiction(v) != "PR")
     return {
         **cert,
         "pr_prefix_rows": len(pr_prefix),
         "pr_state_rows": len(pr_state),
         "pr_unique_ids": len(set(prefix_ids)),
-        "prefix_state_exact_set_equal": set(prefix_ids) == set(state_ids),
-        "gate": "PASS" if len(pr_prefix) == 36 and len(pr_state) == 36 and len(set(prefix_ids)) == 36 and set(prefix_ids) == set(state_ids) else "BLOCKED",
+        "pr_raw_state_values": raw_pr_states,
+        "pr_normalized_state_values": normalized_pr_states,
+        "unrecognized_pr_state_values": unrecognized,
+        "prefix_state_exact_set_equal": exact,
+        "jurisdiction_equivalence_rule": "PR prefix compared to normalized State jurisdiction; raw State preserved",
+        "gate": "PASS" if len(pr_prefix) == 36 and len(pr_state) == 36 and len(set(prefix_ids)) == 36 and exact and not unrecognized else "BLOCKED",
     }
 
 
@@ -124,7 +134,6 @@ def _certify_v4(path: Path, crosswalk: Path) -> dict[str, Any]:
         files = [m for m in members if not m.is_dir()]
         total_member_bytes = sum(m.file_size for m in files)
         names = sorted(m.filename for m in members)
-    # Crosswalk is the frozen historical proof of six PR survey subjects and five NID hard bindings.
     rows = list(csv.DictReader(io.StringIO(crosswalk.read_text(encoding="utf-8"))))
     if len(rows) != 6:
         raise RuntimeError(f"V4 crosswalk expected six PR survey rows; got {len(rows)}")
@@ -156,7 +165,7 @@ def certify(root: Path, output: Path) -> dict[str, Any]:
         _require_hash(path, EXPECTED[key])
 
     document = {
-        "schema": "spiderweb.pr_hydrography.historical_source_certification.v0_1",
+        "schema": "spiderweb.pr_hydrography.historical_source_certification.v0_2",
         "snapshot_set_id": "PR_HYDROGRAPHY_2026_08_11_v2",
         "tiger": _certify_tiger(paths["tiger"]),
         "nhd": _certify_nhd(paths["nhd"]),
