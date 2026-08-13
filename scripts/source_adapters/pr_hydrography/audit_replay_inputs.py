@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 SHA_RE = re.compile(r"^([0-9a-fA-F]{64})\s+[* ]?(.*)$")
+NON_SEMANTIC_NAMES = {".DS_Store"}
 
 
 def sha256_file(path: Path) -> str:
@@ -71,6 +72,17 @@ def audit(historical_root: Path, source_root: Path, output: Path) -> dict[str, A
                 })
                 if state == "EXACT_HASH_MATCH":
                     exact_matches.append(p)
+
+            non_semantic = Path(row["name"]).name in NON_SEMANTIC_NAMES
+            if non_semantic:
+                reference_state = "IGNORED_NON_SEMANTIC_METADATA"
+            elif any(historical_root in p.parents for p in exact_matches):
+                reference_state = "BOUND_IN_SNAPSHOT_STORE"
+            elif exact_matches:
+                reference_state = "AVAILABLE_FOR_BINDING"
+            else:
+                reference_state = "MISSING_OR_HASH_MISMATCH"
+
             references.append({
                 "manifest": str(manifest.relative_to(historical_root)),
                 "referenced_name": row["name"],
@@ -79,20 +91,18 @@ def audit(historical_root: Path, source_root: Path, output: Path) -> dict[str, A
                 "exact_match_count": len(exact_matches),
                 "snapshot_exact_match": any(historical_root in p.parents for p in exact_matches),
                 "source_root_exact_match": any(source_root in p.parents for p in exact_matches),
-                "state": (
-                    "BOUND_IN_SNAPSHOT_STORE" if any(historical_root in p.parents for p in exact_matches)
-                    else "AVAILABLE_FOR_BINDING" if exact_matches
-                    else "MISSING_OR_HASH_MISMATCH"
-                ),
+                "non_semantic_metadata": non_semantic,
+                "state": reference_state,
             })
 
     unique_keys = {(r["expected_sha256"], r["referenced_name"]) for r in references}
+    ignored = [r for r in references if r["state"] == "IGNORED_NON_SEMANTIC_METADATA"]
     missing = [r for r in references if r["state"] == "MISSING_OR_HASH_MISMATCH"]
     available = [r for r in references if r["state"] == "AVAILABLE_FOR_BINDING"]
     bound = [r for r in references if r["state"] == "BOUND_IN_SNAPSHOT_STORE"]
 
     doc = {
-        "schema": "spiderweb.pr_hydrography.replay_input_audit.v0_1",
+        "schema": "spiderweb.pr_hydrography.replay_input_audit.v0_2",
         "historical_root": str(historical_root),
         "source_root": str(source_root),
         "sha_manifest_count": len(manifests),
@@ -101,6 +111,8 @@ def audit(historical_root: Path, source_root: Path, output: Path) -> dict[str, A
         "bound_in_snapshot_store": len(bound),
         "available_for_binding": len(available),
         "missing_or_hash_mismatch": len(missing),
+        "ignored_non_semantic_metadata": len(ignored),
+        "ignored_names": sorted({r["referenced_name"] for r in ignored}),
         "references": references,
         "step4_replay_input_state": (
             "PASS_REPLAY_INPUTS_COMPLETE" if not missing and not available
