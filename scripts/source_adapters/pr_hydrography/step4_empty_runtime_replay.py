@@ -32,13 +32,6 @@ def _first(row: dict[str, str], *names: str) -> str:
     return ""
 
 
-def _rank(row: dict[str, str]) -> float:
-    value = _first(row, "evidence_rank", "top_evidence_rank")
-    if value == "":
-        raise RuntimeError("candidate row has no evidence rank")
-    return float(value)
-
-
 def _nid(row: dict[str, str]) -> str:
     value = _first(row, "nid_id", "source_a_id")
     if not value:
@@ -61,9 +54,46 @@ def _eclass(row: dict[str, str]) -> str:
     return _first(row, "evidence_class")
 
 
+def _build_rank_contract(ranked_rows: list[dict[str, str]]) -> dict[str, float]:
+    """Recover the preserved evidence-class ordering without guessing.
+
+    Historical candidate-universe rows do not all carry a numeric evidence rank.
+    The frozen ranked-candidate artifact preserves the class/rank pairing.  Every
+    observed class must map to exactly one numeric rank or replay fails closed.
+    """
+    observed: dict[str, set[float]] = defaultdict(set)
+    for row in ranked_rows:
+        eclass = _eclass(row)
+        rank_text = _first(row, "evidence_rank", "top_evidence_rank")
+        if not eclass or not rank_text:
+            continue
+        observed[eclass].add(float(rank_text))
+    conflicts = {k: sorted(v) for k, v in observed.items() if len(v) != 1}
+    if conflicts:
+        raise RuntimeError(f"conflicting historical evidence-class rank contract: {conflicts}")
+    contract = {k: next(iter(v)) for k, v in observed.items()}
+    if not contract:
+        raise RuntimeError("historical ranked artifact yielded no evidence-class rank contract")
+    return contract
+
+
+def _rank(row: dict[str, str], rank_contract: dict[str, float]) -> float:
+    value = _first(row, "evidence_rank", "top_evidence_rank")
+    if value != "":
+        return float(value)
+    eclass = _eclass(row)
+    if not eclass:
+        raise RuntimeError(f"candidate row has neither evidence rank nor evidence class: nid={_nid(row)} pid={_pid(row)}")
+    if eclass not in rank_contract:
+        raise RuntimeError(
+            f"candidate evidence class absent from preserved rank contract: "
+            f"nid={_nid(row)} pid={_pid(row)} evidence_class={eclass!r}"
+        )
+    return rank_contract[eclass]
+
+
 def replay(root: Path, output: Path) -> dict[str, Any]:
     root = root.resolve()
-    # All reads are intentionally constrained to the snapshot store.
     candidate_path = _find(root, "nid36_nhd_candidate_universe_2500m_v2_4.csv")
     ledger_path = _find(root, "nid36_nhd_relationship_ledger_v3_2.csv")
     ranked_path = _find(root, "nid36_nhd_ranked_candidates_v2_4.csv")
@@ -75,6 +105,7 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
     ranked = _rows(ranked_path)
     ties = _rows(tie_path)
     unresolved = _rows(unresolved_path)
+    rank_contract = _build_rank_contract(ranked)
 
     groups: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in candidates:
@@ -82,9 +113,9 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
 
     replayed: dict[str, dict[str, Any]] = {}
     for nid, rows in sorted(groups.items()):
-        ordered = sorted(rows, key=lambda r: (_rank(r), _pid(r)))
-        top_rank = _rank(ordered[0])
-        top = [r for r in ordered if _rank(r) == top_rank]
+        ordered = sorted(rows, key=lambda r: (_rank(r, rank_contract), _pid(r)))
+        top_rank = _rank(ordered[0], rank_contract)
+        top = [r for r in ordered if _rank(r, rank_contract) == top_rank]
         tie = len(top) > 1
         winner = None
         state = "TOP_EVIDENCE_TIE" if tie else ""
@@ -121,8 +152,6 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
         if frozen_tie != decision["top_tie"]:
             mismatches.append({"nid_id": nid, "field": "top_evidence_tie", "replayed": decision["top_tie"], "frozen": frozen_tie})
         frozen_pid = _first(frozen, "nhd_permanent_identifier", "source_b_id") or None
-        # A frozen row may retain its top candidate even when unresolved/tied; only
-        # require winner equality when replay logic produces an actual winner.
         if decision["winner_pid"] is not None and frozen_pid != decision["winner_pid"]:
             mismatches.append({"nid_id": nid, "field": "winner_pid", "replayed": decision["winner_pid"], "frozen": frozen_pid})
         frozen_rank = _first(frozen, "top_evidence_rank", "evidence_rank")
@@ -136,7 +165,6 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
     for nid in extra_frozen:
         mismatches.append({"nid_id": nid, "field": "candidate_group", "replayed": "missing", "frozen": "present"})
 
-    # Secondary denominator checks make accidental partial replay impossible.
     denominator = {
         "candidate_groups": len(groups),
         "ledger_rows": len(ledger),
@@ -147,13 +175,16 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
     denominator_pass = len(groups) == 36 and len(ledger) == 36
 
     report = {
-        "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_1",
+        "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_2",
         "snapshot_root": str(root),
         "downloads_folder_required": False,
         "network_required": False,
         "replay_scope": "LOGICAL_DECISION_PROJECTION",
         "historical_transform_source_code_preserved": False,
         "byte_identical_regeneration_claimed": False,
+        "rank_contract_source": "BOUND_HISTORICAL_RANKED_CANDIDATE_ARTIFACT",
+        "rank_contract": dict(sorted(rank_contract.items())),
+        "rank_contract_conflicts": 0,
         "denominator": denominator,
         "denominator_pass": denominator_pass,
         "decision_mismatch_count": len(mismatches),
