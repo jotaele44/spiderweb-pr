@@ -10,6 +10,17 @@ from typing import Any, Mapping, Sequence
 from .core import canonical_pid, matching_text, schema_fingerprint, sha256_bytes
 
 
+NID_JURISDICTION_NORMALIZATION = {
+    "PR": "PR",
+    "Puerto Rico": "PR",
+}
+
+
+def normalize_nid_jurisdiction(value: Any) -> str:
+    raw = "" if value is None else str(value).strip()
+    return NID_JURISDICTION_NORMALIZATION.get(raw, raw)
+
+
 def certify_tiger_pr(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     if not rows:
         raise RuntimeError("TIGER source is empty")
@@ -99,14 +110,18 @@ def certify_nid_csv(payload: bytes) -> dict[str, Any]:
     def nid_id(row: Mapping[str, Any]) -> str:
         return str(row.get("NID ID") or row.get("NID_ID") or "").strip()
 
-    def state(row: Mapping[str, Any]) -> str:
+    def raw_state(row: Mapping[str, Any]) -> str:
         return str(row.get("State") or row.get("STATE") or "").strip()
 
     prefix_list = [nid_id(row) for row in rows if nid_id(row).startswith("PR")]
-    state_list = [nid_id(row) for row in rows if state(row) == "PR"]
+    state_list = [nid_id(row) for row in rows if normalize_nid_jurisdiction(raw_state(row)) == "PR"]
     prefix = set(prefix_list)
     by_state = set(state_list)
     duplicate_ids = sorted(nid for nid, count in Counter(prefix_list).items() if count > 1)
+    pr_raw_state_values = sorted({raw_state(row) for row in rows if nid_id(row).startswith("PR")})
+    unrecognized_pr_state_values = sorted(
+        value for value in pr_raw_state_values if normalize_nid_jurisdiction(value) != "PR"
+    )
     return {
         "source_universe": "NID_DAM_ASSET",
         "header_line_index": len(preamble.splitlines()) if preamble else 0,
@@ -119,6 +134,9 @@ def certify_nid_csv(payload: bytes) -> dict[str, Any]:
         "pr_state_count": len(state_list),
         "pr_state_unique": len(by_state),
         "prefix_state_set_equal": prefix == by_state,
+        "pr_raw_state_values": pr_raw_state_values,
+        "jurisdiction_normalization": dict(NID_JURISDICTION_NORMALIZATION),
+        "unrecognized_pr_state_values": unrecognized_pr_state_values,
         "duplicate_pr_nid_ids": len(duplicate_ids),
         "duplicate_pr_nid_id_values": duplicate_ids,
         "schema_fingerprint": schema_fingerprint(rows),
