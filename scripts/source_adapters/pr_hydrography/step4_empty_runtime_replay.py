@@ -54,24 +54,53 @@ def _eclass(row: dict[str, str]) -> str:
     return _first(row, "evidence_class")
 
 
-def _build_rank_contract(ranked_rows: list[dict[str, str]]) -> dict[str, float]:
+def _rank_text(row: dict[str, str]) -> str:
+    # Historical v2.4 artifacts use different names for the same preserved
+    # evidence-rank value depending on artifact role.  `_evidence_rank` is the
+    # canonical per-candidate field in the candidate-universe artifacts.
+    return _first(
+        row,
+        "_evidence_rank",
+        "evidence_rank",
+        "top_evidence_rank",
+        "_top_evidence_rank",
+    )
+
+
+def _build_rank_contract(
+    preserved_artifacts: list[tuple[str, list[dict[str, str]]]],
+) -> tuple[dict[str, float], dict[str, list[str]]]:
     observed: dict[str, set[float]] = defaultdict(set)
-    for row in ranked_rows:
-        eclass = _eclass(row)
-        rank_text = _first(row, "evidence_rank", "top_evidence_rank")
-        if eclass and rank_text:
-            observed[eclass].add(float(rank_text))
+    sources: dict[str, set[str]] = defaultdict(set)
+    for artifact_name, rows in preserved_artifacts:
+        for row in rows:
+            eclass = _eclass(row)
+            rank_text = _rank_text(row)
+            if not eclass or not rank_text:
+                continue
+            try:
+                rank = float(rank_text)
+            except ValueError as exc:
+                raise RuntimeError(
+                    f"non-numeric preserved evidence rank in {artifact_name}: "
+                    f"nid={_first(row, 'nid_id', 'source_a_id')!r} "
+                    f"evidence_class={eclass!r} rank={rank_text!r}"
+                ) from exc
+            observed[eclass].add(rank)
+            sources[eclass].add(artifact_name)
+
     conflicts = {k: sorted(v) for k, v in observed.items() if len(v) != 1}
     if conflicts:
         raise RuntimeError(f"conflicting historical evidence-class rank contract: {conflicts}")
+
     contract = {k: next(iter(v)) for k, v in observed.items()}
     if not contract:
-        raise RuntimeError("historical ranked artifact yielded no evidence-class rank contract")
-    return contract
+        raise RuntimeError("preserved replay artifacts yielded no evidence-class rank contract")
+    return contract, {k: sorted(v) for k, v in sorted(sources.items())}
 
 
 def _rank(row: dict[str, str], contract: dict[str, float]) -> float:
-    explicit = _first(row, "evidence_rank", "top_evidence_rank")
+    explicit = _rank_text(row)
     if explicit:
         return float(explicit)
     eclass = _eclass(row)
@@ -133,13 +162,24 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
     ranked_path = _find(root, "nid36_nhd_ranked_candidates_v2_4.csv")
     tie_path = _find(root, "nid36_nhd_top_evidence_ties_v2_4.csv")
     unresolved_path = _find(root, "nid36_nhd_unresolved_v2_4.csv")
+    relationship_candidate_path = _find(root, "nid36_nhd_relationship_candidate_universe_v3_0.csv")
 
     candidates = _rows(candidate_path)
     ledger = _rows(ledger_path)
     ranked = _rows(ranked_path)
     ties = _rows(tie_path)
     unresolved = _rows(unresolved_path)
-    base_contract = _build_rank_contract(ranked)
+    relationship_candidates = _rows(relationship_candidate_path)
+
+    preserved_artifacts = [
+        (candidate_path.name, candidates),
+        (ranked_path.name, ranked),
+        (tie_path.name, ties),
+        (unresolved_path.name, unresolved),
+        (ledger_path.name, ledger),
+        (relationship_candidate_path.name, relationship_candidates),
+    ]
+    base_contract, rank_contract_evidence = _build_rank_contract(preserved_artifacts)
 
     groups: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in candidates:
@@ -158,11 +198,9 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
         trials = _trial_values(list(base_contract.values()))
         per_trial = []
         signatures_by_nid: dict[str, set[tuple[Any, ...]]] = {nid: set() for nid in affected}
-        decisions_by_trial: dict[float, dict[str, dict[str, Any]]] = {}
         for trial in trials:
             contract = {**base_contract, unknown: trial}
             trial_decisions = {nid: _decision(groups[nid], contract) for nid in affected}
-            decisions_by_trial[trial] = trial_decisions
             for nid, d in trial_decisions.items():
                 signatures_by_nid[nid].add(_signature(d))
             per_trial.append({"assigned_rank": trial, "decisions": [{"nid_id": n, **trial_decisions[n]} for n in affected]})
@@ -177,15 +215,16 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
         }
         if not invariant:
             report = {
-                "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_3",
+                "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_4",
                 "snapshot_root": str(root),
                 "downloads_folder_required": False,
                 "network_required": False,
-                "replay_scope": "LOGICAL_DECISION_PROJECTION_WITH_RANK_UNCERTAINTY",
+                "replay_scope": "LOGICAL_DECISION_PROJECTION_FROM_PRESERVED_RANK_FIELDS",
                 "historical_transform_source_code_preserved": False,
                 "byte_identical_regeneration_claimed": False,
-                "rank_contract_source": "BOUND_HISTORICAL_RANKED_CANDIDATE_ARTIFACT_PLUS_EXHAUSTIVE_UNKNOWN_RANK_SENSITIVITY",
+                "rank_contract_source": "ALL_BOUND_HISTORICAL_ARTIFACTS_WITH_EXPLICIT_RANK_FIELDS",
                 "rank_contract": dict(sorted(base_contract.items())),
+                "rank_contract_evidence": rank_contract_evidence,
                 "unpreserved_rank_classes": unknown_classes,
                 "rank_uncertainty_sensitivity": sensitivity,
                 "state": "BLOCKED_STEP4_RANK_UNCERTAINTY_CHANGES_DECISION",
@@ -193,8 +232,6 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
             return report
-        # Any trial is safe for computing unaffected numeric top ranks because the
-        # affected logical decisions are proven invariant across every ordering/tie regime.
         chosen_contract[unknown] = trials[0]
 
     replayed = {nid: {"nid_id": nid, **_decision(rows, chosen_contract)} for nid, rows in sorted(groups.items())}
@@ -211,10 +248,9 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
         frozen_pid = _first(frozen, "nhd_permanent_identifier", "source_b_id") or None
         if decision["winner_pid"] is not None and frozen_pid != decision["winner_pid"]:
             mismatches.append({"nid_id": nid, "field": "winner_pid", "replayed": decision["winner_pid"], "frozen": frozen_pid})
-        # Compare numeric top rank only when the top class has a preserved rank.
         top_classes = {_eclass(r) for r in groups[nid] if _pid(r) in decision["top_pids"]}
         if not (top_classes & set(unknown_classes)):
-            frozen_rank = _first(frozen, "top_evidence_rank", "evidence_rank")
+            frozen_rank = _first(frozen, "top_evidence_rank", "evidence_rank", "_top_evidence_rank", "_evidence_rank")
             if frozen_rank and float(frozen_rank) != decision["top_rank"]:
                 mismatches.append({"nid_id": nid, "field": "top_evidence_rank", "replayed": decision["top_rank"], "frozen": float(frozen_rank)})
         frozen_hard = _truth(_first(frozen, "v4_hard_binding", "explicit_hard_binding", "hard_binding"))
@@ -225,22 +261,28 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
         mismatches.append({"nid_id": nid, "field": "candidate_group", "replayed": "missing", "frozen": "present"})
 
     denominator = {
-        "candidate_groups": len(groups), "ledger_rows": len(ledger),
-        "ranked_rows": len(ranked), "tie_rows": len(ties), "unresolved_rows": len(unresolved),
+        "candidate_groups": len(groups),
+        "candidate_rows": len(candidates),
+        "relationship_candidate_rows": len(relationship_candidates),
+        "ledger_rows": len(ledger),
+        "ranked_rows": len(ranked),
+        "tie_rows": len(ties),
+        "unresolved_rows": len(unresolved),
     }
     denominator_pass = len(groups) == 36 and len(ledger) == 36
     sensitivity_pass = not unknown_classes or sensitivity.get("decision_invariant_across_all_rank_regimes") is True
 
     report = {
-        "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_3",
+        "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_4",
         "snapshot_root": str(root),
         "downloads_folder_required": False,
         "network_required": False,
-        "replay_scope": "LOGICAL_DECISION_PROJECTION_WITH_RANK_UNCERTAINTY",
+        "replay_scope": "LOGICAL_DECISION_PROJECTION_FROM_PRESERVED_RANK_FIELDS",
         "historical_transform_source_code_preserved": False,
         "byte_identical_regeneration_claimed": False,
-        "rank_contract_source": "BOUND_HISTORICAL_RANKED_CANDIDATE_ARTIFACT_PLUS_EXHAUSTIVE_UNKNOWN_RANK_SENSITIVITY",
+        "rank_contract_source": "ALL_BOUND_HISTORICAL_ARTIFACTS_WITH_EXPLICIT_RANK_FIELDS",
         "rank_contract": dict(sorted(base_contract.items())),
+        "rank_contract_evidence": rank_contract_evidence,
         "unpreserved_rank_classes": unknown_classes,
         "rank_uncertainty_sensitivity": sensitivity,
         "rank_uncertainty_invariant": sensitivity_pass,
