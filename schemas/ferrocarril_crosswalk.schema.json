@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiderweb-pr/schemas/ferrocarril_crosswalk.schema.json",
+  "title": "Ferrocarril source-to-canonical crosswalk row",
+  "type": "object",
+  "required": [
+    "source_feature_id",
+    "canonical_id",
+    "identity_relation",
+    "certification_state",
+    "coordinate_status",
+    "provenance_locator"
+  ],
+  "properties": {
+    "source_feature_id": {"type": "string", "pattern": "^FERRO-[0-9]{4,}$"},
+    "canonical_id": {"type": "string"},
+    "identity_relation": {"enum": ["1:1", "1:N", "N:1", "N:N", "0:1", "UNRESOLVED"]},
+    "certification_state": {"enum": ["CERTIFIED", "PROVISIONAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED", "SUPERSEDED", "NONCANONICAL"]},
+    "coordinate_status": {"enum": ["EXACT", "BOUNDED", "APPROXIMATE", "UNRESOLVED"]},
+    "provenance_locator": {"type": "string"}
+  },
+  "additionalProperties": false
+}
