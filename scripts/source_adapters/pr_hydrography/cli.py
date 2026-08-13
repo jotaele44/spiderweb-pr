@@ -86,9 +86,7 @@ def _utc_now() -> str:
 
 def _load_latest(manifest_root: Path, source_id: str) -> dict[str, Any] | None:
     path = manifest_root / source_id / "latest_snapshot.json"
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
 def _write_latest(manifest_root: Path, record: object) -> None:
@@ -98,7 +96,18 @@ def _write_latest(manifest_root: Path, record: object) -> None:
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
-def _snapshot_payload(source_id: str, payload: bytes, *, params: dict[str, Any], runtime_root: Path, manifest_root: Path, extension: str, schema_fp: str, source_update_date: str = "", refresh: bool = False) -> dict[str, Any]:
+def _snapshot_payload(
+    source_id: str,
+    payload: bytes,
+    *,
+    params: dict[str, Any],
+    runtime_root: Path,
+    manifest_root: Path,
+    extension: str,
+    schema_fp: str,
+    source_update_date: str = "",
+    refresh: bool = False,
+) -> dict[str, Any]:
     spec = SOURCE_SPECS[source_id]
     previous_data = _load_latest(manifest_root, source_id)
     previous = None
@@ -106,14 +115,31 @@ def _snapshot_payload(source_id: str, payload: bytes, *, params: dict[str, Any],
         from .core import SnapshotRecord
         previous = SnapshotRecord(**previous_data)
     digest = sha256_bytes(payload)
-    decision = decide_refresh(previous, remote_sha256=digest, remote_schema_fingerprint=schema_fp, source_update_date=source_update_date)
+    decision = decide_refresh(
+        previous,
+        remote_sha256=digest,
+        remote_schema_fingerprint=schema_fp,
+        source_update_date=source_update_date,
+    )
     if refresh and decision.startswith("NO_CHANGE"):
         return {"source_id": source_id, "decision": decision, "snapshot": previous_data}
     if decision == "BLOCKED_SCHEMA_DRIFT":
-        return {"source_id": source_id, "decision": decision, "previous_schema": previous.schema_fingerprint if previous else "", "remote_schema": schema_fp}
+        return {
+            "source_id": source_id,
+            "decision": decision,
+            "previous_schema": previous.schema_fingerprint if previous else "",
+            "remote_schema": schema_fp,
+        }
     store = ImmutableSnapshotStore(runtime_root)
-    sig = request_signature(source_id, "GET", params)
-    record = store.write(spec, payload, request_sig=sig, schema_fp=schema_fp, source_update_date=source_update_date, parent_snapshot=previous.snapshot_id if previous else "", extension=extension)
+    record = store.write(
+        spec,
+        payload,
+        request_sig=request_signature(source_id, "GET", params),
+        schema_fp=schema_fp,
+        source_update_date=source_update_date,
+        parent_snapshot=previous.snapshot_id if previous else "",
+        extension=extension,
+    )
     _write_latest(manifest_root, record)
     return {"source_id": source_id, "decision": decision, "snapshot": asdict(record)}
 
@@ -159,7 +185,12 @@ def _atomic_exact_write(path: Path, payload: bytes) -> None:
 
 def _receipt_id(source_id: str, requested_url: str, payload: bytes, retrieval_utc: str) -> str:
     canonical = json.dumps(
-        {"source_id": source_id, "requested_url": requested_url, "raw_bytes_sha256": sha256_bytes(payload), "retrieval_utc": retrieval_utc},
+        {
+            "source_id": source_id,
+            "requested_url": requested_url,
+            "raw_bytes_sha256": sha256_bytes(payload),
+            "retrieval_utc": retrieval_utc,
+        },
         sort_keys=True,
         separators=(",", ":"),
     ).encode()
@@ -190,9 +221,12 @@ def fetch_with_receipt(
     network_error = False
     forced_state = ""
 
-    request = urllib.request.Request(requested_url, headers={"User-Agent": "spiderweb-pr-hydrography/0.2-step5a"})
+    request = urllib.request.Request(
+        requested_url,
+        headers={"User-Agent": "spiderweb-pr-hydrography/0.2-step5a"},
+    )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310 - authoritative public endpoints are registry-bound
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310 - registry-bound public endpoints
             payload = response.read()
             response_headers = _headers_dict(dict(response.headers.items()))
             final_url = response.geturl()
@@ -230,16 +264,10 @@ def fetch_with_receipt(
         expected_bytes=expected_bytes,
     )
     failure_class = step5a_failure_class(transport_state)
-
     receipt_token = _receipt_id(source_id, requested_url, payload, retrieval_utc)
     raw_path = raw_root / source_id / receipt_token / raw_name
     if payload:
-        try:
-            _atomic_exact_write(raw_path, payload)
-        except Exception as exc:
-            transport_state = "HASH_FAILURE"
-            failure_class = "HASH_FAILURE"
-            raise RuntimeError(f"HASH_FAILURE: {exc}") from exc
+        _atomic_exact_write(raw_path, payload)
 
     receipt = FetchReceipt(
         receipt_id=receipt_token,
@@ -278,7 +306,10 @@ def _hash_tree(root: Path) -> dict[str, str]:
     root = root.resolve()
     if not root.exists():
         raise FileNotFoundError(root)
-    return {str(path.relative_to(root)): sha256_file(path) for path in sorted(p for p in root.rglob("*") if p.is_file())}
+    return {
+        str(path.relative_to(root)): sha256_file(path)
+        for path in sorted(p for p in root.rglob("*") if p.is_file())
+    }
 
 
 def compare_parent_tree(before: Mapping[str, str], after: Mapping[str, str]) -> dict[str, Any]:
@@ -287,7 +318,72 @@ def compare_parent_tree(before: Mapping[str, str], after: Mapping[str, str]) -> 
     changed = sorted(k for k in before_keys & after_keys if before[k] != after[k])
     added = sorted(after_keys - before_keys)
     removed = sorted(before_keys - after_keys)
-    return {"changed": changed, "added": added, "removed": removed, "historical_parent_mutations": len(changed) + len(added) + len(removed)}
+    return {
+        "changed": changed,
+        "added": added,
+        "removed": removed,
+        "historical_parent_mutations": len(changed) + len(added) + len(removed),
+    }
+
+
+def audit_raw_receipt_accounting(raw_root: Path, receipts: list[dict[str, Any]]) -> dict[str, Any]:
+    """Independently inventory persisted responses so missing receipts cannot disappear."""
+    root = raw_root.resolve()
+    raw_files = sorted(p.resolve() for p in root.rglob("*") if p.is_file())
+    receipt_by_path: dict[Path, dict[str, Any]] = {}
+    duplicate_receipt_paths: list[str] = []
+    for receipt in receipts:
+        raw_path = str(receipt.get("raw_path") or "")
+        if not raw_path:
+            continue
+        path = Path(raw_path).resolve()
+        if path in receipt_by_path:
+            duplicate_receipt_paths.append(str(path))
+        else:
+            receipt_by_path[path] = receipt
+
+    raw_set = set(raw_files)
+    receipt_set = set(receipt_by_path)
+    orphan = sorted(raw_set - receipt_set)
+    missing = sorted(receipt_set - raw_set)
+    hash_mismatch: list[Path] = []
+    length_mismatch: list[Path] = []
+    outside_root: list[Path] = []
+
+    for path, receipt in sorted(receipt_by_path.items(), key=lambda item: str(item[0])):
+        try:
+            path.relative_to(root)
+        except ValueError:
+            outside_root.append(path)
+        if not path.exists():
+            continue
+        if path.stat().st_size != int(receipt.get("raw_bytes_length", -1)):
+            length_mismatch.append(path)
+        expected_hash = str(receipt.get("raw_bytes_sha256") or "")
+        if not expected_hash or sha256_file(path) != expected_hash:
+            hash_mismatch.append(path)
+
+    violations = set(orphan) | set(missing) | set(hash_mismatch) | set(length_mismatch) | set(outside_root)
+    unaccounted_bytes = 0
+    for path in violations:
+        if path.exists():
+            unaccounted_bytes += path.stat().st_size
+        elif path in receipt_by_path:
+            unaccounted_bytes += max(0, int(receipt_by_path[path].get("raw_bytes_length", 0)))
+
+    zero = unaccounted_bytes == 0 and not duplicate_receipt_paths and not violations
+    return {
+        "raw_file_denominator": len(raw_files),
+        "receipt_raw_path_denominator": len(receipt_set),
+        "orphan_raw_files": [str(p) for p in orphan],
+        "missing_receipt_targets": [str(p) for p in missing],
+        "hash_mismatch_receipt_targets": [str(p) for p in hash_mismatch],
+        "length_mismatch_receipt_targets": [str(p) for p in length_mismatch],
+        "receipt_targets_outside_run_root": [str(p) for p in outside_root],
+        "duplicate_receipt_paths": sorted(duplicate_receipt_paths),
+        "unaccounted_response_bytes": unaccounted_bytes,
+        "zero_unaccounted_response_bytes": zero,
+    }
 
 
 def _source_run_root(runtime_root: Path) -> Path:
@@ -300,8 +396,7 @@ def _source_run_root(runtime_root: Path) -> Path:
 def _append_receipt_set(manifest_root: Path, report: Mapping[str, Any]) -> Path:
     receipt_root = manifest_root / "live_receipts"
     receipt_root.mkdir(parents=True, exist_ok=True)
-    run_id = str(report["run_id"])
-    path = receipt_root / f"{run_id}.json"
+    path = receipt_root / f"{report['run_id']}.json"
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2, ensure_ascii=False, sort_keys=True)
@@ -309,23 +404,55 @@ def _append_receipt_set(manifest_root: Path, report: Mapping[str, Any]) -> Path:
     return path
 
 
-def pull_tiger(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_root: Path | None = None) -> dict[str, Any]:
+def pull_tiger(
+    runtime_root: Path,
+    manifest_root: Path,
+    refresh: bool,
+    *,
+    raw_root: Path | None = None,
+) -> dict[str, Any]:
     spec = SOURCE_SPECS["TIGER_PR_BOUNDARY"]
     raw_root = raw_root or _source_run_root(runtime_root)
-    fetched = fetch_with_receipt(source_id=spec.source_id, url=spec.endpoint, expected_content="zip", raw_root=raw_root, raw_name="tl_2025_us_state.zip")
+    fetched = fetch_with_receipt(
+        source_id=spec.source_id,
+        url=spec.endpoint,
+        expected_content="zip",
+        raw_root=raw_root,
+        raw_name="tl_2025_us_state.zip",
+    )
     _require_fetch_ok(fetched)
     with zipfile.ZipFile(Path(fetched.receipt.raw_path)) as zf:
         bad = zf.testzip()
         if bad is not None:
             raise RuntimeError(f"UNEXPECTED_MEDIA: corrupt TIGER member {bad}")
         names = sorted(zf.namelist())
-    schema_fp = sha256_bytes(json.dumps(names, separators=(",", ":")).encode())
-    result = _snapshot_payload(spec.source_id, fetched.payload, params={}, runtime_root=runtime_root, manifest_root=manifest_root, extension=".zip", schema_fp=schema_fp, source_update_date=fetched.receipt.last_modified, refresh=refresh)
-    result.update({"receipts": [asdict(fetched.receipt)], "raw_remote_zip_preserved_verbatim": True, "zip_valid": True, "repacked": False})
+    result = _snapshot_payload(
+        spec.source_id,
+        fetched.payload,
+        params={},
+        runtime_root=runtime_root,
+        manifest_root=manifest_root,
+        extension=".zip",
+        schema_fp=sha256_bytes(json.dumps(names, separators=(",", ":")).encode()),
+        source_update_date=fetched.receipt.last_modified,
+        refresh=refresh,
+    )
+    result.update({
+        "receipts": [asdict(fetched.receipt)],
+        "raw_remote_zip_preserved_verbatim": True,
+        "zip_valid": True,
+        "repacked": False,
+    })
     return result
 
 
-def pull_nhd(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_root: Path | None = None) -> dict[str, Any]:
+def pull_nhd(
+    runtime_root: Path,
+    manifest_root: Path,
+    refresh: bool,
+    *,
+    raw_root: Path | None = None,
+) -> dict[str, Any]:
     spec = SOURCE_SPECS["USGS_NHD_WATERBODY"]
     raw_root = raw_root or _source_run_root(runtime_root)
     page_receipts: list[FetchReceipt] = []
@@ -355,12 +482,15 @@ def pull_nhd(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_root
 
     accounted = sum(receipt.raw_bytes_length for receipt in page_receipts)
     persisted = sum(Path(receipt.raw_path).stat().st_size for receipt in page_receipts)
-    hash_mismatches = sum(sha256_file(Path(receipt.raw_path)) != receipt.raw_bytes_sha256 for receipt in page_receipts)
+    hash_mismatches = sum(
+        sha256_file(Path(receipt.raw_path)) != receipt.raw_bytes_sha256
+        for receipt in page_receipts
+    )
     closure = accounted == persisted and hash_mismatches == 0
     if not closure:
         raise RuntimeError("HASH_FAILURE: NHD raw-page hash accounting closure failed")
 
-    rows = []
+    rows: list[dict[str, Any]] = []
     for feature in all_features:
         row = dict(feature.get("properties") or {})
         row["__geometry__"] = feature.get("geometry")
@@ -373,8 +503,21 @@ def pull_nhd(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_root
         "feature_count": len(all_features),
         "features": all_features,
     }
-    derivative_payload = json.dumps(derivative, ensure_ascii=False, separators=(",", ":")).encode()
-    result = _snapshot_payload(spec.source_id, derivative_payload, params=nhd_query_params(offset=0), runtime_root=runtime_root, manifest_root=manifest_root, extension=".json", schema_fp=schema_fingerprint(rows), refresh=refresh)
+    derivative_payload = json.dumps(
+        derivative,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode()
+    result = _snapshot_payload(
+        spec.source_id,
+        derivative_payload,
+        params=nhd_query_params(offset=0),
+        runtime_root=runtime_root,
+        manifest_root=manifest_root,
+        extension=".json",
+        schema_fp=schema_fingerprint(rows),
+        refresh=refresh,
+    )
     result.update({
         "receipts": [asdict(receipt) for receipt in page_receipts],
         "raw_page_count": len(page_receipts),
@@ -387,31 +530,73 @@ def pull_nhd(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_root
     return result
 
 
-def pull_nid(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_root: Path | None = None) -> dict[str, Any]:
+def pull_nid(
+    runtime_root: Path,
+    manifest_root: Path,
+    refresh: bool,
+    *,
+    raw_root: Path | None = None,
+) -> dict[str, Any]:
     spec = SOURCE_SPECS["USACE_NID_DAMS"]
     raw_root = raw_root or _source_run_root(runtime_root)
     params = nid_query_params()
-    fetched = fetch_with_receipt(source_id=spec.source_id, url=spec.endpoint, params=params, expected_content="geojson", raw_root=raw_root, raw_name="nid_pr.geojson")
+    fetched = fetch_with_receipt(
+        source_id=spec.source_id,
+        url=spec.endpoint,
+        params=params,
+        expected_content="geojson",
+        raw_root=raw_root,
+        raw_name="nid_pr.geojson",
+    )
     _require_fetch_ok(fetched)
-    try:
-        rows = geojson_feature_rows(fetched.payload)
-    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"SCHEMA_CHANGED: NID GeoJSON parse failed: {exc}") from exc
-    result = _snapshot_payload(spec.source_id, fetched.payload, params=params, runtime_root=runtime_root, manifest_root=manifest_root, extension=".geojson", schema_fp=schema_fingerprint(rows), source_update_date=fetched.receipt.last_modified, refresh=refresh)
-    result.update({"receipts": [asdict(fetched.receipt)], "raw_geojson_preserved_verbatim": True, "normalization_derivative_only": True})
+    data = json.loads(fetched.payload.decode("utf-8"))
+    if "features" not in data or not isinstance(data["features"], list):
+        raise RuntimeError("SCHEMA_CHANGED: NID GeoJSON features is absent or not a list")
+    rows = geojson_feature_rows(fetched.payload)
+    result = _snapshot_payload(
+        spec.source_id,
+        fetched.payload,
+        params=params,
+        runtime_root=runtime_root,
+        manifest_root=manifest_root,
+        extension=".geojson",
+        schema_fp=schema_fingerprint(rows),
+        source_update_date=fetched.receipt.last_modified,
+        refresh=refresh,
+    )
+    result.update({
+        "receipts": [asdict(fetched.receipt)],
+        "raw_geojson_preserved_verbatim": True,
+        "normalization_derivative_only": True,
+    })
     return result
 
 
-def pull_bathy(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_root: Path | None = None) -> dict[str, Any]:
+def pull_bathy(
+    runtime_root: Path,
+    manifest_root: Path,
+    refresh: bool,
+    *,
+    raw_root: Path | None = None,
+) -> dict[str, Any]:
     spec = SOURCE_SPECS["USGS_INLAND_BATHY_V4"]
     raw_root = raw_root or _source_run_root(runtime_root)
-    metadata = fetch_with_receipt(source_id=spec.source_id, url=spec.endpoint, expected_content="sciencebase-item-json", raw_root=raw_root, raw_name="sciencebase_item.json", relation="SCIENCEBASE_ITEM_METADATA")
+    metadata = fetch_with_receipt(
+        source_id=spec.source_id,
+        url=spec.endpoint,
+        expected_content="sciencebase-item-json",
+        raw_root=raw_root,
+        raw_name="sciencebase_item.json",
+        relation="SCIENCEBASE_ITEM_METADATA",
+    )
     _require_fetch_ok(metadata)
     try:
         item = json.loads(metadata.payload.decode("utf-8"))
         file_url = sciencebase_file_url(item)
     except (UnicodeDecodeError, json.JSONDecodeError, RuntimeError) as exc:
-        raise RuntimeError(f"SCHEMA_CHANGED: ScienceBase item could not resolve canonical v4 file: {exc}") from exc
+        raise RuntimeError(
+            f"SCHEMA_CHANGED: ScienceBase item could not resolve canonical v4 file: {exc}"
+        ) from exc
     archive = fetch_with_receipt(
         source_id=spec.source_id,
         url=file_url,
@@ -427,8 +612,17 @@ def pull_bathy(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_ro
         if bad is not None:
             raise RuntimeError(f"UNEXPECTED_MEDIA: corrupt Inland Bathymetry member {bad}")
         names = sorted(zf.namelist())
-    schema_fp = sha256_bytes(json.dumps(names, separators=(",", ":")).encode())
-    result = _snapshot_payload(spec.source_id, archive.payload, params={"sciencebase_item": spec.endpoint, "resolved_file_url": file_url}, runtime_root=runtime_root, manifest_root=manifest_root, extension=".zip", schema_fp=schema_fp, source_update_date=metadata.receipt.last_modified, refresh=refresh)
+    result = _snapshot_payload(
+        spec.source_id,
+        archive.payload,
+        params={"sciencebase_item": spec.endpoint, "resolved_file_url": file_url},
+        runtime_root=runtime_root,
+        manifest_root=manifest_root,
+        extension=".zip",
+        schema_fp=sha256_bytes(json.dumps(names, separators=(",", ":")).encode()),
+        source_update_date=metadata.receipt.last_modified,
+        refresh=refresh,
+    )
     result.update({
         "receipts": [asdict(metadata.receipt), asdict(archive.receipt)],
         "sciencebase_item_preserved_verbatim": True,
@@ -440,32 +634,58 @@ def pull_bathy(runtime_root: Path, manifest_root: Path, refresh: bool, *, raw_ro
     return result
 
 
-PULLERS = {"tiger": pull_tiger, "nhd": pull_nhd, "nid": pull_nid, "inland-bathy": pull_bathy}
+PULLERS = {
+    "tiger": pull_tiger,
+    "nhd": pull_nhd,
+    "nid": pull_nid,
+    "inland-bathy": pull_bathy,
+}
 
 
 def step5a_readiness() -> dict[str, Any]:
     receipt_fields = set(FetchReceipt.__dataclass_fields__)
     required_receipt_fields = {
-        "requested_url", "final_url", "http_status", "response_headers", "content_type", "content_length",
-        "etag", "last_modified", "retrieval_utc", "fetch_backend", "fetch_backend_version",
-        "raw_bytes_sha256", "raw_bytes_length",
+        "requested_url",
+        "final_url",
+        "http_status",
+        "response_headers",
+        "content_type",
+        "content_length",
+        "etag",
+        "last_modified",
+        "retrieval_utc",
+        "fetch_backend",
+        "fetch_backend_version",
+        "raw_bytes_sha256",
+        "raw_bytes_length",
     }
     gates = {
         "four_primary_pullers_hardened": set(PULLERS) == {"tiger", "nhd", "nid", "inland-bathy"},
         "structured_fetch_receipt_complete": required_receipt_fields <= receipt_fields,
         "failure_ontology_complete": STEP5A_FAILURE_CLASSES == {
-            "SOURCE_UNAVAILABLE", "UNEXPECTED_MEDIA", "SOURCE_EMPTY", "PARTIAL_RESPONSE",
-            "REDIRECT_FAILURE", "HASH_FAILURE", "SCHEMA_CHANGED", "UNCLASSIFIED",
+            "SOURCE_UNAVAILABLE",
+            "UNEXPECTED_MEDIA",
+            "SOURCE_EMPTY",
+            "PARTIAL_RESPONSE",
+            "REDIRECT_FAILURE",
+            "HASH_FAILURE",
+            "SCHEMA_CHANGED",
+            "UNCLASSIFIED",
         },
         "append_only_raw_writer": callable(_atomic_exact_write),
         "parent_immutability_hashing": callable(_hash_tree) and callable(compare_parent_tree),
+        "raw_byte_denominator_inventory": callable(audit_raw_receipt_accounting),
         "append_only_receipt_writer": callable(_append_receipt_set),
     }
     return {
         "schema": STEP5A_SCHEMA,
         "pass_parent": STEP5A_PASS_PARENT,
         "gates": gates,
-        "state": "PASS_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY" if all(gates.values()) else "BLOCKED_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY",
+        "state": (
+            "PASS_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY"
+            if all(gates.values())
+            else "BLOCKED_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY"
+        ),
     }
 
 
@@ -483,28 +703,45 @@ def _run_pull(args: argparse.Namespace, *, refresh: bool) -> int:
 
     for source in sources:
         try:
-            results.append(PULLERS[source](runtime_root, manifest_root, refresh, raw_root=raw_root))
+            result = PULLERS[source](runtime_root, manifest_root, refresh, raw_root=raw_root)
+            results.append(result)
+            if result.get("decision") == "BLOCKED_SCHEMA_DRIFT":
+                failure_records.append({
+                    "source": source,
+                    "failure_class": "SCHEMA_CHANGED",
+                    "error": "BLOCKED_SCHEMA_DRIFT",
+                })
         except FetchFailure as exc:
             failure_receipts.append(asdict(exc.receipt))
-            failure_records.append({"source": source, "failure_class": exc.receipt.failure_class, "error": str(exc)})
+            failure_records.append({
+                "source": source,
+                "failure_class": exc.receipt.failure_class,
+                "error": str(exc),
+            })
         except Exception as exc:
             token = str(exc).split(":", 1)[0]
             failure_class = token if token in STEP5A_FAILURE_CLASSES else "UNCLASSIFIED"
-            failure_records.append({"source": source, "failure_class": failure_class, "error": str(exc)})
+            failure_records.append({
+                "source": source,
+                "failure_class": failure_class,
+                "error": str(exc),
+            })
 
     parent_after = _hash_tree(parent_root)
     parent_immutability = compare_parent_tree(parent_before, parent_after)
     receipts = [receipt for result in results for receipt in result.get("receipts", [])] + failure_receipts
-    unaccounted_response_bytes = sum(
-        int(receipt.get("raw_bytes_length", 0))
-        for receipt in receipts
-        if int(receipt.get("raw_bytes_length", 0)) > 0 and (not receipt.get("raw_path") or not Path(str(receipt["raw_path"])).exists())
+    raw_accounting = audit_raw_receipt_accounting(raw_root, receipts)
+    unaccounted_response_bytes = int(raw_accounting["unaccounted_response_bytes"])
+    orphan_count = len(raw_accounting["orphan_raw_files"])
+    unclassified_fetch_outcomes = (
+        sum(receipt.get("failure_class") == "UNCLASSIFIED" for receipt in receipts)
+        + sum(record["failure_class"] == "UNCLASSIFIED" for record in failure_records)
+        + orphan_count
     )
-    unclassified_fetch_outcomes = sum(receipt.get("failure_class") == "UNCLASSIFIED" for receipt in receipts) + sum(record["failure_class"] == "UNCLASSIFIED" for record in failure_records)
     silent_substitutions = 0
     gates = {
         "silent_substitutions_zero": silent_substitutions == 0,
-        "unaccounted_response_bytes_zero": unaccounted_response_bytes == 0,
+        "unaccounted_response_bytes_zero": raw_accounting["zero_unaccounted_response_bytes"],
         "unclassified_fetch_outcomes_zero": unclassified_fetch_outcomes == 0,
         "historical_parent_mutations_zero": parent_immutability["historical_parent_mutations"] == 0,
         "all_requested_sources_completed": not failure_records and len(results) == len(sources),
@@ -516,13 +753,18 @@ def _run_pull(args: argparse.Namespace, *, refresh: bool) -> int:
         "source_results": results,
         "receipts": receipts,
         "failure_records": failure_records,
+        "raw_byte_accounting": raw_accounting,
         "parent_immutability": parent_immutability,
         "silent_substitutions": silent_substitutions,
         "unaccounted_response_bytes": unaccounted_response_bytes,
         "unclassified_fetch_outcomes": unclassified_fetch_outcomes,
         "historical_parent_mutations": parent_immutability["historical_parent_mutations"],
         "gates": gates,
-        "state": "PASS_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY" if all(gates.values()) else "BLOCKED_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY",
+        "state": (
+            "PASS_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY"
+            if all(gates.values())
+            else "BLOCKED_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY"
+        ),
     }
     receipt_set_path = _append_receipt_set(manifest_root, report)
     report["receipt_set_path"] = str(receipt_set_path)
@@ -540,7 +782,11 @@ def _load_json_rows(path: Path) -> list[dict[str, Any]]:
 
 
 def _certify(args: argparse.Namespace) -> int:
-    result = certify_baselines(nhd_rows=_load_json_rows(Path(args.nhd_rows)), nid_rows=_load_json_rows(Path(args.nid_rows)), v4_rows=_load_json_rows(Path(args.v4_rows)))
+    result = certify_baselines(
+        nhd_rows=_load_json_rows(Path(args.nhd_rows)),
+        nid_rows=_load_json_rows(Path(args.nid_rows)),
+        v4_rows=_load_json_rows(Path(args.v4_rows)),
+    )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
@@ -549,8 +795,7 @@ def _certify(args: argparse.Namespace) -> int:
 
 
 def _resolve(args: argparse.Namespace) -> int:
-    document = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    result = resolve_document(document)
+    result = resolve_document(json.loads(Path(args.input).read_text(encoding="utf-8")))
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -591,7 +836,13 @@ def _reproduce(args: argparse.Namespace) -> int:
 
 
 def _bind_historical(args: argparse.Namespace) -> int:
-    record = bind_historical_file(Path(args.path), source_id=args.source_id, expected_sha256=args.expected_sha256, media_type=args.media_type, original_certification=args.original_certification)
+    record = bind_historical_file(
+        Path(args.path),
+        source_id=args.source_id,
+        expected_sha256=args.expected_sha256,
+        media_type=args.media_type,
+        original_certification=args.original_certification,
+    )
     print(json.dumps(asdict(record), indent=2))
     return 0 if record.binding_state == "EXACT_HASH_MATCH" else 5
 
@@ -616,7 +867,10 @@ def build_parser() -> argparse.ArgumentParser:
     certify.add_argument("--nhd-rows", required=True)
     certify.add_argument("--nid-rows", required=True)
     certify.add_argument("--v4-rows", required=True)
-    certify.add_argument("--output", default="manifests/pr_hydrography/runtime/baseline_certification.json")
+    certify.add_argument(
+        "--output",
+        default="manifests/pr_hydrography/runtime/baseline_certification.json",
+    )
 
     resolve = sub.add_parser("resolve-relationships")
     resolve.add_argument("--input", required=True)
