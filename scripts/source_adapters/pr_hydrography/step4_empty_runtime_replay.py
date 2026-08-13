@@ -55,19 +55,12 @@ def _eclass(row: dict[str, str]) -> str:
 
 
 def _build_rank_contract(ranked_rows: list[dict[str, str]]) -> dict[str, float]:
-    """Recover the preserved evidence-class ordering without guessing.
-
-    Historical candidate-universe rows do not all carry a numeric evidence rank.
-    The frozen ranked-candidate artifact preserves the class/rank pairing.  Every
-    observed class must map to exactly one numeric rank or replay fails closed.
-    """
     observed: dict[str, set[float]] = defaultdict(set)
     for row in ranked_rows:
         eclass = _eclass(row)
         rank_text = _first(row, "evidence_rank", "top_evidence_rank")
-        if not eclass or not rank_text:
-            continue
-        observed[eclass].add(float(rank_text))
+        if eclass and rank_text:
+            observed[eclass].add(float(rank_text))
     conflicts = {k: sorted(v) for k, v in observed.items() if len(v) != 1}
     if conflicts:
         raise RuntimeError(f"conflicting historical evidence-class rank contract: {conflicts}")
@@ -77,19 +70,60 @@ def _build_rank_contract(ranked_rows: list[dict[str, str]]) -> dict[str, float]:
     return contract
 
 
-def _rank(row: dict[str, str], rank_contract: dict[str, float]) -> float:
-    value = _first(row, "evidence_rank", "top_evidence_rank")
-    if value != "":
-        return float(value)
+def _rank(row: dict[str, str], contract: dict[str, float]) -> float:
+    explicit = _first(row, "evidence_rank", "top_evidence_rank")
+    if explicit:
+        return float(explicit)
     eclass = _eclass(row)
-    if not eclass:
-        raise RuntimeError(f"candidate row has neither evidence rank nor evidence class: nid={_nid(row)} pid={_pid(row)}")
-    if eclass not in rank_contract:
-        raise RuntimeError(
-            f"candidate evidence class absent from preserved rank contract: "
-            f"nid={_nid(row)} pid={_pid(row)} evidence_class={eclass!r}"
-        )
-    return rank_contract[eclass]
+    if not eclass or eclass not in contract:
+        raise RuntimeError(f"rank unresolved for nid={_nid(row)} pid={_pid(row)} evidence_class={eclass!r}")
+    return contract[eclass]
+
+
+def _decision(rows: list[dict[str, str]], contract: dict[str, float]) -> dict[str, Any]:
+    ordered = sorted(rows, key=lambda r: (_rank(r, contract), _pid(r)))
+    top_rank = _rank(ordered[0], contract)
+    top = [r for r in ordered if _rank(r, contract) == top_rank]
+    tie = len(top) > 1
+    winner = None
+    state = "TOP_EVIDENCE_TIE" if tie else ""
+    if not tie:
+        candidate = top[0]
+        if _hard(candidate):
+            winner = candidate
+            state = "PREFERRED_HARD_BINDING"
+        elif _eclass(candidate).upper().startswith("DISTANCE_ONLY"):
+            state = "UNRESOLVED_PROXIMITY_ONLY"
+        else:
+            winner = candidate
+            state = "PREFERRED_EVIDENCE_WINNER"
+    return {
+        "candidate_count": len(rows),
+        "top_rank": top_rank,
+        "top_tie": tie,
+        "top_pids": sorted(_pid(r) for r in top),
+        "winner_pid": _pid(winner) if winner else None,
+        "winner_evidence_class": _eclass(winner) if winner else None,
+        "winner_hard_binding": _hard(winner) if winner else False,
+        "state": state,
+    }
+
+
+def _signature(d: dict[str, Any]) -> tuple[Any, ...]:
+    return (
+        d["top_tie"], tuple(d["top_pids"]), d["winner_pid"],
+        d["winner_evidence_class"], d["winner_hard_binding"], d["state"],
+    )
+
+
+def _trial_values(known: list[float]) -> list[float]:
+    vals = sorted(set(known))
+    trials = {vals[0] - 1.0, vals[-1] + 1.0}
+    for v in vals:
+        trials.add(v)
+    for a, b in zip(vals, vals[1:]):
+        trials.add((a + b) / 2.0)
+    return sorted(trials)
 
 
 def replay(root: Path, output: Path) -> dict[str, Any]:
@@ -105,42 +139,65 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
     ranked = _rows(ranked_path)
     ties = _rows(tie_path)
     unresolved = _rows(unresolved_path)
-    rank_contract = _build_rank_contract(ranked)
+    base_contract = _build_rank_contract(ranked)
 
     groups: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in candidates:
         groups[_nid(row)].append(row)
 
-    replayed: dict[str, dict[str, Any]] = {}
-    for nid, rows in sorted(groups.items()):
-        ordered = sorted(rows, key=lambda r: (_rank(r, rank_contract), _pid(r)))
-        top_rank = _rank(ordered[0], rank_contract)
-        top = [r for r in ordered if _rank(r, rank_contract) == top_rank]
-        tie = len(top) > 1
-        winner = None
-        state = "TOP_EVIDENCE_TIE" if tie else ""
-        if not tie:
-            candidate = top[0]
-            if _hard(candidate):
-                winner = candidate
-                state = "PREFERRED_HARD_BINDING"
-            elif _eclass(candidate).upper().startswith("DISTANCE_ONLY"):
-                state = "UNRESOLVED_PROXIMITY_ONLY"
-            else:
-                winner = candidate
-                state = "PREFERRED_EVIDENCE_WINNER"
-        replayed[nid] = {
-            "nid_id": nid,
-            "candidate_count": len(rows),
-            "top_rank": top_rank,
-            "top_tie": tie,
-            "top_pids": sorted(_pid(r) for r in top),
-            "winner_pid": _pid(winner) if winner else None,
-            "winner_evidence_class": _eclass(winner) if winner else None,
-            "winner_hard_binding": _hard(winner) if winner else False,
-            "state": state,
-        }
+    candidate_classes = sorted({_eclass(r) for r in candidates if _eclass(r)})
+    unknown_classes = sorted(set(candidate_classes) - set(base_contract))
+    if len(unknown_classes) > 1:
+        raise RuntimeError(f"multiple unpreserved evidence classes require multidimensional sensitivity replay: {unknown_classes}")
 
+    sensitivity: dict[str, Any] = {}
+    chosen_contract = dict(base_contract)
+    if unknown_classes:
+        unknown = unknown_classes[0]
+        affected = sorted(nid for nid, rows in groups.items() if any(_eclass(r) == unknown for r in rows))
+        trials = _trial_values(list(base_contract.values()))
+        per_trial = []
+        signatures_by_nid: dict[str, set[tuple[Any, ...]]] = {nid: set() for nid in affected}
+        decisions_by_trial: dict[float, dict[str, dict[str, Any]]] = {}
+        for trial in trials:
+            contract = {**base_contract, unknown: trial}
+            trial_decisions = {nid: _decision(groups[nid], contract) for nid in affected}
+            decisions_by_trial[trial] = trial_decisions
+            for nid, d in trial_decisions.items():
+                signatures_by_nid[nid].add(_signature(d))
+            per_trial.append({"assigned_rank": trial, "decisions": [{"nid_id": n, **trial_decisions[n]} for n in affected]})
+        invariant = all(len(sigs) == 1 for sigs in signatures_by_nid.values())
+        sensitivity = {
+            "unknown_class": unknown,
+            "affected_nids": affected,
+            "trial_ranks_cover_all_order_and_tie_regimes": trials,
+            "decision_invariant_across_all_rank_regimes": invariant,
+            "distinct_decision_signature_count_by_nid": {n: len(s) for n, s in signatures_by_nid.items()},
+            "trials": per_trial,
+        }
+        if not invariant:
+            report = {
+                "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_3",
+                "snapshot_root": str(root),
+                "downloads_folder_required": False,
+                "network_required": False,
+                "replay_scope": "LOGICAL_DECISION_PROJECTION_WITH_RANK_UNCERTAINTY",
+                "historical_transform_source_code_preserved": False,
+                "byte_identical_regeneration_claimed": False,
+                "rank_contract_source": "BOUND_HISTORICAL_RANKED_CANDIDATE_ARTIFACT_PLUS_EXHAUSTIVE_UNKNOWN_RANK_SENSITIVITY",
+                "rank_contract": dict(sorted(base_contract.items())),
+                "unpreserved_rank_classes": unknown_classes,
+                "rank_uncertainty_sensitivity": sensitivity,
+                "state": "BLOCKED_STEP4_RANK_UNCERTAINTY_CHANGES_DECISION",
+            }
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+            return report
+        # Any trial is safe for computing unaffected numeric top ranks because the
+        # affected logical decisions are proven invariant across every ordering/tie regime.
+        chosen_contract[unknown] = trials[0]
+
+    replayed = {nid: {"nid_id": nid, **_decision(rows, chosen_contract)} for nid, rows in sorted(groups.items())}
     frozen_by_nid = {_nid(row): row for row in ledger}
     mismatches: list[dict[str, Any]] = []
     for nid, decision in replayed.items():
@@ -154,43 +211,45 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
         frozen_pid = _first(frozen, "nhd_permanent_identifier", "source_b_id") or None
         if decision["winner_pid"] is not None and frozen_pid != decision["winner_pid"]:
             mismatches.append({"nid_id": nid, "field": "winner_pid", "replayed": decision["winner_pid"], "frozen": frozen_pid})
-        frozen_rank = _first(frozen, "top_evidence_rank", "evidence_rank")
-        if frozen_rank and float(frozen_rank) != decision["top_rank"]:
-            mismatches.append({"nid_id": nid, "field": "top_evidence_rank", "replayed": decision["top_rank"], "frozen": float(frozen_rank)})
+        # Compare numeric top rank only when the top class has a preserved rank.
+        top_classes = {_eclass(r) for r in groups[nid] if _pid(r) in decision["top_pids"]}
+        if not (top_classes & set(unknown_classes)):
+            frozen_rank = _first(frozen, "top_evidence_rank", "evidence_rank")
+            if frozen_rank and float(frozen_rank) != decision["top_rank"]:
+                mismatches.append({"nid_id": nid, "field": "top_evidence_rank", "replayed": decision["top_rank"], "frozen": float(frozen_rank)})
         frozen_hard = _truth(_first(frozen, "v4_hard_binding", "explicit_hard_binding", "hard_binding"))
         if decision["winner_pid"] is not None and frozen_hard != decision["winner_hard_binding"]:
             mismatches.append({"nid_id": nid, "field": "hard_binding", "replayed": decision["winner_hard_binding"], "frozen": frozen_hard})
 
-    extra_frozen = sorted(set(frozen_by_nid) - set(replayed))
-    for nid in extra_frozen:
+    for nid in sorted(set(frozen_by_nid) - set(replayed)):
         mismatches.append({"nid_id": nid, "field": "candidate_group", "replayed": "missing", "frozen": "present"})
 
     denominator = {
-        "candidate_groups": len(groups),
-        "ledger_rows": len(ledger),
-        "ranked_rows": len(ranked),
-        "tie_rows": len(ties),
-        "unresolved_rows": len(unresolved),
+        "candidate_groups": len(groups), "ledger_rows": len(ledger),
+        "ranked_rows": len(ranked), "tie_rows": len(ties), "unresolved_rows": len(unresolved),
     }
     denominator_pass = len(groups) == 36 and len(ledger) == 36
+    sensitivity_pass = not unknown_classes or sensitivity.get("decision_invariant_across_all_rank_regimes") is True
 
     report = {
-        "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_2",
+        "schema": "spiderweb.pr_hydrography.step4_empty_runtime_replay.v0_3",
         "snapshot_root": str(root),
         "downloads_folder_required": False,
         "network_required": False,
-        "replay_scope": "LOGICAL_DECISION_PROJECTION",
+        "replay_scope": "LOGICAL_DECISION_PROJECTION_WITH_RANK_UNCERTAINTY",
         "historical_transform_source_code_preserved": False,
         "byte_identical_regeneration_claimed": False,
-        "rank_contract_source": "BOUND_HISTORICAL_RANKED_CANDIDATE_ARTIFACT",
-        "rank_contract": dict(sorted(rank_contract.items())),
-        "rank_contract_conflicts": 0,
+        "rank_contract_source": "BOUND_HISTORICAL_RANKED_CANDIDATE_ARTIFACT_PLUS_EXHAUSTIVE_UNKNOWN_RANK_SENSITIVITY",
+        "rank_contract": dict(sorted(base_contract.items())),
+        "unpreserved_rank_classes": unknown_classes,
+        "rank_uncertainty_sensitivity": sensitivity,
+        "rank_uncertainty_invariant": sensitivity_pass,
         "denominator": denominator,
         "denominator_pass": denominator_pass,
         "decision_mismatch_count": len(mismatches),
         "decision_mismatches": mismatches,
         "replayed_decisions": [replayed[k] for k in sorted(replayed)],
-        "state": "PASS_STEP4_EMPTY_RUNTIME_LOGICAL_REPLAY" if denominator_pass and not mismatches else "BLOCKED_STEP4_EMPTY_RUNTIME_LOGICAL_REPLAY",
+        "state": "PASS_STEP4_EMPTY_RUNTIME_LOGICAL_REPLAY" if denominator_pass and sensitivity_pass and not mismatches else "BLOCKED_STEP4_EMPTY_RUNTIME_LOGICAL_REPLAY",
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=output.parent, delete=False, prefix=f".{output.name}.") as tmp:
@@ -202,7 +261,7 @@ def replay(root: Path, output: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Replay historical NID→NHD decision logic from bound snapshot inputs only")
+    ap = argparse.ArgumentParser(description="Replay historical NID→NHD decisions from bound snapshot inputs only")
     ap.add_argument("--root", default="data/raw/pr_hydrography/historical_2026_08_11/replay_inputs")
     ap.add_argument("--output", default="manifests/pr_hydrography/runtime/step4_empty_runtime_replay.json")
     args = ap.parse_args()
