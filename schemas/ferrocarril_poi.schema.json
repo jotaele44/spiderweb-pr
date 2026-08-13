@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiderweb-pr/schemas/ferrocarril_poi.schema.json",
+  "title": "Ferrocarril ILAP candidate feature",
+  "type": "object",
+  "required": ["type", "geometry", "properties"],
+  "properties": {
+    "type": {"const": "Feature"},
+    "geometry": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["type", "coordinates"],
+          "properties": {
+            "type": {"const": "Point"},
+            "coordinates": {
+              "type": "array",
+              "prefixItems": [
+                {"type": "number", "minimum": -68.0, "maximum": -65.1},
+                {"type": "number", "minimum": 17.6, "maximum": 18.7}
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "properties": {
+      "type": "object",
+      "required": [
+        "feature_id",
+        "source_record_id",
+        "name_raw",
+        "municipio_raw",
+        "ferrocarril_subtype",
+        "source_evidence_level",
+        "certification_state",
+        "coordinate_status",
+        "source_sha256"
+      ],
+      "properties": {
+        "feature_id": {"type": "string", "pattern": "^FERRO-[0-9]{4,}$"},
+        "source_record_id": {"type": "integer", "minimum": 1},
+        "name_raw": {"type": "string", "minLength": 1},
+        "municipio_raw": {"type": "string"},
+        "ferrocarril_subtype": {"enum": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"]},
+        "source_evidence_level": {"enum": ["E1", "E2", "E3", "E4", "UNKNOWN"]},
+        "certification_state": {"enum": ["PROVISIONAL", "CERTIFIED", "UNRESOLVED", "SUPERSEDED", "NONCANONICAL", "CANDIDATE_NOT_IDENTITY"]},
+        "segment": {"type": ["integer", "null"]},
+        "corridor_raw": {"type": ["string", "null"]},
+        "notes_raw": {"type": ["string", "null"]},
+        "subtype_description_raw": {"type": ["string", "null"]},
+        "coordinate_status": {"type": "string"},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_path": {"type": "string"},
+        "has_coordinates": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
