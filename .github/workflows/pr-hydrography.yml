@@ -41,8 +41,15 @@ jobs:
           python -m py_compile scripts/source_adapters/pr_hydrography/spine.py
           python -m py_compile scripts/source_adapters/pr_hydrography/transport.py
           python -m py_compile scripts/source_adapters/pr_hydrography/migrate_local.py
+          python -m py_compile scripts/source_adapters/pr_hydrography/step5b_transaction.py
+          python -m py_compile scripts/source_adapters/pr_hydrography/step5b_stage.py
       - name: Run offline certification regressions
-        run: pytest -q tests/test_pr_hydrography_acquisition.py tests/test_pr_hydrography_resolver.py tests/test_pr_hydrography_max_vector.py
+        run: |
+          pytest -q \
+            tests/test_pr_hydrography_acquisition.py \
+            tests/test_pr_hydrography_resolver.py \
+            tests/test_pr_hydrography_max_vector.py \
+            tests/test_pr_hydrography_step5b_transaction.py
 
   freshness-probe:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.probe_live_sources)
