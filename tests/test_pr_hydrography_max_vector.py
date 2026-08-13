@@ -17,6 +17,7 @@ from scripts.source_adapters.pr_hydrography.cli import (
     FetchReceipt,
     _append_receipt_set,
     _atomic_exact_write,
+    audit_raw_receipt_accounting,
     compare_parent_tree,
     step5a_readiness,
 )
@@ -152,6 +153,40 @@ def test_step5a_parent_tree_comparison_detects_any_mutation():
     assert changed["removed"] == ["b"]
     assert changed["added"] == ["c"]
     assert changed["historical_parent_mutations"] == 3
+
+
+def test_step5a_raw_denominator_blocks_orphan_response_bytes(tmp_path: Path):
+    raw_root = tmp_path / "run"
+    accounted = raw_root / "X" / "one" / "response.bin"
+    orphan = raw_root / "X" / "two" / "response.bin"
+    _atomic_exact_write(accounted, b"accounted")
+    _atomic_exact_write(orphan, b"orphan")
+    receipts = [{
+        "raw_path": str(accounted),
+        "raw_bytes_length": len(b"accounted"),
+        "raw_bytes_sha256": hashlib.sha256(b"accounted").hexdigest(),
+    }]
+    audit = audit_raw_receipt_accounting(raw_root, receipts)
+    assert audit["raw_file_denominator"] == 2
+    assert audit["orphan_raw_files"] == [str(orphan.resolve())]
+    assert audit["unaccounted_response_bytes"] == len(b"orphan")
+    assert audit["zero_unaccounted_response_bytes"] is False
+
+
+def test_step5a_raw_denominator_passes_exact_receipt_closure(tmp_path: Path):
+    raw_root = tmp_path / "run"
+    path = raw_root / "X" / "one" / "response.bin"
+    payload = b"accounted"
+    _atomic_exact_write(path, payload)
+    receipts = [{
+        "raw_path": str(path),
+        "raw_bytes_length": len(payload),
+        "raw_bytes_sha256": hashlib.sha256(payload).hexdigest(),
+    }]
+    audit = audit_raw_receipt_accounting(raw_root, receipts)
+    assert audit["raw_file_denominator"] == 1
+    assert audit["unaccounted_response_bytes"] == 0
+    assert audit["zero_unaccounted_response_bytes"] is True
 
 
 def test_step5a_receipt_set_is_append_only(tmp_path: Path):
