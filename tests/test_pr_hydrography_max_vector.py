@@ -13,6 +13,13 @@ from scripts.source_adapters.pr_hydrography.certifiers import (
     certify_tiger_pr,
     logical_certification_fingerprint,
 )
+from scripts.source_adapters.pr_hydrography.cli import (
+    FetchReceipt,
+    _append_receipt_set,
+    _atomic_exact_write,
+    compare_parent_tree,
+    step5a_readiness,
+)
 from scripts.source_adapters.pr_hydrography.control_plane import (
     TransformContract,
     bind_historical_file,
@@ -31,7 +38,11 @@ from scripts.source_adapters.pr_hydrography.core import (
     request_signature,
 )
 from scripts.source_adapters.pr_hydrography.spine import build_spine
-from scripts.source_adapters.pr_hydrography.transport import classify_transport_outcome
+from scripts.source_adapters.pr_hydrography.transport import (
+    STEP5A_FAILURE_CLASSES,
+    classify_transport_outcome,
+    step5a_failure_class,
+)
 from scripts.source_adapters.pr_hydrography.validation import analysis_geometry
 
 
@@ -82,6 +93,73 @@ def test_transport_adversarial_matrix():
     assert classify_transport_outcome(status=200, content_type="application/octet-stream", payload=b"notzip", expected_content="zip") == "UNEXPECTED_MEDIA"
     assert classify_transport_outcome(status=None, content_type="", payload=b"", expected_content="json", timed_out=True) == "TIMEOUT"
     assert classify_transport_outcome(status=None, content_type="", payload=b"", expected_content="json", network_error=True) == "SOURCE_UNAVAILABLE"
+
+
+def test_step5a_failure_ontology_is_closed_and_mapped():
+    assert STEP5A_FAILURE_CLASSES == {
+        "SOURCE_UNAVAILABLE",
+        "UNEXPECTED_MEDIA",
+        "SOURCE_EMPTY",
+        "PARTIAL_RESPONSE",
+        "REDIRECT_FAILURE",
+        "HASH_FAILURE",
+        "SCHEMA_CHANGED",
+        "UNCLASSIFIED",
+    }
+    expected = {
+        "TIMEOUT": "SOURCE_UNAVAILABLE",
+        "SOURCE_UNAVAILABLE": "SOURCE_UNAVAILABLE",
+        "RATE_LIMITED": "SOURCE_UNAVAILABLE",
+        "EMPTY_RESPONSE": "SOURCE_EMPTY",
+        "UNEXPECTED_HTML": "UNEXPECTED_MEDIA",
+        "UNEXPECTED_MEDIA": "UNEXPECTED_MEDIA",
+        "TRUNCATED_JSON": "PARTIAL_RESPONSE",
+        "PARTIAL_DOWNLOAD": "PARTIAL_RESPONSE",
+        "HTTP_REDIRECT": "REDIRECT_FAILURE",
+    }
+    assert {state: step5a_failure_class(state) for state in expected} == expected
+    assert step5a_failure_class("NOT_A_STATE") == "UNCLASSIFIED"
+
+
+def test_step5a_receipt_contract_and_readiness_gate():
+    required = {
+        "requested_url", "final_url", "http_status", "response_headers", "content_type",
+        "content_length", "etag", "last_modified", "retrieval_utc", "fetch_backend",
+        "fetch_backend_version", "raw_bytes_sha256", "raw_bytes_length",
+    }
+    assert required <= set(FetchReceipt.__dataclass_fields__)
+    report = step5a_readiness()
+    assert report["pass_parent"] == "PR_HYDROGRAPHY_2026_08_11_v2"
+    assert all(report["gates"].values())
+    assert report["state"] == "PASS_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY"
+
+
+def test_step5a_raw_writer_is_exact_and_append_only(tmp_path: Path):
+    path = tmp_path / "raw" / "response.bin"
+    payload = b"exact remote response bytes\x00\xff"
+    _atomic_exact_write(path, payload)
+    assert path.read_bytes() == payload
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == hashlib.sha256(payload).hexdigest()
+    with pytest.raises(FileExistsError):
+        _atomic_exact_write(path, payload)
+
+
+def test_step5a_parent_tree_comparison_detects_any_mutation():
+    same = compare_parent_tree({"a": "1", "b": "2"}, {"a": "1", "b": "2"})
+    assert same["historical_parent_mutations"] == 0
+    changed = compare_parent_tree({"a": "1", "b": "2"}, {"a": "9", "c": "3"})
+    assert changed["changed"] == ["a"]
+    assert changed["removed"] == ["b"]
+    assert changed["added"] == ["c"]
+    assert changed["historical_parent_mutations"] == 3
+
+
+def test_step5a_receipt_set_is_append_only(tmp_path: Path):
+    report = {"run_id": "RUN001", "state": "PASS_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY"}
+    path = _append_receipt_set(tmp_path, report)
+    assert path.exists()
+    with pytest.raises(FileExistsError):
+        _append_receipt_set(tmp_path, report)
 
 
 def test_historical_byte_binding_exact_and_mismatch(tmp_path: Path):
