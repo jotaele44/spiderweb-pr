@@ -3,10 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import tempfile
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from .cli import FetchReceipt, audit_raw_receipt_accounting
 from .core import sha256_file
@@ -49,17 +48,30 @@ def write_individual_receipt(receipt_root: Path, receipt: FetchReceipt) -> Path:
     return path
 
 
-def nhd_page_set_manifest(receipts: list[FetchReceipt]) -> dict[str, Any]:
+def nhd_page_set_manifest(receipts: list[FetchReceipt], feature_counts: Sequence[int] | None = None) -> dict[str, Any]:
+    ordered = sorted(receipts, key=lambda r: (-1 if r.page_offset is None else r.page_offset))
     pages = []
-    for receipt in sorted(receipts, key=lambda r: (-1 if r.page_offset is None else r.page_offset)):
+    for index, receipt in enumerate(ordered):
         if receipt.page_offset is None:
             raise RuntimeError("NHD receipt missing page_offset")
-        pages.append({"offset": receipt.page_offset, "request_signature": receipt.request_signature, "receipt_id": receipt.receipt_id, "raw_path": receipt.raw_path, "raw_bytes_length": receipt.raw_bytes_length, "raw_bytes_sha256": receipt.raw_bytes_sha256})
+        page = {"offset": receipt.page_offset, "request_signature": receipt.request_signature, "receipt_id": receipt.receipt_id, "raw_path": receipt.raw_path, "raw_bytes_length": receipt.raw_bytes_length, "raw_bytes_sha256": receipt.raw_bytes_sha256}
+        if feature_counts is not None:
+            page["feature_count"] = int(feature_counts[index])
+        pages.append(page)
     offsets = [p["offset"] for p in pages]
     if offsets != sorted(set(offsets)):
         raise RuntimeError("NHD page offsets are duplicate or nonmonotonic")
+    if offsets and offsets[0] != 0:
+        raise RuntimeError("NHD page offsets must start at zero")
+    if feature_counts is not None:
+        if len(feature_counts) != len(pages):
+            raise RuntimeError("NHD feature-count denominator does not match receipt denominator")
+        for previous, current in zip(pages, pages[1:]):
+            expected = int(previous["offset"]) + int(previous["feature_count"])
+            if int(current["offset"]) != expected:
+                raise RuntimeError(f"NHD_PAGE_GAP: expected offset {expected}; got {current['offset']}")
     canonical = json.dumps(pages, sort_keys=True, separators=(",", ":")).encode()
-    return {"artifact_role": "RAW_PAGE_SET_MANIFEST", "page_count": len(pages), "total_raw_bytes": sum(p["raw_bytes_length"] for p in pages), "page_set_sha256": hashlib.sha256(canonical).hexdigest(), "pages": pages}
+    return {"artifact_role": "RAW_PAGE_SET_MANIFEST", "source_id": "USGS_NHD_WATERBODY", "page_count": len(pages), "total_raw_bytes": sum(p["raw_bytes_length"] for p in pages), "page_set_sha256": hashlib.sha256(canonical).hexdigest(), "pages": pages}
 
 
 def promotion_gate(*, attempted_sources: set[str], certified_sources: set[str], raw_root: Path, receipts: list[dict[str, Any]], parent_before: Mapping[str, Any], parent_after: Mapping[str, Any], unclassified_fetch_outcomes: int = 0, unclassified_source_changes: int = 0, unexplained_denominator_drift: int = 0, silent_substitutions: int = 0) -> dict[str, Any]:
