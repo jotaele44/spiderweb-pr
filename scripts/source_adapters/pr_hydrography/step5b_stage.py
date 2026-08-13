@@ -66,7 +66,7 @@ def stage_nhd(*, raw_root: Path, manifest_root: Path, run_id: str) -> dict[str, 
         if next_offset <= offset:
             raise RuntimeError("SCHEMA_CHANGED: NHD pagination did not advance")
         offset = next_offset
-    page_set = nhd_page_set_manifest(receipt_objects)
+    page_set = nhd_page_set_manifest(receipt_objects, [len(page) for page in pages])
     return {"source": "nhd", "source_id": spec.source_id, "receipts": [asdict(r) for r in receipt_objects], "raw_role": "RAW_PAGE_SET", "raw_page_set": page_set, "page_features": pages, "schema_fingerprint": schema_fingerprint(rows), "promotion_performed": False}
 
 
