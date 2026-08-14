@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiderweb-pr.local/schemas/tile_source_delivery.schema.json",
+  "title": "Spiderweb Martin delivery registry",
+  "type": "object",
+  "required": ["version", "authority", "catalog_source_of_truth", "provenance_source_of_truth", "publication_policy", "sources"],
+  "properties": {
+    "version": {"type": "string", "const": "spiderweb_martin_delivery_v0_1"},
+    "authority": {"type": "string", "const": "noncanonical_delivery_only"},
+    "catalog_source_of_truth": {"type": "string", "const": "configs/layer_catalog.yaml"},
+    "provenance_source_of_truth": {"type": "string"},
+    "publication_policy": {"type": "string", "const": "explicit_named_sources_only"},
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "municipios": {"$ref": "#/$defs/source"}
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": [
+        "publication_state", "visibility_required", "martin_source_id", "source_layer",
+        "source_type", "artifact_path", "martin_artifact_path", "tilejson_path",
+        "tile_path_template", "canonical_dataset_id", "snapshot_id", "provenance_manifest",
+        "expected_crs", "expected_geometry_family", "expected_feature_count",
+        "expected_artifact_sha256", "expected_identity_field", "minzoom", "maxzoom"
+      ],
+      "properties": {
+        "publication_state": {"enum": ["deferred", "candidate", "validated", "published", "quarantined", "deprecated"]},
+        "visibility_required": {"enum": ["V1", "V2", "V3"]},
+        "martin_source_id": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
+        "source_layer": {"type": "string"},
+        "source_type": {"enum": ["geojson", "pmtiles", "mbtiles", "postgis"]},
+        "artifact_path": {"type": "string"},
+        "martin_artifact_path": {"type": "string"},
+        "tilejson_path": {"type": "string", "pattern": "^/"},
+        "tile_path_template": {"type": "string", "pattern": "\\{z\\}.*\\{x\\}.*\\{y\\}"},
+        "canonical_dataset_id": {"type": "string"},
+        "snapshot_id": {"type": "string"},
+        "provenance_manifest": {"type": "string"},
+        "expected_crs": {"type": "string"},
+        "expected_geometry_family": {"enum": ["point", "line", "polygon", "mixed"]},
+        "expected_feature_count": {"type": "integer", "minimum": 0},
+        "expected_artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "expected_state_fips_prefix": {"type": "string"},
+        "expected_identity_field": {"type": "string", "minLength": 1},
+        "minzoom": {"type": "integer", "minimum": 0, "maximum": 30},
+        "maxzoom": {"type": "integer", "minimum": 0, "maximum": 30},
+        "authorization_note": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  }
+}
