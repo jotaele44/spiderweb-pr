@@ -1,0 +1,30 @@
+version: spiderweb_martin_delivery_v0_1
+authority: noncanonical_delivery_only
+catalog_source_of_truth: configs/layer_catalog.yaml
+provenance_source_of_truth: data/tiger/2025/manifest.json
+publication_policy: explicit_named_sources_only
+sources:
+  municipios:
+    publication_state: candidate
+    visibility_required: V3
+    martin_source_id: municipios
+    source_layer: municipios
+    source_type: geojson
+    artifact_path: data/municipios.geojson
+    martin_artifact_path: /spiderweb-data/municipios.geojson
+    tilejson_path: /municipios
+    tile_path_template: /municipios/{z}/{x}/{y}
+    canonical_dataset_id: tiger_2025_pr_municipios
+    snapshot_id: tiger_2025_manifest
+    provenance_manifest: data/tiger/2025/manifest.json
+    expected_crs: EPSG:4326
+    expected_geometry_family: polygon
+    expected_feature_count: 78
+    expected_artifact_sha256: adebd4e779e36ca4aecb69291af9e153e430a829cc4ca8a676f7d5f5197a5d76
+    expected_state_fips_prefix: "72"
+    expected_identity_field: GEOID
+    minzoom: 0
+    maxzoom: 14
+    authorization_note: >-
+      Candidate canary only. Presence in this registry does not promote source
+      authority and does not supersede layer_catalog visibility or provenance.
