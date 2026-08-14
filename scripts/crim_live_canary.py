@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+
+from integration.crim_lookup import CrimClient, CrimLookup, LookupMode, validate_layer_metadata
+
+
+def main() -> int:
+    client = CrimClient()
+    metadata, _ = client.metadata()
+    validate_layer_metadata(metadata)
+
+    # A negative OBJECTID should be a valid zero result while still exercising
+    # live query transport and ArcGIS response decoding.
+    zero = CrimLookup(client).identifier(
+        LookupMode.OBJECTID,
+        "-1",
+        return_geometry=False,
+    )
+    if zero.match_count != 0:
+        raise RuntimeError("negative OBJECTID canary unexpectedly returned a feature")
+
+    print(
+        json.dumps(
+            {
+                "contract": "PASS",
+                "valid_zero_canary": "PASS",
+                "layer": metadata.get("name"),
+                "currentVersion": metadata.get("currentVersion"),
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
