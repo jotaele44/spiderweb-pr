@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiderweb-pr.local/schemas/crim_lookup.schema.json",
+  "title": "Spiderweb CRIM Lookup Result",
+  "type": "object",
+  "required": ["state", "mode", "match_count", "candidates", "identity_state"],
+  "properties": {
+    "state": {
+      "enum": [
+        "MATCH",
+        "VALID_ZERO_RESULT",
+        "MULTIPLE_CANDIDATES",
+        "INVALID_INPUT",
+        "SOURCE_ERROR",
+        "SCHEMA_DRIFT",
+        "TRUNCATED",
+        "UNRESOLVED"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "NUM_CATASTRO",
+        "OLDPID",
+        "GLOBALID",
+        "OBJECTID",
+        "POINT",
+        "BBOX"
+      ]
+    },
+    "match_count": {"type": "integer", "minimum": 0},
+    "candidates": {"type": "array"},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "identity_state": {
+      "enum": ["CERTIFIED", "PROVISIONAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED"]
+    }
+  },
+  "additionalProperties": true
+}
