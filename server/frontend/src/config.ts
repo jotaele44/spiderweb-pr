@@ -12,6 +12,23 @@ export const API_BASE: string =
   import.meta.env.VITE_API_BASE ?? (import.meta.env.PROD ? "" : "http://localhost:8000");
 
 /**
+ * Martin tile-delivery base URL.
+ *
+ * Production defaults to `/tiles` so a same-origin reverse proxy can keep
+ * Martin private. Vite development uses the same path and proxies it to the
+ * local Martin canary. Override only when an explicit deployment requires a
+ * different ingress path.
+ */
+export const MARTIN_BASE: string =
+  import.meta.env.VITE_MARTIN_BASE ?? "/tiles";
+
+/** Return the TileJSON URL for an explicitly registered Martin source. */
+export function martinTileJsonUrl(sourceId: string): string {
+  const base = MARTIN_BASE.replace(/\/$/, "");
+  return `${base}/${encodeURIComponent(sourceId)}`;
+}
+
+/**
  * Raster base-map tile template for the Spatial module.
  *
  * Defaults to public OpenStreetMap tiles. Override with `VITE_TILE_URL` to point
