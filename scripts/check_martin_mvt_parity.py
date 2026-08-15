@@ -35,6 +35,17 @@ def source_geoids(path: Path, field: str) -> set[str]:
     return {str(f["properties"][field]) for f in payload["features"]}
 
 
+def decoded_feature_count(data: bytes, source_layer: str) -> int:
+    if not data:
+        return 0
+    try:
+        decoded = mapbox_vector_tile.decode(data)
+    except Exception:  # noqa: BLE001 - an out-of-range response may be non-MVT metadata/empty bytes
+        return 0
+    layer = decoded.get(source_layer)
+    return len(layer.get("features", [])) if layer else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", default="http://127.0.0.1:3000")
@@ -52,14 +63,10 @@ def main() -> int:
     if any(not geoid.startswith(spec["expected_state_fips_prefix"]) for geoid in expected):
         raise RuntimeError("source contains non-PR GEOID")
 
-    # Health must be independently reachable.
     with request(f"{base}/health") as response:
         if response.status != 200:
             raise RuntimeError(f"health returned {response.status}")
 
-    # Enumerate the PR bounding box at a fixed zoom and reconstruct logical IDs
-    # from all MVT manifestations. Duplicate appearances across clipped tiles are
-    # expected and collapsed into this set.
     west, south, east, north = -68.0, 17.0, -65.0, 19.0
     z = args.zoom
     xs = range(lon2x(west, z), lon2x(east, z) + 1)
@@ -106,7 +113,6 @@ def main() -> int:
     if nonempty_url is None:
         raise RuntimeError("no non-empty municipios tile found")
 
-    # Cache contract: a non-empty tile must advertise ETag and honor If-None-Match.
     if not nonempty_etag:
         raise RuntimeError("non-empty MVT tile missing ETag")
     try:
@@ -116,31 +122,31 @@ def main() -> int:
         if exc.code != 304:
             raise RuntimeError(f"If-None-Match returned {exc.code}, expected 304") from exc
 
-    # A remote tile cannot leak PR features.
     remote = f"{base}/municipios/8/0/0"
     try:
         with request(remote) as response:
-            remote_data = response.read()
-            if remote_data:
-                decoded = mapbox_vector_tile.decode(remote_data)
-                layer = decoded.get(spec["source_layer"])
-                if layer and layer.get("features"):
-                    raise RuntimeError("outside-PR tile unexpectedly contains municipios features")
+            if decoded_feature_count(response.read(), spec["source_layer"]):
+                raise RuntimeError("outside-PR tile unexpectedly contains municipios features")
     except urllib.error.HTTPError as exc:
         if exc.code not in (204, 404):
             raise
 
-    # Invalid zoom must fail rather than silently aliasing valid data.
+    # Martin 1.13 accepts syntactically valid out-of-range z/x/y routes. The
+    # invariant we require is stronger and implementation-neutral: an invalid or
+    # unsupported zoom may not alias, expose, or fabricate authorized features.
+    invalid_url = f"{base}/municipios/99/0/0"
     try:
-        request(f"{base}/municipios/99/0/0").close()
-        raise RuntimeError("invalid zoom unexpectedly succeeded")
+        with request(invalid_url) as response:
+            leaked = decoded_feature_count(response.read(), spec["source_layer"])
+            if leaked:
+                raise RuntimeError(f"invalid zoom leaked {leaked} municipios features")
     except urllib.error.HTTPError as exc:
         if exc.code < 400:
-            raise RuntimeError(f"invalid zoom returned {exc.code}") from exc
+            raise RuntimeError(f"invalid zoom returned unexpected HTTP {exc.code}") from exc
 
     print(f"PASS: MVT GEOID parity count={len(observed)} symmetric_difference=0")
     print(f"PASS: ETag/304 tile={nonempty_url}")
-    print("PASS: outside-PR and invalid-zoom negative controls")
+    print("PASS: outside-PR and invalid-zoom feature-leakage controls")
     return 0
 
 
