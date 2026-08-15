@@ -28,6 +28,12 @@ export function martinTileJsonUrl(sourceId: string): string {
   return `${base}/${encodeURIComponent(sourceId)}`;
 }
 
+/** Return the MVT template for an explicitly registered Martin source. */
+export function martinTileUrlTemplate(sourceId: string): string {
+  const base = MARTIN_BASE.replace(/\/$/, "");
+  return `${base}/${encodeURIComponent(sourceId)}/{z}/{x}/{y}`;
+}
+
 /**
  * Raster base-map tile template for the Spatial module.
  *
