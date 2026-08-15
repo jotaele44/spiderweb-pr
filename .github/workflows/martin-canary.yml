@@ -81,20 +81,32 @@ jobs:
       - name: Prove Martin-down isolation and clean restart
         run: |
           kill "$(cat /tmp/martin.pid)"
-          wait "$(cat /tmp/martin.pid)" || true
           if python scripts/check_martin_canary.py --base http://127.0.0.1:3000; then
             echo "FAIL: canary checker succeeded with Martin stopped" >&2
             exit 1
           fi
+
+          python -m uvicorn server.backend.main:app --host 127.0.0.1 --port 8000 >/tmp/fastapi-isolation.log 2>&1 &
+          api_pid=$!
+          api_status=""
+          for i in $(seq 1 30); do
+            api_status="$(curl --silent --output /tmp/fastapi-health.json --write-out '%{http_code}' http://127.0.0.1:8000/health || true)"
+            if [ "$api_status" = "200" ] || [ "$api_status" = "503" ]; then break; fi
+            sleep 1
+          done
+          if [ "$api_status" != "200" ] && [ "$api_status" != "503" ]; then
+            cat /tmp/fastapi-isolation.log >&2
+            echo "FAIL: FastAPI /health unreachable with Martin down (HTTP $api_status)" >&2
+            exit 1
+          fi
           python - <<'PY'
-          from fastapi.testclient import TestClient
-          from server.backend.main import app
-          with TestClient(app) as client:
-              response = client.get('/health')
-              assert response.status_code in (200, 503), response.status_code
-              assert response.json().get('status') in ('ok', 'degraded')
+          import json
+          payload = json.load(open('/tmp/fastapi-health.json', encoding='utf-8'))
+          assert payload.get('status') in ('ok', 'degraded'), payload
           print('PASS: FastAPI health remains independently reachable with Martin down')
           PY
+          kill "$api_pid" || true
+
           "$MARTIN_BIN" --config martin/config.yaml >/tmp/martin-restart.log 2>&1 &
           echo $! >/tmp/martin.pid
           for i in $(seq 1 30); do
@@ -106,7 +118,6 @@ jobs:
       - name: Fail closed on missing or corrupt canonical input
         run: |
           kill "$(cat /tmp/martin.pid)" || true
-          wait "$(cat /tmp/martin.pid)" || true
 
           sed 's#/spiderweb-data/municipios.geojson#/spiderweb-data/DOES_NOT_EXIST.geojson#' martin/config.yaml >/tmp/martin-missing.yaml
           "$MARTIN_BIN" --config /tmp/martin-missing.yaml >/tmp/martin-missing.log 2>&1 &
@@ -118,7 +129,6 @@ jobs:
             cat /tmp/martin-missing.log >&2
             exit 1
           fi
-          wait "$pid" || true
 
           printf '{not valid geojson' >/tmp/corrupt-municipios.geojson
           sed 's#/spiderweb-data/municipios.geojson#/tmp/corrupt-municipios.geojson#' martin/config.yaml >/tmp/martin-corrupt.yaml
@@ -131,7 +141,6 @@ jobs:
             cat /tmp/martin-corrupt.log >&2
             exit 1
           fi
-          wait "$pid" || true
           echo "PASS: missing/corrupt source fail closed"
 
       - name: Upload Martin logs on failure
@@ -139,7 +148,7 @@ jobs:
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
         with:
           name: martin-canary-logs
-          path: /tmp/martin*.log
+          path: /tmp/*.log
           if-no-files-found: ignore
 
   frontend-ab:
