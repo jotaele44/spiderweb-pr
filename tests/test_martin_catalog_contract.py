@@ -46,7 +46,7 @@ def test_only_municipios_is_in_canary_delivery_registry():
     assert set(delivery["sources"]) == {"municipios"}
 
 
-def test_candidate_source_exists_in_authoritative_layer_catalog_and_is_public():
+def test_validated_source_exists_in_authoritative_layer_catalog_and_is_public():
     source = _yaml(DELIVERY)["sources"]["municipios"]
     catalog = _catalog_layers()
     layer = catalog[source["source_layer"]]
@@ -79,9 +79,10 @@ def test_martin_named_source_matches_delivery_registry():
     assert config["geojson"]["sources"][source["martin_source_id"]] == source["martin_artifact_path"]
 
 
-def test_candidate_is_not_silently_promoted():
+def test_canary_is_validated_but_not_published():
     source = _yaml(DELIVERY)["sources"]["municipios"]
-    assert source["publication_state"] == "candidate"
+    assert source["publication_state"] == "validated"
+    assert source["publication_state"] != "published"
 
 
 def test_zoom_bounds_close():
