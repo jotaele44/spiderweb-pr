@@ -4,7 +4,14 @@ import { byId, fmtMoney } from "../lib/format";
 import type { PriisData, Selection } from "../types/priis";
 import { Pill } from "../components/Badges";
 import { AnomalyCard } from "../components/AnomalyCard";
-import { API_BASE, TILE_ATTRIBUTION, TILE_URL } from "../config";
+import {
+  API_BASE,
+  MUNICIPIOS_DELIVERY,
+  TILE_ATTRIBUTION,
+  TILE_URL,
+  martinTileJsonUrl,
+  martinTileUrlTemplate,
+} from "../config";
 
 const rasterStyle: maplibregl.StyleSpecification = {
   version: 8,
@@ -70,12 +77,40 @@ function whenStyleReady(map: maplibregl.Map, fn: () => void) {
   map.on("styledata", handler);
 }
 
+/** Shared polygon paint layers for either GeoJSON or vector-tile sources. */
+function addPolygonPaintLayers(
+  map: maplibregl.Map,
+  key: PolygonLayerKey,
+  sourceId: string,
+  sourceLayer?: string,
+) {
+  const cfg = POLYGON_LAYERS[key];
+  const common = sourceLayer ? { source: sourceId, "source-layer": sourceLayer } : { source: sourceId };
+  map.addLayer({
+    id: `${sourceId}-fill`,
+    type: "fill",
+    ...common,
+    paint: { "fill-color": cfg.fillColor, "fill-opacity": cfg.fillOpacity },
+  });
+  map.addLayer({
+    id: `${sourceId}-line`,
+    type: "line",
+    ...common,
+    layout: { "line-join": "round", "line-cap": "round" },
+    paint: { "line-color": cfg.lineColor, "line-width": 0.8, "line-opacity": 0.6 },
+  });
+}
+
+function removePolygonPaintLayers(map: maplibregl.Map, sourceId: string) {
+  if (map.getLayer(`${sourceId}-line`)) map.removeLayer(`${sourceId}-line`);
+  if (map.getLayer(`${sourceId}-fill`)) map.removeLayer(`${sourceId}-fill`);
+}
+
 /**
  * Load a backend GeoJSON layer with explicit per-layer status. We fetch the
  * GeoJSON ourselves (rather than handing MapLibre a URL) so we can report
  * loading/error state to the caller — the source is only added on a successful
- * fetch. `addLayers` adds the paint layers; source add/remove is handled here so
- * the removal order (layers before source) stays correct.
+ * fetch.
  */
 function useGeoJsonLayer(opts: {
   mapRef: React.MutableRefObject<maplibregl.Map | null>;
@@ -88,8 +123,6 @@ function useGeoJsonLayer(opts: {
   onStatus: (status: LayerStatus) => void;
 }) {
   const { mapRef, ready, sourceId, url, isOn } = opts;
-  // Keep callbacks in refs so their identity doesn't re-trigger the effect
-  // (which would tear down and refetch the layer on every render).
   const addRef = useRef(opts.addLayers);
   const removeRef = useRef(opts.removeLayers);
   const statusRef = useRef(opts.onStatus);
@@ -116,9 +149,7 @@ function useGeoJsonLayer(opts: {
     let cancelled = false;
 
     async function load() {
-      if (cancelled || map!.getSource(sourceId)) return;
-      // Status is driven by the fetch alone, so it's independent of base-map
-      // readiness — the layer reports "error" even when the OSM tiles are offline.
+      if (cancelled || map.getSource(sourceId)) return;
       statusRef.current("loading");
       let geojson: GeoJSON.GeoJSON;
       try {
@@ -132,11 +163,10 @@ function useGeoJsonLayer(opts: {
       }
       if (cancelled) return;
       statusRef.current("loaded");
-      // Rendering needs the style; add the source/layers as soon as it's ready.
-      whenStyleReady(map!, () => {
-        if (cancelled || map!.getSource(sourceId)) return;
-        map!.addSource(sourceId, { type: "geojson", data: geojson });
-        addRef.current(map!, sourceId);
+      whenStyleReady(map, () => {
+        if (cancelled || map.getSource(sourceId)) return;
+        map.addSource(sourceId, { type: "geojson", data: geojson });
+        addRef.current(map, sourceId);
       });
     }
     void load();
@@ -146,9 +176,95 @@ function useGeoJsonLayer(opts: {
       controller.abort();
       if (map.isStyleLoaded()) teardown(map);
     };
-    // `ready` re-runs the effect once the map instance exists (the map is created
-    // in a later effect than these layer hooks on first mount).
   }, [mapRef, ready, sourceId, url, isOn]);
+}
+
+/**
+ * Load one explicitly authorized Martin vector source. TileJSON is fetched first
+ * as a fail-closed publication/shape check; MapLibre then receives the same-origin
+ * MVT template directly so proxy-generated absolute TileJSON URLs cannot bypass
+ * the `/tiles` ingress prefix.
+ */
+function useVectorTileLayer(opts: {
+  mapRef: React.MutableRefObject<maplibregl.Map | null>;
+  ready: boolean;
+  sourceId: string;
+  martinSourceId: string;
+  sourceLayer: string;
+  isOn: boolean;
+  addLayers: (map: maplibregl.Map, sourceId: string, sourceLayer: string) => void;
+  removeLayers: (map: maplibregl.Map) => void;
+  onStatus: (status: LayerStatus) => void;
+}) {
+  const { mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn } = opts;
+  const addRef = useRef(opts.addLayers);
+  const removeRef = useRef(opts.removeLayers);
+  const statusRef = useRef(opts.onStatus);
+  addRef.current = opts.addLayers;
+  removeRef.current = opts.removeLayers;
+  statusRef.current = opts.onStatus;
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    function teardown(m: maplibregl.Map) {
+      removeRef.current(m);
+      if (m.getSource(sourceId)) m.removeSource(sourceId);
+    }
+
+    if (!isOn) {
+      if (map.isStyleLoaded()) teardown(map);
+      statusRef.current("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+    const onMapError = (event: { sourceId?: string }) => {
+      if (event.sourceId === sourceId) statusRef.current("error");
+    };
+    map.on("error", onMapError);
+
+    async function load() {
+      if (cancelled || map.getSource(sourceId)) return;
+      statusRef.current("loading");
+      try {
+        const res = await fetch(martinTileJsonUrl(martinSourceId), { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const tilejson = (await res.json()) as {
+          minzoom?: number;
+          maxzoom?: number;
+          vector_layers?: Array<{ id?: string }>;
+        };
+        const advertised = new Set((tilejson.vector_layers ?? []).map((item) => item.id));
+        if (!advertised.has(sourceLayer)) throw new Error(`missing source-layer ${sourceLayer}`);
+        if (cancelled) return;
+        whenStyleReady(map, () => {
+          if (cancelled || map.getSource(sourceId)) return;
+          map.addSource(sourceId, {
+            type: "vector",
+            tiles: [martinTileUrlTemplate(martinSourceId)],
+            minzoom: tilejson.minzoom ?? 0,
+            maxzoom: tilejson.maxzoom ?? 14,
+          });
+          addRef.current(map, sourceId, sourceLayer);
+          statusRef.current("loaded");
+        });
+      } catch (err) {
+        if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
+        statusRef.current("error");
+      }
+    }
+    void load();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      map.off("error", onMapError);
+      if (map.isStyleLoaded()) teardown(map);
+    };
+  }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn]);
 }
 
 /** Build the useGeoJsonLayer options for a TIGER polygon layer. */
@@ -159,22 +275,16 @@ function polygonLayerOpts(
   isOn: boolean,
   onStatus: (status: LayerStatus) => void,
 ) {
-  const cfg = POLYGON_LAYERS[key];
+  const sourceId = `geo-${key}`;
   return {
     mapRef,
     ready,
-    sourceId: `geo-${key}`,
+    sourceId,
     url: `${API_BASE}/geo/${key}.geojson`,
     isOn,
     onStatus,
-    addLayers: (map: maplibregl.Map, sourceId: string) => {
-      map.addLayer({ id: `${sourceId}-fill`, type: "fill", source: sourceId, paint: { "fill-color": cfg.fillColor, "fill-opacity": cfg.fillOpacity } });
-      map.addLayer({ id: `${sourceId}-line`, type: "line", source: sourceId, layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": cfg.lineColor, "line-width": 0.8, "line-opacity": 0.6 } });
-    },
-    removeLayers: (map: maplibregl.Map) => {
-      if (map.getLayer(`geo-${key}-line`)) map.removeLayer(`geo-${key}-line`);
-      if (map.getLayer(`geo-${key}-fill`)) map.removeLayer(`geo-${key}-fill`);
-    },
+    addLayers: (map: maplibregl.Map, id: string) => addPolygonPaintLayers(map, key, id),
+    removeLayers: (map: maplibregl.Map) => removePolygonPaintLayers(map, sourceId),
   };
 }
 
@@ -213,9 +323,32 @@ export function SpatialIntelligence({
   const setStatus = (key: BackendLayerKey) => (status: LayerStatus) =>
     setLayerStatus((prev) => (prev[key] === status ? prev : { ...prev, [key]: status }));
 
-  // Polygon overlays — one hook per TIGER layer (fixed set, called at top level
-  // to satisfy the rules of hooks), all driven by POLYGON_LAYERS config.
-  useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "municipios", layers.municipios, setStatus("municipios")));
+  const municipiosViaMartin = MUNICIPIOS_DELIVERY === "martin";
+
+  // Municipios is the only Martin canary. Both hooks remain mounted so changing
+  // VITE_MUNICIPIOS_DELIVERY is a deterministic rollback rather than a code edit.
+  useVectorTileLayer({
+    mapRef,
+    ready: mapReady,
+    sourceId: "mvt-municipios",
+    martinSourceId: "municipios",
+    sourceLayer: "municipios",
+    isOn: layers.municipios && municipiosViaMartin,
+    onStatus: setStatus("municipios"),
+    addLayers: (map, sourceId, sourceLayer) => addPolygonPaintLayers(map, "municipios", sourceId, sourceLayer),
+    removeLayers: (map) => removePolygonPaintLayers(map, "mvt-municipios"),
+  });
+  useGeoJsonLayer(
+    polygonLayerOpts(
+      mapRef,
+      mapReady,
+      "municipios",
+      layers.municipios && !municipiosViaMartin,
+      setStatus("municipios"),
+    ),
+  );
+
+  // Remaining admin layers stay on the established whole-GeoJSON path.
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts")));
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "places", layers.places, setStatus("places")));
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios")));
@@ -230,9 +363,6 @@ export function SpatialIntelligence({
       zoom: 8.4,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
-    // Only surface base-map (OSM raster) failures here — backend GeoJSON layers
-    // report their own status via useGeoJsonLayer. Scoping to sourceId === "osm"
-    // keeps benign per-tile/abort noise out of the UI.
     map.on("error", (e: { sourceId?: string }) => {
       if (e.sourceId === "osm") setTilesFailed(true);
     });
@@ -276,8 +406,6 @@ export function SpatialIntelligence({
         background: anomaly ? "var(--alert)" : site.sensitive ? "var(--warn)" : "var(--t1)",
         boxShadow: "0 0 0 1px var(--ink)",
       });
-      // The marker is a bare coloured circle, so `title` alone leaves it
-      // unnamed to assistive tech — give it the same text as an accessible name.
       const markerLabel = `${site.name} · ${fmtMoney(contractTotal)} · ${anomaly?.id ?? "no anomaly"}`;
       el.title = markerLabel;
       el.setAttribute("aria-label", markerLabel);
