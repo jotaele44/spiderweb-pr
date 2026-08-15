@@ -4,6 +4,8 @@
 This script does not certify semantic parity by itself. It verifies that a
 running Martin instance exposes exactly the named canary source and that its
 TileJSON contract is coherent with Spiderweb's frozen delivery registry.
+Semantic source-layer and GEOID parity are independently proven by
+``check_martin_mvt_parity.py`` from decoded MVT bytes.
 """
 from __future__ import annotations
 
@@ -51,12 +53,16 @@ def main() -> int:
         for layer_id, spec in expected.items():
             tj = get_json(f"{base}{spec['tilejson_path']}")
             vector_layers = tj.get("vector_layers") or []
-            advertised = {x.get("id") for x in vector_layers}
-            if spec["source_layer"] not in advertised:
-                raise RuntimeError(
-                    f"{layer_id}: TileJSON vector_layers={sorted(advertised)} "
-                    f"does not advertise {spec['source_layer']!r}"
-                )
+            # Martin 1.13 GeoJSON sources may omit vector_layers from TileJSON.
+            # When the metadata is present it must agree; when absent, the
+            # decoded-MVT parity gate proves the source-layer contract directly.
+            if vector_layers:
+                advertised = {x.get("id") for x in vector_layers}
+                if spec["source_layer"] not in advertised:
+                    raise RuntimeError(
+                        f"{layer_id}: TileJSON vector_layers={sorted(advertised)} "
+                        f"does not advertise {spec['source_layer']!r}"
+                    )
             tiles_urls = tj.get("tiles") or []
             if not tiles_urls:
                 raise RuntimeError(f"{layer_id}: TileJSON has no tile URLs")
