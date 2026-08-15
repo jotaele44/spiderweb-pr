@@ -22,6 +22,10 @@ export const API_BASE: string =
 export const MARTIN_BASE: string =
   import.meta.env.VITE_MARTIN_BASE ?? "/tiles";
 
+/** Canary switch. Set to `geojson` for immediate rollback without code changes. */
+export const MUNICIPIOS_DELIVERY: "martin" | "geojson" =
+  import.meta.env.VITE_MUNICIPIOS_DELIVERY ?? "martin";
+
 /** Return the TileJSON URL for an explicitly registered Martin source. */
 export function martinTileJsonUrl(sourceId: string): string {
   const base = MARTIN_BASE.replace(/\/$/, "");
