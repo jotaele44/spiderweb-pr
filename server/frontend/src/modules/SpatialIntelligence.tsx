@@ -235,7 +235,7 @@ function useVectorTileLayer(opts: {
         const tilejson = (await res.json()) as {
           minzoom?: number;
           maxzoom?: number;
-          vector_layers?: Array<{ id?: string }>;
+          vector_layers?: { id?: string }[];
         };
         const advertised = new Set((tilejson.vector_layers ?? []).map((item) => item.id));
         if (!advertised.has(sourceLayer)) throw new Error(`missing source-layer ${sourceLayer}`);
