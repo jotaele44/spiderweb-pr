@@ -30,7 +30,6 @@ type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
 type BackendLayerKey = PolygonLayerKey;
 type LayerKey = MarkerLayerKey | BackendLayerKey;
-
 type LayerStatus = "idle" | "loading" | "loaded" | "error";
 
 interface PolygonLayerConfig {
@@ -68,7 +67,6 @@ function layerLabel(key: LayerKey): string {
   return isPolygonKey(key) ? POLYGON_LAYERS[key].label : MARKER_LABELS[key];
 }
 
-/** Run `fn` once the map style is loaded (immediately if already loaded). */
 function whenStyleReady(map: maplibregl.Map, fn: () => void) {
   if (map.isStyleLoaded()) { fn(); return; }
   const handler = () => {
@@ -77,7 +75,6 @@ function whenStyleReady(map: maplibregl.Map, fn: () => void) {
   map.on("styledata", handler);
 }
 
-/** Shared polygon paint layers for either GeoJSON or vector-tile sources. */
 function addPolygonPaintLayers(
   map: maplibregl.Map,
   key: PolygonLayerKey,
@@ -106,12 +103,6 @@ function removePolygonPaintLayers(map: maplibregl.Map, sourceId: string) {
   if (map.getLayer(`${sourceId}-fill`)) map.removeLayer(`${sourceId}-fill`);
 }
 
-/**
- * Load a backend GeoJSON layer with explicit per-layer status. We fetch the
- * GeoJSON ourselves (rather than handing MapLibre a URL) so we can report
- * loading/error state to the caller — the source is only added on a successful
- * fetch.
- */
 function useGeoJsonLayer(opts: {
   mapRef: React.MutableRefObject<maplibregl.Map | null>;
   ready: boolean;
@@ -131,16 +122,17 @@ function useGeoJsonLayer(opts: {
   statusRef.current = opts.onStatus;
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+    const candidate = mapRef.current;
+    if (candidate === null) return;
+    const map: maplibregl.Map = candidate;
 
-    function teardown(m: maplibregl.Map) {
-      removeRef.current(m);
-      if (m.getSource(sourceId)) m.removeSource(sourceId);
+    function teardown() {
+      removeRef.current(map);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
     }
 
     if (!isOn) {
-      if (map.isStyleLoaded()) teardown(map);
+      if (map.isStyleLoaded()) teardown();
       statusRef.current("idle");
       return;
     }
@@ -151,40 +143,32 @@ function useGeoJsonLayer(opts: {
     async function load() {
       if (cancelled || map.getSource(sourceId)) return;
       statusRef.current("loading");
-      let geojson: GeoJSON.GeoJSON;
       try {
         const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        geojson = (await res.json()) as GeoJSON.GeoJSON;
+        const geojson = (await res.json()) as GeoJSON.GeoJSON;
+        if (cancelled) return;
+        whenStyleReady(map, () => {
+          if (cancelled || map.getSource(sourceId)) return;
+          map.addSource(sourceId, { type: "geojson", data: geojson });
+          addRef.current(map, sourceId);
+          statusRef.current("loaded");
+        });
       } catch (err) {
         if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
         statusRef.current("error");
-        return;
       }
-      if (cancelled) return;
-      statusRef.current("loaded");
-      whenStyleReady(map, () => {
-        if (cancelled || map.getSource(sourceId)) return;
-        map.addSource(sourceId, { type: "geojson", data: geojson });
-        addRef.current(map, sourceId);
-      });
     }
     void load();
 
     return () => {
       cancelled = true;
       controller.abort();
-      if (map.isStyleLoaded()) teardown(map);
+      if (map.isStyleLoaded()) teardown();
     };
   }, [mapRef, ready, sourceId, url, isOn]);
 }
 
-/**
- * Load one explicitly authorized Martin vector source. TileJSON is fetched first
- * as a fail-closed publication/shape check; MapLibre then receives the same-origin
- * MVT template directly so proxy-generated absolute TileJSON URLs cannot bypass
- * the `/tiles` ingress prefix.
- */
 function useVectorTileLayer(opts: {
   mapRef: React.MutableRefObject<maplibregl.Map | null>;
   ready: boolean;
@@ -205,16 +189,17 @@ function useVectorTileLayer(opts: {
   statusRef.current = opts.onStatus;
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+    const candidate = mapRef.current;
+    if (candidate === null) return;
+    const map: maplibregl.Map = candidate;
 
-    function teardown(m: maplibregl.Map) {
-      removeRef.current(m);
-      if (m.getSource(sourceId)) m.removeSource(sourceId);
+    function teardown() {
+      removeRef.current(map);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
     }
 
     if (!isOn) {
-      if (map.isStyleLoaded()) teardown(map);
+      if (map.isStyleLoaded()) teardown();
       statusRef.current("idle");
       return;
     }
@@ -235,10 +220,14 @@ function useVectorTileLayer(opts: {
         const tilejson = (await res.json()) as {
           minzoom?: number;
           maxzoom?: number;
+          tiles?: string[];
           vector_layers?: { id?: string }[];
         };
-        const advertised = new Set((tilejson.vector_layers ?? []).map((item) => item.id));
-        if (!advertised.has(sourceLayer)) throw new Error(`missing source-layer ${sourceLayer}`);
+        if (!(tilejson.tiles ?? []).length) throw new Error("TileJSON has no tiles");
+        if (tilejson.vector_layers?.length) {
+          const advertised = new Set(tilejson.vector_layers.map((item) => item.id));
+          if (!advertised.has(sourceLayer)) throw new Error(`missing source-layer ${sourceLayer}`);
+        }
         if (cancelled) return;
         whenStyleReady(map, () => {
           if (cancelled || map.getSource(sourceId)) return;
@@ -262,12 +251,11 @@ function useVectorTileLayer(opts: {
       cancelled = true;
       controller.abort();
       map.off("error", onMapError);
-      if (map.isStyleLoaded()) teardown(map);
+      if (map.isStyleLoaded()) teardown();
     };
   }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn]);
 }
 
-/** Build the useGeoJsonLayer options for a TIGER polygon layer. */
 function polygonLayerOpts(
   mapRef: React.MutableRefObject<maplibregl.Map | null>,
   ready: boolean,
@@ -325,8 +313,6 @@ export function SpatialIntelligence({
 
   const municipiosViaMartin = MUNICIPIOS_DELIVERY === "martin";
 
-  // Municipios is the only Martin canary. Both hooks remain mounted so changing
-  // VITE_MUNICIPIOS_DELIVERY is a deterministic rollback rather than a code edit.
   useVectorTileLayer({
     mapRef,
     ready: mapReady,
@@ -347,13 +333,10 @@ export function SpatialIntelligence({
       setStatus("municipios"),
     ),
   );
-
-  // Remaining admin layers stay on the established whole-GeoJSON path.
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts")));
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "places", layers.places, setStatus("places")));
   useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios")));
 
-  // Initialize map
   useEffect(() => {
     if (!hostRef.current || mapRef.current) return;
     const map = new maplibregl.Map({
@@ -377,7 +360,6 @@ export function SpatialIntelligence({
     };
   }, []);
 
-  // Site markers — rerender when data or layer toggles change
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -421,7 +403,6 @@ export function SpatialIntelligence({
     });
   }, [data, layers, setSelection]);
 
-  // Fly to selection
   useEffect(() => {
     const map = mapRef.current;
     if (!map || selection?.kind !== "site") return;
@@ -429,18 +410,14 @@ export function SpatialIntelligence({
     if (site) map.flyTo({ center: [site.lng, site.lat], zoom: 11, speed: 0.8 });
   }, [data.sites, selection]);
 
-  // Persist the layer-panel collapse preference.
   useEffect(() => {
     localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
   }, [layerPanelCollapsed]);
 
-  // "L" toggles the layer panel. Ignore while typing in an input/textarea.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
-        return;
-      }
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       if (event.key === "l" || event.key === "L") {
         event.preventDefault();
         setLayerPanelCollapsed((value) => !value);
@@ -450,8 +427,6 @@ export function SpatialIntelligence({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Reflow MapLibre after any surrounding layout transition completes, so the
-  // canvas matches its container instead of leaving blank gutters.
   useEffect(() => {
     const timer = window.setTimeout(() => mapRef.current?.resize(), 320);
     return () => window.clearTimeout(timer);
