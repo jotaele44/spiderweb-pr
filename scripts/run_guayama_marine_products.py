@@ -52,7 +52,6 @@ def main() -> int:
     # in the frozen survey denominator.
     multibeam = fetch_all_ncei_file_pages(
         CatalogFamily.MULTIBEAM,
-        surveys=("*",),
         bbox=bbox,
         page_size=200,
     )
