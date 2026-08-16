@@ -1,0 +1,50 @@
+name: Guayama BAG crossvalidation v0.4
+
+on:
+  push:
+    branches:
+      - feat/guayama-bag-crossvalidation-v0-4
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crossvalidate-context:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Re-query derived DEM overlap against selected BAG
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python scripts/run_w00247_context_overlap.py > evidence/marine/w00247_context_overlap_v0_1.stdout.json
+      - name: Discover direct EX1811 archive products
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python scripts/run_ex1811_archive_discovery.py > evidence/marine/ex1811_archive_discovery_v0_1.stdout.json
+      - name: Freeze evidence ledger
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/marine
+          find evidence/marine/w00247_context_overlap_v0_1 evidence/marine/ex1811_archive_discovery_v0_1 -type f -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum > evidence/marine/guayama_bag_crossvalidation_v0_4.sha256
+          for f in evidence/marine/w00247_context_overlap_v0_1.stdout.json evidence/marine/ex1811_archive_discovery_v0_1.stdout.json; do
+            if [ -f "$f" ]; then sha256sum "$f" >> evidence/marine/guayama_bag_crossvalidation_v0_4.sha256; fi
+          done
+      - name: Upload bounded evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guayama-bag-crossvalidation-v0-4
+          path: |
+            evidence/marine/w00247_context_overlap_v0_1/
+            evidence/marine/ex1811_archive_discovery_v0_1/
+            evidence/marine/w00247_context_overlap_v0_1.stdout.json
+            evidence/marine/ex1811_archive_discovery_v0_1.stdout.json
+            evidence/marine/guayama_bag_crossvalidation_v0_4.sha256
+          if-no-files-found: warn
+          retention-days: 30
