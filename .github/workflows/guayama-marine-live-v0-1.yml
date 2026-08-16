@@ -1,0 +1,75 @@
+name: Guayama marine live v0.1
+
+on:
+  push:
+    branches:
+      - exec/guayama-marine-live-v0-1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Execute bounded six-family NOAA denominator
+        run: |
+          set -euo pipefail
+          python scripts/run_guayama_marine_reference.py \
+            --execute \
+            --out evidence/marine/guayama_punta_tuna_v0_1 \
+            > evidence/marine/guayama_punta_tuna_v0_1.stdout.json
+
+      - name: Freeze artifact SHA-256 ledger
+        run: |
+          set -euo pipefail
+          cd evidence/marine
+          find guayama_punta_tuna_v0_1 -type f -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > guayama_punta_tuna_v0_1.sha256
+          sha256sum guayama_punta_tuna_v0_1.stdout.json \
+            >> guayama_punta_tuna_v0_1.sha256
+          cat guayama_punta_tuna_v0_1.sha256
+
+      - name: Summarize bounded acquisition
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          p = Path('evidence/marine/guayama_punta_tuna_v0_1/run_manifest.json')
+          data = json.loads(p.read_text())
+          print('# Guayama–Punta Tuna marine source denominator v0.1')
+          print()
+          print(f"AOI: `{data['bbox']}`")
+          print()
+          print('| source family | pages | response bytes |')
+          print('|---|---:|---:|')
+          for family, pages in data['source_pages'].items():
+              total = sum(int(page['response_size']) for page in pages)
+              print(f'| {family} | {len(pages)} | {total} |')
+          print()
+          print('Certification boundary: source-denominator acquisition only; screenshot registration and seafloor feature certification remain separate.')
+          PY
+
+      - name: Upload frozen live evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: guayama-punta-tuna-marine-v0-1
+          path: |
+            evidence/marine/guayama_punta_tuna_v0_1/
+            evidence/marine/guayama_punta_tuna_v0_1.stdout.json
+            evidence/marine/guayama_punta_tuna_v0_1.sha256
+          if-no-files-found: error
+          retention-days: 30
