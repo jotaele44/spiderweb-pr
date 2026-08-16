@@ -25,51 +25,77 @@ jobs:
       - name: Execute bounded six-family NOAA denominator
         run: |
           set -euo pipefail
-          python scripts/run_guayama_marine_reference.py \
+          mkdir -p evidence/marine
+          set +e
+          PYTHONPATH=. python scripts/run_guayama_marine_reference.py \
             --execute \
             --out evidence/marine/guayama_punta_tuna_v0_1 \
-            > evidence/marine/guayama_punta_tuna_v0_1.stdout.json
+            > evidence/marine/guayama_punta_tuna_v0_1.stdout.json \
+            2> evidence/marine/guayama_punta_tuna_v0_1.stderr.txt
+          status=$?
+          set -e
+          printf '%s\n' "$status" > evidence/marine/guayama_punta_tuna_v0_1.exit_status
+          if [ "$status" -ne 0 ]; then
+            cat evidence/marine/guayama_punta_tuna_v0_1.stderr.txt >&2
+            exit "$status"
+          fi
 
       - name: Freeze artifact SHA-256 ledger
+        if: always()
         run: |
           set -euo pipefail
           cd evidence/marine
-          find guayama_punta_tuna_v0_1 -type f -print0 \
-            | sort -z \
-            | xargs -0 sha256sum \
-            > guayama_punta_tuna_v0_1.sha256
-          sha256sum guayama_punta_tuna_v0_1.stdout.json \
-            >> guayama_punta_tuna_v0_1.sha256
+          : > guayama_punta_tuna_v0_1.sha256
+          if [ -d guayama_punta_tuna_v0_1 ]; then
+            find guayama_punta_tuna_v0_1 -type f -print0 \
+              | sort -z \
+              | xargs -0 -r sha256sum \
+              >> guayama_punta_tuna_v0_1.sha256
+          fi
+          for f in guayama_punta_tuna_v0_1.stdout.json guayama_punta_tuna_v0_1.stderr.txt guayama_punta_tuna_v0_1.exit_status; do
+            if [ -f "$f" ]; then sha256sum "$f" >> guayama_punta_tuna_v0_1.sha256; fi
+          done
           cat guayama_punta_tuna_v0_1.sha256
 
       - name: Summarize bounded acquisition
+        if: always()
         run: |
           python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json
           from pathlib import Path
 
-          p = Path('evidence/marine/guayama_punta_tuna_v0_1/run_manifest.json')
-          data = json.loads(p.read_text())
+          root = Path('evidence/marine')
+          status_path = root / 'guayama_punta_tuna_v0_1.exit_status'
+          status = status_path.read_text().strip() if status_path.exists() else 'not-recorded'
           print('# Guayama–Punta Tuna marine source denominator v0.1')
           print()
-          print(f"AOI: `{data['bbox']}`")
-          print()
-          print('| source family | pages | response bytes |')
-          print('|---|---:|---:|')
-          for family, pages in data['source_pages'].items():
-              total = sum(int(page['response_size']) for page in pages)
-              print(f'| {family} | {len(pages)} | {total} |')
+          print(f'Execution exit status: `{status}`')
+          manifest = root / 'guayama_punta_tuna_v0_1/run_manifest.json'
+          if manifest.exists():
+              data = json.loads(manifest.read_text())
+              print(f"AOI: `{data['bbox']}`")
+              print()
+              print('| source family | pages | response bytes |')
+              print('|---|---:|---:|')
+              for family, pages in data['source_pages'].items():
+                  total = sum(int(page['response_size']) for page in pages)
+                  print(f'| {family} | {len(pages)} | {total} |')
+          else:
+              print('Run manifest was not produced; inspect frozen stderr artifact.')
           print()
           print('Certification boundary: source-denominator acquisition only; screenshot registration and seafloor feature certification remain separate.')
           PY
 
       - name: Upload frozen live evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: guayama-punta-tuna-marine-v0-1
           path: |
             evidence/marine/guayama_punta_tuna_v0_1/
             evidence/marine/guayama_punta_tuna_v0_1.stdout.json
+            evidence/marine/guayama_punta_tuna_v0_1.stderr.txt
+            evidence/marine/guayama_punta_tuna_v0_1.exit_status
             evidence/marine/guayama_punta_tuna_v0_1.sha256
           if-no-files-found: error
           retention-days: 30
