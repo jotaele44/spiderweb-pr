@@ -1,0 +1,30 @@
+# Spiderweb-PR Martin canary configuration.
+#
+# SECURITY / GOVERNANCE INVARIANT:
+# - Named sources only. Do NOT add geojson.paths here: directory scanning would
+#   make filesystem presence equivalent to publication authorization.
+# - Martin serves derived presentation tiles only; source authority remains in
+#   Spiderweb ingestion/provenance/catalog controls.
+listen_addresses: "0.0.0.0:3000"
+keep_alive: 75
+worker_processes: 2
+
+cache:
+  size_mb: 64
+  minzoom: 0
+  maxzoom: 14
+
+cors:
+  origin:
+    - "http://localhost:5173"
+    - "http://127.0.0.1:5173"
+  max_age: 3600
+
+observability:
+  metrics: {}
+
+geojson:
+  extent: 4096
+  buffer: 64
+  sources:
+    municipios: /spiderweb-data/municipios.geojson
