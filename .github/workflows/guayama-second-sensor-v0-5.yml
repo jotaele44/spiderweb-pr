@@ -12,7 +12,7 @@ permissions:
 jobs:
   footprint-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,23 +22,29 @@ jobs:
         run: |
           set -euo pipefail
           PYTHONPATH=. python scripts/run_multibeam_footprint_intersection.py > evidence/marine/w00247_multibeam_footprints_v0_1.stdout.json
-      - name: Freeze footprint ledger
+      - name: Inventory direct products for intersecting roots
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python scripts/run_intersecting_multibeam_product_inventory.py > evidence/marine/w00247_multibeam_product_inventory_v0_1.stdout.json
+      - name: Freeze second-sensor ledger
         if: always()
         run: |
           set -euo pipefail
           mkdir -p evidence/marine
-          find evidence/marine/w00247_multibeam_footprints_v0_1 -type f -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum > evidence/marine/guayama_second_sensor_v0_5.sha256
-          if [ -f evidence/marine/w00247_multibeam_footprints_v0_1.stdout.json ]; then
-            sha256sum evidence/marine/w00247_multibeam_footprints_v0_1.stdout.json >> evidence/marine/guayama_second_sensor_v0_5.sha256
-          fi
-      - name: Upload bounded footprint evidence
+          find evidence/marine/w00247_multibeam_footprints_v0_1 evidence/marine/w00247_multibeam_product_inventory_v0_1 -type f -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum > evidence/marine/guayama_second_sensor_v0_5.sha256
+          for f in evidence/marine/w00247_multibeam_footprints_v0_1.stdout.json evidence/marine/w00247_multibeam_product_inventory_v0_1.stdout.json; do
+            if [ -f "$f" ]; then sha256sum "$f" >> evidence/marine/guayama_second_sensor_v0_5.sha256; fi
+          done
+      - name: Upload bounded second-sensor evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: guayama-second-sensor-v0-5
           path: |
             evidence/marine/w00247_multibeam_footprints_v0_1/
+            evidence/marine/w00247_multibeam_product_inventory_v0_1/
             evidence/marine/w00247_multibeam_footprints_v0_1.stdout.json
+            evidence/marine/w00247_multibeam_product_inventory_v0_1.stdout.json
             evidence/marine/guayama_second_sensor_v0_5.sha256
           if-no-files-found: warn
           retention-days: 30
