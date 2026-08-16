@@ -1,0 +1,41 @@
+name: EX1811 W00247 overlap v0.1
+
+on:
+  push:
+    branches:
+      - feat/guayama-bag-crossvalidation-v0-4
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  overlap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acquire EX1811 XYZ and compute W00247 overlap
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/marine/ex1811_xyz_w00247_v0_1
+          PYTHONPATH=. python scripts/run_ex1811_xyz_intersection.py > evidence/marine/ex1811_xyz_w00247_v0_1.stdout.json
+      - name: Freeze overlap ledger
+        run: |
+          set -euo pipefail
+          cd evidence/marine
+          find ex1811_xyz_w00247_v0_1 -type f -print0 | sort -z | xargs -0 sha256sum > ex1811_xyz_w00247_v0_1.sha256
+          sha256sum ex1811_xyz_w00247_v0_1.stdout.json >> ex1811_xyz_w00247_v0_1.sha256
+      - name: Upload overlap evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ex1811-w00247-overlap-v0-1
+          path: |
+            evidence/marine/ex1811_xyz_w00247_v0_1/
+            evidence/marine/ex1811_xyz_w00247_v0_1.stdout.json
+            evidence/marine/ex1811_xyz_w00247_v0_1.sha256
+          if-no-files-found: error
+          retention-days: 30
