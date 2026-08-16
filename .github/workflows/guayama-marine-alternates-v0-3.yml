@@ -1,0 +1,54 @@
+name: Guayama marine alternates v0.3
+
+on:
+  push:
+    branches:
+      - feat/guayama-product-manifest-v0-2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-alternates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Execute direct NOAA alternates
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/marine/guayama_punta_tuna_alternates_v0_3
+          PYTHONPATH=. python scripts/run_guayama_marine_alternates.py \
+            > evidence/marine/guayama_punta_tuna_alternates_v0_3.stdout.json \
+            2> evidence/marine/guayama_punta_tuna_alternates_v0_3.stderr.txt
+      - name: Freeze alternate ledger
+        if: always()
+        run: |
+          set -euo pipefail
+          cd evidence/marine
+          if [ -d guayama_punta_tuna_alternates_v0_3 ]; then
+            find guayama_punta_tuna_alternates_v0_3 -type f -print0 | sort -z | xargs -0 -r sha256sum > guayama_punta_tuna_alternates_v0_3.sha256
+          else
+            : > guayama_punta_tuna_alternates_v0_3.sha256
+          fi
+          for f in guayama_punta_tuna_alternates_v0_3.stdout.json guayama_punta_tuna_alternates_v0_3.stderr.txt; do
+            if [ -f "$f" ]; then sha256sum "$f" >> guayama_punta_tuna_alternates_v0_3.sha256; fi
+          done
+      - name: Upload alternate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guayama-punta-tuna-alternates-v0-3
+          path: |
+            evidence/marine/guayama_punta_tuna_alternates_v0_3/
+            evidence/marine/guayama_punta_tuna_alternates_v0_3.stdout.json
+            evidence/marine/guayama_punta_tuna_alternates_v0_3.stderr.txt
+            evidence/marine/guayama_punta_tuna_alternates_v0_3.sha256
+          if-no-files-found: warn
+          retention-days: 30

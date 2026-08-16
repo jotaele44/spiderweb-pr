@@ -1,0 +1,48 @@
+name: W00247 BAG v0.1
+
+on:
+  push:
+    branches:
+      - feat/guayama-product-manifest-v0-2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-bags:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install raster reader
+        run: pip install 'rasterio>=1.4,<2'
+      - name: Download, hash, and intersect W00247 BAG products
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python scripts/run_w00247_bag_intersection.py \
+            > evidence/marine/w00247_bag_v0_1.stdout.json
+      - name: Freeze BAG ledger
+        run: |
+          set -euo pipefail
+          cd evidence/marine
+          find w00247_bag_v0_1 -type f -print0 | sort -z | xargs -0 sha256sum > w00247_bag_v0_1.sha256
+          sha256sum w00247_bag_v0_1.stdout.json >> w00247_bag_v0_1.sha256
+      - name: Remove non-intersecting raw BAG bytes from artifact
+        run: |
+          rm -rf evidence/marine/w00247_bag_v0_1/raw
+      - name: Upload W00247 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: w00247-bag-v0-1
+          path: |
+            evidence/marine/w00247_bag_v0_1/
+            evidence/marine/w00247_bag_v0_1.stdout.json
+            evidence/marine/w00247_bag_v0_1.sha256
+          if-no-files-found: error
+          retention-days: 30
