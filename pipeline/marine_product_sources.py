@@ -45,7 +45,7 @@ class ProductFilePage:
 def build_ncei_file_url(
     family: CatalogFamily,
     *,
-    surveys: Iterable[str],
+    surveys: Iterable[str] = (),
     categories: Iterable[str] = (),
     bbox: BoundingBox | None = None,
     offset: int = 0,
@@ -56,13 +56,16 @@ def build_ncei_file_url(
     if page_size <= 0:
         raise ValueError("page_size must be positive")
     survey_ids = tuple(value.strip() for value in surveys if value.strip())
-    if not survey_ids:
-        raise ValueError("at least one survey id is required")
+    if not survey_ids and bbox is None:
+        raise ValueError("at least one survey id or a bounding box is required")
+    if family is CatalogFamily.SOUNDING and not survey_ids:
+        raise ValueError("sounding file discovery requires explicit survey ids")
     params: list[tuple[str, str]] = [
-        ("surveys", ",".join(survey_ids)),
         ("max", str(page_size)),
         ("offset", str(offset)),
     ]
+    if survey_ids:
+        params.insert(0, ("surveys", ",".join(survey_ids)))
     category_values = tuple(value.strip() for value in categories if value.strip())
     if category_values:
         params.append(("categories", ",".join(category_values)))
@@ -115,7 +118,7 @@ def _decode_page(
 def fetch_ncei_file_page(
     family: CatalogFamily,
     *,
-    surveys: Iterable[str],
+    surveys: Iterable[str] = (),
     categories: Iterable[str] = (),
     bbox: BoundingBox | None = None,
     offset: int = 0,
@@ -137,7 +140,7 @@ def fetch_ncei_file_page(
 def fetch_all_ncei_file_pages(
     family: CatalogFamily,
     *,
-    surveys: Iterable[str],
+    surveys: Iterable[str] = (),
     categories: Iterable[str] = (),
     bbox: BoundingBox | None = None,
     page_size: int = 200,
