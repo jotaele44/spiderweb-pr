@@ -5,6 +5,8 @@ from pathlib import Path
 
 import yaml
 
+from scripts.build_martin_config import compile_config
+
 ROOT = Path(__file__).parent.parent
 LAYER_CATALOG = ROOT / "configs" / "layer_catalog.yaml"
 DELIVERY = ROOT / "configs" / "martin_delivery.yaml"
@@ -63,20 +65,31 @@ def test_delivery_binding_matches_frozen_tiger_manifest():
     assert output["path"] == Path(source["artifact_path"]).name
 
 
-def test_martin_config_has_no_directory_autodiscovery():
+def test_committed_martin_config_is_zero_source_bootstrap_without_autodiscovery():
     config = _yaml(MARTIN_CONFIG)
     geojson = config["geojson"]
     assert "paths" not in geojson, (
         "geojson.paths would make filesystem presence equivalent to publication; "
-        "Spiderweb requires explicit named sources"
+        "Spiderweb requires explicit generated named sources"
     )
-    assert set(geojson["sources"]) == {"municipios"}
+    assert geojson["sources"] == {}, (
+        "committed Martin config must not be an independent publication surface"
+    )
 
 
-def test_martin_named_source_matches_delivery_registry():
-    config = _yaml(MARTIN_CONFIG)
+def test_generated_certification_source_matches_delivery_registry():
+    rendered, manifest = compile_config("certification")
+    config = yaml.safe_load(rendered)
     source = _yaml(DELIVERY)["sources"]["municipios"]
+    assert manifest["admitted_sources"] == ["municipios"]
     assert config["geojson"]["sources"][source["martin_source_id"]] == source["martin_artifact_path"]
+
+
+def test_generated_production_config_excludes_validated_unpublished_source():
+    rendered, manifest = compile_config("production")
+    config = yaml.safe_load(rendered)
+    assert manifest["admitted_sources"] == []
+    assert config["geojson"]["sources"] == {}
 
 
 def test_canary_is_validated_but_not_published():
