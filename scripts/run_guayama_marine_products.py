@@ -41,43 +41,72 @@ def main() -> int:
 
     receipt = json.loads(Path(args.receipt).read_text(encoding="utf-8"))
     bbox = BoundingBox(*receipt["source"]["bounded_aoi_wgs84"])
-    multibeam_ids = tuple(receipt["ncei_multibeam_survey_ids"])
+    multibeam_ids = set(receipt["ncei_multibeam_survey_ids"])
     sounding_ids = tuple(receipt["ncei_sounding_survey_ids"])
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
 
-    # Multibeam supports file-level geometry; preserve it to reduce false-positive files.
+    # NCEI supports file-specific geometry for multibeam. Query the AOI directly
+    # without combining it with a long survey/category filter (the service may 500
+    # on that combination), then fail closed if a returned survey was not present
+    # in the frozen survey denominator.
     multibeam = fetch_all_ncei_file_pages(
         CatalogFamily.MULTIBEAM,
-        surveys=multibeam_ids,
-        categories=("Point Data",),
+        surveys=("*",),
         bbox=bbox,
         page_size=200,
     )
-    # NCEI documents that sounding file rows do not expose file-specific geometry.
-    # Therefore this inventory is survey-bound, not file-level AOI certified.
-    sounding = fetch_all_ncei_file_pages(
-        CatalogFamily.SOUNDING,
-        surveys=sounding_ids,
-        categories=("Point Data",),
-        page_size=200,
-    )
+    returned_multibeam_ids = {
+        str(item.get("surveyId"))
+        for page in multibeam
+        for item in page.items
+        if item.get("surveyId") is not None
+    }
+    residue = sorted(returned_multibeam_ids - multibeam_ids)
+    if residue:
+        raise ValueError(f"multibeam file survey ids escaped frozen denominator: {residue}")
 
-    out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
+    # Sounding files do not have file-specific geometry. Query one frozen survey
+    # at a time so one malformed/legacy survey cannot silently collapse the whole
+    # denominator, and preserve each survey's response separately.
+    sounding_pages_by_survey: dict[str, tuple[object, ...]] = {}
+    for survey_id in sounding_ids:
+        sounding_pages_by_survey[survey_id] = fetch_all_ncei_file_pages(
+            CatalogFamily.SOUNDING,
+            surveys=(survey_id,),
+            categories=("Point Data",),
+            page_size=200,
+        )
+
+    frozen_sounding: dict[str, list[dict[str, object]]] = {}
+    sounding_count = 0
+    for survey_id, pages in sounding_pages_by_survey.items():
+        frozen_sounding[survey_id] = _freeze_pages(
+            pages, out, f"ncei_sounding_{survey_id}_point_data"
+        )
+        sounding_count += sum(len(page.items) for page in pages)
+
     manifest = {
         "receipt_version": "0.2",
         "source_denominator_artifact_sha256": receipt["source"]["artifact_sha256"],
         "bounded_aoi_wgs84": receipt["source"]["bounded_aoi_wgs84"],
         "file_pages": {
-            "ncei_multibeam_point_data": _freeze_pages(multibeam, out, "ncei_multibeam_point_data"),
-            "ncei_sounding_point_data": _freeze_pages(sounding, out, "ncei_sounding_point_data"),
+            "ncei_multibeam_all_categories_bbox": _freeze_pages(
+                multibeam, out, "ncei_multibeam_bbox"
+            ),
+            "ncei_sounding_point_data_by_survey": frozen_sounding,
         },
         "counts": {
-            "ncei_multibeam_point_data_files": sum(len(page.items) for page in multibeam),
-            "ncei_sounding_point_data_files": sum(len(page.items) for page in sounding),
+            "ncei_multibeam_files_all_categories_bbox": sum(
+                len(page.items) for page in multibeam
+            ),
+            "ncei_multibeam_survey_ids_returned": len(returned_multibeam_ids),
+            "ncei_sounding_point_data_files": sounding_count,
+            "ncei_sounding_surveys_queried": len(sounding_ids),
         },
         "coverage_semantics": {
-            "ncei_multibeam_point_data": "FILE_LEVEL_BBOX_FILTERED",
-            "ncei_sounding_point_data": "SURVEY_BOUND_ONLY",
+            "ncei_multibeam": "FILE_LEVEL_BBOX_FILTERED",
+            "ncei_sounding": "SURVEY_BOUND_ONLY",
         },
         "certification_boundary": (
             "File metadata enumeration only. Sounding files are not file-level spatially filtered; "
