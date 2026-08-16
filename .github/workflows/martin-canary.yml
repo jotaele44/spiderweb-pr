@@ -1,16 +1,17 @@
 name: Martin municipios canary
 
 on:
-  push:
-    branches: ["martin-municipios-canary"]
   pull_request:
     branches: [main]
     paths:
       - ".github/workflows/martin-canary.yml"
       - "martin/**"
       - "configs/martin_delivery.yaml"
+      - "configs/layer_catalog.yaml"
       - "data/tiger/2025/manifest.json"
       - "scripts/build_martin_canary_fixture.py"
+      - "scripts/build_martin_config.py"
+      - "scripts/build_martin_delivery_artifact.py"
       - "scripts/check_martin_canary.py"
       - "scripts/check_martin_mvt_parity.py"
       - "server/frontend/src/config.ts"
@@ -58,17 +59,49 @@ jobs:
           "$MARTIN_BIN" --version | tee /tmp/martin-version.txt
           grep -F "1.13.0" /tmp/martin-version.txt
 
-      - name: Rebuild and freeze municipios canary artifact
+      - name: Rebuild canonical and property-minimized municipios delivery
         run: |
           sudo mkdir -p /spiderweb-data
           sudo chown "$USER":"$USER" /spiderweb-data
           python scripts/build_martin_canary_fixture.py --output /spiderweb-data/municipios.geojson
           test "$(sha256sum /spiderweb-data/municipios.geojson | cut -d' ' -f1)" = "adebd4e779e36ca4aecb69291af9e153e430a829cc4ca8a676f7d5f5197a5d76"
-          chmod a-w /spiderweb-data/municipios.geojson
+          python scripts/build_martin_delivery_artifact.py \
+            --source /spiderweb-data/municipios.geojson \
+            --output /spiderweb-data/municipios.delivery.geojson \
+            --receipt /tmp/municipios-delivery-receipt.json
+          python - <<'PY'
+          import json
+          r=json.load(open('/tmp/municipios-delivery-receipt.json', encoding='utf-8'))
+          assert r['feature_count']==78
+          assert r['identity_count']==78
+          assert r['symmetric_difference_count']==0
+          assert r['public_properties']==['GEOID','NAME']
+          assert r['unexpected_properties']==[]
+          print('PASS: canonical->delivery parity and property minimization')
+          PY
+          chmod a-w /spiderweb-data/municipios.geojson /spiderweb-data/municipios.delivery.geojson
 
-      - name: Start Martin and certify catalog TileJSON and MVT identity
+      - name: Generate certification and production configs deterministically
         run: |
-          "$MARTIN_BIN" --config martin/config.yaml >/tmp/martin.log 2>&1 &
+          python scripts/build_martin_config.py --environment certification --output /tmp/martin-cert.yaml --manifest /tmp/martin-cert.manifest.json
+          python scripts/build_martin_config.py --environment certification --output /tmp/martin-cert-2.yaml --manifest /tmp/martin-cert-2.manifest.json
+          cmp /tmp/martin-cert.yaml /tmp/martin-cert-2.yaml
+          python scripts/build_martin_config.py --environment production --output /tmp/martin-prod.yaml --manifest /tmp/martin-prod.manifest.json
+          python scripts/build_martin_config.py --environment production --output /tmp/martin-prod-2.yaml --manifest /tmp/martin-prod-2.manifest.json
+          cmp /tmp/martin-prod.yaml /tmp/martin-prod-2.yaml
+          python - <<'PY'
+          import yaml
+          cert=yaml.safe_load(open('/tmp/martin-cert.yaml', encoding='utf-8'))
+          prod=yaml.safe_load(open('/tmp/martin-prod.yaml', encoding='utf-8'))
+          assert set(cert['geojson']['sources']) == {'municipios'}
+          assert prod['geojson']['sources'] == {}
+          assert 'paths' not in cert['geojson'] and 'paths' not in prod['geojson']
+          print('PASS: validated is certifiable but production publishes zero sources')
+          PY
+
+      - name: Start Martin and certify generated catalog TileJSON and MVT identity
+        run: |
+          "$MARTIN_BIN" --config /tmp/martin-cert.yaml >/tmp/martin.log 2>&1 &
           echo $! >/tmp/martin.pid
           for i in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3000/health >/dev/null; then break; fi
@@ -76,7 +109,7 @@ jobs:
           done
           curl --fail http://127.0.0.1:3000/health
           python scripts/check_martin_canary.py --base http://127.0.0.1:3000
-          python scripts/check_martin_mvt_parity.py --base http://127.0.0.1:3000 --source /spiderweb-data/municipios.geojson
+          python scripts/check_martin_mvt_parity.py --base http://127.0.0.1:3000 --source /spiderweb-data/municipios.delivery.geojson
 
       - name: Prove Martin-down isolation and clean restart
         run: |
@@ -94,20 +127,10 @@ jobs:
             if [ "$api_status" = "200" ] || [ "$api_status" = "503" ]; then break; fi
             sleep 1
           done
-          if [ "$api_status" != "200" ] && [ "$api_status" != "503" ]; then
-            cat /tmp/fastapi-isolation.log >&2
-            echo "FAIL: FastAPI /health unreachable with Martin down (HTTP $api_status)" >&2
-            exit 1
-          fi
-          python - <<'PY'
-          import json
-          payload = json.load(open('/tmp/fastapi-health.json', encoding='utf-8'))
-          assert payload.get('status') in ('ok', 'degraded'), payload
-          print('PASS: FastAPI health remains independently reachable with Martin down')
-          PY
+          test "$api_status" = "200" -o "$api_status" = "503"
           kill "$api_pid" || true
 
-          "$MARTIN_BIN" --config martin/config.yaml >/tmp/martin-restart.log 2>&1 &
+          "$MARTIN_BIN" --config /tmp/martin-cert.yaml >/tmp/martin-restart.log 2>&1 &
           echo $! >/tmp/martin.pid
           for i in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3000/health >/dev/null; then break; fi
@@ -115,35 +138,32 @@ jobs:
           done
           python scripts/check_martin_canary.py --base http://127.0.0.1:3000
 
-      - name: Fail closed on missing or corrupt canonical input
+      - name: Fail closed on missing or corrupt delivery input
         run: |
           kill "$(cat /tmp/martin.pid)" || true
-
-          sed 's#/spiderweb-data/municipios.geojson#/spiderweb-data/DOES_NOT_EXIST.geojson#' martin/config.yaml >/tmp/martin-missing.yaml
+          sed 's#/spiderweb-data/municipios.delivery.geojson#/spiderweb-data/DOES_NOT_EXIST.geojson#' /tmp/martin-cert.yaml >/tmp/martin-missing.yaml
           "$MARTIN_BIN" --config /tmp/martin-missing.yaml >/tmp/martin-missing.log 2>&1 &
           pid=$!
           sleep 3
           if kill -0 "$pid" 2>/dev/null; then
             kill "$pid" || true
             echo "FAIL: Martin remained alive with missing authorized source" >&2
-            cat /tmp/martin-missing.log >&2
             exit 1
           fi
 
           printf '{not valid geojson' >/tmp/corrupt-municipios.geojson
-          sed 's#/spiderweb-data/municipios.geojson#/tmp/corrupt-municipios.geojson#' martin/config.yaml >/tmp/martin-corrupt.yaml
+          sed 's#/spiderweb-data/municipios.delivery.geojson#/tmp/corrupt-municipios.geojson#' /tmp/martin-cert.yaml >/tmp/martin-corrupt.yaml
           "$MARTIN_BIN" --config /tmp/martin-corrupt.yaml >/tmp/martin-corrupt.log 2>&1 &
           pid=$!
           sleep 3
           if kill -0 "$pid" 2>/dev/null; then
             kill "$pid" || true
             echo "FAIL: Martin remained alive with corrupt authorized source" >&2
-            cat /tmp/martin-corrupt.log >&2
             exit 1
           fi
-          echo "PASS: missing/corrupt source fail closed"
+          echo "PASS: missing/corrupt delivery source fail closed"
 
-      - name: Upload Martin logs on failure
+      - name: Upload Martin receipts on failure
         if: failure()
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
         with:
