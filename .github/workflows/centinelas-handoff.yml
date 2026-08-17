@@ -17,20 +17,37 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - id: ingest
+        continue-on-error: true
         env:
           CENTINELAS_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
           EXPECTED_TARGET: spiderweb-pr
         run: python3 scripts/ingest_centinelas_handoff.py
-      - name: Build project physical assertions
-        run: python3 scripts/build_project_physical_assertions.py
-      - name: Persist receipt and assertion stream
+      - name: Preserve receipt or collision evidence
+        if: ${{ always() }}
         run: |
           git config user.name centinelas-handoff-bot
           git config user.email actions@users.noreply.github.com
-          git add data/centinelas_handoffs exports/federation
-          git diff --cached --quiet || git commit -m "data: ingest Centinelas project handoff [skip ci]"
+          git add data/centinelas_handoffs
+          git diff --cached --quiet || git commit -m "data: preserve Centinelas handoff evidence [skip ci]"
+          git push
+      - name: Reject collision/fork after evidence preservation
+        if: ${{ steps.ingest.outcome != 'success' }}
+        run: |
+          echo "Centinelas handoff ingest failed; evidence was preserved."
+          exit 1
+      - name: Build project physical assertions
+        if: ${{ steps.ingest.outcome == 'success' }}
+        run: python3 scripts/build_project_physical_assertions.py
+      - name: Persist assertion stream
+        if: ${{ steps.ingest.outcome == 'success' }}
+        run: |
+          git config user.name centinelas-handoff-bot
+          git config user.email actions@users.noreply.github.com
+          git add exports/federation
+          git diff --cached --quiet || git commit -m "data: federate Centinelas project assertion [skip ci]"
           git push
       - name: Acknowledge
+        if: ${{ steps.ingest.outcome == 'success' }}
         env:
           TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
           KEY: ${{ github.event.client_payload.idempotency_key }}
@@ -44,7 +61,7 @@ jobs:
             https://api.github.com/repos/jotaele44/centinelas-pr/dispatches \
             -d "$body"
       - name: Notify Hub
-        if: ${{ success() }}
+        if: ${{ steps.ingest.outcome == 'success' }}
         env:
           TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
           ITEM: ${{ github.event.client_payload.item_id }}
