@@ -37,7 +37,7 @@ app again. Running `PRII-SPIDERWEB.command` instead also avoids it — only `.ap
 bundles are translocated.
 
 Genuine setup failures write their output to
-`$TMPDIR/prii-spiderweb-setup.log`, and the failure message names that file.
+`$TMPDIR/prii-spiderweb-pr-setup.log`, and the failure message names that file.
 
 ## Architecture
 
