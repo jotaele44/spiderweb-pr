@@ -5,6 +5,20 @@ in the change that introduced this document. Each item below is sized so the
 maintainer can approve the higher-risk moves (packaging changes, monorepo split)
 deliberately._
 
+## Status update (2026-08-19)
+
+Items #1, #2, #3, #4, #6, and #7 below are resolved on `main`: `pyproject.toml`
+carries the correct project identity and a full `[project.optional-dependencies]`
+extras split (`airspace`, `gebco`, `rag`, `earthgpt`, `imagery`,
+`remote_monitoring`, `server`, `federation`, `geo`, `dem`, `spatial`, `all`,
+`dev`), `requirements-*.txt` are now thin `-e .[extra]` shims, only `configs/`
+exists (no leftover `config/`), `.pre-commit-config.yaml` is in place, and
+`docs/README.md` is a real subsystem-grouped index. Only #5 (the monorepo
+split/isolation decision) remains genuinely open — it's a scope decision, not
+a mechanical fix, and still needs maintainer sign-off. The snapshot table and
+priority matrix below are left as historical record of what prompted the
+work; they no longer describe the current state.
+
 ## Snapshot
 
 | Metric | Value |

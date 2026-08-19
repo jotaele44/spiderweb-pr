@@ -42,4 +42,22 @@ pytest -q tests/test_martin_catalog_contract.py
 
 ## Promotion gate
 
-`publication_state: candidate` must remain unchanged until the runtime canary, MapLibre rendering path, feature-ID parity, negative publication tests, and rollback test pass. Tile geometry is a derived clipped/quantized manifestation and must not replace the canonical source geometry.
+The `municipios` source has progressed from `candidate` to
+`publication_state: validated` (runtime canary, MapLibre rendering path,
+feature-ID parity, negative publication tests, and rollback test all pass —
+see `.github/workflows/martin-canary.yml` and
+`.github/workflows/martin-publication-contract.yml`). A non-mutating
+eligibility check (`scripts/check_martin_promotion.py --source municipios
+--target published`) confirms it is `ELIGIBLE_FOR_EXPLICIT_TRANSITION`; a
+receipt is on file at `evidence/martin/municipios_promotion_eligibility_receipt.json`.
+
+`validated` is still not `published`: per `configs/martin_delivery.yaml`'s
+`authorization_note`, production config generation excludes this source
+"until an explicit future validated-to-published action." That final flip
+is a deliberate operator decision — it is not performed automatically by
+passing the eligibility check, and updates the guard tests in
+`tests/test_martin_publication_contract.py` that currently assert the
+non-published state (`test_canary_is_validated_but_not_published`,
+`test_production_ingress_authorizes_no_sources_today`). Tile geometry is a
+derived clipped/quantized manifestation and must not replace the canonical
+source geometry.
