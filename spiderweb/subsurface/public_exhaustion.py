@@ -1,8 +1,8 @@
 """Bounded public-source exhaustion certification for subsurface classes.
 
-This module is deliberately stricter than adapter success.  It answers whether the
+This module is deliberately stricter than adapter success. It answers whether the
 frozen public-source denominator is terminal enough to permit consideration of a
-records-request vector.  It never interprets an OPEN source, missing index, or
+records-request vector. It never interprets an OPEN source, missing index, or
 reference-only manifestation as a negative finding.
 """
 from __future__ import annotations
@@ -15,7 +15,7 @@ from typing import Iterable
 from .dispatcher import LAYER_FAMILIES
 from .runner import SourceLedgerRow, source_ledger
 from .sources import SourceSpec
-from .sources_exhaustion import SOURCE_DENOMINATOR_V02
+from .sources_exhaustion_v03 import SOURCE_DENOMINATOR_V03
 
 
 @dataclass(frozen=True)
@@ -43,12 +43,12 @@ def certify_public_exhaustion(
     rows: Iterable[SourceLedgerRow],
     *,
     families: Iterable[str] = LAYER_FAMILIES,
-    scope: str = "PUERTO_RICO_PUBLIC_SUBSURFACE_SOURCE_DENOMINATOR_V02",
+    scope: str = "PUERTO_RICO_PUBLIC_SUBSURFACE_SOURCE_DENOMINATOR_V03",
 ) -> PublicExhaustionCertificate:
     """Certify bounded exhaustion only when every required row is terminal.
 
     Terminal means the source manifestation itself has a PASS or ZERO receipt from
-    an executed, completeness-checked adapter.  VERIFIED_REFERENCE, DISCOVERY_ONLY,
+    an executed, completeness-checked adapter. VERIFIED_REFERENCE, DISCOVERY_ONLY,
     NOT_RUN, OPEN, BLOCKED, or failed rows are non-terminal for this gate.
     """
     requested = tuple(families)
@@ -98,7 +98,7 @@ def certify_public_exhaustion(
 def current_public_exhaustion_certificate(
     receipts=(),
     *,
-    sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V02,
+    sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V03,
 ) -> PublicExhaustionCertificate:
     return certify_public_exhaustion(source_ledger(sources, receipts))
 
