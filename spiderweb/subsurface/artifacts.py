@@ -165,9 +165,14 @@ def export_kml(path: str | Path, records: list[EvidenceRecord]) -> Path:
 
 
 def export_kmz(path: str | Path, records: list[EvidenceRecord]) -> Path:
+    """Write deterministic KMZ without deleting a sibling `<stem>.kml` export."""
     out = Path(path)
-    kml_bytes = export_kml(out.with_suffix(".kml"), records).read_bytes()
-    out.with_suffix(".kml").unlink()
+    scratch = out.with_name(out.name + ".doc.kml.tmp")
+    try:
+        kml_bytes = export_kml(scratch, records).read_bytes()
+    finally:
+        if scratch.exists():
+            scratch.unlink()
     info = zipfile.ZipInfo("doc.kml", date_time=(1980, 1, 1, 0, 0, 0))
     info.compress_type = zipfile.ZIP_DEFLATED
     with zipfile.ZipFile(out, "w") as zf:
