@@ -25,14 +25,15 @@ def run_reference_source(
 ) -> tuple[list[object], SourceRunReceipt]:
     """Freeze one exact public page/download as a terminal source manifestation.
 
-    This certifies retrieval of the registered manifestation only. It does not prove
-    that an HTML index contains every possible document or that a PDF is a complete
-    real-world entity denominator; those coverage claims remain separate source rows.
+    A DISCOVERY_ONLY reference may be byte-frozen to prove that its registered
+    manifestation was searched/retrieved; its evidence role remains candidate-level
+    and cannot prove buried infrastructure or identity. Terminality here is source
+    execution, not evidentiary promotion.
     """
     if spec.kind not in {SourceKind.REFERENCE_PAGE, SourceKind.REFERENCE_DOWNLOAD}:
         raise ValueError("reference adapter requires REFERENCE_PAGE or REFERENCE_DOWNLOAD")
-    if spec.status != SourceStatus.VERIFIED_REFERENCE:
-        raise ValueError("reference adapter requires VERIFIED_REFERENCE")
+    if spec.status not in {SourceStatus.VERIFIED_REFERENCE, SourceStatus.DISCOVERY_ONLY}:
+        raise ValueError("reference adapter requires VERIFIED_REFERENCE or DISCOVERY_ONLY")
     if not spec.endpoint.startswith("https://"):
         raise ValueError("reference endpoint must be HTTPS")
 
@@ -65,6 +66,8 @@ def run_reference_source(
                     "byte_count": len(raw),
                     "sha256": digest,
                     "kind": spec.kind.value,
+                    "registry_status": spec.status.value,
+                    "evidence_role": spec.evidence_role,
                 },
                 indent=2,
                 sort_keys=True,
