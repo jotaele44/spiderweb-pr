@@ -219,12 +219,13 @@ def test_open_required_source_blocks_family_certification():
     assert faults.open_sources == ("OPEN_REQUIRED",)
 
 
-def test_reference_source_is_open_until_exact_payload_is_bound():
+def test_reference_source_is_not_terminal_until_exact_payload_is_frozen():
     source = SourceSpec(
         "REF", "HISTORICAL_CORROBORATION", "USGS", "reference",
         SourceKind.REFERENCE_PAGE, "https://example.test/reference",
         SourceStatus.VERIFIED_REFERENCE,
     )
     row = source_ledger([source], [])[0]
-    assert row.run_state == "OPEN"
-    assert "payload" in row.reason
+    assert row.run_state == "NOT_RUN"
+    assert row.terminal is False
+    assert "byte-frozen" in row.reason
