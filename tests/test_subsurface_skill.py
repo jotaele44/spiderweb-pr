@@ -44,6 +44,7 @@ def test_kml_geojson_equivalent_geometry_freezes_to_same_hash(tmp_path: Path):
     assert a.source_sha256 != b.source_sha256
     assert a.source_has_z is True
     assert a.analysis_dimension_loss == ("Z",)
+    assert a.source_crs == b.source_crs == "OGC:CRS84"
 
 
 def test_kmz_member_hash_and_container_hash_are_separate(tmp_path: Path):
@@ -71,6 +72,22 @@ def test_invalid_polygon_fails_closed(tmp_path: Path):
         freeze_aoi(path)
 
 
+def test_unsupported_legacy_geojson_crs_fails_closed(tmp_path: Path):
+    path = tmp_path / "wrong_crs.geojson"
+    path.write_text(
+        json.dumps(
+            {
+                "type": "Polygon",
+                "crs": {"type": "name", "properties": {"name": "EPSG:3857"}},
+                "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]],
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unsupported GeoJSON CRS"):
+        freeze_aoi(path)
+
+
 def test_proximity_only_cannot_promote_to_direct():
     aoi = Polygon([(0, 0), (2, 0), (2, 2), (0, 2), (0, 0)])
     record = adjudicate_feature(
@@ -85,6 +102,21 @@ def test_proximity_only_cannot_promote_to_direct():
     )
     assert record.evidence_tier == EvidenceTier.CANDIDATE
     assert record.spatial_state == SpatialState.FULLY_WITHIN
+
+
+def test_proximity_does_not_erase_contradiction():
+    aoi = Polygon([(0, 0), (2, 0), (2, 2), (0, 2), (0, 0)])
+    record = adjudicate_feature(
+        aoi=aoi,
+        record_id="r1",
+        source_id="s1",
+        layer_family="HISTORICAL_CORROBORATION",
+        source_uri="fixture://s1",
+        feature=Point(1, 1),
+        asserted_tier=EvidenceTier.CONTRADICTED,
+        basis=["proximity_only", "authoritative_negative_record"],
+    )
+    assert record.evidence_tier == EvidenceTier.CONTRADICTED
 
 
 def test_null_geometry_is_unresolved_not_negative():
