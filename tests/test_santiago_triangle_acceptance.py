@@ -30,6 +30,7 @@ FREEZE_RECEIPT = FIXTURE_DIR / "santiago_triangle.freeze.json"
 BASELINE = FIXTURE_DIR / "santiago_triangle.baseline.json"
 CANONICAL_SHA256 = "4b4109c31681f8d510b8dba9ca0a9018d165ab88ecc05a0625c8a98ce3aca3c8"
 SOURCE_SHA256 = "c8bf698be741bcd439228901cfd3f9304b86a73c8a968c5f7c9f2343d36de34f"
+SYNTHETIC_SOURCE_SHA256 = "a5ac860c7b5e4b8c7f8a8a37109f9fe0ac29ef427aef7ba1c4d44d416a4faa49"
 
 
 def _fixture_record(aoi, record_id: str, geometry):
@@ -39,7 +40,7 @@ def _fixture_record(aoi, record_id: str, geometry):
         source_id="SYNTHETIC_SPATIAL_STATE_FIXTURE",
         layer_family="GEOLOGY_KARST_CAVES",
         source_uri="fixture://santiago-triangle/spatial-states",
-        source_sha256="fixture-not-authoritative",
+        source_sha256=SYNTHETIC_SOURCE_SHA256,
         retrieved_utc="2026-08-20T18:12:00Z",
         feature=geometry,
         asserted_tier=EvidenceTier.CANDIDATE,
@@ -119,6 +120,7 @@ def test_acceptance_exports_and_source_manifest_preserve_complete_fixture_set(tm
     source = snapshot["sources"]["GEOLOGY_KARST_CAVES|SYNTHETIC_SPATIAL_STATE_FIXTURE"]
     assert source["record_count"] == 4
     assert source["record_ids"] == ["outside", "partial", "touch", "within"]
+    assert source["source_sha256"] == SYNTHETIC_SOURCE_SHA256
     assert snapshot["record_count"] == 4
 
     csv_path = export_csv(tmp_path / "evidence.csv", records)
