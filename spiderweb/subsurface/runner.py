@@ -1,19 +1,15 @@
 """Source-backed dispatcher registration and family completeness accounting."""
-
 from __future__ import annotations
-
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 from typing import Iterable
-
 from .adapters import SourceRunReceipt, run_arcgis_source, run_ogc_source, write_run_receipt
 from .dispatcher import LAYER_FAMILIES, SubsurfaceDispatcher
+from .preflight import freeze_arcgis_layer_manifest
 from .sources import DEFAULT_SOURCES, SourceKind, SourceSpec, SourceStatus, denominator_sha256
 
-
 TERMINAL_PASS_STATES = frozenset({"PASS", "ZERO"})
-
 
 @dataclass(frozen=True)
 class SourceLedgerRow:
@@ -25,7 +21,6 @@ class SourceLedgerRow:
     terminal: bool
     reason: str
 
-
 @dataclass(frozen=True)
 class FamilyCertification:
     family: str
@@ -35,10 +30,7 @@ class FamilyCertification:
     pass_sources: int
     open_sources: tuple[str, ...]
 
-
-def source_ledger(
-    sources: Iterable[SourceSpec], receipts: Iterable[SourceRunReceipt]
-) -> list[SourceLedgerRow]:
+def source_ledger(sources: Iterable[SourceSpec], receipts: Iterable[SourceRunReceipt]) -> list[SourceLedgerRow]:
     receipt_map = {receipt.source_id: receipt for receipt in receipts}
     rows: list[SourceLedgerRow] = []
     for source in sources:
@@ -48,27 +40,15 @@ def source_ledger(
             terminal = receipt.state in TERMINAL_PASS_STATES
             reason = receipt.reason
         elif source.status == SourceStatus.OPEN:
-            run_state = "OPEN"
-            terminal = False
-            reason = "source denominator intentionally unresolved"
+            run_state, terminal, reason = "OPEN", False, "source denominator intentionally unresolved"
         elif source.status == SourceStatus.VERIFIED_REFERENCE:
-            run_state = "OPEN"
-            terminal = False
-            reason = "authoritative reference identified but exact payload/snapshot not yet bound"
+            run_state, terminal, reason = "OPEN", False, "authoritative reference identified but exact payload/snapshot not yet bound"
         elif source.status == SourceStatus.DISCOVERY_ONLY:
-            run_state = "OPEN"
-            terminal = False
-            reason = "discovery-only manifestation cannot close authoritative denominator"
+            run_state, terminal, reason = "OPEN", False, "discovery-only manifestation cannot close authoritative denominator"
         else:
-            run_state = "NOT_RUN"
-            terminal = False
-            reason = "queryable source has not been executed for this AOI"
-        rows.append(SourceLedgerRow(
-            source.source_id, source.family, source.required, source.status.value,
-            run_state, terminal, reason,
-        ))
+            run_state, terminal, reason = "NOT_RUN", False, "queryable source has not been executed for this AOI"
+        rows.append(SourceLedgerRow(source.source_id, source.family, source.required, source.status.value, run_state, terminal, reason))
     return rows
-
 
 def certify_families(rows: Iterable[SourceLedgerRow]) -> list[FamilyCertification]:
     ledger = list(rows)
@@ -79,32 +59,35 @@ def certify_families(rows: Iterable[SourceLedgerRow]) -> list[FamilyCertificatio
         passed = [row for row in required if row.run_state in TERMINAL_PASS_STATES]
         open_ids = tuple(row.source_id for row in required if not row.terminal)
         state = "PASS" if required and len(passed) == len(required) else "OPEN"
-        output.append(FamilyCertification(
-            family, state, len(required), len(terminal), len(passed), open_ids
-        ))
+        output.append(FamilyCertification(family, state, len(required), len(terminal), len(passed), open_ids))
     return output
 
-
 class AuthoritativeSourceRunner:
-    """Runs registered queryable sources while preserving unresolved denominator rows."""
-
-    def __init__(
-        self,
-        sources: Iterable[SourceSpec] = DEFAULT_SOURCES,
-        *,
-        snapshot_root: str | Path | None = None,
-        fetch=None,
-    ) -> None:
+    """Runs queryable sources while preserving unresolved denominator rows."""
+    def __init__(self, sources: Iterable[SourceSpec] = DEFAULT_SOURCES, *, snapshot_root: str | Path | None = None, fetch=None) -> None:
         self.sources = tuple(sources)
         self.snapshot_root = None if snapshot_root is None else Path(snapshot_root)
         self.fetch = fetch
         self.receipts: list[SourceRunReceipt] = []
+
+    def _fetcher(self):
+        if self.fetch is not None:
+            return self.fetch
+        from .adapters import _default_fetch  # local import keeps public API small
+        return _default_fetch
 
     def _run_source(self, source: SourceSpec, aoi):
         kwargs = {"snapshot_dir": self.snapshot_root}
         if self.fetch is not None:
             kwargs["fetch"] = self.fetch
         if source.kind == SourceKind.ARCGIS_LAYER:
+            manifest = freeze_arcgis_layer_manifest(source, fetch=self._fetcher(), snapshot_dir=self.snapshot_root)
+            if manifest.object_id_field != "OBJECTID":
+                raise RuntimeError(
+                    f"{source.source_id} OID field is {manifest.object_id_field!r}; current deterministic pager requires OBJECTID"
+                )
+            if "geoJSON" not in manifest.supported_query_formats and "geojson" not in manifest.supported_query_formats.lower():
+                raise RuntimeError(f"{source.source_id} does not advertise GeoJSON query output")
             return run_arcgis_source(source, aoi, **kwargs)
         if source.kind == SourceKind.OGC_FEATURES:
             return run_ogc_source(source, aoi, **kwargs)
@@ -124,9 +107,7 @@ class AuthoritativeSourceRunner:
             if receipt is not None:
                 self.receipts.append(receipt)
                 if self.snapshot_root is not None:
-                    write_run_receipt(
-                        self.snapshot_root / source.source_id / "receipt.json", receipt
-                    )
+                    write_run_receipt(self.snapshot_root / source.source_id / "receipt.json", receipt)
         return output
 
     def dispatcher(self) -> SubsurfaceDispatcher:
