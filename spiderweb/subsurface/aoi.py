@@ -20,6 +20,7 @@ from shapely.ops import unary_union
 class FrozenAOI:
     source_path: str
     source_format: str
+    source_crs: str
     source_sha256: str
     source_size: int
     frozen_at_utc: str
@@ -59,6 +60,28 @@ def _canonicalize_polygonal(geom):
     obj = mapping(normalized)
     payload = json.dumps(obj, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return obj, _sha256(payload), bool(getattr(geom, "has_z", False))
+
+
+def _geojson_crs(obj: dict) -> str:
+    """Return an explicit CRS label and fail closed on unsupported legacy CRS."""
+
+    crs = obj.get("crs")
+    if crs is None:
+        return "OGC:CRS84"
+    if not isinstance(crs, dict):
+        raise ValueError("GeoJSON crs member must be an object")
+    props = crs.get("properties") or {}
+    name = str(props.get("name", "")).strip()
+    normalized = name.upper()
+    allowed = (
+        "EPSG:4326",
+        "URN:OGC:DEF:CRS:OGC:1.3:CRS84",
+        "OGC:CRS84",
+        "CRS84",
+    )
+    if not any(token in normalized for token in allowed):
+        raise ValueError(f"unsupported GeoJSON CRS: {name or '<missing name>'}")
+    return name or "OGC:CRS84"
 
 
 def _extract_geojson(obj: dict):
@@ -139,11 +162,14 @@ def freeze_aoi(path: str | Path) -> FrozenAOI:
     kmz_member_sha = None
 
     if suffix in {".geojson", ".json"}:
-        geom, feature_count = _extract_geojson(json.loads(raw.decode("utf-8")))
+        obj = json.loads(raw.decode("utf-8"))
+        source_crs = _geojson_crs(obj)
+        geom, feature_count = _extract_geojson(obj)
         source_format = "GEOJSON"
     elif suffix == ".kml":
         geom, feature_count = _parse_kml(raw)
         source_format = "KML"
+        source_crs = "OGC:CRS84"
     elif suffix == ".kmz":
         with zipfile.ZipFile(source) as zf:
             names = sorted(n for n in zf.namelist() if n.lower().endswith(".kml"))
@@ -154,6 +180,7 @@ def freeze_aoi(path: str | Path) -> FrozenAOI:
         kmz_member_sha = _sha256(kml)
         geom, feature_count = _parse_kml(kml)
         source_format = "KMZ"
+        source_crs = "OGC:CRS84"
     else:
         raise ValueError("AOI format must be .kml, .kmz, .geojson, or .json")
 
@@ -161,6 +188,7 @@ def freeze_aoi(path: str | Path) -> FrozenAOI:
     return FrozenAOI(
         source_path=str(source),
         source_format=source_format,
+        source_crs=source_crs,
         source_sha256=_sha256(raw),
         source_size=len(raw),
         frozen_at_utc=datetime.now(timezone.utc).isoformat(),
