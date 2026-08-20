@@ -8,7 +8,7 @@ from .adapters import SourceRunReceipt, run_arcgis_source, run_ogc_source, write
 from .dispatcher import LAYER_FAMILIES, SubsurfaceDispatcher
 from .preflight import freeze_arcgis_layer_manifest
 from .sources import SourceKind, SourceSpec, SourceStatus, denominator_sha256
-from .sources_exhaustion_v03 import SOURCE_DENOMINATOR_V03
+from .sources_exhaustion_v04 import SOURCE_DENOMINATOR_V04
 
 TERMINAL_PASS_STATES = frozenset({"PASS", "ZERO"})
 
@@ -65,7 +65,7 @@ def certify_families(rows: Iterable[SourceLedgerRow]) -> list[FamilyCertificatio
 
 class AuthoritativeSourceRunner:
     """Runs queryable sources while preserving unresolved denominator rows."""
-    def __init__(self, sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V03, *, snapshot_root: str | Path | None = None, fetch=None) -> None:
+    def __init__(self, sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V04, *, snapshot_root: str | Path | None = None, fetch=None) -> None:
         self.sources = tuple(sources)
         self.snapshot_root = None if snapshot_root is None else Path(snapshot_root)
         self.fetch = fetch
@@ -74,7 +74,7 @@ class AuthoritativeSourceRunner:
     def _fetcher(self):
         if self.fetch is not None:
             return self.fetch
-        from .adapters import _default_fetch  # local import keeps public API small
+        from .adapters import _default_fetch
         return _default_fetch
 
     def _run_source(self, source: SourceSpec, aoi):
@@ -83,11 +83,9 @@ class AuthoritativeSourceRunner:
             kwargs["fetch"] = self.fetch
         if source.kind == SourceKind.ARCGIS_LAYER:
             manifest = freeze_arcgis_layer_manifest(source, fetch=self._fetcher(), snapshot_dir=self.snapshot_root)
-            if manifest.object_id_field != "OBJECTID":
-                raise RuntimeError(
-                    f"{source.source_id} OID field is {manifest.object_id_field!r}; current deterministic pager requires OBJECTID"
-                )
-            if "geoJSON" not in manifest.supported_query_formats and "geojson" not in manifest.supported_query_formats.lower():
+            if not manifest.object_id_field:
+                raise RuntimeError(f"{source.source_id} has no OID field")
+            if "geojson" not in manifest.supported_query_formats.lower():
                 raise RuntimeError(f"{source.source_id} does not advertise GeoJSON query output")
             return run_arcgis_source(source, aoi, **kwargs)
         if source.kind == SourceKind.OGC_FEATURES:
@@ -129,7 +127,7 @@ class AuthoritativeSourceRunner:
         out = Path(path)
         out.parent.mkdir(parents=True, exist_ok=True)
         payload = {
-            "schema": "spiderweb.subsurface.source_control.v3",
+            "schema": "spiderweb.subsurface.source_control.v4",
             "source_denominator_sha256": denominator_sha256(self.sources),
             "sources": [asdict(source) for source in self.sources],
             "ledger": [asdict(row) for row in self.ledger()],
