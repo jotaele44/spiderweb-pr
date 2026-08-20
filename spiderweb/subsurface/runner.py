@@ -7,6 +7,7 @@ from typing import Iterable
 from .adapters import SourceRunReceipt, run_arcgis_source, run_ogc_source, write_run_receipt
 from .dispatcher import LAYER_FAMILIES, SubsurfaceDispatcher
 from .preflight import freeze_arcgis_layer_manifest
+from .reference_adapter import run_reference_source
 from .sources import SourceKind, SourceSpec, SourceStatus, denominator_sha256
 from .sources_exhaustion_v04 import SOURCE_DENOMINATOR_V04
 
@@ -43,7 +44,7 @@ def source_ledger(sources: Iterable[SourceSpec], receipts: Iterable[SourceRunRec
         elif source.status == SourceStatus.OPEN:
             run_state, terminal, reason = "OPEN", False, "source denominator intentionally unresolved"
         elif source.status == SourceStatus.VERIFIED_REFERENCE:
-            run_state, terminal, reason = "OPEN", False, "authoritative reference identified but exact payload/snapshot not yet bound"
+            run_state, terminal, reason = "NOT_RUN", False, "verified reference has not yet been byte-frozen"
         elif source.status == SourceStatus.DISCOVERY_ONLY:
             run_state, terminal, reason = "OPEN", False, "discovery-only manifestation cannot close authoritative denominator"
         else:
@@ -64,7 +65,7 @@ def certify_families(rows: Iterable[SourceLedgerRow]) -> list[FamilyCertificatio
     return output
 
 class AuthoritativeSourceRunner:
-    """Runs queryable sources while preserving unresolved denominator rows."""
+    """Runs executable public sources while preserving unresolved denominator rows."""
     def __init__(self, sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V04, *, snapshot_root: str | Path | None = None, fetch=None) -> None:
         self.sources = tuple(sources)
         self.snapshot_root = None if snapshot_root is None else Path(snapshot_root)
@@ -90,16 +91,21 @@ class AuthoritativeSourceRunner:
             return run_arcgis_source(source, aoi, **kwargs)
         if source.kind == SourceKind.OGC_FEATURES:
             return run_ogc_source(source, aoi, **kwargs)
+        if source.kind in {SourceKind.REFERENCE_PAGE, SourceKind.REFERENCE_DOWNLOAD}:
+            return run_reference_source(source, **kwargs)
         return [], None
 
     def run_family(self, family: str, aoi) -> list[object]:
         if family not in LAYER_FAMILIES:
             raise ValueError(f"unknown layer family: {family}")
         output: list[object] = []
+        executable = {
+            SourceStatus.VERIFIED_QUERYABLE,
+            SourceStatus.VERIFIED_REFERENCE,
+            SourceStatus.DISCOVERY_ONLY,
+        }
         for source in self.sources:
-            if source.family != family:
-                continue
-            if source.status not in {SourceStatus.VERIFIED_QUERYABLE, SourceStatus.DISCOVERY_ONLY}:
+            if source.family != family or source.status not in executable:
                 continue
             records, receipt = self._run_source(source, aoi)
             output.extend(records)
