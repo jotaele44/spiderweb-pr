@@ -50,9 +50,10 @@ def arcgis_spec() -> SourceSpec:
 def test_source_denominator_covers_every_family():
     counts = validate_source_denominator()
     assert counts["sources"] == len(DEFAULT_SOURCES)
-    assert all(counts[f"{family}:sources"] >= 1 for family in {
-        source.family for source in DEFAULT_SOURCES
-    })
+    assert all(
+        counts[f"{family}:sources"] >= 1
+        for family in {source.family for source in DEFAULT_SOURCES}
+    )
 
 
 def test_arcgis_paging_closes_exact_count_and_snapshots(tmp_path: Path):
@@ -62,7 +63,12 @@ def test_arcgis_paging_closes_exact_count_and_snapshots(tmp_path: Path):
             return json.dumps({"count": 3}).encode()
         offset = int(query["resultOffset"][0])
         rows = [
-            {"type": "Feature", "id": n, "geometry": {"type": "Point", "coordinates": [-66.1, 18.1]}, "properties": {"OBJECTID": n}}
+            {
+                "type": "Feature",
+                "id": n,
+                "geometry": {"type": "Point", "coordinates": [-66.1, 18.1]},
+                "properties": {"OBJECTID": n},
+            }
             for n in range(offset + 1, min(offset + 2, 3) + 1)
         ]
         return json.dumps({"type": "FeatureCollection", "features": rows}).encode()
@@ -77,7 +83,13 @@ def test_arcgis_paging_closes_exact_count_and_snapshots(tmp_path: Path):
     assert receipt.state == "PASS"
     assert receipt.complete is True
     assert sum(page.row_count for page in receipt.pages) == 3
-    assert (tmp_path / "FIX_ARC" / "page_00000.json").exists()
+    source_dir = tmp_path / "FIX_ARC"
+    assert (source_dir / "page_00000.json").exists()
+    assert (source_dir / "count.raw.json").exists()
+    count_manifest = json.loads((source_dir / "count_manifest.json").read_text())
+    assert count_manifest["count"] == 3
+    assert len(count_manifest["byte_sha256"]) == 64
+    assert len(count_manifest["logical_sha256"]) == 64
     assert all(len(page.byte_sha256) == 64 for page in receipt.pages)
     assert all(len(page.logical_sha256) == 64 for page in receipt.pages)
 
@@ -92,6 +104,13 @@ def test_arcgis_zero_requires_successful_count_query_not_missing_source():
     assert receipt.state == "ZERO"
     assert receipt.complete is True
     assert receipt.expected_count == 0
+
+
+def test_arcgis_count_without_count_field_fails_closed():
+    with pytest.raises(RuntimeError, match="missing count"):
+        run_arcgis_source(
+            arcgis_spec(), aoi(), fetch=lambda _url: b'{"status":"ok"}'
+        )
 
 
 def test_arcgis_premature_empty_page_fails_closed():
@@ -117,7 +136,8 @@ def test_ogc_follows_next_links_and_closes_number_matched():
     spec = SourceSpec(
         "FIX_OGC", "AQUIFERS_WELLS_SPRINGS", "fixture", "fixture",
         SourceKind.OGC_FEATURES, "https://example.test/items",
-        SourceStatus.VERIFIED_QUERYABLE, stable_id_fields=("id",), evidence_role="DIRECT",
+        SourceStatus.VERIFIED_QUERYABLE,
+        stable_id_fields=("id",), evidence_role="DIRECT",
     )
     calls = []
 
@@ -125,14 +145,30 @@ def test_ogc_follows_next_links_and_closes_number_matched():
         calls.append(url)
         if len(calls) == 1:
             obj = {
-                "type": "FeatureCollection", "numberMatched": 2,
-                "features": [{"type": "Feature", "id": "a", "geometry": {"type": "Point", "coordinates": [-66.1, 18.1]}, "properties": {}}],
+                "type": "FeatureCollection",
+                "numberMatched": 2,
+                "features": [
+                    {
+                        "type": "Feature",
+                        "id": "a",
+                        "geometry": {"type": "Point", "coordinates": [-66.1, 18.1]},
+                        "properties": {},
+                    }
+                ],
                 "links": [{"rel": "next", "href": "https://example.test/page2"}],
             }
         else:
             obj = {
-                "type": "FeatureCollection", "numberMatched": 2,
-                "features": [{"type": "Feature", "id": "b", "geometry": {"type": "Point", "coordinates": [-66.1, 18.1]}, "properties": {}}],
+                "type": "FeatureCollection",
+                "numberMatched": 2,
+                "features": [
+                    {
+                        "type": "Feature",
+                        "id": "b",
+                        "geometry": {"type": "Point", "coordinates": [-66.1, 18.1]},
+                        "properties": {},
+                    }
+                ],
                 "links": [],
             }
         return json.dumps(obj).encode()
@@ -153,7 +189,9 @@ def test_ogc_pagination_cycle_fails_closed():
 
     def fetch(url: str) -> bytes:
         obj = {
-            "type": "FeatureCollection", "numberMatched": 2, "features": [],
+            "type": "FeatureCollection",
+            "numberMatched": 2,
+            "features": [],
             "links": [{"rel": "next", "href": url}],
         }
         return json.dumps(obj).encode()
