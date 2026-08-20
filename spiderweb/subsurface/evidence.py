@@ -63,7 +63,7 @@ def spatial_state(aoi: BaseGeometry, feature: BaseGeometry | None) -> SpatialSta
         return SpatialState.UNRESOLVED
     if aoi.contains(feature) or aoi.equals(feature):
         return SpatialState.FULLY_WITHIN
-    if aoi.touches(feature) and not aoi.interiors[0].intersects(feature):
+    if aoi.touches(feature):
         return SpatialState.TOUCH_ONLY
     if aoi.intersects(feature):
         return SpatialState.PARTIAL
