@@ -72,9 +72,15 @@ Every evidence geometry terminates in one of:
 
 ## Provenance manifest
 
-`manifest.json` stores the frozen AOI, source-manifest entries supplied by adapters, dispatch plan, invariant counts, and non-promotion rules. Source adapters should freeze at minimum source URI/service/layer/query, retrieval UTC, source bytes or logical snapshot hash, schema, and row/feature count.
+`manifest.json` stores the frozen AOI, source-manifest entries supplied by adapters, dispatch plan, invariant counts, and non-promotion rules. Source adapters freeze source URI/service/layer/query, retrieval UTC, source bytes or logical snapshot hash, schema, and row/feature count where applicable.
 
 Different hashes establish byte difference only. They do not establish logical, schema, geometric, or source-manifestation difference without a corresponding comparison.
+
+## Public-source execution
+
+Queryable ArcGIS and OGC manifestations use count/paging arithmetic with raw-byte and logical hashes. Exact authoritative reference pages/downloads are executable through `reference_adapter.py`, which freezes the retrieved bytes, retrieval UTC, byte count, and SHA-256. A reference receipt certifies only that registered manifestation; it does not certify the completeness of a broader collection or real-world asset universe.
+
+The current public-source denominator is versioned additively through v0.4. `public_exhaustion.py` controls records-request eligibility. Every required source manifestation in scope must be terminal `PASS|ZERO`; any required OPEN, NOT_RUN, failed, discovery-only, unindexed, or otherwise non-terminal row keeps records-request consideration forbidden.
 
 ## Outputs
 
@@ -106,19 +112,8 @@ A plan containing `OPEN` families is a valid preflight result but is **not** a c
 
 ## Regression gates
 
-The test suite covers:
-
-- equivalent KML/GeoJSON geometry -> same canonical geometry hash;
-- different manifestations -> different source byte hashes;
-- KMZ container hash separated from member hash;
-- invalid polygon -> fail closed;
-- proximity-only attempted promotion -> capped at candidate;
-- null geometry -> unresolved, not negative;
-- touch-only -> distinct final spatial state;
-- duplicate record IDs -> fail closed;
-- tied top scores -> review flags, no arbitrary tie-break;
-- missing handler -> `OPEN`, not negative evidence.
+The test suite covers equivalent KML/GeoJSON geometry identity, manifestation hashes, KMZ member identity, invalid polygons, non-promotion rules, null/touch/duplicate/tie safeguards, ArcGIS/OGC paging, exact reference-byte freezing, versioned public-source denominators, and the records-request eligibility gate.
 
 ## Certification boundary
 
-The subsystem can certify AOI intake and evidence-ledger invariants. A full subsurface claim is certifiable only after the requested layer-family denominator is defined, every family is terminal (`PASS`, justified `BLOCKED`, or otherwise explicitly adjudicated), every candidate is classified, duplicate/edge cases are resolved, provenance is frozen, and zero unresolved residue remains inside the claim scope.
+A full subsurface/public-source claim is certifiable only after the selected layer-family denominator is defined, every required source manifestation is terminal, every candidate is classified, duplicate/edge cases are resolved, provenance is frozen, and zero unresolved residue remains inside the claim scope. Precise current protected hardened/underground military assets are not enumerated by this subsystem.
