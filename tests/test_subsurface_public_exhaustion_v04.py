@@ -1,26 +1,37 @@
 from spiderweb.subsurface.public_exhaustion import current_public_exhaustion_certificate
 from spiderweb.subsurface.sources import SourceStatus
-from spiderweb.subsurface.sources_exhaustion_v04 import SOURCE_DENOMINATOR_V04
+from spiderweb.subsurface.sources_exhaustion_v04 import (
+    SOURCE_DENOMINATOR_V04,
+    USGS_OPENING_TYPES,
+    USGS_OPENING_WHERE,
+)
 
 
 def test_v04_binds_current_usgs_mine_and_mrds_machine_layers():
     by_id = {source.source_id: source for source in SOURCE_DENOMINATOR_V04}
     points = by_id["USGS_USMIN_CONSOLIDATED_POINTS_17"]
+    openings = by_id["USGS_USMIN_EXPLICIT_OPENINGS_17"]
     polygons = by_id["USGS_USMIN_CONSOLIDATED_POLYGONS_18"]
-    mrds = by_id["USGS_MRDS_GLOBAL_3_PR_AOI"]
+    mrds = by_id["USGS_MRDS_HOSTED_0_PR_AOI"]
     assert points.status == SourceStatus.VERIFIED_QUERYABLE
     assert points.layer_id == 17
     assert points.evidence_role == "SUPPORTING"
+    assert openings.status == SourceStatus.VERIFIED_QUERYABLE
+    assert openings.layer_id == 17
+    assert openings.evidence_role == "DIRECT"
+    assert openings.query_dict["where"] == USGS_OPENING_WHERE
+    assert USGS_OPENING_TYPES == ("Adit", "Air Shaft", "Mine Shaft")
     assert polygons.status == SourceStatus.VERIFIED_QUERYABLE
     assert polygons.layer_id == 18
     assert mrds.status == SourceStatus.VERIFIED_QUERYABLE
-    assert mrds.layer_id == 3
+    assert mrds.layer_id == 0
 
 
 def test_v04_supersedes_old_single_mine_symbol_manifestation():
     ids = {source.source_id for source in SOURCE_DENOMINATOR_V04}
     assert "USGS_USMIN_MINE_SYMBOLS_0" not in ids
     assert "USGS_USMIN_CONSOLIDATED_POINTS_17" in ids
+    assert "USGS_USMIN_EXPLICIT_OPENINGS_17" in ids
     assert "USGS_USMIN_CONSOLIDATED_POLYGONS_18" in ids
 
 
