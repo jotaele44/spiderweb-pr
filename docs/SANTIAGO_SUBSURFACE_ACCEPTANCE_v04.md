@@ -13,13 +13,13 @@
 
 ## Public-source gate
 
-The v0.4 live execution produced:
+The corrected v0.4 live execution produced:
 
 - required source manifestations: **58**
 - terminal manifestations: **47**
 - `PASS`: **45**
 - `ZERO`: **2**
-- explicit `OPEN` denominator rows: **4 required + 1 non-required active-military exclusion**
+- required explicit `OPEN` denominator rows: **4**
 - source execution `FAIL`: **7**, all USACE former-site reference manifestations returning HTTP 403 from the GitHub Actions runner
 - `records_request_eligible`: **false**
 - public-source exhaustion: **OPEN**
@@ -117,7 +117,7 @@ This closes machine-queryable map-edition discovery for the registered topoView 
 
 Former-site/FUDS and land-tenure manifestations are retained only as discovery/support context. This acceptance report intentionally does not enumerate precise current hardened/underground military asset locations, and former-site evidence cannot promote to current protected-asset identity.
 
-## Artifact hashes
+## Corrected run artifact hashes
 
 | Artifact | SHA256 |
 |---|---|
@@ -126,8 +126,6 @@ Former-site/FUDS and land-tenure manifestations are retained only as discovery/s
 | `evidence.csv` | `2b8cf3e41a994555191638da89e0173c0ced7fd1c075319a48ee8815f69645b9` |
 | `evidence.geojson` | `fe5f7e89cebd51d6deffde9e83facde6525a1d7fd6e87113d5d98bc259adac66` |
 | `evidence.kmz` | `5e15b00146bf624a37ca3b5701df4be6d6e39784dbfa2ec39b387ddce3fe5473` |
-
-The table hashes above correspond to the successful acceptance artifact used for substantive AOI analysis. A later utility-status-only correction increased source terminality from 46 to 47 without changing the four hard public-source residual classes.
 
 ## Certification
 
