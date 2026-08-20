@@ -1,6 +1,7 @@
 """Source-backed dispatcher registration and family completeness accounting."""
 from __future__ import annotations
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 from typing import Iterable
@@ -94,6 +95,22 @@ class AuthoritativeSourceRunner:
             return run_reference_source(source, **kwargs)
         return [], None
 
+    def _failure_receipt(self, source: SourceSpec, exc: Exception) -> SourceRunReceipt:
+        now = datetime.now(timezone.utc).isoformat()
+        return SourceRunReceipt(
+            source.source_id,
+            source.family,
+            "FAIL",
+            now,
+            now,
+            None,
+            0,
+            0,
+            False,
+            (),
+            f"{type(exc).__name__}: {exc}",
+        )
+
     def run_family(self, family: str, aoi) -> list[object]:
         if family not in LAYER_FAMILIES:
             raise ValueError(f"unknown layer family: {family}")
@@ -106,7 +123,10 @@ class AuthoritativeSourceRunner:
         for source in self.sources:
             if source.family != family or source.status not in executable:
                 continue
-            records, receipt = self._run_source(source, aoi)
+            try:
+                records, receipt = self._run_source(source, aoi)
+            except Exception as exc:  # noqa: BLE001 - receipt must preserve external-source failure
+                records, receipt = [], self._failure_receipt(source, exc)
             output.extend(records)
             if receipt is not None:
                 self.receipts.append(receipt)
