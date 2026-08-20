@@ -29,13 +29,14 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install Spiderweb
+      - name: Install Spiderweb with repository source bindings
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e .
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e .
 
       - name: Run frozen Santiago Triangle against v0.4 public denominator
         run: |
+          mkdir -p artifacts
           python -m spiderweb.subsurface.cli \
             tests/fixtures/subsurface/santiago_triangle.kml \
             --out artifacts/santiago-v04 \
@@ -51,6 +52,8 @@ jobs:
           from pathlib import Path
 
           root = Path('artifacts/santiago-v04')
+          if not (root / 'source_control.json').exists():
+              raise SystemExit('source_control.json missing: live execution did not reach receipt generation')
           control = json.loads((root / 'source_control.json').read_text())
           cert = json.loads((root / 'public_exhaustion.json').read_text())
           ledger = control['ledger']
@@ -61,7 +64,12 @@ jobs:
           print('PUBLIC_EXHAUSTION:', cert['state'])
           print('RECORDS_REQUEST_ELIGIBLE:', cert['records_request_eligible'])
           print('UNRESOLVED:', len(cert['unresolved_sources']))
-          # This acceptance run must never silently promote a still-open denominator.
+          print('FAILURES:')
+          for row in ledger:
+              if row['run_state'] == 'FAIL':
+                  print(f"  {row['source_id']}: {row['reason']}")
+          # The current denominator has explicit public residues; a live run must
+          # not silently promote them into records-request eligibility.
           assert cert['records_request_eligible'] is False
           PY
 
@@ -70,6 +78,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: santiago-subsurface-v04-${{ github.run_id }}
-          path: artifacts/santiago-v04
+          path: |
+            artifacts/santiago-v04
+            artifacts/santiago-v04.console.json
           if-no-files-found: error
           retention-days: 30
