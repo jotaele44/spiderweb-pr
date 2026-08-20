@@ -11,7 +11,7 @@ from .dispatcher import LAYER_FAMILIES, SubsurfaceDispatcher
 from .preflight import freeze_arcgis_layer_manifest
 from .reference_adapter import run_reference_source
 from .sources import SourceKind, SourceSpec, SourceStatus, denominator_sha256
-from .sources_exhaustion_v04 import SOURCE_DENOMINATOR_V04
+from .sources_exhaustion_v05 import SOURCE_DENOMINATOR_V05
 
 TERMINAL_PASS_STATES = frozenset({"PASS", "ZERO"})
 
@@ -68,7 +68,7 @@ def certify_families(rows: Iterable[SourceLedgerRow]) -> list[FamilyCertificatio
 
 class AuthoritativeSourceRunner:
     """Runs executable public sources while preserving unresolved denominator rows."""
-    def __init__(self, sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V04, *, snapshot_root: str | Path | None = None, fetch=None) -> None:
+    def __init__(self, sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V05, *, snapshot_root: str | Path | None = None, fetch=None) -> None:
         self.sources = tuple(sources)
         self.snapshot_root = None if snapshot_root is None else Path(snapshot_root)
         self.fetch = fetch
@@ -152,7 +152,7 @@ class AuthoritativeSourceRunner:
         out = Path(path)
         out.parent.mkdir(parents=True, exist_ok=True)
         payload = {
-            "schema": "spiderweb.subsurface.source_control.v4",
+            "schema": "spiderweb.subsurface.source_control.v5",
             "source_denominator_sha256": denominator_sha256(self.sources),
             "sources": [asdict(source) for source in self.sources],
             "ledger": [asdict(row) for row in self.ledger()],
