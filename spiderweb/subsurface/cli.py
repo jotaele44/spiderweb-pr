@@ -7,6 +7,7 @@ from pathlib import Path
 from .aoi import freeze_aoi
 from .artifacts import export_csv, export_geojson, export_kml, export_kmz, write_manifest
 from .dispatcher import SubsurfaceDispatcher
+from .public_exhaustion import current_public_exhaustion_certificate, write_public_exhaustion_certificate
 from .runner import AuthoritativeSourceRunner
 
 
@@ -32,11 +33,16 @@ def main(argv: list[str] | None = None) -> int:
     aoi = freeze_aoi(args.aoi)
 
     source_runner = None
+    exhaustion = None
     if args.run_sources:
         source_runner = AuthoritativeSourceRunner(snapshot_root=out / "sources")
         dispatcher = source_runner.dispatcher()
         outputs = dispatcher.run(aoi, args.families)
         records = [record for family_records in outputs.values() for record in family_records]
+        exhaustion = current_public_exhaustion_certificate(
+            source_runner.receipts,
+            sources=source_runner.sources,
+        )
     else:
         dispatcher = SubsurfaceDispatcher()
         records = []
@@ -60,6 +66,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     if source_runner is not None:
         source_runner.write_control_manifest(out / "source_control.json")
+    if exhaustion is not None:
+        write_public_exhaustion_certificate(out / "public_exhaustion.json", exhaustion)
     export_csv(out / "evidence.csv", records)
     export_geojson(out / "evidence.geojson", records)
     export_kml(out / "evidence.kml", records)
@@ -68,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     result = {"aoi": aoi.canonical_sha256, "dispatch": [asdict(t) for t in plan]}
     if source_runner is not None:
         result["family_certification"] = [asdict(row) for row in source_runner.certification()]
+    if exhaustion is not None:
+        result["public_exhaustion"] = asdict(exhaustion)
     print(json.dumps(result, indent=2))
     return 0
 
