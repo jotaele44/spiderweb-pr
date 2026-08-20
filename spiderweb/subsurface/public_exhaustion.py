@@ -15,7 +15,7 @@ from typing import Iterable
 from .dispatcher import LAYER_FAMILIES
 from .runner import SourceLedgerRow, source_ledger
 from .sources import SourceSpec
-from .sources_exhaustion_v03 import SOURCE_DENOMINATOR_V03
+from .sources_exhaustion_v04 import SOURCE_DENOMINATOR_V04
 
 
 @dataclass(frozen=True)
@@ -43,7 +43,7 @@ def certify_public_exhaustion(
     rows: Iterable[SourceLedgerRow],
     *,
     families: Iterable[str] = LAYER_FAMILIES,
-    scope: str = "PUERTO_RICO_PUBLIC_SUBSURFACE_SOURCE_DENOMINATOR_V03",
+    scope: str = "PUERTO_RICO_PUBLIC_SUBSURFACE_SOURCE_DENOMINATOR_V04",
 ) -> PublicExhaustionCertificate:
     """Certify bounded exhaustion only when every required row is terminal.
 
@@ -98,7 +98,7 @@ def certify_public_exhaustion(
 def current_public_exhaustion_certificate(
     receipts=(),
     *,
-    sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V03,
+    sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V04,
 ) -> PublicExhaustionCertificate:
     return certify_public_exhaustion(source_ledger(sources, receipts))
 
