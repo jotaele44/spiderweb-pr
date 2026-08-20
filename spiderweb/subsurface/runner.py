@@ -4,7 +4,8 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 from typing import Iterable
-from .adapters import SourceRunReceipt, run_arcgis_source, run_ogc_source, write_run_receipt
+from .adapters import SourceRunReceipt, run_ogc_source, write_run_receipt
+from .arcgis_adapter_v2 import run_arcgis_source_v2
 from .dispatcher import LAYER_FAMILIES, SubsurfaceDispatcher
 from .preflight import freeze_arcgis_layer_manifest
 from .reference_adapter import run_reference_source
@@ -86,9 +87,7 @@ class AuthoritativeSourceRunner:
             manifest = freeze_arcgis_layer_manifest(source, fetch=self._fetcher(), snapshot_dir=self.snapshot_root)
             if not manifest.object_id_field:
                 raise RuntimeError(f"{source.source_id} has no OID field")
-            if "geojson" not in manifest.supported_query_formats.lower():
-                raise RuntimeError(f"{source.source_id} does not advertise GeoJSON query output")
-            return run_arcgis_source(source, aoi, **kwargs)
+            return run_arcgis_source_v2(source, aoi, manifest, **kwargs)
         if source.kind == SourceKind.OGC_FEATURES:
             return run_ogc_source(source, aoi, **kwargs)
         if source.kind in {SourceKind.REFERENCE_PAGE, SourceKind.REFERENCE_DOWNLOAD}:
