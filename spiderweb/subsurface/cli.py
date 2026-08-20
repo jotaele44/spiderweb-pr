@@ -6,8 +6,11 @@ import json
 from pathlib import Path
 from .aoi import freeze_aoi
 from .artifacts import export_csv, export_geojson, export_kml, export_kmz, write_manifest
+from .dedup import write_dedup_outputs
 from .dispatcher import SubsurfaceDispatcher
 from .public_exhaustion import current_public_exhaustion_certificate, write_public_exhaustion_certificate
+from .relevance import write_relevance_geojson
+from .residuals import write_residual_assessment
 from .runner import AuthoritativeSourceRunner
 
 
@@ -23,6 +26,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--run-sources", action="store_true",
         help="Execute registered public-source adapters. Without this flag, only freeze/plan artifacts are produced.",
     )
+    parser.add_argument("--dedup", action="store_true", help="Build conservative cross-source canonical-asset and identity-edge outputs.")
+    parser.add_argument("--relevance", action="store_true", help="Build coarse public-evidence relevance zones; military-family evidence is excluded.")
     return parser
 
 
@@ -48,7 +53,8 @@ def main(argv: list[str] | None = None) -> int:
         records = []
     plan = dispatcher.plan(args.families)
 
-    (out / "aoi_frozen.geojson").write_text(
+    aoi_path = out / "aoi_frozen.geojson"
+    aoi_path.write_text(
         json.dumps({
             "type": "Feature",
             "geometry": aoi.canonical_geojson,
@@ -66,18 +72,30 @@ def main(argv: list[str] | None = None) -> int:
     )
     if source_runner is not None:
         source_runner.write_control_manifest(out / "source_control.json")
+        write_residual_assessment(out / "public_residual_assessment.json")
     if exhaustion is not None:
         write_public_exhaustion_certificate(out / "public_exhaustion.json", exhaustion)
+    evidence_path = export_geojson(out / "evidence.geojson", records)
     export_csv(out / "evidence.csv", records)
-    export_geojson(out / "evidence.geojson", records)
     export_kml(out / "evidence.kml", records)
     export_kmz(out / "evidence.kmz", records)
+
+    derived = {}
+    if args.dedup:
+        asset_path, edge_path = write_dedup_outputs(evidence_path, out / "derived")
+        derived["canonical_assets"] = str(asset_path)
+        derived["identity_edges"] = str(edge_path)
+    if args.relevance:
+        relevance_path = write_relevance_geojson(aoi_path, evidence_path, out / "derived" / "relevance_zones.geojson")
+        derived["relevance_zones"] = str(relevance_path)
 
     result = {"aoi": aoi.canonical_sha256, "dispatch": [asdict(t) for t in plan]}
     if source_runner is not None:
         result["family_certification"] = [asdict(row) for row in source_runner.certification()]
     if exhaustion is not None:
         result["public_exhaustion"] = asdict(exhaustion)
+    if derived:
+        result["derived_outputs"] = derived
     print(json.dumps(result, indent=2))
     return 0
 
