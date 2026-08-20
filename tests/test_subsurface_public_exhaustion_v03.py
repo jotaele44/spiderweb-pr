@@ -9,6 +9,14 @@ def test_v03_adds_1930_historical_imagery_and_luma_underground_standard():
     assert by_id["LUMA_UNDERGROUND_DISTRIBUTION_MANUAL_2023"].status == SourceStatus.VERIFIED_REFERENCE
 
 
+def test_mixed_usgs_mine_symbol_layer_is_not_direct_without_type_filter():
+    by_id = {source.source_id: source for source in SOURCE_DENOMINATOR_V03}
+    symbols = by_id["USGS_USMIN_MINE_SYMBOLS_0"]
+    assert symbols.status == SourceStatus.VERIFIED_QUERYABLE
+    assert symbols.evidence_role == "SUPPORTING"
+    assert "feature-level" in symbols.notes
+
+
 def test_v03_keeps_records_request_gate_closed_while_public_residue_remains():
     cert = current_public_exhaustion_certificate()
     assert cert.state == "OPEN"
