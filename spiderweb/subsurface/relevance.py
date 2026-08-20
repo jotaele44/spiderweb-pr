@@ -50,19 +50,8 @@ def _attrs(feature: dict) -> dict:
     return dict(_props(feature).get("attributes") or {})
 
 
-def _intersects(feature: dict, cell) -> bool:
-    geom = feature.get("geometry")
-    if not geom:
-        return False
-    try:
-        return shape(geom).intersects(cell)
-    except Exception:
-        return False
-
-
 def _is_cave(feature: dict) -> bool:
-    source = _props(feature).get("source_id")
-    return source in {"PRPB_CAVES_31"}
+    return _props(feature).get("source_id") == "PRPB_CAVES_31"
 
 
 def _is_groundwater_point(feature: dict) -> bool:
@@ -122,19 +111,29 @@ def build_relevance_zones(
     *,
     cell_degrees: float = 0.02,
 ) -> list[tuple[RelevanceZone, dict]]:
-    """Build coarse cells clipped conceptually by AOI intersection.
+    """Build coarse cells intersecting the AOI from exact evidence predicates.
 
-    Counts use only evidence geometries that exactly intersect each cell. No nearest
-    feature or distance-buffer promotion is used. Counts are capped logarithmically
-    so dense utility segmentation cannot dominate geological evidence.
+    No nearest-feature or distance-buffer promotion is used.  Geometry objects are
+    parsed once before cell iteration so live acceptance remains deterministic and
+    fast even when segmented utility layers contain thousands of rows.
     """
     aoi = shape(aoi_geojson)
     minx, miny, maxx, maxy = aoi.bounds
-    rows = [
-        f for f in evidence_features
-        if _props(f).get("layer_family") in SCORING_FAMILIES
-        and _props(f).get("spatial_state") in {"FULLY_WITHIN", "PARTIAL"}
-    ]
+    indexed: list[tuple[dict, object]] = []
+    for feature in evidence_features:
+        props = _props(feature)
+        if props.get("layer_family") not in SCORING_FAMILIES:
+            continue
+        if props.get("spatial_state") not in {"FULLY_WITHIN", "PARTIAL"}:
+            continue
+        geom = feature.get("geometry")
+        if not geom:
+            continue
+        try:
+            indexed.append((feature, shape(geom)))
+        except Exception:
+            continue
+
     output: list[tuple[RelevanceZone, dict]] = []
     ix = 0
     x = math.floor(minx / cell_degrees) * cell_degrees
@@ -145,7 +144,7 @@ def build_relevance_zones(
             if not cell.intersects(aoi):
                 y += cell_degrees
                 continue
-            hits = [f for f in rows if _intersects(f, cell)]
+            hits = [feature for feature, geom in indexed if geom.intersects(cell)]
             sources = {_props(f).get("source_id") for f in hits if _props(f).get("source_id")}
             caves = sum(_is_cave(f) for f in hits)
             groundwater = sum(_is_groundwater_point(f) for f in hits)
@@ -155,9 +154,6 @@ def build_relevance_zones(
             history = sum(_is_historical_map(f) for f in hits)
             direct_openings = sum(_props(f).get("source_id") == "USGS_USMIN_EXPLICIT_OPENINGS_17" for f in hits)
 
-            # Public-evidence relevance only. Utility/history contributions are capped
-            # low so infrastructure density and map availability cannot manufacture a
-            # subsurface finding without geological/hydrogeological corroboration.
             score = 0.0
             score += min(3.0, caves * 3.0)
             score += min(2.5, math.log1p(groundwater) * 0.75)
