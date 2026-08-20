@@ -1,8 +1,8 @@
 """Fourth bounded public-source exhaustion overlay.
 
-v0.4 binds newer exact machine-queryable manifestations discovered during the
+v0.4 binds exact machine-queryable manifestations discovered during the
 public-residual closure campaign while preserving unresolved classes that cannot
-be certified from public material alone.  Former military sources remain
+be certified from public material alone. Former military sources remain
 property/report-level only; no precise current hardened-asset locator is created.
 """
 from __future__ import annotations
@@ -15,14 +15,18 @@ USGS_USMIN_CONSOLIDATED = (
     "USMin_Prospect_and_mine_related_map_features/FeatureServer"
 )
 USGS_MRDS = (
-    "https://energy.usgs.gov/arcgis/rest/services/MRData/"
+    "https://energy.usgs.gov/arcgis/rest/services/Hosted/"
     "Mineral_Resource_Data_System/FeatureServer"
 )
 TOPOVIEW = "https://ngmdb.usgs.gov/arcgis/rest/services/topoview/ustOverlay/MapServer"
 PRPB_INFRA = "https://sige.pr.gov/server/rest/services/MIPR/Infraestructura/FeatureServer"
 
-# Supersede the earlier single mine-symbol manifestation with the September-2025
-# consolidated point/polygon service.  The residual for non-mapped workings remains.
+# Only these authoritative point-symbol values are treated as explicit opening
+# classes. Generic Mine, Coal Mine, pits, dumps, tailings, quarries and prospects
+# are intentionally excluded from the DIRECT opening manifestation.
+USGS_OPENING_TYPES = ("Adit", "Air Shaft", "Mine Shaft")
+USGS_OPENING_WHERE = "ftr_type IN ('Adit','Air Shaft','Mine Shaft')"
+
 _SUPERSEDED_V03 = frozenset({"USGS_USMIN_MINE_SYMBOLS_0"})
 
 BOUND_V04: tuple[SourceSpec, ...] = (
@@ -35,12 +39,30 @@ BOUND_V04: tuple[SourceSpec, ...] = (
         USGS_USMIN_CONSOLIDATED,
         SourceStatus.VERIFIED_QUERYABLE,
         layer_id=17,
-        stable_id_fields=("OBJECTID",),
+        stable_id_fields=("objectid", "OBJECTID"),
         evidence_role="SUPPORTING",
         notes=(
             "September-2025 USGS consolidation of historical-topographic-map mine symbols. "
-            "Mixed taxonomy includes shafts/adits and non-opening features; direct subsurface "
-            "promotion requires authoritative row-level feature-type classification."
+            "Mixed taxonomy includes openings and non-opening features; no direct subsurface "
+            "promotion is permitted from the unfiltered manifestation."
+        ),
+    ),
+    SourceSpec(
+        "USGS_USMIN_EXPLICIT_OPENINGS_17",
+        "MINES_QUARRIES_SHAFTS",
+        "U.S. Geological Survey",
+        "Consolidated mine symbols restricted to explicit opening classes",
+        SourceKind.ARCGIS_LAYER,
+        USGS_USMIN_CONSOLIDATED,
+        SourceStatus.VERIFIED_QUERYABLE,
+        layer_id=17,
+        query=(("where", USGS_OPENING_WHERE),),
+        stable_id_fields=("objectid", "OBJECTID"),
+        evidence_role="DIRECT",
+        notes=(
+            "Exact authoritative ftr_type filter limited to Adit, Air Shaft, and Mine Shaft. "
+            "DIRECT means the historical map explicitly depicts that opening class; it does "
+            "not imply current accessibility, condition, ownership, or continued existence."
         ),
     ),
     SourceSpec(
@@ -52,7 +74,7 @@ BOUND_V04: tuple[SourceSpec, ...] = (
         USGS_USMIN_CONSOLIDATED,
         SourceStatus.VERIFIED_QUERYABLE,
         layer_id=18,
-        stable_id_fields=("OBJECTID",),
+        stable_id_fields=("objectid", "OBJECTID"),
         evidence_role="SUPPORTING",
         notes=(
             "Polygon companion to consolidated mine-symbol point layer. Polygon overlap is "
@@ -60,20 +82,20 @@ BOUND_V04: tuple[SourceSpec, ...] = (
         ),
     ),
     SourceSpec(
-        "USGS_MRDS_GLOBAL_3_PR_AOI",
+        "USGS_MRDS_HOSTED_0_PR_AOI",
         "MINES_QUARRIES_SHAFTS",
         "U.S. Geological Survey",
-        "Mineral Resources Data System feature layer",
+        "Hosted Mineral Resources Data System feature layer",
         SourceKind.ARCGIS_LAYER,
         USGS_MRDS,
         SourceStatus.VERIFIED_QUERYABLE,
-        layer_id=3,
-        stable_id_fields=("OBJECTID", "dep_id", "site_name"),
+        layer_id=0,
+        stable_id_fields=("objectid", "OBJECTID", "dep_id", "site_name"),
         evidence_role="SUPPORTING",
         notes=(
-            "Structured MRDS point manifestation supersedes reliance on PDF-only references "
-            "for spatial discovery. Mine/prospect/occurrence status is preserved as returned; "
-            "MRDS point identity does not prove an accessible underground opening."
+            "Current hosted structured MRDS manifestation. Records may represent producers, "
+            "past producers, prospects, or occurrences and may be historically stale; a point "
+            "record does not prove an accessible underground opening."
         ),
     ),
     SourceSpec(
@@ -123,7 +145,6 @@ BOUND_V04: tuple[SourceSpec, ...] = (
             "content must be frozen per dataset; coverage/project data do not imply buried paths."
         ),
     ),
-    # Former-site public report corpus: property/report-level manifestations only.
     SourceSpec(
         "USACE_FUDS_CULEBRA_REPORT_INDEX",
         "MILITARY_HARDENED_SUBSURFACE",
