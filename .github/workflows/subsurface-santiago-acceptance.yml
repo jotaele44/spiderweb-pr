@@ -17,9 +17,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  live-santiago-v04:
+  live-santiago-v05:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -34,16 +34,18 @@ jobs:
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system -c constraints.txt -e .
 
-      - name: Run frozen Santiago Triangle against v0.4 public denominator
+      - name: Run frozen Santiago Triangle against v0.5 public denominator
         run: |
           mkdir -p artifacts
           python -m spiderweb.subsurface.cli \
             tests/fixtures/subsurface/santiago_triangle.kml \
-            --out artifacts/santiago-v04 \
+            --out artifacts/santiago-v05 \
             --run-sources \
-            | tee artifacts/santiago-v04.console.json
+            --dedup \
+            --relevance \
+            | tee artifacts/santiago-v05.console.json
 
-      - name: Summarize receipts and gate
+      - name: Summarize source gate, residuals, dedup and relevance
         if: always()
         run: |
           python - <<'PY'
@@ -51,35 +53,46 @@ jobs:
           from collections import Counter
           from pathlib import Path
 
-          root = Path('artifacts/santiago-v04')
+          root = Path('artifacts/santiago-v05')
           if not (root / 'source_control.json').exists():
               raise SystemExit('source_control.json missing: live execution did not reach receipt generation')
           control = json.loads((root / 'source_control.json').read_text())
           cert = json.loads((root / 'public_exhaustion.json').read_text())
+          residual = json.loads((root / 'public_residual_assessment.json').read_text())
+          assets = json.loads((root / 'derived/canonical_assets.json').read_text())['assets']
+          edges = json.loads((root / 'derived/identity_edges.json').read_text())['edges']
+          relevance = json.loads((root / 'derived/relevance_zones.geojson').read_text())['features']
           ledger = control['ledger']
           states = Counter(row['run_state'] for row in ledger)
+          residual_states = Counter(row['state'] for row in residual['rows'])
+          relation_states = Counter(row['relation'] for row in assets)
+          relevance_states = Counter(row['properties']['relevance'] for row in relevance)
           print('SOURCE STATES:', dict(sorted(states.items())))
           print('REQUIRED:', cert['required_sources'])
           print('TERMINAL:', cert['terminal_sources'])
           print('PUBLIC_EXHAUSTION:', cert['state'])
           print('RECORDS_REQUEST_ELIGIBLE:', cert['records_request_eligible'])
-          print('UNRESOLVED:', len(cert['unresolved_sources']))
+          print('PUBLIC RESIDUAL STATES:', dict(sorted(residual_states.items())))
+          print('CANONICAL ASSETS:', len(assets))
+          print('IDENTITY EDGES:', len(edges))
+          print('ASSET RELATIONS:', dict(sorted(relation_states.items())))
+          print('RELEVANCE ZONES:', len(relevance), dict(sorted(relevance_states.items())))
           print('FAILURES:')
           for row in ledger:
               if row['run_state'] == 'FAIL':
                   print(f"  {row['source_id']}: {row['reason']}")
-          # The current denominator has explicit public residues; a live run must
-          # not silently promote them into records-request eligibility.
+          # v0.5 still has OPEN former-site and historical-frame residuals.
           assert cert['records_request_eligible'] is False
+          assert residual['all_residuals_terminal'] is False
           PY
 
-      - name: Upload Santiago v0.4 receipts and evidence
+      - name: Upload Santiago v0.5 receipts, canonical assets and relevance zones
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: santiago-subsurface-v04-${{ github.run_id }}
+          name: santiago-subsurface-v05-${{ github.run_id }}
           path: |
-            artifacts/santiago-v04
-            artifacts/santiago-v04.console.json
+            artifacts/santiago-v05
+            artifacts/santiago-v05.console.json
           if-no-files-found: error
           retention-days: 30
