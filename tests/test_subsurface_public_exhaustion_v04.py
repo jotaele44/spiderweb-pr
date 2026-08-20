@@ -1,4 +1,5 @@
-from spiderweb.subsurface.public_exhaustion import current_public_exhaustion_certificate
+from spiderweb.subsurface.public_exhaustion import certify_public_exhaustion
+from spiderweb.subsurface.runner import source_ledger
 from spiderweb.subsurface.sources import SourceStatus
 from spiderweb.subsurface.sources_exhaustion_v04 import (
     SOURCE_DENOMINATOR_V04,
@@ -64,7 +65,10 @@ def test_former_military_report_indexes_do_not_open_active_asset_vector():
 
 
 def test_v04_records_request_gate_remains_forbidden_without_terminal_public_rows():
-    cert = current_public_exhaustion_certificate()
+    cert = certify_public_exhaustion(
+        source_ledger(SOURCE_DENOMINATOR_V04, []),
+        scope="PUERTO_RICO_PUBLIC_SUBSURFACE_SOURCE_DENOMINATOR_V04",
+    )
     assert cert.scope == "PUERTO_RICO_PUBLIC_SUBSURFACE_SOURCE_DENOMINATOR_V04"
     assert cert.state == "OPEN"
     assert cert.records_request_eligible is False
