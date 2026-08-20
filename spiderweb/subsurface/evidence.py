@@ -110,7 +110,10 @@ def adjudicate_feature(
         "same_category",
         "source_absence",
     }
-    if set(bases) & heuristic_only and tier > EvidenceTier.CANDIDATE:
+    if set(bases) & heuristic_only and tier in {
+        EvidenceTier.SUPPORTING,
+        EvidenceTier.DIRECT,
+    }:
         tier = EvidenceTier.CANDIDATE
     if state in {SpatialState.NULL_EMPTY, SpatialState.UNRESOLVED}:
         tier = EvidenceTier.UNRESOLVED
