@@ -7,6 +7,8 @@ former-site records remain handled at property/report level in v0.2.
 """
 from __future__ import annotations
 
+from dataclasses import replace
+
 from .sources import SourceKind, SourceSpec, SourceStatus
 from .sources_exhaustion import SOURCE_DENOMINATOR_V02
 
@@ -42,6 +44,27 @@ OPEN_CLASS_SOURCES_V03: tuple[SourceSpec, ...] = (
     ),
 )
 
+# The USGS mine-symbol layer is authoritative geometry but contains a mixed symbol
+# taxonomy (e.g. adits/mines plus prospects, dumps and tailings).  The unfiltered
+# layer therefore cannot be DIRECT evidence of a subsurface opening.  Individual
+# rows may be promoted downstream only after the authoritative symbol/type field is
+# classified and the corresponding feature semantics support that promotion.
+_BASE_V03 = tuple(
+    replace(
+        source,
+        evidence_role="SUPPORTING",
+        notes=(
+            source.notes
+            + " Unfiltered layer is SUPPORTING only because its symbol taxonomy mixes "
+            "subsurface openings with non-opening mine/prospect-related features; direct "
+            "promotion requires feature-level authoritative type classification."
+        ),
+    )
+    if source.source_id == "USGS_USMIN_MINE_SYMBOLS_0"
+    else source
+    for source in SOURCE_DENOMINATOR_V02
+)
+
 SOURCE_DENOMINATOR_V03: tuple[SourceSpec, ...] = (
-    SOURCE_DENOMINATOR_V02 + OPEN_CLASS_SOURCES_V03
+    _BASE_V03 + OPEN_CLASS_SOURCES_V03
 )
