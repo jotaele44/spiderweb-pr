@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import zipfile
+from xml.sax.saxutils import escape
 
 from shapely import wkt
 from shapely.geometry import mapping
@@ -145,12 +146,12 @@ def export_kml(path: str | Path, records: list[EvidenceRecord]) -> Path:
             continue
         data = _jsonable_record(record)
         extended = "".join(
-            f'<Data name="{key}"><value>{json.dumps(value, ensure_ascii=False)}</value></Data>'
+            f'<Data name="{escape(str(key))}"><value>{escape(json.dumps(value, ensure_ascii=False))}</value></Data>'
             for key, value in data.items()
             if key != "geometry_wkt"
         )
         placemarks.append(
-            f"<Placemark><name>{record.record_id}</name><ExtendedData>{extended}</ExtendedData>{geometry_xml}</Placemark>"
+            f"<Placemark><name>{escape(record.record_id)}</name><ExtendedData>{extended}</ExtendedData>{geometry_xml}</Placemark>"
         )
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
