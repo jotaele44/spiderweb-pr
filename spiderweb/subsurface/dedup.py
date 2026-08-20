@@ -1,6 +1,6 @@
 """Conservative cross-source identity resolution for subsurface evidence exports.
 
-The resolver is intentionally not a nearest-neighbour merger.  Geometry proximity,
+The resolver is intentionally not a nearest-neighbour merger. Geometry proximity,
 shared system IDs, and category similarity may create candidate edges, but canonical
 asset components are formed only from hard or high-confidence identity bindings.
 """
@@ -20,6 +20,7 @@ WITHIN_STATES = frozenset({"FULLY_WITHIN", "PARTIAL"})
 WELL_SOURCES = frozenset({"PRPB_WELLS_JCA_20", "PRPB_WELLS_AAA_21", "USGS_MONITORING_LOCATIONS_PR"})
 SPRING_SOURCE = "PRPB_SPRINGS_19"
 QUARRY_SOURCES = frozenset({"PRPB_QUARRIES_10", "USGS_USMIN_CONSOLIDATED_POINTS_17", "USGS_MRDS_HOSTED_0_PR_AOI"})
+TARGET_SOURCES = WELL_SOURCES | {SPRING_SOURCE} | QUARRY_SOURCES
 
 
 @dataclass(frozen=True)
@@ -116,8 +117,21 @@ def _display_name(feature: dict) -> str:
     return ""
 
 
+def _is_target(feature: dict) -> bool:
+    source = _source_id(feature)
+    if source not in TARGET_SOURCES:
+        return False
+    if source == "USGS_MONITORING_LOCATIONS_PR":
+        site_type = str(_attrs(feature).get("site_type") or "").lower()
+        return site_type in {"well", "spring", "multiple wells"}
+    return True
+
+
 def _within(features: Iterable[dict]) -> list[dict]:
-    return [f for f in features if _prop(f, "spatial_state") in WITHIN_STATES]
+    return [
+        f for f in features
+        if _prop(f, "spatial_state") in WITHIN_STATES and _is_target(f)
+    ]
 
 
 def build_identity_edges(features: Iterable[dict]) -> list[IdentityEdge]:
@@ -127,8 +141,6 @@ def build_identity_edges(features: Iterable[dict]) -> list[IdentityEdge]:
         by_source.setdefault(_source_id(row), []).append(row)
     edges: list[IdentityEdge] = []
 
-    # PRPB spring rows retain the underlying USGS SITE_ID. This is a hard
-    # authoritative cross-source binding when the monitoring-location number matches.
     usgs_by_number = {
         str(_attrs(row).get("monitoring_location_number") or "").strip(): row
         for row in by_source.get("USGS_MONITORING_LOCATIONS_PR", [])
@@ -156,8 +168,6 @@ def build_identity_edges(features: Iterable[dict]) -> list[IdentityEdge]:
                     _distance_m(first, other), 1.0, (f"same PRPB SITE_ID {site_id}",),
                 ))
 
-    # JCA and AAA well layers overlap, but PWS/system IDs describe systems rather
-    # than individual physical wells.  Bind only with strong name + tight geometry.
     for jca in by_source.get("PRPB_WELLS_JCA_20", []):
         for aaa in by_source.get("PRPB_WELLS_AAA_21", []):
             distance = _distance_m(jca, aaa)
@@ -174,8 +184,6 @@ def build_identity_edges(features: Iterable[dict]) -> list[IdentityEdge]:
                 ("point_distance<=25m", "normalized_name_similarity", "system IDs not used as asset identity"),
             ))
 
-    # JCA-to-USGS matches are candidate/supporting only; there is no shared
-    # authoritative asset identifier in the current public manifestations.
     for jca in by_source.get("PRPB_WELLS_JCA_20", []):
         for usgs in by_source.get("USGS_MONITORING_LOCATIONS_PR", []):
             if str(_attrs(usgs).get("site_type") or "").lower() != "well":
@@ -195,8 +203,6 @@ def build_identity_edges(features: Iterable[dict]) -> list[IdentityEdge]:
                     distance, similarity, ("point_distance<=10m", "name binding insufficient"),
                 ))
 
-    # Quarry/mineral co-location is discovery only unless an authoritative ID or
-    # strong name binding is present. Do not merge blank-name USMIN symbols.
     prpb_quarries = by_source.get("PRPB_QUARRIES_10", [])
     other_quarries = by_source.get("USGS_USMIN_CONSOLIDATED_POINTS_17", []) + by_source.get("USGS_MRDS_HOSTED_0_PR_AOI", [])
     for left in prpb_quarries:
@@ -262,10 +268,11 @@ def canonicalize(features: Iterable[dict]) -> tuple[list[CanonicalAsset], list[I
         elif source_set & QUARRY_SOURCES:
             asset_class = "MINE_QUARRY_FEATURE"
         else:
-            asset_class = "OTHER_EVIDENCE_FEATURE"
+            asset_class = "UNRESOLVED_TARGET"
         relation = _relation_for_members(members)
+        member_ids = {_record_id(m) for m in members}
         confidence = "DIRECT" if any(
-            edge.binding and edge.confidence == "DIRECT" and edge.left_record_id in {_record_id(m) for m in members}
+            edge.binding and edge.confidence == "DIRECT" and edge.left_record_id in member_ids
             for edge in edges
         ) else "SUPPORTING" if len(members) > 1 else "SOURCE_ONLY"
         assets.append(CanonicalAsset(
