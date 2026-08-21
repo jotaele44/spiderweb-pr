@@ -38,21 +38,36 @@ def test_site78_claim_denominator_is_explicit() -> None:
     assert "4.4" not in km_claim.text
 
 
-def test_known_points_do_not_auto_bind_to_sz0015() -> None:
+def test_historical_mine_point_does_not_auto_bind_to_sz0015() -> None:
     rows = adjudicate_manifestations(
         aoi=_santiago_aoi(),
         zones=(("SZ-0015", _sz0015()),),
     )
     by_id = {row["manifestation_id"]: row for row in rows}
 
-    # All three point manifestations are outside the frozen Santiago AOI. This
-    # prevents the newly recovered historical-working evidence from silently
-    # increasing the SZ-0015 score.
-    assert by_id["USGS_W701145_JUANA_DIAZ_MINE"]["aoi_spatial_state"] == "OUTSIDE"
-    assert by_id["PROCAN_EMBEDDED_MAP_CENTER"]["aoi_spatial_state"] == "OUTSIDE"
-    assert by_id["EPA_PRODUCTOS_AGREGADOS_CANTERA_NARANJO"]["aoi_spatial_state"] == "OUTSIDE"
+    # The independent USGS Juana Diaz Mine record point remains just outside the
+    # frozen AOI/SZ-0015. Modern Procan and EPA facility/map points are outside
+    # as well. None can add a historical-working score to SZ-0015.
+    for source_id in (
+        "USGS_W701145_JUANA_DIAZ_MINE",
+        "PROCAN_EMBEDDED_MAP_CENTER",
+        "EPA_PRODUCTOS_AGREGADOS_CANTERA_NARANJO",
+    ):
+        assert by_id[source_id]["aoi_spatial_state"] == "OUTSIDE"
+        assert by_id[source_id]["containing_zones"] == []
 
-    assert all(row["containing_zones"] == [] for row in rows)
+    # A different PRPB manifestation named CANTERA NARANJO is already inside
+    # SZ-0015 and was already counted as quarry evidence in v1/v1.1. Its spatial
+    # presence does not establish identity with historical Site 78 or W701145.
+    prpb = by_id["PRPB_CANTERA_NARANJO_OBJECTID_38"]
+    assert prpb["aoi_spatial_state"] == "WITHIN"
+    assert prpb["containing_zones"] == ["SZ-0015"]
+
+    # The MRDS Cantero Naranjo point is distinct again and outside the triangle.
+    mrds = by_id["USGS_MRDS_CANTERO_NARANJO_200733"]
+    assert mrds["aoi_spatial_state"] == "OUTSIDE"
+    assert mrds["containing_zones"] == []
+
     assert all(row["promotion_permitted"] is False for row in rows)
     assert all(row["connectivity_inference_permitted"] is False for row in rows)
 
