@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  live-santiago-v05:
+  live-santiago-v06:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -35,23 +35,23 @@ jobs:
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system -c constraints.txt -e .
 
-      - name: Run frozen Santiago Triangle against v0.5 public denominator
+      - name: Run frozen Santiago Triangle against v0.6 public denominator
         run: |
           mkdir -p artifacts
           python -m spiderweb.subsurface.cli \
             tests/fixtures/subsurface/santiago_triangle.kml \
-            --out artifacts/santiago-v05 \
+            --out artifacts/santiago-v06 \
             --run-sources \
             --dedup \
             --relevance \
-            | tee artifacts/santiago-v05.console.json
+            | tee artifacts/santiago-v06.console.json
 
       - name: Harden relevance to canonical-asset v1.1 and build ranked evidence pack
         run: |
           python - <<'PY'
           from spiderweb.subsurface.relevance_v11 import run
           from spiderweb.subsurface.zone_evidence_pack import write_pack
-          root = 'artifacts/santiago-v05'
+          root = 'artifacts/santiago-v06'
           v11 = f'{root}/derived/v11'
           geo, transition = run(
               f'{root}/derived/relevance_zones.geojson',
@@ -70,6 +70,23 @@ jobs:
           print(transition)
           PY
 
+      - name: Adjudicate Cantera Naranjo historical point manifestations
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from shapely.geometry import shape
+          from spiderweb.subsurface.aoi import freeze_aoi
+          from spiderweb.subsurface.cantera_naranjo import write_lineage_receipt
+
+          root = Path('artifacts/santiago-v06')
+          zones_payload = json.loads((root / 'derived/v11/relevance_zones_v11.geojson').read_text())
+          zones = tuple((f['properties']['zone_id'], shape(f['geometry'])) for f in zones_payload['features'])
+          aoi = freeze_aoi('tests/fixtures/subsurface/santiago_triangle.kml').geometry
+          out = write_lineage_receipt(root / 'derived/cantera_naranjo_lineage.json', aoi=aoi, zones=zones)
+          print(out)
+          PY
+
       - name: Summarize source gate, residuals, dedup and relevance
         if: always()
         run: |
@@ -78,7 +95,7 @@ jobs:
           from collections import Counter
           from pathlib import Path
 
-          root = Path('artifacts/santiago-v05')
+          root = Path('artifacts/santiago-v06')
           if not (root / 'source_control.json').exists():
               raise SystemExit('source_control.json missing: live execution did not reach receipt generation')
           control = json.loads((root / 'source_control.json').read_text())
@@ -89,6 +106,7 @@ jobs:
           relevance = json.loads((root / 'derived/relevance_zones.geojson').read_text())['features']
           v11 = json.loads((root / 'derived/v11/relevance_zones_v11.geojson').read_text())['features']
           visual = json.loads((root / 'derived/v11/top8/visual_morphology_assessment.json').read_text())['assessments']
+          lineage = json.loads((root / 'derived/cantera_naranjo_lineage.json').read_text())
           ledger = control['ledger']
           states = Counter(row['run_state'] for row in ledger)
           residual_states = Counter(row['state'] for row in residual['rows'])
@@ -110,10 +128,13 @@ jobs:
           print('RELEVANCE v1.1:', len(v11), dict(sorted(v11_states.items())))
           print('ELEVATED SENSITIVITY:', dict(sorted(sensitivity.items())))
           print('VISUAL MORPHOLOGY:', len(visual), dict(sorted(visual_binding.items())))
+          print('CANTERA NARANJO POINTS:', [(r['manifestation_id'], r['aoi_spatial_state'], r['containing_zones']) for r in lineage['point_manifestations']])
           high = [row for row in v11 if row['properties']['v11_relevance'] == 'HIGH']
           assert not high
           assert all(row.get('promotion_permitted') is False for row in visual)
           assert sum(1 for row in visual if row.get('zone_id') is None) == 2
+          assert all(row['aoi_spatial_state'] == 'OUTSIDE' for row in lineage['point_manifestations'])
+          assert all(not row['containing_zones'] for row in lineage['point_manifestations'])
           assert cert['records_request_eligible'] is False
           assert residual['all_residuals_terminal'] is False
           PY
@@ -122,9 +143,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: santiago-subsurface-v05-${{ github.run_id }}
+          name: santiago-subsurface-v06-${{ github.run_id }}
           path: |
-            artifacts/santiago-v05
-            artifacts/santiago-v05.console.json
+            artifacts/santiago-v06
+            artifacts/santiago-v06.console.json
           if-no-files-found: error
           retention-days: 30
