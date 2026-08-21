@@ -5,6 +5,10 @@ FINAL_PUBLIC_GAP means the bounded authoritative public search was exhausted and
 an authority explicitly documents that a complete public denominator does not
 exist (or is not publicly indexed). It is not negative evidence about the real
 world and it does not by itself make a records request permissible.
+
+v0.5 is retained as a frozen historical assessment. v0.6 is the current state
+and reopens the historic-workings residual because newly recovered authoritative
+documentary evidence creates executable public identity/geometry vectors.
 """
 from __future__ import annotations
 
@@ -30,18 +34,18 @@ class ResidualAssessment:
     negative_evidence_permitted: bool = False
 
 
-V06_RESIDUAL_ASSESSMENTS: tuple[ResidualAssessment, ...] = (
+# Frozen v0.5 lineage. Do not mutate: historical tests and certification records
+# depend on this exact semantic state.
+V05_RESIDUAL_ASSESSMENTS: tuple[ResidualAssessment, ...] = (
     ResidualAssessment(
         "HISTORIC_WORKINGS_NONMAPPED_RESIDUAL",
         "MINES_QUARRIES_SHAFTS",
-        ResidualState.OPEN,
+        ResidualState.FINAL_PUBLIC_GAP,
         (
-            "https://docs.pr.gov/files/OECH/Publicaciones%20y%20Recursos/Libros/La%20Carretera%20Central%20Un%20viaje%20esc%C3%A9nico%20a%20la%20historia%20de%20Puerto%20Rico.pdf",
-            "https://pubs.usgs.gov/of/1998/of98-038/pdf/manuscript.pdf",
-            "https://pubs.usgs.gov/of/1998/of98-038/pdf/appendices.pdf",
             "https://www.usgs.gov/centers/gggsc/science/usmin-abandoned-mine-lands-inventory",
+            "https://www.usgs.gov/data/consolidated-prospect-and-mine-related-features-us-geological-survey-75-and-15-minute",
         ),
-        "Reopened in v0.6. The OECH/UPR Site 78 guide provides a named documentary manifestation of historical manganese-mine tunnels at Cantera Naranjo that is not represented by the AOI's explicit USGS Adit|Air Shaft|Mine Shaft symbol query. USGS OFR 98-038 independently documents Atlantic Ore Company manganese production in Juana Diaz and the Juana Diaz Mine. The public historical-workings corpus therefore has newly executable identity, geometry, and archival vectors and is not terminal. This does not negate the USGS statement that no comprehensive national abandoned-mine-feature inventory exists.",
+        "USGS states that no comprehensive national abandoned-mine-feature inventory currently exists; the consolidated HTMC mine-feature release is authoritative for mapped symbols but does not address every feature destroyed, covered, undocumented, or never mapped.",
     ),
     ResidualAssessment(
         "FORMER_MILITARY_SUBSURFACE_REPORT_CORPUS_RESIDUAL",
@@ -79,6 +83,25 @@ V06_RESIDUAL_ASSESSMENTS: tuple[ResidualAssessment, ...] = (
 )
 
 
+V06_RESIDUAL_ASSESSMENTS: tuple[ResidualAssessment, ...] = (
+    ResidualAssessment(
+        "HISTORIC_WORKINGS_NONMAPPED_RESIDUAL",
+        "MINES_QUARRIES_SHAFTS",
+        ResidualState.OPEN,
+        (
+            "https://docs.pr.gov/files/OECH/Publicaciones%20y%20Recursos/Libros/La%20Carretera%20Central%20Un%20viaje%20esc%C3%A9nico%20a%20la%20historia%20de%20Puerto%20Rico.pdf",
+            "https://pubs.usgs.gov/of/1998/of98-038/pdf/manuscript.pdf",
+            "https://pubs.usgs.gov/of/1998/of98-038/pdf/appendices.pdf",
+            "https://www.usgs.gov/centers/gggsc/science/usmin-abandoned-mine-lands-inventory",
+        ),
+        "Reopened in v0.6. The OECH/UPR Site 78 guide provides a named documentary manifestation of historical manganese-mine tunnels at Cantera Naranjo that is not represented by the AOI's explicit USGS Adit|Air Shaft|Mine Shaft symbol query. USGS OFR 98-038 independently documents Atlantic Ore Company manganese production in Juana Diaz and the Juana Diaz Mine. The public historical-workings corpus therefore has newly executable identity, geometry, and archival vectors and is not terminal. This does not negate the USGS statement that no comprehensive national abandoned-mine-feature inventory exists.",
+    ),
+    V05_RESIDUAL_ASSESSMENTS[1],
+    V05_RESIDUAL_ASSESSMENTS[2],
+    V05_RESIDUAL_ASSESSMENTS[3],
+)
+
+
 def assessment_map() -> dict[str, ResidualAssessment]:
     return {row.source_id: row for row in V06_RESIDUAL_ASSESSMENTS}
 
@@ -92,6 +115,7 @@ def write_residual_assessment(path: str | Path) -> Path:
     out.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema": "spiderweb.subsurface.public_residual_assessment.v2",
+        "lineage": {"current": "v0.6", "preserved": ["v0.5"]},
         "rows": [asdict(row) for row in V06_RESIDUAL_ASSESSMENTS],
         "all_residuals_terminal": all_residuals_terminal(),
         "rule": "FINAL_PUBLIC_GAP is public-search exhaustion, never real-world absence and never negative evidence; new authoritative evidence reopens a previously terminal residual.",
