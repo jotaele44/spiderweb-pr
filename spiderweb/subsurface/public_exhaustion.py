@@ -15,7 +15,7 @@ from typing import Iterable
 from .dispatcher import LAYER_FAMILIES
 from .runner import SourceLedgerRow, source_ledger
 from .sources import SourceSpec
-from .sources_exhaustion_v05 import SOURCE_DENOMINATOR_V05
+from .sources_exhaustion_v06 import SOURCE_DENOMINATOR_V06
 
 
 @dataclass(frozen=True)
@@ -43,12 +43,12 @@ def certify_public_exhaustion(
     rows: Iterable[SourceLedgerRow],
     *,
     families: Iterable[str] = LAYER_FAMILIES,
-    scope: str = "PUERTO_RICO_PUBLIC_SUBSURFACE_SOURCE_DENOMINATOR_V05",
+    scope: str = "PUERTO_RICO_PUBLIC_SUBSURFACE_SOURCE_DENOMINATOR_V06",
 ) -> PublicExhaustionCertificate:
     """Certify bounded exhaustion only when every required source row is terminal.
 
     Residual adjudication such as FINAL_PUBLIC_GAP is intentionally separate from
-    this gate.  Until the source-control policy explicitly promotes such a state,
+    this gate. Until the source-control policy explicitly promotes such a state,
     terminal here still means a PASS or ZERO receipt from an executed manifestation.
     This prevents a documented public-data limitation from silently becoming a
     negative source result or a records-request authorization.
@@ -100,7 +100,7 @@ def certify_public_exhaustion(
 def current_public_exhaustion_certificate(
     receipts=(),
     *,
-    sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V05,
+    sources: Iterable[SourceSpec] = SOURCE_DENOMINATOR_V06,
 ) -> PublicExhaustionCertificate:
     return certify_public_exhaustion(source_ledger(sources, receipts))
 
