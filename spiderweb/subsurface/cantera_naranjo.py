@@ -60,6 +60,15 @@ class PointManifestation:
         return Point(self.longitude, self.latitude)
 
 
+@dataclass(frozen=True)
+class Contradiction:
+    contradiction_id: str
+    subject: str
+    manifestations: tuple[str, ...]
+    state: str
+    reason: str
+
+
 SITE78_SOURCE_ID = "OECH_CARRETERA_CENTRAL_CANTERA_NARANJO_1996"
 USGS_MN_SOURCE_ID = "USGS_OFR98_038_MANUSCRIPT_MANGANESE"
 USGS_APPENDIX_SOURCE_ID = "USGS_INDUSTRIAL_MINERALS_PR_OFR_98_038"
@@ -133,6 +142,44 @@ KNOWN_POINT_MANIFESTATIONS: tuple[PointManifestation, ...] = (
     ),
 )
 
+CONTRADICTIONS: tuple[Contradiction, ...] = (
+    Contradiction(
+        "CN-CONTR-001",
+        "PR-551 chainage",
+        (SITE78_SOURCE_ID, "PROCAN_FIRST_PARTY_MAP"),
+        "OPEN",
+        "OECH Site 78 prints Km 4 with no decimal; modern Procan manifestations use approximately Km 4.4-4.5. The modern decimal must not be imported into the historical source.",
+    ),
+    Contradiction(
+        "CN-CONTR-002",
+        "Cantera Naranjo name/chainage",
+        ("PRPB_CANTERA_NARANJO_OBJECTID_38", "EPA_PRODUCTOS_AGREGADOS_CANTERA_NARANJO", "PROCAN_EMBEDDED_MAP_CENTER"),
+        "OPEN",
+        "The corpus carries distinct Cantera/Productos de Cantera manifestations around PR-551 Km 2.1, Km 2.7 and Km 4.4-4.5; name normalization is forbidden.",
+    ),
+    Contradiction(
+        "CN-CONTR-003",
+        "Santiago exact spatial state",
+        ("PRPB_CANTERA_NARANJO_OBJECTID_38", "USGS_MRDS_CANTERO_NARANJO_200733", "USGS_W701145_JUANA_DIAZ_MINE"),
+        "OPEN",
+        "The PRPB quarry point is within SZ-0015 while MRDS Cantero Naranjo and USGS W701145 are outside the exact Santiago polygon.",
+    ),
+    Contradiction(
+        "CN-CONTR-004",
+        "mapped opening symbols versus documentary tunnels",
+        ("USGS_USMIN_EXPLICIT_OPENINGS_17", SITE78_SOURCE_ID),
+        "EXPLAINED_DIFFERENT_UNIVERSES",
+        "The AOI explicit Adit|Air Shaft|Mine Shaft symbol query is ZERO while Site 78 documents tunnels; the source universes and spatial manifestations differ, so ZERO is not real-world absence.",
+    ),
+    Contradiction(
+        "CN-CONTR-005",
+        "natural cave versus artificial historical workings",
+        ("PRPB_CAVES_31:178", SITE78_SOURCE_ID, "USGS_W701145_JUANA_DIAZ_MINE"),
+        "OPEN",
+        "Cueva Naranjo is mapped inside SZ-0015; historical manganese-working geometry is not spatially bound inside the cell. Connectivity remains unresolved.",
+    ),
+)
+
 
 def point_spatial_state(point: Point, geometry: BaseGeometry) -> str:
     if geometry.is_empty:
@@ -171,6 +218,23 @@ def adjudicate_manifestations(
     return output
 
 
+def historical_working_score_eligible(rows: Iterable[dict[str, object]], *, zone_id: str) -> bool:
+    """Return True only for an identity-bound historical working inside a zone.
+
+    Documentary existence, nearby record points, quarry points, and unresolved
+    identities are deliberately insufficient. This function is a promotion gate,
+    not a scoring formula.
+    """
+    for row in rows:
+        if row.get("role") != "HISTORICAL_MINE_RECORD_POINT":
+            continue
+        if row.get("identity_to_site78") == IdentityState.UNRESOLVED:
+            continue
+        if zone_id in row.get("containing_zones", []):
+            return True
+    return False
+
+
 def write_lineage_receipt(
     path: str | Path,
     *,
@@ -179,10 +243,16 @@ def write_lineage_receipt(
 ) -> Path:
     out = Path(path)
     out.parent.mkdir(parents=True, exist_ok=True)
+    points = adjudicate_manifestations(aoi=aoi, zones=zones)
     payload = {
         "schema": "spiderweb.subsurface.cantera_naranjo_lineage.v1",
         "site78_claims": [asdict(row) for row in SITE78_CLAIMS],
-        "point_manifestations": adjudicate_manifestations(aoi=aoi, zones=zones),
+        "point_manifestations": points,
+        "contradictions": [asdict(row) for row in CONTRADICTIONS],
+        "relevance_gate": {
+            "SZ-0015_historical_working_score_eligible": historical_working_score_eligible(points, zone_id="SZ-0015"),
+            "rule": "historical artificial-subsurface score requires identity-bound historical-working geometry inside exact zone",
+        },
         "rules": [
             "no name-only identity",
             "no proximity-only identity or connectivity",
