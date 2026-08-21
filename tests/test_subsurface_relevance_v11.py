@@ -1,6 +1,3 @@
-import json
-from pathlib import Path
-
 from spiderweb.subsurface.relevance_v11 import harden_relevance
 
 
@@ -35,8 +32,7 @@ def test_v11_never_uses_military_family_in_score():
 
 def test_v11_marks_canonical_threshold_drop_provisional():
     v1 = {"type": "FeatureCollection", "features": [_zone()]}
-    evidence = {"type": "FeatureCollection", "features": []}
-    out = harden_relevance(v1, evidence, {"assets": []})["features"][0]["properties"]
+    out = harden_relevance(v1, {"type": "FeatureCollection", "features": []}, {"assets": []})["features"][0]["properties"]
     assert out["v11_relevance"] == "VERY_LOW"
     assert out["sensitivity_state"] == "PROVISIONAL"
 
@@ -45,11 +41,18 @@ def test_v11_direct_cave_zone_can_be_robust_without_connectivity_claim():
     v1 = {"type": "FeatureCollection", "features": [_zone(6.0, "DIRECT")]}
     evidence = {"type": "FeatureCollection", "features": [
         _feature("c", "PRPB_CAVES_31", "GEOLOGY_KARST_CAVES"),
-        _feature("q", "PRPB_QUARRIES_10", "MINES_QUARRIES_SHAFTS"),
+        _feature("q1", "PRPB_QUARRIES_10", "MINES_QUARRIES_SHAFTS"),
+        _feature("q2", "USGS_USMIN_CONSOLIDATED_POINTS_17", "MINES_QUARRIES_SHAFTS"),
+        _feature("w", "USGS_MONITORING_LOCATIONS_PR", "AQUIFERS_WELLS_SPRINGS", {"site_type": "Well"}),
+        _feature("i", "PRPB_UST_7", "INDUSTRIAL_REMEDIATION"),
         _feature("h", "USGS_TOPOVIEW_OVERLAY_0", "HISTORICAL_CORROBORATION"),
         _feature("u", "PRPB_AAA_WATER_MAIN_3", "UTILITIES_UNDERGROUND"),
     ]}
-    assets = {"assets": [{"canonical_id": "Q1", "asset_class": "MINE_QUARRY_FEATURE", "member_record_ids": ["q"]}]}
+    assets = {"assets": [
+        {"canonical_id": "Q1", "asset_class": "MINE_QUARRY_FEATURE", "member_record_ids": ["q1"]},
+        {"canonical_id": "Q2", "asset_class": "MINE_QUARRY_FEATURE", "member_record_ids": ["q2"]},
+        {"canonical_id": "GW1", "asset_class": "GROUNDWATER_POINT", "member_record_ids": ["w"]},
+    ]}
     out = harden_relevance(v1, evidence, assets)["features"][0]["properties"]
     assert out["v11_relevance"] in {"MODERATE", "HIGH"}
     assert out["sensitivity_state"] == "ROBUST"
