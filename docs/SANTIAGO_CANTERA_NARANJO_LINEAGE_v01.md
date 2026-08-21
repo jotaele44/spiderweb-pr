@@ -50,6 +50,21 @@ The key geometry result is therefore asymmetric: **a modern PRPB manifestation n
 
 The inside PRPB quarry point is approximately 806 m from the USGS W701145 mine record point. Cueva Naranjo's published point is approximately 144 m from the PRPB quarry point. Those distances are discovery measurements only and create no identity or connectivity edge.
 
+## Frozen topographic quarry lineage inside SZ-0015
+
+The already-certified v1.1 evidence ledger contains independent USGS historical-topographic quarry manifestations inside/intersecting SZ-0015:
+
+| manifestation | source map | scan id | state |
+|---|---|---:|---|
+| USMin quarry point `487420` | Río Descalabrado 1945 | `362556` | FULLY_WITHIN |
+| USMin quarry point `487419` | Río Descalabrado 1972 | `362238` | FULLY_WITHIN |
+| USMin quarry polygon `115004` | Río Descalabrado 1982 | `362239` | FULLY_WITHIN |
+| USMin quarry polygon `115000` | Río Descalabrado 1982 | `362239` | PARTIAL |
+
+The 1982 polygons represent approximately 9,013 m² fully within and 26,454 m² for the larger partial polygon before clipping to the zone. These are historical **surface-quarry** manifestations. No registered historical `Adit|Air Shaft|Mine Shaft` symbol was returned for the AOI.
+
+Relevant topoView footprints over SZ-0015 additionally include Río Descalabrado editions from 1945, 1952, 1960 and 1972 plus later US Topo editions. This supplies a bounded temporal map stack for future quarry-face reconstruction but does not by itself locate Site-78 tunnels.
+
 ## Additional cave/property corroboration
 
 A separate Cueva Naranjo conservation manifestation places the cave in Cerro Cuevas, Guayabal, and describes it as being on the premises of Cantera Naranjo. That is relevant to cave/quarry **property context**. It is not evidence that the natural cave connects to the historical manganese workings or that the named quarry manifestation in that source equals OECH Site 78.
@@ -112,7 +127,7 @@ Reopening the residual does not imply that a comprehensive national mine-working
 
 **No v1.1 score change is currently permitted.**
 
-SZ-0015 remains `6.558`, `MODERATE`, `ROBUST`, and `DIRECT` solely because of the mapped natural cave evidence already present in the certified model. Its quarry contribution already includes the PRPB quarry manifestation. The recovered historical artificial-subsurface evidence cannot add a new score contribution until exact spatial identity/containment places the historical working inside the zone without double-counting an existing manifestation.
+SZ-0015 remains `6.558`, `MODERATE`, `ROBUST`, and `DIRECT` solely because of the mapped natural cave evidence already present in the certified model. Its quarry contribution already includes the PRPB and USGS quarry manifestations above. The recovered historical artificial-subsurface evidence cannot add a new score contribution until exact spatial identity/containment places the historical working inside the zone without double-counting an existing manifestation.
 
 Therefore:
 
@@ -131,7 +146,7 @@ Priority order:
 1. recover original OECH/UPR Site-78 survey card, notes and photograph(s), if publicly manifested;
 2. recover Atlantic Ore Company Juana Díaz property descriptions, maps and mine/mill plans from USGS/USBM/PR historical publications;
 3. reconstruct PR-551 Km 4 historical chainage and compare with current Km 4.4/4.5 Procan manifestations;
-4. acquire historical topo/aerial epochs to reconstruct quarry-face migration and likely destruction zones;
+4. acquire actual HTMC map payloads and historical aerial epochs to reconstruct quarry-face migration and likely destruction zones;
 5. search for the stone mine-office structure as a historical georegistration anchor;
 6. preserve every competing quarry/facility manifestation rather than normalizing by name.
 
