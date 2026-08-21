@@ -1,5 +1,18 @@
 # Santiago Triangle — Subsurface Relevance Model v1.1
 
+## Run identity
+
+- live acceptance workflow run: `32498918608`
+- branch head executed: `34d1be28b117b8fd2874f8522d0569a0784cd1e7`
+- workflow artifact ID: `9452795978`
+- artifact SHA256: `c28308339900bcf2eef90cc47f615d01a8b9f297c20082afc391c141d9f7ec6c`
+- live source execution: `50 PASS | 3 ZERO | 10 FAIL | 5 OPEN`
+- required manifestations: `67`; terminal required: `53`
+- bounded public-source exhaustion: `OPEN`
+- records-request eligible: `FALSE`
+
+All repository checks for this head, including full CI, CodeQL, Semgrep, Secret scan, pip-audit, PRII Smoke Gate, federation drift and live Santiago acceptance, completed successfully.
+
 ## Purpose
 
 v1.1 preserves the v1 zone ledger and hardens interpretation by replacing duplicate-prone groundwater and mine/quarry source-row counts with canonical physical-asset counts where binding exists, then running auxiliary-family perturbations and rank-stability tests. It does not infer subsurface connectivity, access, intent, hidden use, or current protected infrastructure.
@@ -74,7 +87,7 @@ The last result demonstrates that the cave/geology family is the controlling dir
 
 ## Historical and aerial coverage boundary
 
-topoView closes a substantial topographic-map chronology for SZ-0015, including 1945/1947/1952/1960/1972 HTMC and 2013/2018/2024 US Topo manifestations. The historical aerial frame/scene denominator remains OPEN under the v0.5 public-source certificate; v1.1 therefore does not claim a complete aerial temporal stack.
+topoView closes a substantial topographic-map chronology for SZ-0015, including 1945/1947/1952/1960/1972 HTMC and 2013/2018/2024 US Topo manifestations. In the latest live run, both registered NARA historical-aerial reference manifestations became terminal, but the `HISTORICAL_AERIAL_COLLECTION_INDEX_RESIDUAL` itself remains `OPEN`: the Santiago frame/scene metadata denominator has not yet been fully materialized. v1.1 therefore does not claim a complete aerial temporal stack.
 
 ## Interpretation boundary
 
