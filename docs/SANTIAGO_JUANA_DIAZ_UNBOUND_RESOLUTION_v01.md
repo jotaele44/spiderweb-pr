@@ -28,6 +28,12 @@ Public sources provide two useful but non-equivalent anchors:
 
 The separation between these public coordinates demonstrates why the label `Cantera Naranjo` cannot be used as a shortcut to georegister an unlabeled screenshot. Facility points, quarry-property extents, extraction faces and cave locations are different spatial entities and must remain separate unless exact geometry establishes identity or containment.
 
+## New historical-workings lead discovered during resolution
+
+An official Puerto Rico historic-road guide describes `Cantera Naranjo` along PR-551 and states that the marble quarry contains tunnels from a manganese mine exploited in the early 1900s; it further states that most of those tunnels were destroyed by later quarry exploitation and that a small stone office building survives.
+
+This is retained as `HISTORICAL_DOCUMENTARY_LEAD`, not as a screenshot binding and not yet as exact tunnel geometry. Before promotion it requires exact manifestation/identity binding between the guide's `Cantera Naranjo`, the frozen quarry manifestations, the cave/quarry property geometry and the relevant Santiago cell(s). The lead does not alter the `UNRESOLVED` state of either screenshot.
+
 ## Binding decision
 
 ### IMG_4020
