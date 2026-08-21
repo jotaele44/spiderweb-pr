@@ -7,6 +7,7 @@ on:
     paths:
       - "spiderweb/subsurface/**"
       - "tests/fixtures/subsurface/santiago_triangle.kml"
+      - "tests/fixtures/subsurface/santiago_triangle.visual_morphology.v01.json"
       - ".github/workflows/subsurface-santiago-acceptance.yml"
 
 permissions:
@@ -58,7 +59,13 @@ jobs:
               f'{root}/derived/canonical_assets.json',
               v11,
           )
-          write_pack(geo, f'{root}/evidence.geojson', f'{root}/derived/canonical_assets.json', f'{v11}/top8')
+          write_pack(
+              geo,
+              f'{root}/evidence.geojson',
+              f'{root}/derived/canonical_assets.json',
+              f'{v11}/top8',
+              'tests/fixtures/subsurface/santiago_triangle.visual_morphology.v01.json',
+          )
           print(geo)
           print(transition)
           PY
@@ -81,6 +88,7 @@ jobs:
           edges = json.loads((root / 'derived/identity_edges.json').read_text())['edges']
           relevance = json.loads((root / 'derived/relevance_zones.geojson').read_text())['features']
           v11 = json.loads((root / 'derived/v11/relevance_zones_v11.geojson').read_text())['features']
+          visual = json.loads((root / 'derived/v11/top8/visual_morphology_assessment.json').read_text())['assessments']
           ledger = control['ledger']
           states = Counter(row['run_state'] for row in ledger)
           residual_states = Counter(row['state'] for row in residual['rows'])
@@ -88,6 +96,7 @@ jobs:
           relevance_states = Counter(row['properties']['relevance'] for row in relevance)
           v11_states = Counter(row['properties']['v11_relevance'] for row in v11)
           sensitivity = Counter(row['properties']['sensitivity_state'] for row in v11 if row['properties']['relevance'] == 'MODERATE')
+          visual_binding = Counter(row['binding_state'] for row in visual)
           print('SOURCE STATES:', dict(sorted(states.items())))
           print('REQUIRED:', cert['required_sources'])
           print('TERMINAL:', cert['terminal_sources'])
@@ -100,8 +109,11 @@ jobs:
           print('RELEVANCE v1:', len(relevance), dict(sorted(relevance_states.items())))
           print('RELEVANCE v1.1:', len(v11), dict(sorted(v11_states.items())))
           print('ELEVATED SENSITIVITY:', dict(sorted(sensitivity.items())))
+          print('VISUAL MORPHOLOGY:', len(visual), dict(sorted(visual_binding.items())))
           high = [row for row in v11 if row['properties']['v11_relevance'] == 'HIGH']
           assert not high
+          assert all(row.get('promotion_permitted') is False for row in visual)
+          assert sum(1 for row in visual if row.get('zone_id') is None) == 2
           assert cert['records_request_eligible'] is False
           assert residual['all_residuals_terminal'] is False
           PY
