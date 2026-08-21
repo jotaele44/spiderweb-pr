@@ -3,10 +3,12 @@ from __future__ import annotations
 from shapely.geometry import Polygon
 
 from spiderweb.subsurface.cantera_naranjo import (
+    CONTRADICTIONS,
     KNOWN_POINT_MANIFESTATIONS,
     SITE78_CLAIMS,
     IdentityState,
     adjudicate_manifestations,
+    historical_working_score_eligible,
 )
 
 
@@ -36,6 +38,7 @@ def test_site78_claim_denominator_is_explicit() -> None:
     km_claim = next(row for row in SITE78_CLAIMS if row.claim_id == "CN78-C02")
     assert "kilometer 4" in km_claim.text
     assert "4.4" not in km_claim.text
+    assert len(CONTRADICTIONS) >= 5
 
 
 def test_historical_mine_point_does_not_auto_bind_to_sz0015() -> None:
@@ -70,6 +73,7 @@ def test_historical_mine_point_does_not_auto_bind_to_sz0015() -> None:
 
     assert all(row["promotion_permitted"] is False for row in rows)
     assert all(row["connectivity_inference_permitted"] is False for row in rows)
+    assert historical_working_score_eligible(rows, zone_id="SZ-0015") is False
 
 
 def test_identity_remains_unresolved_despite_name_and_history_overlap() -> None:
