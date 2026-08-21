@@ -34,13 +34,34 @@ def _polygon_kml(geom):
     return chunks[0] if len(chunks) == 1 else "<MultiGeometry>" + "".join(chunks) + "</MultiGeometry>"
 
 
-def build_top8_pack(v11_geojson: dict, evidence_geojson: dict, canonical_assets: dict) -> tuple[dict, dict]:
+def _visual_by_zone(visual_morphology: dict | None) -> dict[str, list[dict]]:
+    by_zone: dict[str, list[dict]] = {}
+    if not visual_morphology:
+        return by_zone
+    for row in visual_morphology.get("assessments", []):
+        zone_id = row.get("zone_id")
+        if not zone_id:
+            continue
+        safe = dict(row)
+        # Visual morphology is context/falsification only; it cannot affect score.
+        safe["promotion_permitted"] = False
+        by_zone.setdefault(str(zone_id), []).append(safe)
+    return by_zone
+
+
+def build_top8_pack(
+    v11_geojson: dict,
+    evidence_geojson: dict,
+    canonical_assets: dict,
+    visual_morphology: dict | None = None,
+) -> tuple[dict, dict]:
     member_to_asset = {str(member): asset["canonical_id"] for asset in canonical_assets.get("assets", []) for member in asset.get("member_record_ids", [])}
     evidence = [f for f in evidence_geojson.get("features", []) if f.get("geometry") and _p(f).get("spatial_state") in {"FULLY_WITHIN", "PARTIAL"}]
     geoms = [shape(f["geometry"]) for f in evidence]
     tree = STRtree(geoms)
     elevated = [f for f in v11_geojson.get("features", []) if _p(f).get("relevance") == "MODERATE"]
     elevated.sort(key=lambda f: float(_p(f).get("score") or 0), reverse=True)
+    visual_by_zone = _visual_by_zone(visual_morphology)
     dossiers = []
     overlay = []
     for rank, zone in enumerate(elevated, 1):
@@ -56,7 +77,10 @@ def build_top8_pack(v11_geojson: dict, evidence_geojson: dict, canonical_assets:
                     "evidence_tier": _p(f).get("evidence_tier"), "spatial_state": _p(f).get("spatial_state"),
                     "attributes": _a(f),
                 })
+        zone_visual = visual_by_zone.get(str(_p(zone).get("zone_id")), [])
         props = dict(_p(zone)); props["rank_v1"] = rank
+        props["visual_morphology_image_count"] = len(zone_visual)
+        props["visual_morphology_score_effect"] = 0.0
         overlay.append({"type": "Feature", "geometry": zone["geometry"], "properties": props})
         dossiers.append({
             "rank_v1": rank, "zone_id": props["zone_id"], "baseline_score": props.get("score"),
@@ -66,23 +90,47 @@ def build_top8_pack(v11_geojson: dict, evidence_geojson: dict, canonical_assets:
             "bounds": list(zg.bounds), "score_components": props.get("v11_components"),
             "perturbations": props.get("perturbations"), "source_counts": dict(sorted(source_counts.items())),
             "target_evidence": target,
-            "interpretive_boundary": "Evidence co-occurrence within a cell does not establish subsurface connectivity, identity, access, intent, or hidden use.",
+            "visual_morphology": zone_visual,
+            "visual_morphology_summary": {
+                "image_count": len(zone_visual),
+                "classes": sorted({str(r.get("morphology_class")) for r in zone_visual if r.get("morphology_class")}),
+                "visible_subsurface_indicator": (
+                    "NONE_VISIBLE"
+                    if zone_visual and all(r.get("visible_subsurface_indicator") in {"NONE_VISIBLE", "SURFACE_EXTRACTION_ONLY"} for r in zone_visual)
+                    else "UNRESOLVED"
+                ),
+                "score_effect": 0.0,
+            },
+            "interpretive_boundary": "Evidence co-occurrence and satellite morphology within a cell do not establish subsurface connectivity, identity, access, intent, hidden use, or an underground facility.",
         })
-    return {"schema": "spiderweb.subsurface.top8_zone_evidence_pack.v1", "zones": dossiers}, {"type": "FeatureCollection", "features": overlay}
+    return {
+        "schema": "spiderweb.subsurface.top8_zone_evidence_pack.v1.1",
+        "visual_morphology_policy": "FALSIFICATION_CONTEXT_ONLY_NO_SCORE_PROMOTION",
+        "zones": dossiers,
+    }, {"type": "FeatureCollection", "features": overlay}
 
 
-def write_pack(v11_path: str | Path, evidence_path: str | Path, assets_path: str | Path, out_dir: str | Path):
+def write_pack(
+    v11_path: str | Path,
+    evidence_path: str | Path,
+    assets_path: str | Path,
+    out_dir: str | Path,
+    visual_manifest_path: str | Path | None = None,
+):
     v11 = json.loads(Path(v11_path).read_text(encoding="utf-8"))
     evidence = json.loads(Path(evidence_path).read_text(encoding="utf-8"))
     assets = json.loads(Path(assets_path).read_text(encoding="utf-8"))
-    pack, overlay = build_top8_pack(v11, evidence, assets)
+    visual = json.loads(Path(visual_manifest_path).read_text(encoding="utf-8")) if visual_manifest_path else None
+    pack, overlay = build_top8_pack(v11, evidence, assets, visual)
     out = Path(out_dir); out.mkdir(parents=True, exist_ok=True)
     (out / "top8_evidence_pack.json").write_text(json.dumps(pack, indent=2, sort_keys=True), encoding="utf-8")
     (out / "top8_ranked.geojson").write_text(json.dumps(overlay, indent=2, sort_keys=True), encoding="utf-8")
+    if visual is not None:
+        (out / "visual_morphology_assessment.json").write_text(json.dumps(visual, indent=2, sort_keys=True), encoding="utf-8")
     placemarks = []
     for feature in overlay["features"]:
         props = feature["properties"]
-        summary = {k: props.get(k) for k in ("score", "v11_score", "v11_relevance", "sensitivity_state", "rank_min", "rank_max")}
+        summary = {k: props.get(k) for k in ("score", "v11_score", "v11_relevance", "sensitivity_state", "rank_min", "rank_max", "visual_morphology_image_count")}
         placemarks.append(f'<Placemark><name>{escape(props["zone_id"])}</name><description>{escape(json.dumps(summary, sort_keys=True))}</description>{_polygon_kml(shape(feature["geometry"]))}</Placemark>')
     kml = '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>' + "".join(placemarks) + "</Document></kml>"
     kml_path = out / "top8_ranked.kml"; kml_path.write_text(kml, encoding="utf-8")
