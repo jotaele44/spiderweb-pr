@@ -79,11 +79,31 @@ SITE78_CLAIMS: tuple[HistoricalClaim, ...] = (
     HistoricalClaim("CN78-C11", "A small stone building used as the mine office is described as surviving at publication time.", SITE78_SOURCE_ID),
 )
 
-# USGS appendix W701145 is an independent mine manifestation. The coordinate is
-# the published record point, not a tunnel-entrance coordinate and not a quarry
-# boundary. Identity with OECH Site 78 remains UNRESOLVED until property/chainage
-# or documentary evidence explicitly binds them.
+# Each coordinate below is the coordinate of its own source manifestation. None
+# is treated as a tunnel entrance or property boundary. In particular, the PRPB
+# Cantera Naranjo point is inside SZ-0015 while the independent USGS Juana Diaz
+# Mine record point is just outside the frozen Santiago AOI. That spatial split
+# is preserved as a contradiction/identity problem rather than reconciled by
+# name, commodity, or proximity.
 KNOWN_POINT_MANIFESTATIONS: tuple[PointManifestation, ...] = (
+    PointManifestation(
+        "PRPB_CANTERA_NARANJO_OBJECTID_38",
+        "CANTERA NARANJO",
+        -66.47027159432102,
+        18.06533875942472,
+        "PRPB_QUARRIES_10",
+        "QUARRY_SOURCE_POINT",
+        notes="Planning Board quarry row OBJECTID 38; source address CARR 551 KM 2.1 BO NARANJO; source status field CERRADO; GPS date is historical and is not a current-operation claim.",
+    ),
+    PointManifestation(
+        "USGS_MRDS_CANTERO_NARANJO_200733",
+        "Cantero Naranjo",
+        -66.47027000007718,
+        18.068469999666476,
+        "USGS_MRDS_HOSTED_0_PR_AOI",
+        "HISTORICAL_MINERAL_RECORD_POINT",
+        notes="MRDS producer manifestation nearly aligned in longitude with PRPB quarry point but outside exact Santiago triangle; name/nearby geometry is insufficient for identity.",
+    ),
     PointManifestation(
         "USGS_W701145_JUANA_DIAZ_MINE",
         "Juana Diaz Mine",
@@ -91,7 +111,7 @@ KNOWN_POINT_MANIFESTATIONS: tuple[PointManifestation, ...] = (
         18.070833333333333,
         USGS_APPENDIX_SOURCE_ID,
         "HISTORICAL_MINE_RECORD_POINT",
-        notes="USGS OFR 98-038 appendix: W701145; Mn; fissure fillings in limestone; Rio Descalabrado quadrangle.",
+        notes="USGS OFR 98-038 appendix: W701145; Mn; fissure fillings in limestone; Rio Descalabrado quadrangle. The record point is not tunnel-entrance geometry.",
     ),
     PointManifestation(
         "PROCAN_EMBEDDED_MAP_CENTER",
@@ -109,7 +129,7 @@ KNOWN_POINT_MANIFESTATIONS: tuple[PointManifestation, ...] = (
         18.054444,
         "EPA_ECHO_FACILITY_MANIFESTATION",
         "MODERN_FACILITY_POINT",
-        notes="Modern regulatory facility point at PR-551 Km 2.7; name similarity cannot bind it to historic Site 78.",
+        notes="Modern regulatory facility point associated with a different PR-551 chainage manifestation; name similarity cannot bind it to historic Site 78.",
     ),
 )
 
@@ -168,6 +188,7 @@ def write_lineage_receipt(
             "no proximity-only identity or connectivity",
             "USGS record point is not tunnel geometry",
             "modern business/facility points are not quarry-property boundaries",
+            "a quarry manifestation already counted by v1.1 is not a new historical-working score contribution",
             "historical working evidence changes relevance only after exact AOI/zone spatial binding",
         ],
     }
