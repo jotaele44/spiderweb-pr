@@ -115,6 +115,7 @@ jobs:
           v11_states = Counter(row['properties']['v11_relevance'] for row in v11)
           sensitivity = Counter(row['properties']['sensitivity_state'] for row in v11 if row['properties']['relevance'] == 'MODERATE')
           visual_binding = Counter(row['binding_state'] for row in visual)
+          cn = {row['manifestation_id']: row for row in lineage['point_manifestations']}
           print('SOURCE STATES:', dict(sorted(states.items())))
           print('REQUIRED:', cert['required_sources'])
           print('TERMINAL:', cert['terminal_sources'])
@@ -133,8 +134,14 @@ jobs:
           assert not high
           assert all(row.get('promotion_permitted') is False for row in visual)
           assert sum(1 for row in visual if row.get('zone_id') is None) == 2
-          assert all(row['aoi_spatial_state'] == 'OUTSIDE' for row in lineage['point_manifestations'])
-          assert all(not row['containing_zones'] for row in lineage['point_manifestations'])
+          for source_id in ('USGS_W701145_JUANA_DIAZ_MINE', 'PROCAN_EMBEDDED_MAP_CENTER', 'EPA_PRODUCTOS_AGREGADOS_CANTERA_NARANJO'):
+              assert cn[source_id]['aoi_spatial_state'] == 'OUTSIDE'
+              assert not cn[source_id]['containing_zones']
+          assert cn['PRPB_CANTERA_NARANJO_OBJECTID_38']['aoi_spatial_state'] == 'WITHIN'
+          assert cn['PRPB_CANTERA_NARANJO_OBJECTID_38']['containing_zones'] == ['SZ-0015']
+          assert cn['USGS_MRDS_CANTERO_NARANJO_200733']['aoi_spatial_state'] == 'OUTSIDE'
+          assert not cn['USGS_MRDS_CANTERO_NARANJO_200733']['containing_zones']
+          assert all(row['promotion_permitted'] is False for row in lineage['point_manifestations'])
           assert cert['records_request_eligible'] is False
           assert residual['all_residuals_terminal'] is False
           PY
