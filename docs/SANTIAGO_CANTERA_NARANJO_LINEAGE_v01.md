@@ -26,7 +26,13 @@ USGS Open-File Report 98-038 independently documents manganese exploitation in J
 
 This independently corroborates a United States mining company, Juana Díaz manganese exploitation, limestone-hosted mineralization and the early-twentieth-century time window. It does **not** explicitly state that `W701145` and OECH Site 78 are the same mine/property.
 
-A 1930s *Revista de Obras Públicas de Puerto Rico* manifestation additionally discusses Atlantic Ore Company operations at Juana Díaz, subsurface exploration, a mine and mill, a ridge extending toward the Guayabal reservoir and Río Descalabrado, and nearby marble deposits. This is corroborating district-scale evidence, not exact Site-78 tunnel geometry.
+A 1930s *Revista de Obras Públicas de Puerto Rico* manifestation additionally discusses Atlantic Ore Company operations at Juana Díaz, subsurface exploration, a mine and mill, a ridge extending toward the Guayabal reservoir and Río Descalabrado, and nearby marble deposits. It states that the mine was on the south-central side of an elongate limestone-capped ridge extending westward toward the Guayabal reservoir and eastward toward Río Descalabrado, and discusses exploratory underground operations. This is corroborating district-scale evidence, not exact Site-78 tunnel geometry.
+
+### Historical-operator state
+
+`ATLANTIC ORE COMPANY → JUANA DÍAZ MANGANESE DISTRICT` is `CORROBORATED` by independent USGS/historical-public-works evidence.
+
+`ATLANTIC ORE COMPANY → OECH SITE 78` remains `UNRESOLVED`, because no recovered source yet explicitly names Site 78/Cantera Naranjo as the Atlantic Ore Company property.
 
 ## Point-manifestation geometry
 
@@ -41,6 +47,8 @@ Exact predicates against the frozen Santiago Triangle and SZ-0015 are used. Dist
 | EPA `Productos de Agregados - Cantera Naranjo` | `18.054444,-66.500278` | OUTSIDE (~386 m) | OUTSIDE | modern regulatory facility point associated with PR-551 Km 2.7; not historical Site 78 |
 
 The key geometry result is therefore asymmetric: **a modern PRPB manifestation named Cantera Naranjo is inside SZ-0015, but the independent USGS Juana Díaz historical-mine record point is outside the frozen Santiago AOI**. That difference is preserved instead of being reconciled by name or proximity.
+
+The inside PRPB quarry point is approximately 806 m from the USGS W701145 mine record point. Cueva Naranjo's published point is approximately 144 m from the PRPB quarry point. Those distances are discovery measurements only and create no identity or connectivity edge.
 
 ## Additional cave/property corroboration
 
@@ -64,11 +72,11 @@ No nearest-neighbor or name-only edge may collapse these entities.
 
 ### CN-CONTR-001 — chainage correction
 
-Earlier working text used `PR-551 Km 4.4`; the frozen OECH page prints `PR-551 Km. 4.`. The `4.4` value belongs to a separate modern Procan address/map manifestation and cannot be imported into the historical source.
+Earlier working text used `PR-551 Km 4.4`; the frozen OECH page prints `PR-551 Km. 4.`. The `4.4/4.5` value belongs to separate modern Productos de Cantera/Procan manifestations and cannot be imported into the historical source.
 
 ### CN-CONTR-002 — multiple Cantera Naranjo chainages
 
-The corpus contains modern manifestations around `Km 2.1`, `Km 2.7`, and modern Productos de Cantera/Procan around `Km 4.4–4.5`, while historical Site 78 prints `Km 4.`. These are not forced into one quarry.
+The corpus contains modern manifestations around `Km 2.1`, `Km 2.7`, and modern Productos de Cantera/Procan around `Km 4.4–4.5`, while historical Site 78 prints `Km 4.`. These are not forced into one quarry. Current business directories likewise list Procan around Km 4.5 and Cantera Naranjo around Km 2.7 as separate entries.
 
 ### CN-CONTR-003 — split spatial states
 
