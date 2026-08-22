@@ -4,11 +4,19 @@ on:
   push:
     branches:
       - feature/pr-archipelago-geography
+    paths:
+      - "scripts/acquire_pr_archipelago_sources.py"
+      - "scripts/acquire_pr_archipelago_geometry.py"
+      - "spiderweb/spatial/archipelago.py"
+      - "tests/test_archipelago_geography.py"
+      - "configs/pr_archipelago_sources.json"
+      - ".github/workflows/pr-archipelago-acquire.yml"
   pull_request:
     branches:
       - main
     paths:
       - "scripts/acquire_pr_archipelago_sources.py"
+      - "scripts/acquire_pr_archipelago_geometry.py"
       - "spiderweb/spatial/archipelago.py"
       - "tests/test_archipelago_geography.py"
       - "configs/pr_archipelago_sources.json"
@@ -19,7 +27,7 @@ permissions:
   contents: read
 
 jobs:
-  acquire:
+  acquire-current:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -29,29 +37,36 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Acquire and freeze current source manifestations
+      - name: Acquire and freeze current naming manifestations
         run: |
           python scripts/acquire_pr_archipelago_sources.py \
             --output evidence/pr_archipelago/source_snapshots
+
+      - name: Acquire and freeze independent geometry manifestations
+        run: |
+          python scripts/acquire_pr_archipelago_geometry.py \
+            --output evidence/pr_archipelago/geometry_snapshots
 
       - name: Install regression-test runner
         run: python -m pip install --disable-pip-version-check pytest
 
       - name: Run archipelago regression gates
-        run: |
-          python -m pytest -q tests/test_archipelago_geography.py
+        run: python -m pytest -q tests/test_archipelago_geography.py
 
       - name: Inventory acquisition output
         if: always()
         run: |
-          find evidence/pr_archipelago/source_snapshots -type f -printf '%p %s bytes\n' | sort || true
+          find evidence/pr_archipelago -type f -printf '%p %s bytes\n' | sort || true
           sha256sum evidence/pr_archipelago/source_snapshots/source_manifest.json || true
+          sha256sum evidence/pr_archipelago/geometry_snapshots/geometry_source_manifest.json || true
 
-      - name: Upload frozen acquisition evidence
+      - name: Upload frozen current evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pr-archipelago-source-snapshot
-          path: evidence/pr_archipelago/source_snapshots/
+          name: pr-archipelago-current-snapshot
+          path: |
+            evidence/pr_archipelago/source_snapshots/
+            evidence/pr_archipelago/geometry_snapshots/
           if-no-files-found: error
           retention-days: 30
