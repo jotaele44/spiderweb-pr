@@ -34,6 +34,9 @@ jobs:
           python scripts/acquire_pr_archipelago_sources.py \
             --output evidence/pr_archipelago/source_snapshots
 
+      - name: Install regression-test runner
+        run: python -m pip install --disable-pip-version-check pytest
+
       - name: Run archipelago regression gates
         run: |
           python -m pytest -q tests/test_archipelago_geography.py
