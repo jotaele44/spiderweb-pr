@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Freeze NOAA NGS historical Puerto Rico shoreline manifestations independently.
 
-Only Shoreline Data Rescue records whose own NOAA catalog-link title binds them
-to Puerto Rico are admitted. This lane never mutates, fills, or certifies the
-current A denominator. Historical names/geometries remain independent source
-manifestations until temporal/identity adjudication.
+Primary discovery requires a Shoreline Data Rescue catalog-link title that
+itself binds to Puerto Rico. A bounded supplemental registry is allowed only
+when an authoritative NOAA InPort record independently binds a title-ambiguous
+record to Puerto Rico in its metadata. This lane never mutates or fills A.
 """
 
 from __future__ import annotations
@@ -18,8 +18,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 PARENT = "https://www.fisheries.noaa.gov/inport/item/59091/full-list"
-UA = "spiderweb-pr-noaa-historical/1.0 (+https://github.com/jotaele44/spiderweb-pr)"
+UA = "spiderweb-pr-noaa-historical/1.1 (+https://github.com/jotaele44/spiderweb-pr)"
 ANCHOR_RE = re.compile(r'href="/inport/item/(\d+)"[^>]*>(.*?)</a>', re.I | re.S)
+SUPPLEMENTAL_METADATA_BINDINGS = {
+    60864: {
+        "title": "Shoreline Data Rescue Project of Bahia de Guayanilla, PH6903",
+        "project_code": "PH6903",
+        "binding": "NOAA InPort abstract says Bahia de Guayanilla, PR and spatial keywords bind Puerto Rico; title alone omits jurisdiction",
+    }
+}
 
 
 def now() -> str:
@@ -68,7 +75,6 @@ def is_pr_historical(title: str) -> bool:
 
 
 def project_code(title: str) -> str | None:
-    # Historical rescue identifiers are heterogeneous: PH####, PR####A/B, etc.
     parts = [p.strip(" ,.;:()") for p in title.split()]
     for token in reversed(parts):
         if re.fullmatch(r"(?:PH|PR)\d{4}[A-Z0-9]*", token, re.I):
@@ -97,19 +103,24 @@ def main() -> int:
             "item_id": int(item_id),
             "title": title,
             "project_code": project_code(title),
+            "discovery_basis": "CATALOG_TITLE_PR_BINDING",
         })
 
-    # The same catalog item may appear in more than one rendered hierarchy link.
-    unique = {}
-    for row in discovered:
-        key = (row["item_id"], row["title"])
-        unique[key] = row
+    unique = {row["item_id"]: row for row in discovered}
+    for item_id, supplemental in SUPPLEMENTAL_METADATA_BINDINGS.items():
+        unique.setdefault(item_id, {
+            "item_id": item_id,
+            "title": supplemental["title"],
+            "project_code": supplemental["project_code"],
+            "discovery_basis": "AUTHORITATIVE_METADATA_PR_BINDING",
+            "binding_note": supplemental["binding"],
+        })
     rows = sorted(unique.values(), key=lambda x: (x.get("project_code") or "", x["item_id"]))
 
     manifest = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "generated_utc": now(),
-        "scope": "NOAA NGS historical Shoreline Data Rescue manifestations explicitly bound to Puerto Rico by their own catalog title",
+        "scope": "NOAA NGS historical Shoreline Data Rescue manifestations bound to Puerto Rico by same-link title or explicit authoritative metadata",
         "parent_catalog": {
             "url": PARENT,
             "path": str(parent_path),
@@ -121,7 +132,8 @@ def main() -> int:
         "rules": {
             "current_contamination": "forbidden; this lane never fills A",
             "identity": "historical project/title/extent does not establish current canonical identity",
-            "discovery": "same-link-title Puerto Rico evidence only; no nearby-window heuristic",
+            "primary_discovery": "same-link-title Puerto Rico evidence only; no nearby-window heuristic",
+            "supplemental_discovery": "bounded item registry requires authoritative NOAA metadata that explicitly binds the otherwise ambiguous title to Puerto Rico",
         },
         "certification": {
             "NOAA_HISTORICAL_SHORELINE_MANIFESTATIONS": "OPEN",
@@ -149,8 +161,9 @@ def main() -> int:
     manifest["record_count"] = len(manifest["records"])
     manifest["metadata_pass_count"] = sum(bool(x["metadata_pass"]) for x in manifest["records"])
     manifest["unique_item_id_count"] = len({x["item_id"] for x in manifest["records"]})
+    manifest["supplemental_metadata_binding_count"] = sum(x.get("discovery_basis") == "AUTHORITATIVE_METADATA_PR_BINDING" for x in manifest["records"])
     if manifest["record_count"] and manifest["metadata_pass_count"] == manifest["record_count"]:
-        manifest["certification"]["NOAA_HISTORICAL_SHORELINE_MANIFESTATIONS"] = "PASS_SOURCE_FAMILY_ONLY"
+        manifest["certification"]["NOAA_HISTORICAL_SHORELINE_MANIFESTATIONS"] = "PASS_BOUNDED_SOURCE_FAMILY_ONLY"
 
     mp = out / "noaa_historical_shoreline_manifest.json"
     mp.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
@@ -159,6 +172,7 @@ def main() -> int:
         "sha256": sha(mp.read_bytes()),
         "record_count": manifest["record_count"],
         "metadata_pass_count": manifest["metadata_pass_count"],
+        "supplemental_metadata_binding_count": manifest["supplemental_metadata_binding_count"],
         "project_codes": [x.get("project_code") for x in manifest["records"]],
         "certification": manifest["certification"]
     }, ensure_ascii=False, indent=2))
