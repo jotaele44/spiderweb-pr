@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "scope": "Derived coverage audit from frozen NOAA exact project archives combined with previously frozen Census and SIGE geometry candidates",
+  "noaa_source": {
+    "project_archives": 15,
+    "archive_manifest_sha256": "734244411db9baee90218dd98f410c0249c20872f703009811f0af9b681831ce",
+    "shoreline_record_filter": "CLASS == SHORELINE in NOAA project line shapefiles",
+    "shoreline_line_records": 13751,
+    "derived_polygon_candidates": 44694,
+    "note": "NOAA line datasets include many cartographic classes; non-SHORELINE lines were excluded before polygonization"
+  },
+  "coverage": {
+    "gnis_current_island_feature_ids": 148,
+    "census_candidate_covered": 106,
+    "sige_candidate_covered": 58,
+    "noaa_shoreline_candidate_covered": 76,
+    "census_sige_union_covered": 109,
+    "census_sige_noaa_union_covered": 113,
+    "unexplained_current_geometry_residue": 35,
+    "newly_covered_by_noaa_beyond_census_sige": [
+      {"feature_id":"1610244","feature_name":"El Mono"},
+      {"feature_id":"1611235","feature_name":"La Blanquilla"},
+      {"feature_id":"1611676","feature_name":"Piragua de Afuera"},
+      {"feature_id":"1613163","feature_name":"Piedra Stevens"}
+    ]
+  },
+  "interpretation": {
+    "coverage": "representative-point containment in polygonized shoreline linework is corroborating geometry coverage only",
+    "polygonization": "derived polygons can include topology artifacts and must not be promoted to canonical land features without geometry adjudication",
+    "misses": "the 35 uncovered GNIS points remain unexplained; noncoverage is not feature absence",
+    "identity": "zero canonical identities are promoted by this audit"
+  },
+  "arithmetic": {
+    "148_total_gnis_ids": 148,
+    "covered_union": 113,
+    "uncovered_union": 35,
+    "closed": true
+  },
+  "certification": {
+    "NOAA_SHORELINE_DERIVED_GEOMETRY": "CANDIDATE_NOT_IDENTITY",
+    "DERIVED_CURRENT_GEOMETRY_UNION": "CANDIDATE_NOT_IDENTITY",
+    "GEOMETRIC_CURRENT": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}
