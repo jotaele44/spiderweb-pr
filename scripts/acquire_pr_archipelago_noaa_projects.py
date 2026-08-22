@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Freeze the current NOAA NGS Puerto Rico shoreline project denominator.
+"""Freeze the NOAA NGS Puerto Rico shoreline project denominator.
 
-This lane is metadata-first and source-manifestation preserving.  It discovers
-Puerto Rico shoreline datasets from the live NGS Shoreline parent catalog,
-freezes the parent catalog and each project InPort/ISO record, completion report,
-and tests likely project-specific shoreline ZIP manifestations without treating
-404/HTML/transport failure as data absence.
+Discovery is link-local: an InPort child is accepted only when its own link title
+contains a Puerto Rico project code (PR####...) and either spells out Puerto
+Rico or uses the Puerto Rico jurisdiction token `, PR`. No nearby-window or
+proximity heuristic is permitted.
 
-It does NOT merge projects or certify land geometry.  Project rectangular
-extents are metadata scopes, not land polygons.
+Metadata, completion reports, and guessed direct ZIP manifestations are kept
+separate. Viewer-only distribution or failed ZIP probes never establish source
+absence. Project extents are metadata scopes, never land polygons.
 """
 
 from __future__ import annotations
@@ -17,16 +17,15 @@ import hashlib
 import html
 import json
 import re
-import urllib.error
 import urllib.request
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 PARENT = "https://www.fisheries.noaa.gov/inport/item/59091/full-list"
-UA = "spiderweb-pr-noaa-projects/1.0 (+https://github.com/jotaele44/spiderweb-pr)"
-PROJECT_RE = re.compile(r'href="/inport/item/(\d+)"[^>]*>([^<]*Puerto Rico[^<]*?(PR\d{4}[A-Z]?-[-A-Z0-9]+))</a>', re.I)
-CODE_RE = re.compile(r"\b(PR\d{4}[A-Z]?-[-A-Z0-9]+)\b", re.I)
+UA = "spiderweb-pr-noaa-projects/1.1 (+https://github.com/jotaele44/spiderweb-pr)"
+ANCHOR_RE = re.compile(r'href="/inport/item/(\d+)"[^>]*>(.*?)</a>', re.I | re.S)
+CODE_RE = re.compile(r"\b(PR\d{4}[A-Z]?(?:-[A-Z0-9]+)+)\b", re.I)
 
 
 def now() -> str:
@@ -62,6 +61,22 @@ def freeze(url: str, path: Path) -> dict:
         return {"url": url, "state": "BLOCKED", "error": repr(exc)}
 
 
+def pdf_probe(urls: list[str], path: Path) -> dict:
+    attempts = []
+    for url in urls:
+        rec = freeze(url, path)
+        attempts.append(rec)
+        if rec.get("state") != "PASS_BYTES_FROZEN":
+            continue
+        data = path.read_bytes()
+        if data.startswith(b"%PDF-"):
+            rec["state"] = "PASS_PDF_FROZEN"
+            rec["attempts"] = attempts
+            return rec
+        rec["state"] = "BLOCKED_NOT_PDF"
+    return {"state": "BLOCKED", "attempts": attempts}
+
+
 def zip_probe(url: str, path: Path) -> dict:
     rec = freeze(url, path)
     if rec["state"] != "PASS_BYTES_FROZEN":
@@ -88,24 +103,27 @@ def zip_probe(url: str, path: Path) -> dict:
 
 
 def discover_projects(text: str) -> list[dict]:
-    projects = {}
-    # Primary extraction from links/titles.
-    for item_id, raw_title, code in PROJECT_RE.findall(text):
-        title = html.unescape(re.sub(r"\s+", " ", raw_title)).strip()
-        projects[(item_id, code.upper())] = {"item_id": int(item_id), "project_code": code.upper(), "title": title}
-    # Fallback: locate item links in local windows around Puerto Rico project codes.
-    for m in CODE_RE.finditer(text):
+    projects: dict[str, dict] = {}
+    rejected = []
+    for item_id, raw_anchor in ANCHOR_RE.findall(text):
+        title = html.unescape(re.sub(r"<[^>]+>", "", raw_anchor))
+        title = re.sub(r"\s+", " ", title).strip()
+        m = CODE_RE.search(title)
+        if not m:
+            continue
         code = m.group(1).upper()
-        window = text[max(0, m.start()-1200):min(len(text), m.end()+1200)]
-        if "Puerto Rico" not in window:
+        if not ("PUERTO RICO" in title.upper() or re.search(r",\s*PR(?:\s*,|\s*$)", title, re.I)):
+            rejected.append({"item_id": int(item_id), "project_code": code, "title": title, "reason": "TITLE_NOT_PR_JURISDICTION"})
             continue
-        ids = re.findall(r'/inport/item/(\d+)', window)
-        if not ids:
-            continue
-        item_id = ids[-1]
-        key = (item_id, code)
-        projects.setdefault(key, {"item_id": int(item_id), "project_code": code, "title": "DISCOVERED_FROM_PARENT_WINDOW"})
-    return sorted(projects.values(), key=lambda x: (x["project_code"], x["item_id"]))
+        candidate = {"item_id": int(item_id), "project_code": code, "title": title}
+        prior = projects.get(code)
+        if prior and prior != candidate:
+            # Exact duplicate project-code manifestations must remain visible.
+            prior.setdefault("duplicate_catalog_manifestations", []).append(candidate)
+        else:
+            projects.setdefault(code, candidate)
+    rows = sorted(projects.values(), key=lambda x: x["project_code"])
+    return rows, rejected
 
 
 def main() -> int:
@@ -120,10 +138,10 @@ def main() -> int:
     parent_path = out / "ngs_shoreline_parent_full_list.html"
     parent_path.write_bytes(parent_b)
     text = parent_b.decode("utf-8", errors="replace")
-    projects = discover_projects(text)
+    projects, rejected = discover_projects(text)
 
     manifest = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "generated_utc": now(),
         "source_family": "NOAA_NGS_SHORELINE",
         "parent_catalog": {
@@ -134,10 +152,13 @@ def main() -> int:
             "content_type": parent_h.get("Content-Type"),
         },
         "projects": [],
+        "rejected_catalog_candidates": rejected,
         "rules": {
+            "discovery": "item link title must itself carry PR project code and Puerto Rico jurisdiction evidence",
             "project_extent": "metadata scope only; never promoted to land geometry",
             "viewer_only_distribution": "does not establish geometry absence",
-            "zip_probe": "successful archive is a source manifestation only; failed probe is not absence",
+            "zip_probe": "successful archive is source manifestation only; failed probe is not absence",
+            "pdf_validation": "completion report requires PDF magic; HTML error payload is retained as failed manifestation",
         },
         "certification": {"GEOMETRIC_CURRENT": "OPEN", "CURRENT_PR_ARCHIPELAGO": "OPEN"},
     }
@@ -156,12 +177,13 @@ def main() -> int:
             f"https://www.fisheries.noaa.gov/inportserve/waf/noaa/nos/ngs/iso19115/xml/{item}.xml",
             pdir / f"{item}.iso19115.xml",
         )
-        rec["completion_report"] = freeze(
-            f"https://www.ngs.noaa.gov/desc_reports/{code}.PDF",
-            pdir / f"{code}.PDF",
+        rec["completion_report"] = pdf_probe(
+            [
+                f"https://www.ngs.noaa.gov/desc_reports/{code}.pdf",
+                f"https://www.ngs.noaa.gov/desc_reports/{code}.PDF",
+            ],
+            pdir / f"{code}.pdf",
         )
-        # Preserve bounded likely direct manifestations. Historical combined
-        # Southeast_Caribbean failure is not retried here.
         probes = []
         for host in ("https://geodesy.noaa.gov", "https://www.ngs.noaa.gov"):
             for rel in (
@@ -171,8 +193,9 @@ def main() -> int:
             ):
                 url = host + rel
                 probe_path = pdir / (host.split("//",1)[1].replace(".", "_") + "__" + rel.rsplit("/",1)[-1])
-                probes.append(zip_probe(url, probe_path))
-                if probes[-1].get("state") == "PASS_ARCHIVE_FROZEN":
+                probe = zip_probe(url, probe_path)
+                probes.append(probe)
+                if probe.get("state") == "PASS_ARCHIVE_FROZEN":
                     break
             if probes and probes[-1].get("state") == "PASS_ARCHIVE_FROZEN":
                 break
@@ -181,11 +204,19 @@ def main() -> int:
         rec["geometry_archive_pass"] = any(x.get("state") == "PASS_ARCHIVE_FROZEN" for x in probes)
         manifest["projects"].append(rec)
 
-    manifest["project_count"] = len(projects)
+    codes = [x["project_code"] for x in manifest["projects"]]
+    manifest["project_count"] = len(codes)
+    manifest["unique_project_code_count"] = len(set(codes))
+    manifest["duplicate_project_code_residue"] = len(codes) - len(set(codes))
     manifest["metadata_pass_count"] = sum(bool(x["metadata_pass"]) for x in manifest["projects"])
+    manifest["completion_report_pass_count"] = sum(x["completion_report"].get("state") == "PASS_PDF_FROZEN" for x in manifest["projects"])
     manifest["geometry_archive_pass_count"] = sum(bool(x["geometry_archive_pass"]) for x in manifest["projects"])
-    manifest["project_codes"] = [x["project_code"] for x in manifest["projects"]]
-    manifest["state"] = "PASS_PROJECT_DENOMINATOR_METADATA" if projects and manifest["metadata_pass_count"] == len(projects) else "OPEN"
+    manifest["project_codes"] = codes
+    manifest["state"] = (
+        "PASS_PROJECT_DENOMINATOR_METADATA"
+        if codes and manifest["metadata_pass_count"] == len(codes) and manifest["duplicate_project_code_residue"] == 0
+        else "OPEN"
+    )
 
     mp = out / "noaa_pr_project_manifest.json"
     mp.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
@@ -193,8 +224,11 @@ def main() -> int:
         "manifest": str(mp),
         "sha256": sha(mp.read_bytes()),
         "project_count": manifest["project_count"],
+        "project_codes": codes,
         "metadata_pass_count": manifest["metadata_pass_count"],
+        "completion_report_pass_count": manifest["completion_report_pass_count"],
         "geometry_archive_pass_count": manifest["geometry_archive_pass_count"],
+        "duplicate_project_code_residue": manifest["duplicate_project_code_residue"],
         "state": manifest["state"],
     }, indent=2))
     return 0 if manifest["state"] == "PASS_PROJECT_DENOMINATOR_METADATA" else 2
