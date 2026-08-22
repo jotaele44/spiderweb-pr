@@ -1,0 +1,41 @@
+name: PR Archipelago NSDE App Discovery
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/inspect_pr_archipelago_nsde_app.py"
+      - ".github/workflows/pr-archipelago-nsde-app.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nsde-app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Freeze and inspect NSDE app.js
+        run: |
+          python scripts/inspect_pr_archipelago_nsde_app.py \
+            --output evidence/pr_archipelago/geometry_snapshots/noaa_nsde_app
+      - name: Show endpoint candidates
+        run: |
+          python - <<'PY'
+          import json
+          p='evidence/pr_archipelago/geometry_snapshots/noaa_nsde_app/nsde_app_discovery_manifest.json'
+          d=json.load(open(p))
+          print(json.dumps({k:d[k] for k in ['absolute_urls','quoted_endpoint_candidates','service_tokens']}, indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr-archipelago-nsde-app
+          path: evidence/pr_archipelago/geometry_snapshots/noaa_nsde_app/
+          if-no-files-found: error
+          retention-days: 30
