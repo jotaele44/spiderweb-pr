@@ -1,0 +1,43 @@
+name: PR Archipelago SIGE REST Acquisition
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/acquire_pr_archipelago_sige_rest.py"
+      - ".github/workflows/pr-archipelago-sige-rest.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sige-rest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Freeze official SIGE ArcGIS REST manifestations
+        run: |
+          python scripts/acquire_pr_archipelago_sige_rest.py \
+            --output evidence/pr_archipelago/geometry_snapshots/sige_rest
+
+      - name: Inventory SIGE evidence
+        if: always()
+        run: |
+          find evidence/pr_archipelago/geometry_snapshots/sige_rest -type f -printf '%p %s bytes\n' | sort || true
+          sha256sum evidence/pr_archipelago/geometry_snapshots/sige_rest/sige_rest_manifest.json || true
+
+      - name: Upload frozen SIGE evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-archipelago-sige-rest-snapshot
+          path: evidence/pr_archipelago/geometry_snapshots/sige_rest/
+          if-no-files-found: error
+          retention-days: 30
