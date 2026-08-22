@@ -43,7 +43,11 @@ def load_certified_snapshot(root: str | Path) -> CertifiedArchipelagoSnapshot:
 
     Required manifest contract:
       certification.CURRENT_PR_ARCHIPELAGO == "PASS"
+      certification.SOURCE_EVIDENCE_PRESERVATION == "PASS"
+      source_evidence_durable is true
       unresolved_current_identity_residue == 0
+      unresolved_current_geometry_residue == 0
+      candidate_only_current_geometry_residue == 0
       arithmetic_closed is true
       features_file + geometry_file exist
       optional recorded SHA256 values, when present, match actual bytes
@@ -63,8 +67,16 @@ def load_certified_snapshot(root: str | Path) -> CertifiedArchipelagoSnapshot:
     certification = manifest.get("certification") or {}
     if certification.get("CURRENT_PR_ARCHIPELAGO") != "PASS":
         raise ArchipelagoSnapshotError("CURRENT_PR_ARCHIPELAGO is not PASS")
+    if certification.get("SOURCE_EVIDENCE_PRESERVATION") != "PASS":
+        raise ArchipelagoSnapshotError("SOURCE_EVIDENCE_PRESERVATION is not PASS")
+    if manifest.get("source_evidence_durable") is not True:
+        raise ArchipelagoSnapshotError("source evidence is not durably preserved")
     if manifest.get("unresolved_current_identity_residue") != 0:
         raise ArchipelagoSnapshotError("unresolved current identity residue is nonzero or missing")
+    if manifest.get("unresolved_current_geometry_residue") != 0:
+        raise ArchipelagoSnapshotError("unresolved current geometry residue is nonzero or missing")
+    if manifest.get("candidate_only_current_geometry_residue") != 0:
+        raise ArchipelagoSnapshotError("candidate-only current geometry residue is nonzero or missing")
     if manifest.get("arithmetic_closed") is not True:
         raise ArchipelagoSnapshotError("current denominator arithmetic is not closed")
 
