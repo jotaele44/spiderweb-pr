@@ -1,20 +1,6 @@
 name: PR Archipelago Acquisition
 
 on:
-  push:
-    branches:
-      - feature/pr-archipelago-geography
-    paths:
-      - "scripts/acquire_pr_archipelago_sources.py"
-      - "scripts/acquire_pr_archipelago_geometry.py"
-      - "scripts/acquire_pr_archipelago_prgov_layers.py"
-      - "spiderweb/spatial/archipelago.py"
-      - "tests/test_archipelago_geography.py"
-      - "configs/pr_archipelago_sources.json"
-      - ".github/workflows/pr-archipelago-acquire.yml"
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
