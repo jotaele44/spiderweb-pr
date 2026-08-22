@@ -1,14 +1,10 @@
 name: PR Archipelago Residual Acquisition
 
+# NOAA Southeast_Caribbean and PR-government WFS are now classified residual
+# surfaces. Keep this workflow manual-only so unrelated PR changes do not
+# create redundant mutable-source snapshots. Dedicated SIGE workflows handle
+# the active fallback acquisition path.
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/acquire_pr_archipelago_prgov_layers.py"
-      - "scripts/acquire_pr_archipelago_noaa_residual.py"
-      - "scripts/acquire_pr_archipelago_sige_rest.py"
-      - ".github/workflows/pr-archipelago-residual.yml"
   workflow_dispatch:
 
 permissions:
@@ -36,19 +32,12 @@ jobs:
           python scripts/acquire_pr_archipelago_prgov_layers.py \
             --output evidence/pr_archipelago/geometry_snapshots/pr_gov_exact
 
-      - name: Freeze official SIGE ArcGIS REST manifestations
-        continue-on-error: true
-        run: |
-          python scripts/acquire_pr_archipelago_sige_rest.py \
-            --output evidence/pr_archipelago/geometry_snapshots/sige_rest
-
       - name: Inventory residual evidence
         if: always()
         run: |
           find evidence/pr_archipelago/geometry_snapshots -type f -printf '%p %s bytes\n' | sort || true
           sha256sum evidence/pr_archipelago/geometry_snapshots/noaa_residual/noaa_residual_manifest.json || true
           sha256sum evidence/pr_archipelago/geometry_snapshots/pr_gov_exact/pr_gov_exact_manifest.json || true
-          sha256sum evidence/pr_archipelago/geometry_snapshots/sige_rest/sige_rest_manifest.json || true
 
       - name: Upload frozen residual evidence
         if: always()
