@@ -1,12 +1,6 @@
 name: PR Archipelago NOAA Historical Geometry
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/acquire_pr_archipelago_noaa_historical_geometry.py"
-      - ".github/workflows/pr-archipelago-noaa-historical-geometry.yml"
   workflow_dispatch:
 
 permissions:
