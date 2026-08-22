@@ -20,6 +20,10 @@ def _write_snapshot(
     identity_residue=0,
     geometry_residue=0,
     candidate_geometry_residue=0,
+    candidate_component_residue=0,
+    unresolved_component_residue=0,
+    identity_denominator_closed=True,
+    geometry_denominator_closed=True,
     closed=True,
     durable=True,
     preservation_state="PASS",
@@ -36,9 +40,13 @@ def _write_snapshot(
             "SOURCE_EVIDENCE_PRESERVATION": preservation_state,
         },
         "source_evidence_durable": durable,
+        "canonical_identity_denominator_closed": identity_denominator_closed,
+        "canonical_geometry_denominator_closed": geometry_denominator_closed,
         "unresolved_current_identity_residue": identity_residue,
         "unresolved_current_geometry_residue": geometry_residue,
         "candidate_only_current_geometry_residue": candidate_geometry_residue,
+        "candidate_canonical_component_residue": candidate_component_residue,
+        "unresolved_canonical_component_residue": unresolved_component_residue,
         "arithmetic_closed": closed,
         "canonical_feature_count": 1,
         "features_file": "features.json",
@@ -57,6 +65,18 @@ def test_open_snapshot_is_rejected(tmp_path):
         load_certified_snapshot(tmp_path)
 
 
+def test_open_identity_denominator_is_rejected(tmp_path):
+    _write_snapshot(tmp_path, identity_denominator_closed=False)
+    with pytest.raises(ArchipelagoSnapshotError, match="identity denominator"):
+        load_certified_snapshot(tmp_path)
+
+
+def test_open_geometry_denominator_is_rejected(tmp_path):
+    _write_snapshot(tmp_path, geometry_denominator_closed=False)
+    with pytest.raises(ArchipelagoSnapshotError, match="geometry denominator"):
+        load_certified_snapshot(tmp_path)
+
+
 def test_nonzero_identity_residue_is_rejected(tmp_path):
     _write_snapshot(tmp_path, identity_residue=1)
     with pytest.raises(ArchipelagoSnapshotError, match="identity residue"):
@@ -72,6 +92,18 @@ def test_nonzero_geometry_residue_is_rejected(tmp_path):
 def test_candidate_only_geometry_residue_is_rejected(tmp_path):
     _write_snapshot(tmp_path, candidate_geometry_residue=1)
     with pytest.raises(ArchipelagoSnapshotError, match="candidate-only current geometry residue"):
+        load_certified_snapshot(tmp_path)
+
+
+def test_candidate_component_residue_is_rejected(tmp_path):
+    _write_snapshot(tmp_path, candidate_component_residue=1)
+    with pytest.raises(ArchipelagoSnapshotError, match="candidate canonical component residue"):
+        load_certified_snapshot(tmp_path)
+
+
+def test_unresolved_component_residue_is_rejected(tmp_path):
+    _write_snapshot(tmp_path, unresolved_component_residue=1)
+    with pytest.raises(ArchipelagoSnapshotError, match="unresolved canonical component residue"):
         load_certified_snapshot(tmp_path)
 
 
