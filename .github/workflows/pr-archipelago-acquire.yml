@@ -1,0 +1,45 @@
+name: PR Archipelago Acquisition
+
+on:
+  push:
+    branches:
+      - feature/pr-archipelago-geography
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Acquire and freeze current source manifestations
+        run: |
+          python scripts/acquire_pr_archipelago_sources.py \
+            --output evidence/pr_archipelago/source_snapshots
+
+      - name: Run archipelago regression gates
+        run: |
+          python -m pytest -q tests/test_archipelago_geography.py
+
+      - name: Inventory acquisition output
+        if: always()
+        run: |
+          find evidence/pr_archipelago/source_snapshots -type f -printf '%p %s bytes\n' | sort || true
+          sha256sum evidence/pr_archipelago/source_snapshots/source_manifest.json || true
+
+      - name: Upload frozen acquisition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-archipelago-source-snapshot
+          path: evidence/pr_archipelago/source_snapshots/
+          if-no-files-found: error
+          retention-days: 30
