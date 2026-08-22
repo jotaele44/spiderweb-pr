@@ -12,6 +12,9 @@ on:
       - "tests/test_archipelago_geography.py"
       - "configs/pr_archipelago_sources.json"
       - ".github/workflows/pr-archipelago-acquire.yml"
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
