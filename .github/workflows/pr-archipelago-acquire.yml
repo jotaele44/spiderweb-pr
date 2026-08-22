@@ -7,6 +7,7 @@ on:
     paths:
       - "scripts/acquire_pr_archipelago_sources.py"
       - "scripts/acquire_pr_archipelago_geometry.py"
+      - "scripts/acquire_pr_archipelago_prgov_layers.py"
       - "spiderweb/spatial/archipelago.py"
       - "tests/test_archipelago_geography.py"
       - "configs/pr_archipelago_sources.json"
@@ -32,10 +33,15 @@ jobs:
           python scripts/acquire_pr_archipelago_sources.py \
             --output evidence/pr_archipelago/source_snapshots
 
-      - name: Acquire and freeze independent geometry manifestations
+      - name: Acquire and freeze independent geometry manifests
         run: |
           python scripts/acquire_pr_archipelago_geometry.py \
             --output evidence/pr_archipelago/geometry_snapshots
+
+      - name: Negotiate and freeze exact PR-government control layers
+        run: |
+          python scripts/acquire_pr_archipelago_prgov_layers.py \
+            --output evidence/pr_archipelago/geometry_snapshots/pr_gov_exact
 
       - name: Install regression-test runner
         run: python -m pip install --disable-pip-version-check pytest
@@ -49,6 +55,7 @@ jobs:
           find evidence/pr_archipelago -type f -printf '%p %s bytes\n' | sort || true
           sha256sum evidence/pr_archipelago/source_snapshots/source_manifest.json || true
           sha256sum evidence/pr_archipelago/geometry_snapshots/geometry_source_manifest.json || true
+          sha256sum evidence/pr_archipelago/geometry_snapshots/pr_gov_exact/pr_gov_exact_manifest.json || true
 
       - name: Upload frozen current evidence
         if: always()
