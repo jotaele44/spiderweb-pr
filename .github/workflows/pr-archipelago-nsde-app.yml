@@ -1,12 +1,6 @@
 name: PR Archipelago NSDE App Discovery
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/inspect_pr_archipelago_nsde_app.py"
-      - ".github/workflows/pr-archipelago-nsde-app.yml"
   workflow_dispatch:
 
 permissions:
