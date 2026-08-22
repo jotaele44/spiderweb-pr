@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Retry only the previously-blocked SIGE municipality manifestation.
 
-The first generic SIGE run hard-coded OBJECTID ordering. This layer declares
-FID as its esriFieldTypeOID field, so this residual discovers the OID field
-from metadata and re-fetches only this failed source manifestation. It does not
-reacquire the already-passed shoreline or geographic-reference artifacts.
+The source declares FID as its OID and does not support pagination. Because its
+provider count is below maxRecordCount, this residual requests the complete
+layer once, then requires exact count closure and unique/non-null OIDs. It does
+not reacquire the already-passed shoreline or geographic-reference artifacts.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 BASE = "https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer/0"
-UA = "spiderweb-pr-sige-municipality-residual/1.0 (+https://github.com/jotaele44/spiderweb-pr)"
+UA = "spiderweb-pr-sige-municipality-residual/1.1 (+https://github.com/jotaele44/spiderweb-pr)"
 
 
 def now():
@@ -59,51 +59,44 @@ def main() -> int:
     count_b, _ = get(count_url)
     (out / "count.json").write_bytes(count_b)
     expected = int(json.loads(count_b.decode("utf-8"))["count"])
-
-    page_size = min(int(meta.get("maxRecordCount") or 1000), 1000)
-    features = []
-    pages = []
-    offset = 0
-    page_no = 0
-    while offset < expected:
-        url = qurl(
-            where="1=1", outFields="*", returnGeometry="true", outSR="4326",
-            f="geojson", resultOffset=str(offset), resultRecordCount=str(page_size),
-            orderByFields=f"{oid} ASC",
+    max_record_count = int(meta.get("maxRecordCount") or 1000)
+    if expected > max_record_count:
+        raise RuntimeError(
+            f"source does not support pagination and expected={expected} exceeds maxRecordCount={max_record_count}"
         )
-        data, headers = get(url)
-        obj = json.loads(data.decode("utf-8"))
-        if obj.get("type") != "FeatureCollection" or not isinstance(obj.get("features"), list):
-            raise RuntimeError(f"non-FeatureCollection page {page_no}: {str(obj)[:500]}")
-        page_path = out / f"page_{page_no:04d}.geojson"
-        page_path.write_bytes(data)
-        feats = obj["features"]
-        pages.append({"page": page_no, "offset": offset, "count": len(feats), "sha256": sha(data), "url": url, "content_type": headers.get("Content-Type")})
-        features.extend(feats)
-        if not feats:
-            break
-        offset += len(feats)
-        page_no += 1
+
+    data_url = qurl(
+        where="1=1", outFields="*", returnGeometry="true", outSR="4326",
+        f="geojson", orderByFields=f"{oid} ASC",
+    )
+    data, headers = get(data_url)
+    obj = json.loads(data.decode("utf-8"))
+    if obj.get("type") != "FeatureCollection" or not isinstance(obj.get("features"), list):
+        raise RuntimeError(f"non-FeatureCollection response: {str(obj)[:500]}")
+    (out / "full.geojson").write_bytes(data)
+    features = obj["features"]
 
     ids = [f.get("properties", {}).get(oid) for f in features]
     duplicate_ids = len(ids) - len(set(ids))
-    merged = json.dumps({"type": "FeatureCollection", "features": features}, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    (out / "merged.geojson").write_bytes(merged)
-    closed = len(features) == expected and duplicate_ids == 0 and all(x is not None for x in ids)
+    null_ids = sum(x is None for x in ids)
+    closed = len(features) == expected and duplicate_ids == 0 and null_ids == 0
     manifest = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "generated_utc": now(),
         "source": BASE,
         "oid_field": oid,
+        "pagination_supported": False,
+        "max_record_count": max_record_count,
         "expected_count": expected,
         "retained_count": len(features),
         "duplicate_oid_count": duplicate_ids,
-        "null_oid_count": sum(x is None for x in ids),
+        "null_oid_count": null_ids,
         "arithmetic_closed": closed,
         "metadata_sha256": sha(meta_b),
         "count_sha256": sha(count_b),
-        "merged_sha256": sha(merged),
-        "pages": pages,
+        "data_sha256": sha(data),
+        "data_url": data_url,
+        "content_type": headers.get("Content-Type"),
         "state": "PASS_BYTES_FROZEN" if closed else "FAIL",
         "certification": "ADMINISTRATIVE_GEOMETRY_SUPPORT_ONLY",
     }
