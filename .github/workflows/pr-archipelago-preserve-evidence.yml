@@ -53,33 +53,14 @@ jobs:
             printf '%s  %s\n' "${actual}" "${name}.zip" >> evidence-assets/SHA256SUMS.txt
           }
 
-          # Current GNIS/Census/SIGE frozen snapshot.
           fetch_exact 9477967478 pr-archipelago-current-snapshot 6e8a29fc87178264584c5e88add8ac63d8e0e9a72b9f05f63795c6edec2c92e4
-
-          # NOAA current metadata/project discovery. Contains the preserved
-          # failed guessed direct-download manifestations as well as the
-          # corrected 15-project parent-catalog evidence.
           fetch_exact 9481975938 pr-archipelago-noaa-projects 17244efb257dd626358b02d97a21052ad3c913e3a4f8af9179d616d2bdc82478
-
-          # Exact 15/15 current project archive bundle discovered through the
-          # frozen NSDE app contract.
           fetch_exact 9482078439 pr-archipelago-noaa-project-geometry 48d040ee92a1535c2cc9832a5f61bdabd73a83cd55bfdc5e7573f1fffe8fc596
-
-          # Frozen NSDE application code used to establish exact endpoint
-          # contracts.
           fetch_exact 9482050789 pr-archipelago-nsde-app f88d374dfab01617e906302950db76f662672ca683ca69fcb1191942f5eccde4
-
-          # Preserve both failed compressed-PBF attempt and corrected CUSP
-          # snapshot; the failed manifestation is evidence, not garbage.
           fetch_exact 9482133296 pr-archipelago-cusp-failed-decode e4778c0384d893ea7d7e3d41c215734a002013b41f96982b088a01ffcbd22c9c
           fetch_exact 9482150952 pr-archipelago-cusp-final 578d8bb1760ac29a6db032cc4f9d7a307f05cf486014fecb4f28830b3511895e
-
-          # Preserve both the initial seven-record historical discovery and
-          # the corrected metadata-bound eight-record denominator.
           fetch_exact 9481998242 pr-archipelago-noaa-historical-initial ae6a466b4e837f6ef01325107ceed13afa1dd11cb60c6ceccae9c7f96e5ae264
           fetch_exact 9482012503 pr-archipelago-noaa-historical-final 5197d884f84e44e1808c4548914cd76c3e7a0d73ffb5bb1585eb3430aff5a742
-
-          # Exact 8/8 historical NSDE archive bundle.
           fetch_exact 9482202035 pr-archipelago-noaa-historical-geometry a80476874be68fb50557688bcabc85f0d4d0861bafa38cec96304d7218edc6ff
 
           sort -o evidence-assets/SHA256SUMS.txt evidence-assets/SHA256SUMS.txt
@@ -106,19 +87,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if ! gh release view "${FREEZE_TAG}" >/dev/null 2>&1; then
+          if ! gh release view "${FREEZE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh release create "${FREEZE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
               --target "${GITHUB_SHA}" \
               --title "PR Archipelago frozen evidence — 2026-08-22" \
               --notes "Durable byte-preservation bundle for PR_ARCHIPELAGO_GEOGRAPHY. Assets are copied from already-frozen Actions artifacts and SHA256-verified before upload. This release does not change CURRENT_PR_ARCHIPELAGO=OPEN or HISTORICAL_ARCHIPELAGO_EXHAUSTION=OPEN."
           fi
-          gh release upload "${FREEZE_TAG}" evidence-assets/* --clobber
+          gh release upload "${FREEZE_TAG}" evidence-assets/* --clobber --repo "${GITHUB_REPOSITORY}"
 
       - name: Verify release assets exist
         shell: bash
         run: |
           set -euo pipefail
-          gh release view "${FREEZE_TAG}" --json tagName,targetCommitish,assets,url > release-view.json
+          gh release view "${FREEZE_TAG}" --repo "${GITHUB_REPOSITORY}" --json tagName,targetCommitish,assets,url > release-view.json
           python - <<'PY'
           import json
           d=json.load(open('release-view.json'))
