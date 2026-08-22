@@ -1,12 +1,6 @@
 name: PR Archipelago SIGE REST Acquisition
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/acquire_pr_archipelago_sige_rest.py"
-      - ".github/workflows/pr-archipelago-sige-rest.yml"
   workflow_dispatch:
 
 permissions:
