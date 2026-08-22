@@ -1,16 +1,9 @@
 name: PR Archipelago Preserve Frozen Evidence
 
+# Frozen evidence is already durably promoted under
+# pr-archipelago-freeze-2026-08-22. Manual-only prevents open-PR path-filter
+# semantics from redundantly reprocessing the same immutable artifact bytes.
 on:
-  push:
-    branches:
-      - feature/pr-archipelago-geography
-    paths:
-      - ".github/workflows/pr-archipelago-preserve-evidence.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/pr-archipelago-preserve-evidence.yml"
   workflow_dispatch:
 
 concurrency:
