@@ -1,0 +1,31 @@
+name: PR Archipelago Provider Gates
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "spiderweb/spatial/archipelago.py"
+      - "spiderweb/spatial/archipelago_provider.py"
+      - "tests/test_archipelago_geography.py"
+      - "tests/test_archipelago_provider.py"
+      - ".github/workflows/pr-archipelago-provider-gates.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provider-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pytest
+      - name: Run base and provider fail-closed gates
+        run: |
+          python -m pytest -q \
+            tests/test_archipelago_geography.py \
+            tests/test_archipelago_provider.py
