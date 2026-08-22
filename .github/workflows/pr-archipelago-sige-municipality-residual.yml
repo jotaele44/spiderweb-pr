@@ -1,0 +1,40 @@
+name: PR Archipelago SIGE Municipality Residual
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/acquire_pr_archipelago_sige_municipality_residual.py"
+      - ".github/workflows/pr-archipelago-sige-municipality-residual.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  municipality-residual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Freeze failed SIGE municipality manifestation only
+        run: |
+          python scripts/acquire_pr_archipelago_sige_municipality_residual.py \
+            --output evidence/pr_archipelago/geometry_snapshots/sige_municipality_residual
+      - name: Inventory municipality evidence
+        if: always()
+        run: |
+          find evidence/pr_archipelago/geometry_snapshots/sige_municipality_residual -type f -printf '%p %s bytes\n' | sort || true
+          sha256sum evidence/pr_archipelago/geometry_snapshots/sige_municipality_residual/sige_municipality_residual_manifest.json || true
+      - name: Upload frozen municipality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-archipelago-sige-municipality-residual
+          path: evidence/pr_archipelago/geometry_snapshots/sige_municipality_residual/
+          if-no-files-found: error
+          retention-days: 30
