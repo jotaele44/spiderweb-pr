@@ -2,7 +2,7 @@
 
 This module provides the canonical *contract* for archipelagic geography.
 It deliberately keeps source manifestations, canonical identities, geometries,
-and operational classifications separate.  Discovery is not identity proof.
+and operational classifications separate. Discovery is not identity proof.
 
 The capability is source-agnostic: authoritative GNIS/NOAA/Census/PR source
 snapshots are ingested elsewhere and normalized into the dataclasses below.
@@ -32,6 +32,31 @@ class SpatialState(str, Enum):
     TOUCH_ONLY = "TOUCH_ONLY"
     OUTSIDE = "OUTSIDE"
     NULL_EMPTY = "NULL_EMPTY"
+    UNRESOLVED = "UNRESOLVED"
+
+
+class GeometryRepresentation(str, Enum):
+    """Native or derived geometric representation of one manifestation.
+
+    Representation is deliberately independent of canonical feature type. A
+    named rock/cay may have a source-native POINT and independent shoreline
+    LINE evidence without a defensible POLYGON. Polygon absence is therefore
+    not equivalent to geometry absence.
+    """
+
+    POINT = "POINT"
+    LINE = "LINE"
+    POLYGON = "POLYGON"
+    MULTIPOINT = "MULTIPOINT"
+    MULTILINE = "MULTILINE"
+    MULTIPOLYGON = "MULTIPOLYGON"
+    RASTER_DERIVED = "RASTER_DERIVED"
+    UNRESOLVED = "UNRESOLVED"
+
+
+class GeometryOrigin(str, Enum):
+    SOURCE_NATIVE = "SOURCE_NATIVE"
+    DERIVED = "DERIVED"
     UNRESOLVED = "UNRESOLVED"
 
 
@@ -77,6 +102,27 @@ class SourceManifestation:
 
 
 @dataclass(frozen=True)
+class GeometryManifestation:
+    """One explicitly sourced or derived geometry manifestation.
+
+    A geometry manifestation is not a canonical feature identity. Candidate
+    bindings may be many-to-many and remain unresolved until separately
+    adjudicated.
+    """
+
+    geometry_manifestation_id: str
+    source_id: str
+    representation: GeometryRepresentation
+    origin: GeometryOrigin
+    source_geometry_type_raw: str
+    source_feature_id: Optional[str] = None
+    candidate_canonical_feature_ids: tuple[str, ...] = field(default_factory=tuple)
+    snapshot_sha256: Optional[str] = None
+    valid_from: Optional[str] = None
+    valid_to: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class CanonicalInsularFeature:
     canonical_feature_id: str
     canonical_name: str
@@ -101,7 +147,7 @@ class DenominatorDiff:
 def compare_denominators(a: Iterable[str], b: Iterable[str]) -> DenominatorDiff:
     """Compute the full A/B denominator comparison without asserting identity.
 
-    Inputs must already be stable identity keys for the compared scope.  Raw or
+    Inputs must already be stable identity keys for the compared scope. Raw or
     normalized names are not acceptable identity keys.
     """
     a_set = frozenset(a)
@@ -129,7 +175,8 @@ def current_denominator_certification(
 
     PASS means only that the supplied bounded denominator satisfies these
     explicit gates; it does not claim universal historical or public-source
-    exhaustion.
+    exhaustion. geometry_total counts accepted geometry manifestations across
+    permitted representations; it must never be interpreted as polygon_total.
     """
     counts = (named_total, geometry_total, resolved_current, unresolved_current, duplicate_unresolved)
     if any(v < 0 for v in counts):
