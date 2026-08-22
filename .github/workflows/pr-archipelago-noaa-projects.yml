@@ -1,12 +1,6 @@
 name: PR Archipelago NOAA Project Inventory
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/acquire_pr_archipelago_noaa_projects.py"
-      - ".github/workflows/pr-archipelago-noaa-projects.yml"
   workflow_dispatch:
 
 permissions:
