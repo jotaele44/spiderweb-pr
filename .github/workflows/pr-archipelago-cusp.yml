@@ -1,12 +1,6 @@
 name: PR Archipelago CUSP Index
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/acquire_pr_archipelago_cusp_index.py"
-      - ".github/workflows/pr-archipelago-cusp.yml"
   workflow_dispatch:
 
 permissions:
