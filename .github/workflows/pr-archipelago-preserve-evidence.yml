@@ -6,7 +6,16 @@ on:
       - feature/pr-archipelago-geography
     paths:
       - ".github/workflows/pr-archipelago-preserve-evidence.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/pr-archipelago-preserve-evidence.yml"
   workflow_dispatch:
+
+concurrency:
+  group: pr-archipelago-preserve-frozen-evidence
+  cancel-in-progress: false
 
 permissions:
   contents: write
