@@ -24,6 +24,7 @@ jobs:
           python-version: '3.12'
 
       - name: Freeze NOAA Southeast Caribbean shoreline residual
+        continue-on-error: true
         run: |
           python scripts/acquire_pr_archipelago_noaa_residual.py \
             --output evidence/pr_archipelago/geometry_snapshots/noaa_residual
