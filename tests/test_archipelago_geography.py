@@ -1,5 +1,8 @@
 from spiderweb.spatial.archipelago import (
     CertificationState,
+    GeometryManifestation,
+    GeometryOrigin,
+    GeometryRepresentation,
     compare_denominators,
     current_denominator_certification,
     assert_manifestation_conservation,
@@ -13,6 +16,32 @@ def test_denominator_diff_closes():
     assert diff.b_only == frozenset({"d"})
     assert diff.union == frozenset({"a", "b", "c", "d"})
     assert diff.symmetric_difference == frozenset({"a", "d"})
+
+
+def test_geometry_manifestation_can_be_source_native_point():
+    geom = GeometryManifestation(
+        geometry_manifestation_id="GNIS:1612633:POINT",
+        source_id="GNIS",
+        representation=GeometryRepresentation.POINT,
+        origin=GeometryOrigin.SOURCE_NATIVE,
+        source_geometry_type_raw="Point",
+        source_feature_id="1612633",
+    )
+    assert geom.representation == GeometryRepresentation.POINT
+    assert geom.origin == GeometryOrigin.SOURCE_NATIVE
+
+
+def test_derived_line_or_polygon_is_not_identity_by_construction():
+    geom = GeometryManifestation(
+        geometry_manifestation_id="NOAA:CUSP:N15W070:derived-1",
+        source_id="NOAA_CUSP",
+        representation=GeometryRepresentation.POLYGON,
+        origin=GeometryOrigin.DERIVED,
+        source_geometry_type_raw="Polyline polygonization",
+        candidate_canonical_feature_ids=("PR-CANDIDATE-1", "PR-CANDIDATE-2"),
+    )
+    assert geom.origin == GeometryOrigin.DERIVED
+    assert len(geom.candidate_canonical_feature_ids) == 2
 
 
 def test_current_denominator_pass_requires_zero_residue_and_frozen_inputs():
