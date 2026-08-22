@@ -8,10 +8,12 @@ on:
       - "spiderweb/spatial/archipelago.py"
       - "spiderweb/spatial/archipelago_adjudication.py"
       - "spiderweb/spatial/archipelago_denominator.py"
+      - "spiderweb/spatial/archipelago_history.py"
       - "spiderweb/spatial/archipelago_provider.py"
       - "tests/test_archipelago_geography.py"
       - "tests/test_archipelago_adjudication.py"
       - "tests/test_archipelago_denominator.py"
+      - "tests/test_archipelago_history.py"
       - "tests/test_archipelago_provider.py"
       - ".github/workflows/pr-archipelago-provider-gates.yml"
   workflow_dispatch:
@@ -34,4 +36,5 @@ jobs:
             tests/test_archipelago_geography.py \
             tests/test_archipelago_adjudication.py \
             tests/test_archipelago_denominator.py \
+            tests/test_archipelago_history.py \
             tests/test_archipelago_provider.py
