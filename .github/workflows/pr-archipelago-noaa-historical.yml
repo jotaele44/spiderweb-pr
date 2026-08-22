@@ -1,12 +1,6 @@
 name: PR Archipelago NOAA Historical Inventory
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/acquire_pr_archipelago_noaa_historical.py"
-      - ".github/workflows/pr-archipelago-noaa-historical.yml"
   workflow_dispatch:
 
 permissions:
