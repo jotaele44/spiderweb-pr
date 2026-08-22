@@ -1,0 +1,135 @@
+name: PR Archipelago Preserve Frozen Evidence
+
+on:
+  push:
+    branches:
+      - feature/pr-archipelago-geography
+    paths:
+      - ".github/workflows/pr-archipelago-preserve-evidence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FREEZE_TAG: pr-archipelago-freeze-2026-08-22
+    steps:
+      - name: Download exact previously frozen artifacts by artifact ID
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence-assets
+
+          fetch_exact() {
+            local id="$1"
+            local name="$2"
+            local expected="$3"
+            local out="evidence-assets/${name}.zip"
+            curl --fail --location --retry 3 \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}/zip" \
+              --output "${out}"
+            actual="$(sha256sum "${out}" | awk '{print $1}')"
+            test "${actual}" = "${expected}" || {
+              echo "SHA256 mismatch for artifact ${id}: expected ${expected}, got ${actual}" >&2
+              exit 17
+            }
+            printf '%s  %s\n' "${actual}" "${name}.zip" >> evidence-assets/SHA256SUMS.txt
+          }
+
+          # Current GNIS/Census/SIGE frozen snapshot.
+          fetch_exact 9477967478 pr-archipelago-current-snapshot 6e8a29fc87178264584c5e88add8ac63d8e0e9a72b9f05f63795c6edec2c92e4
+
+          # NOAA current metadata/project discovery. Contains the preserved
+          # failed guessed direct-download manifestations as well as the
+          # corrected 15-project parent-catalog evidence.
+          fetch_exact 9481975938 pr-archipelago-noaa-projects 17244efb257dd626358b02d97a21052ad3c913e3a4f8af9179d616d2bdc82478
+
+          # Exact 15/15 current project archive bundle discovered through the
+          # frozen NSDE app contract.
+          fetch_exact 9482078439 pr-archipelago-noaa-project-geometry 48d040ee92a1535c2cc9832a5f61bdabd73a83cd55bfdc5e7573f1fffe8fc596
+
+          # Frozen NSDE application code used to establish exact endpoint
+          # contracts.
+          fetch_exact 9482050789 pr-archipelago-nsde-app f88d374dfab01617e906302950db76f662672ca683ca69fcb1191942f5eccde4
+
+          # Preserve both failed compressed-PBF attempt and corrected CUSP
+          # snapshot; the failed manifestation is evidence, not garbage.
+          fetch_exact 9482133296 pr-archipelago-cusp-failed-decode e4778c0384d893ea7d7e3d41c215734a002013b41f96982b088a01ffcbd22c9c
+          fetch_exact 9482150952 pr-archipelago-cusp-final 578d8bb1760ac29a6db032cc4f9d7a307f05cf486014fecb4f28830b3511895e
+
+          # Preserve both the initial seven-record historical discovery and
+          # the corrected metadata-bound eight-record denominator.
+          fetch_exact 9481998242 pr-archipelago-noaa-historical-initial ae6a466b4e837f6ef01325107ceed13afa1dd11cb60c6ceccae9c7f96e5ae264
+          fetch_exact 9482012503 pr-archipelago-noaa-historical-final 5197d884f84e44e1808c4548914cd76c3e7a0d73ffb5bb1585eb3430aff5a742
+
+          # Exact 8/8 historical NSDE archive bundle.
+          fetch_exact 9482202035 pr-archipelago-noaa-historical-geometry a80476874be68fb50557688bcabc85f0d4d0861bafa38cec96304d7218edc6ff
+
+          sort -o evidence-assets/SHA256SUMS.txt evidence-assets/SHA256SUMS.txt
+          cat evidence-assets/SHA256SUMS.txt
+
+      - name: Write release provenance manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > evidence-assets/RELEASE_PROVENANCE.json <<EOF
+          {
+            "schema_version": "1.0",
+            "freeze_tag": "${FREEZE_TAG}",
+            "promotion_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "repository": "${GITHUB_REPOSITORY}",
+            "promoting_commit": "${GITHUB_SHA}",
+            "rule": "release assets are byte-for-byte copies of previously frozen GitHub Actions artifacts; no authoritative source was reacquired during promotion",
+            "current_certification": "OPEN",
+            "historical_certification": "OPEN"
+          }
+          EOF
+
+      - name: Create or update durable freeze release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh release view "${FREEZE_TAG}" >/dev/null 2>&1; then
+            gh release create "${FREEZE_TAG}" \
+              --target "${GITHUB_SHA}" \
+              --title "PR Archipelago frozen evidence — 2026-08-22" \
+              --notes "Durable byte-preservation bundle for PR_ARCHIPELAGO_GEOGRAPHY. Assets are copied from already-frozen Actions artifacts and SHA256-verified before upload. This release does not change CURRENT_PR_ARCHIPELAGO=OPEN or HISTORICAL_ARCHIPELAGO_EXHAUSTION=OPEN."
+          fi
+          gh release upload "${FREEZE_TAG}" evidence-assets/* --clobber
+
+      - name: Verify release assets exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view "${FREEZE_TAG}" --json tagName,targetCommitish,assets,url > release-view.json
+          python - <<'PY'
+          import json
+          d=json.load(open('release-view.json'))
+          assets=d.get('assets',[])
+          names={a['name'] for a in assets}
+          expected={
+            'pr-archipelago-current-snapshot.zip',
+            'pr-archipelago-noaa-projects.zip',
+            'pr-archipelago-noaa-project-geometry.zip',
+            'pr-archipelago-nsde-app.zip',
+            'pr-archipelago-cusp-failed-decode.zip',
+            'pr-archipelago-cusp-final.zip',
+            'pr-archipelago-noaa-historical-initial.zip',
+            'pr-archipelago-noaa-historical-final.zip',
+            'pr-archipelago-noaa-historical-geometry.zip',
+            'SHA256SUMS.txt',
+            'RELEASE_PROVENANCE.json',
+          }
+          missing=sorted(expected-names)
+          if missing:
+            raise SystemExit('missing release assets: '+repr(missing))
+          print(json.dumps({'release_url':d.get('url'),'asset_count':len(assets),'required_assets':len(expected),'missing':missing},indent=2))
+          PY
