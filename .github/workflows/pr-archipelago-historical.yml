@@ -1,0 +1,46 @@
+name: PR Archipelago Historical Acquisition
+
+on:
+  push:
+    branches:
+      - feature/pr-archipelago-geography
+    paths:
+      - "scripts/acquire_pr_archipelago_historical.py"
+      - ".github/workflows/pr-archipelago-historical.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/acquire_pr_archipelago_historical.py"
+      - ".github/workflows/pr-archipelago-historical.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-historical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Freeze historical and alias source manifestations
+        run: |
+          python scripts/acquire_pr_archipelago_historical.py \
+            --output evidence/pr_archipelago/historical_snapshots
+      - name: Inventory historical evidence
+        if: always()
+        run: |
+          find evidence/pr_archipelago/historical_snapshots -type f -printf '%p %s bytes\n' | sort || true
+          sha256sum evidence/pr_archipelago/historical_snapshots/historical_source_manifest.json || true
+      - name: Upload frozen historical evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-archipelago-historical-snapshot
+          path: evidence/pr_archipelago/historical_snapshots/
+          if-no-files-found: error
+          retention-days: 30
