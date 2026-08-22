@@ -7,12 +7,6 @@ on:
     paths:
       - "scripts/acquire_pr_archipelago_historical.py"
       - ".github/workflows/pr-archipelago-historical.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/acquire_pr_archipelago_historical.py"
-      - ".github/workflows/pr-archipelago-historical.yml"
   workflow_dispatch:
 
 permissions:
