@@ -1,0 +1,39 @@
+name: PR Archipelago NOAA Project Geometry
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/acquire_pr_archipelago_noaa_project_geometry.py"
+      - ".github/workflows/pr-archipelago-noaa-project-geometry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  noaa-project-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Freeze exact NSDE project archives
+        run: |
+          python scripts/acquire_pr_archipelago_noaa_project_geometry.py \
+            --output evidence/pr_archipelago/geometry_snapshots/noaa_project_geometry
+      - name: Inventory NOAA exact project evidence
+        if: always()
+        run: |
+          find evidence/pr_archipelago/geometry_snapshots/noaa_project_geometry -type f -printf '%p %s bytes\n' | sort || true
+          sha256sum evidence/pr_archipelago/geometry_snapshots/noaa_project_geometry/noaa_project_geometry_manifest.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-archipelago-noaa-project-geometry
+          path: evidence/pr_archipelago/geometry_snapshots/noaa_project_geometry/
+          if-no-files-found: error
+          retention-days: 30
