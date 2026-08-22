@@ -1,0 +1,51 @@
+name: PR Archipelago Residual Acquisition
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/acquire_pr_archipelago_prgov_layers.py"
+      - "scripts/acquire_pr_archipelago_noaa_residual.py"
+      - ".github/workflows/pr-archipelago-residual.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  residual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Freeze NOAA Southeast Caribbean shoreline residual
+        run: |
+          python scripts/acquire_pr_archipelago_noaa_residual.py \
+            --output evidence/pr_archipelago/geometry_snapshots/noaa_residual
+
+      - name: Freeze PR-government exact WFS control layers
+        continue-on-error: true
+        run: |
+          python scripts/acquire_pr_archipelago_prgov_layers.py \
+            --output evidence/pr_archipelago/geometry_snapshots/pr_gov_exact
+
+      - name: Inventory residual evidence
+        if: always()
+        run: |
+          find evidence/pr_archipelago/geometry_snapshots -type f -printf '%p %s bytes\n' | sort || true
+          sha256sum evidence/pr_archipelago/geometry_snapshots/noaa_residual/noaa_residual_manifest.json || true
+          sha256sum evidence/pr_archipelago/geometry_snapshots/pr_gov_exact/pr_gov_exact_manifest.json || true
+
+      - name: Upload frozen residual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-archipelago-residual-snapshot
+          path: evidence/pr_archipelago/geometry_snapshots/
+          if-no-files-found: error
+          retention-days: 30
