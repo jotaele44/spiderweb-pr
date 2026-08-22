@@ -1,0 +1,39 @@
+name: PR Archipelago NOAA Historical Geometry
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/acquire_pr_archipelago_noaa_historical_geometry.py"
+      - ".github/workflows/pr-archipelago-noaa-historical-geometry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  noaa-historical-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Freeze exact historical NSDE archives
+        run: |
+          python scripts/acquire_pr_archipelago_noaa_historical_geometry.py \
+            --output evidence/pr_archipelago/historical_snapshots/noaa_geometry
+      - name: Inventory historical geometry evidence
+        if: always()
+        run: |
+          find evidence/pr_archipelago/historical_snapshots/noaa_geometry -type f -printf '%p %s bytes\n' | sort || true
+          sha256sum evidence/pr_archipelago/historical_snapshots/noaa_geometry/noaa_historical_geometry_manifest.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-archipelago-noaa-historical-geometry
+          path: evidence/pr_archipelago/historical_snapshots/noaa_geometry/
+          if-no-files-found: error
+          retention-days: 30
