@@ -12,7 +12,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -23,10 +22,20 @@ from pathlib import Path
 UA = "spiderweb-pr-archipelago/1.0 (+https://github.com/jotaele44/spiderweb-pr)"
 CENSUS_ROOT = "https://www2.census.gov/geo/tiger/"
 PR_WFS_URLS = [
-    "https://geoserver2.pr.gov/geoserver/pr_geodata/wfs?service=WFS&request=GetCapabilities",
-    "http://geoserver2.pr.gov/geoserver/pr_geodata/wfs?service=WFS&request=GetCapabilities",
+    "https://geoserver2.pr.gov/geoserver/pr_geodata/wfs",
+    "http://geoserver2.pr.gov/geoserver/pr_geodata/wfs",
 ]
 NSDE = "https://nsde.ngs.noaa.gov/"
+
+# Exact local-authority geometry manifestations selected from the frozen WFS
+# capabilities.  These are not interchangeable: one is a broad island/legal
+# shape candidate, one is detailed areal hydrography, and one is an explicit
+# known-incomplete shoreline negative control.
+PR_WFS_CONTROL_LAYERS = [
+    "pr_geodata:g03_legales_isla_pr",
+    "pr_geodata:g23_mapa_base_hidrografia_areas_2023",
+    "pr_geodata:g23_riesgo_inunda_shoreline_2017",
+]
 
 
 def now():
@@ -99,8 +108,6 @@ def census(out: Path, manifest: dict) -> None:
             continue
         text = index_path.read_text(encoding="utf-8", errors="replace")
         links = [x for x in hrefs(text) if x.lower().endswith(".zip")]
-        # STATE is national; COASTLINE may be state-specific. Preserve all
-        # candidates and only auto-select exact PR FIPS 72 or national state.
         exact = []
         for x in links:
             low = x.lower()
@@ -115,6 +122,7 @@ def census(out: Path, manifest: dict) -> None:
             "candidate_links": links,
             "exact_pr_or_national_candidates": exact,
             "downloads": [],
+            "certification_note": "TIGER STATE is legal/administrative geometry and COASTLINE is linework; neither is promoted to a canonical land-feature denominator.",
         }
         for x in exact:
             url = urllib.parse.urljoin(index_url, x)
@@ -122,40 +130,111 @@ def census(out: Path, manifest: dict) -> None:
         if not exact:
             info["state"] = "OPEN_NO_EXACT_PR_OR_NATIONAL_CANDIDATE"
         manifest["census"][layer] = info
+    manifest["census"]["state"] = (
+        "PASS_SUPPORT_MANIFESTATIONS_FROZEN"
+        if all(manifest["census"].get(x, {}).get("downloads") for x in ("STATE", "COASTLINE"))
+        else "OPEN"
+    )
+
+
+def _wfs_url(base: str, **params: str) -> str:
+    fixed = {"service": "WFS", "version": "2.0.0"}
+    fixed.update(params)
+    return base + "?" + urllib.parse.urlencode(fixed)
+
+
+def _feature_type_metadata(root: ET.Element) -> list[dict]:
+    rows = []
+    for elem in root.iter():
+        if elem.tag.rsplit("}", 1)[-1] != "FeatureType":
+            continue
+        row = {}
+        for c in elem:
+            tag = c.tag.rsplit("}", 1)[-1]
+            if tag in {"Name", "Title", "Abstract", "DefaultCRS", "SRS"}:
+                row[tag.lower()] = c.text
+            elif tag == "WGS84BoundingBox":
+                low = next((x.text for x in c if x.tag.rsplit("}", 1)[-1] == "LowerCorner"), None)
+                high = next((x.text for x in c if x.tag.rsplit("}", 1)[-1] == "UpperCorner"), None)
+                row["wgs84_lower"] = low
+                row["wgs84_upper"] = high
+        if row.get("name"):
+            rows.append(row)
+    return rows
+
+
+def _count_geojson(path: Path) -> dict:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        features = data.get("features", []) if isinstance(data, dict) else []
+        geom_types = {}
+        null_geometry = 0
+        for f in features:
+            geom = f.get("geometry") if isinstance(f, dict) else None
+            if not geom:
+                null_geometry += 1
+                continue
+            t = geom.get("type", "UNKNOWN")
+            geom_types[t] = geom_types.get(t, 0) + 1
+        return {
+            "feature_count": len(features),
+            "geometry_types": geom_types,
+            "null_geometry_count": null_geometry,
+        }
+    except Exception as exc:
+        return {"parse_state": "BLOCKED", "error": repr(exc)}
 
 
 def pr_wfs(out: Path, manifest: dict) -> None:
     last_error = None
     frozen = None
-    for url in PR_WFS_URLS:
+    base_used = None
+    for base in PR_WFS_URLS:
+        url = _wfs_url(base, request="GetCapabilities")
         try:
             frozen = freeze(url, out / "pr_gov" / "pr_geodata_wfs_GetCapabilities.xml")
+            base_used = base
             break
         except Exception as exc:
             last_error = repr(exc)
-    if not frozen:
+    if not frozen or not base_used:
         manifest["pr_gov_wfs"] = {"state": "BLOCKED", "error": last_error}
         return
     path = Path(frozen["local_path"])
     raw = path.read_bytes()
     try:
         root = ET.fromstring(raw)
-        names = []
-        for elem in root.iter():
-            if elem.tag.rsplit("}", 1)[-1] == "FeatureType":
-                name = next((c.text for c in elem if c.tag.rsplit("}", 1)[-1] == "Name"), None)
-                title = next((c.text for c in elem if c.tag.rsplit("}", 1)[-1] == "Title"), None)
-                if name:
-                    names.append({"name": name, "title": title})
+        metadata = _feature_type_metadata(root)
         tokens = ("coast", "costa", "shore", "litoral", "agua", "water", "hydro", "hidro", "isla", "cayo", "isl")
-        candidates = [x for x in names if any(t in ((x["name"] or "") + " " + (x["title"] or "")).casefold() for t in tokens)]
+        candidates = [
+            x for x in metadata
+            if any(t in ((x.get("name") or "") + " " + (x.get("title") or "")).casefold() for t in tokens)
+        ]
+        exact = []
+        by_name = {x["name"]: x for x in metadata}
+        for typename in PR_WFS_CONTROL_LAYERS:
+            safe = typename.split(":", 1)[-1]
+            layer = {"typename": typename, "capabilities_metadata": by_name.get(typename), "state": "OPEN"}
+            try:
+                hits_url = _wfs_url(base_used, request="GetFeature", typeNames=typename, resultType="hits")
+                layer["hits"] = freeze(hits_url, out / "pr_gov" / f"{safe}_hits.xml")
+                data_url = _wfs_url(base_used, request="GetFeature", typeNames=typename, outputFormat="application/json")
+                layer["geojson"] = freeze(data_url, out / "pr_gov" / f"{safe}.geojson")
+                layer["geojson_summary"] = _count_geojson(Path(layer["geojson"]["local_path"]))
+                layer["state"] = "PASS_EXACT_LAYER_FROZEN"
+            except Exception as exc:
+                layer["state"] = "BLOCKED"
+                layer["error"] = repr(exc)
+            exact.append(layer)
         manifest["pr_gov_wfs"] = {
             "state": "PASS_CAPABILITIES_FROZEN",
             "snapshot": frozen,
-            "feature_type_count": len(names),
+            "base_url_used": base_used,
+            "feature_type_count": len(metadata),
             "geometry_relevant_discovery_candidates": candidates,
             "candidate_count": len(candidates),
-            "certification_note": "text-token filtering is discovery only; full WFS layer set remains preserved in capabilities bytes",
+            "exact_control_layers": exact,
+            "certification_note": "text-token filtering is discovery only; exact control layers are separately frozen but remain source manifestations, not canonical identities.",
         }
     except Exception as exc:
         manifest["pr_gov_wfs"] = {"state": "BLOCKED_PARSE", "snapshot": frozen, "error": repr(exc)}
@@ -170,6 +249,7 @@ def nsde(out: Path, manifest: dict) -> None:
             "state": "PASS_PORTAL_FROZEN",
             "snapshot": frozen,
             "links": links,
+            "southeast_caribbean_candidate": next((x for x in links if "Southeast_Caribbean.zip" in x), None),
             "certification_note": "portal freeze only; vector geometry bytes remain OPEN until exact downloadable resources are resolved",
         }
     except Exception as exc:
@@ -184,7 +264,7 @@ def main() -> int:
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "generated_utc": now(),
         "scope": "independent geometry-source discovery and byte freeze",
         "census": {"state": "OPEN"},
