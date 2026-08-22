@@ -1,12 +1,6 @@
 name: PR Archipelago SIGE Municipality Residual
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "scripts/acquire_pr_archipelago_sige_municipality_residual.py"
-      - ".github/workflows/pr-archipelago-sige-municipality-residual.yml"
   workflow_dispatch:
 
 permissions:
