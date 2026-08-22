@@ -6,12 +6,15 @@ The endpoint contract comes from frozen NSDE app.js:
   feature.properties.name -> /downloads/<name>.zip
 
 This script freezes metadata and only the vector tiles intersecting a bounded PR
-bbox. It discovers exact CUSP download names but does not equate index features,
-regional packages, shoreline lines, or proximity with canonical insular identity.
+bbox. NSDE serves these PBF tiles gzip-compressed, so raw response bytes are
+preserved and a decompressed copy is used only for vector-tile decoding. It
+discovers exact CUSP download names but never promotes regional-package or
+shoreline coverage to canonical insular identity.
 """
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import math
@@ -24,7 +27,7 @@ META = "https://nsde.ngs.noaa.gov/cusp/cuspidx/metadata.json"
 TILE = "https://nsde.ngs.noaa.gov/cusp/cuspidx/{z}/{x}/{y}.pbf"
 DOWNLOAD = "https://nsde.ngs.noaa.gov/downloads/{name}.zip"
 BBOX = (-68.1, 17.7, -64.9, 18.7)
-UA = "spiderweb-pr-cusp-index/1.0 (+https://github.com/jotaele44/spiderweb-pr)"
+UA = "spiderweb-pr-cusp-index/1.1 (+https://github.com/jotaele44/spiderweb-pr)"
 
 
 def now():
@@ -57,6 +60,12 @@ def tiles_for_bbox(z):
     return [(x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)]
 
 
+def decode_payload(data: bytes) -> tuple[bytes, str]:
+    if data.startswith(b"\x1f\x8b"):
+        return gzip.decompress(data), "GZIP"
+    return data, "IDENTITY"
+
+
 def main() -> int:
     import argparse
     import mapbox_vector_tile
@@ -72,8 +81,6 @@ def main() -> int:
     meta = json.loads(meta_b.decode("utf-8"))
     minzoom = int(meta.get("minzoom", 0))
     maxzoom = int(meta.get("maxzoom", minzoom))
-    # Use the highest published index zoom, but cap tile count defensively by
-    # walking down until the PR bbox uses at most 64 tiles.
     z = maxzoom
     while z > minzoom and len(tiles_for_bbox(z)) > 64:
         z -= 1
@@ -86,13 +93,14 @@ def main() -> int:
         try:
             data, headers = get(url, timeout=60)
         except Exception as exc:
-            tile_records.append({"z":z,"x":x,"y":y,"url":url,"state":"BLOCKED","error":repr(exc)})
+            tile_records.append({"z":z,"x":x,"y":y,"url":url,"state":"BLOCKED_TRANSPORT","error":repr(exc)})
             continue
         path = out / "tiles" / str(z) / str(x) / f"{y}.pbf"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
         try:
-            decoded = mapbox_vector_tile.decode(data)
+            decode_bytes, encoding = decode_payload(data)
+            decoded = mapbox_vector_tile.decode(decode_bytes)
             feature_count = 0
             tile_names = set()
             for layer_name, layer in decoded.items():
@@ -105,7 +113,7 @@ def main() -> int:
                     if name not in (None, ""):
                         tile_names.add(str(name))
                         names.add(str(name))
-            tile_records.append({"z":z,"x":x,"y":y,"url":url,"state":"PASS_TILE_FROZEN","path":str(path),"size_bytes":len(data),"sha256":sha(data),"content_type":headers.get("Content-Type"),"feature_count":feature_count,"names":sorted(tile_names)})
+            tile_records.append({"z":z,"x":x,"y":y,"url":url,"state":"PASS_TILE_FROZEN","path":str(path),"size_bytes":len(data),"sha256":sha(data),"transport_encoding":encoding,"decoded_size_bytes":len(decode_bytes),"content_type":headers.get("Content-Type"),"feature_count":feature_count,"names":sorted(tile_names)})
         except Exception as exc:
             tile_records.append({"z":z,"x":x,"y":y,"url":url,"state":"BLOCKED_DECODE","path":str(path),"size_bytes":len(data),"sha256":sha(data),"error":repr(exc)})
 
@@ -121,6 +129,7 @@ def main() -> int:
             rec.update({"path":str(path),"size_bytes":len(data),"sha256":sha(data),"content_type":headers.get("Content-Type")})
             if not zipfile.is_zipfile(path):
                 rec["state"] = "BLOCKED_NOT_ZIP"
+                rec["archive_member_count"] = 0
             else:
                 members=[]
                 with zipfile.ZipFile(path) as zf:
@@ -132,11 +141,11 @@ def main() -> int:
                 rec["archive_member_count"]=len(members)
                 rec["archive_members"]=members
         except Exception as exc:
-            rec.update({"state":"BLOCKED_TRANSPORT","error":repr(exc)})
+            rec.update({"state":"BLOCKED_TRANSPORT","error":repr(exc),"archive_member_count":0})
         downloads.append(rec)
 
     manifest={
-        "schema_version":"1.0",
+        "schema_version":"1.1",
         "generated_utc":now(),
         "source_family":"NOAA_NSDE_CUSP",
         "discovery_bbox":BBOX,
@@ -146,21 +155,22 @@ def main() -> int:
         "layer_feature_counts":layer_counts,
         "discovered_download_names":sorted(names),
         "downloads":downloads,
-        "rules":{"index_scope":"discovery only","download_name":"must come from feature.properties.name in frozen CUSP index tile","identity":"no CUSP index/package/shoreline relation independently establishes canonical insular identity"},
+        "rules":{"index_scope":"discovery only","download_name":"must come from feature.properties.name in frozen CUSP index tile","raw_tile":"raw compressed response is evidence; decompression is a derived decode step","identity":"no CUSP index/package/shoreline relation independently establishes canonical insular identity"},
         "certification":{"CUSP_INDEX":"OPEN","CUSP_DOWNLOAD_MANIFESTATIONS":"OPEN","GEOMETRIC_CURRENT":"OPEN","CURRENT_PR_ARCHIPELAGO":"OPEN"}
     }
     manifest["tile_pass_count"]=sum(x.get("state")=="PASS_TILE_FROZEN" for x in tile_records)
     manifest["download_pass_count"]=sum(x.get("state")=="PASS_ARCHIVE_FROZEN" for x in downloads)
-    manifest["tile_arithmetic_closed"]=manifest["tile_pass_count"]==manifest["tile_count_expected"]
+    manifest["tile_arithmetic_closed"]=manifest["tile_pass_count"] + sum(x.get("state")!="PASS_TILE_FROZEN" for x in tile_records)==manifest["tile_count_expected"]
+    manifest["tile_zero_failure_gate"]=manifest["tile_pass_count"]==manifest["tile_count_expected"]
     manifest["download_arithmetic_closed"]=manifest["download_pass_count"] + sum(x.get("state")!="PASS_ARCHIVE_FROZEN" for x in downloads)==len(downloads)
-    if manifest["tile_arithmetic_closed"]:
+    if manifest["tile_zero_failure_gate"]:
         manifest["certification"]["CUSP_INDEX"]="PASS_BOUNDED_PR_BBOX"
     if manifest["download_arithmetic_closed"] and downloads:
         manifest["certification"]["CUSP_DOWNLOAD_MANIFESTATIONS"]="PASS_SOURCE_MANIFESTATION_ARITHMETIC"
     mp=out/"cusp_pr_manifest.json"
     mp.write_text(json.dumps(manifest,ensure_ascii=False,indent=2,sort_keys=True),encoding="utf-8")
-    print(json.dumps({"manifest":str(mp),"sha256":sha(mp.read_bytes()),"selected_zoom":z,"tile_count":manifest["tile_count_expected"],"tile_pass_count":manifest["tile_pass_count"],"names":sorted(names),"download_pass_count":manifest["download_pass_count"]},indent=2))
-    return 0 if manifest["tile_arithmetic_closed"] else 2
+    print(json.dumps({"manifest":str(mp),"sha256":sha(mp.read_bytes()),"selected_zoom":z,"tile_count":manifest["tile_count_expected"],"tile_pass_count":manifest["tile_pass_count"],"tile_zero_failure_gate":manifest["tile_zero_failure_gate"],"names":sorted(names),"download_pass_count":manifest["download_pass_count"]},indent=2))
+    return 0 if manifest["tile_zero_failure_gate"] else 2
 
 
 if __name__ == "__main__":
