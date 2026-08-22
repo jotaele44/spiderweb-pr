@@ -7,7 +7,7 @@ and operational classifications separate. Discovery is not identity proof.
 The capability is source-agnostic: authoritative GNIS/NOAA/Census/PR source
 snapshots are ingested elsewhere and normalized into the dataclasses below.
 Certification remains OPEN until the current named and geometry denominators
-close with zero unresolved current identity residue.
+close with zero unresolved current identity/geometry residue.
 """
 
 from __future__ import annotations
@@ -168,22 +168,41 @@ def current_denominator_certification(
     resolved_current: int,
     unresolved_current: int,
     duplicate_unresolved: int,
+    unresolved_geometry: int,
+    candidate_only_geometry: int,
     arithmetic_closed: bool,
     snapshots_frozen: bool,
+    identity_denominator_closed: bool,
+    geometry_denominator_closed: bool,
+    source_evidence_durable: bool,
 ) -> CertificationState:
-    """Fail closed on the current archipelago denominator.
+    """Fail closed on the bounded current archipelago denominator.
 
-    PASS means only that the supplied bounded denominator satisfies these
-    explicit gates; it does not claim universal historical or public-source
-    exhaustion. geometry_total counts accepted geometry manifestations across
+    PASS requires more than nonzero totals. The independently constructed
+    canonical identity and canonical geometry denominators must each be closed,
+    current identity and geometry residue must be zero, source evidence must be
+    frozen and durably preserved, and all conservation arithmetic must close.
+
+    ``geometry_total`` counts accepted canonical geometry manifestations across
     permitted representations; it must never be interpreted as polygon_total.
+    Candidate-only geometries are not accepted canonical geometry.
     """
-    counts = (named_total, geometry_total, resolved_current, unresolved_current, duplicate_unresolved)
+    counts = (
+        named_total,
+        geometry_total,
+        resolved_current,
+        unresolved_current,
+        duplicate_unresolved,
+        unresolved_geometry,
+        candidate_only_geometry,
+    )
     if any(v < 0 for v in counts):
         return CertificationState.FAIL
-    if unresolved_current or duplicate_unresolved:
+    if unresolved_current or duplicate_unresolved or unresolved_geometry or candidate_only_geometry:
         return CertificationState.OPEN
-    if not arithmetic_closed or not snapshots_frozen:
+    if not identity_denominator_closed or not geometry_denominator_closed:
+        return CertificationState.OPEN
+    if not arithmetic_closed or not snapshots_frozen or not source_evidence_durable:
         return CertificationState.OPEN
     if named_total == 0 or geometry_total == 0 or resolved_current == 0:
         return CertificationState.OPEN
