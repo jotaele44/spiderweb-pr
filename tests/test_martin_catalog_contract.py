@@ -85,17 +85,20 @@ def test_generated_certification_source_matches_delivery_registry():
     assert config["geojson"]["sources"][source["martin_source_id"]] == source["martin_artifact_path"]
 
 
-def test_generated_production_config_excludes_validated_unpublished_source():
+def test_generated_production_config_admits_published_source():
     rendered, manifest = compile_config("production")
     config = yaml.safe_load(rendered)
-    assert manifest["admitted_sources"] == []
-    assert config["geojson"]["sources"] == {}
-
-
-def test_canary_is_validated_but_not_published():
     source = _yaml(DELIVERY)["sources"]["municipios"]
-    assert source["publication_state"] == "validated"
-    assert source["publication_state"] != "published"
+    assert manifest["admitted_sources"] == ["municipios"]
+    assert (
+        config["geojson"]["sources"][source["martin_source_id"]]
+        == source["martin_artifact_path"]
+    )
+
+
+def test_municipios_is_published():
+    source = _yaml(DELIVERY)["sources"]["municipios"]
+    assert source["publication_state"] == "published"
 
 
 def test_zoom_bounds_close():
