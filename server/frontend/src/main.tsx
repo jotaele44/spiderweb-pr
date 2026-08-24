@@ -17,6 +17,7 @@ import "@fontsource/source-serif-4/latin-600.css";
 
 import "./styles/federation.css";
 import "./styles/app.css";
+import "./styles/responsive.css";
 import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { THEME_STORAGE_KEY, resolveInitialTheme } from "./theme";
