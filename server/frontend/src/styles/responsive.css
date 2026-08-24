@@ -1,0 +1,70 @@
+/* Federation GUI certification compact-view contract.
+   At phone widths the desktop three-column workbench cannot preserve two side
+   rails without covering the central tab strip. Collapse both side tracks and
+   keep the tab strip horizontally scrollable; users can still reach chrome
+   through the existing toggle controls. */
+@media (max-width: 767px) {
+  .workbench {
+    --rail-w: 0px;
+    --inspector-w: 0px;
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+  }
+
+  .workbench .rail,
+  .workbench .brand,
+  .workbench .inspector {
+    overflow: hidden;
+    min-width: 0;
+    pointer-events: none;
+  }
+
+  .cmdbar {
+    min-width: 0;
+  }
+
+  .query {
+    min-width: 0;
+    padding-inline: 8px;
+  }
+
+  .chips,
+  .runstate {
+    display: none;
+  }
+
+  .center {
+    min-width: 0;
+  }
+
+  .tabstrip {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
+  .tabs {
+    flex: 0 0 auto;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+
+  .tab-meta {
+    display: none;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .map-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .map-shell .layer-panel {
+    display: none;
+  }
+}
