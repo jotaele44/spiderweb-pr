@@ -94,9 +94,9 @@ jobs:
           cert=yaml.safe_load(open('/tmp/martin-cert.yaml', encoding='utf-8'))
           prod=yaml.safe_load(open('/tmp/martin-prod.yaml', encoding='utf-8'))
           assert set(cert['geojson']['sources']) == {'municipios'}
-          assert prod['geojson']['sources'] == {}
+          assert set(prod['geojson']['sources']) == {'municipios'}
           assert 'paths' not in cert['geojson'] and 'paths' not in prod['geojson']
-          print('PASS: validated is certifiable but production publishes zero sources')
+          print('PASS: published municipios is admitted to both certification and production')
           PY
 
       - name: Start Martin and certify generated catalog TileJSON and MVT identity
