@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { byId, fmtMoney } from "../lib/format";
 import type { PriisData, Selection } from "../types/priis";
@@ -123,12 +123,9 @@ function useGeoJsonLayer(opts: {
   onStatus: (status: LayerStatus) => void;
 }) {
   const { mapRef, ready, sourceId, url, isOn } = opts;
-  const addRef = useRef(opts.addLayers);
-  const removeRef = useRef(opts.removeLayers);
-  const statusRef = useRef(opts.onStatus);
-  addRef.current = opts.addLayers;
-  removeRef.current = opts.removeLayers;
-  statusRef.current = opts.onStatus;
+  const addLayers = useEffectEvent(opts.addLayers);
+  const removeLayers = useEffectEvent(opts.removeLayers);
+  const onStatus = useEffectEvent(opts.onStatus);
 
   useEffect(() => {
     const candidate = mapRef.current;
@@ -136,13 +133,13 @@ function useGeoJsonLayer(opts: {
     const map: maplibregl.Map = candidate;
 
     function teardown() {
-      removeRef.current(map);
+      removeLayers(map);
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     }
 
     if (!isOn) {
       if (map.isStyleLoaded()) teardown();
-      statusRef.current("idle");
+      onStatus("idle");
       return;
     }
 
@@ -151,7 +148,7 @@ function useGeoJsonLayer(opts: {
 
     async function load() {
       if (cancelled || map.getSource(sourceId)) return;
-      statusRef.current("loading");
+      onStatus("loading");
       try {
         const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -159,16 +156,16 @@ function useGeoJsonLayer(opts: {
         if (cancelled) return;
         // Backend/source retrieval succeeded. Do not call this rendered until
         // MapLibre's style is actually ready and the source/layers are attached.
-        statusRef.current("source-ready");
+        onStatus("source-ready");
         whenStyleReady(map, () => {
           if (cancelled || map.getSource(sourceId)) return;
           map.addSource(sourceId, { type: "geojson", data: geojson });
-          addRef.current(map, sourceId);
-          statusRef.current("loaded");
+          addLayers(map, sourceId);
+          onStatus("loaded");
         });
       } catch (err) {
         if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
-        statusRef.current("error");
+        onStatus("error");
       }
     }
     void load();
@@ -193,12 +190,9 @@ function useVectorTileLayer(opts: {
   onStatus: (status: LayerStatus) => void;
 }) {
   const { mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn } = opts;
-  const addRef = useRef(opts.addLayers);
-  const removeRef = useRef(opts.removeLayers);
-  const statusRef = useRef(opts.onStatus);
-  addRef.current = opts.addLayers;
-  removeRef.current = opts.removeLayers;
-  statusRef.current = opts.onStatus;
+  const addLayers = useEffectEvent(opts.addLayers);
+  const removeLayers = useEffectEvent(opts.removeLayers);
+  const onStatus = useEffectEvent(opts.onStatus);
 
   useEffect(() => {
     const candidate = mapRef.current;
@@ -206,26 +200,26 @@ function useVectorTileLayer(opts: {
     const map: maplibregl.Map = candidate;
 
     function teardown() {
-      removeRef.current(map);
+      removeLayers(map);
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     }
 
     if (!isOn) {
       if (map.isStyleLoaded()) teardown();
-      statusRef.current("idle");
+      onStatus("idle");
       return;
     }
 
     const controller = new AbortController();
     let cancelled = false;
     const onMapError = (event: { sourceId?: string }) => {
-      if (event.sourceId === sourceId) statusRef.current("error");
+      if (event.sourceId === sourceId) onStatus("error");
     };
     map.on("error", onMapError);
 
     async function load() {
       if (cancelled || map.getSource(sourceId)) return;
-      statusRef.current("loading");
+      onStatus("loading");
       try {
         const res = await fetch(martinTileJsonUrl(martinSourceId), { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -241,7 +235,7 @@ function useVectorTileLayer(opts: {
           if (!advertised.has(sourceLayer)) throw new Error(`missing source-layer ${sourceLayer}`);
         }
         if (cancelled) return;
-        statusRef.current("source-ready");
+        onStatus("source-ready");
         whenStyleReady(map, () => {
           if (cancelled || map.getSource(sourceId)) return;
           map.addSource(sourceId, {
@@ -250,12 +244,12 @@ function useVectorTileLayer(opts: {
             minzoom: tilejson.minzoom ?? 0,
             maxzoom: tilejson.maxzoom ?? 14,
           });
-          addRef.current(map, sourceId, sourceLayer);
-          statusRef.current("loaded");
+          addLayers(map, sourceId, sourceLayer);
+          onStatus("loaded");
         });
       } catch (err) {
         if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
-        statusRef.current("error");
+        onStatus("error");
       }
     }
     void load();
@@ -269,7 +263,7 @@ function useVectorTileLayer(opts: {
   }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn]);
 }
 
-function polygonLayerOpts(
+function usePolygonLayer(
   mapRef: React.MutableRefObject<maplibregl.Map | null>,
   ready: boolean,
   key: PolygonLayerKey,
@@ -277,7 +271,7 @@ function polygonLayerOpts(
   onStatus: (status: LayerStatus) => void,
 ) {
   const sourceId = `geo-${key}`;
-  return {
+  useGeoJsonLayer({
     mapRef,
     ready,
     sourceId,
@@ -286,7 +280,7 @@ function polygonLayerOpts(
     onStatus,
     addLayers: (map: maplibregl.Map, id: string) => addPolygonPaintLayers(map, key, id),
     removeLayers: (map: maplibregl.Map) => removePolygonPaintLayers(map, sourceId),
-  };
+  });
 }
 
 export function SpatialIntelligence({
@@ -337,18 +331,16 @@ export function SpatialIntelligence({
     addLayers: (map, sourceId, sourceLayer) => addPolygonPaintLayers(map, "municipios", sourceId, sourceLayer),
     removeLayers: (map) => removePolygonPaintLayers(map, "mvt-municipios"),
   });
-  useGeoJsonLayer(
-    polygonLayerOpts(
-      mapRef,
-      mapReady,
-      "municipios",
-      layers.municipios && !municipiosViaMartin,
-      setStatus("municipios"),
-    ),
+  usePolygonLayer(
+    mapRef,
+    mapReady,
+    "municipios",
+    layers.municipios && !municipiosViaMartin,
+    setStatus("municipios"),
   );
-  useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts")));
-  useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "places", layers.places, setStatus("places")));
-  useGeoJsonLayer(polygonLayerOpts(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios")));
+  usePolygonLayer(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts"));
+  usePolygonLayer(mapRef, mapReady, "places", layers.places, setStatus("places"));
+  usePolygonLayer(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios"));
 
   useEffect(() => {
     if (!hostRef.current || mapRef.current) return;
