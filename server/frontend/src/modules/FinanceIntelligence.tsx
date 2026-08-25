@@ -1,11 +1,16 @@
 import { useMemo, useState } from "react";
 import {
+  columnFilteringFeature,
+  columnVisibilityFeature,
   createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  useReactTable,
+  createFilteredRowModel,
+  createSortedRowModel,
+  globalFilteringFeature,
+  rowSortingFeature,
+  sortFn_alphanumeric,
+  sortFn_text,
+  tableFeatures,
+  useTable,
   type SortingState,
 } from "@tanstack/react-table";
 import { fmtMoney } from "../lib/format";
@@ -14,7 +19,17 @@ import { Pill, TierBadge, contractStatusTone } from "../components/Badges";
 import { Card } from "../components/Card";
 import { exportContractsCsv } from "../export/csvExport";
 
-const colHelper = createColumnHelper<Contract>();
+const financeTableFeatures = tableFeatures({
+  columnFilteringFeature,
+  globalFilteringFeature,
+  rowSortingFeature,
+  columnVisibilityFeature,
+  filteredRowModel: createFilteredRowModel(),
+  sortedRowModel: createSortedRowModel(),
+  sortFns: { alphanumeric: sortFn_alphanumeric, text: sortFn_text },
+});
+
+const colHelper = createColumnHelper<typeof financeTableFeatures, Contract>();
 
 export function FinanceIntelligence({
   data,
@@ -46,7 +61,7 @@ export function FinanceIntelligence({
   );
 
   const columns = useMemo(
-    () => [
+    () => colHelper.columns([
       colHelper.accessor("id", { header: "ID", cell: (i) => <span className="mono">{i.getValue()}</span> }),
       colHelper.accessor("signed", { header: "Signed", cell: (i) => <span className="mono">{i.getValue()}</span> }),
       colHelper.accessor("agency", {
@@ -73,19 +88,17 @@ export function FinanceIntelligence({
         header: "Tier",
         cell: (i) => <TierBadge tier={i.getValue()} />,
       }),
-    ],
+    ]),
     [agenciesById, sitesById, vendorsById],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features: financeTableFeatures,
     data: data.contracts,
     columns,
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     // TanStack's default global filter sees the raw foreign-key values (V-1024,
     // A-0007, S-0042), while the table renders the joined vendor/agency/site
     // labels. That made a visible value such as "Caribe" impossible to search.
@@ -162,11 +175,11 @@ export function FinanceIntelligence({
                         >
                           {canSort ? (
                             <button type="button" className="th-sort" onClick={header.column.getToggleSortingHandler()}>
-                              {flexRender(header.column.columnDef.header, header.getContext())}
+                              <table.FlexRender header={header} />
                               <span aria-hidden="true">{sorted === "asc" ? " ↑" : sorted === "desc" ? " ↓" : ""}</span>
                             </button>
                           ) : (
-                            flexRender(header.column.columnDef.header, header.getContext())
+                            <table.FlexRender header={header} />
                           )}
                         </th>
                       );
@@ -196,7 +209,7 @@ export function FinanceIntelligence({
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } }}
                       >
                         {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                          <td key={cell.id}><table.FlexRender cell={cell} /></td>
                         ))}
                       </tr>
                     );
