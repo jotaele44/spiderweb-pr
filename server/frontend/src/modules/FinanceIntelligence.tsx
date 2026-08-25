@@ -82,6 +82,37 @@ export function FinanceIntelligence({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    // TanStack's default global filter sees the raw foreign-key values (V-1024,
+    // A-0007, S-0042), while the table renders the joined vendor/agency/site
+    // labels. That made a visible value such as "Caribe" impossible to search.
+    // Search the same semantic values the operator can actually see, preserving
+    // raw ids as additional discovery terms rather than treating them as the
+    // only searchable representation.
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const contract = row.original;
+      const agency = byId(data.agencies, contract.agency);
+      const vendor = byId(data.vendors, contract.vendor);
+      const site = byId(data.sites, contract.site ?? "");
+      const haystack = [
+        contract.id,
+        contract.signed,
+        contract.agency,
+        agency?.code,
+        agency?.name,
+        contract.vendor,
+        vendor?.name,
+        contract.site,
+        site?.name,
+        contract.amount,
+        fmtMoney(contract.amount),
+        contract.status,
+        contract.tier,
+      ]
+        .filter((value) => value !== undefined && value !== null)
+        .join(" ")
+        .toLocaleLowerCase();
+      return haystack.includes(String(filterValue ?? "").trim().toLocaleLowerCase());
+    },
   });
 
   return (
@@ -151,11 +182,6 @@ export function FinanceIntelligence({
                     const active = selection?.kind === "contract" && selection.id === row.original.id;
                     const select = () => setSelection({ kind: "contract", id: row.original.id });
                     return (
-                      // The row keeps its implicit `row` role. `role="button"`
-                      // here replaced it, so the cells lost their row ancestor
-                      // and screen readers lost table navigation over the grid.
-                      // Selection is expressed with aria-selected under the
-                      // table's grid role instead.
                       <tr
                         key={row.id}
                         data-active={active}
