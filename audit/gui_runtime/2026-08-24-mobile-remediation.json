@@ -1,0 +1,53 @@
+{
+  "schema_version": "spiderweb_gui_mobile_remediation_v1",
+  "repository": "jotaele44/spiderweb-pr",
+  "frozen_main_base": "d11b74ac5e42812755282356f1d14fffc996809c",
+  "claim_scope": "cross-browser six-module workbench usability at declared viewport matrix; excludes native browser 200 percent zoom certification",
+  "before": {
+    "workflow_run_id": 32801753537,
+    "artifact_id": 9546831997,
+    "artifact_sha256": "2d7bbcf8bd15a9f8caffbc06dbd43b85617d53379a130363b679caca5bc9224c",
+    "expected_surface_cells": 108,
+    "observed_surface_cells": 72,
+    "failures": 6,
+    "failure_set": [
+      "chromium:320",
+      "chromium:375",
+      "firefox:320",
+      "firefox:375",
+      "webkit:320",
+      "webkit:375"
+    ],
+    "failure_class": "GUI_POINTER_OCCLUSION",
+    "mechanism": "left rail and/or inspector intercepted module-tab pointer events on phone widths"
+  },
+  "after": {
+    "workflow_run_id": 32802462545,
+    "artifact_id": 9547002636,
+    "artifact_sha256": "0a28012306fe4672fe1e9642761231ef94f901873d2279cf0674b1f89a644702",
+    "tested_head": "9824c8c68f3b6bccb6d5946083d35dc2410c2103",
+    "matrix_schema_version": "1.1",
+    "expected_surface_cells": 108,
+    "observed_surface_cells": 108,
+    "surface_failures": 0,
+    "all_recorded_failures": 0,
+    "horizontal_overflow_cells": 0,
+    "engines": ["chromium", "firefox", "webkit"],
+    "viewports": [320, 375, 768, 1280, 1440, 1920],
+    "modules": ["Command", "Finance", "Spatial", "Anomaly", "Graph", "Query"],
+    "native_200_percent_zoom_certified": false
+  },
+  "arithmetic": {
+    "expected_surface_cells": "3 engines * 6 viewports * 6 modules = 108",
+    "before_observed_plus_unobserved": "72 + 36 = 108",
+    "after_observed": "108 = 108",
+    "after_surface_failures": "0",
+    "after_horizontal_overflow_cells": "0"
+  },
+  "certification_boundary": {
+    "gui_matrix_claim": "PASS_AT_TESTED_HEAD",
+    "native_200_percent_zoom": "OPEN",
+    "overall_spiderweb_readiness": "FAIL_OPEN",
+    "script_success_is_certification": false
+  }
+}
