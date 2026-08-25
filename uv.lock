@@ -5511,7 +5511,7 @@ requires-dist = [
     { name = "requests", marker = "extra == 'earthgpt'", specifier = ">=2.31.0,<3" },
     { name = "requests", marker = "extra == 'geo'", specifier = ">=2.31.0,<3" },
     { name = "requests", marker = "extra == 'imagery'", specifier = ">=2.31.0,<3" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.5,<0.16" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.5,<0.17" },
     { name = "scikit-image", specifier = ">=0.26,<1" },
     { name = "scikit-image", marker = "extra == 'gebco'", specifier = ">=0.26,<1" },
     { name = "scipy", specifier = ">=1.17,<2" },
