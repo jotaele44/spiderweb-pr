@@ -30,7 +30,7 @@ type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
 type BackendLayerKey = PolygonLayerKey;
 type LayerKey = MarkerLayerKey | BackendLayerKey;
-type LayerStatus = "idle" | "loading" | "loaded" | "error";
+export type LayerStatus = "idle" | "loading" | "source-ready" | "loaded" | "error";
 
 interface PolygonLayerConfig {
   fillOpacity: number;
@@ -65,6 +65,15 @@ function isBackendKey(key: LayerKey): key is BackendLayerKey {
 }
 function layerLabel(key: LayerKey): string {
   return isPolygonKey(key) ? POLYGON_LAYERS[key].label : MARKER_LABELS[key];
+}
+
+export function layerStatusText(enabled: boolean, status?: LayerStatus): string {
+  if (!enabled) return "off";
+  if (status === "loading") return "loading…";
+  if (status === "source-ready") return "source ready";
+  if (status === "loaded") return "rendered";
+  if (status === "error") return "error";
+  return "on";
 }
 
 function whenStyleReady(map: maplibregl.Map, fn: () => void) {
@@ -148,6 +157,9 @@ function useGeoJsonLayer(opts: {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const geojson = (await res.json()) as GeoJSON.GeoJSON;
         if (cancelled) return;
+        // Backend/source retrieval succeeded. Do not call this rendered until
+        // MapLibre's style is actually ready and the source/layers are attached.
+        statusRef.current("source-ready");
         whenStyleReady(map, () => {
           if (cancelled || map.getSource(sourceId)) return;
           map.addSource(sourceId, { type: "geojson", data: geojson });
@@ -229,6 +241,7 @@ function useVectorTileLayer(opts: {
           if (!advertised.has(sourceLayer)) throw new Error(`missing source-layer ${sourceLayer}`);
         }
         if (cancelled) return;
+        statusRef.current("source-ready");
         whenStyleReady(map, () => {
           if (cancelled || map.getSource(sourceId)) return;
           map.addSource(sourceId, {
@@ -477,7 +490,6 @@ export function SpatialIntelligence({
           <h2>Layer control</h2>
           {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => {
             const status = isBackendKey(key) && value ? layerStatus[key] : undefined;
-            const right = status === "loading" ? "loading…" : status === "error" ? "error" : value ? "on" : "off";
             return (
               <button
                 key={key}
@@ -488,7 +500,7 @@ export function SpatialIntelligence({
                 onClick={() => setLayers((cur) => ({ ...cur, [key]: !cur[key] }))}
               >
                 <span>{layerLabel(key)}</span>
-                <span>{right}</span>
+                <span>{layerStatusText(value, status)}</span>
               </button>
             );
           })}

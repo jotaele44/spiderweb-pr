@@ -1,4 +1,4 @@
-# Martin delivery canary
+# Martin delivery
 
 This directory contains Spiderweb-PR's non-canonical Martin tile-delivery configuration.
 
@@ -6,7 +6,7 @@ This directory contains Spiderweb-PR's non-canonical Martin tile-delivery config
 
 Martin is a presentation/delivery service. It does not establish source authority, canonical identity, visibility, provenance, or analytical truth. Those remain owned by Spiderweb.
 
-The canary intentionally publishes exactly one source: `municipios`.
+The registry intentionally publishes exactly one source: `municipios`.
 
 `martin/config.yaml` uses `geojson.sources` and deliberately does **not** use `geojson.paths`. Directory discovery would allow an added file to become a published source without an explicit Spiderweb authorization change.
 
@@ -42,22 +42,31 @@ pytest -q tests/test_martin_catalog_contract.py
 
 ## Promotion gate
 
-The `municipios` source has progressed from `candidate` to
-`publication_state: validated` (runtime canary, MapLibre rendering path,
-feature-ID parity, negative publication tests, and rollback test all pass —
-see `.github/workflows/martin-canary.yml` and
+The `municipios` source progressed `candidate` → `validated` → `published`.
+`validated` was reached after the runtime canary, MapLibre rendering path,
+feature-ID parity, negative publication tests, and rollback test all passed
+(see `.github/workflows/martin-canary.yml` and
 `.github/workflows/martin-publication-contract.yml`). A non-mutating
-eligibility check (`scripts/check_martin_promotion.py --source municipios
---target published`) confirms it is `ELIGIBLE_FOR_EXPLICIT_TRANSITION`; a
-receipt is on file at `evidence/martin/municipios_promotion_eligibility_receipt.json`.
+eligibility check (`scripts/check_martin_promotion.py`) confirmed it was
+`ELIGIBLE_FOR_EXPLICIT_TRANSITION`; that eligibility receipt remains on file
+at `evidence/martin/municipios_promotion_eligibility_receipt.json` as a
+historical record of the decision.
 
-`validated` is still not `published`: per `configs/martin_delivery.yaml`'s
-`authorization_note`, production config generation excludes this source
-"until an explicit future validated-to-published action." That final flip
-is a deliberate operator decision — it is not performed automatically by
-passing the eligibility check, and updates the guard tests in
-`tests/test_martin_publication_contract.py` that currently assert the
-non-published state (`test_canary_is_validated_but_not_published`,
-`test_production_ingress_authorizes_no_sources_today`). Tile geometry is a
-derived clipped/quantized manifestation and must not replace the canonical
-source geometry.
+`published` was then reached via an explicit, operator-authorized action —
+per design (see `configs/martin_delivery.yaml`'s `authorization_note`), this
+transition is never automatic; it required deliberately updating the
+registry's `publication_state` and the guard tests in
+`tests/test_martin_publication_contract.py` and
+`tests/test_martin_catalog_contract.py` that previously asserted the
+non-published state. `municipios` is now served in the production Martin
+config (`scripts/build_martin_config.py --environment production`) and via
+the production ingress (`server/backend/martin_ingress.py`,
+`GET /tiles/municipios`).
+
+To roll back, transition `publication_state` to `quarantined`
+(`allowed_transitions` in `configs/martin_delivery.yaml`) — `quarantined`
+sources are excluded from every environment (`never_serve`) and the existing
+`/geo/municipios.geojson` FastAPI route remains available as the
+rollback/parity path regardless. Tile geometry is a derived
+clipped/quantized manifestation and must not replace the canonical source
+geometry.
