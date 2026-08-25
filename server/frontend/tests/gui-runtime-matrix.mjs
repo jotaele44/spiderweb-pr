@@ -31,19 +31,21 @@ for (const [engineName, engine] of Object.entries(engines)) {
         await page.getByRole('tab', { name: 'Command', exact: true }).waitFor({ timeout: 30000 })
 
         for (const moduleName of modules) {
+          const errorOffset = pageErrors.length
           const tab = page.getByRole('tab', { name: moduleName, exact: true })
           await tab.click()
           await page.waitForTimeout(150)
           const selected = await tab.getAttribute('aria-selected')
+          const moduleErrors = pageErrors.slice(errorOffset)
           const file = `${engineName}-${viewport.width}-${moduleName.toLowerCase()}.png`
           await page.screenshot({ path: path.join(outDir, file), fullPage: true })
           record({
             engine: engineName,
             viewport: viewport.width,
             surface: moduleName,
-            status: selected === 'true' && pageErrors.length === 0 ? 'PASS' : 'FAIL',
+            status: selected === 'true' && moduleErrors.length === 0 ? 'PASS' : 'FAIL',
             aria_selected: selected,
-            page_errors: [...pageErrors],
+            page_errors: moduleErrors,
             screenshot: file,
           })
         }
