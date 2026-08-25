@@ -40,12 +40,24 @@ export function QueryLayer({
     setPending(true);
 
     if (useRag) {
-      // Stream from the real backend
+      // Stream from the real backend. Terminal return code is part of the
+      // user-facing contract: an empty/nonzero response is an error, not a
+      // successful answer with no text.
       const cancel = streamRagQuery(
         text,
         (token) => { if (runId.current === thisRun) setStreamLines((prev) => [...prev, token]); },
-        () => { if (runId.current === thisRun) setPending(false); },
-        (message) => { if (runId.current === thisRun) setError(message); },
+        (returncode) => {
+          if (runId.current !== thisRun) return;
+          cancelRef.current = null;
+          setPending(false);
+          if (returncode !== 0) setError(`RAG backend exited with code ${returncode}`);
+        },
+        (message) => {
+          if (runId.current !== thisRun) return;
+          cancelRef.current = null;
+          setError(message);
+          setPending(false);
+        },
       );
       cancelRef.current = cancel;
     } else {
