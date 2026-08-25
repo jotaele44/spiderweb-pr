@@ -23,6 +23,10 @@
 
 /* Touch hardware gets a minimum target without inflating dense desktop rows. */
 @media (pointer: coarse) {
+  .center {
+    grid-template-rows: 44px minmax(0, 1fr);
+  }
+
   .act,
   .tab,
   .navbtn,
