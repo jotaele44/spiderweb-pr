@@ -17,7 +17,7 @@ state_machine:
     deprecated: []
 sources:
   municipios:
-    publication_state: validated
+    publication_state: published
     visibility_required: V3
     martin_source_id: municipios
     source_layer: municipios
@@ -44,7 +44,10 @@ sources:
     maxzoom: 14
     certification_receipt: martin_canary_run_31864818783
     authorization_note: >-
-      Validated canary delivery source. Validation does not promote source
-      authority, does not imply production publication, and does not supersede
-      layer_catalog visibility or provenance. Production config generation must
-      exclude this source until an explicit future validated-to-published action.
+      Published delivery source (promoted from validated via an explicit
+      operator-authorized action; eligibility receipt at
+      evidence/martin/municipios_promotion_eligibility_receipt.json).
+      Publication does not promote source authority, does not imply this is
+      canonical geometry, and does not supersede layer_catalog visibility or
+      provenance — Martin remains presentation/delivery only. To roll back,
+      transition publication_state to quarantined (allowed_transitions).
