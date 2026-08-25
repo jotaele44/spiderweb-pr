@@ -7,7 +7,8 @@ Exposes three tools over MCP:
   * ``query_imagery_metadata(bbox, date_range, provider)``— catalog search, no pixels
   * ``compare_imagery(lat, lon, date1, date2, provider)`` — lightweight change detection
 
-Providers: ``gibs`` (no auth, default), ``sentinelhub`` (OAuth2), ``copernicus`` (CDSE OAuth2).
+Providers: ``gibs`` (no auth, default), ``sentinelhub`` (OAuth2), and
+``copernicus`` (CDSE OAuth2).
 
 Run (stdio, the default agent-loop transport):
     python -m imagery.server
@@ -20,7 +21,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from . import compare as compare_mod
-from . import config, sink
+from . import sink
 from .providers import ProviderError, available_providers, get_provider
 
 TOOL_NAMES = ["fetch_imagery", "query_imagery_metadata", "compare_imagery"]
