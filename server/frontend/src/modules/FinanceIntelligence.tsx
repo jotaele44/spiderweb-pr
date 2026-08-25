@@ -16,6 +16,32 @@ import { exportContractsCsv } from "../export/csvExport";
 
 const colHelper = createColumnHelper<Contract>();
 
+/** Match exactly the values an operator can see in the contracts grid. */
+export function contractMatchesGlobalFilter(
+  contract: Contract,
+  data: PriisData,
+  filterValue: unknown,
+): boolean {
+  const needle = String(filterValue ?? "").trim().toLocaleLowerCase();
+  if (!needle) return true;
+
+  const agency = byId(data.agencies, contract.agency);
+  const vendor = byId(data.vendors, contract.vendor);
+  const site = byId(data.sites, contract.site ?? "");
+  const visibleValues = [
+    contract.id,
+    contract.signed,
+    agency?.code ?? contract.agency,
+    vendor?.name ?? contract.vendor,
+    site?.name ?? contract.site,
+    fmtMoney(contract.amount),
+    contract.status,
+    contract.tier,
+  ];
+
+  return visibleValues.some((value) => String(value ?? "").toLocaleLowerCase().includes(needle));
+}
+
 export function FinanceIntelligence({
   data,
   selection,
@@ -79,6 +105,8 @@ export function FinanceIntelligence({
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, filterValue) =>
+      contractMatchesGlobalFilter(row.original, data, filterValue),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
