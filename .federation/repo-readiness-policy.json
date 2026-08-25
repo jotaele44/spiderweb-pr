@@ -1,0 +1,99 @@
+{
+  "schema": "prii.repo-readiness-policy/v1",
+  "policy_version": "1.0.0",
+  "applies_to": ["spiderweb-pr"],
+  "certification_rule": {
+    "certified_state": "CERTIFIED",
+    "required_domain_state": "PASS",
+    "max_unresolved_mandatory_residue": 0,
+    "script_success_is_certification": false,
+    "gui_presence_is_backend_completion": false,
+    "backend_presence_is_user_accessibility": false
+  },
+  "evidence_classes": [
+    "FACT",
+    "COMPUTED",
+    "BINDING",
+    "INFERENCE",
+    "ASSUMPTION",
+    "HYPOTHESIS",
+    "UNKNOWN"
+  ],
+  "domain_states": [
+    "PASS",
+    "FAIL",
+    "OPEN",
+    "BLOCKED",
+    "PROVISIONAL",
+    "AUDIT_ONLY",
+    "NONCANONICAL",
+    "CANDIDATE_NOT_IDENTITY",
+    "UNRESOLVED",
+    "SUPERSEDED"
+  ],
+  "mandatory_domains": [
+    "repository_completion",
+    "startup",
+    "gui_route_closure",
+    "data_integrity",
+    "evidence_integrity",
+    "provenance",
+    "ux",
+    "professionalism",
+    "security",
+    "testing",
+    "documentation",
+    "deployment_readiness",
+    "scope_boundary"
+  ],
+  "capability_closure_chain": [
+    "user_intent",
+    "gui_action",
+    "handler",
+    "service",
+    "data_source",
+    "artifact",
+    "validation",
+    "user_feedback"
+  ],
+  "identity_forbidden_as_sole_evidence": [
+    "NAME_ONLY",
+    "NORMALIZED_NAME_ONLY",
+    "COUNT_EQUALITY",
+    "NEAREST_ONLY",
+    "PROXIMITY_ONLY",
+    "SAME_CATEGORY",
+    "SOURCE_ABSENCE"
+  ],
+  "required_adversarial_cases": [
+    "NULL",
+    "TIE",
+    "DUPLICATE",
+    "M:N",
+    "SCHEMA_DRIFT",
+    "NETWORK_FAILURE",
+    "MISSING_SOURCE",
+    "BAD_SECRET",
+    "INTERRUPTED_JOB",
+    "READ_ONLY_DIRECTORY"
+  ],
+  "repository_residue_states": [
+    "COMPLETE",
+    "INTENTIONALLY_DEFERRED",
+    "DEAD",
+    "DUPLICATE",
+    "SUPERSEDED",
+    "OPEN",
+    "BLOCKED",
+    "UNRESOLVED"
+  ],
+  "invariants": {
+    "preserve_passed_artifacts": true,
+    "freeze_before_observation": true,
+    "full_candidate_sets_preserved": true,
+    "ties_fail_closed": true,
+    "unexpected_many_to_many_fails_closed": true,
+    "arithmetic_must_close": true,
+    "mutable_sources_are_versioned_snapshots": true
+  }
+}
