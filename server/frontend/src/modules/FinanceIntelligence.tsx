@@ -8,7 +8,7 @@ import {
   useReactTable,
   type SortingState,
 } from "@tanstack/react-table";
-import { byId, fmtMoney } from "../lib/format";
+import { fmtMoney } from "../lib/format";
 import type { Contract, PriisData, Selection } from "../types/priis";
 import { Pill, TierBadge, contractStatusTone } from "../components/Badges";
 import { Card } from "../components/Card";
@@ -27,6 +27,10 @@ export function FinanceIntelligence({
 }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "amount", desc: true }]);
   const [globalFilter, setGlobalFilter] = useState("");
+
+  const agenciesById = useMemo(() => new Map(data.agencies.map((agency) => [agency.id, agency])), [data.agencies]);
+  const vendorsById = useMemo(() => new Map(data.vendors.map((vendor) => [vendor.id, vendor])), [data.vendors]);
+  const sitesById = useMemo(() => new Map(data.sites.map((site) => [site.id, site])), [data.sites]);
 
   const total = useMemo(() => data.contracts.reduce((sum, c) => sum + c.amount, 0), [data.contracts]);
   const vendorTotals = useMemo(
@@ -47,15 +51,15 @@ export function FinanceIntelligence({
       colHelper.accessor("signed", { header: "Signed", cell: (i) => <span className="mono">{i.getValue()}</span> }),
       colHelper.accessor("agency", {
         header: "Agency",
-        cell: (i) => <span className="mono">{byId(data.agencies, i.getValue())?.code ?? i.getValue()}</span>,
+        cell: (i) => <span className="mono">{agenciesById.get(i.getValue())?.code ?? i.getValue()}</span>,
       }),
       colHelper.accessor("vendor", {
         header: "Vendor",
-        cell: (i) => byId(data.vendors, i.getValue())?.name ?? i.getValue(),
+        cell: (i) => vendorsById.get(i.getValue())?.name ?? i.getValue(),
       }),
       colHelper.accessor("site", {
         header: "Site",
-        cell: (i) => byId(data.sites, i.getValue() ?? "")?.name ?? i.getValue(),
+        cell: (i) => sitesById.get(i.getValue() ?? "")?.name ?? i.getValue(),
       }),
       colHelper.accessor("amount", {
         header: "Amount",
@@ -70,7 +74,7 @@ export function FinanceIntelligence({
         cell: (i) => <TierBadge tier={i.getValue()} />,
       }),
     ],
-    [data],
+    [agenciesById, sitesById, vendorsById],
   );
 
   const table = useReactTable({
@@ -90,9 +94,9 @@ export function FinanceIntelligence({
     // only searchable representation.
     globalFilterFn: (row, _columnId, filterValue) => {
       const contract = row.original;
-      const agency = byId(data.agencies, contract.agency);
-      const vendor = byId(data.vendors, contract.vendor);
-      const site = byId(data.sites, contract.site ?? "");
+      const agency = agenciesById.get(contract.agency);
+      const vendor = vendorsById.get(contract.vendor);
+      const site = sitesById.get(contract.site ?? "");
       const haystack = [
         contract.id,
         contract.signed,
