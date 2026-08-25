@@ -32,10 +32,9 @@ jobs:
           cache: pip
       - name: Install
         run: |
-          # PRII_FETCH_HUB: ensure shared federation libs resolve
-          if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system -e .[federation,dev]
+          test ! -e "$GITHUB_WORKSPACE/../thehub-pr"
       - name: Maintenance tests
         run: python -m pytest tests/test_maintenance.py -q
       - name: Audit run

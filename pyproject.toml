@@ -68,7 +68,7 @@ earthgpt = [
 # Imagery MCP server — fetch/search/compare satellite imagery over MCP
 # (NASA GIBS, Sentinel Hub, Copernicus/CDSE). jsonschema comes via `airspace`.
 imagery = [
-    "fastmcp>=2.9,<3",
+    "fastmcp>=2.9,<4",
     "requests>=2.31.0,<3",
     "python-dotenv>=1.0.0,<2",
     "Pillow>=10.0,<13",
@@ -108,15 +108,24 @@ geo = [
 dem = [
     "rasterio>=1.4,<2",
 ]
+# Embedded spatial SQL (spiderweb/spatial/duckdb_engine.py). DuckDB's `spatial`
+# extension is loaded at runtime (INSTALL/LOAD), not a separate pip package.
+# Deliberately not Spark/Sedona/Wherobots: every dataset this repo processes is
+# PR-scoped and megabytes in size (see RECOMMENDATIONS.md), so an embedded,
+# no-cluster SQL engine is the right amount of tooling for ad hoc spatial joins
+# and predicate queries over the existing on-disk GeoJSON artifacts.
+spatial = [
+    "duckdb>=1.1,<2",
+]
 # Convenience union of every runtime subsystem (gebco is already in base).
 all = [
-    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo,dem,remote_monitoring]",
+    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo,dem,remote_monitoring,spatial]",
 ]
 dev = [
     "pytest>=9.0.2,<10",
     "pytest-cov>=7.0,<8",
     "black>=26.3.0,<27",
-    "ruff>=0.15.5,<0.16",
+    "ruff>=0.15.5,<0.17",
     "mypy>=1.13,<3",
 ]
 

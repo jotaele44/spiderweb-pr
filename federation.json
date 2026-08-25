@@ -26,12 +26,13 @@
         "observations",
         "tracks",
         "sources"
-      ]
+      ],
+      "ppp_geometry_lane": "readiness/ppp_geometry.py resolves moneysweep-pr concession projects from a municipality to a WGS84 point using configs/airport_registry.yaml, and scripts/federation_export.py emits the result as anchored canonical observations. Unmatched projects stay in the geocode queue rather than receiving a municipality-centroid guess. Skipped when no moneysweep-pr sibling checkout is present."
     }
   },
   "hub_callable_commands": {
     "setup": "python -m pip install uv && uv pip install --system -e .[airspace,earthgpt,server,dev] \"httpx>=0.27\"",
-    "test_suite": "python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py",
+    "test_suite": "python -m pytest tests/ -q --tb=short",
     "validate_schemas": "make validate-schemas",
     "validate_export": "python scripts/validate_export.py --package exports/samples --mode test",
     "export_canonical": "python3 scripts/federation_export.py --mode test",
@@ -50,7 +51,8 @@
       "Z2 geometry projection complete: scripts/federation_export.py projects representative WGS84 location onto canonical record entities for observations, events, and tracks when Point geometry or LineString path data exists.",
       "real (non-synthetic) rows exist: scripts/build_real_spatial_streams.py emits 10 real observations + 2 real sources from committed data (Isabela site record + PR airport registry); build+validate --mode production passes (docs/federation_readiness.md gate)",
       "the parent hub (thehub-pr) validated this producer's canonical package: hub validate-package -> VALID; hub validate-federation classifies spiderweb-pr as declared_not_live with package_valid=true",
-      "operator approved the first real production package (2026-07-03 'every follow-up' sweep): ready_for_hub_live_execution flipped true; corpus is small-but-real (1 structure sighting + 9 airport reference locations) and grows with the intake lane"
+      "operator approved the first real production package (2026-07-03 'every follow-up' sweep): ready_for_hub_live_execution flipped true; corpus is small-but-real (1 structure sighting + 9 airport reference locations) and grows with the intake lane",
+      "PPP geometry lane: spiderweb resolves moneysweep-pr's municipality-only concession projects to real points and returns them as canonical observations, so thehub-pr's correlate_observations can join a public-money project to a place (hub validate-package -> VALID)."
     ],
     "blocking_conditions": []
   }
