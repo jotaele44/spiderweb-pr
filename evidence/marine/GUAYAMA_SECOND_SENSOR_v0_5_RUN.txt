@@ -1,0 +1,14 @@
+Workflow run: 31970561422
+Head SHA: fd6339bbeaec7a0348effc151c9e1274d96f6529
+Artifact: guayama-second-sensor-v0-5
+Artifact SHA-256: ad4d367a90a59ab0a5e55e3cd94853126ede95d1387bf7c617e48dbd81da5313
+Result: PASS_SECOND_SENSOR_ROOT
+Second root: EX1502L3 / Okeanos Explorer / Kongsberg EM302 / 2015
+EX1502L3 XYZ SHA-256: 0bb09757fd5433075b788f15546597c444cf63d9f617de9f3ba385ce31fc736c
+W00247 BAG SHA-256: b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8
+Valid W00247 cells touched by EX1502L3: 212
+EX1502L3 XYZ rows on valid W00247 cells: 282
+Vertical datum adjudication: CONTRADICTORY_PRIMARY_METADATA
+Depth subtraction: BLOCKED
+Spearman rank rho across paired valid cells: 0.9826226318260621
+Multisensor feature promotion: BLOCKED_PENDING_FEATURE_BOUNDARY_AND_VERTICAL_ADJUDICATION

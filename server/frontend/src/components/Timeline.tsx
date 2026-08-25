@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { EventRecord, Selection } from "../types/priis";
 import { TierBadge } from "./Badges";
 
@@ -22,6 +23,7 @@ export function Timeline({
   setCursor: (value: string) => void;
   setSelection: (selection: Selection) => void;
 }) {
+  const [fallbackNow] = useState(() => Date.now());
   // Derive the visible window from the event data (padded), instead of a
   // hardcoded date range that drifts from the dataset. Fall back to a window
   // around the cursor when there are no events.
@@ -32,7 +34,7 @@ export function Timeline({
   // to the newest event rather than propagating NaN into the track geometry.
   const parsedCursor = new Date(cursor).getTime();
   const cursorMs = Number.isNaN(parsedCursor)
-    ? (times.length ? Math.max(...times) : Date.now())
+    ? (times.length ? Math.max(...times) : fallbackNow)
     : parsedCursor;
   const rawMin = times.length ? Math.min(...times) : cursorMs - 180 * DAY;
   const rawMax = times.length ? Math.max(...times) : cursorMs + 180 * DAY;

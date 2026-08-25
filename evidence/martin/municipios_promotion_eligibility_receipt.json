@@ -1,0 +1,15 @@
+{
+  "canonical_sha256": "adebd4e779e36ca4aecb69291af9e153e430a829cc4ca8a676f7d5f5197a5d76",
+  "certification_receipt": "martin_canary_run_31864818783",
+  "current_state": "validated",
+  "feature_count": 78,
+  "identity_field": "GEOID",
+  "mutation_performed": false,
+  "public_properties": [
+    "GEOID",
+    "NAME"
+  ],
+  "result": "ELIGIBLE_FOR_EXPLICIT_TRANSITION",
+  "source_id": "municipios",
+  "target_state": "published"
+}

@@ -132,7 +132,7 @@ class FlightRadarOCR:
             data.departed_seconds_ago, data.arriving_in_seconds = self._extract_timing(combined)
             data.ocr_confidence = 0.85 if data.callsign else 0.20
 
-        except Exception:
+        except (OSError, TypeError, ValueError):
             pass
 
         return data
@@ -155,7 +155,7 @@ class FlightRadarOCR:
         try:
             mtime = os.path.getmtime(image_path)
             return datetime.utcfromtimestamp(mtime).isoformat()
-        except Exception:
+        except (OSError, OverflowError, ValueError):
             return datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
     def _extract_callsign(self, text: str) -> str:
@@ -292,9 +292,20 @@ class CoordinateMapper:
         self.map_top_fraction = 0.15     # header
         self.map_bottom_fraction = 0.75  # map ends here
         self.bounds = map_bounds or PR_BOUNDS
+        self.derived_fit = None
+
+    def fit_derived_anchors(self, anchors):
+        """Adopt a bounded per-screenshot fit when OCR-matched anchors support it."""
+        from pipeline.geo_anchors import fit_homography
+
+        self.derived_fit = fit_homography(anchors)
+        return self.derived_fit
 
     def pixel_to_latlon(self, px: int, py: int) -> Tuple[float, float]:
         """Convert pixel (px, py) to (latitude, longitude)."""
+        if self.derived_fit is not None:
+            lon, lat = self.derived_fit.project(px, py)
+            return lat, lon
         map_top_px = self.image_height * self.map_top_fraction
         map_bottom_px = self.image_height * self.map_bottom_fraction
         map_height_px = map_bottom_px - map_top_px
@@ -584,7 +595,7 @@ class FlightGrouper:
                 prev_time = datetime.fromisoformat(current_group[-1]["timestamp"])
                 curr_time = datetime.fromisoformat(s["timestamp"])
                 gap_min = (curr_time - prev_time).total_seconds() / 60
-            except Exception:
+            except (TypeError, ValueError):
                 gap_min = 0
 
             if gap_min > self.GAP_MINUTES:
@@ -611,7 +622,7 @@ class FlightGrouper:
             t0 = datetime.fromisoformat(takeoff_time)
             t1 = datetime.fromisoformat(landing_time)
             duration_min = int((t1 - t0).total_seconds() / 60)
-        except Exception:
+        except (TypeError, ValueError):
             duration_min = 0
 
         altitudes = [s.get("altitude_ft") or 0 for s in screenshots]
