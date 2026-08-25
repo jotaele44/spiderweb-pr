@@ -239,15 +239,27 @@ export function streamPipeline(
 
 // ─── RAG ───────────────────────────────────────────────────────────────────────
 
+function parseRagEventBlock(block: string): { event: string; data: string } | null {
+  let event = "message";
+  const data: string[] = [];
+  for (const line of block.split(/\r?\n/)) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    if (line.startsWith("data:")) data.push(line.slice(5).trimStart());
+  }
+  if (data.length === 0 && event === "message") return null;
+  return { event, data: data.join("\n") };
+}
+
 /**
  * Stream a RAG query to the backend.
- * Calls onToken for each output line, onDone when the response ends, and onError
- * (if provided) when the request fails or returns no readable stream.
+ * Calls onToken for message events, onDone with the subprocess return code only
+ * after an explicit terminal `done` event, and onError for transport/protocol
+ * failures. A clean EOF without a terminal event is an error, never success.
  */
 export function streamRagQuery(
   query: string,
   onToken: (token: string) => void,
-  onDone: () => void,
+  onDone: (returncode: number) => void,
   onError?: (message: string) => void,
 ): () => void {
   let cancelled = false;
@@ -261,37 +273,60 @@ export function streamRagQuery(
       });
       if (!res.ok) {
         onError?.(`RAG backend returned ${res.status}`);
-        onDone();
         return;
       }
       if (!res.body) {
         onError?.("RAG backend returned no response stream");
-        onDone();
         return;
       }
+
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let buf = "";
-      while (true) {
+      let terminal = false;
+
+      const processBlock = (block: string): boolean => {
+        const parsed = parseRagEventBlock(block);
+        if (!parsed) return false;
+        if (parsed.event !== "done") {
+          if (parsed.data) onToken(parsed.data);
+          return false;
+        }
+        let payload: unknown;
+        try {
+          payload = JSON.parse(parsed.data);
+        } catch {
+          onError?.("RAG backend returned a malformed completion event");
+          return true;
+        }
+        const returncode = (payload as { returncode?: unknown }).returncode;
+        if (typeof returncode !== "number" || !Number.isFinite(returncode)) {
+          onError?.("RAG backend completion event omitted a numeric return code");
+          return true;
+        }
+        terminal = true;
+        onDone(returncode);
+        return true;
+      };
+
+      while (!cancelled && !terminal) {
         const { value, done } = await reader.read();
-        if (done || cancelled) break;
+        if (done) break;
         buf += dec.decode(value, { stream: true });
-        const lines = buf.split("\n");
-        buf = lines.pop() ?? "";
-        for (const line of lines) {
-          if (line.startsWith("data:")) {
-            onToken(line.slice(5).trim());
-          }
-          if (line.startsWith("event: done")) {
-            onDone();
-            return;
-          }
+        const blocks = buf.split(/\r?\n\r?\n/);
+        buf = blocks.pop() ?? "";
+        for (const block of blocks) {
+          if (processBlock(block)) break;
         }
       }
-      onDone();
+
+      if (cancelled || terminal) return;
+      buf += dec.decode();
+      if (buf.trim() && processBlock(buf)) return;
+      onError?.("RAG response ended before a terminal completion event");
     } catch (err) {
+      if (cancelled) return;
       onError?.(err instanceof Error ? err.message : "RAG request failed");
-      onDone();
     }
   })();
 
