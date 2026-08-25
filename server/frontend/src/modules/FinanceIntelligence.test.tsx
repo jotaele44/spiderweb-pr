@@ -17,7 +17,7 @@ describe("FinanceIntelligence visible-value filtering", () => {
 
     expect(dataRows).toHaveLength(4);
     for (const row of dataRows) {
-      expect(within(row).getByText("Caribe Civil Works LLC")).toBeInTheDocument();
+      expect(within(row).queryByText("Caribe Civil Works LLC")).not.toBeNull();
     }
   });
 
@@ -39,6 +39,6 @@ describe("FinanceIntelligence visible-value filtering", () => {
       target: { value: "NO_SUCH_VISIBLE_VALUE" },
     });
 
-    expect(screen.getByText(/No contracts match/)).toBeInTheDocument();
+    expect(screen.queryByText(/No contracts match/)).not.toBeNull();
   });
 });
