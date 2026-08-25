@@ -57,7 +57,7 @@ def _get(url: str, headers: dict[str, str] | None = None) -> tuple[int, bytes, d
 
 def main() -> int:
     registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8")) or {}
-    assert registry["sources"]["municipios"]["publication_state"] == "validated"
+    assert registry["sources"]["municipios"]["publication_state"] == "published"
 
     with tempfile.TemporaryDirectory() as td:
         temp_registry = Path(td) / "registry.yaml"
@@ -107,7 +107,7 @@ def main() -> int:
         server.should_exit = True
         api_thread.join(timeout=5)
 
-    assert yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))["sources"]["municipios"]["publication_state"] == "validated"
+    assert yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))["sources"]["municipios"]["publication_state"] == "published"
     print("PASS: production ingress preserves ETag/cache/304, fails visible, rejects unknown/path traversal, and does not mutate publication")
     return 0
 

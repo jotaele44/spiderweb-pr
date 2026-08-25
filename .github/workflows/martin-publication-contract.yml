@@ -93,15 +93,15 @@ jobs:
           prod=yaml.safe_load(open('/tmp/production-a.yaml', encoding='utf-8'))
           assert set(canary['geojson']['sources'])=={'municipios'}
           assert set(cert['geojson']['sources'])=={'municipios'}
-          assert prod['geojson']['sources']=={}
+          assert set(prod['geojson']['sources'])=={'municipios'}
           for c in (canary,cert,prod): assert 'paths' not in c['geojson']
-          print('PASS: production config has zero unpublished sources')
+          print('PASS: production config admits exactly the published source set')
           PY
 
       - name: Non-mutating promotion eligibility receipt
         run: |
           before="$(sha256sum configs/martin_delivery.yaml | cut -d' ' -f1)"
-          python scripts/check_martin_promotion.py --source municipios --target published --receipt /tmp/promotion-check.json
+          python scripts/check_martin_promotion.py --source municipios --target quarantined --receipt /tmp/promotion-check.json
           after="$(sha256sum configs/martin_delivery.yaml | cut -d' ' -f1)"
           test "$before" = "$after"
           python - <<'PY'
@@ -109,14 +109,14 @@ jobs:
           r=json.load(open('/tmp/promotion-check.json', encoding='utf-8'))
           registry=yaml.safe_load(open('configs/martin_delivery.yaml', encoding='utf-8'))
           assert r['mutation_performed'] is False
-          assert registry['sources']['municipios']['publication_state']=='validated'
-          print('PASS: publication check creates receipt but performs no publication')
+          assert registry['sources']['municipios']['publication_state']=='published'
+          print('PASS: rollback-eligibility check creates receipt but performs no mutation')
           PY
 
       - name: Production same-origin ingress contract
         run: python scripts/check_martin_ingress_contract.py
 
-      - name: Production entrypoint exposes zero unpublished Martin sources
+      - name: Production entrypoint serves exactly the published Martin sources
         run: |
           python -m uvicorn server.backend.production:app --host 127.0.0.1 --port 18002 >/tmp/production-api.log 2>&1 &
           pid=$!
@@ -129,12 +129,17 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('/tmp/martin-health.json', encoding='utf-8'))
-          assert p['authorized_published_source_count']==0
-          assert p['authorized_published_sources']==[]
+          assert p['authorized_published_source_count']==1
+          assert p['authorized_published_sources']==['municipios']
           assert p['arbitrary_proxy_target'] is False
-          print('PASS: production ingress published source denominator=0')
+          print('PASS: production ingress authorizes exactly municipios')
           PY
-          test "$(curl -s -o /tmp/unpublished.json -w '%{http_code}' http://127.0.0.1:18002/tiles/municipios)" = "404"
+          # Published, but no Martin upstream is running in this job step: the
+          # ingress proxies the request and gets a connection failure, so 503
+          # (upstream unavailable) — not 404 — is the correct signal here.
+          test "$(curl -s -o /tmp/published.json -w '%{http_code}' http://127.0.0.1:18002/tiles/municipios)" = "503"
+          # An unpublished/unknown source id must still be rejected outright.
+          test "$(curl -s -o /tmp/unpublished.json -w '%{http_code}' http://127.0.0.1:18002/tiles/not-a-real-source)" = "404"
           kill "$pid" || true
 
       - name: Upload closure receipts
