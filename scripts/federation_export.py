@@ -23,12 +23,19 @@ NOTE (Z2): the canonical entity schema now carries an optional `location`
 {lat, lon}; record entities (observations/events/tracks) project a representative
 WGS84 point from their GeoJSON geometry/path so the query-hub's correlate_spatial
 can join them against other producers' entities.
+
+The export also carries a fourth stream, `observations`, produced by the PPP
+geometry lane (see `build_ppp_geometry_streams`): moneysweep-pr federates a
+concession project with a municipality and no coordinates, and this lane resolves
+that municipality to a real point from a committed reference geography and hands
+it back. The stream is omitted when no moneysweep-pr package is reachable.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -38,6 +45,9 @@ from prii_export_utils import norm as _norm
 from prii_export_utils import sha256 as _sha256
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+# Run as a script from anywhere: the PPP geometry lane imports from readiness/.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 PRODUCER = "spiderweb-pr"
 CONTRACT_VERSION = "1.0.0"
 PRODUCER_SCRIPT = "scripts/federation_export.py"
@@ -45,7 +55,12 @@ STREAM_SCHEMA = {
     "sources": "federation_source.schema.json",
     "entities": "federation_entity.schema.json",
     "relationships": "federation_relationship.schema.json",
+    "observations": "federation_observation.schema.json",
 }
+# Streams always written when non-empty, in package order. ``observations`` is
+# the PPP geometry lane (see below) and is absent from packages built without a
+# moneysweep-pr sibling checkout.
+PACKAGE_STREAMS = ("sources", "entities", "relationships", "observations")
 # spiderweb stream file -> canonical entity_type for its records
 RECORD_STREAMS = {
     "airspace_events": "airspace_event",
@@ -70,12 +85,19 @@ def _score(conf: Any) -> float:
         return 0.5
 
 
-def _lineage(phase: str) -> dict[str, Any]:
+_ENVELOPE_INPUTS = ["exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"]
+
+
+def _lineage(
+    phase: str,
+    source_inputs: list[str] | None = None,
+    extraction_method: str = "deterministic_envelope_projection",
+) -> dict[str, Any]:
     return {
         "producer_script": PRODUCER_SCRIPT,
         "producer_phase": phase,
-        "source_inputs": ["exports/<package>/{sources,observations,airspace_events,tracks}.jsonl"],
-        "extraction_method": "deterministic_envelope_projection",
+        "source_inputs": source_inputs or _ENVELOPE_INPUTS,
+        "extraction_method": extraction_method,
     }
 
 
@@ -174,7 +196,129 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
 
     return {"sources": list(sources.values()),
             "entities": list(entities.values()),
-            "relationships": list(relationships.values())}
+            "relationships": list(relationships.values()),
+            "observations": []}
+
+
+# --------------------------------------------------------------------------
+# PPP geometry lane
+# --------------------------------------------------------------------------
+# moneysweep-pr federates a PPP project with a municipality and no coordinates,
+# by design: it owns the concession record, not the geography. This lane closes
+# the loop — it resolves that municipality to a real point from spiderweb's
+# committed reference geographies and hands the result back to the Hub.
+#
+# The result is emitted as an ``observations`` row rather than a location on
+# moneysweep's entity, because a producer may only describe its own rows. The
+# Hub's correlate_observations then joins the observation to every other
+# producer's entity in the same municipality, which is how the point reaches the
+# money project without either producer reaching into the other's data.
+#
+# Each observation is anchored to a spiderweb entity (the resolved asset
+# location), because correlate_observations skips any observation whose anchor is
+# not present in the aggregate.
+PPP_SOURCE_REF = "spiderweb-pr:ppp_geometry"
+
+
+def _ppp_lineage(phase: str, reference_path: str | None = None) -> dict[str, Any]:
+    """Lineage for the PPP lane, which reads the producer package and a committed
+    reference geography — not the envelope streams the rest of this script reads."""
+    inputs = ["../moneysweep-pr/data/exports/canonical_v1_federation/entities.jsonl"]
+    if reference_path:
+        inputs.append(reference_path)
+    return _lineage(phase, inputs, "reference_geography_resolution")
+
+
+def build_ppp_geometry_streams(resolution: dict[str, Any], now: str) -> dict[str, list[dict]]:
+    """Sources/entities/observations for resolved PPP concession geometry."""
+    resolved = resolution.get("resolved") or []
+    if not resolved:
+        return {"sources": [], "entities": [], "observations": []}
+
+    sid = _fid("src", PPP_SOURCE_REF)
+    source = {
+        "source_id": sid,
+        "source_type": "reference_geography",
+        "source_name": PPP_SOURCE_REF,
+        "source_ref": PPP_SOURCE_REF,
+        "confidence": 0.95,
+        "lineage": _ppp_lineage("PPP_GEOMETRY"),
+        "synthetic": False,
+        "created_at": now,
+        "extracted_at": now,
+    }
+
+    entities: list[dict] = []
+    observations: list[dict] = []
+    for row in resolved:
+        name = f"{row['name']} (resolved location)"
+        ent_id = _fid("ent", "ppp_asset_location", row["entity_id"])
+        location = {
+            "lat": row["lat"],
+            "lon": row["lon"],
+            "municipality": row["municipality"],
+        }
+        entities.append(
+            {
+                "entity_id": ent_id,
+                "source_id": sid,
+                "name": name,
+                "normalized_name": _norm(name),
+                "entity_type": "ppp_asset_location",
+                "jurisdiction": "PR",
+                "location": location,
+                "confidence": row["geometry_confidence"],
+                "lineage": _ppp_lineage(
+                    "PPP_ASSET_LOCATION_ENTITY", row["reference_path"]
+                ),
+                "synthetic": False,
+                "created_at": now,
+                "extracted_at": now,
+            }
+        )
+        observations.append(
+            {
+                "observation_id": _fid("obs", "ppp_geometry", row["entity_id"]),
+                "source_id": sid,
+                "entity_id": ent_id,
+                "observation_type": "ppp_asset_location",
+                "observed_at": now,
+                "location": location,
+                "attributes": {
+                    # The producer row this geometry is for. The Hub joins on
+                    # municipality, so this is provenance for a reviewer rather
+                    # than a key — it records which money project was located,
+                    # and by what.
+                    "producer_entity_id": row["entity_id"],
+                    "producer_project_name": row["name"],
+                    "resolver": row["resolver"],
+                    "reference_id": row["reference_id"],
+                    "reference_path": row["reference_path"],
+                    "producer_attribution_confidence": row.get(
+                        "producer_attribution_confidence"
+                    ),
+                },
+                "confidence": row["geometry_confidence"],
+                "lineage": _ppp_lineage("PPP_GEOMETRY", row["reference_path"]),
+                "synthetic": False,
+                "created_at": now,
+                "extracted_at": now,
+            }
+        )
+    return {"sources": [source], "entities": entities, "observations": observations}
+
+
+def merge_ppp_geometry(streams: dict[str, list[dict]], ppp: dict[str, list[dict]]) -> None:
+    """Fold the PPP geometry lane into the canonical streams, in place."""
+    known_sources = {s["source_id"] for s in streams["sources"]}
+    for source in ppp["sources"]:
+        if source["source_id"] not in known_sources:
+            streams["sources"].append(source)
+    known_entities = {e["entity_id"] for e in streams["entities"]}
+    for entity in ppp["entities"]:
+        if entity["entity_id"] not in known_entities:
+            streams["entities"].append(entity)
+    streams["observations"].extend(ppp["observations"])
 
 
 def _rel(src_ent, rtype, tgt_ent, sid, score, synthetic, created, now):
@@ -239,8 +383,8 @@ def _read_stream(pkg: Path, name: str) -> list[dict]:
 def write_package(streams, out_dir: Path, mode: str, now: str) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     files = []
-    for stream in ("sources", "entities", "relationships"):
-        rows = streams[stream]
+    for stream in PACKAGE_STREAMS:
+        rows = streams.get(stream) or []
         if not rows:
             continue
         fpath = out_dir / f"{stream}.jsonl"
@@ -268,6 +412,11 @@ def main() -> int:
                     help="Build streams and report counts without writing any files.")
     ap.add_argument("--diff-from", default=None,
                     help="Compare the would-be export against a previous export dir.")
+    ap.add_argument("--moneysweep-package", default=None,
+                    help="moneysweep-pr canonical export dir to resolve PPP geometry from "
+                         "(default: the sibling checkout). The lane is skipped when absent.")
+    ap.add_argument("--no-ppp-geometry", action="store_true",
+                    help="Skip the PPP geometry lane even if the producer package is present.")
     args = ap.parse_args()
 
     pkg = Path(args.package)
@@ -278,6 +427,23 @@ def main() -> int:
         return 0
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     streams = build_streams(sources_in, records, now)
+
+    if not args.no_ppp_geometry:
+        # Degrade gracefully: a checkout without the moneysweep-pr sibling still
+        # produces a valid package, just without the PPP geometry lane.
+        try:
+            from readiness.ppp_geometry import resolve_projects
+
+            resolution = resolve_projects(args.moneysweep_package)
+        except Exception as exc:  # noqa: BLE001 - lane is optional, never fatal
+            print(f"PPP geometry lane skipped: {exc}")
+        else:
+            merge_ppp_geometry(streams, build_ppp_geometry_streams(resolution, now))
+            if resolution["unresolved_count"]:
+                print(
+                    f"PPP geometry: {resolution['resolved_count']} resolved, "
+                    f"{resolution['unresolved_count']} left in the geocode queue"
+                )
 
     if args.mode == "production":
         synthetic = [r for s in streams.values() for r in s if r.get("synthetic")]

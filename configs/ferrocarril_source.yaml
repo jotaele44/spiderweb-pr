@@ -1,0 +1,45 @@
+version: ferrocarril_source_v0_1
+source_name: Ferrocarril ILAP Master
+source_path: data/sources/ferrocarril/ferrocarril_ilap_master_full.csv
+source_format: csv
+snapshot_sha256: 1241049696f4d452b3bcbd4ad7d834476dccff64daa38847b53685109922366f
+snapshot_row_count: 609
+snapshot_columns:
+  - Row_No
+  - ID
+  - POI_Name
+  - Municipio
+  - Subtype
+  - Status
+  - Notes
+  - Segment
+  - Corridor
+  - Subtype_Description
+  - Latitude
+  - Longitude
+  - Coordinate_Status
+subtype_counts:
+  F1: 77
+  F2: 101
+  F3: 206
+  F4: 85
+  F5: 22
+  F6: 47
+  F7: 24
+  F8: 47
+source_evidence_level_counts:
+  E1: 596
+  E2: 11
+  E3: 2
+coordinate_status_counts:
+  Pending exact georeference: 609
+canonicalization_policy:
+  ingest_state: PROVISIONAL
+  source_evidence_level_is_not_certification: true
+  coordinates_must_not_be_invented: true
+  null_geometry_allowed: true
+  promote_to_canonical_only_after_row_level_provenance_and_geometry_validation: true
+notes:
+  - This snapshot is an operator-local source input and is intentionally not committed under data/.
+  - The SHA256 and counts bind the adapter to the reviewed snapshot while preserving Spiderweb-PR data policy.
+  - E1/E2/E3 values are preserved as source classifications; they do not constitute Spiderweb certification.

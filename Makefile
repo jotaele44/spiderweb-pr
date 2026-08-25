@@ -1,4 +1,4 @@
-.PHONY: help bootstrap test lint lint-strict format mypy check \
+.PHONY: help bootstrap test lint lint-strict format mypy check data-policy-lint \
 	validate-schemas preflight release-check clean
 
 .DEFAULT_GOAL := help
@@ -55,6 +55,9 @@ mypy:  ## Type-check the curated allowlist
 	python -m mypy $(LINT_PATHS)
 
 check: lint-strict mypy test  ## Local CI parity: lint + type + test
+
+data-policy-lint:  ## Reject tracked runtime and sensitive export artifacts
+	python scripts/check_data_policy.py
 
 # ── Schema validation ─────────────────────────────────────────────────────────
 

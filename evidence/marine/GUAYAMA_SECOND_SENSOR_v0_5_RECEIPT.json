@@ -1,0 +1,88 @@
+{
+  "receipt_version": "0.5",
+  "workflow_run_id": 31970561422,
+  "workflow_head_sha": "fd6339bbeaec7a0348effc151c9e1274d96f6529",
+  "artifact_name": "guayama-second-sensor-v0-5",
+  "artifact_sha256": "ad4d367a90a59ab0a5e55e3cd94853126ede95d1387bf7c617e48dbd81da5313",
+  "source_baseline_main_sha": "f985471e6bf4b556e3592757117b432dca44e780",
+  "selected_w00247": {
+    "survey_id": "W00247",
+    "product": "W00247_MB_VR_MLLW_3of4.bag",
+    "sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+    "size_bytes": 6935533,
+    "valid_cells": 7910,
+    "horizontal_crs": "EPSG:26920",
+    "vertical_crs": "EPSG:5866",
+    "vertical_datum": "MLLW"
+  },
+  "ncei_multibeam_footprint_gate": {
+    "service": "https://gis.ngdc.noaa.gov/arcgis/rest/services/multibeam_footprints/MapServer/0",
+    "intersecting_features_all": 11,
+    "intersecting_features_in_frozen_13_survey_denominator": 10,
+    "unique_intersecting_frozen_surveys": 9,
+    "survey_ids": [
+      "AT20",
+      "EX1502L3",
+      "KN151L4",
+      "KN173L02",
+      "NF-14-01T",
+      "NF1501",
+      "NF2202",
+      "RB0604",
+      "TN390"
+    ]
+  },
+  "second_sensor": {
+    "state": "PASS_SECOND_SENSOR_ROOT",
+    "survey_id": "EX1502L3",
+    "platform": "Okeanos Explorer",
+    "instrument": "Kongsberg EM302",
+    "survey_year": 2015,
+    "product": "EX1502L3_MB_FNL_50m_WGS84.xyz.gz",
+    "product_sha256": "0bb09757fd5433075b788f15546597c444cf63d9f617de9f3ba385ce31fc736c",
+    "product_size_bytes": 23635239,
+    "xyz_numeric_rows": 3700961,
+    "xyz_parse_reject_rows": 0,
+    "xyz_rows_inside_w00247_raster_bbox": 22338,
+    "xyz_rows_on_valid_w00247_bag_cells": 282,
+    "unique_w00247_valid_cells_touched": 212,
+    "candidate_value_min": -1037.25,
+    "candidate_value_max": -448.13
+  },
+  "vertical_reference_adjudication": {
+    "state": "CONTRADICTORY_PRIMARY_METADATA",
+    "bound_vertical_reference": "UNRESOLVED",
+    "reference_system_declares_vertical_datum_unknown": true,
+    "vertical_extent_links_epsg_5715": true,
+    "vertical_extent_labels_msl_depth_in_meters": true,
+    "depth_subtraction_allowed": false
+  },
+  "datum_independent_morphology_ordering": {
+    "state": "PASS_COMPUTED_ASSOCIATION",
+    "paired_valid_bag_cells": 212,
+    "spearman_rank_rho": 0.9826226318260621,
+    "sequential_same_order_fraction": 0.7203791469194313,
+    "feature_promotion": "NOT_PERMITTED_FROM_THIS_STATISTIC_ALONE"
+  },
+  "certification": {
+    "second_independent_sensor_root_overlapping_w00247": "PASS",
+    "second_sensor_byte_identity": "PASS",
+    "nonzero_valid_cell_overlap": "PASS",
+    "vertical_datum_equivalence": "UNRESOLVED_CONTRADICTION",
+    "direct_depth_subtraction": "BLOCKED",
+    "datum_independent_ordering_comparison": "PASS_COMPUTED_ONLY",
+    "multisensor_feature_confirmation": "BLOCKED_PENDING_FEATURE_BOUNDARY_AND_VERTICAL_ADJUDICATION",
+    "screenshot_registration": "BLOCKED_PENDING_REAL_CONTROL_POINTS",
+    "anthropogenic_or_anomalous_origin": "NOT_ASSESSED"
+  },
+  "invariants": [
+    "CATALOG_BBOX!=ACTUAL_SENSOR_COVERAGE",
+    "SURVEY_FOOTPRINT!=DEPTH_MEASUREMENT",
+    "DERIVED_DEM!=INDEPENDENT_SENSOR_ROOT",
+    "ZERO_SPATIAL_OVERLAP!=CORROBORATION",
+    "FAILED_API!=ZERO_DATA",
+    "SAME_ROOT_DERIVATIVES_COUNT_ONCE",
+    "UNKNOWN_OR_CONTRADICTORY_VERTICAL_DATUM_BLOCKS_DEPTH_SUBTRACTION",
+    "RENDERED_PIXEL!=SENSOR_OBSERVATION"
+  ]
+}
