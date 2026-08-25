@@ -55,7 +55,6 @@ export default function App() {
   const [activeInvestigation, setActiveInvestigation] = useState("");
   const [query, setQuery] = useState("vendors with concentration near restricted sites");
   const [cursor, setCursor] = useState("");
-  const [filters, setFilters] = useState<{ key: string; label: string; color?: string }[]>([]);
 
   // Pipeline state
   const [runState, setRunState] = useState<RunState>("idle");
@@ -225,8 +224,6 @@ export default function App() {
         <CommandBar
           query={query}
           setQuery={setQuery}
-          filters={filters}
-          removeFilter={(key) => setFilters((current) => current.filter((item) => item.key !== key))}
           onSubmit={() => { setModule("query"); setQuerySubmitCount((count) => count + 1); }}
           runState={runState}
           onRunPipeline={() => { void handlePipelineRun(); }}
