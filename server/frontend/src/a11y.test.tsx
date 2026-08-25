@@ -94,8 +94,6 @@ const cases: [string, () => ReactElement][] = [
       <CommandBar
         query="vendors near restricted sites"
         setQuery={noop}
-        filters={[{ key: "inv", label: "INV-007" }]}
-        removeFilter={noop}
         onSubmit={noop}
         onRunPipeline={noop}
         onToggleTheme={noop}
