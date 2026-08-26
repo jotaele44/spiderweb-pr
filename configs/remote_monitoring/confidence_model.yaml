@@ -1,0 +1,30 @@
+version: rm_confidence_model_v0_1
+generated_at: '2026-07-22T00:00:00Z'
+producer_module: spiderweb.remote_monitoring
+note: >-
+  Additive 0-100 confidence model. Each component is scored 0..1 and scaled by
+  its maximum. The resulting band names the strength of the surface-change signal
+  ONLY — it is not an event classification. A high-confidence change is not, by
+  itself, a high-confidence dredging, landslide, or earthwork.
+
+components:
+  sensor_quality: 15
+  registration_reliability: 15
+  temporal_persistence: 15
+  independent_corroboration: 20
+  terrain_hydro_consistency: 10
+  authoritative_correlation: 15
+  human_adjudication: 10
+
+# Bands: minimum inclusive score -> label.
+bands:
+  - min: 85
+    label: high_confidence_change
+  - min: 70
+    label: corroborated_change
+  - min: 50
+    label: supported_candidate
+  - min: 30
+    label: candidate
+  - min: 0
+    label: weak_signal

@@ -39,6 +39,7 @@ Defines what is and is not committed to the repository, and how runtime artifact
 |------|----------|--------|
 | Screenshot images | `*.jpg`, `*.png` flight screenshots | Binary, large, potentially sensitive |
 | GEBCO bathymetry grid | `GEBCO_2023.nc` (~7 GB) | Binary, too large, freely downloadable |
+| NCEI/NOAA Coastal DEM rasters | `*.nc`, `*.tif`, `*.tiff`, `*.vrt`, downloaded CUDEM tiles | Binary, large, regenerable source payloads |
 | Social media CSV | `PRUAP_MASTER_SOCIAL.csv` | May contain personal data |
 | SQLite databases | `*.db`, `flight_database.db` | Runtime state, potentially large |
 | Parquet files | `*.parquet` | Binary runtime output |
@@ -56,6 +57,8 @@ Defines what is and is not committed to the repository, and how runtime artifact
 Source adapters should prefer on-demand acquisition plus small provenance records over committed raw data dumps.
 
 For the Census Partnership Puerto Rico adapter, commit only documentation, source manifests, SHA256 manifests, coverage ledgers, and promoted normalized GIS outputs. Do not commit raw Census ZIP files, extracted shapefile trees, partial downloads, or temporary batch folders. See `docs/source_adapters/census_partnership_pr.md` for the adapter-specific rule set.
+
+For the NCEI Coastal DEM adapter, commit only source code, schemas, documentation, small registry rows, and offline test fixtures. Do not commit NetCDF, GeoTIFF, VRT, ZIP, extracted raster, or generated derivative payloads. Runtime discovery bundles belong under `outputs/ncei_coastal_dem/`; raw/cache downloads belong under `data/ncei_coastal_dem/raw/` or `data/ncei_coastal_dem/cache/`. The `discover` command must remain metadata-only by default, and the `fetch` command must require an explicit dataset id plus `--acknowledge-no-commit`.
 
 ---
 
@@ -88,4 +91,18 @@ find outputs/ -not -name '.gitkeep' -delete
 
 # Clear tile cache
 find tile_cache/ -name '*.png' -delete
+```
+
+## Enforcement
+
+CI runs `python scripts/check_data_policy.py` against tracked files. The check
+rejects runtime content under `outputs/`, `cache/`, and `tile_cache/`, database,
+Parquet, NetCDF, and raw-imagery artifacts, unapproved JSONL outputs, and named
+root export artifacts. It permits documented `.gitkeep` placeholders,
+provenance-bound data artifacts, and committed test/export fixtures.
+
+Run the same gate locally with:
+
+```bash
+make data-policy-lint
 ```

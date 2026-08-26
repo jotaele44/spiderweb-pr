@@ -17,6 +17,12 @@ outputs/*
 # outputs.zip — packaged outputs snapshot at repo root (build artifact)
 outputs.zip
 
+# Road name gazetteer ingest — generated artifacts (245 MB across 85 files under
+# data/reference/). Regenerable: pipeline/download_road_sources.py re-fetches the
+# upstream sources, then pipeline/road_gazetteer_ingest.py rebuilds the processed
+# CSVs. The pipeline, schemas, tests and runbook above it are tracked.
+spiderweb_pr_road_name_gazetteer_ingest/data/
+
 # data/ — input datasets (screenshots, GEBCO .nc, social CSV, etc.)
 data/*
 !data/.gitkeep
@@ -366,3 +372,31 @@ skywatcher_bridge_ingest/
 
 # Generated demo/runtime SQLite DB (built by server/ingestion/seed_demo.py)
 server/priis.db
+
+# NCEI Coastal DEM source adapter: track only small registry placeholders.
+!data/ncei_coastal_dem/
+data/ncei_coastal_dem/*
+!data/ncei_coastal_dem/.gitkeep
+!data/ncei_coastal_dem/registry/
+data/ncei_coastal_dem/registry/*
+!data/ncei_coastal_dem/registry/*.csv
+!data/ncei_coastal_dem/registry/*.json
+!outputs/ncei_coastal_dem/
+outputs/ncei_coastal_dem/*
+!outputs/ncei_coastal_dem/.gitkeep
+
+# NCEI/NOAA DEM local rasters and caches are runtime-only.
+data/ncei_coastal_dem/raw/
+data/ncei_coastal_dem/cache/
+data/ncei_coastal_dem/**/*.nc
+data/ncei_coastal_dem/**/*.tif
+data/ncei_coastal_dem/**/*.tiff
+data/ncei_coastal_dem/**/*.vrt
+data/ncei_coastal_dem/**/*.ovr
+data/ncei_coastal_dem/**/*.aux.xml
+outputs/ncei_coastal_dem/**/*.nc
+outputs/ncei_coastal_dem/**/*.tif
+outputs/ncei_coastal_dem/**/*.tiff
+outputs/ncei_coastal_dem/**/*.vrt
+outputs/ncei_coastal_dem/**/*.ovr
+outputs/ncei_coastal_dem/**/*.aux.xml

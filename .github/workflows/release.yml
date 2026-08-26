@@ -11,11 +11,18 @@ on:
 permissions:
   contents: write
 
+# Serialise runs on the same ref without cancelling. This workflow can
+# publish, write data, or hand off to another repo, and killing it
+# mid-flight risks leaving that work half-done.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Extract CHANGELOG section for this tag
         id: changelog
@@ -34,7 +41,7 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           body_path: release_body.md
           name: ${{ github.ref_name }}

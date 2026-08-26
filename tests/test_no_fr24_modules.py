@@ -24,6 +24,7 @@ REMOVED_MODULES = [
     "pipeline.hardened_pipeline",
     "pipeline.home_base_correlation",
     "pipeline.ensemble_ocr",
+    "pipeline.geo_anchors",
 ]
 
 REMOVED_SYMBOLS = [
@@ -32,6 +33,7 @@ REMOVED_SYMBOLS = [
     "process_all_images",
     "process_with_hardening",
     "link_screenshots_to_flights",
+    "GeoAnchor",
     "/mnt/user-data/uploads",
 ]
 

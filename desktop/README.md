@@ -1,97 +1,51 @@
-# Run Spiderweb as a desktop app
+# Spiderweb for macOS
 
-Double-click the launcher for your system in the repo root:
+Use the standalone macOS `.dmg` from a desktop release:
 
-| System | File |
-|---|---|
-| macOS | `PRII-SPIDERWEB.command` |
-| Windows | `PRII-SPIDERWEB.bat` |
-| Linux | `PRII-SPIDERWEB.sh` |
+1. Open the downloaded `.dmg`.
+2. Drag **Spiderweb** to **Applications**.
+3. Open Spiderweb from Finder or Launchpad.
+4. In **Setup & Diagnostics**, choose a workspace and select **Save & Open App**.
 
-The **first run** needs an internet connection once: it creates a private
-`.venv` and installs the small server dependencies (requires
-[Python 3.10+](https://www.python.org/downloads/); **no Node.js needed** —
-the UI is the standalone `dashboard/dashboard.html` viewer with vendored
-React/Tailwind under `dashboard/vendor/`). Every later run starts instantly
-and **works fully offline**.
+The release app is self-contained. End-user setup needs no Terminal and no
+separate Python, Node.js, Git, package-manager, or source checkout.
 
-## What it shows
+First launch creates a writable workspace and prepares
+`exports/dashboard_data.json`. It imports an existing local flight database when
+one is available, otherwise it creates an empty, valid snapshot so the dashboard
+and source-status UI still open. Bundled exports are copied only when the
+workspace does not already contain a user version.
 
-The dashboard reads a JSON snapshot of your local flight database
-(`~/flight_database.db`, exported to `outputs/dashboard_data.json` during
-setup via `run_all.py --export-json`). Without a database the app opens with
-empty metrics and a source-status panel — run the spiderweb pipeline
-(`python run_all.py …`) to populate it, then re-run
-`python desktop/setup.py --force` (or export manually) to refresh the
-snapshot. Optional layers (`fr24_dashboard_review_queue.json`,
-`contract_finance_layer_report.json`) appear automatically when the
-corresponding exports exist in `outputs/`.
+Use the always-available gear button in the app to reopen **Setup & Diagnostics**.
+It can choose the workspace, run local checks, or repair generated configuration.
+Repair is idempotent and does not delete user data.
 
-The heavy analysis extras (`rag` LLM stack, geospatial ingest) are **not**
-part of the desktop install; they remain the documented developer CLI paths.
+## If macOS blocks the first open
 
-## How it works
+Open **System Settings → Privacy & Security**, find the message naming
+Spiderweb, and select **Open Anyway**. This is the complete UI-only recovery
+path for an unnotarized development release.
 
-- `desktop/config.py` — per-repo settings (title, dashboard/outputs paths).
-- `desktop/app_server.py` — FastAPI serving `dashboard/` and `outputs/`
-  from one local port (replaces the `python -m http.server` step from the
-  dashboard header docs).
-- `desktop/launch.py` — picks a free port, starts uvicorn, opens a native
-  [pywebview](https://pywebview.flowrl.com/) window (falls back to the
-  default browser). Flags: `--no-window`, `--browser`, `--smoke`.
-- `desktop/setup.py` — idempotent one-time setup (`--force` to redo).
+## If the app reports that first-run setup could not finish
 
-## Command line
+Opening `PRII-SPIDERWEB.app` straight out of an unzipped download makes macOS
+run it from a throwaway read-only copy under
+`/private/var/folders/…/AppTranslocation/…`, where the rest of the checkout is
+not present and no `.venv` can be written. Move the folder somewhere else (your
+home folder is fine), double-click `Fix-Gatekeeper.command` once, then open the
+app again. Running `PRII-SPIDERWEB.command` instead also avoids it — only `.app`
+bundles are translocated.
 
-```bash
-python desktop/setup.py          # one-time setup + data snapshot
-.venv/bin/python desktop/launch.py            # native window
-.venv/bin/python desktop/launch.py --browser  # browser tab instead
-.venv/bin/python desktop/launch.py --no-window  # server only
-```
+Genuine setup failures write their output to
+`$TMPDIR/prii-spiderweb-pr-setup.log`, and the failure message names that file.
 
-## macOS app icon
+## Architecture
 
-`PRII-SPIDERWEB.app` is a double-click macOS app (Apple-silicon and Intel). Double-click
-it in Finder and the dashboard opens in its own window — no Terminal. The first
-launch runs the one-time setup (needs internet once; no Node.js — the dashboard
-is the vendored no-build viewer); after that it starts straight away and works
-offline.
+`desktop/config.py` and `desktop/app_server.py` are the thin Spiderweb adapters
+for its no-build dashboard. Native setup, repair, diagnostics, the per-user
+lock, and the pywebview lifecycle live in
+`thehub-pr/packages/prii_desktop`. Release CI builds and smokes the frozen app
+on macOS, Windows, and Linux and packages the macOS `.dmg`.
 
-Because the app is a small self-locating wrapper around `desktop/launch.py`, it
-must stay at the repo root (it finds the repo from its own location). If macOS
-blocks the first open, see **If macOS won't open the app** below.
-
-## If macOS won't open the app
-
-The app is safe — it's an open-source launcher script you can read in
-`Contents/MacOS/`. macOS blocks it only because it isn't signed with a paid
-Apple Developer ID or notarized by Apple, so the first open may show *"cannot be
-opened because Apple cannot check it for malicious software"* or an
-*"unidentified developer"* notice. That's macOS quarantining files downloaded
-from the internet (it happens especially with GitHub's **Download ZIP**). Any
-one of the following clears it — you only do this once per download:
-
-- **Easiest — run the helper.** Double-click **`Fix-Gatekeeper.command`** in the
-  repo root, then open the app normally. If the helper is itself blocked,
-  right-click it → **Open** to run it once.
-- **Terminal (always works).** Paste this into Terminal (pasting a command is
-  never blocked), then press Return:
-  ```bash
-  xattr -dr com.apple.quarantine "/path/to/spiderweb-pr/PRII-SPIDERWEB.app"
-  ```
-  Tip: type `xattr -dr com.apple.quarantine ` (with a trailing space) and drag
-  the app onto the Terminal window to fill in its path.
-- **System Settings.** Double-click the app, let macOS block it, then open
-  **System Settings → Privacy & Security**, scroll to the message naming the app,
-  and click **Open Anyway**. On macOS Sequoia 15 and later this replaces the old
-  right-click → **Open** trick.
-
-## Standalone builds (no Python required)
-
-The `desktop-build` workflow (`.github/workflows/desktop-build.yml`) freezes
-`desktop/launch.py` with PyInstaller (`desktop/pyinstaller.spec`) on Linux,
-macOS, and Windows, bundling `dashboard/` (html + jsx + vendored JS) into the
-`PRII-SPIDERWEB` one-folder app. It smoke-tests each frozen build
-(`--smoke`), zips the bundles, packages a macOS `.dmg` via `hdiutil`, and
-attaches everything to the release on `desktop-v*` tags.
+`desktop/setup.py` and command-line launcher flags remain developer conveniences;
+they are not part of end-user installation.

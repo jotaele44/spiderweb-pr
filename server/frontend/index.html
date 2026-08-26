@@ -3,18 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PRIIS V1.5 Workbench</title>
-    <script>
-      // Dark workbench identity + federation accent, set before first paint.
-      (function () {
-        var r = document.documentElement;
-        r.dataset.theme = 'dark';
-        r.dataset.repo = 'spiderweb-pr';
-      })();
-    </script>
+    <title>Spiderweb</title>
+    <meta
+      name="description"
+      content="Spiderweb — spatial / operational diagnostic workbench for the PRII federation."
+    />
+    <!-- Generated from assets/branding/icon.png by thehub-pr's
+         tools/build_program_icons.py; do not edit by hand. -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Must stay the brand accent and unconditional: thehub-pr's
+         tools/build_program_icons.py --check validates this against
+         assets/branding/icon.png, and desktop-build.yml gates on it. Splitting it
+         into prefers-color-scheme variants fails that check, so the browser
+         chrome does not follow the in-app theme toggle. -->
+    <meta name="theme-color" content="#ca0c02" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      Spiderweb is a JavaScript application. Enable JavaScript to load the
+      workbench, or use the Python CLI (<code>run_all.py</code>) for headless runs.
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

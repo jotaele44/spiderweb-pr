@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spiderweb Road Municipio Edge",
+  "type": "object",
+  "required": [
+    "spiderweb_road_id",
+    "municipio_geoid",
+    "edge_type",
+    "source_family"
+  ],
+  "properties": {
+    "spiderweb_road_id": {
+      "type": "string",
+      "pattern": "^road:"
+    },
+    "municipio_geoid": {
+      "type": "string",
+      "pattern": "^72[0-9]{3}$"
+    },
+    "municipio_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "edge_type": {
+      "type": "string",
+      "enum": [
+        "LOCATED_IN_MUNICIPIO",
+        "CROSSES_MUNICIPIO",
+        "TOUCHES_MUNICIPIO"
+      ]
+    },
+    "source_family": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "string",
+        "null"
+      ]
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}

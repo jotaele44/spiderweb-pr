@@ -1,0 +1,84 @@
+{
+  "receipt_version": "0.1",
+  "state": "PASS",
+  "source_run": {
+    "github_actions_run_id": 31968275167,
+    "head_sha": "6df72f0563b31b804c59ad08e758b4e7512639d3",
+    "artifact_id": 9269084591,
+    "artifact_sha256": "5edbfb68a3ad87eb8c19dc20d60301a998dbfe695a12cbae137ae4e8dc5abe6f"
+  },
+  "survey_id": "W00247",
+  "bounded_aoi_wgs84": [-66.2, 17.5, -65.8, 18.05],
+  "bag_denominator": 4,
+  "intersecting_bags": 1,
+  "unresolved_bags": 0,
+  "bags": [
+    {
+      "filename": "W00247_MB_VR_MLLW_4of4.bag",
+      "sha256": "30d78250a183fd9b525014d8f3557001d237ee6b1279fb14813c0057f0970066",
+      "size_bytes": 395721,
+      "bounds_wgs84": [-65.74419710543393, 17.767965780865214, -65.66586916634314, 17.842997402124503],
+      "aoi_relation": "OUTSIDE"
+    },
+    {
+      "filename": "W00247_MB_VR_MLLW_2of4.bag",
+      "sha256": "656c10f989c5e2b565b0cfe698e8c5997fbeef32974492b070b0b6299b928599",
+      "size_bytes": 44040118,
+      "bounds_wgs84": [-65.73232453961667, 17.777460533386606, -65.10542633746643, 18.377028914624077],
+      "aoi_relation": "OUTSIDE"
+    },
+    {
+      "filename": "W00247_MB_VR_MLLW_1of4.bag",
+      "sha256": "d02a3fd2d66b3a0a4a3595f2ebee2f9707ad6fcb264239b147cce1b6ea0b74b9",
+      "size_bytes": 127315039,
+      "bounds_wgs84": [-65.56026630521589, 18.338955007425778, -65.40315803460807, 18.488923345160618],
+      "aoi_relation": "OUTSIDE"
+    },
+    {
+      "filename": "W00247_MB_VR_MLLW_3of4.bag",
+      "sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+      "size_bytes": 6935533,
+      "bounds_wgs84": [-65.9833772516194, 17.723098751773474, -65.82659038887648, 17.873293497881694],
+      "aoi_relation": "FULLY_WITHIN",
+      "raster": {
+        "driver": "BAG",
+        "width": 256,
+        "height": 256,
+        "bands": 2,
+        "resolution_native_m": [64.0, 64.0],
+        "valid_cells": 7910,
+        "elevation_m": {
+          "minimum": -1026.302978515625,
+          "maximum": -58.81014633178711,
+          "mean": -269.6831226295828,
+          "stddev": 220.35403715056975
+        },
+        "uncertainty_m": {
+          "minimum": 0.18395116925239563,
+          "maximum": 17.567480087280273,
+          "mean": 2.430052692398862,
+          "stddev": 2.2863409046971173
+        }
+      }
+    }
+  ],
+  "vertical_reference": {
+    "horizontal": "NAD83 / UTM zone 20N",
+    "horizontal_epsg": 26920,
+    "vertical": "MLLW depth",
+    "vertical_epsg": 5866,
+    "axis_direction": "DOWN",
+    "unit": "metre"
+  },
+  "epistemic_binding": {
+    "FACT": "One authoritative W00247 BAG product has raster bounds fully within the frozen discovery AOI and its exact bytes are SHA-256 frozen.",
+    "COMPUTED": "Band statistics were computed from the selected frozen BAG bytes with nodata masked.",
+    "NOT_CERTIFIED": [
+      "SCREENSHOT_PIXEL_TO_GEO_REGISTRATION",
+      "SCREENSHOT_VISIBLE_FEATURE_EQUIVALENCE",
+      "MULTISENSOR_FEATURE_CONFIRMATION",
+      "ANTHROPOGENIC_OR_ANOMALOUS_ORIGIN"
+    ]
+  },
+  "certification_boundary": "This receipt certifies W00247 BAG byte identity, raster georeferencing, MLLW vertical reference, and bounded AOI coverage for one BAG. It does not certify equivalence to any screenshot-visible morphology."
+}

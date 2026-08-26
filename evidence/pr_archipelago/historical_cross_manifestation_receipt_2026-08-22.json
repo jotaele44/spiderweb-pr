@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "receipt_state": "PASS_BOUNDED_CROSS_MANIFESTATION_ADJUDICATION",
+  "inputs": {
+    "current_gnis_source_manifestation_set": {
+      "current_island_feature_ids": 148,
+      "identity_basis": "stable GNIS feature_id",
+      "manifest_sha256": "0f28e7b43903abb1878b5a95b1c4e56f7a07ecfaa54c948df5cd6e286d5c0aac"
+    },
+    "historical_snapshot": {
+      "workflow_run_id": 32579849599,
+      "workflow_artifact_id": 9477500864,
+      "workflow_artifact_digest": "sha256:0e3dad0a80e4d6cd1e78d541e8f63baeb1ac5877f5af9ba5b3cb49b723d52078",
+      "historical_source_manifest_sha256": "51df684754995b70978324427687bfec30209a7777e25d0378d62b6ffc9115a0",
+      "allnames_zip_sha256": "2f7e92a7c5ce589d2c74f616b62220e878dbc7b268420c6b44d8c55b4397e148",
+      "allnames_text_member_sha256": "e2e93c88c76e997fa0756879b00163b5d258bd1cb5791dff835d50cb964e1fc4",
+      "historicalfeatures_zip_sha256": "3759a1e74a6fc51d49423fc3b084e0faee5dcc8fbd69c98d708f52cb27b7350b",
+      "historicalfeatures_text_member_sha256": "7e4ebaeaf64ad01c4f4fe8056e0355307a7682da463c647f1f86b6d435532b78"
+    }
+  },
+  "facts": {
+    "historicalfeatures_pr_rows": 56,
+    "historicalfeatures_pr_unique_feature_ids": 56,
+    "historicalfeatures_pr_island_class_rows": 0,
+    "historicalfeatures_pr_class_counts": {
+      "Military": 29,
+      "Populated Place": 25,
+      "Civil": 1,
+      "Cape": 1
+    },
+    "current_island_ids_intersect_historical_pr_ids": 0,
+    "allnames_national_rows": 1249630,
+    "allnames_rows_for_204_bound_pr_ids": 458,
+    "allnames_bound_feature_ids": 204,
+    "allnames_missing_bound_feature_ids": 0,
+    "allnames_rows_for_current_148_island_ids": 375,
+    "allnames_rows_for_56_historical_pr_ids": 83,
+    "current_island_ids_with_multiple_distinct_names": 77,
+    "historical_pr_ids_with_multiple_distinct_names": 6
+  },
+  "contradictions": [
+    {
+      "type": "SCHEMA",
+      "observation": "Initial generic state-field filter returned 0 PR rows from AllNames_National_Text.",
+      "adjudication": "SUPERSEDED",
+      "reason": "AllNames schema has no state fields. Zero was a SEARCH_FALSE_NEGATIVE candidate, not evidence of absence. Stable GNIS feature_id binding recovered all 204 target IDs."
+    },
+    {
+      "type": "NAME_COUNT",
+      "observation": "For the 148 current Island feature IDs, national AllNames exposes 375 distinct (feature_id, feature_name) pairs while the frozen PR FullModel Gaz_Names exposes 376.",
+      "adjudication": "OPEN_SOURCE_MANIFESTATION_DIFFERENCE",
+      "detail": "The sole FullModel-only pair is feature_id 1613028 / name 'Luispena'. This does not alter feature identity count."
+    }
+  ],
+  "certification": {
+    "GNIS_HISTORICAL_FEATURE_SOURCE_FAMILY": "PASS",
+    "ALLNAMES_PR_PROJECTION_BY_STABLE_ID": "PASS",
+    "HISTORICAL_ISLAND_DENOMINATOR": "OPEN",
+    "HISTORICAL_ARCHIPELAGO_EXHAUSTION": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "UNCHANGED_OPEN"
+  },
+  "safeguards": [
+    "Historical manifestations do not back-promote or alter current identity.",
+    "AllNames is joined by stable GNIS feature_id only, never by name.",
+    "The 56 historical PR records are not interpreted as historical island features; their source feature classes contain zero Island rows.",
+    "The AllNames/FullModel name-count difference is preserved as a source-manifestation contradiction rather than normalized away."
+  ]
+}

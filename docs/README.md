@@ -51,6 +51,7 @@ the relevant subsystem below.
 - [GIS_EXPORT_GUIDE.md](GIS_EXPORT_GUIDE.md) — GeoJSON/KML/QGIS consumption
 - [EXTERNAL_AERODROME_LAYER.md](EXTERNAL_AERODROME_LAYER.md)
 - [PR_GEODATA_INTEGRITY_AUDIT.md](PR_GEODATA_INTEGRITY_AUDIT.md)
+- [DUCKDB_SPATIAL.md](DUCKDB_SPATIAL.md) — embedded spatial SQL for ad hoc joins/queries over on-disk GeoJSON
 - DEM workflow: [PR_DEM_END_TO_END_PROCESS.md](PR_DEM_END_TO_END_PROCESS.md),
   [PR_DEM_ONE_TILE_PILOT.md](PR_DEM_ONE_TILE_PILOT.md),
   [PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md](PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md),
@@ -59,8 +60,12 @@ the relevant subsystem below.
   [PR_DEM_QGIS_QUEUE_STYLE_GUIDE.md](PR_DEM_QGIS_QUEUE_STYLE_GUIDE.md),
   [PR_DEM_QGIS_REVIEW_GUIDE.md](PR_DEM_QGIS_REVIEW_GUIDE.md)
 
+## Remote-sensing monitoring
+- [remote_monitoring/ARCHITECTURE.md](remote_monitoring/ARCHITECTURE.md) — `spiderweb.remote_monitoring` Phase-0 provenance backbone
+
 ## Dashboard & UI
-- [STATIC_DASHBOARD_MODE.md](STATIC_DASHBOARD_MODE.md)
+- [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md) — state of the `server/frontend` SPA:
+  defects, inert controls, intentional stubs, and the product-grade delta
 
 ## Policy & structure
 - [DATA_POLICY.md](DATA_POLICY.md)

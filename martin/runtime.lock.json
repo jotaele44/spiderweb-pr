@@ -1,0 +1,15 @@
+{
+  "version": "1.13.0",
+  "release_tag": "martin-v1.13.0",
+  "release_id": 359630857,
+  "release_published_at": "2026-07-25T10:30:29Z",
+  "asset": {
+    "name": "martin-x86_64-unknown-linux-musl.tar.gz",
+    "url": "https://github.com/maplibre/martin/releases/download/martin-v1.13.0/martin-x86_64-unknown-linux-musl.tar.gz",
+    "sha256": "96d6415ca3b18f843eb0ef28f44d34b96c494b192e9ef7e7289b3bc88612009d",
+    "size_bytes": 33610982
+  },
+  "source_release_commit": "cc660bd",
+  "authority": "MapLibre Martin GitHub release asset digest",
+  "purpose": "Spiderweb-PR municipios canary runtime only"
+}

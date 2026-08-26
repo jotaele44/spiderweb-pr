@@ -1,0 +1,158 @@
+name: Subsurface Santiago Acceptance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "spiderweb/subsurface/**"
+      - "tests/fixtures/subsurface/santiago_triangle.kml"
+      - "tests/fixtures/subsurface/santiago_triangle.visual_morphology.v01.json"
+      - ".github/workflows/subsurface-santiago-acceptance.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: subsurface-santiago-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-santiago-v06:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Spiderweb with repository source bindings
+        run: |
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e .
+
+      - name: Run frozen Santiago Triangle against v0.6 public denominator
+        run: |
+          mkdir -p artifacts
+          python -m spiderweb.subsurface.cli \
+            tests/fixtures/subsurface/santiago_triangle.kml \
+            --out artifacts/santiago-v06 \
+            --run-sources \
+            --dedup \
+            --relevance \
+            | tee artifacts/santiago-v06.console.json
+
+      - name: Harden relevance to canonical-asset v1.1 and build ranked evidence pack
+        run: |
+          python - <<'PY'
+          from spiderweb.subsurface.relevance_v11 import run
+          from spiderweb.subsurface.zone_evidence_pack import write_pack
+          root = 'artifacts/santiago-v06'
+          v11 = f'{root}/derived/v11'
+          geo, transition = run(
+              f'{root}/derived/relevance_zones.geojson',
+              f'{root}/evidence.geojson',
+              f'{root}/derived/canonical_assets.json',
+              v11,
+          )
+          write_pack(
+              geo,
+              f'{root}/evidence.geojson',
+              f'{root}/derived/canonical_assets.json',
+              f'{v11}/top8',
+              'tests/fixtures/subsurface/santiago_triangle.visual_morphology.v01.json',
+          )
+          print(geo)
+          print(transition)
+          PY
+
+      - name: Adjudicate Cantera Naranjo historical point manifestations
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from shapely.geometry import shape
+          from spiderweb.subsurface.aoi import freeze_aoi
+          from spiderweb.subsurface.cantera_naranjo import write_lineage_receipt
+
+          root = Path('artifacts/santiago-v06')
+          zones_payload = json.loads((root / 'derived/v11/relevance_zones_v11.geojson').read_text())
+          zones = tuple((f['properties']['zone_id'], shape(f['geometry'])) for f in zones_payload['features'])
+          aoi = freeze_aoi('tests/fixtures/subsurface/santiago_triangle.kml').geometry
+          out = write_lineage_receipt(root / 'derived/cantera_naranjo_lineage.json', aoi=aoi, zones=zones)
+          print(out)
+          PY
+
+      - name: Summarize source gate, residuals, dedup and relevance
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          root = Path('artifacts/santiago-v06')
+          if not (root / 'source_control.json').exists():
+              raise SystemExit('source_control.json missing: live execution did not reach receipt generation')
+          control = json.loads((root / 'source_control.json').read_text())
+          cert = json.loads((root / 'public_exhaustion.json').read_text())
+          residual = json.loads((root / 'public_residual_assessment.json').read_text())
+          assets = json.loads((root / 'derived/canonical_assets.json').read_text())['assets']
+          edges = json.loads((root / 'derived/identity_edges.json').read_text())['edges']
+          relevance = json.loads((root / 'derived/relevance_zones.geojson').read_text())['features']
+          v11 = json.loads((root / 'derived/v11/relevance_zones_v11.geojson').read_text())['features']
+          visual = json.loads((root / 'derived/v11/top8/visual_morphology_assessment.json').read_text())['assessments']
+          lineage = json.loads((root / 'derived/cantera_naranjo_lineage.json').read_text())
+          ledger = control['ledger']
+          states = Counter(row['run_state'] for row in ledger)
+          residual_states = Counter(row['state'] for row in residual['rows'])
+          relation_states = Counter(row['relation'] for row in assets)
+          relevance_states = Counter(row['properties']['relevance'] for row in relevance)
+          v11_states = Counter(row['properties']['v11_relevance'] for row in v11)
+          sensitivity = Counter(row['properties']['sensitivity_state'] for row in v11 if row['properties']['relevance'] == 'MODERATE')
+          visual_binding = Counter(row['binding_state'] for row in visual)
+          cn = {row['manifestation_id']: row for row in lineage['point_manifestations']}
+          print('SOURCE STATES:', dict(sorted(states.items())))
+          print('REQUIRED:', cert['required_sources'])
+          print('TERMINAL:', cert['terminal_sources'])
+          print('PUBLIC_EXHAUSTION:', cert['state'])
+          print('RECORDS_REQUEST_ELIGIBLE:', cert['records_request_eligible'])
+          print('PUBLIC RESIDUAL STATES:', dict(sorted(residual_states.items())))
+          print('CANONICAL ASSETS:', len(assets))
+          print('IDENTITY EDGES:', len(edges))
+          print('ASSET RELATIONS:', dict(sorted(relation_states.items())))
+          print('RELEVANCE v1:', len(relevance), dict(sorted(relevance_states.items())))
+          print('RELEVANCE v1.1:', len(v11), dict(sorted(v11_states.items())))
+          print('ELEVATED SENSITIVITY:', dict(sorted(sensitivity.items())))
+          print('VISUAL MORPHOLOGY:', len(visual), dict(sorted(visual_binding.items())))
+          print('CANTERA NARANJO POINTS:', [(r['manifestation_id'], r['aoi_spatial_state'], r['containing_zones']) for r in lineage['point_manifestations']])
+          high = [row for row in v11 if row['properties']['v11_relevance'] == 'HIGH']
+          assert not high
+          assert all(row.get('promotion_permitted') is False for row in visual)
+          assert sum(1 for row in visual if row.get('zone_id') is None) == 2
+          for source_id in ('USGS_W701145_JUANA_DIAZ_MINE', 'PROCAN_EMBEDDED_MAP_CENTER', 'EPA_PRODUCTOS_AGREGADOS_CANTERA_NARANJO'):
+              assert cn[source_id]['aoi_spatial_state'] == 'OUTSIDE'
+              assert not cn[source_id]['containing_zones']
+          assert cn['PRPB_CANTERA_NARANJO_OBJECTID_38']['aoi_spatial_state'] == 'WITHIN'
+          assert cn['PRPB_CANTERA_NARANJO_OBJECTID_38']['containing_zones'] == ['SZ-0015']
+          assert cn['USGS_MRDS_CANTERO_NARANJO_200733']['aoi_spatial_state'] == 'OUTSIDE'
+          assert not cn['USGS_MRDS_CANTERO_NARANJO_200733']['containing_zones']
+          assert all(row['promotion_permitted'] is False for row in lineage['point_manifestations'])
+          assert cert['records_request_eligible'] is False
+          assert residual['all_residuals_terminal'] is False
+          PY
+
+      - name: Upload Santiago receipts, canonical assets, v1.1 zones and evidence packs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: santiago-subsurface-v06-${{ github.run_id }}
+          path: |
+            artifacts/santiago-v06
+            artifacts/santiago-v06.console.json
+          if-no-files-found: error
+          retention-days: 30

@@ -19,17 +19,24 @@ dedup — not a schema merge:
   data/sources/_consolidated/<today>/missing_persons_pr_canonical.csv
 
 `scripts/populate_dataset_layers.py::main()` prefers this consolidated file over
-the NamUs-only canonical when present. Cross-source identity linkage
-(`linkage_keys_json` / `coord_disagreement_km`) is intentionally left for a later
-pass — this only dedups within a source by `case_id_hash`. Raw PII never enters
-the canonical (dropped at harvest); only the municipio aggregate is federation-safe
-(see docs/DATA_POLICY.md).
+the NamUs-only canonical when present. Within a source, rows are deduped by
+`case_id_hash`. Likely *cross-source* duplicates are **annotated, not collapsed**
+(`annotate_linkage`): rows sharing a deterministic blocking key
+(`sex|age_band|last_seen_municipio|last_seen_date`) across ≥2 sources get a stable
+`linkage_group_id` plus `linkage_keys_json` / `coord_disagreement_km`, so a
+distinct-people count can be layered on later without changing today's aggregate.
+This is deliberately conservative — no fuzzy name matching (names are dropped at
+harvest). Raw PII never enters the canonical; only the municipio aggregate is
+federation-safe (see docs/DATA_POLICY.md).
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+import json
 import logging
+import math
 import sys
 from datetime import date
 from pathlib import Path
@@ -59,6 +66,16 @@ MISSING_PERSONS_SOURCES = [
 
 CONSOLIDATED_FILENAME = "missing_persons_pr_canonical.csv"
 
+# `linkage_group_id` is a consolidation-only provenance column appended to the
+# output; the per-source harvester canonical contract (CANONICAL_COLUMNS) is left
+# untouched so `tests/test_missing_persons_layer.py::test_harvest_*` stay valid.
+CONSOLIDATED_COLUMNS = list(CANONICAL_COLUMNS) + ["linkage_group_id"]
+
+# Blocking-key components — non-PII redacted fields already present on every row.
+# All four must be non-empty for a row to be linkable (names are dropped at harvest,
+# so this is deliberately conservative, not fuzzy identity matching).
+_LINKAGE_KEY_FIELDS = ("sex", "age_band", "last_seen_municipio", "last_seen_date")
+
 
 def find_latest_canonical(source_root: Path) -> Optional[Path]:
     """Latest ``*_canonical.csv`` under the most recent dated snapshot of a source.
@@ -73,11 +90,71 @@ def find_latest_canonical(source_root: Path) -> Optional[Path]:
     return cands[0] if cands else None
 
 
+def _blocking_key(row: dict) -> Optional[str]:
+    """Deterministic cross-source blocking key from non-PII redacted fields, or
+    None when any component is missing (row is left un-linkable)."""
+    parts = [(row.get(f) or "").strip() for f in _LINKAGE_KEY_FIELDS]
+    return "|".join(parts) if all(parts) else None
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r = 6371.0088
+    dlat, dlon = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    a = (math.sin(dlat / 2) ** 2
+         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2)
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+def _coords(row: dict) -> Optional[tuple[float, float]]:
+    try:
+        return float(row["last_seen_lat"]), float(row["last_seen_lon"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def annotate_linkage(rows: list[dict]) -> int:
+    """Annotate (not collapse) likely cross-source duplicates in place.
+
+    Rows sharing a blocking key across ≥2 distinct sources get a stable
+    ``linkage_group_id``; ``linkage_keys_json`` records the key components and,
+    when ≥2 rows in a group carry coordinates, ``coord_disagreement_km`` is set to
+    the max pairwise haversine. Returns the number of cross-source groups found.
+    The municipio aggregate is unaffected — this is auditable metadata only.
+    """
+    groups: dict[str, list[int]] = {}
+    for i, row in enumerate(rows):
+        row.setdefault("linkage_group_id", "")
+        key = _blocking_key(row)
+        if key is not None:
+            groups.setdefault(key, []).append(i)
+
+    linked = 0
+    for key, idxs in groups.items():
+        if len(idxs) < 2 or len({rows[i].get("source_id", "") for i in idxs}) < 2:
+            continue  # only genuine cross-source groups
+        linked += 1
+        gid = hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
+        pts = [c for c in (_coords(rows[i]) for i in idxs) if c is not None]
+        max_km = max(
+            (_haversine_km(*pts[a], *pts[b])
+             for a in range(len(pts)) for b in range(a + 1, len(pts))),
+            default=None,
+        )
+        for i in idxs:
+            rows[i]["linkage_group_id"] = gid
+            rows[i]["linkage_keys_json"] = json.dumps(
+                {f: rows[i].get(f, "") for f in _LINKAGE_KEY_FIELDS}, ensure_ascii=False)
+            if max_km is not None:
+                rows[i]["coord_disagreement_km"] = str(round(max_km, 3))
+    return linked
+
+
 def consolidate(sources_dir: Path) -> tuple[list[dict], dict[str, int]]:
     """Return ``(rows, per_source_counts)`` merged across all sources present.
 
     Rows keep every canonical column and their per-row ``source_id`` (already set
-    by each harvester). Dedup is within a source by ``case_id_hash``.
+    by each harvester). Dedup is within a source by ``case_id_hash``; likely
+    cross-source duplicates are annotated (not collapsed) via ``annotate_linkage``.
     """
     rows: list[dict] = []
     per_source: dict[str, int] = {}
@@ -102,6 +179,8 @@ def consolidate(sources_dir: Path) -> tuple[list[dict], dict[str, int]]:
                 count += 1
         per_source[source_id] = count
         log.info("%s: %d rows from %s", source_id, count, canonical)
+    linked = annotate_linkage(rows)
+    log.info("cross-source linkage groups: %d", linked)
     return rows, per_source
 
 
@@ -109,9 +188,11 @@ def write_consolidated(rows: list[dict], out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / CONSOLIDATED_FILENAME
     with out_path.open("w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=CANONICAL_COLUMNS)
+        writer = csv.DictWriter(fh, fieldnames=CONSOLIDATED_COLUMNS, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(rows)
+        for row in rows:
+            row.setdefault("linkage_group_id", "")
+            writer.writerow(row)
     return out_path
 
 

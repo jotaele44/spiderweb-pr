@@ -5,6 +5,55 @@ in the change that introduced this document. Each item below is sized so the
 maintainer can approve the higher-risk moves (packaging changes, monorepo split)
 deliberately._
 
+## Status update (2026-08-19)
+
+Items #1, #2, #3, #4, #6, and #7 below are resolved on `main`: `pyproject.toml`
+carries the correct project identity and a full `[project.optional-dependencies]`
+extras split (`airspace`, `gebco`, `rag`, `earthgpt`, `imagery`,
+`remote_monitoring`, `server`, `federation`, `geo`, `dem`, `spatial`, `all`,
+`dev`), `requirements-*.txt` are now thin `-e .[extra]` shims, only `configs/`
+exists (no leftover `config/`), `.pre-commit-config.yaml` is in place, and
+`docs/README.md` is a real subsystem-grouped index. The snapshot table and
+priority matrix below are left as historical record of what prompted the
+work; they no longer describe the current state.
+
+## Status update (2026-08-23) — item #5 resolved: no split
+
+Item #5 (evaluate splitting gebco/earthgpt/llm into separate repos) is now
+decided, with maintainer sign-off: **do not split.** Evidence gathered
+against the current `main`:
+
+- **Size**: ~3,185 combined LOC across `gebco/` (1,091), `earthgpt/` (1,586),
+  and `llm/` (508) — small relative to the core (tens of thousands of LOC).
+- **Coupling out**: zero imports from any of the three subsystems into the
+  core (`pipeline.`, `federation.`, `server.`, `fr24.`, `readiness.`, etc.) —
+  each is already a leaf package.
+- **Coupling in**: `gebco` is imported by exactly 2 pipeline files (one
+  lazily/guarded, adding no hard dependency); `earthgpt` has zero imports
+  from `pipeline/`, `federation/`, `server/`, `readiness/`, or `spiderweb/`
+  — it's only driven by its own dedicated `scripts/` CLI runners; `llm` has
+  zero external references anywhere.
+- **Federation**: `federation.json` and `federation/export_writer.py`/
+  `envelope.py` reference none of the three — no cross-repo (thehub-pr)
+  dependency on their internals.
+- **CI**: already substantially isolated — `gebco` has its own dedicated
+  test job, heavy `rag`/`llm` deps are excluded from CI via
+  `importorskip`/mocks, and a per-extra `install-matrix` job already proves
+  each extra (`gebco`, `earthgpt`, ...) installs and imports cleanly on its
+  own.
+- **Extras/README isolation** (the original ask's fallback option) is
+  already done: separate `pyproject.toml` extras, matching
+  `requirements-*.txt` shims, and subsystem READMEs all exist for all three.
+- The row's other justification, an "embedded node app at
+  `workbench/priis-v1/app`," is stale — that app was deleted three weeks
+  before this document was generated (commit `fcb658b`, "Consolidate to one
+  flight-free frontend and retire the airspace surface").
+
+Conclusion: a full repo split (originally sized Large effort / Medium risk)
+would buy negligible decoupling, since there's almost nothing left to
+decouple. The item is closed as "isolation already sufficient, no split
+warranted" rather than actioned as a split.
+
 ## Snapshot
 
 | Metric | Value |
@@ -45,10 +94,8 @@ correctness, not code quality in the individual modules.
 
 - **#3 dependency consolidation** — collapses 6+ manifests into `pyproject`
   extras; do this alongside **#1/#2** so there's a single dependency story.
-- **#5 monorepo split / isolation** — the biggest structural decision. Decide
-  whether gebco/earthgpt/llm are first-class members of this repo or separate
-  products; the answer drives packaging, CI, and docs. Sequence it after #3 so
-  each candidate already has a clean extras boundary.
+- **#5 monorepo split / isolation** — resolved 2026-08-23, no split. See the
+  "item #5 resolved" status section above for the evidence and decision.
 
 ## Cross-repo federation (shared with moneysweep-pr)
 

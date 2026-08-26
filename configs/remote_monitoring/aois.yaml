@@ -1,0 +1,64 @@
+version: rm_aois_v0_1
+generated_at: '2026-07-22T00:00:00Z'
+producer_module: spiderweb.remote_monitoring
+note: >-
+  Versioned monitoring AOIs. Carraizo is the active Phase-0 pilot; the Cordillera
+  landslide corridor is seeded but inactive. Polygons are approximate seed
+  geometries pending an authoritative PRI.gpkg-sourced boundary (see review_status).
+aois:
+  - aoi_uid: rm_aoi_carraizo_reservoir
+    name: Lago Loiza / Carraizo Reservoir
+    aoi_class: reservoir
+    municipio: Trujillo Alto
+    monitoring_objective: >-
+      Track water extent, shoreline movement, turbidity proxies and spoil-area
+      change; build a dated physical-activity and observability timeline for
+      comparison against documented sedimentation/dredging milestones. Reservoir
+      detectors only — do not reuse landslide thresholds here.
+    allowed_detectors:
+      - optical_water_extent
+      - optical_change
+      - sar_amplitude
+      - turbidity_proxy
+      - shoreline_movement
+    baseline_start: '2016-01-01'
+    monitoring_start: '2018-01-01'
+    priority: 1
+    active: true
+    source_ref: seed:approximate_boundary
+    review_status: seed
+    geometry:
+      type: Polygon
+      coordinates:
+        - - [-66.020, 18.310]
+          - [-66.020, 18.345]
+          - [-65.980, 18.345]
+          - [-65.980, 18.310]
+          - [-66.020, 18.310]
+  - aoi_uid: rm_aoi_cordillera_landslide_corridor
+    name: Cordillera Central Landslide Corridor (seed)
+    aoi_class: landslide_corridor
+    municipio: Utuado
+    monitoring_objective: >-
+      Screen for slope disturbance via SAR amplitude / coherence candidates with
+      optical and terrain-morphology corroboration. Seeded but inactive pending
+      pilot selection.
+    allowed_detectors:
+      - sar_amplitude
+      - coherence
+      - optical_change
+      - terrain_morphology
+    baseline_start: '2016-01-01'
+    monitoring_start: '2018-01-01'
+    priority: 2
+    active: false
+    source_ref: seed:approximate_boundary
+    review_status: seed
+    geometry:
+      type: Polygon
+      coordinates:
+        - - [-66.750, 18.230]
+          - [-66.750, 18.290]
+          - [-66.650, 18.290]
+          - [-66.650, 18.230]
+          - [-66.750, 18.230]

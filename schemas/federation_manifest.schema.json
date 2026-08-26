@@ -35,6 +35,15 @@
     "hub_parent": {
       "type": "string"
     },
+    "branding": {
+      "type": "object",
+      "description": "Program visual identity; icons derive from icon.png via thehub-pr/tools/build_program_icons.py.",
+      "properties": {
+        "icon": { "type": "string" },
+        "icon_dir": { "type": "string" },
+        "accent_color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      }
+    },
     "jurisdiction": {
       "type": "string"
     },

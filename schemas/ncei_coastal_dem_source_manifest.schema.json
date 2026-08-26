@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/spiderweb-pr/ncei_coastal_dem_source_manifest.schema.json",
+  "title": "NCEI Coastal DEM Source Manifest",
+  "type": "object",
+  "required": ["adapter", "generated_at", "sources"],
+  "properties": {
+    "adapter": {"const": "ncei_coastal_dem"},
+    "generated_at": {"type": "string"},
+    "fetch_result": {"type": "object"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "dataset_id",
+          "source_family",
+          "source_url",
+          "accessed_at",
+          "horizontal_datum",
+          "vertical_datum",
+          "resolution_arcsec",
+          "bbox_wgs84",
+          "raw_commit_allowed",
+          "derived_outputs",
+          "confidence",
+          "review_status"
+        ],
+        "properties": {
+          "source_id": {"type": "string"},
+          "dataset_id": {"type": "string"},
+          "source_family": {"type": "string"},
+          "source_url": {"type": "string"},
+          "accessed_at": {"type": "string"},
+          "file_name": {"type": ["string", "null"]},
+          "file_size_bytes": {"type": ["integer", "null"], "minimum": 0},
+          "sha256": {
+            "type": ["string", "null"],
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "horizontal_datum": {"type": "string"},
+          "vertical_datum": {"type": "string"},
+          "resolution_arcsec": {"type": "string"},
+          "bbox_wgs84": {"type": "array"},
+          "raw_commit_allowed": {"const": false},
+          "local_cache_path": {"type": ["string", "null"]},
+          "derived_outputs": {"type": "array"},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "review_status": {"type": "string"},
+          "datum_merge_policy": {"type": "string"},
+          "requires_vertical_normalization": {"type": "boolean"},
+          "acquisition_context_refs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["ref_type", "ref_id", "confidence", "notes"],
+              "properties": {
+                "ref_type": {
+                  "type": "string",
+                  "enum": [
+                    "usaspending_award_id",
+                    "contract_vehicle",
+                    "source_note"
+                  ]
+                },
+                "ref_id": {"type": "string"},
+                "confidence": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high"]
+                },
+                "notes": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

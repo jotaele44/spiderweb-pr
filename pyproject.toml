@@ -24,14 +24,15 @@ dependencies = [
     # Skywatcher packages against schemas/spiderweb_bridge.schema.json, so
     # jsonschema is a base (not optional) dependency.
     "jsonschema>=4.17,<5",
-    # Shared maintenance core (ADR 0001 Phase 3, thehub-pr). Pinned to a commit
-    # SHA, not a branch — bump deliberately, one line, one PR.
-    "prii-maintenance @ git+https://github.com/jotaele44/thehub-pr.git@3c9e51e3de406f8455605a06fabd4823452d9b63#subdirectory=packages/prii_maintenance",
-    # Shared federation-export helpers (fid/norm/sha256), extracted from the
-    # per-producer federation_export.py duplication. Pinned to a commit SHA —
-    # bump deliberately, one line, one PR.
-    "prii-export-utils @ git+https://github.com/jotaele44/thehub-pr.git@c007a728910128efebcda79bdbe6b9b33212551e#subdirectory=packages/prii_export_utils",
+    # Shared maintenance core and federation-export helpers are resolved from
+    # immutable Git sources below so an isolated clone remains installable.
+    "prii-maintenance",
+    "prii-export-utils",
 ]
+
+[tool.uv.sources]
+prii-maintenance = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_maintenance" }
+prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_export_utils" }
 
 # Per-subsystem extras. The shared scientific stack lives in `dependencies` above;
 # each extra adds only what that subsystem needs on top. Install e.g.
@@ -55,7 +56,7 @@ gebco = [
 ]
 # LLM pipeline (RAG over PRUAP social data). Heavy ML — installs torch + transformers.
 rag = [
-    "praw>=7.8.1,<8",
+    "praw>=7.8.1,<9",
     "chromadb>=0.4.0,<2",
     "sentence-transformers>=2.7.0,<6",
     "transformers>=4.40.0,<6",
@@ -71,10 +72,18 @@ earthgpt = [
 # Imagery MCP server — fetch/search/compare satellite imagery over MCP
 # (NASA GIBS, Sentinel Hub, Copernicus/CDSE). jsonschema comes via `airspace`.
 imagery = [
-    "fastmcp>=2.9,<3",
+    "fastmcp>=2.9,<4",
     "requests>=2.31.0,<3",
     "python-dotenv>=1.0.0,<2",
     "Pillow>=10.0,<13",
+    "jsonschema>=4.17,<5",
+]
+# Remote-sensing monitoring backbone (spiderweb.remote_monitoring). The Phase-0
+# core is stdlib-only; PyYAML loads the AOI/provider registries and jsonschema
+# validates the emitted records. Live STAC discovery reuses the `imagery` extra;
+# a later GPKG sink reuses `geo`.
+remote_monitoring = [
+    "PyYAML>=6.0,<7",
     "jsonschema>=4.17,<5",
 ]
 # PRIIS FastAPI backend (ranges mirror the pinned server/backend/requirements.txt).
@@ -103,21 +112,31 @@ geo = [
 dem = [
     "rasterio>=1.4,<2",
 ]
+# Embedded spatial SQL (spiderweb/spatial/duckdb_engine.py). DuckDB's `spatial`
+# extension is loaded at runtime (INSTALL/LOAD), not a separate pip package.
+# Deliberately not Spark/Sedona/Wherobots: every dataset here is PR-scoped and
+# megabytes in size (see RECOMMENDATIONS.md), so an embedded, no-cluster SQL
+# engine is the right amount of tooling for ad hoc spatial joins and predicate
+# queries over the existing on-disk GeoJSON artifacts.
+spatial = [
+    "duckdb>=1.1,<2",
+]
 # Convenience union of every runtime subsystem (gebco is already in base).
 all = [
-    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo,dem]",
+    "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo,dem,remote_monitoring,spatial]",
 ]
 dev = [
     "pytest>=9.0.2,<10",
     "pytest-cov>=7.0,<8",
     "black>=26.3.0,<27",
-    "ruff>=0.15.5,<0.16",
+    "ruff>=0.15.5,<0.17",
     "mypy>=1.13,<3",
 ]
 
 [project.scripts]
 spiderweb-run = "run_all:main"
 spiderweb-release-check = "release_check:main"
+spiderweb-subsurface = "spiderweb.subsurface.cli:main"
 
 [tool.setuptools]
 # Top-level orchestration modules (live at the repo root, not inside a package)
@@ -137,10 +156,12 @@ include = [
     "federation*",
     "server*",
     "scripts*",
+    "source_adapters*",
     "gebco*",
     "earthgpt*",
     "llm*",
     "imagery*",
+    "spiderweb.subsurface*",
 ]
 
 # ---------------------------------------------------------------------------
@@ -189,7 +210,7 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["integration", "pipeline", "fr24", "readiness", "federation", "llm",
-          "earthgpt", "imagery", "provenance_utils", "run_modes", "release_check"]
+          "earthgpt", "imagery", "spiderweb.subsurface", "provenance_utils", "run_modes", "release_check"]
 omit = [
     "tests/*",
     "scripts/*",
@@ -222,4 +243,3 @@ ignore_missing_imports = true
 no_implicit_optional = true
 warn_unused_ignores = true
 follow_imports = "silent"
-

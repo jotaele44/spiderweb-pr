@@ -1,0 +1,36 @@
+{
+  "schema": "spiderweb.subsurface.cantera_naranjo_site78.provenance.v1",
+  "source_id": "OECH_CARRETERA_CENTRAL_CANTERA_NARANJO_1996",
+  "title": "La Carretera Central: un viaje escenico a la historia de Puerto Rico",
+  "institutional_provenance": [
+    "Oficina Estatal de Preservacion Historica de Puerto Rico",
+    "Centro de Investigacion y Desarrollo, Recinto Universitario de Mayaguez, Universidad de Puerto Rico"
+  ],
+  "publication_year": 1996,
+  "site_number": 78,
+  "site_name": "Cantera Naranjo",
+  "source_location_text": "Al oeste del pueblo de Juana Diaz, PR-551, Km. 4.",
+  "source_pdf_page": 41,
+  "book_page": 34,
+  "uploaded_manifestation": {
+    "sha256": "6a0516d70ad79dacfa152a212324c2f1a8150a22f51b8bfef85385e8e089973a",
+    "byte_size": 9738689
+  },
+  "rendered_page_41": {
+    "render": "pdftoppm PNG 150 dpi",
+    "sha256": "0272f52ac8b68b6ebd81cdd8c68c74084b1bd1d036cf118c72b7d137bef47b08",
+    "byte_size": 136989
+  },
+  "claims": [
+    "named historical Cantera Naranjo west of Juana Diaz",
+    "source prints PR-551 Km. 4. with no decimal",
+    "marble quarry",
+    "tunnels from a manganese mine",
+    "mine worked in the early 1900s by a U.S. company",
+    "material ground to a black powder and exported",
+    "tunnels followed the mineral vein through marble",
+    "most tunnels later destroyed by quarry exploitation",
+    "small stone mine-office building survived at publication time"
+  ],
+  "binding_rule": "The publication establishes a named historical documentary manifestation. It does not supply exact tunnel geometry and does not by itself bind Site 78 to a modern quarry point, USGS mine record point, cave, parcel, or screenshot."
+}
