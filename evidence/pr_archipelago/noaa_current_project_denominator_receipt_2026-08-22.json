@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "scope": "NOAA NGS Shoreline current Puerto Rico project-level source manifestations",
+  "source_family": "NOAA_NGS_SHORELINE",
+  "run": {
+    "workflow_run_id": 32597559345,
+    "job_id": 97090813949,
+    "manifest_sha256": "ba07a44a0d242c82ea009e36a878b628394723fe95b92d52ebce13d32e45355d"
+  },
+  "counts": {
+    "project_codes": 15,
+    "metadata_pass": 15,
+    "duplicate_project_code_residue": 0,
+    "completion_report_pdf_pass": 0,
+    "direct_geometry_archive_pass": 0
+  },
+  "projects": [
+    {"project_code":"PR1401A-TB-N","inport_item_id":60847},
+    {"project_code":"PR1401B-TB-N","inport_item_id":65686},
+    {"project_code":"PR1401C-TB-N","inport_item_id":65687},
+    {"project_code":"PR1401D-TB-N","inport_item_id":63492},
+    {"project_code":"PR1502-CS-N","inport_item_id":60848},
+    {"project_code":"PR1503-CS-N","inport_item_id":60849},
+    {"project_code":"PR1801A-TB-C","inport_item_id":70768},
+    {"project_code":"PR1801B-TB-C","inport_item_id":70833},
+    {"project_code":"PR1801C-TB-C","inport_item_id":71219},
+    {"project_code":"PR1801D-TB-C","inport_item_id":71306},
+    {"project_code":"PR1801E-TB-C","inport_item_id":71771},
+    {"project_code":"PR2001-CS-T","inport_item_id":65688},
+    {"project_code":"PR2002-CS-T","inport_item_id":60443},
+    {"project_code":"PR2003-CS-T","inport_item_id":67549},
+    {"project_code":"PR2401-CS-T","inport_item_id":79545}
+  ],
+  "adjudication": {
+    "superseded_discovery_result": "The prior 16-item result was a discovery-heuristic artifact caused by nearby-window associations with unrelated states. Source bytes are preserved; only the downstream project-denominator conclusion is superseded.",
+    "project_discovery_rule": "The project code and Puerto Rico jurisdiction evidence must occur in the same NOAA catalog link title.",
+    "completion_report_rule": "A report is PASS only when payload begins with PDF magic. The 15905-byte NOAA error payloads are not PDFs.",
+    "geometry_archive_rule": "A direct geometry archive is PASS only when the payload is a real ZIP with inventoried members. Guessed non-ZIP responses do not establish data absence.",
+    "identity_rule": "Project membership and spatial coverage metadata do not establish canonical insular-feature identity."
+  },
+  "certification": {
+    "NOAA_CURRENT_PROJECT_METADATA_DENOMINATOR": "PASS_SOURCE_FAMILY_ONLY",
+    "NOAA_DIRECT_PROJECT_GEOMETRY_DISTRIBUTION": "BLOCKED",
+    "GEOMETRIC_CURRENT": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

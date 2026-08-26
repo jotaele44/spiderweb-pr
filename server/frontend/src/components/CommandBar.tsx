@@ -1,5 +1,3 @@
-interface FilterChip { key: string; label: string; color?: string }
-
 type RunState = "idle" | "running" | "done" | "error";
 
 const RUN_LABEL: Record<RunState, string> = {
@@ -19,8 +17,6 @@ const RUN_COLOR: Record<RunState, string> = {
 export function CommandBar({
   query,
   setQuery,
-  filters,
-  removeFilter,
   onSubmit,
   runState = "idle",
   onRunPipeline,
@@ -30,8 +26,6 @@ export function CommandBar({
 }: {
   query: string;
   setQuery: (value: string) => void;
-  filters: FilterChip[];
-  removeFilter: (key: string) => void;
   onSubmit: (query: string) => void;
   runState?: RunState;
   onRunPipeline?: () => void;
@@ -53,14 +47,6 @@ export function CommandBar({
         <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Global Spiderweb query" />
         <span className="kbd">ENTER</span>
       </form>
-      <div className="chips">
-        {filters.map((filter) => (
-          <span key={filter.key} className="chip" style={{ borderColor: filter.color ?? undefined }}>
-            {filter.label}
-            <button aria-label={`Remove ${filter.label}`} onClick={() => removeFilter(filter.key)} style={{ border: 0, background: "transparent", color: "inherit" }}>×</button>
-          </span>
-        ))}
-      </div>
       <div className="runstate">
         <div className="runstate-actions">
           {onToggleTheme && (

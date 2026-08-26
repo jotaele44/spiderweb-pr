@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "scope": "Current authoritative hydrographic morphology adjudication for high-distance GNIS polygon-noncontainment cases; identity remains separate",
+  "authority": {
+    "publisher": "NOAA Office of Coast Survey",
+    "publication": "U.S. Coast Pilot 5, Chapter 13",
+    "edition_observed": "2026 current web edition",
+    "url": "https://www.nauticalcharts.noaa.gov/publications/coast-pilot/files/cp5/CPB5_C13_WEB.pdf"
+  },
+  "rules": {
+    "hard_evidence_overrides_heuristic": true,
+    "identity_promotion": "forbidden; Coast Pilot morphology does not bind GNIS/SIGE identities by name alone",
+    "polygon_requirement": "rejected where authoritative morphology is submerged/awash ridge or multiple bare rocks",
+    "taxonomy": "GNIS Island source class remains independent from NOAA hydrographic morphology"
+  },
+  "rows": [
+    {
+      "gnis_feature_id": "1609822",
+      "gnis_name": "Cayo Largo",
+      "previous_combined_shoreline_distance_m": 2786.4173,
+      "authoritative_description": "NOAA states Cayo Largo is a narrow 1.8-mile-long ridge; the south half is awash at low water and the north half has depths of 4 to 15 feet.",
+      "morphology_state": "SUBMERGED_OR_AWASH_RIDGE",
+      "expected_geometry_representations": ["POINT", "LINE_OR_AREA_HYDROGRAPHIC"],
+      "single_emergent_land_polygon_required": false,
+      "canonical_identity_state": "UNRESOLVED",
+      "canonical_footprint_state": "MORPHOLOGY_RESOLVED_REPRESENTATION_NOT_CANONICAL_FOOTPRINT"
+    },
+    {
+      "gnis_feature_id": "1613035",
+      "gnis_name": "Cayo Fanduca",
+      "previous_combined_shoreline_distance_m": 1508.3470,
+      "authoritative_description": "NOAA states Cayo Fanduca consists of a few bare rocks about 0.5 mile from shore.",
+      "morphology_state": "MULTIPLE_BARE_ROCKS",
+      "expected_geometry_representations": ["POINT", "MULTIPOINT", "SMALL_MULTIPOLYGON_CANDIDATE"],
+      "single_emergent_land_polygon_required": false,
+      "canonical_identity_state": "UNRESOLVED",
+      "canonical_footprint_state": "MORPHOLOGY_RESOLVED_REPRESENTATION_NOT_CANONICAL_FOOTPRINT"
+    }
+  ],
+  "remaining_gt_1000m_cases_after_morphology_adjudication": [
+    {"gnis_feature_id":"1611372","gnis_name":"Las Lavanderas del Oeste","state":"MORPHOLOGY_UNRESOLVED_CURRENT"},
+    {"gnis_feature_id":"2575426","gnis_name":"Las Lavanderas","state":"MORPHOLOGY_UNRESOLVED_CURRENT"}
+  ],
+  "arithmetic": {
+    "previous_gt_1000m_cases": 4,
+    "hard_morphology_adjudicated": 2,
+    "current_morphology_unresolved": 2,
+    "closed": true
+  },
+  "certification": {
+    "HIGH_DISTANCE_MORPHOLOGY": "PARTIAL_PASS_2_OF_4",
+    "CANONICAL_IDENTITY": "OPEN",
+    "CANONICAL_FOOTPRINT": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

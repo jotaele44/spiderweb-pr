@@ -14,6 +14,6 @@ permissions:
 
 jobs:
   semgrep:
-    uses: jotaele44/thehub-pr/.github/workflows/semgrep.yml@cd666f621aa8a9d3af94bb211b8abbea3381b76f
+    uses: jotaele44/thehub-pr/.github/workflows/semgrep.yml@2ee5f45222dc27d1166c539c864ecffd4ff97c3b
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}

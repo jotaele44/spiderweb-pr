@@ -95,4 +95,4 @@ The existing FastAPI `/geo/{layer}.geojson` path remains intact. `VITE_MUNICIPIO
 
 ## Promotion boundary
 
-`municipios` is now `validated` in the non-authoritative Martin delivery registry. It is deliberately **not** `published`. Production publication, expansion to `tracts|places|barrios`, and the `wetlands_nwi_prvi` scale benchmark remain separate gates after final repository CI convergence and review.
+`municipios` is now `published` in the non-authoritative Martin delivery registry, reached via an explicit operator-authorized `validated` -> `published` transition (see `martin/README.md`'s "Promotion gate" section for the full history and rollback path). Expansion to `tracts|places|barrios`, and the `wetlands_nwi_prvi` scale benchmark, remain separate gates — publishing `municipios` does not admit any other source.

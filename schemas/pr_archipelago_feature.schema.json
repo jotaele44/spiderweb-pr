@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiderweb-pr/schemas/pr_archipelago_feature.schema.json",
+  "title": "PR Archipelago Canonical Feature",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "canonical_feature_id",
+    "canonical_name",
+    "canonical_feature_type",
+    "manifestation_ids",
+    "identity_state",
+    "geometry_state",
+    "certification_state"
+  ],
+  "properties": {
+    "canonical_feature_id": {"type": "string", "minLength": 1},
+    "canonical_name": {"type": "string", "minLength": 1},
+    "canonical_feature_type": {
+      "type": "string",
+      "enum": ["MAIN_ISLAND", "OUTLYING_ISLAND", "CAY", "ISLET", "ROCK", "EMERGENT_REEF_LAND", "OTHER", "UNRESOLVED"]
+    },
+    "manifestation_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "identity_state": {
+      "type": "string",
+      "enum": ["1:1", "1:N", "N:1", "N:N", "0:1", "UNRESOLVED"]
+    },
+    "geometry_state": {
+      "type": "string",
+      "enum": ["FULLY_WITHIN", "PARTIAL", "TOUCH_ONLY", "OUTSIDE", "NULL_EMPTY", "UNRESOLVED"]
+    },
+    "municipality": {"type": ["string", "null"]},
+    "active": {"type": "boolean"},
+    "aliases": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "certification_state": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "OPEN", "BLOCKED", "PROVISIONAL", "AUDIT_ONLY", "NONCANONICAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED", "SUPERSEDED"]
+    }
+  }
+}

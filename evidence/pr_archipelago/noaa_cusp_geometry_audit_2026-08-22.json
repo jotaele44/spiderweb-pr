@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "scope": "Derived representative-point coverage audit from the two frozen NOAA CUSP packages intersecting the Puerto Rico discovery bbox",
+  "source": {
+    "cells": ["N15W065", "N15W070"],
+    "CUSP_index_manifest_sha256": "dc78521bb75738b4263a6caa511e865816ae22e692a64503b4325bb88accd406",
+    "N15W065_line_records": 873,
+    "N15W070_line_records": 12900,
+    "total_line_records": 13773,
+    "geometry_type": "POLYLINE",
+    "attributes_include": ["Natural.Mean High Water", "Natural.Apparent.Mangrove Or Cypress", "Man-made.Bulkhead Or Sea Wall", "Natural.Apparent.Marsh Or Swamp", "Man-made.Rip Rap", "Breakwater.Bare", "Jetty.Bare", "Groin.Bare"]
+  },
+  "derivation": {
+    "polygon_candidates": 9515,
+    "rule": "polygonization is discovery geometry only; CUSP contains shoreline and alongshore manifestations and can also include river/lake/canal linework"
+  },
+  "coverage": {
+    "gnis_current_island_ids": 148,
+    "covered_by_cusp_derived_polygons": 71,
+    "covered_by_existing_census_sige_noaa_project_union": 113,
+    "covered_by_union_after_cusp": 113,
+    "newly_covered_beyond_existing_union": 0,
+    "polygon_noncontainment_residue": 35
+  },
+  "interpretation": {
+    "no_negative_evidence": "polygon noncontainment is not evidence that a named feature is absent; tiny rocks, reefs, source representative-point offsets, line topology, and non-polygon feature representations remain plausible",
+    "geometry_representation": "the current model must support POINT and LINE-supported manifestations in addition to POLYGON; requiring every GNIS Island-class identity to have a polygon is rejected",
+    "identity": "zero canonical identities are promoted by this audit"
+  },
+  "certification": {
+    "CUSP_DERIVED_GEOMETRY": "CANDIDATE_NOT_IDENTITY",
+    "POLYGON_COVERAGE_COMPLETE": false,
+    "GEOMETRIC_CURRENT": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

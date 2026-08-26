@@ -1,0 +1,55 @@
+{
+  "certification": {
+    "CURRENT_PR_ARCHIPELAGO": "OPEN",
+    "GEOMETRIC_CURRENT": "OPEN",
+    "IDENTITY": "OPEN",
+    "SIGE_LOCAL_NAMED_CANDIDATE_SET": "PASS_SOURCE_MANIFESTATIONS_ONLY"
+  },
+  "computed": {
+    "alias_spatial_candidate_rows": 25,
+    "unresolved_rows": 4
+  },
+  "rows": [
+    {"gnis_alias_spatial_candidates":[{"distance_m":198.8,"gnis_feature_id":"1609827","gnis_official_name":"Cayo Palomas","matched_gnis_name_raw":"Cayo Palomas"}],"lat":17.97622899929361,"lon":-66.74783068907625,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Palomas","sige_objectid":161,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":286.6,"gnis_feature_id":"1613040","gnis_official_name":"Cayo María Langa","matched_gnis_name_raw":"Cayo Maria Langa"},{"distance_m":286.6,"gnis_feature_id":"1613040","gnis_official_name":"Cayo María Langa","matched_gnis_name_raw":"Cayo María Langa"}],"lat":17.9676325528681,"lon":-66.75173165014881,"sige_class_raw":"Cayos","sige_name_raw":" Cayo María Langa","sige_objectid":162,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":157.6,"gnis_feature_id":"1609815","gnis_official_name":"Cayo Caribe","matched_gnis_name_raw":"Cayo Caribe"}],"lat":17.971254520681498,"lon":-66.73329819093252,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Caribe","sige_objectid":163,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":282.6,"gnis_feature_id":"1609828","gnis_official_name":"Cayo Parguera","matched_gnis_name_raw":"Cayo Parguera"}],"lat":17.981118345514577,"lon":-66.7173219224064,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Parguera","sige_objectid":164,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":500.0,"gnis_feature_id":"1613033","gnis_official_name":"Isla de Cardona","matched_gnis_name_raw":"Cayo Cardona"}],"lat":17.959196822329908,"lon":-66.63912562380615,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Cardona","sige_objectid":165,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":198.0,"gnis_feature_id":"1613056","gnis_official_name":"Isla del Frio","matched_gnis_name_raw":"Isla del Frio"}],"lat":17.963953997364214,"lon":-66.55542024734481,"sige_class_raw":"Cayos","sige_name_raw":" Isla del Frío","sige_objectid":166,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":163.5,"gnis_feature_id":"1609824","gnis_official_name":"Cayo Mata","matched_gnis_name_raw":"Cayo Mata"},{"distance_m":49721.9,"gnis_feature_id":"1609825","gnis_official_name":"Cayo Mata","matched_gnis_name_raw":"Cayo Mata"}],"lat":17.954415745717917,"lon":-66.29483058812882,"sige_class_raw":"Cayos","sige_name_raw":"Cayo Mata","sige_objectid":167,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[],"lat":17.936766758031723,"lon":-66.29419191588902,"sige_class_raw":"Cayos","sige_name_raw":"Cayo de Ratones","sige_objectid":168,"state":"UNRESOLVED"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":141.3,"gnis_feature_id":"1609836","gnis_official_name":"Cayos de Pájaros","matched_gnis_name_raw":"Cayos de Pajaros"},{"distance_m":141.3,"gnis_feature_id":"1609836","gnis_official_name":"Cayos de Pájaros","matched_gnis_name_raw":"Cayos de Pájaros"}],"lat":17.924549692328007,"lon":-66.26074710734684,"sige_class_raw":"Cayos","sige_name_raw":"Cayos de Pájaros","sige_objectid":169,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":735.2,"gnis_feature_id":"1613045","gnis_official_name":"Cayo Puerca","matched_gnis_name_raw":"Cayo Puerca"}],"lat":17.92516439295753,"lon":-66.2421584572596,"sige_class_raw":"Cayos","sige_name_raw":"Cayo Puerca","sige_objectid":170,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":332.2,"gnis_feature_id":"1609834","gnis_official_name":"Cayos de Barca","matched_gnis_name_raw":"Cayos de Barca"}],"lat":17.918882302269314,"lon":-66.24129105733269,"sige_class_raw":"Cayos","sige_name_raw":"Cayos de Barca","sige_objectid":171,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":215.6,"gnis_feature_id":"1613055","gnis_official_name":"Cayos Caribes","matched_gnis_name_raw":"Cayos Caribe"}],"lat":17.92816005762872,"lon":-66.21387673386162,"sige_class_raw":"Cayos","sige_name_raw":"Cayos Caribe","sige_objectid":172,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":300.3,"gnis_feature_id":"1609832","gnis_official_name":"Cayo Santiago","matched_gnis_name_raw":"Cayo Santiago"}],"lat":18.159036889135134,"lon":-65.73433870710059,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Santiago","sige_objectid":173,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":443.1,"gnis_feature_id":"1613132","gnis_official_name":"Isla Piñeros","matched_gnis_name_raw":"Isla Piñeros"},{"distance_m":443.1,"gnis_feature_id":"1613132","gnis_official_name":"Isla Piñeros","matched_gnis_name_raw":"Isla Pineros"}],"lat":18.255304923275343,"lon":-65.59387546350948,"sige_class_raw":"Cayos","sige_name_raw":" Isla Piñeros","sige_objectid":174,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[],"lat":18.25055462311363,"lon":-65.57918791080765,"sige_class_raw":"Cayos","sige_name_raw":" Cabeza de Perros","sige_objectid":175,"state":"UNRESOLVED"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":265.0,"gnis_feature_id":"1611178","gnis_official_name":"Isla Cabras","matched_gnis_name_raw":"Isla Cabras"},{"distance_m":63070.4,"gnis_feature_id":"1611175","gnis_official_name":"Isla de Cabras","matched_gnis_name_raw":"Isla Cabras"}],"lat":18.21442637492489,"lon":-65.60322274527584,"sige_class_raw":"Cayos","sige_name_raw":" Isla Cabras","sige_objectid":176,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":404.2,"gnis_feature_id":"1611177","gnis_official_name":"Isla de Ramos","matched_gnis_name_raw":"Isla de Ramos"}],"lat":18.31564863236154,"lon":-65.60732060827192,"sige_class_raw":"Cayos","sige_name_raw":" Isla de Ramos","sige_objectid":177,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":345.5,"gnis_feature_id":"1613037","gnis_official_name":"Cayo Icacos","matched_gnis_name_raw":"Cayo Icacos"}],"lat":18.38944100801008,"lon":-65.58897839077211,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Icacos","sige_objectid":178,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":558.7,"gnis_feature_id":"1609831","gnis_official_name":"Cayo Ratones","matched_gnis_name_raw":"Cayo Ratones"},{"distance_m":126283.2,"gnis_feature_id":"1613047","gnis_official_name":"Isla de Ratones","matched_gnis_name_raw":"Cayo Ratones"},{"distance_m":172897.6,"gnis_feature_id":"1609830","gnis_official_name":"Cayo Ratones","matched_gnis_name_raw":"Cayo Ratones"}],"lat":18.384695534930863,"lon":-65.57542469630387,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Ratones","sige_objectid":179,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":654.6,"gnis_feature_id":"1609823","gnis_official_name":"Cayo Lobos","matched_gnis_name_raw":"Cayo Lobos"}],"lat":18.37761465829205,"lon":-65.56368261150726,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Lobos","sige_objectid":180,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":738.2,"gnis_feature_id":"1611191","gnis_official_name":"Isla Palominos","matched_gnis_name_raw":"Isla Palominos"}],"lat":18.351210770782405,"lon":-65.5615243284471,"sige_class_raw":"Cayos","sige_name_raw":" Isla Palominos","sige_objectid":181,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":438.5,"gnis_feature_id":"2575427","gnis_official_name":"Isleta Marina","matched_gnis_name_raw":"Cayo Zancudo"}],"lat":18.343344136383603,"lon":-65.61945490577286,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Zancudo","sige_objectid":182,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":261.1,"gnis_feature_id":"2575427","gnis_official_name":"Isleta Marina","matched_gnis_name_raw":"Isleta Marina"}],"lat":18.339267579453963,"lon":-65.6157126656746,"sige_class_raw":"Cayos","sige_name_raw":" Isleta Marina","sige_objectid":183,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":581.0,"gnis_feature_id":"1609830","gnis_official_name":"Cayo Ratones","matched_gnis_name_raw":"Cayo Ratones"},{"distance_m":57043.0,"gnis_feature_id":"1613047","gnis_official_name":"Isla de Ratones","matched_gnis_name_raw":"Cayo Ratones"},{"distance_m":172511.5,"gnis_feature_id":"1609831","gnis_official_name":"Cayo Ratones","matched_gnis_name_raw":"Cayo Ratones"}],"lat":18.121644356512842,"lon":-67.1905443820221,"sige_class_raw":"Cayos","sige_name_raw":" Cayo Ratones","sige_objectid":184,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":826.6,"gnis_feature_id":"1611180","gnis_official_name":"Isla Cueva","matched_gnis_name_raw":"Isla Cueva"}],"lat":17.961988634432316,"lon":-67.07236605762735,"sige_class_raw":"Cayos","sige_name_raw":" Isla Cueva","sige_objectid":185,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[],"lat":17.96472021932405,"lon":-67.04904115044091,"sige_class_raw":"Cayos","sige_name_raw":" Isla Maguelles","sige_objectid":186,"state":"UNRESOLVED"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":942.6,"gnis_feature_id":"1611187","gnis_official_name":"Isla Matei","matched_gnis_name_raw":"Isla Matei"}],"lat":17.960175407163675,"lon":-67.00366211222942,"sige_class_raw":"Cayos","sige_name_raw":" Isla Matei","sige_objectid":187,"state":"CANDIDATE_NOT_IDENTITY"},
+    {"gnis_alias_spatial_candidates":[],"lat":17.939913076246924,"lon":-66.86915446026576,"sige_class_raw":"Cayos","sige_name_raw":" Cayo de Caña Gorda","sige_objectid":188,"state":"UNRESOLVED"},
+    {"gnis_alias_spatial_candidates":[{"distance_m":79.3,"gnis_feature_id":"1609826","gnis_official_name":"Cayo Morrillo","matched_gnis_name_raw":"Cayo Morrillo"}],"lat":17.927230232430805,"lon":-66.27361714017948,"sige_class_raw":"Cayo","sige_name_raw":"Cayo Morrillo","sige_objectid":189,"state":"CANDIDATE_NOT_IDENTITY"}
+  ],
+  "rules": {
+    "identity": "no canonical identity promoted in this receipt; geometry adjudication remains required",
+    "name_matching": "normalization is discovery only; stable GNIS feature IDs come from the frozen AllNames projection",
+    "spatial_support": "distance between provider representative points is corroboration only"
+  },
+  "schema_version": "1.0",
+  "scope": "SIGE Referencia Geografica Cayo/Cayos source manifestations versus frozen current GNIS Island-class source IDs",
+  "source_counts": {
+    "gnis_current_island_feature_ids": 148,
+    "sige_insular_candidate_rows": 29,
+    "sige_referencia_total": 189
+  }
+}

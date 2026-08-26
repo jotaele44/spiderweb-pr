@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/spiderweb-pr/ncei_coastal_dem_registry.schema.json",
+  "title": "NCEI Coastal DEM Registry Row",
+  "type": "object",
+  "required": [
+    "dataset_id",
+    "source_family",
+    "name",
+    "area",
+    "year",
+    "horizontal_datum",
+    "vertical_datum",
+    "resolution_arcsec",
+    "status",
+    "source_url",
+    "access_method",
+    "raw_commit_allowed",
+    "priority",
+    "notes"
+  ],
+  "properties": {
+    "dataset_id": {"type": "string", "minLength": 1},
+    "source_family": {
+      "type": "string",
+      "enum": ["NCEI_REGIONAL_DEM", "NOAA_CUDEM_TILE"]
+    },
+    "name": {"type": "string", "minLength": 1},
+    "area": {"type": "string", "minLength": 1},
+    "year": {"type": "string", "minLength": 1},
+    "horizontal_datum": {"type": "string", "minLength": 1},
+    "vertical_datum": {"type": "string", "minLength": 1},
+    "resolution_arcsec": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "minLength": 1},
+    "source_url": {"type": "string", "format": "uri"},
+    "access_method": {"type": "string", "minLength": 1},
+    "raw_commit_allowed": {"const": false},
+    "priority": {"type": "string", "enum": ["P0", "P1", "P2"]},
+    "notes": {"type": "string"}
+  },
+  "additionalProperties": false
+}
