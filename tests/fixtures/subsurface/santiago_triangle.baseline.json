@@ -1,0 +1,21 @@
+{
+  "schema": "spiderweb.subsurface.acceptance.v1",
+  "fixture_id": "SANTIAGO_TRIANGLE",
+  "aoi_canonical_sha256": "4b4109c31681f8d510b8dba9ca0a9018d165ab88ecc05a0625c8a98ce3aca3c8",
+  "baseline_kind": "NO_REGISTERED_AUTHORITATIVE_ADAPTERS",
+  "dispatch_plan": [
+    {"family": "AQUIFERS_WELLS_SPRINGS", "handler_name": null, "state": "OPEN", "reason": "no registered adapter; do not interpret as negative evidence"},
+    {"family": "FAULTS_STRUCTURES", "handler_name": null, "state": "OPEN", "reason": "no registered adapter; do not interpret as negative evidence"},
+    {"family": "GEOLOGY_KARST_CAVES", "handler_name": null, "state": "OPEN", "reason": "no registered adapter; do not interpret as negative evidence"},
+    {"family": "HISTORICAL_CORROBORATION", "handler_name": null, "state": "OPEN", "reason": "no registered adapter; do not interpret as negative evidence"},
+    {"family": "INDUSTRIAL_REMEDIATION", "handler_name": null, "state": "OPEN", "reason": "no registered adapter; do not interpret as negative evidence"},
+    {"family": "MILITARY_HARDENED_SUBSURFACE", "handler_name": null, "state": "OPEN", "reason": "no registered adapter; do not interpret as negative evidence"},
+    {"family": "MINES_QUARRIES_SHAFTS", "handler_name": null, "state": "OPEN", "reason": "no registered adapter; do not interpret as negative evidence"},
+    {"family": "UTILITIES_UNDERGROUND", "handler_name": null, "state": "OPEN", "reason": "no registered adapter; do not interpret as negative evidence"}
+  ],
+  "sources": {},
+  "records": {},
+  "record_count": 0,
+  "interpretation": "Zero records means zero registered authoritative adapters at this baseline, not zero subsurface evidence in the AOI.",
+  "certification": "OPEN"
+}

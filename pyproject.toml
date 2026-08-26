@@ -110,10 +110,10 @@ dem = [
 ]
 # Embedded spatial SQL (spiderweb/spatial/duckdb_engine.py). DuckDB's `spatial`
 # extension is loaded at runtime (INSTALL/LOAD), not a separate pip package.
-# Deliberately not Spark/Sedona/Wherobots: every dataset this repo processes is
-# PR-scoped and megabytes in size (see RECOMMENDATIONS.md), so an embedded,
-# no-cluster SQL engine is the right amount of tooling for ad hoc spatial joins
-# and predicate queries over the existing on-disk GeoJSON artifacts.
+# Deliberately not Spark/Sedona/Wherobots: every dataset here is PR-scoped and
+# megabytes in size (see RECOMMENDATIONS.md), so an embedded, no-cluster SQL
+# engine is the right amount of tooling for ad hoc spatial joins and predicate
+# queries over the existing on-disk GeoJSON artifacts.
 spatial = [
     "duckdb>=1.1,<2",
 ]
@@ -132,6 +132,7 @@ dev = [
 [project.scripts]
 spiderweb-run = "run_all:main"
 spiderweb-release-check = "release_check:main"
+spiderweb-subsurface = "spiderweb.subsurface.cli:main"
 
 [tool.setuptools]
 # Top-level orchestration modules (live at the repo root, not inside a package)
@@ -156,6 +157,7 @@ include = [
     "earthgpt*",
     "llm*",
     "imagery*",
+    "spiderweb.subsurface*",
 ]
 
 # ---------------------------------------------------------------------------
@@ -204,7 +206,7 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["integration", "pipeline", "fr24", "readiness", "federation", "llm",
-          "earthgpt", "imagery", "provenance_utils", "run_modes", "release_check"]
+          "earthgpt", "imagery", "spiderweb.subsurface", "provenance_utils", "run_modes", "release_check"]
 omit = [
     "tests/*",
     "scripts/*",

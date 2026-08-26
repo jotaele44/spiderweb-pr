@@ -1,0 +1,21 @@
+{
+  "schema": "spiderweb.subsurface.source-manifest.v1",
+  "fixture_id": "SANTIAGO_TRIANGLE",
+  "aoi_canonical_sha256": "4b4109c31681f8d510b8dba9ca0a9018d165ab88ecc05a0625c8a98ce3aca3c8",
+  "families": {
+    "AQUIFERS_WELLS_SPRINGS": {"state": "OPEN", "sources": []},
+    "FAULTS_STRUCTURES": {"state": "OPEN", "sources": []},
+    "GEOLOGY_KARST_CAVES": {"state": "OPEN", "sources": []},
+    "HISTORICAL_CORROBORATION": {"state": "OPEN", "sources": []},
+    "INDUSTRIAL_REMEDIATION": {"state": "OPEN", "sources": []},
+    "MILITARY_HARDENED_SUBSURFACE": {"state": "OPEN", "sources": []},
+    "MINES_QUARRIES_SHAFTS": {"state": "OPEN", "sources": []},
+    "UTILITIES_UNDERGROUND": {"state": "OPEN", "sources": []}
+  },
+  "invariants": {
+    "family_count": 8,
+    "registered_authoritative_source_count": 0,
+    "record_count": 0
+  },
+  "interpretation": "This manifest records adapter/source coverage only. Empty source arrays are OPEN coverage gaps and are not negative evidence about the Santiago Triangle."
+}
