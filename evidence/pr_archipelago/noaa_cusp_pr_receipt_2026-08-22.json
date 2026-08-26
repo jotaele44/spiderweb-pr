@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "scope": "NOAA NSDE CUSP index and exact CUSP package manifestations intersecting the bounded Puerto Rico discovery bbox",
+  "workflow": {
+    "run_id": 32598266132,
+    "job_id": 97092495079,
+    "artifact_id": 9482150952,
+    "artifact_zip_sha256": "578d8bb1760ac29a6db032cc4f9d7a307f05cf486014fecb4f28830b3511895e",
+    "manifest_sha256": "dc78521bb75738b4263a6caa511e865816ae22e692a64503b4325bb88accd406"
+  },
+  "index": {
+    "selected_zoom": 10,
+    "expected_tiles": 40,
+    "pass_tiles": 40,
+    "failed_tiles": 0,
+    "transport": "NSDE PBF responses are gzip-compressed; raw bytes are frozen and decompressed only for decoding",
+    "discovered_download_names": ["N15W065", "N15W070"]
+  },
+  "downloads": {
+    "expected_named_packages": 2,
+    "pass_archive_frozen": 2,
+    "blocked": 0,
+    "N15W065_size_bytes": 13226382,
+    "N15W070_size_bytes": 13963306,
+    "archive_shape": "each package contains one readme plus one SHP/SHX/DBF/PRJ polyline family"
+  },
+  "interpretation": {
+    "source": "CUSP is independent from project-based National Shoreline and is a current NOAA shoreline product; the two 5-degree cells are source package manifestations, not insular identities.",
+    "geometry": "CUSP linework may be used as current shoreline evidence; polygonization remains derived candidate geometry.",
+    "identity": "no CUSP package, line, polygon, or proximity relationship independently establishes canonical insular identity."
+  },
+  "certification": {
+    "CUSP_PR_INDEX": "PASS_BOUNDED_PR_BBOX",
+    "CUSP_PR_PACKAGE_DENOMINATOR": "PASS_SOURCE_MANIFESTATIONS_ONLY",
+    "GEOMETRIC_CURRENT": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

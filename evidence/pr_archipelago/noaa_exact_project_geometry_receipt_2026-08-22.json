@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "scope": "Exact NOAA NSDE CMP project archive manifestations for the bounded 15-project Puerto Rico current shoreline source family",
+  "source_contract": "frozen NSDE app.js constructs CMP downloads as https://nsde.ngs.noaa.gov/downloads/<feature.properties.id>.zip",
+  "workflow": {
+    "run_id": 32597976274,
+    "job_id": 97091812267,
+    "artifact_id": 9482078439,
+    "artifact_zip_sha256": "48d040ee92a1535c2cc9832a5f61bdabd73a83cd55bfdc5e7573f1fffe8fc596",
+    "manifest_sha256": "734244411db9baee90218dd98f410c0249c20872f703009811f0af9b681831ce"
+  },
+  "arithmetic": {
+    "expected_projects": 15,
+    "pass_archive_frozen": 15,
+    "blocked": 0,
+    "unexplained": 0,
+    "closed": true
+  },
+  "member_inventory_summary": {
+    "projects_with_three_shapefile_families": 11,
+    "projects_with_two_shapefile_families": 3,
+    "projects_with_one_shapefile_family": 1,
+    "project_archive_member_counts": {
+      "PR1401A-TB-N":13,"PR1401B-TB-N":13,"PR1401C-TB-N":13,"PR1401D-TB-N":13,
+      "PR1502-CS-N":13,"PR1503-CS-N":13,
+      "PR1801A-TB-C":13,"PR1801B-TB-C":13,"PR1801C-TB-C":13,"PR1801D-TB-C":13,"PR1801E-TB-C":13,
+      "PR2001-CS-T":9,"PR2002-CS-T":9,"PR2003-CS-T":9,"PR2401-CS-T":5
+    },
+    "standard_three_family_projects": "projbnd polygon + softcopyl1 polyline + softcopyp1 point",
+    "standard_two_family_projects": "projbnd polygon + softcopyl1 polyline",
+    "PR2401_CS_T": "one polyline shapefile family"
+  },
+  "adjudication": {
+    "prior_guessed_distribution": "SUPERSEDED downstream conclusion only: the earlier guessed geodesy.noaa.gov/dist_shoreline paths returned non-ZIP error payloads; those source responses remain preserved.",
+    "exact_distribution": "PASS; all 15 UI-derived NSDE /downloads/<id>.zip manifestations are valid ZIP archives.",
+    "project_boundary": "projbnd is project scope only and must never be used as land/insular identity geometry.",
+    "line_geometry": "softcopyl1/PR2401 l1 are multi-class cartographic line datasets; only records explicitly classified by NOAA as CLASS=SHORELINE may enter shoreline derivation.",
+    "identity": "NOAA archive membership, project coverage, shoreline containment and representative-point proximity do not independently establish canonical insular identity."
+  },
+  "certification": {
+    "NOAA_CURRENT_PROJECT_ARCHIVE_DENOMINATOR": "PASS",
+    "NOAA_PROJECT_GEOMETRY_BYTES": "PASS",
+    "GEOMETRIC_CURRENT": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

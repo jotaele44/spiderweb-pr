@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "scope": "Candidate expansion for the four SIGE Cayo/Cayos manifestations that had no exact GNIS alias-spatial candidate in the first reconciliation",
+  "rules": {
+    "identity_promotion": "forbidden",
+    "fuzzy_name": "candidate discovery only",
+    "representative_point_distance": "candidate corroboration only",
+    "result": "all rows remain UNRESOLVED for canonical identity until independent geometry/lineage evidence exists"
+  },
+  "rows": [
+    {
+      "sige_objectid": 168,
+      "sige_name_raw": "Cayo de Ratones",
+      "candidates": [
+        {"gnis_feature_id":"1609837","gnis_official_name":"Cayos de Ratones","name_similarity":0.96,"representative_point_distance_m":256.9},
+        {"gnis_feature_id":"1609831","gnis_official_name":"Cayo Ratones","name_similarity":1.0,"representative_point_distance_m":90263.1},
+        {"gnis_feature_id":"1609830","gnis_official_name":"Cayo Ratones","name_similarity":1.0,"representative_point_distance_m":96631.7},
+        {"gnis_feature_id":"1613047","gnis_official_name":"Isla de Ratones","name_similarity":0.75,"representative_point_distance_m":40959.4}
+      ],
+      "state":"UNRESOLVED"
+    },
+    {
+      "sige_objectid": 175,
+      "sige_name_raw": "Cabeza de Perros",
+      "candidates": [
+        {"gnis_feature_id":"1609661","gnis_official_name":"Cabeza de Perro","name_similarity":0.96,"representative_point_distance_m":311.9},
+        {"gnis_feature_id":"1613398","gnis_official_name":"Cabeza de Perro","name_similarity":0.96,"representative_point_distance_m":315.8},
+        {"gnis_feature_id":"1990733","gnis_official_name":"Cabezo de Perro","name_similarity":0.88,"representative_point_distance_m":243.5}
+      ],
+      "state":"UNRESOLVED"
+    },
+    {
+      "sige_objectid": 186,
+      "sige_name_raw": "Isla Maguelles",
+      "candidates": [
+        {"gnis_feature_id":"1611186","gnis_official_name":"Isla Magueyes","name_similarity":0.8889,"representative_point_distance_m":698.7}
+      ],
+      "state":"UNRESOLVED"
+    },
+    {
+      "sige_objectid": 188,
+      "sige_name_raw": "Cayo de Caña Gorda",
+      "candidates": [
+        {"gnis_feature_id":"1609835","gnis_official_name":"Cayos de Caña Gorda","name_similarity":0.9677,"representative_point_distance_m":339.1}
+      ],
+      "state":"UNRESOLVED"
+    }
+  ],
+  "arithmetic": {
+    "input_unresolved_rows": 4,
+    "rows_with_nonempty_candidate_sets_after_expansion": 4,
+    "canonical_identity_resolved": 0,
+    "canonical_identity_unresolved": 4
+  },
+  "certification": {
+    "SIGE_CANDIDATE_GENERATION": "PASS_FULL_CANDIDATE_SETS_PRESERVED",
+    "SIGE_CANONICAL_IDENTITY": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

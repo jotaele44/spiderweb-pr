@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "receipt_state": "PROVISIONAL_EMPIRICAL_INPUT",
+  "workflow_run_id": 32579372465,
+  "workflow_artifact_id": 9477384392,
+  "workflow_artifact_digest": "sha256:da477b8fcd865e7f8d1fa812e4b74c2806c39e80e987daaa0b06c783d57928c2",
+  "workflow_artifact_size_bytes": 4715702,
+  "source_manifest_sha256": "eee777bbfe3d2b46de5c82b604a7615c5ff0e6446b105c29b219fc5f2a0ce69e",
+  "gnis_named_current_island_manifestations_sha256": "0f28e7b43903abb1878b5a95b1c4e56f7a07ecfaa54c948df5cd6e286d5c0aac",
+  "facts": {
+    "gnis_domestic_directory_object_count": 175,
+    "gnis_domestic_pr_candidates": 1,
+    "gnis_fullmodel_directory_object_count": 343,
+    "gnis_fullmodel_pr_candidates": 2,
+    "gnis_domestic_total_rows": 5818,
+    "gnis_current_island_class_source_manifestations": 148,
+    "gnis_current_island_class_unique_feature_ids": 148,
+    "gnis_current_island_class_duplicate_feature_ids": 0,
+    "gnis_fullmodel_domesticnames_island_count": 148,
+    "gnis_domestic_text_vs_fullmodel_gpkg_intersection": 148,
+    "gnis_domestic_text_only": 0,
+    "gnis_fullmodel_gpkg_only": 0,
+    "gnis_text_vs_gpkg_symmetric_difference": 0,
+    "gnis_names_for_current_island_feature_ids": 401,
+    "gnis_current_island_features_with_multiple_name_manifestations": 77,
+    "gnis_historicalfeatures_island_class_count": 0,
+    "noaa_ngs_project_metadata_snapshots": 5
+  },
+  "frozen_objects": {
+    "DomesticNames_PR_Text.zip": {
+      "size_bytes": 224083,
+      "sha256": "04bbb818744b76bc1ff75bbde57168ed299ef657e3e8b95fcfbde6665f25484f",
+      "payload_member": {
+        "path": "Text/DomesticNames_PR.txt",
+        "uncompressed_size": 883941,
+        "sha256": "4365533de57c786e7eddc93f33c762022c8a34f2ff751a29cf836a44543ee18f"
+      }
+    },
+    "Gazetteer_PR_GDB.zip": {
+      "size_bytes": 1827970,
+      "sha256": "c1c1bebad2185fce4d5e954327c4c12322aeadf73d8768ca3e1a9b7a95708634"
+    },
+    "Gazetteer_PR_GPKG.zip": {
+      "size_bytes": 2497878,
+      "sha256": "81d02dc028a1b5fcbd286d0cd6c15740a38a9757f938f98aa4c945aa21fa0711",
+      "payload_member": {
+        "path": "Gazetteer_PR_GPKG.gpkg",
+        "uncompressed_size": 7827456,
+        "sha256": "e6e53fb68ea05f95f4f51b68bd0ddc5ad423712ca300e00ff23cefe4da8f5860"
+      }
+    }
+  },
+  "blocked_or_open": {
+    "census_tiger_2026_index": "404_NOT_FOUND; year-specific URL assumption rejected",
+    "census_tiger_2026_state": "404_NOT_FOUND; year-specific URL assumption rejected",
+    "census_tiger_2026_coastline": "404_NOT_FOUND; year-specific URL assumption rejected",
+    "noaa_vector_geometry_download": "OPEN; project metadata frozen but NSDE vector bytes not yet acquired",
+    "pr_government_wfs_layer_denominator": "OPEN; GetCapabilities/layer enumeration not yet frozen",
+    "canonical_identity_adjudication": "OPEN",
+    "geometric_denominator": "OPEN"
+  },
+  "certification": {
+    "NAMED_CURRENT_GNIS_SOURCE_MANIFESTATIONS": "PASS",
+    "GNIS_TEXT_GPKG_LOGICAL_EQUIVALENCE_FOR_ISLAND_FEATURE_IDS": "PASS",
+    "CANONICAL_CURRENT_INSULAR_FEATURE_DENOMINATOR": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN",
+    "HISTORICAL_ARCHIPELAGO_EXHAUSTION": "OPEN"
+  },
+  "notes": [
+    "148 is a GNIS source-manifestation count, not a certified canonical island/cay/islet count.",
+    "GNIS Island source taxonomy must not be promoted directly to canonical feature subtype.",
+    "The first workflow's acquisition step passed. Its overall failure occurred later because pytest was absent from the isolated runner; the frozen artifact remains valid evidence and was reused for this receipt.",
+    "No mutable source was redownloaded to create this receipt."
+  ]
+}

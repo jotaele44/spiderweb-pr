@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "scope": "Durable promotion of previously frozen PR_ARCHIPELAGO_GEOGRAPHY source/evidence artifacts without authoritative-source reacquisition",
+  "release": {
+    "tag": "pr-archipelago-freeze-2026-08-22",
+    "url": "https://github.com/jotaele44/spiderweb-pr/releases/tag/pr-archipelago-freeze-2026-08-22",
+    "verified_asset_count": 11,
+    "required_asset_count": 11,
+    "missing_assets": []
+  },
+  "promotion_workflow": {
+    "workflow": "PR Archipelago Preserve Frozen Evidence",
+    "successful_run_id": 32600301410,
+    "successful_job_id": 97097472352,
+    "rule": "download existing Actions artifacts by exact artifact ID, verify artifact-archive SHA256, then upload byte-for-byte copies to durable release assets",
+    "authoritative_source_reacquisition": false
+  },
+  "artifact_archives": [
+    {"name":"pr-archipelago-current-snapshot.zip","artifact_id":9477967478,"sha256":"6e8a29fc87178264584c5e88add8ac63d8e0e9a72b9f05f63795c6edec2c92e4"},
+    {"name":"pr-archipelago-noaa-projects.zip","artifact_id":9481975938,"sha256":"17244efb257dd626358b02d97a21052ad3c913e3a4f8af9179d616d2bdc82478"},
+    {"name":"pr-archipelago-noaa-project-geometry.zip","artifact_id":9482078439,"sha256":"48d040ee92a1535c2cc9832a5f61bdabd73a83cd55bfdc5e7573f1fffe8fc596"},
+    {"name":"pr-archipelago-nsde-app.zip","artifact_id":9482050789,"sha256":"f88d374dfab01617e906302950db76f662672ca683ca69fcb1191942f5eccde4"},
+    {"name":"pr-archipelago-cusp-failed-decode.zip","artifact_id":9482133296,"sha256":"e4778c0384d893ea7d7e3d41c215734a002013b41f96982b088a01ffcbd22c9c"},
+    {"name":"pr-archipelago-cusp-final.zip","artifact_id":9482150952,"sha256":"578d8bb1760ac29a6db032cc4f9d7a307f05cf486014fecb4f28830b3511895e"},
+    {"name":"pr-archipelago-noaa-historical-initial.zip","artifact_id":9481998242,"sha256":"ae6a466b4e837f6ef01325107ceed13afa1dd11cb60c6ceccae9c7f96e5ae264"},
+    {"name":"pr-archipelago-noaa-historical-final.zip","artifact_id":9482012503,"sha256":"5197d884f84e44e1808c4548914cd76c3e7a0d73ffb5bb1585eb3430aff5a742"},
+    {"name":"pr-archipelago-noaa-historical-geometry.zip","artifact_id":9482202035,"sha256":"a80476874be68fb50557688bcabc85f0d4d0861bafa38cec96304d7218edc6ff"}
+  ],
+  "preserved_nonterminal_evidence": {
+    "stale_or_failed_manifestations_retained": true,
+    "examples": [
+      "failed guessed NOAA project direct-download payloads inside current NOAA project evidence",
+      "failed compressed-PBF CUSP decode artifact",
+      "initial seven-record NOAA historical discovery artifact superseded by metadata-bound eight-record artifact"
+    ]
+  },
+  "arithmetic": {
+    "artifact_archives_expected": 9,
+    "artifact_archives_sha256_verified": 9,
+    "release_support_files": 2,
+    "release_assets_expected": 11,
+    "release_assets_verified": 11,
+    "missing": 0,
+    "closed": true
+  },
+  "certification": {
+    "SOURCE_EVIDENCE_PRESERVATION": "PASS",
+    "SOURCE_EVIDENCE_DURABLE": true,
+    "CURRENT_PR_ARCHIPELAGO": "UNCHANGED_OPEN",
+    "HISTORICAL_ARCHIPELAGO_EXHAUSTION": "UNCHANGED_OPEN"
+  }
+}
