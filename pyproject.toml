@@ -151,6 +151,7 @@ include = [
     "federation*",
     "server*",
     "scripts*",
+    "source_adapters*",
     "gebco*",
     "earthgpt*",
     "llm*",
