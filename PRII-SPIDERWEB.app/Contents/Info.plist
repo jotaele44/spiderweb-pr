@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Spiderweb — PRII</string>
+	<string>Spiderweb</string>
 	<key>CFBundleExecutable</key>
 	<string>PRII-SPIDERWEB</string>
 	<key>CFBundleIconFile</key>
@@ -11,7 +11,7 @@
 	<key>CFBundleIdentifier</key>
 	<string>pr.prii.spiderweb.launcher</string>
 	<key>CFBundleName</key>
-	<string>Spiderweb — PRII</string>
+	<string>Spiderweb</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

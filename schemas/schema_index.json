@@ -14,7 +14,7 @@
       "review_status"
     ],
     "fact_status_default": "observed for primary-extractor outputs; inferred for derived/scored outputs; null for reports/manifests",
-    "schema_name_null_means": "no JSON Schema registered yet \u2014 see NEXT_100_TASKS"
+    "schema_name_null_means": "no JSON Schema registered yet — see NEXT_100_TASKS"
   },
   "artifacts": [
     {
@@ -373,68 +373,6 @@
     },
     {
       "workstream": "rlsm",
-      "artifact_path": "outputs/rlsm_ingest_manifest.csv",
-      "schema_name": "rlsm_ingest_manifest",
-      "schema_file": "schemas/rlsm_ingest_manifest.schema.json",
-      "format": "csv",
-      "crs": null,
-      "required_columns_summary": [
-        "screenshot_id",
-        "sha256",
-        "filename",
-        "rel_path",
-        "month_bucket",
-        "ingest_status",
-        "ocr_status"
-      ],
-      "provenance_fields": [
-        "sha256",
-        "ingested_at"
-      ],
-      "dedup_key": "sha256",
-      "fact_status_default": "observed",
-      "notes": "11,926-row inventory of every baseline screenshot."
-    },
-    {
-      "workstream": "rlsm",
-      "artifact_path": "outputs/rlsm_duplicate_report.csv",
-      "schema_name": "rlsm_duplicate_report",
-      "schema_file": "schemas/rlsm_duplicate_report.schema.json",
-      "format": "csv",
-      "crs": null,
-      "required_columns_summary": [
-        "dup_group_id",
-        "group_size",
-        "sha256",
-        "filename",
-        "rel_path"
-      ],
-      "provenance_fields": [
-        "sha256"
-      ],
-      "dedup_key": "dup_group_id",
-      "fact_status_default": "observed"
-    },
-    {
-      "workstream": "rlsm",
-      "artifact_path": "outputs/rlsm_failed_files.csv",
-      "schema_name": "rlsm_failed_files",
-      "schema_file": "schemas/rlsm_failed_files.schema.json",
-      "format": "csv",
-      "crs": null,
-      "required_columns_summary": [
-        "screenshot_id",
-        "filename",
-        "rel_path",
-        "ingest_status",
-        "ingest_error"
-      ],
-      "provenance_fields": [],
-      "dedup_key": "screenshot_id",
-      "fact_status_default": "observed"
-    },
-    {
-      "workstream": "rlsm",
       "artifact_path": "outputs/ocr_raw_by_zone.jsonl",
       "schema_name": "ocr_raw_by_zone",
       "schema_file": "schemas/ocr_raw_by_zone.schema.json",
@@ -560,7 +498,7 @@
       ],
       "dedup_key": "aircraft_obs_id",
       "fact_status_default": "observed",
-      "notes": "identity_status \u2208 {confirmed, partial, conflicting, unknown, recovered}; 'recovered' is the raw-text-rescue tier."
+      "notes": "identity_status ∈ {confirmed, partial, conflicting, unknown, recovered}; 'recovered' is the raw-text-rescue tier."
     },
     {
       "workstream": "rlsm",
@@ -584,7 +522,7 @@
       ],
       "dedup_key": "track_feat_id",
       "fact_status_default": "inferred",
-      "notes": "Deferred placeholder \u2014 no extractor yet (Workstream B follow-up)."
+      "notes": "Deferred placeholder — no extractor yet (Workstream B follow-up)."
     },
     {
       "workstream": "rlsm",
@@ -718,7 +656,7 @@
       "provenance_fields": [],
       "dedup_key": null,
       "fact_status_default": null,
-      "notes": "Human-readable coverage report \u2014 not validated."
+      "notes": "Human-readable coverage report — not validated."
     },
     {
       "workstream": "readiness",
@@ -926,6 +864,123 @@
       "dedup_key": "package_id",
       "fact_status_default": null,
       "notes": "Hub-facing package manifest sidecar written by scripts/federation_export.py::write_package(); the schema mirrors thehub-pr's canonical federation_export_manifest.schema.json. Distinct from federation/export_writer.py's legacy manifest shape, which no schema currently governs."
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_monitoring_aois.geojson",
+      "schema_name": "monitoring_aoi",
+      "schema_file": "schemas/monitoring_aoi.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "aoi_uid",
+        "name",
+        "geometry",
+        "aoi_class",
+        "monitoring_objective"
+      ],
+      "provenance_fields": [
+        "source_ref",
+        "created_at",
+        "review_status"
+      ],
+      "dedup_key": "aoi_uid",
+      "fact_status_default": "seed"
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_source_scenes.jsonl",
+      "schema_name": "source_scene",
+      "schema_file": "schemas/source_scene.schema.json",
+      "format": "jsonl",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "scene_uid",
+        "provider",
+        "collection",
+        "platform",
+        "sensor",
+        "acquisition_start",
+        "crs"
+      ],
+      "provenance_fields": [
+        "source_checksum",
+        "catalog_query_hash",
+        "processing_datetime",
+        "ingest_status"
+      ],
+      "dedup_key": "scene_uid",
+      "fact_status_default": "discovered"
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_observations.geojson",
+      "schema_name": "remote_observation",
+      "schema_file": "schemas/remote_observation.schema.json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+      "required_columns_summary": [
+        "observation_uid",
+        "aoi_uid",
+        "scene_uids",
+        "detector_name",
+        "detector_version",
+        "evidence_tier",
+        "geometry",
+        "candidate_status"
+      ],
+      "provenance_fields": [
+        "scene_uids",
+        "baseline_scene_uid",
+        "detector_version",
+        "review_status"
+      ],
+      "dedup_key": "observation_uid",
+      "fact_status_default": "candidate"
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_adjudications.jsonl",
+      "schema_name": "adjudication_event",
+      "schema_file": "schemas/adjudication_event.schema.json",
+      "format": "jsonl",
+      "crs": null,
+      "required_columns_summary": [
+        "adjudication_uid",
+        "observation_uid",
+        "decision",
+        "previous_status",
+        "new_status",
+        "analyst_or_rule",
+        "decision_datetime"
+      ],
+      "provenance_fields": [
+        "analyst_or_rule",
+        "rule_version",
+        "decision_datetime"
+      ],
+      "dedup_key": "adjudication_uid",
+      "fact_status_default": "decided"
+    },
+    {
+      "workstream": "remote_monitoring",
+      "artifact_path": "rm_contract_crosswalk.jsonl",
+      "schema_name": "physical_contract_crosswalk",
+      "schema_file": "schemas/physical_contract_crosswalk.schema.json",
+      "format": "jsonl",
+      "crs": null,
+      "required_columns_summary": [
+        "crosswalk_uid",
+        "contract_node_uid",
+        "observation_uid",
+        "reconciliation_status"
+      ],
+      "provenance_fields": [
+        "observation_uid",
+        "contract_node_uid"
+      ],
+      "dedup_key": "crosswalk_uid",
+      "fact_status_default": "not_assessable"
     }
   ]
 }

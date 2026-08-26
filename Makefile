@@ -1,4 +1,4 @@
-.PHONY: help bootstrap test lint lint-strict format mypy check \
+.PHONY: help bootstrap test lint lint-strict format mypy check data-policy-lint \
 	validate-schemas preflight release-check clean
 
 .DEFAULT_GOAL := help
@@ -18,7 +18,7 @@ help:  ## Show this help
 
 bootstrap:  ## Create a venv, install dev extras, install pre-commit hooks
 	python -m venv .venv
-	. .venv/bin/activate && pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27" && pre-commit install
+	. .venv/bin/activate && pip install uv && uv pip install -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27" && pre-commit install
 	@echo "Bootstrap complete. Activate with: . .venv/bin/activate"
 
 # ── Test targets ──────────────────────────────────────────────────────────────
@@ -56,6 +56,9 @@ mypy:  ## Type-check the curated allowlist
 
 check: lint-strict mypy test  ## Local CI parity: lint + type + test
 
+data-policy-lint:  ## Reject tracked runtime and sensitive export artifacts
+	python scripts/check_data_policy.py
+
 # ── Schema validation ─────────────────────────────────────────────────────────
 
 validate-schemas:  ## Load all schemas and assert the expected count
@@ -88,7 +91,7 @@ preflight: validate-schemas test-prii  ## Schema validation + PRII tests
 release-check:  ## Run the umbrella release gate
 	python run_all.py --release-check
 
-# ── Syntax check ─────────────────────────────────────────────────────────────
+# ── Syntax check ──────────────────────────────────────────────────────────────
 
 syntax-check:  ## Compile every Python module (no import)
 	find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +

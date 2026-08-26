@@ -79,6 +79,18 @@ shares the **PRVD02** vertical datum of the existing primary `san_juan_19_prvd02
 so the two layers compose consistently (San Juan remains a higher-detail local inset;
 the CUDEM is the island-wide base).
 
+### Third arc-second CUDEM — regional bathymetry fill (added 2026-07-22)
+
+The **1/3 arc-second** PR CUDEM (`m9524`, 2022) — the product originally linked for
+review — is also registered, as `puerto_rico_cudem_third_9524` with
+`role: regional_bathymetry_fill` (`primary: false`). It is **not** the land-terrain
+base: per the CUDEM design above the 1/3 tier is bathymetry-leaning, so it is retained
+as broader bathymetric context that composes with the 1/9 base (same PRVD02 / NAD83
+datum). Provider metadata (verbatim from `cudem_third_pr_m9524_met_forHumans.html`):
+1/3 arc-second (~10 m), PRVD02 vertical datum, NAD83 (EPSG:4269), bounds
+W −68.00 / E −65.25 / S 17.50 / N 19.00, created 2022-06-03, 28 GeoTIFF tiles (~851 MB).
+Distributed as GeoTIFF on S3 (no `opendap_url`); live raster QA is `pending_live_sample`.
+
 **Access note:** unlike the San Juan and MHW DEMs, this CUDEM is distributed as
 GeoTIFF on S3 rather than through the NGDC THREDDS `regional/*.nc` catalog, so the
 manifest entry carries `source_url` / `s3_prefix` / `url_list` instead of an

@@ -320,11 +320,45 @@ def test_consolidate_merges_sources_and_dedups_within_source(tmp_path, snapshot,
 
     out = consolidate_module.write_consolidated(rows, sources / "_consolidated" / "2026-06-12")
     assert out.name == "missing_persons_pr_canonical.csv"
-    # Header is exactly the canonical contract.
+    # Header is the canonical contract plus the consolidation-only linkage column.
     with out.open(encoding="utf-8") as fh:
         header = next(csv.reader(fh))
-    from scripts._harvest_base import CANONICAL_COLUMNS
-    assert header == CANONICAL_COLUMNS
+    assert header == consolidate_module.CONSOLIDATED_COLUMNS
+
+
+def test_linkage_annotates_cross_source_duplicates(consolidate_module):
+    common = {"sex": "F", "age_band": "18_30", "last_seen_municipio": "72127",
+              "last_seen_date": "2026-06-01"}
+    rows = [
+        {**common, "case_id_hash": "n1", "source_id": "namus",
+         "last_seen_lat": "18.45", "last_seen_lon": "-66.06"},
+        {**common, "case_id_hash": "a1", "source_id": "prpb_alertas_amber",
+         "last_seen_lat": "18.40", "last_seen_lon": "-66.00"},
+        # same key but SAME source as row 0 → not a cross-source group
+        {**common, "case_id_hash": "n2", "source_id": "namus"},
+        # missing a key component → un-linkable
+        {"sex": "M", "age_band": "", "last_seen_municipio": "72021",
+         "last_seen_date": "2026-06-02", "case_id_hash": "x1", "source_id": "namus"},
+    ]
+    linked = consolidate_module.annotate_linkage(rows)
+    assert linked == 1
+    gid = rows[0]["linkage_group_id"]
+    assert gid and rows[1]["linkage_group_id"] == gid          # cross-source pair shares id
+    assert rows[2]["linkage_group_id"] == gid                   # same key rolls into the group
+    assert rows[3]["linkage_group_id"] == ""                    # un-linkable stays empty
+    assert float(rows[0]["coord_disagreement_km"]) > 0          # haversine set (both have coords)
+    assert json.loads(rows[0]["linkage_keys_json"])["last_seen_municipio"] == "72127"
+
+
+def test_linkage_ignores_single_source_key_collisions(consolidate_module):
+    rows = [
+        {"sex": "M", "age_band": "31_50", "last_seen_municipio": "72021",
+         "last_seen_date": "2026-06-03", "case_id_hash": "a", "source_id": "namus"},
+        {"sex": "M", "age_band": "31_50", "last_seen_municipio": "72021",
+         "last_seen_date": "2026-06-03", "case_id_hash": "b", "source_id": "namus"},
+    ]
+    assert consolidate_module.annotate_linkage(rows) == 0
+    assert all(r["linkage_group_id"] == "" for r in rows)
 
 
 def test_populate_prefers_consolidated_over_namus(tmp_path, populate_module):

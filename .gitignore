@@ -17,6 +17,12 @@ outputs/*
 # outputs.zip — packaged outputs snapshot at repo root (build artifact)
 outputs.zip
 
+# Road name gazetteer ingest — generated artifacts (245 MB across 85 files under
+# data/reference/). Regenerable: pipeline/download_road_sources.py re-fetches the
+# upstream sources, then pipeline/road_gazetteer_ingest.py rebuilds the processed
+# CSVs. The pipeline, schemas, tests and runbook above it are tracked.
+spiderweb_pr_road_name_gazetteer_ingest/data/
+
 # data/ — input datasets (screenshots, GEBCO .nc, social CSV, etc.)
 data/*
 !data/.gitkeep

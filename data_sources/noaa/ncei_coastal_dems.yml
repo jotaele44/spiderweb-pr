@@ -55,7 +55,7 @@
       "puerto_rico_2017",
       "san_juan_19_prvd02_2015"
     ],
-    "coverage_status": "live_catalog_checked_2026-07-16: 7 of 8 PR-relevant DEMs resolved+validated on NGDC THREDDS regional (San Juan 2015 + six 1/3 arc-second MHW DEMs); PR-wide 2017 DEM not yet published. 2026-07-20: PR-wide coverage added via NOAA Coastal LiDAR PDS CUDEM ninth arc-second (m9525, 2022), registered as puerto_rico_cudem_ninth_9525.",
+    "coverage_status": "live_catalog_checked_2026-07-16: 7 of 8 PR-relevant DEMs resolved+validated on NGDC THREDDS regional (San Juan 2015 + six 1/3 arc-second MHW DEMs); PR-wide 2017 DEM not yet published. 2026-07-20: PR-wide coverage added via NOAA Coastal LiDAR PDS CUDEM ninth arc-second (m9525, 2022), registered as puerto_rico_cudem_ninth_9525. 2026-07-22: coarser 1/3 arc-second CUDEM (m9524, 2022) registered as puerto_rico_cudem_third_9524 (regional bathymetry fill).",
     "coverage_percent_against_uploaded_snapshot": 100,
     "coverage_percent_against_live_ncei_catalog": null,
     "live_catalog_additions": [
@@ -63,6 +63,11 @@
         "dataset_key": "puerto_rico_cudem_ninth_9525",
         "note": "Beyond the uploaded snapshot universe; located in the NOAA Coastal LiDAR Public Data Set (not the NGDC THREDDS regional catalog). Does not change the snapshot ledger counts above.",
         "added": "2026-07-20"
+      },
+      {
+        "dataset_key": "puerto_rico_cudem_third_9524",
+        "note": "Coarser 1/3 arc-second CUDEM (bathymetry-leaning) registered as a regional fill alongside the 9525 base. Beyond the uploaded snapshot universe; does not change the snapshot ledger counts above.",
+        "added": "2026-07-22"
       }
     ]
   },
@@ -397,6 +402,72 @@
       "validation": {
         "metadata_status": "registered_from_provider_metadata_2026-07-20",
         "live_catalog_checked": "2026-07-20",
+        "raster_minmax_status": "pending_live_sample",
+        "nodata_status": "pending_live_sample",
+        "promotion_status": "source_metadata_registered"
+      }
+    },
+    {
+      "dataset_key": "puerto_rico_cudem_third_9524",
+      "name": "Puerto Rico CUDEM (Third Arc-Second Topobathy)",
+      "year": 2022,
+      "status_in_snapshot": "not_in_uploaded_snapshot__located_via_noaa_coastal_lidar_pds_2026-07-22",
+      "primary": false,
+      "role": "regional_bathymetry_fill",
+      "vertical_datum": "Puerto Rico Vertical Datum of 2002",
+      "horizontal_datum": "NAD83",
+      "horizontal_crs_epsg": 4269,
+      "spatial_resolution": "1/3 arc-second",
+      "resolution_meters_approx": 10.3,
+      "integrated_topobathy": false,
+      "format": "GeoTIFF",
+      "access_method": "AWS S3 (GeoTIFF tiles) + NOAA Coastal bulk download",
+      "source_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_third_Topobathy_PuertoRico_9524/index.html",
+      "s3_prefix": "s3://noaa-nos-coastal-lidar-pds/dem/NCEI_third_Topobathy_PuertoRico_9524/",
+      "url_list": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_third_Topobathy_PuertoRico_9524/urllist9524.txt",
+      "vrt": "NCEI_third_Topobathy_PuertoRico_EPSG-4269.vrt",
+      "tile_index": "tileindex_NCEI_third_Topobathy_PuertoRico.zip",
+      "tile_count": 28,
+      "download_size_approx": "851 MB",
+      "bounds_wgs84": {
+        "min_lat": 17.5,
+        "max_lat": 19.0,
+        "min_lon": -68.0,
+        "max_lon": -65.25
+      },
+      "bounds_note": "Native horizontal CRS is NAD83 (EPSG:4269); at this scale NAD83 and WGS84 bounds are equivalent to sub-meter. Values taken verbatim from provider metadata (cudem_third_pr_m9524_met_forHumans.html).",
+      "provenance": {
+        "provider": "NOAA NCEI / NOS Coastal LiDAR Public Data Set",
+        "dataset_id": "m9524",
+        "created": "2022-06-03",
+        "published": "2022-06-11",
+        "citation": "CIRES at the University of Colorado, Boulder. Continuously Updated Digital Elevation Model (CUDEM) - 1/3 Arc-Second Resolution Bathymetric-Topographic Tiles (CUDEM methodology: Amante et al. 2023).",
+        "metadata_files": [
+          "cudem_third_pr_m9524_met.xml",
+          "cudem_third_pr_m9524_met_forHumans.html"
+        ],
+        "resolved_from_live_catalog": "2026-07-22",
+        "artifact_names_note": "vrt / tile_index / url_list follow the NOAA Coastal LiDAR PDS naming convention confirmed for the sibling m9525 product; tile_count and download size are from the m9524 S3 folder listing."
+      },
+      "selection_rationale": "Registered as a coarser regional / bathymetry-leaning fill alongside the 1/9 arc-second primary base (puerto_rico_cudem_ninth_9525). This is the dataset originally linked for review; per NCEI's CUDEM design only the ninth arc-second tier fully integrates land topography, so the third arc-second tier (this product) is retained as broader bathymetric context, not the land-terrain base. Shares the PRVD02 vertical datum, so it composes with the 9525 base and the San Juan inset.",
+      "spiderweb_layers": [
+        "02_HYDROLOGY_KARST",
+        "05_AIRSPACE_MARITIME",
+        "10_REFERENCE"
+      ],
+      "allowed_inference": [
+        "coastal_bathy_topo_context",
+        "coastal_outlet_gradient_context",
+        "maritime_terrain_context"
+      ],
+      "disallowed_inference_without_additional_evidence": [
+        "subsurface_access",
+        "covert_infrastructure",
+        "UAP_or_USO_claim_confirmation"
+      ],
+      "validation": {
+        "metadata_status": "registered_from_provider_metadata_2026-07-22",
+        "live_catalog_checked": "2026-07-22",
         "raster_minmax_status": "pending_live_sample",
         "nodata_status": "pending_live_sample",
         "promotion_status": "source_metadata_registered"

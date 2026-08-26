@@ -6,13 +6,23 @@
 
 `spiderweb-pr` is the spatial / operational producer node for the Puerto Rico Integrated Intelligence (PRII) federation. It prepares GIS-linked records, operational context, provenance, confidence metadata, and review outputs for federation aggregation in [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
 
-> **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's dashboard is a
-> development and diagnostic tool for this producer only. The supported product
+> **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's app
+> (`server/frontend`, served by `desktop/`) is a development and diagnostic tool
+> for this producer only. The supported product
 > surface for the PRII federation is the hub app
 > (`thehub-pr/server/frontend`), which renders this producer's data alongside
 > the other engines. See `thehub-pr/docs/adr/0001-federated-engines-single-hub.md`.
 
-> **Boundary update:** FlightRadar24 screenshot ingestion, FR24 route extraction, and the active airspace observation export now belong to [`skywatcher-pr`](https://github.com/jotaele44/skywatcher-pr). Spiderweb keeps legacy spatial bridge logic and retained integration exports, but it is not the active FR24 owner.
+> **Boundary update (completed 2026-07-29):** the airspace surface is now fully
+> ceded to [`skywatcher-pr`](https://github.com/jotaele44/skywatcher-pr). Beyond
+> FR24 screenshot ingestion and route extraction, this repo has also retired its
+> FR24/ADS-B ingestion (`ingest_fr24_csv`, `ingest_track_points`, the
+> registration watchlist/reconcile tools, `parse_adsb_archive.py`), the
+> `GET /events/{flight_id}/track` endpoint, the aircraft-detail columns on
+> `/events`, and the residual RLSM ontology/schema set — all parked under
+> `docs/legacy/`. Spiderweb retains its own spatial ILAP/AASB bridges, which
+> drive a gating export stage (see `docs/DUPLICATION_REGISTER.md`).
+> `maintenance/adapters/local.py::check_migration_remnants` enforces this.
 
 > **Status:** diagnostic / integration-ready only after validation gates pass. Run `--validate` and review `integration_report.json` before promoting outputs.
 
@@ -41,7 +51,9 @@ Cross-producer correlation is owned by the Hub and downstream consumers. Spiderw
 ## Quick start
 
 ```bash
-pip install -e ".[airspace]"
+# The shared prii-* libs resolve via the pinned git+https reference in
+# [tool.uv.sources] — no thehub-pr sibling checkout needed:
+pip install uv && uv pip install -e ".[airspace]"
 python run_all.py --status
 python run_all.py --images 10
 python run_all.py --db flight_database.db --validate

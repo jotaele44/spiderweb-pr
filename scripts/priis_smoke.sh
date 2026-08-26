@@ -133,7 +133,7 @@ fi
 
 # ── 4. Frontend build ───────────────────────────────────────────────────────
 printf '\n[4/5] Frontend build\n'
-APP_DIR="$ROOT/workbench/priis-v1/app"
+APP_DIR="$ROOT/server/frontend"
 
 check "node_modules present"  test -d "$APP_DIR/node_modules"
 

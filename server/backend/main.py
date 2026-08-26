@@ -170,39 +170,18 @@ async def list_contracts():
 
 @app.get("/events")
 async def list_events():
+    """Spatial/operational event stream (contract, imagery, report, outage, …).
+
+    Aircraft-detail columns and the per-point ADS-B track endpoint were retired
+    with the airspace surface; airspace observations are owned by skywatcher-pr
+    (see docs/REPO_BOUNDARY.md).
+    """
     rows = await _rows(
-        "SELECT id, kind, at, site_id, ref_id, label, tier, "
-        "registration, callsign, aircraft_type, operator, origin_code, "
-        "destination_code, altitude_ft, ground_speed_mph, flight_status, "
-        "image_path FROM events"
+        "SELECT id, kind, at, site_id, ref_id, label, tier FROM events"
     )
     for r in rows:
         r["siteId"] = r.pop("site_id", None)
         r["refId"] = r.pop("ref_id", None)
-        r["aircraftType"] = r.pop("aircraft_type", None)
-        r["originCode"] = r.pop("origin_code", None)
-        r["destinationCode"] = r.pop("destination_code", None)
-        r["altitudeFt"] = r.pop("altitude_ft", None)
-        r["groundSpeedMph"] = r.pop("ground_speed_mph", None)
-        r["flightStatus"] = r.pop("flight_status", None)
-        r["imagePath"] = r.pop("image_path", None)
-    return rows
-
-
-@app.get("/events/{flight_id}/track")
-async def event_track(flight_id: str):
-    """Ordered per-point ADS-B track for a flight event (route playback).
-
-    Returns the position reports ingested by scripts/parse_adsb_archive.py into
-    the track_points table, oldest first. Empty list if the flight has no track.
-    """
-    rows = await _rows(
-        "SELECT ts, at, lat, lng, altitude_ft, speed, direction "
-        "FROM track_points WHERE flight_id = ? ORDER BY ts",
-        (flight_id,),
-    )
-    for r in rows:
-        r["altitudeFt"] = r.pop("altitude_ft", None)
     return rows
 
 
@@ -232,7 +211,7 @@ async def list_investigations():
 @app.get("/alerts")
 async def list_alerts():
     return await _rows(
-        "SELECT id, at, kind, title, tier, investigation, registration FROM alerts"
+        "SELECT id, at, kind, title, tier, investigation FROM alerts"
     )
 
 # ─── Pipeline ──────────────────────────────────────────────────────────────────

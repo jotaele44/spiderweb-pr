@@ -1,0 +1,15 @@
+{
+  "schema_version":"1.0.0","repository":"jotaele44/spiderweb-pr","audit_date":"2026-08-04","normalized_score":70.90,
+  "weights":{"code_completeness":20,"main_branch_availability":15,"ci_enforcement":15,"data_materialization":15,"operator_verification":15,"gui_completeness":10,"federation_readiness":10},
+  "dimensions":{"code_completeness":82,"main_branch_availability":85,"ci_enforcement":68,"data_materialization":55,"operator_verification":60,"gui_completeness":68,"federation_readiness":75},
+  "items":[
+    {"id":"SPW-001","title":"Land isolated-clone runtime","state":"merged_certification_pending","owner":"spiderweb-pr","blocker":"standalone_packaging_certification","dependency":[],"evidence":["pull/243"],"exit_criteria":"Standalone install, test, frontend and desktop packaging pass from main."},
+    {"id":"SPW-002","title":"Reconcile GUI parity against current main","state":"stale_unmergeable_pr","owner":"spiderweb-pr","blocker":"main_drift_and_legacy_baseline","dependency":["PR-237"],"evidence":["pull/237","pull/241"],"exit_criteria":"Current main has a valid parity ratchet and every legacy gap is classified or reduced."},
+    {"id":"SPW-003","title":"Add typed error taxonomy","state":"main_gap","owner":"spiderweb-pr","blocker":"implementation","dependency":[],"evidence":["NEXT_100_TASKS_V2.md#81"],"exit_criteria":"Broad and bare exception paths use typed errors with tests and stable reporting."},
+    {"id":"SPW-004","title":"Add checkpoint and resume","state":"closed_merged","owner":"spiderweb-pr","blocker":null,"dependency":[],"evidence":["commit/63b8c4b","tests/test_resumable_job_queue.py"],"exit_criteria":"Long runs resume from content-bound checkpoints and reject tampered or incompatible state."},
+    {"id":"SPW-005","title":"Add data-policy export lint","state":"closed_merged","owner":"spiderweb-pr","blocker":null,"dependency":[],"evidence":["commit/63b8c4b","scripts/check_data_policy.py","tests/test_data_policy_lint.py"],"exit_criteria":"CI rejects exported content violating DATA_POLICY redaction rules."},
+    {"id":"SPW-006","title":"Add GeoPackage and map previews","state":"closed_merged","owner":"spiderweb-pr","blocker":null,"dependency":[],"evidence":["commit/97e6ef9","commit/fa6310b","tests/test_remote_monitoring_exports.py"],"exit_criteria":"Local GeoJSON produces deterministic GPKG and preview artifacts with tests."},
+    {"id":"SPW-007","title":"Implement geo-anchors v2","state":"main_gap","owner":"spiderweb-pr","blocker":"implementation","dependency":[],"evidence":["NEXT_100_TASKS_V2.md#69"],"exit_criteria":"OCR-matched anchors produce bounded homographies with rejection and uncertainty evidence."},
+    {"id":"SPW-008","title":"Replace fixed hydro and infrastructure proxies","state":"external_data","owner":"spiderweb-pr","blocker":"authoritative_vector_layers","dependency":[],"evidence":["integration/ilap_airspace_bridge.py"],"exit_criteria":"Scores derive from licensed, provenance-bound infrastructure and hydrology layers rather than constants or geometry-only proxies."}
+  ]
+}

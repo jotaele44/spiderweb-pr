@@ -1,0 +1,53 @@
+{
+  "receipt_version": "0.3",
+  "state": "PASS",
+  "source_probe": {
+    "github_actions_run_id": 31968187892,
+    "head_sha": "b6a3c15ae1a658ae43f5f1e3167746ac0be787eb",
+    "artifact_id": 9269055407,
+    "artifact_sha256": "da4cc36a696c099002b563d026b49aaa6d2e1bbcc25f11752ffb79bd309b1bed"
+  },
+  "bounded_aoi_wgs84": [-66.2, 17.5, -65.8, 18.05],
+  "nos_w00247": {
+    "landing_http_status": 200,
+    "landing_response_size": 49989,
+    "landing_response_sha256": "542a47617d33a70fee1f5a826f7b6ff44e34dc9a735892870204525402f415c5",
+    "discovered_product_links": 13,
+    "bag_links": 4,
+    "bag_filenames": [
+      "W00247_MB_VR_MLLW_4of4.bag",
+      "W00247_MB_VR_MLLW_2of4.bag",
+      "W00247_MB_VR_MLLW_1of4.bag",
+      "W00247_MB_VR_MLLW_3of4.bag"
+    ]
+  },
+  "digital_coast_derived_dem_stac": {
+    "6211_2015_ngs": {
+      "http_status": 200,
+      "response_size": 33046004,
+      "response_sha256": "327fae7576a7fdc0fdfcbece3ebcde1363389382db8438b1400fc4fa43e0e90c",
+      "intersecting_items": 344,
+      "role": "DERIVED_DEM_CONTEXT_NOT_INDEPENDENT_SENSOR"
+    },
+    "8462_2016_ngs": {
+      "http_status": 200,
+      "response_size": 25855832,
+      "response_sha256": "99267d01d961c0dcc92fd9555a4bf51015a24e7a65e86a0530485919af3aa4f6",
+      "intersecting_items": 84,
+      "role": "DERIVED_DEM_CONTEXT_NOT_INDEPENDENT_SENSOR"
+    },
+    "8571_2018_usace_fema": {
+      "http_status": 200,
+      "response_size": 12711566,
+      "response_sha256": "9737a51bea070c74b4442434c1f569b23c5f947a5f8264bb9a5ecf12055a06af",
+      "intersecting_items": 217,
+      "role": "DERIVED_DEM_CONTEXT_NOT_INDEPENDENT_SENSOR"
+    }
+  },
+  "vertical_context": {
+    "6211": "STAC items expose compound NAD83/UTM zone 19N + NAVD88 height definitions; individual item metadata remains authoritative.",
+    "8462": "STAC items expose NAD83(2011)/UTM zone 19N + NAVD88 height.",
+    "8571": "STAC assets expose NAD83(2011) horizontal CRS; vertical datum must be bound from product metadata before numerical cross-dataset comparison."
+  },
+  "certification_boundary": "Direct product discovery and derived-DEM tile intersection only. DEM tiles are contextual/derived and do not create independent sensor corroboration. W00247 BAG links are not AOI-certified until BAG bytes and georeferencing are inspected."
+}

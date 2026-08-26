@@ -11,8 +11,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pipeline.errors import PipelineError
 
-class PathTraversalError(ValueError):
+
+class PathTraversalError(PipelineError, ValueError):
     """Raised when a resolved path escapes its intended base directory."""
 
 

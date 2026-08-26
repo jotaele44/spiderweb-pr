@@ -1,0 +1,47 @@
+layer_id: rm_monitoring_pr
+name: Puerto Rico Remote-Sensing Monitoring
+family: remote_monitoring
+sensitivity: medium
+visibility:
+  default: restricted
+  public_export: candidates_only
+source:
+  aoi_registry: configs/remote_monitoring/aois.yaml
+  provider_registry: configs/remote_monitoring/providers.yaml
+  confidence_model: configs/remote_monitoring/confidence_model.yaml
+schema:
+  id_field: observation_uid
+  aoi_id_field: aoi_uid
+  scene_id_field: scene_uid
+  required_fields:
+    - observation_uid
+    - aoi_uid
+    - detector_name
+    - evidence_tier
+    - candidate_status
+nodes:
+  - rm_monitoring_aoi
+  - rm_source_scene
+  - rm_remote_observation
+edges:
+  - OBSERVED_IN
+  - DERIVED_FROM
+  - ADJUDICATES
+  - CROSSWALKS
+guardrails:
+  candidate_before_confirmed: true          # detections are never conclusions
+  coherence_loss_is_candidate_only: true    # coherence != classification
+  no_signal_never_implies_non_performance: true
+  lidar_volume_requires_two_epochs: true
+  imagery_does_not_measure_dredged_volume: true
+  sar_revisit_cadence: observed_from_catalog # never hard-coded 12-day
+confidence:
+  model: configs/remote_monitoring/confidence_model.yaml
+  anomaly_detector: false
+output_layers:
+  - rm_monitoring_aois
+  - rm_source_scenes
+  - rm_observations
+  - rm_change_candidates
+  - rm_adjudications
+  - rm_contract_crosswalk

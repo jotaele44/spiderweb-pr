@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "source_scene",
+  "title": "Remote Monitoring Source Scene",
+  "description": "Scene-level provenance for one acquisition discovered via STAC or an equivalent catalog. Records provider/collection/platform/sensor, acquisition and processing timing, orbit geometry (relative_orbit, orbit_direction, polarization), and the asset locator + checksum. Distinct from satellite_source_manifest: this is the discovery/monitoring-ledger view, not the ingested-asset manifest.",
+  "type": "object",
+  "required": [
+    "scene_uid",
+    "provider",
+    "collection",
+    "platform",
+    "sensor",
+    "acquisition_start",
+    "crs"
+  ],
+  "properties": {
+    "scene_uid":           {"type": "string", "minLength": 1},
+    "provider":            {"type": "string", "minLength": 1},
+    "collection":          {"type": "string", "minLength": 1},
+    "platform":            {"type": "string", "minLength": 1},
+    "sensor":              {"type": "string", "minLength": 1},
+    "product_type":        {"type": ["string", "null"]},
+    "item_id":             {"type": ["string", "null"]},
+    "acquisition_start":   {"type": "string", "minLength": 1},
+    "acquisition_end":     {"type": ["string", "null"]},
+    "processing_datetime": {"type": ["string", "null"]},
+    "processing_baseline": {"type": ["string", "null"]},
+    "orbit_direction":     {"type": ["string", "null"], "enum": ["ascending", "descending", null]},
+    "relative_orbit":      {"type": ["integer", "string", "null"]},
+    "acquisition_mode":    {"type": ["string", "null"]},
+    "polarization":        {"type": ["string", "null"]},
+    "cloud_cover":         {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+    "gsd_m":               {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "crs":                 {"type": "string", "minLength": 1},
+    "asset_href":          {"type": ["string", "null"]},
+    "license_class":       {"type": ["string", "null"]},
+    "source_checksum":     {"type": ["string", "null"]},
+    "catalog_query_hash":  {"type": ["string", "null"]},
+    "ingest_status":       {"type": "string", "enum": ["discovered", "ingested", "excluded"]},
+    "bbox": {
+      "type": ["array", "null"],
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"type": "number"}
+    }
+  },
+  "additionalProperties": true
+}

@@ -52,6 +52,19 @@ and GEBCO bathymetry for `_infra_align_score` / `_hydro_utility_score`, and expo
 - Repointing spiderweb's phase-2 / `release_check` export at skywatcher's output would be
   **breaking** (it would remove a gating producer stage and its manifest) and is rejected.
 
+### Update 2026-07-29 — the rest of the airspace surface is gone, the bridges stay
+The FR24/ADS-B ingestion, the `/events/{flight_id}/track` endpoint, the aircraft
+columns on `/events`, the RLSM ontology/schema set and the whole `dashboard/`
+viewer (which still shipped an **FR24 Review Queue** tab) were retired to
+`docs/legacy/` — see `docs/REPO_BOUNDARY.md`. That removed the last cross-repo
+*duplication of function*; what remains below is the deliberate per-repo
+*adaptation* of the two bridges.
+
+The bridges are explicitly **not** part of that retirement: they are still live in
+`run_all.py::_run_export_spiderweb` and the gating `release_check.py::export_spiderweb`
+stage, so removing them would drop a release gate. The reasoning below stands
+unchanged.
+
 ### Maintenance rule
 The files are **no longer a shared duplicate** — they are sibling adaptations. Make
 spiderweb-specific producer changes in `integration/`; make airspace/EarthGPT changes in

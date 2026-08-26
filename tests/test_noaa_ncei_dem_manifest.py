@@ -113,6 +113,44 @@ def test_pr_wide_cudem_ninth_registered() -> None:
     assert cudem["validation"]["promotion_status"] == "source_metadata_registered"
 
 
+def test_third_cudem_regional_fill_registered() -> None:
+    manifest = load_manifest()
+    datasets = {item["dataset_key"]: item for item in manifest["datasets"]}
+    cudem = datasets["puerto_rico_cudem_third_9524"]
+
+    # The originally-linked 1/3 arc-second product, registered as a coarser
+    # bathymetry-leaning fill — NOT the land-terrain base.
+    assert cudem["year"] == 2022
+    assert cudem["primary"] is False
+    assert cudem["role"] == "regional_bathymetry_fill"
+    assert cudem["spatial_resolution"] == "1/3 arc-second"
+    assert cudem["integrated_topobathy"] is False
+    # Shares the base's datum so the layers compose.
+    assert cudem["vertical_datum"] == "Puerto Rico Vertical Datum of 2002"
+    assert cudem["horizontal_datum"] == "NAD83"
+    assert cudem["horizontal_crs_epsg"] == 4269
+
+    # GeoTIFF via S3 (no OPeNDAP), same as the 9525 base.
+    assert cudem["format"] == "GeoTIFF"
+    assert "opendap_url" not in cudem
+    assert cudem["s3_prefix"].startswith("s3://noaa-nos-coastal-lidar-pds/")
+
+    bounds = cudem["bounds_wgs84"]
+    assert bounds == {"min_lat": 17.5, "max_lat": 19.0, "min_lon": -68.0, "max_lon": -65.25}
+    assert bounds["min_lat"] < bounds["max_lat"]
+    assert bounds["min_lon"] < bounds["max_lon"]
+
+    assert cudem["validation"]["promotion_status"] == "source_metadata_registered"
+
+    # Live-catalog addition recorded without disturbing the snapshot ledger.
+    coverage = manifest["catalog_coverage"]
+    assert coverage["pr_relevant_rows_located"] == 8
+    assert len(coverage["located_dataset_keys"]) == 8
+    assert "puerto_rico_cudem_third_9524" not in coverage["located_dataset_keys"]
+    additions = {item["dataset_key"] for item in coverage["live_catalog_additions"]}
+    assert "puerto_rico_cudem_third_9524" in additions
+
+
 def test_pr_wide_gap_mitigated_without_disturbing_snapshot_ledger() -> None:
     manifest = load_manifest()
 

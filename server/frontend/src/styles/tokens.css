@@ -1,0 +1,48 @@
+/* Legacy token aliases → canonical Federation tokens (styles/federation.css).
+   These keep existing var(--x) references working while components are migrated
+   onto the --fd-* namespace. Light/dark is resolved entirely by the --fd-*
+   values, so no theme-specific values live here. */
+:root {
+  --font-sans: var(--fd-font-sans);
+  --font-mono: var(--fd-font-mono);
+  --font-serif: var(--fd-font-serif);
+
+  --bg: var(--fd-bg);
+  --bg-deep: var(--fd-bg-deep);
+  --surface: var(--fd-surface);
+  --surface-2: var(--fd-surface-2);
+  --surface-3: var(--fd-surface-3);
+
+  --ink: var(--fd-text);
+  --ink-2: var(--fd-text-2);
+  --muted: var(--fd-text-muted);
+  --muted-2: var(--fd-text-muted-2);
+  --muted-on-ink: var(--fd-text-on-ink-muted);
+
+  --line: var(--fd-border);
+  --line-soft: var(--fd-border-soft);
+  --line-hard: var(--fd-border-hard);
+
+  --t1: var(--fd-t1);
+  --t2: var(--fd-t2);
+  --t3: var(--fd-t3);
+  --t4: var(--fd-t4);
+
+  --alert: var(--fd-alert);
+  --warn: var(--fd-warn);
+  --ok: var(--fd-ok);
+  --info: var(--fd-info);
+
+  /* Spiderweb program brand. Kept deliberately separate from --fd-accent (the
+     shared Federation focus/evidence accent) so program identity is red without
+     redefining design-system semantics. Values must match BRAND_ACCENT /
+     BRAND_ACCENT_STRONG in desktop/config.py, which drive the native window and
+     setup UI. Both are AA against white (5.89:1 and 8.34:1). */
+  --brand-accent: #ca0c02;
+  --brand-accent-strong: #9f0a02;
+
+  --rail-w: var(--fd-rail-w);
+  --inspector-w: var(--fd-inspector-w);
+  --cmd-h: var(--fd-cmd-h);
+  --time-h: var(--fd-time-h);
+}

@@ -1,0 +1,38 @@
+{
+  "receipt_version": "0.2",
+  "state": "BLOCKED",
+  "source_probe": {
+    "github_actions_run_id": 31968084165,
+    "head_sha": "b7db652815db096768fa1a1274bf3fca1107da4f",
+    "artifact_id": 9269027455,
+    "artifact_sha256": "a125c9d11bfc1d77f978c0da0954dfef471986888a4bbe39fee7c45ec9ab43f4"
+  },
+  "bounded_aoi_wgs84": [-66.2, 17.5, -65.8, 18.05],
+  "ncei_file_endpoint_probe": {
+    "multibeam_surveys_in_denominator": 13,
+    "multibeam_surveys_successful": 0,
+    "multibeam_surveys_http_500": 13,
+    "sounding_surveys_in_denominator": 29,
+    "sounding_surveys_successful": 0,
+    "sounding_surveys_http_500": 29,
+    "failed_total": 42,
+    "zero_result_claim_permitted": false
+  },
+  "binding": {
+    "fact": "Every one of the 42 frozen survey-specific NCEI /file probes returned HTTP 500 in GitHub Actions run 31968084165.",
+    "interpretation": "SOURCE_ENDPOINT_BLOCKED",
+    "not_interpreted_as": [
+      "NO_FILES",
+      "NO_SENSOR_COVERAGE",
+      "NO_BATHYMETRY",
+      "ZERO_RESULTS"
+    ]
+  },
+  "next_admissible_paths": [
+    "NOAA_NOS_SURVEY_PRODUCT_PAGES_AND_BAG_DOWNLOADS",
+    "NOAA_DIGITAL_COAST_STAC_OR_TILE_INDEX",
+    "NOAA_DIGITAL_COAST_BULK_URL_LISTS",
+    "NCEI_ORDERING_API_WITH_EXPLICIT_ORDER_PROVENANCE"
+  ],
+  "certification_boundary": "This receipt certifies bounded exhaustion of the documented NCEI multibeam and sounding file endpoints for the frozen 42-survey denominator at this snapshot. It certifies an API blocker, not absence of products or sensor coverage."
+}
