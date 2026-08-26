@@ -218,7 +218,8 @@ async def list_alerts():
 
 class PipelineRunRequest(BaseModel):
     phase: Optional[int] = None
-    images: Optional[int] = None
+    # FR24 screenshot ingestion (and its image-count limit) migrated to
+    # skywatcher-pr; Spiderweb runs downstream phases 2-4 only.
 
 
 @app.post("/pipeline/run")
@@ -227,8 +228,6 @@ async def pipeline_run(req: PipelineRunRequest = PipelineRunRequest()):
     cmd = ["python", str(ROOT / "run_all.py")]
     if req.phase is not None:
         cmd += ["--phase", str(req.phase)]
-    if req.images is not None:
-        cmd += ["--images", str(req.images)]
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,

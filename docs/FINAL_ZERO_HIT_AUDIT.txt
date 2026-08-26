@@ -1,0 +1,28 @@
+FINAL ZERO-HIT AUDIT — spiderweb-pr active FR24 screenshot-processing code
+Generated: 2026-07-20
+Method: grep -rnE over *.py excluding tests/test_no_fr24_modules.py (boundary asserts) and docs/
+Allowed matches: removal/migration docs, the boundary test, explanatory comments.
+
+=== symbol: FlightAnalyzer ===
+  ZERO active hits
+
+=== symbol: FlightRadarOCR ===
+  ZERO active hits
+
+=== symbol: process_all_images ===
+  ZERO active hits
+
+=== symbol: process_with_hardening ===
+  ZERO active hits
+
+=== symbol: link_screenshots_to_flights ===
+  ZERO active hits
+
+=== symbol: /mnt/user-data/uploads ===
+  ZERO active hits
+
+=== symbol: screenshot ingestion CLI (--image-dir/--images) ===
+  ./server/backend/main.py:242:    # FR24 screenshot ingestion (and its --images limit) migrated to
+
+=== RESULT: PASS — zero active FR24 screenshot-processing implementations in spiderweb-pr ===
+(Note: pipeline/hardening_layer.py retained for TemporalValidator used by integration/pr_intel_adapter.py — pure validation, not screenshot processing.)

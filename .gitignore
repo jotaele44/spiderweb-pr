@@ -361,6 +361,15 @@ desktop/.setup-complete
 outputs/dashboard_data.json
 desktop/.running
 
+# --- FR24 boundary correction: runtime artifact exclusions ---
+*.db-wal
+*.db-shm
+skywatcher.db
+flight_database.db
+inputs/screenshots/
+# ingested Skywatcher bridge packages are runtime data, never committed
+skywatcher_bridge_ingest/
+
 # Generated demo/runtime SQLite DB (built by server/ingestion/seed_demo.py)
 server/priis.db
 
