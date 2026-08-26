@@ -1,0 +1,33 @@
+{
+  "source_id": "CRIM_SIGE_PARCELARIO",
+  "authority": "Centro de Recaudacion de Ingresos Municipales (CRIM) / SIGE",
+  "layer_url": "https://sigejp.pr.gov/server/rest/services/crim/crim_parcelas/MapServer/0",
+  "query_url": "https://sigejp.pr.gov/server/rest/services/crim/crim_parcelas/MapServer/0/query",
+  "expected_layer_id": 0,
+  "expected_geometry_type": "esriGeometryPolygon",
+  "expected_native_wkid": 32161,
+  "required_fields": [
+    "OBJECTID",
+    "GLOBALID",
+    "NUM_CATASTRO",
+    "OLDPID",
+    "TIPO",
+    "CATEGORIA"
+  ],
+  "claim_boundary": {
+    "proves": [
+      "source parcel identifiers",
+      "source parcel geometry",
+      "source classification",
+      "query-to-feature spatial relationship"
+    ],
+    "does_not_prove": [
+      "current ownership",
+      "title",
+      "tax balance",
+      "appraised value",
+      "beneficial ownership",
+      "occupancy"
+    ]
+  }
+}
