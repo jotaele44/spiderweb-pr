@@ -6,7 +6,12 @@ import hashlib
 import json
 from pathlib import Path
 
-from integration.crim_lookup import CrimClient, canonical_json, utc_now, validate_layer_metadata
+from integration.crim_lookup import (
+    CrimClient,
+    canonical_json,
+    utc_now,
+    validate_layer_metadata,
+)
 
 
 def main() -> int:

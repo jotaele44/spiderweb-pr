@@ -15,11 +15,11 @@ The adapter may establish what the CRIM parcel service returns: parcel identifie
 - Required fields: `OBJECTID`, `GLOBALID`, `NUM_CATASTRO`, `OLDPID`, `TIPO`, `CATEGORIA`
 - `TIPO`: `P=PARCELA`, `V=VIAL`, `A=AGUA`
 
-The live metadata currently declares the `GLOBALID` and `NUM_CATASTRO` indexes non-unique. Exact identifier lookups therefore retain every returned candidate. Cardinality is always explicit.
+The live metadata currently declares the `GLOBALID` and `NUM_CATASTRO` indexes non-unique. Exact identifier lookups therefore retain every returned candidate. Cardinality is always explicit, and even a single identifier result remains `PROVISIONAL` until an independent authoritative binding establishes canonical identity.
 
 ## Failure semantics
 
-Transport failure, invalid JSON, an ArcGIS `error` object, schema drift, transfer-limit truncation, and pagination arithmetic failure are errors. None is converted into `VALID_ZERO_RESULT`.
+Transport failure, invalid JSON, an ArcGIS `error` object, missing or malformed `features`/`objectIds`, schema drift, transfer-limit truncation, and pagination arithmetic failure are errors. None is converted into `VALID_ZERO_RESULT`.
 
 ## Completeness
 
