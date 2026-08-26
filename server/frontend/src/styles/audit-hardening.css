@@ -1,0 +1,40 @@
+/* Audit-derived accessibility hardening.
+   Keep these rules narrow: they repair confirmed user-facing defects without
+   redefining the federation design tokens or component semantics. */
+
+/* app.css intentionally removes the native outline from the command query
+   input. Restore an explicit keyboard focus indicator after that rule. */
+.query input:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* An active layer button uses the dark ink background. var(--alert) on that
+   background measured below AA contrast. The literal text "error" already
+   carries the semantic state, so use high-contrast foreground plus underline
+   instead of relying on red alone. */
+.navbtn[data-active="true"][data-status="error"] > span:last-child {
+  color: var(--surface-2);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+/* Touch hardware gets a minimum target without inflating dense desktop rows. */
+@media (pointer: coarse) {
+  .center {
+    grid-template-rows: 44px minmax(0, 1fr);
+  }
+
+  .act,
+  .tab,
+  .navbtn,
+  .linklike {
+    min-height: 44px;
+  }
+
+  .linklike {
+    padding-inline: 8px;
+  }
+}

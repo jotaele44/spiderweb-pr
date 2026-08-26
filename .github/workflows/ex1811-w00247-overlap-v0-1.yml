@@ -1,9 +1,6 @@
 name: EX1811 W00247 overlap v0.1
 
 on:
-  push:
-    branches:
-      - feat/guayama-bag-crossvalidation-v0-4
   workflow_dispatch:
 
 permissions:
@@ -14,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       - name: Acquire EX1811 XYZ and compute W00247 overlap
@@ -30,7 +27,7 @@ jobs:
           find ex1811_xyz_w00247_v0_1 -type f -print0 | sort -z | xargs -0 sha256sum > ex1811_xyz_w00247_v0_1.sha256
           sha256sum ex1811_xyz_w00247_v0_1.stdout.json >> ex1811_xyz_w00247_v0_1.sha256
       - name: Upload overlap evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
         with:
           name: ex1811-w00247-overlap-v0-1
           path: |
