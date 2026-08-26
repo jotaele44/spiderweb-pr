@@ -37,7 +37,7 @@ prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = 
 [project.optional-dependencies]
 # Spiderweb — OCR/vision + export validation.
 airspace = [
-    "opencv-python>=4.8,<5",
+    "opencv-python>=4.8,<6",
     "pytesseract>=0.3.10,<0.4",
     "Pillow>=10.0,<13",
     "pillow-heif>=1.3.0,<2",
