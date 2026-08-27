@@ -13,18 +13,22 @@ serve at ``/outputs``, and a database for the backend to read.
 from __future__ import annotations
 
 import os
+import tempfile
+from contextlib import suppress
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-
-#: Where the backend looks for its database (server/backend/main.py::DB_PATH).
-BACKEND_DB = REPO_ROOT / "server" / "priis.db"
 
 
 def _workspace() -> Path:
     """The writable data home chosen by the setup UI, or the repo as a fallback."""
     configured = os.environ.get("SPIDERWEB_DATA_HOME", "").strip()
     return Path(configured) if configured else REPO_ROOT
+
+
+def _backend_db() -> Path:
+    """Return the backend DB path inside the selected writable workspace."""
+    return _workspace() / "server" / "priis.db"
 
 
 def prepare_workspace() -> None:
@@ -35,15 +39,32 @@ def prepare_workspace() -> None:
     ``db_exists`` on ``/health``), so a read-only install directory must leave
     setup reporting success rather than raising.
     """
-    (_workspace() / "exports").mkdir(parents=True, exist_ok=True)
+    with suppress(OSError):
+        (_workspace() / "exports").mkdir(parents=True, exist_ok=True)
 
-    if BACKEND_DB.exists():
+    backend_db = _backend_db()
+    if backend_db.exists():
         return
+    temporary_db: Path | None = None
     try:
         from server.ingestion import seed_demo
 
-        seed_demo.main(BACKEND_DB)
+        backend_db.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            dir=backend_db.parent,
+            prefix=f".{backend_db.name}.seed-",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary_db = Path(handle.name)
+        seed_demo.main(temporary_db)
+        if not backend_db.exists():
+            os.replace(temporary_db, backend_db)
     except Exception:
         # Read-only install, or the optional seed deps are unavailable. The app
         # still starts; the UI surfaces the empty state.
         return
+    finally:
+        if temporary_db is not None:
+            with suppress(OSError):
+                temporary_db.unlink(missing_ok=True)

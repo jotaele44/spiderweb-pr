@@ -11,10 +11,6 @@ Smoke commands and full workflows for each module. All commands run from the rep
 git clone https://github.com/jotaele44/spiderweb-pr.git
 cd spiderweb-pr
 
-# Install system OCR engine (Spiderweb pipeline only)
-# Ubuntu:  sudo apt-get install tesseract-ocr
-# macOS:   brew install tesseract
-
 # Install module deps (choose one or all)
 pip install -r requirements-airspace.txt
 pip install -r requirements-gebco.txt
@@ -29,14 +25,15 @@ pip install -r requirements-earthgpt.txt
 ### Smoke commands
 
 ```bash
-# Verify install and DB status (no images required)
-python run_all.py --db /tmp/smoke.db --status
+# Verify install and inspect an existing validated database
+python run_all.py --help
+python run_all.py --db /path/to/validated.db --status
 
 # Schema validation on an existing DB
-python run_all.py --db /tmp/smoke.db --validate
+python run_all.py --db /path/to/validated.db --validate
 
-# PR Intel export (empty DB, should produce all files with PASS gates)
-python run_all.py --db /tmp/smoke.db --export-pr-intel /tmp/pr_intel_smoke
+# PR Intel export
+python run_all.py --db /path/to/validated.db --export-pr-intel /tmp/pr_intel_smoke
 python -c "
 import json
 r = json.load(open('/tmp/pr_intel_smoke/integration_report.json'))
@@ -44,74 +41,36 @@ print(r['overall_status'])
 "
 
 # Spiderweb bridge export
-python run_all.py --db /tmp/smoke.db --export-spiderweb /tmp/sw_smoke
+python run_all.py --db /path/to/validated.db --export-spiderweb /tmp/sw_smoke
 ls /tmp/sw_smoke/
 ```
 
-### Full pipeline
+### Downstream pipeline
+
+Spiderweb no longer creates flight/track databases from screenshots. Phases 2-4
+remain available for an already validated database containing `flights` and
+`track_points`. A read-only preflight rejects missing or incomplete databases
+before any derived tables are written.
 
 ```bash
-# Place screenshots
-mkdir -p data/screenshots && cp /your/screenshots/*.jpg data/screenshots/
+# Run all retained downstream phases
+python run_all.py --db /path/to/validated.db
 
-# Run all phases (0-4)
-python run_all.py --image-dir data/screenshots --db outputs/flights.db
+# Run one retained phase
+python run_all.py --db /path/to/validated.db --phase 2
 
-# Run with first 50 images only (testing)
-python run_all.py --image-dir data/screenshots --db outputs/flights.db --images 50
-
-# Single phase
-python run_all.py --image-dir data/screenshots --db outputs/flights.db --phase 2
-
-# Full pipeline + all exports (single line — iOS / a-Shell friendly)
-python run_all.py --image-dir data/screenshots --db outputs/flights.db --validate --export-pr-intel outputs/pr_intel --export-spiderweb outputs/spiderweb
-```
-
-### RLSM unlabeled — parallel OCR runner
-
-`scripts/rlsm_unlabeled.py` OCRs a directory of **unlabeled** screenshots into the
-local flight DB using this repo's FlightAnalyzer OCR engine. It is a thin parallel
-harness (mini-batch `ThreadPoolExecutor`, thread-safe writes, sha256 dedup) — not
-the FR24 inventory/route/mining pipeline, which migrated to
-[skywatcher-pr](https://github.com/jotaele44/skywatcher-pr).
-
-Prereqs: the system `tesseract` engine (see [Prerequisites](#prerequisites)) plus
-`pip install -e ".[airspace]"`.
-
-```bash
-# Process a directory across 4 workers (OMP is auto-pinned to 1 thread/worker)
-python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --workers 4
-
-# Smoke on the first 5 images
-python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --limit 5
-
-# Time-box a run (stop dispatching new work after 30s; safe to re-run)
-python scripts/rlsm_unlabeled.py --image-dir data/screenshots --db outputs/flights.db --time-budget 30
-
-# Counts only (no processing)
-python scripts/rlsm_unlabeled.py --status --db outputs/flights.db
-```
-
-Throughput is ~1.1 s/img effective at 4 workers with OMP pinned; tune `--workers`
-to the core count. Runs are **resumable** — already-stored screenshots are skipped
-via sha256 dedup, so re-running after an interruption picks up where it left off.
-
-Verify a real run end-to-end:
-
-```bash
-python scripts/rlsm_unlabeled.py --image-dir /path/to/shots --limit 5 --db /tmp/rlsm.db
-#   → "processed 5/5  ok:N skip:M err:0"
-python scripts/rlsm_unlabeled.py --status --db /tmp/rlsm.db   # screenshot count climbed
-python run_all.py --db /tmp/rlsm.db --status                  # cross-check via the main CLI
-python run_all.py --db /tmp/rlsm.db --rlsm-status             # RLSM-specific counts (#129)
+# Validate and export without running phases
+python run_all.py --db /path/to/validated.db --validate \
+  --export-pr-intel outputs/pr_intel --export-spiderweb outputs/spiderweb
 ```
 
 ### FR24 screenshot processor
 
 The FR24 screenshot ingestion pipeline (inventory scan, route extraction, RLSM mining)
 **migrated to [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr)** in 2026-06
-(PRs #110/#111). The `--scan-inventory` / `--export-fr24-events` flags no longer exist
-here; run that pipeline from skywatcher-pr.
+(PRs #110/#111). Spiderweb contains no active OCR runner or screenshot-processing
+phase. A direct package consumer is also absent until the four prerequisites in
+`ADR_SKYWATCHER_SPIDERWEB_INTEGRATION.md` pass.
 
 ### Reports and profiles
 
@@ -122,9 +81,6 @@ python run_all.py --db outputs/flights.db --report daily
 # Aircraft intelligence profile
 python run_all.py --db outputs/flights.db --aircraft N5854Z
 
-# Export DB snapshot for dashboard
-python run_all.py --db outputs/flights.db --export-json outputs/dashboard_data.json
-python -m http.server 8080  # open dashboard/dashboard.html in browser
 ```
 
 ---

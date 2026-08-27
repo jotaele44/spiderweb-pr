@@ -62,7 +62,10 @@ def test_fr24_dir_is_warning(tmp_path):
     "rel",
     [
         "pipeline/fr24_ingest.py",
+        "pipeline/flight_analyzer.py",
+        "pipeline/hardened_pipeline.py",
         "scripts/fr24_vision_ingest.py",
+        "scripts/ocr_parallel.py",
         "scripts/rlsm_unlabeled.py",
         "pipeline/rlsm_ontology_gate.py",
         "scripts/parse_adsb_archive.py",

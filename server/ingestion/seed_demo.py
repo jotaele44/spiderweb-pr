@@ -92,9 +92,13 @@ EVENTS = [
 
 # (id, title, category, score, band, site_id, summary, factors, contracts, event_ids, confidence, contradictions)
 ANOMALIES = [
-    ("DEMO-AN-1", "Demo clustered filings", "temporal", 0.82, "hi", "DEMO-ST-1",
-     "Synthetic demo anomaly: several demo filings cluster near one site.",
-     [{"tag": "temporal", "note": "Demo factor"}], ["DEMO-CT-1"], ["DEMO-EV-1"], 3, []),
+    (
+        "DEMO-AN-1", "Demo filing-to-contract alignment", "temporal", 0.82,
+        "hi", "DEMO-ST-1",
+        "Synthetic demo anomaly: one demo filing aligns with one contract near a site.",
+        [{"tag": "temporal", "note": "Demo factor"}],
+        ["DEMO-CT-1"], ["DEMO-EV-1"], 2, [],
+    ),
     ("DEMO-AN-2", "Demo sole-source pattern", "financial", 0.67, "md", "DEMO-ST-5",
      "Synthetic demo anomaly: repeated sole-source demo awards.",
      [{"tag": "finance", "note": "Demo factor"}], ["DEMO-CT-3"], [], 2, ["Demo contradiction note"]),

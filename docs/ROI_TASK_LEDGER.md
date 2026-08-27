@@ -177,6 +177,6 @@ are **new** work, not part of the V2 roadmap.
 | #125 | Contract the Head Start civic layer | new civic-data | ✅ | `pytest tests/test_headstart_schema.py` | Schema-pinned civic layer + CLI export |
 | #127 | Batch flight track-point inserts + index the watchlist scan | T4 perf (extends #25/#26) | ✅ | `pytest tests/test_performance.py` | `executemany` track-points + watchlist-scan index |
 | #128 | Pin the canonical-export contract with a golden test | T9 federation (extends #74) | ✅ | `pytest tests/test_federation_contract_compat.py` | Canonical-export golden + contract-version pin |
-| #129 | Parallel unlabeled-RLSM runner + `run_all --rlsm-status` | T4 #24 / T5 #41 | ✅ | `pytest tests/test_rlsm_unlabeled.py` | Injectable ThreadPool harness + status flag |
+| #129 | Parallel unlabeled-RLSM runner + `run_all --rlsm-status` | T4 #24 / T5 #41 | superseded | Historical implementation; executable ownership later moved to `skywatcher-pr`. | Spiderweb flag/test removed by boundary closure. |
 | #130 | Add `federation/namespace.py` to the lint + type allowlist | T6 CI (extends #49/#50) | ✅ | CI `lint` job | Allowlist grows by one clean module |
 | (this PR) | Roadmap/ledger/changelog tidy + coverage ratchet 55→64 + OCR runner OMP pinning & runbook | T12 #100 / T5 #42 / T4 #24·#30 | 🚧 in flight | CI + `pytest -k rlsm_unlabeled` | Closes #100; ratchet floor 64 (TOTAL 66.13%) |

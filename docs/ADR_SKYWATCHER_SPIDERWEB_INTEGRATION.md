@@ -25,6 +25,20 @@ A direct Skywatcher-to-Spiderweb pipe would create a second integration channel,
 3. Spiderweb completes geometry-on-entities support for spatial joins.
 4. Only then may Spiderweb add a thin Skywatcher package adapter, using the same canonical export contract.
 
+## Prerequisite status (2026-08-26)
+
+| Gate | State | Evidence |
+|---|---|---|
+| Live, non-synthetic Skywatcher canonical package | **BLOCKED** | `skywatcher-pr/federation.json` declares `ready_for_hub_live_execution=false` and says only the synthetic example is present. |
+| TheHub validation and aggregation of that live package | **BLOCKED** | No live package exists to admit. TheHub accepts canonical `sources`, `entities`, `relationships`, `funding_awards`, `transactions`, `observations`, and `alerts` streams; Skywatcher's separate `bridge_records.jsonl` package is not that contract. |
+| Spiderweb geometry on canonical entities | **PASS** | `scripts/federation_export.py` projects validated point and path geometry onto canonical entities, and `federation.json` records the completed gate. |
+| Thin Spiderweb consumer | **BLOCKED** | Gates 1-2 remain blocked. No direct adapter is shipped in this repository. |
+
+The earlier PR #194 proposal called a producer-specific
+`manifest.json + bridge_records.jsonl` payload "hub-canonical." That proposed
+equivalence is rejected: shared field names do not establish logical or schema
+identity, and TheHub does not admit `bridge_records` as a canonical stream.
+
 ## Rejected Options
 
 ### Bespoke direct connector

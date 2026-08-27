@@ -15,13 +15,19 @@ scaffolding is reused and carry ±50% uncertainty.
 The three **P0 quick-wins** were executed in the same PR that introduced this
 doc and are marked ✅ below for traceability.
 
+> **Boundary supersession (2026-08-26).** FR24/RLSM/OCR task slots below are
+> preserved only as history. Their executable ownership moved to
+> `skywatcher-pr`; they are not open Spiderweb work. The generic
+> `pipeline.geo_anchors` homography utility remains, but screenshot/OCR anchor
+> production does not.
+
 ---
 
 ## P0 — executed in this sweep
 
 | # | Task | Result |
 |---|---|---|
-| **P0-1** | ✅ Fix packaging identity | `pyproject.toml` renamed `gebco-bathymetry-pipeline` → `spiderweb-pr`; `packages.find` now ships `pipeline/fr24/integration/readiness/federation/server/scripts/gebco/earthgpt/llm` (was gebco-only). |
+| **P0-1** | ✅ Fix packaging identity | Historical rename to `spiderweb-pr`; current package discovery excludes the retired `fr24` package and ships the retained producer/server/GEBCO/EarthGPT/LLM modules. |
 | **P0-2** | ✅ Reconcile dependency pins | `pyproject.toml` is the single source of truth for ranges; `requirements.txt` numpy/shapely aligned (was `numpy>=1.26` vs `>=2.4`); narrow `<x.(y+1)` caps relaxed to `<next-major`; exact pins remain in `constraints.txt`. |
 | **P0-3** | ✅ Merge duplicate config dirs | `config/` (2 files) merged into the heavily-referenced `configs/`; 3 code refs + 1 docstring + 1 doc updated; empty `config/` removed. |
 
@@ -45,7 +51,7 @@ doc and are marked ✅ below for traceability.
 |---|---|---|---|---|
 | **8** | N1 release_report schema | `schemas/release_report.schema.json` + register in `schema_index.json`. | 1 h | None |
 | **9** | N2 integration_report schema | `schemas/integration_report.schema.json` + validate in `release_check.export_pr_intel`. | 1 h | None |
-| **10** | N3 RLSM CSV schemas | One JSON Schema per the 14 RLSM CSV outputs; register all. | 3 h | None |
+| **10** superseded | N3 RLSM CSV schemas | Historical task transferred with RLSM ownership to `skywatcher-pr`. | — | Transferred |
 | **11** | T2-18 geometry validity | `validate_geometry(features)` on `SchemaValidator` (shapely), enforced on GeoJSON exports. | 3 h | shapely (already a dep) |
 | **12** | T2-19 null-field policy | Reject `null` for required cols → enriched review queue (`error_type='null_field'`). | 2 h | None |
 | **13** | T2-20 confidence-scale tests | Assert every `confidence` ∈ `[0,1]` + HIGH/MED/LOW/REJECTED label. | 2 h | None |
@@ -69,13 +75,13 @@ doc and are marked ✅ below for traceability.
 
 | # | Task | Scope | Effort | Blockers |
 |---|---|---|---|---|
-| **24** ✅ | N5 `--workers` for rlsm_unlabeled | **Done (#129)** — injectable mini-batch ThreadPool harness; tesseract is a subprocess, so OMP pinning (not ProcessPool) is the real lever — added in the post-V2 tidy PR. | 2 h | None |
+| **24** superseded | N5 `--workers` for rlsm_unlabeled | Historical #129 implementation; the Spiderweb runner was removed and current ownership is `skywatcher-pr`. | — | Transferred |
 | **25** ✅ | SQLite index audit | **Done** — covering indexes in Theme 4; watchlist-scan index extended in #127. | 2 h | Migration |
 | **26** ✅ | Bulk-insert batching | **Done** — `executemany` in Theme 4; flight track-point inserts batched in #127. | 2 h | None |
-| **27** | WAL + tuned PRAGMAs | Enable WAL + cache/synchronous tuning on the flight DB. | 1 h | None |
+| **27** superseded | WAL + tuned PRAGMAs for flight DB | Retired with the Spiderweb flight database; current airspace persistence belongs to `skywatcher-pr`. | — | Transferred |
 | **28** | Profile operational_intelligence | Profile the 35 KB hottest module; optimize hotspots. | 4 h | None |
 | **29** | Vectorize adapter loops | Replace `iterrows` with vectorized/`itertuples` in adapters. | 3 h | None |
-| **30** ✅ | Cache OCR engine init | **Done (#129)** — the OCR engine is built once (`_OCRWorker(fa.ocr)`) and reused across every `process()` call. | 2 h | None |
+| **30** superseded | Cache OCR engine init | Historical #129 implementation; OCR execution was removed from Spiderweb. | — | Transferred |
 | **31** | Parquet export option | Optional pyarrow Parquet for the large CSV exports. | 2 h | None |
 | **32** | Chunked reads | Lazy/chunked reads for the 500k-candidate tables. | 3 h | None |
 | **33** | Memoize centroid distances | Cache municipal-centroid distance (T3-24 path). | 1 h | None |
@@ -91,9 +97,9 @@ doc and are marked ✅ below for traceability.
 | **38** | Tier 6 #23 test_provenance_utils | Cover the 8-key metadata block + git fallback. | 1 h | None |
 | **39** | Tier 6 #26 spiderweb_intake ext | Tests for the new additive fields. | 2 h | #23 |
 | **40** | N6 / B7 harden reproducibility | "Two fresh exports" instead of on-disk-vs-fresh. | 30 m | None |
-| **41** ✅ | B-integrate RLSM into suite | **Done (#129)** — `--rlsm-status` on `run_all.py`; `tests/test_rlsm_unlabeled.py` in the default suite. | 3 h | None |
+| **41** superseded | B-integrate RLSM into suite | Historical implementation from #129; later repository-boundary work moved RLSM to `skywatcher-pr` and removed the Spiderweb flag/test. | — | Closed |
 | **42** ✅ | Coverage + ratchet | **Done** — `pytest-cov` floor in CI (Theme 5); raised 55→64 in the post-V2 tidy PR (TOTAL 66.13%). | 2 h | None |
-| **43** | Property-based tests | hypothesis for OCR-confidence + geometry parsers. | 3 h | None |
+| **43** | Property-based tests | Hypothesis coverage for retained geometry parsers; OCR-confidence coverage belongs to `skywatcher-pr`. | 2 h | None |
 | **44** | Resolve ignored suites | Fix or document `test_io` / `test_terrain` exclusions. | 2 h | None |
 | **45** | GeoJSON golden-file tests | Golden shape per GeoJSON export. | 3 h | #57 |
 | **46** | Flaky-test quarantine | Seed-fixed RNG + quarantine marker. | 2 h | None |
@@ -127,18 +133,22 @@ doc and are marked ✅ below for traceability.
 | **64** | GeoPackage export | Single-file `.gpkg` export option. | 2 h | None |
 | **65** | CRS/EPSG stamping | Stamp CRS metadata on every geo artifact. | 1 h | #57 |
 
-## Theme 8 — RLSM pipeline upgrades
+## Theme 8 — RLSM pipeline upgrades — **SUPERSEDED / TRANSFERRED**
+
+All eight slots below moved with executable airspace ownership to
+`skywatcher-pr`. They remain listed solely to preserve the original task
+denominator; none is an open Spiderweb vector.
 
 | # | Task | Scope | Effort | Blockers |
 |---|---|---|---|---|
-| **66** | N4 canonicalize recover-tails | Move rescue logic into `scripts/rlsm_recover_tails_by_rawtext.py`; emit `processing_runs` row. | 2 h | None |
-| **67** | B-dedup-unique index | UNIQUE on `aircraft_observations(screenshot_id, registration, source_zone)`. | 1 h | Migration |
-| **68** | B-flight-track v2 | Pixel CV: `track_length_px`, `bbox_*`, `has_loop/orbit/gap`. | 6 h | #69 |
-| **69** | B-geo-anchors v2 | Per-screenshot derived anchors via OCR-matched POIs → RANSAC homography. | 8 h | None |
-| **70** | OCR-failure JSONL | Export `ocr_status='failed'` rows as a flat JSONL for operators (T4-32). | 1 h | None |
-| **71** | Coverage drift section | Per-zone + per-engine drift in `rlsm_coverage_report.md`. | 2 h | None |
-| **72** | Confidence recalibration | Recalibrate OCR confidence against labeled ground truth. | 4 h | Labeled set |
-| **73** | Ensemble vote | Multi-engine vote for low-confidence OCR cells. | 4 h | Engines installed |
+| **66** superseded | N4 canonicalize recover-tails | Historical task transferred to `skywatcher-pr`. | — | Transferred |
+| **67** superseded | B-dedup-unique index | Historical airspace-persistence task transferred to `skywatcher-pr`. | — | Transferred |
+| **68** superseded | B-flight-track v2 | Historical pixel-track task transferred to `skywatcher-pr`. | — | Transferred |
+| **69** superseded | B-geo-anchors v2 | Screenshot/OCR anchor production transferred; only generic homography remains here. | — | Transferred |
+| **70** superseded | OCR-failure JSONL | Historical operator-export task transferred to `skywatcher-pr`. | — | Transferred |
+| **71** superseded | Coverage drift section | Historical RLSM reporting task transferred to `skywatcher-pr`. | — | Transferred |
+| **72** superseded | Confidence recalibration | Historical OCR calibration task transferred to `skywatcher-pr`. | — | Transferred |
+| **73** superseded | Ensemble vote | Historical OCR-engine task transferred to `skywatcher-pr`. | — | Transferred |
 
 ## Theme 9 — Federation hardening
 
@@ -183,7 +193,7 @@ doc and are marked ✅ below for traceability.
 | **95** | Propagate package rename | Update all docs referencing the old package name (post-P0-1). | 1 h | P0-1 |
 | **96** | Per-subsystem READMEs | READMEs for `gebco/`, `earthgpt/`, `llm/` prepping the split decision. | 2 h | None |
 | **97** | Monorepo-split evaluation | Decision doc + extras boundary (RECOMMENDATIONS #5). | 4 h | #1 |
-| **98** | Consolidate FR24 docs | Merge the `FR24_*.md` set into one guide with a TOC. | 3 h | None |
+| **98** superseded | Consolidate FR24 docs | Replaced by the bounded retirement ledger; historical FR24 material remains non-executable. | — | Closed |
 | **99** | API reference | Generate pdoc/mkdocs reference for public modules. | 3 h | None |
 | **100** ✅ | Roadmap maintenance | **Done (this PR)** — post-V2 PRs recorded in `ROI_TASK_LEDGER.md`; roadmap + ledger linked from README. | 1 h | None |
 
@@ -200,7 +210,7 @@ doc and are marked ✅ below for traceability.
 | 5 — Testing & coverage | 12 | ~23.5 h |
 | 6 — CI/CD & DX | 9 | ~14.5 h |
 | 7 — GIS / export | 9 | ~17.5 h |
-| 8 — RLSM pipeline | 8 | ~28 h |
+| 8 — RLSM pipeline | 0 (8 transferred) | — |
 | 9 — Federation | 6 | ~16 h |
 | 10 — Observability | 7 | ~18 h |
 | 11 — Security & data policy | 6 | ~10 h |

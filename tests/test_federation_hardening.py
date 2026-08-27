@@ -107,8 +107,15 @@ def test_export_dry_run_writes_nothing(sample_pkg, tmp_path, capsys, monkeypatch
     out = tmp_path / "out"
     monkeypatch.setattr(
         "sys.argv",
-        ["federation_export.py", "--package", str(sample_pkg),
-         "--out", str(out), "--dry-run"],
+        [
+            "federation_export.py",
+            "--package",
+            str(sample_pkg),
+            "--out",
+            str(out),
+            "--dry-run",
+            "--no-ppp-geometry",
+        ],
     )
     rc = fx.main()
     assert rc == 0

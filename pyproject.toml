@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "spiderweb-pr"
 version = "0.1.0"
-description = "Spiderweb — FR24 OCR/GIS flight intelligence, federation, and the GEBCO bathymetry pipeline"
+description = "Spiderweb spatial intelligence, federation exports, and GEBCO bathymetry"
 requires-python = ">=3.11"
 # Shared scientific stack. This is the single source of truth for version ranges;
 # requirements*.txt defer to these, and constraints.txt holds the exact pins.
@@ -20,10 +20,6 @@ dependencies = [
     "shapely>=2.1,<3",
     "scikit-image>=0.26,<1",
     "openpyxl>=3.1,<4",
-    # Bridge runtime: the default `--ingest-skywatcher` entry point validates
-    # Skywatcher packages against schemas/spiderweb_bridge.schema.json, so
-    # jsonschema is a base (not optional) dependency.
-    "jsonschema>=4.17,<5",
     # Shared maintenance core and federation-export helpers are resolved from
     # immutable Git sources below so an isolated clone remains installable.
     "prii-maintenance",
@@ -39,13 +35,11 @@ prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = 
 #   pip install -e ".[airspace]"        (ranges)
 #   pip install -c constraints.txt -e ".[airspace]"   (exact pins)
 [project.optional-dependencies]
-# Spiderweb — export validation + geospatial serialization.
-# NOTE: FR24 screenshot OCR/image dependencies (opencv-python, pytesseract,
-# pillow-heif, Pillow) were REMOVED here — that capability moved to skywatcher-pr
-# (see its [project.optional-dependencies].fr24 group). Spiderweb now only needs
-# schema validation (jsonschema) and columnar export (pyarrow) for the retained
-# downstream/bridge paths.
+# Spiderweb spatial bridge + export validation. OpenCV supports the retained
+# evidence-bounded homography helpers in pipeline.geo_anchors.
 airspace = [
+    "opencv-python>=4.8,<6",
+    "jsonschema>=4.17,<5",
     "pyarrow>=14.0",
     "PyYAML>=6.0,<7",
 ]
@@ -68,6 +62,7 @@ earthgpt = [
     "requests>=2.31.0,<3",
     "python-dotenv>=1.0.0,<2",
     "folium>=0.15.0,<1",
+    "Pillow>=10.0,<13",
 ]
 # Imagery MCP server — fetch/search/compare satellite imagery over MCP
 # (NASA GIBS, Sentinel Hub, Copernicus/CDSE). jsonschema comes via `airspace`.
@@ -128,6 +123,7 @@ all = [
 dev = [
     "pytest>=9.0.2,<10",
     "pytest-cov>=7.0,<8",
+    "httpx>=0.27,<1",
     "black>=26.3.0,<27",
     "ruff>=0.15.5,<0.17",
     "mypy>=1.13,<3",
@@ -150,7 +146,6 @@ py-modules = ["run_all", "release_check", "run_modes", "provenance_utils"]
 [tool.setuptools.packages.find]
 include = [
     "pipeline*",
-    "fr24*",
     "integration*",
     "readiness*",
     "federation*",
@@ -209,7 +204,7 @@ markers = [
 # are omitted so the percentage reflects library code, not unrun tooling.
 [tool.coverage.run]
 branch = true
-source = ["integration", "pipeline", "fr24", "readiness", "federation", "llm",
+source = ["integration", "pipeline", "readiness", "federation", "llm",
           "earthgpt", "imagery", "spiderweb.subsurface", "provenance_utils", "run_modes", "release_check"]
 omit = [
     "tests/*",
