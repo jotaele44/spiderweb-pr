@@ -5,6 +5,7 @@ Project-lead receipts are immutable. An exact replay is idempotent; reuse of the
 same idempotency key with different protected payload bytes is a collision/fork
 and fails closed. Correlation handles never acquire identity semantics here.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -15,9 +16,9 @@ from typing import Any
 
 
 def _canonical_bytes(value: Any) -> bytes:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode(
-        "utf-8"
-    )
+    return json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
 
 
 def _sha256(value: Any) -> str:
@@ -50,7 +51,10 @@ def main() -> int:
     if payload["target"] != os.environ["EXPECTED_TARGET"]:
         raise SystemExit("handoff target mismatch")
 
-    out = Path("data/centinelas_handoffs") / f"{hashlib.sha256(key.encode()).hexdigest()}.json"
+    out = (
+        Path("data/centinelas_handoffs")
+        / f"{hashlib.sha256(key.encode()).hexdigest()}.json"
+    )
     candidate = _receipt(payload)
     duplicate = False
     collision = False
@@ -85,7 +89,9 @@ def main() -> int:
             )
             raise SystemExit(f"handoff collision/fork rejected; evidence={evidence}")
     else:
-        out.write_text(json.dumps(candidate, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        out.write_text(
+            json.dumps(candidate, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
     if github_output := os.environ.get("GITHUB_OUTPUT"):
         with open(github_output, "a", encoding="utf-8") as handle:

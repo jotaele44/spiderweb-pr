@@ -5,6 +5,7 @@ The Centinelas lead opens discovery only. Municipality candidates, names, and
 proximity remain non-identity evidence; without independently sourced geometry or
 stable asset/project IDs the packet is explicitly UNRESOLVED.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -28,6 +29,7 @@ def _sid(prefix: str, *parts: str) -> str:
 
 def _rows() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    seen_lead_ids: set[str] = set()
     if not RECEIPTS.exists():
         return rows
     for path in sorted(RECEIPTS.glob("*.json")):
@@ -43,6 +45,14 @@ def _rows() -> list[dict[str, Any]]:
         if not isinstance(lead, dict) or not lead.get("lead_id"):
             continue
         lead_id = str(lead["lead_id"])
+        if lead_id in seen_lead_ids:
+            raise SystemExit(f"duplicate project lead_id across receipts: {lead_id}")
+        seen_lead_ids.add(lead_id)
+        municipality_candidates = lead.get("municipality_candidates") or []
+        if not isinstance(municipality_candidates, list):
+            raise SystemExit(
+                f"municipality_candidates must be a list for project lead_id: {lead_id}"
+            )
         candidates = [
             {
                 "candidate_type": "municipality",
@@ -50,7 +60,7 @@ def _rows() -> list[dict[str, Any]]:
                 "spatial_state": "UNRESOLVED",
                 "identity_effect": "NONE",
             }
-            for raw in (lead.get("municipality_candidates") or [])
+            for raw in municipality_candidates
         ]
         rows.append(
             {
@@ -81,13 +91,22 @@ def main() -> int:
     rows = _rows()
     if not rows:
         return 0
-    PKG.mkdir(parents=True, exist_ok=True)
-    OUT.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows), encoding="utf-8")
     manifest_path = PKG / "manifest.json"
     if not manifest_path.exists():
-        raise SystemExit("canonical federation manifest missing; refusing orphan assertion stream")
+        raise SystemExit(
+            "canonical federation manifest missing; refusing orphan assertion stream"
+        )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    files = [f for f in manifest.get("files", []) if f.get("stream") != "project_physical_assertions"]
+    PKG.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(
+        "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows),
+        encoding="utf-8",
+    )
+    files = [
+        f
+        for f in manifest.get("files", [])
+        if f.get("stream") != "project_physical_assertions"
+    ]
     files.append(
         {
             "filename": OUT.name,
@@ -100,10 +119,14 @@ def main() -> int:
     manifest["files"] = files
     mode = str(manifest.get("mode") or "test")
     digest = hashlib.sha256(
-        ("|".join(f"{f['filename']}:{f['sha256']}" for f in files) + f"|{mode}").encode("utf-8")
+        ("|".join(f"{f['filename']}:{f['sha256']}" for f in files) + f"|{mode}").encode(
+            "utf-8"
+        )
     ).hexdigest()[:32]
     manifest["package_id"] = f"pkg_{digest}"
-    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return 0
 
 
