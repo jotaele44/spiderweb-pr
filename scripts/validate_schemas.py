@@ -6,6 +6,7 @@ wraps the same ``SchemaValidator.available_schemas()`` check historically
 embedded in ``make validate-schemas`` while providing a stable ``--json`` mode
 for machine consumption.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -37,7 +38,9 @@ def validate() -> dict[str, object]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--json", action="store_true", help="emit a machine-readable result")
+    parser.add_argument(
+        "--json", action="store_true", help="emit a machine-readable result"
+    )
     args = parser.parse_args(argv)
 
     try:
