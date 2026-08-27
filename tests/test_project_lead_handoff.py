@@ -57,6 +57,21 @@ def test_exact_replay_is_idempotent(tmp_path: Path, monkeypatch):
     assert files[0].read_bytes() == before
 
 
+def test_success_outputs_report_duplicate_and_receipt_path(tmp_path: Path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+
+    assert _run(monkeypatch, _payload()) == 0
+    assert _run(monkeypatch, _payload()) == 0
+
+    lines = output.read_text(encoding="utf-8").splitlines()
+    assert lines[0] == "duplicate=false"
+    assert lines[1].startswith("receipt_path=data/centinelas_handoffs/")
+    assert lines[2] == "duplicate=true"
+    assert lines[3] == lines[1]
+
+
 def test_same_lead_changed_payload_is_rejected_and_preserved(
     tmp_path: Path, monkeypatch
 ):

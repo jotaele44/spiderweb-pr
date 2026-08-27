@@ -57,7 +57,6 @@ def main() -> int:
     )
     candidate = _receipt(payload)
     duplicate = False
-    collision = False
     out.parent.mkdir(parents=True, exist_ok=True)
 
     if out.exists():
@@ -70,7 +69,6 @@ def main() -> int:
         else:
             same = _sha256(existing) == candidate["payload_sha256"]
         if not same:
-            collision = True
             evidence = out.with_suffix(".collision.json")
             evidence.write_text(
                 json.dumps(
@@ -95,11 +93,7 @@ def main() -> int:
 
     if github_output := os.environ.get("GITHUB_OUTPUT"):
         with open(github_output, "a", encoding="utf-8") as handle:
-            handle.write(
-                f"duplicate={str(duplicate).lower()}\n"
-                f"collision={str(collision).lower()}\n"
-                f"receipt_path={out}\n"
-            )
+            handle.write(f"duplicate={str(duplicate).lower()}\nreceipt_path={out}\n")
     return 0
 
 
