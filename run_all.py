@@ -1,22 +1,15 @@
 #!/usr/bin/env python3
-"""
-SPIDERWEB
-Complete Unified Pipeline — All Phases
+"""Spiderweb downstream spatial and operational pipeline.
 
-Usage:
-  python run_all.py                        # Run downstream phases (2-4)
-  python run_all.py --phase 2              # Run specific downstream phase only
-  python run_all.py --ingest-skywatcher P  # Ingest a Skywatcher bridge package
-  python run_all.py --report daily         # Generate daily report only
-  python run_all.py --aircraft N5854Z      # Profile single aircraft
-  python run_all.py --status               # Show database status
-
-FR24 screenshot ingestion (former phases 0-1) was migrated to skywatcher-pr.
+FR24 screenshot ingestion and OCR are owned by ``skywatcher-pr``. This command
+retains downstream phases 2-4 for already validated databases plus Spiderweb's
+own validation, export, and readiness surfaces.
 """
 
 import argparse
 import sqlite3
 import sys
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,10 +18,8 @@ BANNER = """
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
 ║          SPIDERWEB                                                            ║
-║          Unified Pipeline v1.0                                                ║
+║          Spatial / Operational Pipeline v1.0                                  ║
 ║                                                                               ║
-║  Phase 0: Image Extraction                                                    ║
-║  Phase 1: Telemetry Hardening     (Confidence + Validation)                  ║
 ║  Phase 2: GIS Intelligence        (Infrastructure + Corridors)               ║
 ║  Phase 3: Mission Inference       (Scoring + Clustering + Prediction)        ║
 ║  Phase 4: Operational Platform    (Alerts + Reports)                         ║
@@ -36,38 +27,88 @@ BANNER = """
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 """
 
+REQUIRED_DOWNSTREAM_COLUMNS = {
+    "flights": {
+        "flight_id",
+        "callsign",
+        "aircraft_type",
+        "operator",
+        "origin_airport",
+        "destination_airport",
+        "origin_lat",
+        "origin_lon",
+        "dest_lat",
+        "dest_lon",
+        "takeoff_time",
+        "landing_time",
+        "flight_duration_minutes",
+        "max_altitude_ft",
+        "avg_speed_mph",
+        "mission_type",
+        "num_screenshots",
+    },
+    "track_points": {
+        "id",
+        "flight_id",
+        "timestamp",
+        "latitude",
+        "longitude",
+        "altitude_ft",
+        "ground_speed_mph",
+    },
+}
 
-# FR24 screenshot ingestion (former Phase 0) and telemetry hardening (former
-# Phase 1) were REMOVED from Spiderweb: that capability now belongs to
-# skywatcher-pr. Spiderweb no longer processes screenshots. The flights /
-# track_points that downstream phases 2-4 consume are now supplied by the
-# retained Skywatcher bridge consumer below (--ingest-skywatcher).
-# See docs/FR24_MIGRATION_TO_SKYWATCHER.md.
 
+def _require_downstream_database(db_path: str) -> None:
+    """Fail before phase execution unless the retained source tables exist.
 
-def run_ingest_skywatcher(args):
-    """Consume a validated Skywatcher hub-canonical export package.
-
-    This is the single retained FR24 integration boundary: it schema-validates
-    the package's spiderweb_bridge records and routes the valid ones into the
-    flights / track_points tables for downstream correlation. No screenshots,
-    no OCR.
+    Opening a missing path with ``sqlite3.connect`` creates an empty database,
+    which made a removed-ingest workflow look initialized. The read-only
+    preflight prevents that silent success while leaving downstream phases free
+    to write their derived tables after the gate passes.
     """
-    from integration.skywatcher_bridge import ingest_package
 
-    print("\n  INGEST SKYWATCHER BRIDGE PACKAGE")
-    print("  " + "─" * 50)
-    summary = ingest_package(
-        Path(args.ingest_skywatcher), args.db, dry_run=getattr(args, "dry_run", False)
-    )
-    print(f"  package:   {summary['package']}")
-    print(f"  total:     {summary['total']}")
-    print(f"  ingested:  {summary['ingested']}")
-    print(f"  rejected:  {summary['rejected']}")
-    if summary["rejected"]:
-        for r in summary["rejects"][:10]:
-            print(f"    - {r['flight_id']}: {r['errors']}")
-    print(f"\n  ✓ Skywatcher ingest complete ({summary['adapter_version']})")
+    path = Path(db_path).expanduser()
+    if not path.is_file():
+        raise SystemExit(f"downstream database not found: {path}")
+
+    uri = f"{path.resolve().as_uri()}?mode=ro"
+    missing_columns = []
+    try:
+        with closing(sqlite3.connect(uri, uri=True)) as conn:
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            required = set(REQUIRED_DOWNSTREAM_COLUMNS)
+            missing = sorted(required - tables)
+            if not missing:
+                for table, required_columns in REQUIRED_DOWNSTREAM_COLUMNS.items():
+                    columns = {
+                        row[1]
+                        for row in conn.execute(f"PRAGMA table_info({table})")
+                    }
+                    missing_for_table = sorted(required_columns - columns)
+                    if missing_for_table:
+                        missing_columns.append(
+                            f"{table}({', '.join(missing_for_table)})"
+                        )
+    except sqlite3.Error as exc:
+        raise SystemExit(f"downstream database is unreadable: {path}: {exc}") from exc
+
+    if missing:
+        raise SystemExit(
+            "downstream database is not phase-ready; missing tables: "
+            + ", ".join(missing)
+        )
+
+    if missing_columns:
+        raise SystemExit(
+            "downstream database is not phase-ready; missing columns: "
+            + "; ".join(missing_columns)
+        )
 
 
 def run_phase_2(args):
@@ -167,12 +208,6 @@ def run_aircraft_profile(args):
     print(reporter.aircraft_profile_report(args.aircraft))
 
 
-# run_home_base / run_fleet_correlation / _run_export_home_base were REMOVED:
-# they depended on pipeline.home_base_correlation (a screenshot-derived
-# home-base inference module already deleted in the FR24 migration) and are
-# part of the FR24 screenshot-processing capability now owned by skywatcher-pr.
-
-
 def run_daily_report(args):
     from pipeline.operational_intelligence import ReportGenerator
     reporter = ReportGenerator(args.db)
@@ -182,54 +217,6 @@ def run_daily_report(args):
     with open(report_path, "w") as f:
         f.write(report)
     print(f"\n  Report saved: {report_path}")
-
-
-def export_json(db_path: str, output_path: str):
-    """Dump a DB snapshot to JSON for the dashboard.html viewer."""
-    import json
-
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-
-    def rows(table, order=""):
-        try:
-            return [dict(r) for r in conn.execute(f"SELECT * FROM {table} {order} LIMIT 5000")]
-        except Exception:
-            return []
-
-    try:
-        aircraft_profiles_raw = rows("aircraft_profiles")
-        if not aircraft_profiles_raw:
-            try:
-                cur = conn.execute(
-                    "SELECT callsign, aircraft_type, operator, mission_type FROM flights GROUP BY callsign"
-                )
-                aircraft_profiles_raw = [
-                    {"callsign": r[0], "aircraft_type": r[1], "operator": r[2],
-                     "primary_mission": r[3], "confidence_level": None}
-                    for r in cur.fetchall()
-                ]
-            except Exception:
-                aircraft_profiles_raw = []
-
-        data = {
-            "exported_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
-            "db_path": db_path,
-            "flights": rows("flights", "ORDER BY takeoff_time DESC"),
-            "aircraft_profiles": aircraft_profiles_raw,
-            "alerts": rows("alerts", "ORDER BY triggered_at DESC"),
-            "anomalies": rows("gis_anomalies", "ORDER BY detected_at DESC"),
-        }
-    finally:
-        conn.close()
-
-    with open(output_path, "w") as f:
-        json.dump(data, f, default=str)
-
-    counts = {k: len(v) for k, v in data.items() if isinstance(v, list)}
-    print(f"\n  Dashboard JSON exported: {output_path}")
-    for k, v in counts.items():
-        print(f"    {k:<22} {v:>6,} records")
 
 
 def print_status(db_path: str):
@@ -257,14 +244,6 @@ def print_status(db_path: str):
                 print(f"  {label:<30} {'N/A':>8}")
 
         try:
-            cursor.execute("SELECT AVG(combined_confidence) FROM extraction_confidence")
-            avg_conf = cursor.fetchone()[0]
-            if avg_conf:
-                print(f"  {'Avg extraction confidence':<30} {avg_conf:>8.1%}")
-        except Exception:
-            pass
-
-        try:
             cursor.execute("SELECT severity, COUNT(*) FROM alerts GROUP BY severity")
             alert_counts = cursor.fetchall()
             if alert_counts:
@@ -278,11 +257,6 @@ def print_status(db_path: str):
         conn.close()
     except Exception as e:
         print(f"  Database not found or uninitialized: {e}")
-
-
-# print_rlsm_status was REMOVED: it reported RLSM screenshot-processing coverage
-# from the `screenshots` table, which is FR24 screenshot state now owned by
-# skywatcher-pr. Spiderweb no longer maintains a screenshots table.
 
 
 def _run_schema_validation(db_path: str):
@@ -498,22 +472,19 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run_all.py                              Run downstream pipeline (2-4)
+  python run_all.py --db validated.db            Run downstream phases 2-4
   python run_all.py --phase 3                    Mission inference only
-  python run_all.py --ingest-skywatcher PKG      Ingest Skywatcher bridge package
   python run_all.py --report daily               Daily operational report
   python run_all.py --aircraft N5854Z            Aircraft intelligence profile
   python run_all.py --status                     Show database status
-  python run_all.py --export-json data.json      Export DB snapshot for dashboard
         """
     )
-    parser.add_argument("--phase", type=int, choices=[2, 3, 4],
-                        help="Run only specified downstream phase (2-4). "
-                             "Phases 0-1 (FR24 screenshot ingest/hardening) were "
-                             "migrated to skywatcher-pr.")
-    parser.add_argument("--ingest-skywatcher", dest="ingest_skywatcher", metavar="PATH",
-                        help="Ingest a validated Skywatcher hub-canonical export "
-                             "package (dir with manifest.json + bridge_records.jsonl)")
+    parser.add_argument(
+        "--phase",
+        type=int,
+        choices=[2, 3, 4],
+        help="Run one downstream phase (FR24 phases 0-1 moved to skywatcher-pr)",
+    )
     parser.add_argument("--db", default=str(Path.home() / "flight_database.db"),
                         help="Database path")
     parser.add_argument("--report", choices=["daily", "infrastructure", "all"],
@@ -522,8 +493,6 @@ Examples:
                         help="Generate intelligence profile for callsign")
     parser.add_argument("--status", action="store_true",
                         help="Show database status and exit")
-    parser.add_argument("--export-json", metavar="PATH",
-                        help="Export DB snapshot to JSON for dashboard.html")
     parser.add_argument("--validate", action="store_true",
                         help="Run schema validation after pipeline")
     parser.add_argument("--export-pr-intel", metavar="DIR",
@@ -579,24 +548,19 @@ Examples:
     print(f"  Started:    {datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}\n")
 
     if args.status:
+        _require_downstream_database(args.db)
         print_status(args.db)
         return
 
-    if args.export_json:
-        export_json(args.db, args.export_json)
-        return
-
     if args.report:
+        _require_downstream_database(args.db)
         if args.report in ("daily", "all"):
             run_daily_report(args)
         return
 
     if args.aircraft:
+        _require_downstream_database(args.db)
         run_aircraft_profile(args)
-        return
-
-    if args.ingest_skywatcher:
-        run_ingest_skywatcher(args)
         return
 
     if args.headstart_csv or args.export_headstart:
@@ -617,12 +581,18 @@ Examples:
              or args.release_check)
     )
 
+    db_integration_requested = bool(
+        args.validate
+        or args.export_pr_intel
+        or args.export_spiderweb
+        or args.release_check
+    )
+    if not new_flags_only or db_integration_requested:
+        _require_downstream_database(args.db)
+
     if not new_flags_only:
         start = datetime.now(timezone.utc).replace(tzinfo=None)
 
-        # Phases 0-1 (FR24 screenshot ingest + hardening) migrated to
-        # skywatcher-pr. Downstream correlation begins at Phase 2 and consumes
-        # flights/track_points supplied via --ingest-skywatcher.
         if args.phase is None or args.phase == 2:
             run_phase_2(args)
 

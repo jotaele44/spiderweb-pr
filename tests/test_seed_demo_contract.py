@@ -114,6 +114,23 @@ def test_anomaly_and_event_references_resolve():
         assert row[5] is None or row[5] in investigations, f"{row[0]}: investigation {row[5]!r}"
 
 
+def test_high_confidence_anomalies_have_t1_or_t2_evidence():
+    contract_tiers = {row[0]: row[7] for row in seed_demo.CONTRACTS}
+    event_tiers = {row[0]: row[6] for row in seed_demo.EVENTS}
+
+    for row in seed_demo.ANOMALIES:
+        anomaly_id, contract_ids, event_ids, confidence = (
+            row[0], row[8], row[9], row[10]
+        )
+        if confidence != 3:
+            continue
+        tiers = {contract_tiers[ref] for ref in contract_ids}
+        tiers.update(event_tiers[ref] for ref in event_ids)
+        assert tiers & {"T1", "T2"}, (
+            f"{anomaly_id}: confidence 3 has only {sorted(tiers)} evidence"
+        )
+
+
 def test_seed_carries_no_retired_airspace_vocabulary():
     """The FR24/ADS-B surface was ceded to skywatcher-pr in fcb658b."""
     blob = repr(seed_demo.SOURCES) + repr(seed_demo.EVENTS) + repr(seed_demo.ANOMALIES)

@@ -9,6 +9,7 @@ resolve without CORS.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -40,10 +41,13 @@ DIST_DIR = FRONTEND_DIR / "dist"
 # JSON exports mounted read-only at /outputs.
 OUTPUTS_DIR = REPO_ROOT / "outputs"
 
-# Default flight database consumed by run_all.py (may not exist; the backend
-# then serves empty-but-valid responses and the app shows source statuses
-# instead of data).
-DEFAULT_DB = Path.home() / "flight_database.db"
+# Database consumed by the desktop backend. Keep this binding identical to
+# desktop.setup_actions and desktop.app_server so setup, diagnostics, and the
+# live app cannot silently target different SQLite files.
+_configured_data_home = os.environ.get(DATA_ENV_VAR, "").strip()
+DEFAULT_DB = (
+    Path(_configured_data_home) if _configured_data_home else REPO_ROOT
+) / "server" / "priis.db"
 
 # The frontend reads its API base from this scoped var (see
 # server/frontend/src/config.ts); blank it at build time so a developer

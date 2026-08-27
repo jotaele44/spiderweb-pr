@@ -9,7 +9,6 @@ in this boundary test itself.
 from __future__ import annotations
 
 import importlib
-import re
 import sys
 from pathlib import Path
 
@@ -24,7 +23,6 @@ REMOVED_MODULES = [
     "pipeline.hardened_pipeline",
     "pipeline.home_base_correlation",
     "pipeline.ensemble_ocr",
-    "pipeline.geo_anchors",
 ]
 
 REMOVED_SYMBOLS = [
@@ -33,7 +31,6 @@ REMOVED_SYMBOLS = [
     "process_all_images",
     "process_with_hardening",
     "link_screenshots_to_flights",
-    "GeoAnchor",
     "/mnt/user-data/uploads",
 ]
 
@@ -45,16 +42,13 @@ def test_removed_modules_not_importable(modname):
 
 
 def test_run_all_has_no_screenshot_flags():
-    import run_all
-    parser = run_all._build_parser() if hasattr(run_all, "_build_parser") else None
     # run_all builds its parser inside main(); assert the source has no FR24 flags.
     src = (_REPO_ROOT / "run_all.py").read_text(encoding="utf-8")
     assert "--image-dir" not in src
     assert "--images" not in src
     assert "run_phase_0" not in src
     assert "run_phase_1" not in src
-    # The retained bridge consumer flag IS present.
-    assert "--ingest-skywatcher" in src
+    assert "--ingest-skywatcher" not in src
 
 
 def _iter_active_py():

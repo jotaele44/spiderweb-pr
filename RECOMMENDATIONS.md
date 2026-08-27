@@ -1,5 +1,11 @@
 # spiderweb-pr — Improvement Recommendations
 
+> **Historical audit.** This document records the repository shape observed
+> before the current packaging and airspace-boundary work. FR24/RLSM/OCR items
+> below are not active Spiderweb recommendations; executable ownership belongs
+> to `skywatcher-pr`. Current dispositions live in
+> `docs/FR24_EXECUTABLE_RETIREMENT.md` and `docs/REPO_BOUNDARY.md`.
+
 _Generated 2026-05-29. Advisory only — no source code was refactored or deleted
 in the change that introduced this document. Each item below is sized so the
 maintainer can approve the higher-risk moves (packaging changes, monorepo split)

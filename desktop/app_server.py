@@ -22,12 +22,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from desktop import config  # noqa: E402
-from server.backend.main import app  # noqa: E402
+from server.backend import main as backend  # noqa: E402
 
 # Honour the workspace the setup UI picked, so a read-only install directory
 # still gets writable exports (see desktop/setup_actions.py).
 _workspace = os.environ.get(config.DATA_ENV_VAR, "").strip()
 OUTPUTS_DIR = Path(_workspace) / "exports" if _workspace else config.OUTPUTS_DIR
+if _workspace:
+    backend.DB_PATH = Path(_workspace) / "server" / "priis.db"
+app = backend.app
 
 
 @app.get("/desktop/health", include_in_schema=False)

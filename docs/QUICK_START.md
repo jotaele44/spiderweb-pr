@@ -4,13 +4,15 @@ A 1-page on-ramp for operators new to the spiderweb-pr pipeline. For deeper docs
 
 ## What this repo produces
 
-Spiderweb turns FR24 flight screenshots + supporting reference data into:
+Spiderweb validates retained spatial/operational records and produces:
 
-- **PR Intel exports** — flight events, aircraft profiles, track points, screenshot evidence, mission inferences, anomaly index, GIS overlays. Lives under `<output-dir>/`.
+- **PR Intel exports** — validated downstream records, mission inferences, anomaly indexes, and GIS overlays. Lives under `<output-dir>/`.
 - **Spiderweb overlay** — POI / ILAP / corridor / AASB-edge candidates fused into a single GeoJSON layer with MBIL classifications + evidence tiers. Lives at `<output-dir>/spiderweb_overlay_candidates.geojson`.
 - **Release report** — single PASS/FAIL umbrella aggregating syntax + tests + validate + 2 exports + EarthGPT self-test. Lives at `<release-output-dir>/release_report.json`.
 
-> The RLSM screenshot pipeline that previously appeared here migrated to skywatcher-pr — see below.
+> FR24/RLSM ingestion and all active screenshot/OCR executables live in
+> skywatcher-pr. Spiderweb does not consume a separate bridge package while the
+> canonical-package ADR prerequisites remain blocked.
 
 ## Five commands an operator runs most days
 
@@ -52,7 +54,7 @@ The OCR + unlabeled-vision RLSM passes (`fr24.rlsm_*`) **migrated to
 
 ## Three things that trip up new operators
 
-1. **`data/*` is gitignored.** The large screenshot baseline + SQLite DBs live on disk only; check `.gitignore` if you're confused about what's tracked. (The former `data/rlsm/` schema + handoff migrated to skywatcher-pr.)
+1. **Runtime data is not source.** Local SQLite databases and large source datasets are gitignored; inspect manifests and validation receipts before treating any local file as an admitted input.
 2. **Strict / demo / normal modes:** `--strict-production` raises on missing inputs; `--demo` labels manifests `mode: "demo"` and prefixes banners; default is `normal`. See [D2 in the plan](#) for details.
 3. **MBIL alone cannot escalate to T1/T2.** A candidate with high `mbil_class` but no hydro / utility / corridor_id corroboration stays at T4 by design (T3-27 guardrail). See [`SPIDERWEB_LANGUAGE_BRIDGE.md`](SPIDERWEB_LANGUAGE_BRIDGE.md).
 

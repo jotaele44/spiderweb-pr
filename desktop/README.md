@@ -10,11 +10,9 @@ Use the standalone macOS `.dmg` from a desktop release:
 The release app is self-contained. End-user setup needs no Terminal and no
 separate Python, Node.js, Git, package-manager, or source checkout.
 
-First launch creates a writable workspace and prepares
-`exports/dashboard_data.json`. It imports an existing local flight database when
-one is available, otherwise it creates an empty, valid snapshot so the dashboard
-and source-status UI still open. Bundled exports are copied only when the
-workspace does not already contain a user version.
+First launch creates a writable workspace and prepares `server/priis.db` for the
+live backend. It seeds the diagnostic dataset only when the database is absent;
+existing user state is left untouched.
 
 Use the always-available gear button in the app to reopen **Setup & Diagnostics**.
 It can choose the workspace, run local checks, or repair generated configuration.
@@ -42,7 +40,7 @@ Genuine setup failures write their output to
 ## Architecture
 
 `desktop/config.py` and `desktop/app_server.py` are the thin Spiderweb adapters
-for its no-build dashboard. Native setup, repair, diagnostics, the per-user
+for its Vite/FastAPI diagnostic app. Native setup, repair, diagnostics, the per-user
 lock, and the pywebview lifecycle live in
 `thehub-pr/packages/prii_desktop`. Release CI builds and smokes the frozen app
 on macOS, Windows, and Linux and packages the macOS `.dmg`.
