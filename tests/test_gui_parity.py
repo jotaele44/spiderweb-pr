@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import tempfile
 import unittest
 from datetime import date
@@ -44,6 +45,7 @@ export default function App() {
         )
         self._write(
             "frontend/src/Header.jsx",
+            '// A <button> without a handler would be dead.\n'
             'export default () => <a href="/items">Items</a>;\n',
         )
         self._write(
@@ -118,8 +120,23 @@ export default function Items() {
         route_ids = {
             item["id"] for item in candidates if item["kind"] == "gui_route"
         }
-        self.assertTrue(endpoint_ids <= mapped)
-        self.assertTrue(route_ids <= mapped)
+        self.assertLessEqual(endpoint_ids, mapped)
+        self.assertLessEqual(route_ids, mapped)
+
+    def test_discovery_accepts_a_symlinked_repository_root(self) -> None:
+        linked_root = self.root.parent / f"{self.root.name}-link"
+        try:
+            linked_root.symlink_to(self.root, target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f"symlink creation unavailable: {exc}")
+        self.addCleanup(os.unlink, linked_root)
+
+        candidates = parity.discover_candidates(linked_root, self._manifest())
+
+        self.assertTrue(candidates)
+        self.assertTrue(
+            all(not item["path"].startswith("/") for item in candidates)
+        )
 
     def test_backend_without_gui_is_rejected(self) -> None:
         manifest = self._manifest()
@@ -130,11 +147,24 @@ export default function Items() {
         self.assertIn("BACKEND_NOT_GUI_SURFACED", codes)
         self.assertIn("GUI_PATH_NOT_E2E_TESTED", codes)
 
+    def test_controls_mentioned_only_in_comments_are_ignored(self) -> None:
+        candidates = parity.discover_candidates(self.root, self._manifest())
+
+        self.assertFalse(
+            any(
+                item["kind"] == "dead_control"
+                and item["path"] == "frontend/src/Header.jsx"
+                for item in candidates
+            )
+        )
+
     def test_ratchet_rejects_a_new_unclassified_endpoint(self) -> None:
         manifest = self._manifest()
         before = parity.discover_candidates(self.root, manifest)
         baseline = parity.build_baseline(manifest, before)
-        with (self.root / "server/backend/main.py").open("a", encoding="utf-8") as handle:
+        with (self.root / "server/backend/main.py").open(
+            "a", encoding="utf-8"
+        ) as handle:
             handle.write(
                 '\n@app.post("/items/run")\ndef run_items():\n    return {"ok": True}\n'
             )

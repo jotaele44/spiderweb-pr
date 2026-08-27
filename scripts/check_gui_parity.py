@@ -180,7 +180,13 @@ def _iter_files(
             candidate.relative_to(repo_root.resolve())
         except ValueError:
             continue
-        paths = [candidate] if candidate.is_file() else candidate.rglob("*") if candidate.exists() else []
+        paths = (
+            [candidate]
+            if candidate.is_file()
+            else candidate.rglob("*")
+            if candidate.exists()
+            else []
+        )
         for path in paths:
             if not path.is_file() or path.suffix.lower() not in suffixes:
                 continue
@@ -195,6 +201,53 @@ def _read_text(path: Path) -> str:
         return path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return ""
+
+
+def _mask_javascript_comments(text: str) -> str:
+    """Replace JS/JSX comments with spaces while preserving offsets and lines."""
+    chars = list(text)
+    index = 0
+    quote: str | None = None
+    escaped = False
+    while index < len(chars):
+        char = chars[index]
+        following = chars[index + 1] if index + 1 < len(chars) else ""
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in {'"', "'", "`"}:
+            quote = char
+            index += 1
+            continue
+        if char == "/" and following == "/":
+            while index < len(chars) and chars[index] != "\n":
+                chars[index] = " "
+                index += 1
+            continue
+        if char == "/" and following == "*":
+            chars[index] = chars[index + 1] = " "
+            index += 2
+            while index < len(chars):
+                if (
+                    chars[index] == "*"
+                    and index + 1 < len(chars)
+                    and chars[index + 1] == "/"
+                ):
+                    chars[index] = chars[index + 1] = " "
+                    index += 2
+                    break
+                if chars[index] != "\n":
+                    chars[index] = " "
+                index += 1
+            continue
+        index += 1
+    return "".join(chars)
 
 
 def _discover_python(
@@ -295,6 +348,7 @@ def _discover_frontend(
     for path in frontend_files:
         rel = path.relative_to(repo_root).as_posix()
         text = _read_text(path)
+        discovery_text = _mask_javascript_comments(text)
         all_frontend_text[path.resolve()] = text
 
         if path in page_files:
@@ -312,7 +366,7 @@ def _discover_frontend(
                         )
                     )
 
-        for match in CONTROL_RE.finditer(text):
+        for match in CONTROL_RE.finditer(discovery_text):
             tag = match.group(1).lower()
             normalized = re.sub(r"\s+", " ", match.group(0)).strip()
             digest = hashlib.sha1(normalized.encode("utf-8")).hexdigest()[:12]
@@ -322,7 +376,7 @@ def _discover_frontend(
                     "gui_control",
                     rel,
                     detail=detail,
-                    line=text.count("\n", 0, match.start()) + 1,
+                line=discovery_text.count("\n", 0, match.start()) + 1,
                 )
             )
             if tag == "button":
@@ -336,11 +390,11 @@ def _discover_frontend(
                             "dead_control",
                             rel,
                             detail=detail,
-                            line=text.count("\n", 0, match.start()) + 1,
+                            line=discovery_text.count("\n", 0, match.start()) + 1,
                         )
                     )
 
-        for line_number, line in enumerate(text.splitlines(), start=1):
+        for line_number, line in enumerate(discovery_text.splitlines(), start=1):
             marker = PLACEHOLDER_RE.search(line)
             if not marker:
                 continue
@@ -413,6 +467,7 @@ def _discover_frontend(
 def discover_candidates(
     repo_root: Path, manifest: dict[str, Any]
 ) -> list[dict[str, Any]]:
+    repo_root = repo_root.resolve()
     discovery = manifest.get("discovery", {})
     records = [
         *_discover_python(repo_root, discovery),
@@ -626,7 +681,8 @@ def validate_manifest(
                 if not (backend_present or analysis_present):
                     add(
                         "GUI_NOT_BACKEND_WIRED",
-                        "active human-facing capability has no backend/analysis binding",
+                        "active human-facing capability has no "
+                        "backend/analysis binding",
                         capability_id,
                     )
                 if not frontend_present:
@@ -731,7 +787,8 @@ def validate_manifest(
                 if status == "active" and route in unreachable_routes:
                     add(
                         "GUI_WORKFLOW_UNREACHABLE",
-                        f"route has no discoverable link outside the route table: {route}",
+                        "route has no discoverable link outside the route table: "
+                        f"{route}",
                         capability_id,
                     )
             for route in frontend.get("e2e_routes", []):

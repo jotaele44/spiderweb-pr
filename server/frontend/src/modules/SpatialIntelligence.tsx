@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
+import type * as GeoJSON from "geojson";
+import * as maplibregl from "maplibre-gl";
 import { byId, fmtMoney } from "../lib/format";
 import type { PriisData, Selection } from "../types/priis";
 import { Pill } from "../components/Badges";
@@ -65,6 +66,10 @@ function isBackendKey(key: LayerKey): key is BackendLayerKey {
 }
 function layerLabel(key: LayerKey): string {
   return isPolygonKey(key) ? POLYGON_LAYERS[key].label : MARKER_LABELS[key];
+}
+
+function mapErrorSourceId(event: maplibregl.ErrorEvent): string | undefined {
+  return (event as maplibregl.ErrorEvent & { sourceId?: string }).sourceId;
 }
 
 export function layerStatusText(enabled: boolean, status?: LayerStatus): string {
@@ -212,8 +217,8 @@ function useVectorTileLayer(opts: {
 
     const controller = new AbortController();
     let cancelled = false;
-    const onMapError = (event: { sourceId?: string }) => {
-      if (event.sourceId === sourceId) onStatus("error");
+    const onMapError = (event: maplibregl.ErrorEvent) => {
+      if (mapErrorSourceId(event) === sourceId) onStatus("error");
     };
     map.on("error", onMapError);
 
@@ -351,8 +356,8 @@ export function SpatialIntelligence({
       zoom: 8.4,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
-    map.on("error", (e: { sourceId?: string }) => {
-      if (e.sourceId === "osm") setTilesFailed(true);
+    map.on("error", (event: maplibregl.ErrorEvent) => {
+      if (mapErrorSourceId(event) === "osm") setTilesFailed(true);
     });
     mapRef.current = map;
     setMapReady(true);

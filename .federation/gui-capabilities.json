@@ -34,10 +34,11 @@
       "server/frontend/src"
     ],
     "frontend_capability_roots": [
-      "server/frontend/src/components"
+      "server/frontend/src/components",
+      "server/frontend/src/modules"
     ],
     "frontend_api_roots": [
-      "server/frontend/src/lib/api.ts"
+      "server/frontend/src/api/client.ts"
     ],
     "route_files": [],
     "navigation_files": [
@@ -73,13 +74,18 @@
           "GET /sites",
           "GET /contracts",
           "GET /events",
-          "GET /events/{flight_id}/track",
           "GET /anomalies",
           "GET /sources",
           "GET /investigations",
           "GET /alerts",
           "GET /geo/{layer}.geojson",
-          "GET /catalog"
+          "GET /catalog",
+          "POST /pipeline/run",
+          "GET /pipeline/status/{job_id}",
+          "GET /pipeline/events/{job_id}",
+          "DELETE /pipeline/{job_id}",
+          "POST /rag/query",
+          "POST /rag/index"
         ]
       },
       "frontend": {
@@ -91,10 +97,13 @@
         ],
         "components": [
           "server/frontend/src/App.tsx",
-          "server/frontend/src/lib/api.ts",
-          "server/frontend/src/components/FinancePane.tsx",
-          "server/frontend/src/components/MapPane.tsx",
-          "server/frontend/src/components/LayerCatalogPane.tsx"
+          "server/frontend/src/api/client.ts",
+          "server/frontend/src/modules/CommandCenter.tsx",
+          "server/frontend/src/modules/FinanceIntelligence.tsx",
+          "server/frontend/src/modules/SpatialIntelligence.tsx",
+          "server/frontend/src/modules/AnomalyWorkbench.tsx",
+          "server/frontend/src/modules/InvestigationGraph.tsx",
+          "server/frontend/src/modules/QueryLayer.tsx"
         ],
         "discoverability": [
           "server/frontend/src/App.tsx"
@@ -107,8 +116,10 @@
           "tests/test_layer_catalog.py"
         ],
         "contract": [
-          "tests/test_static_dashboard_export.py",
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "server/frontend/src/api/client.test.ts",
+          "server/frontend/src/modules/FinanceIntelligence.test.tsx",
+          "server/frontend/src/modules/SpatialIntelligence.test.ts"
         ],
         "e2e": [
           "server/frontend/tests/gui-parity.spec.mjs"
@@ -127,8 +138,7 @@
           "desktop/app_server.py"
         ],
         "endpoints": [
-          "GET /health",
-          "GET /"
+          "GET /health"
         ]
       },
       "tests": {
