@@ -195,7 +195,6 @@ For executed code head `ee84b9f6b76bc7f80742c9cef81d69866df473c5`, the following
 - install matrix
 - release check
 - Secret scan
-- Semgrep
 - CodeQL
 - pip-audit
 - PRII smoke gate
