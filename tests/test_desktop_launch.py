@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
 
 pytest.importorskip("prii_desktop")
 
@@ -49,3 +50,17 @@ def test_adapter_exports_only_its_entrypoint():
         "write_lock",
     }
     assert legacy_helpers.isdisjoint(vars(launch))
+
+
+def test_frozen_bundle_includes_layer_catalog():
+    spec = (REPO_ROOT / "desktop" / "pyinstaller.spec").read_text(encoding="utf-8")
+
+    assert 'REPO_ROOT / "configs" / "layer_catalog.yaml"' in spec
+    assert '"configs"' in spec
+
+
+def test_frozen_bundle_includes_seed_schema():
+    spec = (REPO_ROOT / "desktop" / "pyinstaller.spec").read_text(encoding="utf-8")
+
+    assert 'REPO_ROOT / "server" / "database" / "schema_sqlite.sql"' in spec
+    assert '"server/database"' in spec

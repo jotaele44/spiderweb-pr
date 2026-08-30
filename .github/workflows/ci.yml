@@ -110,7 +110,7 @@ jobs:
       - name: Install package (airspace + earthgpt + server extras)
         run: |
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
-          uv pip install --system -c constraints.txt -e ".[airspace,earthgpt,server,dev]" "httpx>=0.27"
+          uv pip install --system -c constraints.txt -e ".[airspace,earthgpt,server,dev]"
           uv pip install --system "prii-desktop @ git+https://github.com/jotaele44/thehub-pr.git@f2b81769924689b4d959554928810b1d7b7ef3d6#subdirectory=packages/prii_desktop"
 
       - name: Syntax check all Python modules
@@ -134,13 +134,27 @@ jobs:
           assert r['passed'] == r['total'], f\"EarthGPT selftest failed: {r}\"
           "
 
+      - name: Prepare phase-ready CLI smoke database
+        run: |
+          python - <<'PY'
+          import sqlite3
+          from contextlib import closing
+          from pathlib import Path
+
+          with closing(sqlite3.connect('/tmp/ci_smoke.db')) as conn:
+              conn.executescript(
+                  Path('tests/fixtures/downstream_phase_ready.sql').read_text()
+              )
+              conn.commit()
+          PY
+
       - name: CLI smoke — status
         run: python run_all.py --db /tmp/ci_smoke.db --status
 
-      - name: CLI smoke — validate (empty DB)
+      - name: CLI smoke — validate (empty phase-ready DB)
         run: python run_all.py --db /tmp/ci_smoke.db --validate
 
-      - name: CLI smoke — export-pr-intel (empty DB)
+      - name: CLI smoke — export-pr-intel (empty phase-ready DB)
         run: |
           python run_all.py --db /tmp/ci_smoke.db --export-pr-intel /tmp/ci_pr_intel
           python -c "
@@ -152,7 +166,7 @@ jobs:
           print('gates:', gates)
           "
 
-      - name: CLI smoke — export-spiderweb (empty DB)
+      - name: CLI smoke — export-spiderweb (empty phase-ready DB)
         run: |
           python run_all.py --db /tmp/ci_smoke.db --export-spiderweb /tmp/ci_spiderweb
           test -f /tmp/ci_spiderweb/spiderweb_ingest_manifest.json

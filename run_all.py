@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
-"""
-SPIDERWEB
-Complete Unified Pipeline — All Phases
+"""Spiderweb downstream spatial and operational pipeline.
 
-Usage:
-  python run_all.py                    # Run all phases
-  python run_all.py --phase 1          # Run specific phase only
-  python run_all.py --images 100       # Test with 100 images
-  python run_all.py --report daily     # Generate daily report only
-  python run_all.py --aircraft N5854Z  # Profile single aircraft
-  python run_all.py --status           # Show database status
+FR24 screenshot ingestion and OCR are owned by ``skywatcher-pr``. This command
+retains downstream phases 2-4 for already validated databases plus Spiderweb's
+own validation, export, and readiness surfaces.
 """
 
 import argparse
 import sqlite3
 import sys
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,10 +18,8 @@ BANNER = """
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
 ║          SPIDERWEB                                                            ║
-║          Unified Pipeline v1.0                                                ║
+║          Spatial / Operational Pipeline v1.0                                  ║
 ║                                                                               ║
-║  Phase 0: Image Extraction                                                    ║
-║  Phase 1: Telemetry Hardening     (Confidence + Validation)                  ║
 ║  Phase 2: GIS Intelligence        (Infrastructure + Corridors)               ║
 ║  Phase 3: Mission Inference       (Scoring + Clustering + Prediction)        ║
 ║  Phase 4: Operational Platform    (Alerts + Reports)                         ║
@@ -34,33 +27,88 @@ BANNER = """
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 """
 
+REQUIRED_DOWNSTREAM_COLUMNS = {
+    "flights": {
+        "flight_id",
+        "callsign",
+        "aircraft_type",
+        "operator",
+        "origin_airport",
+        "destination_airport",
+        "origin_lat",
+        "origin_lon",
+        "dest_lat",
+        "dest_lon",
+        "takeoff_time",
+        "landing_time",
+        "flight_duration_minutes",
+        "max_altitude_ft",
+        "avg_speed_mph",
+        "mission_type",
+        "num_screenshots",
+    },
+    "track_points": {
+        "id",
+        "flight_id",
+        "timestamp",
+        "latitude",
+        "longitude",
+        "altitude_ft",
+        "ground_speed_mph",
+    },
+}
 
-def run_phase_0(args):
-    from pipeline.flight_analyzer import FlightAnalyzer
-    print("\n  PHASE 0: IMAGE EXTRACTION")
-    print("  " + "─" * 50)
-    analyzer = FlightAnalyzer(args.image_dir, args.db)
-    analyzer.process_all_images(max_images=args.images)
-    analyzer.link_screenshots_to_flights()
-    conn = sqlite3.connect(args.db)
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM flights")
-    count = cursor.fetchone()[0]
-    conn.close()
-    print(f"\n  ✓ Phase 0 complete — {count} flights in database")
 
+def _require_downstream_database(db_path: str) -> None:
+    """Fail before phase execution unless the retained source tables exist.
 
-def run_phase_1(args):
-    from pipeline.hardened_pipeline import HardenedFlightAnalyzer
-    print("\n  PHASE 1: TELEMETRY HARDENING")
-    print("  " + "─" * 50)
-    analyzer = HardenedFlightAnalyzer(args.image_dir, args.db)
-    analyzer.process_with_hardening(
-        batch_id=f"run_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d_%H%M')}",
-        max_images=args.images,
-        checkpoint_interval=50,
-    )
-    print(f"\n  ✓ Phase 1 complete")
+    Opening a missing path with ``sqlite3.connect`` creates an empty database,
+    which made a removed-ingest workflow look initialized. The read-only
+    preflight prevents that silent success while leaving downstream phases free
+    to write their derived tables after the gate passes.
+    """
+
+    path = Path(db_path).expanduser()
+    if not path.is_file():
+        raise SystemExit(f"downstream database not found: {path}")
+
+    uri = f"{path.resolve().as_uri()}?mode=ro"
+    missing_columns = []
+    try:
+        with closing(sqlite3.connect(uri, uri=True)) as conn:
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            required = set(REQUIRED_DOWNSTREAM_COLUMNS)
+            missing = sorted(required - tables)
+            if not missing:
+                for table, required_columns in REQUIRED_DOWNSTREAM_COLUMNS.items():
+                    columns = {
+                        row[1]
+                        for row in conn.execute(f"PRAGMA table_info({table})")
+                    }
+                    missing_for_table = sorted(required_columns - columns)
+                    if missing_for_table:
+                        missing_columns.append(
+                            f"{table}({', '.join(missing_for_table)})"
+                        )
+    except sqlite3.Error as exc:
+        raise SystemExit(f"downstream database is unreadable: {path}: {exc}") from exc
+
+    if missing:
+        raise SystemExit(
+            "downstream database is not phase-ready; missing tables: "
+            + ", ".join(missing)
+        )
+
+    if missing_columns:
+        raise SystemExit(
+            "downstream database is not phase-ready; missing columns: "
+            + "; ".join(missing_columns)
+        )
 
 
 def run_phase_2(args):
@@ -160,61 +208,6 @@ def run_aircraft_profile(args):
     print(reporter.aircraft_profile_report(args.aircraft))
 
 
-def run_home_base(args):
-    from pipeline.home_base_correlation import HomeBaseDeducer
-    print(f"\n  HOME-BASE INTELLIGENCE: {args.home_base}\n")
-    print(HomeBaseDeducer(args.db).intelligence_report(args.home_base))
-
-
-def run_fleet_correlation(args):
-    from pipeline.home_base_correlation import FleetColocationAnalyzer
-    print("\n  FLEET HOME-BASE CORRELATION\n")
-    print(FleetColocationAnalyzer(args.db).correlation_report())
-
-
-def _run_export_home_base(db_path: str, output_dir: str):
-    """Write home_base_report.md, home_base_assignments.csv, shared_space_leads.json."""
-    import csv
-    import json
-
-    from pipeline.home_base_correlation import (
-        FleetColocationAnalyzer,
-        HomeBaseDeducer,
-        OPERATOR_MISSION,
-        OPERATOR_OWNER,
-        GENERIC_OPERATORS,
-    )
-
-    print("\n  HOME-BASE EXPORT")
-    print("  " + "─" * 50)
-    out = Path(output_dir)
-    out.mkdir(parents=True, exist_ok=True)
-
-    fleet = FleetColocationAnalyzer(db_path)
-    deducer = HomeBaseDeducer(db_path)
-    hb = fleet.home_base_map()
-
-    (out / "home_base_report.md").write_text(fleet.correlation_report())
-
-    with open(out / "home_base_assignments.csv", "w", newline="") as fh:
-        w = csv.writer(fh)
-        w.writerow(["callsign", "lat", "lon", "feature_id", "feature_name",
-                    "operator", "owner", "mission", "confidence"])
-        for cs in sorted(hb):
-            spot = hb[cs]
-            profile = deducer.deduce_profile(cs)
-            op = spot.nearest_operator
-            owner = OPERATOR_OWNER.get(op, "" if op in GENERIC_OPERATORS else op)
-            w.writerow([cs, spot.lat, spot.lon, spot.nearest_feature_id,
-                        spot.nearest_feature_name, op, owner,
-                        OPERATOR_MISSION.get(op, ""), profile.confidence_level])
-
-    leads = {fid: cs for fid, cs in fleet.shared_bases().items() if len(cs) >= 2}
-    (out / "shared_space_leads.json").write_text(json.dumps(leads, indent=2))
-
-    print(f"  ✓ Home-base outputs written to: {output_dir}")
-
-
 def run_daily_report(args):
     from pipeline.operational_intelligence import ReportGenerator
     reporter = ReportGenerator(args.db)
@@ -226,54 +219,6 @@ def run_daily_report(args):
     print(f"\n  Report saved: {report_path}")
 
 
-def export_json(db_path: str, output_path: str):
-    """Dump a DB snapshot to JSON for the dashboard.html viewer."""
-    import json
-
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-
-    def rows(table, order=""):
-        try:
-            return [dict(r) for r in conn.execute(f"SELECT * FROM {table} {order} LIMIT 5000")]
-        except Exception:
-            return []
-
-    try:
-        aircraft_profiles_raw = rows("aircraft_profiles")
-        if not aircraft_profiles_raw:
-            try:
-                cur = conn.execute(
-                    "SELECT callsign, aircraft_type, operator, mission_type FROM flights GROUP BY callsign"
-                )
-                aircraft_profiles_raw = [
-                    {"callsign": r[0], "aircraft_type": r[1], "operator": r[2],
-                     "primary_mission": r[3], "confidence_level": None}
-                    for r in cur.fetchall()
-                ]
-            except Exception:
-                aircraft_profiles_raw = []
-
-        data = {
-            "exported_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
-            "db_path": db_path,
-            "flights": rows("flights", "ORDER BY takeoff_time DESC"),
-            "aircraft_profiles": aircraft_profiles_raw,
-            "alerts": rows("alerts", "ORDER BY triggered_at DESC"),
-            "anomalies": rows("gis_anomalies", "ORDER BY detected_at DESC"),
-        }
-    finally:
-        conn.close()
-
-    with open(output_path, "w") as f:
-        json.dump(data, f, default=str)
-
-    counts = {k: len(v) for k, v in data.items() if isinstance(v, list)}
-    print(f"\n  Dashboard JSON exported: {output_path}")
-    for k, v in counts.items():
-        print(f"    {k:<22} {v:>6,} records")
-
-
 def print_status(db_path: str):
     try:
         conn = sqlite3.connect(db_path)
@@ -282,7 +227,6 @@ def print_status(db_path: str):
         tables = {
             "flights": "Total flight records",
             "track_points": "Track points",
-            "screenshots": "Processed screenshots",
             "alerts": "Total alerts",
             "mission_scores": "Mission scores",
             "cluster_assignments": "Cluster assignments",
@@ -300,14 +244,6 @@ def print_status(db_path: str):
                 print(f"  {label:<30} {'N/A':>8}")
 
         try:
-            cursor.execute("SELECT AVG(combined_confidence) FROM extraction_confidence")
-            avg_conf = cursor.fetchone()[0]
-            if avg_conf:
-                print(f"  {'Avg extraction confidence':<30} {avg_conf:>8.1%}")
-        except Exception:
-            pass
-
-        try:
             cursor.execute("SELECT severity, COUNT(*) FROM alerts GROUP BY severity")
             alert_counts = cursor.fetchall()
             if alert_counts:
@@ -317,36 +253,6 @@ def print_status(db_path: str):
                     print(f"  {severity:<30} {count:>8,}")
         except Exception:
             pass
-
-        conn.close()
-    except Exception as e:
-        print(f"  Database not found or uninitialized: {e}")
-
-
-def print_rlsm_status(db_path: str):
-    """RLSM screenshot-processing status: coverage + low-confidence backlog."""
-    try:
-        conn = sqlite3.connect(db_path)
-
-        print("\n  RLSM STATUS")
-        print("  " + "─" * 45)
-
-        def _count(sql: str):
-            try:
-                return conn.execute(sql).fetchone()[0]
-            except Exception:
-                return None
-
-        rows = [
-            ("Screenshots processed", _count("SELECT COUNT(*) FROM screenshots")),
-            ("Low-confidence (<0.5)",
-             _count("SELECT COUNT(*) FROM screenshots WHERE ocr_confidence < 0.5")),
-            ("No OCR text",
-             _count("SELECT COUNT(*) FROM screenshots WHERE raw_text IS NULL OR raw_text = ''")),
-        ]
-        for label, val in rows:
-            shown = f"{val:,}" if isinstance(val, int) else "N/A"
-            print(f"  {label:<30} {shown:>8}")
 
         conn.close()
     except Exception as e:
@@ -566,41 +472,27 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run_all.py                              Run complete pipeline
-  python run_all.py --phase 1                    Hardening only
+  python run_all.py --db validated.db            Run downstream phases 2-4
   python run_all.py --phase 3                    Mission inference only
-  python run_all.py --images 50                  Test with 50 images
   python run_all.py --report daily               Daily operational report
   python run_all.py --aircraft N5854Z            Aircraft intelligence profile
   python run_all.py --status                     Show database status
-  python run_all.py --export-json data.json      Export DB snapshot for dashboard
         """
     )
-    parser.add_argument("--phase", type=int, choices=[0, 1, 2, 3, 4],
-                        help="Run only specified phase (0-4)")
-    parser.add_argument("--images", type=int, default=None,
-                        help="Max images to process (default: all)")
-    parser.add_argument("--image-dir", dest="image_dir",
-                        default="/mnt/user-data/uploads",
-                        help="Directory containing screenshots")
+    parser.add_argument(
+        "--phase",
+        type=int,
+        choices=[2, 3, 4],
+        help="Run one downstream phase (FR24 phases 0-1 moved to skywatcher-pr)",
+    )
     parser.add_argument("--db", default=str(Path.home() / "flight_database.db"),
                         help="Database path")
     parser.add_argument("--report", choices=["daily", "infrastructure", "all"],
                         help="Generate report only")
     parser.add_argument("--aircraft", type=str,
                         help="Generate intelligence profile for callsign")
-    parser.add_argument("--home-base", dest="home_base", metavar="CALLSIGN",
-                        help="Deduce operator/owner/mission from a craft's home base")
-    parser.add_argument("--fleet-correlation", action="store_true",
-                        help="Cross-craft home-base correlation and shared-space leads")
-    parser.add_argument("--export-home-base", metavar="DIR",
-                        help="Export home-base report + assignments CSV + shared-space leads JSON")
     parser.add_argument("--status", action="store_true",
                         help="Show database status and exit")
-    parser.add_argument("--rlsm-status", dest="rlsm_status", action="store_true",
-                        help="Show RLSM screenshot processing status and exit")
-    parser.add_argument("--export-json", metavar="PATH",
-                        help="Export DB snapshot to JSON for dashboard.html")
     parser.add_argument("--validate", action="store_true",
                         help="Run schema validation after pipeline")
     parser.add_argument("--export-pr-intel", metavar="DIR",
@@ -653,41 +545,22 @@ Examples:
 
     print(BANNER)
     print(f"  Database:   {args.db}")
-    print(f"  Image dir:  {args.image_dir}")
-    print(f"  Max images: {args.images or 'All'}")
     print(f"  Started:    {datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}\n")
 
     if args.status:
+        _require_downstream_database(args.db)
         print_status(args.db)
         return
 
-    if args.rlsm_status:
-        print_rlsm_status(args.db)
-        return
-
-    if args.export_json:
-        export_json(args.db, args.export_json)
-        return
-
     if args.report:
+        _require_downstream_database(args.db)
         if args.report in ("daily", "all"):
             run_daily_report(args)
         return
 
     if args.aircraft:
+        _require_downstream_database(args.db)
         run_aircraft_profile(args)
-        return
-
-    if args.home_base:
-        run_home_base(args)
-        return
-
-    if args.fleet_correlation:
-        run_fleet_correlation(args)
-        return
-
-    if args.export_home_base:
-        _run_export_home_base(args.db, args.export_home_base)
         return
 
     if args.headstart_csv or args.export_headstart:
@@ -701,22 +574,24 @@ Examples:
     # Skip phases when the user only supplied integration-export flags
     # (standalone export mode against an existing DB).
     new_flags_only = (
-        not args.images
-        and args.phase is None
+        args.phase is None
         and (args.validate or args.export_pr_intel or args.export_spiderweb
              or args.spiderweb_intake or args.calibrate_scoring
              or args.assess_readiness or args.ingest_satellite
              or args.release_check)
     )
 
+    db_integration_requested = bool(
+        args.validate
+        or args.export_pr_intel
+        or args.export_spiderweb
+        or args.release_check
+    )
+    if not new_flags_only or db_integration_requested:
+        _require_downstream_database(args.db)
+
     if not new_flags_only:
         start = datetime.now(timezone.utc).replace(tzinfo=None)
-
-        if args.phase is None or args.phase == 0:
-            run_phase_0(args)
-
-        if args.phase is None or args.phase == 1:
-            run_phase_1(args)
 
         if args.phase is None or args.phase == 2:
             run_phase_2(args)

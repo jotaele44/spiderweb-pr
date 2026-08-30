@@ -9,7 +9,7 @@ and records a reproducibility block (D3).
 
 Stages:
   syntax_check      compile every source module (compile-only; never imports,
-                    so optional-dep guards in FR24/EarthGPT modules are safe)
+                    so optional-dependency guards in retained modules are safe)
   core_tests        pytest subset (GEBCO io/terrain tests excluded — D7)
   validate          schema validation → review_queue.csv
   export_pr_intel   PRIntelAdapter.export_all() → integration_report.json

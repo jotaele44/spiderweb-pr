@@ -358,8 +358,41 @@ reports/maintenance/
 # Desktop wrapper (see desktop/README.md)
 .venv/
 desktop/.setup-complete
-outputs/dashboard_data.json
 desktop/.running
+
+# Runtime SQLite artifacts and retired screenshot-input staging.
+*.db-wal
+*.db-shm
+flight_database.db
+inputs/screenshots/
 
 # Generated demo/runtime SQLite DB (built by server/ingestion/seed_demo.py)
 server/priis.db
+
+# NCEI Coastal DEM source adapter: track only small registry placeholders.
+!data/ncei_coastal_dem/
+data/ncei_coastal_dem/*
+!data/ncei_coastal_dem/.gitkeep
+!data/ncei_coastal_dem/registry/
+data/ncei_coastal_dem/registry/*
+!data/ncei_coastal_dem/registry/*.csv
+!data/ncei_coastal_dem/registry/*.json
+!outputs/ncei_coastal_dem/
+outputs/ncei_coastal_dem/*
+!outputs/ncei_coastal_dem/.gitkeep
+
+# NCEI/NOAA DEM local rasters and caches are runtime-only.
+data/ncei_coastal_dem/raw/
+data/ncei_coastal_dem/cache/
+data/ncei_coastal_dem/**/*.nc
+data/ncei_coastal_dem/**/*.tif
+data/ncei_coastal_dem/**/*.tiff
+data/ncei_coastal_dem/**/*.vrt
+data/ncei_coastal_dem/**/*.ovr
+data/ncei_coastal_dem/**/*.aux.xml
+outputs/ncei_coastal_dem/**/*.nc
+outputs/ncei_coastal_dem/**/*.tif
+outputs/ncei_coastal_dem/**/*.tiff
+outputs/ncei_coastal_dem/**/*.vrt
+outputs/ncei_coastal_dem/**/*.ovr
+outputs/ncei_coastal_dem/**/*.aux.xml

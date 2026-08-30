@@ -14,8 +14,8 @@ As of the latest boundary refresh, `spiderweb-pr` operates purely as the spatial
 spiderweb-pr/
 │
 ├── pipeline/                    Retained operational/spatial analysis modules
-│   ├── flight_analyzer.py        Legacy flight/event extraction and DB support
 │   ├── aircraft_intelligence.py  Operator/profile enrichment retained for review
+│   ├── geo_anchors.py            Evidence-bounded homography helpers
 │   ├── gis_intelligence.py       Puerto Rico infrastructure graph and GIS helpers
 │   ├── mission_inference.py      Mission scoring and behavioral review helpers
 │   └── operational_intelligence.py

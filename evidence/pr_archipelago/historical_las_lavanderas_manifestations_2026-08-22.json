@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "scope": "Independent B-lane historical Las Lavanderas manifestations; does not modify current A identity or geometry",
+  "rules": {
+    "current_contamination": "forbidden",
+    "name_continuity": "historical/current same or similar labels do not prove stable identity continuity",
+    "geometry_continuity": "historical map placement is a temporal geometry manifestation and must not overwrite current geometry"
+  },
+  "historical_sources": [
+    {
+      "authority": "U.S. Geological Survey",
+      "product": "Punta Puerca, PR 1:20,000 quadrangle",
+      "year": 1957,
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Maps/HistoricalTopo/PDF/PR/20000/PR_Punta%20Puerca_362220_1957_20000_geo.pdf",
+      "observed_labels": ["Las Lavanderas del Este", "Las Lavanderas del Oeste", "Piragua de Afuera", "Piragua de Adentro"],
+      "temporal_state": "HISTORICAL_MAP_MANIFESTATION",
+      "identity_binding": "NONE"
+    },
+    {
+      "authority": "U.S. Geological Survey",
+      "product": "Cayo Icacos, PR US Topo",
+      "year": 2013,
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Maps/USTopo/PDF/PR/PR_Cayo_Icacos_20130923_TM_geo.pdf",
+      "observed_labels": ["Las Lavanderas", "Piragua de Afuera", "Piragua de Adentro"],
+      "temporal_state": "HISTORICAL_OR_PRIOR_CURRENT_MAP_MANIFESTATION",
+      "identity_binding": "NONE"
+    }
+  ],
+  "interpretation": {
+    "continuity_candidate": "The map corpus demonstrates long-running naming manifestations in the same Ceiba coastal complex, including explicit East/West labels by 1957 and generic Las Lavanderas labeling in later US Topo products.",
+    "not_proven": ["stable feature continuity", "parent/group relation", "unchanged footprint", "merge/split chronology", "current canonical identity"]
+  },
+  "arithmetic": {
+    "historical_source_manifestations": 2,
+    "current_A_promotions": 0,
+    "closed": true
+  },
+  "certification": {
+    "LAS_LAVANDERAS_HISTORICAL_MANIFESTATIONS": "PASS_BOUNDED_SOURCE_MANIFESTATIONS_ONLY",
+    "LAS_LAVANDERAS_TEMPORAL_IDENTITY": "OPEN",
+    "HISTORICAL_ARCHIPELAGO_EXHAUSTION": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "UNCHANGED_OPEN"
+  }
+}

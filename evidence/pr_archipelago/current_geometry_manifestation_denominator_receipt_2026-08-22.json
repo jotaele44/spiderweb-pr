@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0",
+  "scope": "Representation-preserving current geometry-manifestation denominator built only from already-frozen PR_ARCHIPELAGO_GEOGRAPHY artifacts",
+  "rules": {
+    "identity_promotion": "forbidden from name, normalized name, count equality, nearest, proximity, overlap, or source taxonomy alone",
+    "representation": "POINT, LINE, and POLYGON manifestations remain distinct",
+    "origin": "SOURCE_NATIVE remains distinct from DERIVED",
+    "source_taxonomy": "used only for scope partitioning, never canonical identity",
+    "candidate_graph": "full candidate sets and 1:1|1:N|N:1|N:N|0:1 graph states preserved; graph cardinality is not canonical identity"
+  },
+  "frozen_inputs": {
+    "current_snapshot_artifact_sha256": "6e8a29fc87178264584c5e88add8ac63d8e0e9a72b9f05f63795c6edec2c92e4",
+    "noaa_current_project_geometry_artifact_sha256": "48d040ee92a1535c2cc9832a5f61bdabd73a83cd55bfdc5e7573f1fffe8fc596",
+    "cusp_current_artifact_sha256": "578d8bb1760ac29a6db032cc4f9d7a307f05cf486014fecb4f28830b3511895e",
+    "durable_release_tag": "pr-archipelago-freeze-2026-08-22",
+    "source_reacquisition_for_this_receipt": 0
+  },
+  "source_families": {
+    "GNIS_CURRENT_ISLAND_POINTS": {
+      "source_manifestations": 148,
+      "representation": "POINT",
+      "origin": "SOURCE_NATIVE",
+      "partition": {"retained": 148, "excluded": 0, "candidate": 0, "unresolved": 0},
+      "exact_duplicate_coordinate_groups": 0,
+      "note": "stable GNIS Feature ID binds each source-native representative point to its own GNIS source manifestation; this does not establish footprint"
+    },
+    "SIGE_INSULAR_REFERENCE_POINTS": {
+      "source_manifestations": 29,
+      "representation": "POINT",
+      "origin": "SOURCE_NATIVE",
+      "partition": {"retained": 0, "excluded": 0, "candidate": 29, "unresolved": 0},
+      "known_identity_unresolved_rows": 4,
+      "note": "all 29 have preserved candidate sets; four remain unresolved for canonical identity even though their geometry manifestations are terminally classified as CANDIDATE"
+    },
+    "CENSUS_2025_COASTLINE_PR_DISCOVERY_SCOPE": {
+      "national_source_manifestations": 4240,
+      "discovery_bbox": [-68.1, 17.7, -64.9, 18.7],
+      "source_manifestations_in_scope": 248,
+      "representation": "LINE",
+      "origin": "SOURCE_NATIVE",
+      "partition": {"retained": 0, "excluded": 0, "candidate": 248, "unresolved": 0},
+      "note": "bbox scope is discovery-only; Census coastline is not a canonical insular denominator"
+    },
+    "NOAA_CURRENT_PROJECT_ARCHIVES": {
+      "project_archives": 15,
+      "shapefiles": {"POINT": 11, "POLYLINE": 15, "PROJECT_BOUNDARY_POLYGON": 14},
+      "source_records_total": 28693,
+      "source_records_by_representation": {"POINT": 1849, "LINE": 26830, "POLYGON": 14},
+      "project_boundary_polygons": {
+        "count": 14,
+        "partition_state": "EXCLUDED",
+        "reason": "project coverage metadata, not land/emergent-feature geometry"
+      },
+      "non_archipelago_scope_records": {
+        "count": 5947,
+        "classes": ["TRANSPORTATION", "CULTURAL FEATURE MISCELLANEOUS", "CONTOUR", "LANDMARK", "AID TO NAVIGATION", "CARTOGRAPHIC LIMIT"],
+        "partition_state": "EXCLUDED",
+        "note": "class is used only to determine relevance to this geometry-manifestation scope, not to infer identity or canonical feature type"
+      },
+      "archipelago_geometry_candidate_records": {
+        "count": 22732,
+        "classes": {
+          "SHORELINE": 13751,
+          "ALONGSHORE FEATURE": 4171,
+          "NATURAL FEATURE MISCELLANEOUS": 1543,
+          "DANGER AREA": 1474,
+          "OBSTRUCTION POINT": 1253,
+          "FREESTANDING MARINE FEATURE": 291,
+          "OBSTRUCTION LINEAR": 249
+        },
+        "partition_state": "CANDIDATE"
+      },
+      "exact_geometry_hash_candidate_graph": {
+        "duplicate_groups": 160,
+        "records_in_groups": 320,
+        "extra_duplicate_manifestations": 160,
+        "group_sizes": {"2": 160},
+        "same_class_and_feature_code_groups": 150,
+        "conflicting_class_or_feature_code_groups": 10,
+        "canonical_promotions": 0,
+        "interpretation": "byte-normalized exact geometry equality creates equivalence candidates only; even exact geometry equality does not by itself establish canonical identity"
+      }
+    },
+    "NOAA_CUSP_CURRENT": {
+      "cells": ["N15W065", "N15W070"],
+      "source_manifestations": 13773,
+      "representation": "LINE",
+      "origin": "SOURCE_NATIVE",
+      "partition": {"retained": 0, "excluded": 0, "candidate": 13773, "unresolved": 0},
+      "exact_internal_geometry_duplicate_groups": 0,
+      "exact_geometry_hash_matches_to_NOAA_project_candidates": 0
+    }
+  },
+  "denominator_partition": {
+    "source_manifestations": 42891,
+    "retained": 148,
+    "excluded": 5961,
+    "candidate": 36782,
+    "unresolved": 0,
+    "explained_total": 42891,
+    "unexplained_residue": 0,
+    "arithmetic_closed": true
+  },
+  "canonical_state": {
+    "geometry_manifestation_denominator": "PASS_SOURCE_PARTITION_ONLY",
+    "canonical_geometry_denominator": "OPEN",
+    "canonical_identity_denominator": "OPEN",
+    "candidate_only_current_geometry_residue": 36782,
+    "unresolved_canonical_geometry_residue": "NOT_YET_COMPUTABLE",
+    "unresolved_canonical_identity_residue": "NOT_YET_COMPUTABLE",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

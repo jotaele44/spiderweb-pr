@@ -31,7 +31,8 @@ python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain
 | Test file | What it covers |
 |-----------|---------------|
 | `test_aircraft_intelligence.py` | N-number lookup, operator profile deduction, unknown callsign handling |
-| `test_cli.py` | `run_all.py --status`, `--export-json` CLI flags |
+| `test_cli.py` | `run_all.py --status` and missing-database validation |
+| `test_fr24_boundary.py` | Removed OCR paths/flags stay absent; retained geo anchors stay importable |
 | `test_end_to_end.py` | Full `--validate`, `--export-pr-intel`, `--export-spiderweb` smoke runs |
 | `test_gis_intelligence.py` | Haversine distance, corridor membership, PR infrastructure graph |
 | `test_mission_inference.py` | Mission scorer probabilities, confidence levels, multi-factor weights |
@@ -80,18 +81,22 @@ Optional-dependency tests use `pytest.importorskip`; they skip cleanly without `
 
 ## CI matrix
 
-`.github/workflows/ci.yml` has two independent jobs that run on every push and PR against `main`:
+`.github/workflows/ci.yml` has nine independent jobs. The runtime test jobs below
+run on every push and PR against `main`; lint, data-policy, release, install,
+frontend, lock, and advisory security jobs provide the remaining gates.
 
 ### Job: `test` — Spiderweb + LLM Pipeline + EarthGPT
 
-Python versions: **3.10**, **3.11**, **3.12**  
-Dependencies: `jsonschema>=4.17`, `pyarrow>=14.0`, `pytest>=7.4`, `Pillow>=10.0`, `numpy>=1.26`
+Python versions: **3.11**, **3.12**
+Dependencies: constrained editable install of
+`.[airspace,earthgpt,server,dev]` plus the pinned `prii-desktop` package.
 
 | Step | Command |
 |------|---------|
-| Syntax check | `python -m py_compile *.py` |
-| Test suite | `python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py` |
+| Syntax check | Compile all active Python modules, excluding Git metadata, `.claude`, and `docs/legacy` |
+| Test suite | `python -m pytest tests/ -q --tb=short --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-fail-under=62` |
 | EarthGPT selftest | `run_selftest()` — asserts 7/7 gates pass |
+| Prepare CLI DB | Load `tests/fixtures/downstream_phase_ready.sql` into `/tmp/ci_smoke.db` |
 | CLI smoke — status | `python run_all.py --db /tmp/ci_smoke.db --status` |
 | CLI smoke — validate | `python run_all.py --db /tmp/ci_smoke.db --validate` |
 | CLI smoke — export-pr-intel | Full gate assertion on `integration_report.json` (6 gates) |

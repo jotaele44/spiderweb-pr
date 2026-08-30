@@ -23,6 +23,9 @@
 > `docs/legacy/`. Spiderweb retains its own spatial ILAP/AASB bridges, which
 > drive a gating export stage (see `docs/DUPLICATION_REGISTER.md`).
 > `maintenance/adapters/local.py::check_migration_remnants` enforces this.
+> The follow-up boundary closure removes the last executable screenshot/OCR
+> processors. A direct Skywatcher consumer remains intentionally absent until
+> every prerequisite in `docs/ADR_SKYWATCHER_SPIDERWEB_INTEGRATION.md` passes.
 
 > **Status:** diagnostic / integration-ready only after validation gates pass. Run `--validate` and review `integration_report.json` before promoting outputs.
 
@@ -67,8 +70,8 @@ See [`desktop/README.md`](desktop/README.md) for details.
 # The shared prii-* libs resolve via the pinned git+https reference in
 # [tool.uv.sources] — no thehub-pr sibling checkout needed:
 pip install uv && uv pip install -e ".[airspace]"
-python run_all.py --status
-python run_all.py --images 10
+python run_all.py --help
+python run_all.py --db flight_database.db --status
 python run_all.py --db flight_database.db --validate
 python run_all.py --db flight_database.db --export-pr-intel ./outputs/pr_intel
 python run_all.py --db flight_database.db --export-spiderweb ./outputs/spiderweb

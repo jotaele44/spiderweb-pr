@@ -20,6 +20,10 @@ Offline caveat: map basemap tiles are fetched from the internet
 (OpenStreetMap), so without a connection the map background is blank while
 all other data, tables, and charts keep working.
 
+First launch also creates a writable workspace and prepares `server/priis.db`
+for the live backend. It seeds the diagnostic dataset only when the database
+is absent; existing user state is left untouched.
+
 ## How it works
 
 - `desktop/config.py` — the only per-repo file (window title, branding,

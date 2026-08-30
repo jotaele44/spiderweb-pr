@@ -1,16 +1,17 @@
 # Aircraft Home-Base Intelligence
 
+> **Retired executable surface.** The implementation and `run_all.py`
+> home-base/fleet/export flags no longer exist in Spiderweb. This document is
+> retained as historical analytical context; active aviation implementation
+> belongs to `skywatcher-pr`.
+
 **What can be deduced about each craft's operator, owner, and mission purely from
 where it takes off and — above all — where it lands and stays?** And once every
 craft's home base is known, what do the *shared* locations tell us?
 
-This is the analytical product of `pipeline/home_base_correlation.py`. Run it live with:
-
-```bash
-python run_all.py --home-base C6062        # one craft
-python run_all.py --fleet-correlation      # the whole fleet + shared-space leads
-python run_all.py --export-home-base ./outputs/home_base
-```
+This was the analytical product of the retired
+`pipeline/home_base_correlation.py`. There is no live Spiderweb command for this
+workflow.
 
 ## Why the resting spot is the strongest single signal
 
@@ -61,7 +62,7 @@ Reading of each:
 
 ## Using all four together — shared-space leads
 
-Plotting the four home bases against each other (the `--fleet-correlation` product):
+The retired fleet-correlation output plotted the four home bases against each other:
 
 - **Isla Grande (SIG) is a shared apron.** PREPA's N5854Z and the private N684JB both
   bed down here. Shared apron ⇒ shared fuel, maintenance, and ATC relationships and a
