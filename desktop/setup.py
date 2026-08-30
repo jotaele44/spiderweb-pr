@@ -33,6 +33,7 @@ MARKER = Path(__file__).resolve().parent / ".setup-complete"
 MIN_PYTHON = (3, 10)
 
 REQUIREMENTS = REPO_ROOT / "requirements-desktop.txt"
+CONSTRAINTS_DESKTOP = REPO_ROOT / "constraints-desktop.txt"
 
 
 def venv_python() -> Path:
@@ -65,8 +66,12 @@ def setup_python() -> None:
         print(f"Creating virtual environment at {VENV_DIR} …")
         venv.EnvBuilder(with_pip=True, clear=False).create(VENV_DIR)
     run([str(venv_python()), "-m", "pip", "install", "--upgrade", "pip", "--quiet"])
+    constraints = (
+        ["-c", str(CONSTRAINTS_DESKTOP)] if CONSTRAINTS_DESKTOP.is_file() else []
+    )
     run(
         [str(venv_python()), "-m", "pip", "install", "--quiet", "-r", str(REQUIREMENTS)]
+        + constraints
     )
 
 
