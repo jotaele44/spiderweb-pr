@@ -45,3 +45,11 @@ def test_discovery_only_and_same_as_are_rejected():
     r = base_row(); r["relation_type"] = "SAME_AS"
     with pytest.raises(HTRContextError):
         import_htr_graph([r])
+
+
+def test_unsupported_row_is_rejected():
+    r = base_row()
+    r["state"] = "UNSUPPORTED"
+    r["identity_state"] = "UNRESOLVED"
+    with pytest.raises(HTRContextError):
+        import_htr_graph([r])
