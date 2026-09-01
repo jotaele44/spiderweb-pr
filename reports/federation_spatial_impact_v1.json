@@ -2,7 +2,7 @@
   "contract_version":"federation-spatial-impact/1.0",
   "producer_repo":"spiderweb-pr",
   "branch":"feat/federation-gis-max-v1",
-  "base_sha":"533fdde554e11b486a4ddb7a3fbe8127ed3fa2b2",
+  "base_sha":"02169e73bf7ae110eeccb8cfaf47a4f7dfa2989f",
   "head_sha":null,
   "changes":{
     "contracts":["federation-spatial-contract/1.0","federation-map-runtime/1.0","fedgeopack/1.0","federation-spatial-manifest/1.0"],

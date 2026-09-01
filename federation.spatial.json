@@ -2,7 +2,7 @@
   "contract_version":"federation-spatial-manifest/1.0",
   "producer_repo":"spiderweb-pr",
   "authority":"cross-domain investigation and spatial evidence fusion",
-  "frozen_base_sha":"533fdde554e11b486a4ddb7a3fbe8127ed3fa2b2",
+  "frozen_base_sha":"02169e73bf7ae110eeccb8cfaf47a4f7dfa2989f",
   "branch":"feat/federation-gis-max-v1",
   "contracts":{
     "feature":"schemas/federation_spatial_feature_v1.schema.json",
