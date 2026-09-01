@@ -68,16 +68,65 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
       selectionIndicator: false,
       shouldAnimate: false,
     });
+    viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#06111a");
     viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0a1a2a");
+    viewer.scene.globe.show = true;
+    viewer.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
+      cells: 8,
+      color: Cesium.Color.fromCssColorString("#3b8793").withAlpha(0.75),
+      glowColor: Cesium.Color.fromCssColorString("#06111a").withAlpha(0.35),
+      glowWidth: 2,
+      backgroundColor: Cesium.Color.fromCssColorString("#0a2633"),
+    }));
     this.viewer = viewer;
     const [longitude, latitude] = config.initialView.center;
+    const previewExtent = Cesium.Rectangle.fromDegrees(
+      longitude - 1.6,
+      latitude - 0.8,
+      longitude + 1.6,
+      latitude + 0.8,
+    );
+
+    // This is a scene-orientation aid derived from the configured preview
+    // extent, not a coastline, jurisdiction, or canonical boundary. Keeping it
+    // visibly rectangular prevents the phase-2 shell from implying more
+    // geographic precision than it currently has.
+    viewer.entities.add({
+      name: "Regional preview extent (not a canonical boundary)",
+      rectangle: {
+        coordinates: previewExtent,
+        height: 0,
+        material: Cesium.Color.fromCssColorString("#0f6b78").withAlpha(0.72),
+        outline: true,
+        outlineColor: Cesium.Color.fromCssColorString("#7ee5d3"),
+      },
+    });
+    viewer.entities.add({
+      name: "Regional preview center",
+      position: Cesium.Cartesian3.fromDegrees(longitude, latitude, 250),
+      point: {
+        color: Cesium.Color.fromCssColorString("#f4d35e"),
+        outlineColor: Cesium.Color.fromCssColorString("#06111a"),
+        outlineWidth: 2,
+        pixelSize: 12,
+      },
+      label: {
+        text: "REGIONAL PREVIEW EXTENT\nNOT A CANONICAL BOUNDARY",
+        font: "12px monospace",
+        fillColor: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.fromCssColorString("#06111a"),
+        outlineWidth: 3,
+        pixelOffset: new Cesium.Cartesian2(0, -30),
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+      },
+    });
     viewer.camera.setView({
-      destination: Cesium.Rectangle.fromDegrees(
-        longitude - 1.6,
-        latitude - 0.8,
-        longitude + 1.6,
-        latitude + 0.8,
-      ),
+      destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, 450_000),
+      orientation: {
+        heading: 0,
+        pitch: -Cesium.Math.PI_OVER_TWO,
+        roll: 0,
+      },
     });
     viewer.resize();
     viewer.scene.requestRender();

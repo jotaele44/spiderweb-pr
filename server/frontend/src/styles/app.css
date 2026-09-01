@@ -121,7 +121,7 @@ button.source-row { width: 100%; border: 0; background: transparent; color: inhe
 .inspector-head h2 { margin: 4px 0; font-size: 16px; }
 .inspector-body { padding: 14px; display: grid; gap: 12px; }
 
-.panel { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+.panel { height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
 .panel-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
 .panel-head h1 { margin: 0; font-size: 18px; }
 .panel-grid { padding: 16px; display: grid; gap: 14px; overflow: auto; }
@@ -177,8 +177,8 @@ button.source-row { width: 100%; border: 0; background: transparent; color: inhe
 .hr { height: 1px; background: var(--line); margin: 10px 0; }
 .empty-state { display: grid; place-items: center; height: 100%; min-height: 120px; padding: 24px; color: var(--muted); font-size: 13px; text-align: center; }
 .empty-state[data-tone="error"] { color: var(--alert); }
-.map-col { position: relative; min-width: 0; }
-.map-host { width: 100%; height: 100%; }
+.map-col { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.map-host { position: absolute; inset: 0; width: 100%; height: 100%; }
 /* MapLibre ships its attribution links at rgba(0,0,0,.75) on black surrounding
    text — 2.02:1, an axe link-in-text-block failure in both themes. Attribution
    has to stay visible, so restyle it and underline the links, which
@@ -204,7 +204,7 @@ button.source-row { width: 100%; border: 0; background: transparent; color: inhe
 .linklike { border: 0; background: transparent; color: inherit; text-decoration: underline; padding: 0; font: inherit; }
 .navbtn[data-status="error"] > span:last-child { color: var(--alert); }
 .navbtn[data-status="loading"] > span:last-child { color: var(--muted); font-style: italic; }
-.map-shell { display: grid; grid-template-columns: 1fr 280px; height: 100%; transition: grid-template-columns .3s ease; }
+.map-shell { display: grid; grid-template-columns: minmax(0, 1fr) 280px; min-height: 0; height: 100%; overflow: hidden; transition: grid-template-columns .3s ease; }
 .layer-panel { border-left: 1px solid var(--line); background: var(--surface); padding: 12px; overflow: auto; }
 .map-shell[data-layer-collapsed="true"] .layer-panel { overflow: hidden; padding: 0; border-left: 0; }
 .graph-surface { position: relative; height: 100%; min-height: 420px; background: radial-gradient(circle at 50% 50%, var(--surface-3), var(--bg)); overflow: hidden; }
@@ -226,3 +226,100 @@ button.source-row { width: 100%; border: 0; background: transparent; color: inhe
 .timeline-event { position: absolute; top: 50%; transform: translate(-50%, -50%); }
 .timeline-event button { display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 10px var(--font-mono); padding: 2px 5px; white-space: nowrap; }
 .timeline-event button:hover { border-color: var(--info); }
+
+@media (max-width: 720px) {
+  .classif {
+    padding-inline: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 8px;
+  }
+
+  .workbench,
+  .workbench[data-left-collapsed="true"],
+  .workbench[data-right-collapsed="true"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--cmd-h) minmax(0, 1fr);
+    grid-template-areas:
+      "cmd"
+      "center";
+  }
+
+  .rail,
+  .inspector,
+  .timeline,
+  .brand,
+  .tab-meta,
+  .tabstrip > .chrome-toggle {
+    display: none;
+  }
+
+  .cmdbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .query {
+    min-width: 0;
+    padding-inline: 8px;
+  }
+
+  .query input {
+    min-width: 0;
+  }
+
+  .query > .subtle,
+  .query > .kbd,
+  .runstate > span {
+    display: none;
+  }
+
+  .runstate {
+    width: auto;
+    padding: 4px;
+  }
+
+  .runstate-actions {
+    gap: 3px;
+  }
+
+  .runstate .act {
+    padding-inline: 6px;
+  }
+
+  .center {
+    grid-template-rows: 44px minmax(0, 1fr);
+  }
+
+  .tabstrip {
+    min-width: 0;
+    overflow-x: auto;
+    padding-inline: 4px;
+  }
+
+  .tabs {
+    min-width: max-content;
+  }
+
+  .panel-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .panel-head > .row {
+    flex-wrap: wrap;
+  }
+
+  .map-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(240px, 1fr) minmax(0, auto);
+  }
+
+  .layer-panel {
+    max-height: 220px;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+}
