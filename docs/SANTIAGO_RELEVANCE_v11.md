@@ -11,7 +11,7 @@
 - bounded public-source exhaustion: `OPEN`
 - records-request eligible: `FALSE`
 
-All repository checks for this head, including full CI, CodeQL, Semgrep, Secret scan, pip-audit, PRII Smoke Gate, federation drift and live Santiago acceptance, completed successfully.
+All repository checks for this head, including full CI, CodeQL, Secret scan, pip-audit, PRII Smoke Gate, federation drift and live Santiago acceptance, completed successfully.
 
 ## Purpose
 

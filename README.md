@@ -51,6 +51,19 @@ Cross-producer correlation is owned by the Hub and downstream consumers. Spiderw
 | Puerto Rico historical case corpus | `OVNIS` / `ovnis-pr` |
 | Producer discovery, validation, aggregation, and cross-producer correlation | `thehub-pr` |
 
+## Desktop app
+
+Double-click launchers at the repo root start the local desktop app (first run
+installs dependencies, later runs work offline). This is the diagnostic
+dashboard described above (ADR 0001, Phase 2), not the federation's supported
+product surface:
+
+- `PRII-SPIDERWEB.command` (macOS) / `PRII-SPIDERWEB.app`
+- `PRII-SPIDERWEB.bat` (Windows)
+- `PRII-SPIDERWEB.sh` (Linux)
+
+See [`desktop/README.md`](desktop/README.md) for details.
+
 ## Quick start
 
 ```bash
