@@ -36,7 +36,7 @@ def compare_tree_manifests(before: Mapping[str, Any], after: Mapping[str, Any]) 
 
 def append_json_exclusive(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2, ensure_ascii=False, sort_keys=True)
         handle.write("\n")

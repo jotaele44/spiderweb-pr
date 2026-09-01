@@ -14,7 +14,6 @@ from .step5b_transaction import (
     REQUIRED_SOURCES,
     append_json_exclusive,
     atomic_promote_directory,
-    compare_tree_manifests,
     promotion_gate,
 )
 

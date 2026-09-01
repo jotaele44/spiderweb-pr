@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import json
 import struct
 import zipfile
@@ -10,7 +9,7 @@ from typing import Any, Mapping, Sequence
 
 from .certifiers import certify_inland_bathy_archive, certify_nhd_pages
 from .control_plane import classify_remote_change, require_classified_changes
-from .core import EXPECTED_V4_HARD_BINDINGS, SnapshotRecord, canonical_pid, schema_fingerprint, sha256_file
+from .core import EXPECTED_V4_HARD_BINDINGS, SnapshotRecord, schema_fingerprint, sha256_file
 
 
 CHANGE_STATES = {

@@ -78,6 +78,7 @@ def test_individual_receipt_write_is_append_only(tmp_path: Path):
 def test_append_json_exclusive_is_append_only(tmp_path: Path):
     path = tmp_path / "x.json"
     append_json_exclusive(path, {"x": 1})
+    assert path.stat().st_mode & 0o077 == 0
     with pytest.raises(FileExistsError):
         append_json_exclusive(path, {"x": 2})
 

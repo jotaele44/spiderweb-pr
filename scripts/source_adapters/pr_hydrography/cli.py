@@ -397,7 +397,7 @@ def _append_receipt_set(manifest_root: Path, report: Mapping[str, Any]) -> Path:
     receipt_root = manifest_root / "live_receipts"
     receipt_root.mkdir(parents=True, exist_ok=True)
     path = receipt_root / f"{report['run_id']}.json"
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2, ensure_ascii=False, sort_keys=True)
         handle.write("\n")

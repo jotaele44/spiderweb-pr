@@ -193,6 +193,7 @@ def test_step5a_receipt_set_is_append_only(tmp_path: Path):
     report = {"run_id": "RUN001", "state": "PASS_STEP5A_LIVE_ACQUISITION_PROVENANCE_READY"}
     path = _append_receipt_set(tmp_path, report)
     assert path.exists()
+    assert path.stat().st_mode & 0o077 == 0
     with pytest.raises(FileExistsError):
         _append_receipt_set(tmp_path, report)
 
