@@ -35,7 +35,11 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def require_unique_strings(value: Any, field: str) -> list[str]:
-    if not isinstance(value, list) or not value or not all(isinstance(v, str) and v for v in value):
+    if (
+        not isinstance(value, list)
+        or not value
+        or not all(isinstance(v, str) and v and v == v.strip() for v in value)
+    ):
         raise PolicyError(f"{field} must be a non-empty list of strings")
     if len(value) != len(set(value)):
         raise PolicyError(f"{field} contains duplicates")
@@ -46,32 +50,92 @@ def validate_policy(policy: dict[str, Any]) -> None:
     if policy.get("schema") != "prii.repo-readiness-policy/v1":
         raise PolicyError("unsupported policy schema")
 
-    mandatory = require_unique_strings(policy.get("mandatory_domains"), "mandatory_domains")
+    mandatory = require_unique_strings(
+        policy.get("mandatory_domains"), "mandatory_domains"
+    )
     states = set(require_unique_strings(policy.get("domain_states"), "domain_states"))
-    evidence = set(require_unique_strings(policy.get("evidence_classes"), "evidence_classes"))
-    closure = require_unique_strings(policy.get("capability_closure_chain"), "capability_closure_chain")
-    forbidden = set(require_unique_strings(policy.get("identity_forbidden_as_sole_evidence"), "identity_forbidden_as_sole_evidence"))
-    adversarial = set(require_unique_strings(policy.get("required_adversarial_cases"), "required_adversarial_cases"))
+    evidence = set(
+        require_unique_strings(policy.get("evidence_classes"), "evidence_classes")
+    )
+    closure = require_unique_strings(
+        policy.get("capability_closure_chain"), "capability_closure_chain"
+    )
+    forbidden = set(
+        require_unique_strings(
+            policy.get("identity_forbidden_as_sole_evidence"),
+            "identity_forbidden_as_sole_evidence",
+        )
+    )
+    adversarial = set(
+        require_unique_strings(
+            policy.get("required_adversarial_cases"), "required_adversarial_cases"
+        )
+    )
 
-    required_states = {"PASS", "FAIL", "OPEN", "BLOCKED", "PROVISIONAL", "UNRESOLVED", "SUPERSEDED"}
+    required_states = {
+        "PASS",
+        "FAIL",
+        "OPEN",
+        "BLOCKED",
+        "PROVISIONAL",
+        "UNRESOLVED",
+        "SUPERSEDED",
+    }
     if not required_states <= states:
         raise PolicyError(f"domain_states missing {sorted(required_states - states)}")
 
-    required_evidence = {"FACT", "COMPUTED", "BINDING", "INFERENCE", "ASSUMPTION", "HYPOTHESIS", "UNKNOWN"}
+    required_evidence = {
+        "FACT",
+        "COMPUTED",
+        "BINDING",
+        "INFERENCE",
+        "ASSUMPTION",
+        "HYPOTHESIS",
+        "UNKNOWN",
+    }
     if evidence != required_evidence:
-        raise PolicyError("evidence_classes must exactly preserve the seven evidence classes")
+        raise PolicyError(
+            "evidence_classes must exactly preserve the seven evidence classes"
+        )
 
-    required_closure = ["user_intent", "gui_action", "handler", "service", "data_source", "artifact", "validation", "user_feedback"]
+    required_closure = [
+        "user_intent",
+        "gui_action",
+        "handler",
+        "service",
+        "data_source",
+        "artifact",
+        "validation",
+        "user_feedback",
+    ]
     if closure != required_closure:
         raise PolicyError("capability_closure_chain changed ordering or membership")
 
-    required_forbidden = {"NAME_ONLY", "NORMALIZED_NAME_ONLY", "COUNT_EQUALITY", "NEAREST_ONLY", "PROXIMITY_ONLY", "SAME_CATEGORY", "SOURCE_ABSENCE"}
+    required_forbidden = {
+        "NAME_ONLY",
+        "NORMALIZED_NAME_ONLY",
+        "COUNT_EQUALITY",
+        "NEAREST_ONLY",
+        "PROXIMITY_ONLY",
+        "SAME_CATEGORY",
+        "SOURCE_ABSENCE",
+    }
     if not required_forbidden <= forbidden:
-        raise PolicyError(f"identity safeguards missing {sorted(required_forbidden - forbidden)}")
+        raise PolicyError(
+            f"identity safeguards missing {sorted(required_forbidden - forbidden)}"
+        )
 
-    required_adversarial = {"NULL", "TIE", "DUPLICATE", "M:N", "SCHEMA_DRIFT", "NETWORK_FAILURE"}
+    required_adversarial = {
+        "NULL",
+        "TIE",
+        "DUPLICATE",
+        "M:N",
+        "SCHEMA_DRIFT",
+        "NETWORK_FAILURE",
+    }
     if not required_adversarial <= adversarial:
-        raise PolicyError(f"adversarial denominator missing {sorted(required_adversarial - adversarial)}")
+        missing_adversarial = sorted(required_adversarial - adversarial)
+        raise PolicyError(f"adversarial denominator missing {missing_adversarial}")
 
     rule = policy.get("certification_rule")
     if not isinstance(rule, dict):
@@ -81,20 +145,25 @@ def validate_policy(policy: dict[str, Any]) -> None:
     if rule.get("required_domain_state") != "PASS":
         raise PolicyError("required_domain_state must remain PASS")
     if rule.get("max_unresolved_mandatory_residue") != 0:
-        raise PolicyError("certification must require zero unresolved mandatory residue")
+        raise PolicyError(
+            "certification must require zero unresolved mandatory residue"
+        )
     if rule.get("script_success_is_certification") is not False:
         raise PolicyError("script success must never equal certification")
 
     invariants = policy.get("invariants")
-    if not isinstance(invariants, dict) or not all(invariants.get(key) is True for key in (
-        "preserve_passed_artifacts",
-        "freeze_before_observation",
-        "full_candidate_sets_preserved",
-        "ties_fail_closed",
-        "unexpected_many_to_many_fails_closed",
-        "arithmetic_must_close",
-        "mutable_sources_are_versioned_snapshots",
-    )):
+    if not isinstance(invariants, dict) or not all(
+        invariants.get(key) is True
+        for key in (
+            "preserve_passed_artifacts",
+            "freeze_before_observation",
+            "full_candidate_sets_preserved",
+            "ties_fail_closed",
+            "unexpected_many_to_many_fails_closed",
+            "arithmetic_must_close",
+            "mutable_sources_are_versioned_snapshots",
+        )
+    ):
         raise PolicyError("one or more fail-closed invariants were removed")
 
     if len(mandatory) < 10:
@@ -111,10 +180,16 @@ def validate_report(policy: dict[str, Any], report: dict[str, Any]) -> dict[str,
     for field in ("commit_sha", "tree_sha"):
         value = snapshot.get(field)
         if not isinstance(value, str) or not SHA40_RE.fullmatch(value):
-            raise PolicyError(f"snapshot.{field} must be a lowercase 40-character git SHA")
-    for field in ("branches_total_at_freeze", "open_prs_at_freeze", "open_issues_at_freeze"):
+            raise PolicyError(
+                f"snapshot.{field} must be a lowercase 40-character git SHA"
+            )
+    for field in (
+        "branches_total_at_freeze",
+        "open_prs_at_freeze",
+        "open_issues_at_freeze",
+    ):
         value = snapshot.get(field)
-        if not isinstance(value, int) or value < 0:
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
             raise PolicyError(f"snapshot.{field} must be a non-negative integer")
 
     allowed_states = set(policy["domain_states"])
@@ -138,10 +213,14 @@ def validate_report(policy: dict[str, Any], report: dict[str, Any]) -> dict[str,
             raise PolicyError(f"domain {name} has invalid state {state!r}")
         evidence_class = entry.get("evidence_class")
         if evidence_class not in allowed_evidence:
-            raise PolicyError(f"domain {name} has invalid evidence class {evidence_class!r}")
+            raise PolicyError(
+                f"domain {name} has invalid evidence class {evidence_class!r}"
+            )
         residue = entry.get("mandatory_unresolved_residue")
-        if not isinstance(residue, int) or residue < 0:
-            raise PolicyError(f"domain {name} unresolved residue must be a non-negative integer")
+        if not isinstance(residue, int) or isinstance(residue, bool) or residue < 0:
+            raise PolicyError(
+                f"domain {name} unresolved residue must be a non-negative integer"
+            )
         unresolved_total += residue
         if state != policy["certification_rule"]["required_domain_state"]:
             non_pass.append(name)
@@ -149,12 +228,28 @@ def validate_report(policy: dict[str, Any], report: dict[str, Any]) -> dict[str,
     certification_state = report.get("certification_state")
     if not isinstance(certification_state, str) or not certification_state:
         raise PolicyError("certification_state must be a non-empty string")
+    allowed_certification_states = allowed_states | {
+        policy["certification_rule"]["certified_state"]
+    }
+    if (
+        certification_state != certification_state.strip()
+        or certification_state not in allowed_certification_states
+    ):
+        raise PolicyError(
+            "invalid certification_state "
+            f"{certification_state!r}; allowed: {sorted(allowed_certification_states)}"
+        )
 
     if certification_state == policy["certification_rule"]["certified_state"]:
         if non_pass:
-            raise PolicyError(f"false certification: mandatory domains not PASS: {non_pass}")
+            raise PolicyError(
+                f"false certification: mandatory domains not PASS: {non_pass}"
+            )
         if unresolved_total != 0:
-            raise PolicyError(f"false certification: mandatory unresolved residue is {unresolved_total}, expected 0")
+            raise PolicyError(
+                "false certification: mandatory unresolved residue is "
+                f"{unresolved_total}, expected 0"
+            )
 
     return {
         "certification_state": certification_state,
@@ -166,7 +261,9 @@ def validate_report(policy: dict[str, Any], report: dict[str, Any]) -> dict[str,
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--policy", type=Path, default=Path(".federation/repo-readiness-policy.json"))
+    parser.add_argument(
+        "--policy", type=Path, default=Path(".federation/repo-readiness-policy.json")
+    )
     parser.add_argument("--report", type=Path)
     return parser.parse_args(argv)
 
