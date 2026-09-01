@@ -29,7 +29,10 @@ _MIGRATED_DIRS = ("fr24",)
 # Glob patterns for individual migrated modules/artifacts. Paths containing a
 # legacy/archive marker are exempt (that is where retired code is parked).
 _MIGRATED_GLOBS = (
+    "pipeline/flight_analyzer.py",
+    "pipeline/hardened_pipeline.py",
     "pipeline/fr24*.py",
+    "scripts/ocr_*.py",
     "scripts/fr24*.py",
     "pipeline/rlsm*.py",
     "scripts/rlsm*.py",

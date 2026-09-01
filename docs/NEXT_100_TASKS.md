@@ -5,6 +5,12 @@
 > [`NEXT_100_TASKS_V2.md`](NEXT_100_TASKS_V2.md), which carries the still-open
 > items below forward. New work should be tracked there.
 
+> **Boundary supersession (2026-08-26).** Every FR24/RLSM/OCR item in this
+> historical sweep is `SUPERSEDED` for Spiderweb. Executable ownership moved to
+> `skywatcher-pr`; these rows are traceability only and must not be implemented
+> in this repository. Spiderweb retains only the producer-neutral homography
+> utilities documented in [`FR24_EXECUTABLE_RETIREMENT.md`](FR24_EXECUTABLE_RETIREMENT.md).
+
 Backlog of release-readiness work beyond the Tier 1–Tier 5 sweep documented in the [main plan](../%2E%2E/%2E%2E/.claude/plans/you-are-claude-code-tingly-salamander.md) and the [ROI Task Ledger](ROI_TASK_LEDGER.md).
 
 Tasks are grouped by impact tier. Within each tier, the **one-line scope** + **estimated effort** + **dependency blockers** are listed so an operator can pick up any item independently.
@@ -19,9 +25,9 @@ Effort is per-engineer-hour and assumes the existing test scaffolding is reused.
 |---|---|---|---|---|
 | **N1** | JSON Schema for `release_report.json` | Define `schemas/release_report.schema.json`; register in `schema_index.json`. | 1 h | None |
 | **N2** | JSON Schema for `integration_report.json` | Define `schemas/integration_report.schema.json`; register in `schema_index.json`; add validation in `release_check.export_pr_intel`. | 1 h | None |
-| **N3** | JSON Schemas for the 14 RLSM CSV outputs | One schema per artifact; register all in `schema_index.json`. | 3 h | None |
-| **N4** | Canonicalize the recover-tails-by-rawtext script | Move the un-tracked rescue logic into `scripts/rlsm_recover_tails_by_rawtext.py`; emit `processing_runs` row with `run_kind='recover_tails'`. | 2 h | Already done in D3 (this sweep) |
-| **N5** | Add `--workers` parallelism to `rlsm_unlabeled` | Mirror `rlsm_ocr_parallel`'s `ProcessPoolExecutor` pattern. Cuts a full backfill from ~70 min single-thread to ~18 min on 4 workers. | 2 h | None (busy_timeout fix already landed) |
+| **N3** | RLSM CSV schemas — **SUPERSEDED** | Historical schema work; any current RLSM contract belongs in `skywatcher-pr`. | — | Transferred |
+| **N4** | Recover-tails runner — **SUPERSEDED** | Historical implementation; executable ownership moved to `skywatcher-pr`. | — | Transferred |
+| **N5** | RLSM worker parallelism — **SUPERSEDED** | Historical implementation from #129; the Spiderweb runner was removed at boundary closure. | — | Transferred |
 | **N6** | Harden `test_exports_reproducible` | Change from "on-disk vs fresh export" to "two fresh exports" — decouples from stale-artifact tripwire. | 30 m | None |
 
 ---
@@ -53,9 +59,12 @@ Effort is per-engineer-hour and assumes the existing test scaffolding is reused.
 
 ---
 
-## Tier 4 follow-ups (FR24 hardening) — **SUPERSEDED BY RLSM**
+## Tier 4 follow-ups (FR24 hardening) — **SUPERSEDED / TRANSFERRED**
 
-**Decision (DG-2): RLSM is canonical.** The 16-script analysis suite (commit `39918c9`) + the parallel OCR runner + the recover-tails-by-rawtext canonicalization + the `--workers` parallelism (N5) collectively replace `fr24/batch_run.py`'s functionality. The legacy batch runner is treated as **deprecated** going forward; new resumability/manifest/failure-log work targets the RLSM runners instead.
+**Historical decision (DG-2): RLSM was canonical for the old in-repo airspace
+surface.** That decision is now superseded by the repository boundary: FR24/RLSM
+ingestion and OCR belong to `skywatcher-pr`, and the Spiderweb executables were
+removed. No row in this section authorizes rebuilding them here.
 
 The original T4-31..T4-40 list is preserved below for traceability, but each item is **marked with its replacement** in RLSM. Items already implemented on the RLSM side carry ✅; items genuinely deferred are flagged.
 
@@ -72,7 +81,9 @@ The original T4-31..T4-40 list is preserved below for traceability, but each ite
 | **T4-39** | `--resume-from <sha256>` | RLSM runners are resumable via the `NOT EXISTS`-style WHERE clauses — restart picks up where it left off. Per-sha256 retry is achievable by manually flipping `ocr_status='pending'` for a row. | ✅ via SQL |
 | **T4-40** | OCR engine pinning per zone (`ZONE_OCR_CONFIG` → engine version) | `ocr_observations.engine` + `.engine_version` + `.psm` columns ARE pinned per row. Operators can audit drift via `SELECT DISTINCT engine, engine_version, psm FROM ocr_observations`. | ✅ implemented |
 
-**Action items going forward** — there's essentially nothing left under "Tier 4 hardening" as originally scoped, because RLSM covers it. If `fr24/batch_run.py` is still referenced anywhere as a primary path, that's a deprecation-doc task, not a feature task.
+**Action items going forward** — none in Spiderweb. Any live RLSM/OCR gap must
+be tracked and implemented in `skywatcher-pr`; references here are historical
+evidence only.
 
 ---
 
@@ -96,10 +107,10 @@ The original T4-31..T4-40 list is preserved below for traceability, but each ite
 
 | # | Task | Scope | Effort | Blockers |
 |---|---|---|---|---|
-| **B-flight-track** | ✅ Heuristic version shipped (PR #66). v2 pass: pixel CV for `track_length_px`, `bbox_*`, `has_loop`/`has_orbit`/`has_gap` + spatial context. | 6 h | PR 9 (geo-anchors) for spatial context |
-| **B-geo-anchors** | ✅ Static version shipped (PR #67). v2 pass: per-screenshot `'derived'` anchors via OCR-matched `labeled_pois` → RANSAC homography fit. | 8 h | None |
-| **B-integrate** | Fold RLSM into `run_all.py` / Makefile / CI | Add `--rlsm-status` flag to `run_all.py`; add `tests/test_rlsm_pipeline.py` to the default suite (it auto-skips on missing DB). | 3 h | None |
-| **B-dedup-unique** | UNIQUE constraint on `aircraft_observations` | Add `(screenshot_id, registration, source_zone)` unique index to prevent run-65/run-67 type duplicates. | 1 h | Migration |
+| **B-flight-track** | **Superseded by repository boundary** | Historical pixel-track work transferred to `skywatcher-pr`. | — | Transferred |
+| **B-geo-anchors** | **Partially retained / otherwise superseded** | Generic evidence-bounded homography remains; screenshot/OCR anchor derivation belongs to `skywatcher-pr`. | — | Transferred |
+| **B-integrate** | **Superseded by repository boundary** | RLSM execution and status belong to `skywatcher-pr`; Spiderweb's retired flag must not be restored. | — | Closed |
+| **B-dedup-unique** | **Superseded by repository boundary** | Historical airspace-persistence hardening transferred to `skywatcher-pr`. | — | Transferred |
 
 ---
 

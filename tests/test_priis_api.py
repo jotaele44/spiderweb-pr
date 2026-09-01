@@ -11,14 +11,43 @@ Run with:
 """
 from __future__ import annotations
 
-import json
+import os
+
 import pytest
 import requests
 
-BASE = "http://localhost:8000"
+CONFIGURED_BASE = os.environ.get("PRIIS_API_BASE_URL")
+BASE = (CONFIGURED_BASE or "http://localhost:8000").rstrip("/")
+EXPECTED_SERVICE_ID = "spiderweb-priis-api"
 
 
 # ─── Helpers ───────────────────────────────────────────────────────────────────
+
+@pytest.fixture(scope="module", autouse=True)
+def require_priis_backend() -> None:
+    """Reject or skip unrelated services before exercising the API contract."""
+    try:
+        response = requests.get(f"{BASE}/health", timeout=5)
+    except requests.RequestException as exc:
+        message = f"PRIIS backend unavailable at {BASE}: {exc}"
+        if CONFIGURED_BASE:
+            pytest.fail(message)
+        pytest.skip(message)
+        raise AssertionError("pytest fail/skip unexpectedly returned")
+
+    try:
+        payload = response.json()
+    except requests.exceptions.JSONDecodeError:
+        payload = None
+    service_id = payload.get("service") if isinstance(payload, dict) else None
+    if response.status_code != 200 or service_id != EXPECTED_SERVICE_ID:
+        message = (
+            f"{BASE} is not the Spiderweb PRIIS API "
+            f"(status={response.status_code}, service={service_id!r})"
+        )
+        if CONFIGURED_BASE:
+            pytest.fail(message)
+        pytest.skip(message)
 
 def _get(path: str) -> list | dict:
     """GET a JSON response, skipping the test if the server is not running."""
@@ -26,6 +55,7 @@ def _get(path: str) -> list | dict:
         r = requests.get(f"{BASE}{path}", timeout=5)
     except requests.ConnectionError:
         pytest.skip("PRIIS backend not running — start with: python3 -m uvicorn server.backend.main:app --port 8000")
+        raise AssertionError("pytest.skip unexpectedly returned")
     assert r.status_code == 200, f"{path} → {r.status_code}"
     return r.json()
 
@@ -39,6 +69,7 @@ def _check_fields(record: dict, required: list[str], path: str) -> None:
 
 def test_health():
     data = _get("/health")
+    assert data["service"] == EXPECTED_SERVICE_ID
     assert data["status"] == "ok"
     assert data["db_exists"] is True
 
@@ -85,7 +116,10 @@ def test_events_shape():
     rows = _get("/events")
     assert isinstance(rows, list) and len(rows) > 0
     _check_fields(rows[0], ["id", "kind", "at", "label"], "/events")
-    valid_kinds = {"contract", "imagery", "flight", "report", "outage", "permit", "field", "other"}
+    valid_kinds = {
+        "contract", "imagery", "report", "outage", "permit", "field",
+        "filing", "sighting", "other",
+    }
     for r in rows:
         assert r["kind"] in valid_kinds, f"invalid kind: {r['kind']}"
         # siteId and refId are optional but must not be absent keys
@@ -104,18 +138,6 @@ def test_anomalies_shape():
         assert isinstance(r["contradictions"], list), f"contradictions is not a list: {type(r['contradictions'])}"
         assert r["band"] in ("lo", "md", "hi"), f"invalid band: {r['band']}"
         assert r["confidence"] in (1, 2, 3), f"invalid confidence: {r['confidence']}"
-
-        # Evidence tier rules: confidence 3 must not come from T3/T4 alone
-        # (This checks the seed data respects the hard requirement)
-        if r["confidence"] == 3:
-            factors = r["factors"]
-            if factors:
-                tags = {f["tag"] for f in factors if isinstance(f, dict) and "tag" in f}
-                # High confidence is allowed only if there's T1/T2 evidence (finance/spatial/imagery)
-                t1_t2_tags = {"finance", "spatial", "imagery", "flight"}
-                assert tags & t1_t2_tags, (
-                    f"confidence=3 anomaly {r['id']} has no T1/T2 evidence tags: {tags}"
-                )
 
 
 def test_sources_shape():

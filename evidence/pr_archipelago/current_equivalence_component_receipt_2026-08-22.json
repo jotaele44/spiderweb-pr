@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0",
+  "scope": "Component-level candidate graph over the already-closed 42,891 current geometry source-manifestation denominator",
+  "rules": {
+    "collapse_source_manifestations": false,
+    "identity_promotion_from_exact_geometry": false,
+    "identity_promotion_from_name_or_proximity": false,
+    "component_meaning": "connected candidate evidence only; never canonical identity by construction",
+    "contradictions": "preserved and dominate component evidence state",
+    "geometry_only_component": "a component with no current named-source manifestation linked by hard evidence; not a claim of a distinct physical island"
+  },
+  "inputs": {
+    "source_manifestation_denominator": 42891,
+    "retained_source_manifestations": 148,
+    "excluded_source_manifestations": 5961,
+    "candidate_source_manifestations": 36782,
+    "unresolved_source_manifestations": 0,
+    "current_gnis_named_manifestations": 148,
+    "sige_insular_named_manifestations": 29,
+    "source_reacquisition": 0,
+    "durable_release_tag": "pr-archipelago-freeze-2026-08-22"
+  },
+  "exact_geometry_graph": {
+    "noaa_candidate_records_in_exact_pairs": 320,
+    "exact_pair_components": 160,
+    "component_size_distribution": {"2": 160},
+    "transitive_components_larger_than_two": 0,
+    "inter_project_pairs": 158,
+    "intra_project_pairs": 2,
+    "same_class_and_feature_code_components": 150,
+    "attribute_contradiction_components": 10,
+    "canonical_collapses": 0,
+    "pair_project_distribution": {
+      "PR1401C-TB-N|PR1801B-TB-C": 76,
+      "PR1401D-TB-N|PR1801A-TB-C": 32,
+      "PR1401A-TB-N|PR1801E-TB-C": 20,
+      "PR1401B-TB-N|PR1801D-TB-C": 18,
+      "PR1401D-TB-N|PR1801B-TB-C": 9,
+      "PR1401C-TB-N|PR2003-CS-T": 3,
+      "PR1401C-TB-N|PR1401C-TB-N": 2
+    }
+  },
+  "candidate_component_partition": {
+    "candidate_source_manifestations": 36782,
+    "exact_pair_reductions_for_component_count_only": 160,
+    "candidate_components": 36622,
+    "components_with_SIGE_named_manifestation": 29,
+    "geometry_only_components_without_hard_named_binding": 36593,
+    "unexplained_component_residue": 0,
+    "arithmetic": "36782 - 160 = 36622; 29 + 36593 = 36622"
+  },
+  "name_reconciliation": {
+    "GNIS": {
+      "source_manifestations": 148,
+      "stable_source_ids": 148,
+      "source_native_point_bindings": 148,
+      "canonical_footprint_bindings_from_source_id": 0,
+      "note": "stable GNIS Feature ID binds the GNIS point manifestation to the GNIS named manifestation, not to a shoreline/footprint component"
+    },
+    "SIGE": {
+      "source_manifestations": 29,
+      "candidate_components": 29,
+      "hard_cross_source_identity_bindings_to_GNIS": 0,
+      "heuristic_candidate_sets_preserved": 29,
+      "known_identity_unresolved_rows": 4,
+      "canonical_promotions": 0
+    }
+  },
+  "candidate_topology": {
+    "exact_geometry_pair_components": {
+      "count": 160,
+      "topology": "1:1_CANDIDATE",
+      "canonical_identity_state": "CANDIDATE_NOT_IDENTITY"
+    },
+    "geometry_only_components_without_hard_named_binding": {
+      "count": 36593,
+      "topology": "0:1_CANDIDATE_AT_CURRENT_HARD_EVIDENCE_GRAPH",
+      "warning": "0:1 here records absence of a hard current-name binding; it is not proof that the geometry is unnamed in reality"
+    },
+    "sige_named_components": {
+      "count": 29,
+      "topology": "PRESERVE_FULL_HEURISTIC_CANDIDATE_SETS",
+      "canonical_identity_state": "OPEN"
+    }
+  },
+  "canonical_set_algebra": {
+    "INTERSECTION": "NOT_YET_COMPUTABLE",
+    "NAMED_ONLY": "NOT_YET_COMPUTABLE",
+    "GEOMETRY_ONLY": "NOT_YET_COMPUTABLE",
+    "UNION": "NOT_YET_COMPUTABLE",
+    "SYMMETRIC_DIFFERENCE": "NOT_YET_COMPUTABLE",
+    "reason": "component graph has source-level closure but hard cross-source canonical bindings remain insufficient; source-manifestation counts cannot be substituted for canonical identity counts"
+  },
+  "component_terminal_partition": {
+    "retained_components": 148,
+    "excluded_source_manifestations": 5961,
+    "candidate_components": 36622,
+    "unresolved_components": 0,
+    "note": "excluded source manifestations are terminally explained but are intentionally not coalesced into candidate equivalence components"
+  },
+  "certification": {
+    "SOURCE_MANIFESTATION_ARITHMETIC": "PASS",
+    "CANDIDATE_COMPONENT_ARITHMETIC": "PASS",
+    "CANONICAL_EQUIVALENCE_COMPONENTS": "OPEN",
+    "CANONICAL_IDENTITY_DENOMINATOR": "OPEN",
+    "CANONICAL_GEOMETRY_DENOMINATOR": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

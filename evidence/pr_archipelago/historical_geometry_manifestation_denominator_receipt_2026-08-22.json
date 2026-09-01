@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "scope": "Independent historical NOAA geometry-manifestation denominator from the already-frozen 8/8 historical NSDE archive bundle",
+  "rules": {
+    "A_backfill": "forbidden",
+    "historical_relation_states": ["CONTINUITY", "RENAMED", "SPLIT", "MERGED", "DISAPPEARED", "HISTORICAL_ONLY", "UNRESOLVED"],
+    "name_only_promotion": "forbidden",
+    "proximity_only_promotion": "forbidden",
+    "exact_geometry_equality": "continuity candidate only; never direct A promotion"
+  },
+  "frozen_input": {
+    "artifact_sha256": "a80476874be68fb50557688bcabc85f0d4d0861bafa38cec96304d7218edc6ff",
+    "archive_count": 8,
+    "durable_release_tag": "pr-archipelago-freeze-2026-08-22",
+    "source_reacquisition_for_this_receipt": 0
+  },
+  "inventory": {
+    "source_records": 2356,
+    "representations": {"LINE": 2348, "POLYGON": 8},
+    "project_boundary_polygons": {
+      "count": 8,
+      "state": "EXCLUDED",
+      "reason": "project coverage metadata, not historical insular feature geometry"
+    },
+    "historical_line_manifestations": {
+      "count": 2348,
+      "state": "CANDIDATE",
+      "classes": {
+        "SHORELINE": 1868,
+        "ALONGSHORE FEATURE": 246,
+        "CARTOGRAPHIC LIMIT": 233,
+        "CULTURAL FEATURE MISCELLANEOUS": 1
+      }
+    }
+  },
+  "current_cross_manifestation_test": {
+    "comparison": "exact representation + byte-normalized geometry SHA256 against current NOAA archipelago-geometry candidate records",
+    "exact_geometry_groups": 0,
+    "historical_records_in_exact_groups": 0,
+    "current_records_in_exact_groups": 0,
+    "canonical_temporal_promotions": 0,
+    "interpretation": "absence of exact byte-normalized equality is not discontinuity; temporal relations remain OPEN and require independent map/lineage/geometry adjudication"
+  },
+  "partition": {
+    "source_manifestations": 2356,
+    "retained": 0,
+    "excluded": 8,
+    "candidate": 2348,
+    "unresolved": 0,
+    "explained_total": 2356,
+    "unexplained_residue": 0,
+    "arithmetic_closed": true
+  },
+  "certification": {
+    "HISTORICAL_GEOMETRY_SOURCE_PARTITION": "PASS",
+    "HISTORICAL_TEMPORAL_RELATION_GRAPH": "OPEN",
+    "HISTORICAL_ARCHIPELAGO_EXHAUSTION": "OPEN",
+    "A_CURRENT_PROMOTIONS_FROM_B": 0
+  }
+}

@@ -1,0 +1,5 @@
+# Embedded spatial SQL (spiderweb/spatial/duckdb_engine.py).
+#
+#   pip install -r requirements-spatial.txt
+#   pip install -c constraints.txt -r requirements-spatial.txt   # exact pins
+-e .[spatial]

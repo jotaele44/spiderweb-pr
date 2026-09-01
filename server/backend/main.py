@@ -19,16 +19,17 @@ import sys
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Literal, Optional
 
 import aiosqlite
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sse_starlette.sse import EventSourceResponse
 
 log = logging.getLogger("priis.backend")
+SERVICE_ID = "spiderweb-priis-api"
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,8 @@ async def health():
     returns 200 so a load balancer can read the body rather than guessing.
     """
     result: dict[str, Any] = {
+        "service": SERVICE_ID,
+        "api_version": app.version,
         "status": "ok",
         "db": str(DB_PATH),
         "db_exists": DB_PATH.exists(),
@@ -217,8 +220,9 @@ async def list_alerts():
 # ─── Pipeline ──────────────────────────────────────────────────────────────────
 
 class PipelineRunRequest(BaseModel):
-    phase: Optional[int] = None
-    images: Optional[int] = None
+    model_config = ConfigDict(extra="forbid")
+
+    phase: Literal[2, 3, 4] | None = None
 
 
 @app.post("/pipeline/run")
@@ -227,8 +231,6 @@ async def pipeline_run(req: PipelineRunRequest = PipelineRunRequest()):
     cmd = ["python", str(ROOT / "run_all.py")]
     if req.phase is not None:
         cmd += ["--phase", str(req.phase)]
-    if req.images is not None:
-        cmd += ["--images", str(req.images)]
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,

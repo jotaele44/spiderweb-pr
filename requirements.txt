@@ -10,10 +10,6 @@
 #   requirements-airspace.txt   requirements-gebco.txt
 #   requirements-rag.txt        requirements-earthgpt.txt
 #
-# The PRIIS FastAPI backend is a separate extra:  pip install -e ".[server]"
-# The dashboard is a no-build vendored viewer (dashboard/vendor/*.js) — no npm.
-#
-# System prerequisite (not pip-installable):
-#   Ubuntu:  sudo apt-get install tesseract-ocr
-#   macOS:   brew install tesseract
+# The PRIIS FastAPI/Vite app is a separate extra: pip install -e ".[server]"
+# FR24 screenshot OCR is owned by skywatcher-pr; this install needs no Tesseract.
 -e .[airspace,rag,earthgpt]

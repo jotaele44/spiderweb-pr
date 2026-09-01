@@ -1,0 +1,37 @@
+name: PR Archipelago NOAA Project Inventory
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  noaa-projects:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Freeze NOAA Puerto Rico shoreline project manifestations
+        run: |
+          python scripts/acquire_pr_archipelago_noaa_projects.py \
+            --output evidence/pr_archipelago/geometry_snapshots/noaa_projects
+
+      - name: Inventory NOAA project evidence
+        if: always()
+        run: |
+          find evidence/pr_archipelago/geometry_snapshots/noaa_projects -type f -printf '%p %s bytes\n' | sort || true
+          sha256sum evidence/pr_archipelago/geometry_snapshots/noaa_projects/noaa_pr_project_manifest.json || true
+
+      - name: Upload NOAA project evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-archipelago-noaa-projects
+          path: evidence/pr_archipelago/geometry_snapshots/noaa_projects/
+          if-no-files-found: error
+          retention-days: 30

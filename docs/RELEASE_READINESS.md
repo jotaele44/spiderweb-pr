@@ -69,8 +69,8 @@ See [`SCHEMA_AND_EXPORT_CONTRACTS.md`](SCHEMA_AND_EXPORT_CONTRACTS.md) for the c
 |---|---|---|
 | ~~`core_tests: FAIL` with `test_exports_reproducible` failing on `rlsm_ingest_manifest.csv`~~ | The RLSM export/coverage pipeline migrated to [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr) (2026-06, PRs #110/#111); this failure mode no longer applies here. | — |
 | `validate: FAIL` with `_error: "no such table: ..."` | Wrong DB path or pipeline not yet run. | Confirm `--db` points at the populated DB; run `python run_all.py --db DB --status` first. |
-| `export_pr_intel: FAIL` with `evidence_chain_coverage < 0.50` | < 50% of screenshots linked to a flight (FK weakness). | Re-run the phase-0 ingest (`python run_all.py --image-dir <dir> --db DB`) so screenshots link to flights. (The standalone FR24 inventory/event-export flags migrated to [skywatcher-pr](https://github.com/jotaele44/skywatcher-pr).) |
-| `export_spiderweb: FAIL` with `sqlite3.OperationalError: database is locked` | Concurrent writer on the same SQLite. | Single-writer discipline; the RLSM lock fix landed in commit `5e3832...` (timeout=30 on rlsm_unlabeled/extractors/ocr). |
+| `export_pr_intel: FAIL` with `evidence_chain_coverage < 0.50` | The supplied retained database does not satisfy the evidence contract. | Treat the package as blocked. Spiderweb no longer owns a phase-0 ingest, and unvalidated local screenshot processing is not an allowed workaround. |
+| `export_spiderweb: FAIL` with `sqlite3.OperationalError: database is locked` | Concurrent writer on the same SQLite. | Stop the writer or use an immutable copy; rerun with single-writer discipline. |
 | `earthgpt_selftest: WARNING` | EarthGPT module unavailable or a sub-gate failed. | Non-blocking. Investigate if EarthGPT is required for your release. |
 
 ---

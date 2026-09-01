@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "scope": "B-only exact NOAA NSDE historical Puerto Rico shoreline archives",
+  "workflow": {
+    "run_id": 32598470265,
+    "job_id": 97092976552,
+    "artifact_id": 9482202035,
+    "artifact_zip_sha256": "a80476874be68fb50557688bcabc85f0d4d0861bafa38cec96304d7218edc6ff",
+    "manifest_sha256": "02080b0678a45a2575bdaaeb788711cb340a7d40008aee1eb97a60dfb62bfdaa"
+  },
+  "arithmetic": {
+    "expected_projects": 8,
+    "pass_archive_frozen": 8,
+    "blocked": 0,
+    "unexplained": 0,
+    "closed": true
+  },
+  "projects": ["PH6106","PH6403","PH6403DZ","PH6708","PH6903","PR1901A","PR1901B","PR1926A"],
+  "rules": {
+    "current_contamination": "forbidden; these historical bytes may not fill any A identity or geometry residue",
+    "temporal_identity": "project/archive/geometry overlap with current sources requires independent temporal adjudication",
+    "source_preservation": "historical metadata and geometry manifests remain separate from current NOAA project/CUSP sources"
+  },
+  "certification": {
+    "NOAA_HISTORICAL_GEOMETRY_ARCHIVE_DENOMINATOR": "PASS_BOUNDED_SOURCE_FAMILY_ONLY",
+    "HISTORICAL_ARCHIPELAGO_EXHAUSTION": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "UNCHANGED_OPEN"
+  }
+}

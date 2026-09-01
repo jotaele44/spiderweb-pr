@@ -1,0 +1,99 @@
+{
+  "receipt_version": "0.1",
+  "source": {
+    "github_actions_run_id": 31964005120,
+    "head_sha": "49c2a0d9ae74dce83e5914fc563b90ec2e78b93c",
+    "artifact_id": 9267981855,
+    "artifact_name": "guayama-punta-tuna-marine-v0-1",
+    "artifact_sha256": "aa0879d8bfa2550d498a662dc7c2a3280d5d00548cc6cba528967b269a0411a4",
+    "bounded_aoi_wgs84": [-66.2, 17.5, -65.8, 18.05]
+  },
+  "screenshot": {
+    "library_name": "Screenshot 2026-08-14 at 9.33.34 PM.jpeg",
+    "size_bytes": 251039,
+    "width_px": 1170,
+    "height_px": 1259,
+    "sha256": "3f7bf7bdf822a00df2e1700f1122941c39066ace2af97c2a5fa9576f544be02c",
+    "registration_state": "UNRESOLVED",
+    "reason": "No certified >=3 well-distributed pixel-to-geographic control point set has been frozen."
+  },
+  "live_counts": {
+    "ncei_multibeam_surveys": 13,
+    "ncei_sounding_surveys": 29,
+    "nos_bag_surveys": 1,
+    "usiei_topobathy_features": 4,
+    "usiei_bathymetric_features": 0,
+    "usiei_other_bathymetric_features": 0
+  },
+  "ncei_multibeam_survey_ids": [
+    "AT20", "EX1502L3", "EX1811", "EX2203", "EX2206", "KN151L4", "KN173L02",
+    "NF-14-01T", "NF1501", "NF2202", "RB0604", "RC2605", "TN390"
+  ],
+  "ncei_sounding_survey_ids": [
+    "F00729", "H01514", "H01532", "H02423", "H02424", "H02583", "H02584",
+    "H02737", "H02805", "H03007", "H04302", "H04726", "H04740", "H09278",
+    "H09485", "H09486", "H09491", "H09595", "H09596", "H09597", "H09607",
+    "H09608", "H09609", "H09610", "H11034", "H11035", "H12935", "H13147", "W00247"
+  ],
+  "nos_bag_survey_ids": ["W00247"],
+  "usiei_topobathy_features": [
+    {
+      "project_name": "2015 NOAA NGS Topobathy Lidar: Puerto Rico",
+      "objectid": 2306,
+      "invid": 6244,
+      "uuid": "{B740F042-26BE-E611-A101-90E2BA100C1C}",
+      "globalid": "{5849600C-A7D8-48EB-87D5-C775BC5BF4C6}",
+      "project_status": "Complete",
+      "collection_date": "Nov 2, 2014 - May 20, 2015",
+      "vertical_datum": "User Specified",
+      "vertical_rmse_cm": 9.3,
+      "digital_coast_id": "5193"
+    },
+    {
+      "project_name": "2016 NOAA NGS Topobathy Lidar: Puerto Rico",
+      "objectid": 2580,
+      "invid": 9095,
+      "uuid": "{0AFBC12F-7873-42E5-81BB-98BDC6DD3D6D}",
+      "globalid": "{E64B3751-437F-419F-AC8B-EAA740659FFD}",
+      "project_status": "Complete",
+      "collection_date": "Feb 19 - Mar 31, 2016",
+      "vertical_datum": "User Specified",
+      "vertical_rmse_cm": 15.0,
+      "digital_coast_id": "8463"
+    },
+    {
+      "project_name": "2018 USACE FEMA Topobathy Lidar: Main Island, Culebra, and Vieques, Puerto Rico",
+      "objectid": 2621,
+      "invid": 9395,
+      "uuid": "{568EF8EB-30D1-48BE-8ED2-CB4D6F90142A}",
+      "globalid": "{6ADB97A2-22B1-48A2-AC48-6EE82B9EE3D6}",
+      "project_status": "Complete",
+      "collection_date": "Jul 3 - 28, 2018",
+      "vertical_datum": "User Specified",
+      "vertical_rmse_cm": 10.0,
+      "digital_coast_id": "8560"
+    },
+    {
+      "project_name": "2019 NOAA NGS Topobathy Lidar: PR1801-TB-C",
+      "objectid": 2799,
+      "invid": 9412,
+      "uuid": "{444575A0-72C3-4996-AC2F-F5B7655A8A77}",
+      "globalid": "{E1FAF616-B6FD-42C3-B389-A2775B12953D}",
+      "project_status": "Planned/Funded",
+      "collection_date": null,
+      "vertical_datum": "Not Provided",
+      "vertical_rmse_cm": null,
+      "digital_coast_id": null
+    }
+  ],
+  "identity_gate": {
+    "state": "UNRESOLVED_CROSSWALK",
+    "rule": "USIEI inventory identifiers are not silently equated to NOAA Digital Coast/InPort dataset identifiers by project-name similarity alone.",
+    "known_external_candidate": {
+      "title": "2019 NOAA NGS Topobathy Lidar: Puerto Rico",
+      "inport_id": "65546",
+      "digital_coast_id": "9390"
+    }
+  },
+  "certification_boundary": "This receipt certifies the bounded source discovery response universe and screenshot byte identity only. It does not certify screenshot georegistration, file-level AOI coverage for sounding products, vertical equivalence, or any seafloor feature."
+}
