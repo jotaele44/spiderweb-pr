@@ -17,7 +17,7 @@ def base_row():
     }
 
 
-def test_unbound_name_match_stays_possible_epnym_not_identity():
+def test_unbound_name_match_stays_possible_eponym_not_identity():
     graph = import_htr_graph([base_row()])
     assert graph["invariants"]["identity_edge_count"] == 0
     assert graph["invariants"]["node_count"] == 2
@@ -39,11 +39,49 @@ def test_bound_relation_remains_non_identity():
 
 
 def test_discovery_only_and_same_as_are_rejected():
-    r = base_row(); r["state"] = "CANDIDATE_NOT_IDENTITY"
+    r = base_row()
+    r["state"] = "CANDIDATE_NOT_IDENTITY"
     with pytest.raises(HTRContextError):
         import_htr_graph([r])
-    r = base_row(); r["relation_type"] = "SAME_AS"
+    r = base_row()
+    r["relation_type"] = "SAME_AS"
     with pytest.raises(HTRContextError):
+        import_htr_graph([r])
+
+
+@pytest.mark.parametrize("relation", [None, "", [], {}])
+def test_relation_type_must_be_non_empty_string(relation):
+    r = base_row()
+    r["relation_type"] = relation
+    with pytest.raises(HTRContextError, match="relation_type"):
+        import_htr_graph([r])
+
+
+def test_unknown_pair_binding_state_and_endpoint_collapse_are_rejected():
+    r = base_row()
+    r["pair_binding_state"] = "UNKNOWN"
+    with pytest.raises(HTRContextError, match="pair_binding_state"):
+        import_htr_graph([r])
+
+    r = base_row()
+    r["hydro_entity_id"] = r["source_observation_id"]
+    with pytest.raises(HTRContextError, match="endpoints must remain distinct"):
+        import_htr_graph([r])
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("source_observation_id", "", "source_observation_id"),
+        ("hydro_entity_id", None, "hydro_entity_id"),
+        ("identity_state", "UNRESOLVED", "distinct entities"),
+        ("downstream_semantics", "IDENTITY", "context-only contract"),
+    ],
+)
+def test_graph_boundary_rejects_invalid_contract_fields(field, value, message):
+    r = base_row()
+    r[field] = value
+    with pytest.raises(HTRContextError, match=message):
         import_htr_graph([r])
 
 
