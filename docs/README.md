@@ -7,7 +7,8 @@ the relevant subsystem below.
 ## Getting started
 - [QUICK_START.md](QUICK_START.md) — install + first run
 - [EXECUTION_GUIDE.md](EXECUTION_GUIDE.md) — running the pipeline end to end
-- [ARCHITECTURE.md](ARCHITECTURE.md) — system architecture (phases 0–4, federation, RLSM)
+- [ARCHITECTURE.md](ARCHITECTURE.md) — spatial/operational and federation architecture
+- [FR24_EXECUTABLE_RETIREMENT.md](FR24_EXECUTABLE_RETIREMENT.md) — bounded ownership-closure ledger
 - [TESTING.md](TESTING.md) — test tiers and how to run them
 - [RELEASE_READINESS.md](RELEASE_READINESS.md) — the release gate
 
@@ -45,12 +46,13 @@ the relevant subsystem below.
 ## Spiderweb language & calibration
 - [SPIDERWEB_LANGUAGE_BRIDGE.md](SPIDERWEB_LANGUAGE_BRIDGE.md)
 - [SPIDERWEB_OPERATIONAL_CALIBRATION.md](SPIDERWEB_OPERATIONAL_CALIBRATION.md)
-- [AIRCRAFT_HOME_BASE_INTELLIGENCE.md](AIRCRAFT_HOME_BASE_INTELLIGENCE.md)
+- [AIRCRAFT_HOME_BASE_INTELLIGENCE.md](AIRCRAFT_HOME_BASE_INTELLIGENCE.md) — retired historical context
 
 ## GIS / DEM / geodata
 - [GIS_EXPORT_GUIDE.md](GIS_EXPORT_GUIDE.md) — GeoJSON/KML/QGIS consumption
 - [EXTERNAL_AERODROME_LAYER.md](EXTERNAL_AERODROME_LAYER.md)
 - [PR_GEODATA_INTEGRITY_AUDIT.md](PR_GEODATA_INTEGRITY_AUDIT.md)
+- [DUCKDB_SPATIAL.md](DUCKDB_SPATIAL.md) — embedded spatial SQL for ad hoc joins/queries over on-disk GeoJSON
 - DEM workflow: [PR_DEM_END_TO_END_PROCESS.md](PR_DEM_END_TO_END_PROCESS.md),
   [PR_DEM_ONE_TILE_PILOT.md](PR_DEM_ONE_TILE_PILOT.md),
   [PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md](PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md),

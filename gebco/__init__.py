@@ -1,7 +1,8 @@
-"""GEBCO 2023 bathymetry processing pipeline.
+"""Bathymetry and marine spatial-evidence processing for Spiderweb.
 
-Provides regional subset extraction (``gebco.io``) and terrain-derivative
-computation (``gebco.terrain``) for the GEBCO 2023 global 15 arc-second grid.
+Provides GEBCO regional subset extraction (``gebco.io``), terrain derivatives
+(``gebco.terrain``), and source-agnostic marine evidence controls
+(``gebco.marine_evidence``).
 """
 
 try:
@@ -10,6 +11,24 @@ try:
 except ImportError:
     _has_io = False
 
+from .marine_evidence import (
+    CoverageState,
+    DepthComparison,
+    DepthTransform,
+    EvidenceState,
+    GeomorphologyClass,
+    MarineObservation,
+    ProductStage,
+    SensorType,
+    VerticalCompatibilityError,
+    VerticalReference,
+    classify_feature_evidence,
+    compare_depths,
+    independent_root_ids,
+    lineage_independence_count,
+    source_lineage_roots,
+    validate_lineage,
+)
 from .terrain import (
     PR_LAT_MAX,
     PR_LAT_MIN,
@@ -38,4 +57,20 @@ __all__ = [
     "compute_curvatures",
     "compute_roughness",
     "compute_rugosity",
+    "SensorType",
+    "ProductStage",
+    "CoverageState",
+    "EvidenceState",
+    "GeomorphologyClass",
+    "VerticalReference",
+    "DepthTransform",
+    "MarineObservation",
+    "VerticalCompatibilityError",
+    "DepthComparison",
+    "compare_depths",
+    "independent_root_ids",
+    "lineage_independence_count",
+    "classify_feature_evidence",
+    "validate_lineage",
+    "source_lineage_roots",
 ]

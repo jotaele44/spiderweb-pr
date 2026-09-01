@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "scope": "Controlling A certification-gate ledger after durable evidence preservation and representation-aware geometry adjudication",
+  "principle": "Known source-level arithmetic must not be relabeled as canonical closure. A residue count is canonical only after the corresponding canonical denominator is itself closed.",
+  "frozen_source_state": {
+    "gnis_current_island_feature_ids": 148,
+    "sige_current_insular_source_rows": 29,
+    "noaa_current_project_archives": {"expected":15,"frozen":15,"blocked":0,"closed":true},
+    "noaa_cusp_packages": {"expected":2,"frozen":2,"blocked":0,"closed":true},
+    "noaa_historical_archives_B_only": {"expected":8,"frozen":8,"blocked":0,"closed":true},
+    "source_evidence_preservation": {
+      "state":"PASS",
+      "durable":true,
+      "release_tag":"pr-archipelago-freeze-2026-08-22",
+      "release_assets_verified":11
+    }
+  },
+  "known_current_source_arithmetic": {
+    "sige_identity_candidate_partition": {
+      "source_rows":29,
+      "candidate_not_identity":25,
+      "unresolved":4,
+      "canonical_promotions":0,
+      "closed":true
+    },
+    "gnis_polygon_coverage_partition": {
+      "source_ids":148,
+      "contained_by_derived_candidate_polygon_union":113,
+      "not_contained_by_derived_candidate_polygon_union":35,
+      "closed":true,
+      "warning":"Neither side of this partition is a canonical-footprint resolution count."
+    },
+    "high_distance_morphology_partition": {
+      "gt_1000m_cases":4,
+      "hard_current_morphology_adjudicated":2,
+      "current_morphology_still_open":2,
+      "closed":true
+    }
+  },
+  "canonical_identity_gate": {
+    "denominator_closed":false,
+    "known_unresolved_source_bindings":4,
+    "known_unresolved_source_binding_scope":"SIGE insular rows after candidate expansion",
+    "canonical_unresolved_residue":"NOT_YET_COMPUTABLE_BECAUSE_CANONICAL_IDENTITY_DENOMINATOR_IS_OPEN",
+    "reason":"GNIS stable identities and SIGE/local manifestations have not yet been fully adjudicated into one canonical 1:1|1:N|N:1|N:N|0:1 graph."
+  },
+  "canonical_geometry_gate": {
+    "denominator_closed":false,
+    "gnis_source_native_point_representations":148,
+    "derived_polygon_coverage_candidates":113,
+    "polygon_noncontainment_cases":35,
+    "canonical_resolved_geometry_count":"NOT_YET_COMPUTABLE",
+    "canonical_unresolved_geometry_residue":"NOT_YET_COMPUTABLE_BECAUSE_CANONICAL_GEOMETRY_DENOMINATOR_IS_OPEN",
+    "candidate_only_current_geometry_residue":"NOT_YET_COMPUTABLE_BECAUSE_CANDIDATE_GEOMETRY_HAS_NOT_BEEN_CANONICALIZED",
+    "reason":"Census/SIGE/NOAA/CUSP source geometries and derived polygonizations remain overlapping source/candidate manifestations; a geometry-only canonical denominator has not yet been constructed and deduplicated."
+  },
+  "preservation_gate": {
+    "SOURCE_EVIDENCE_PRESERVATION":"PASS",
+    "source_evidence_durable":true,
+    "note":"Pass here removes an evidence-durability blocker only; it cannot compensate for open identity or geometry denominators."
+  },
+  "C_provider_gate": {
+    "provider_contract_hardened":true,
+    "requires_current_pass":true,
+    "requires_identity_residue_zero":true,
+    "requires_geometry_residue_zero":true,
+    "requires_candidate_geometry_residue_zero":true,
+    "requires_identity_denominator_closed":true,
+    "requires_geometry_denominator_closed":true,
+    "requires_durable_source_evidence":true,
+    "runtime_activation":"BLOCKED"
+  },
+  "certification": {
+    "NAMED_CURRENT":"OPEN",
+    "GEOMETRIC_CURRENT":"OPEN",
+    "CURRENT_PR_ARCHIPELAGO":"OPEN",
+    "HISTORICAL_ARCHIPELAGO_EXHAUSTION":"OPEN",
+    "SOURCE_EVIDENCE_PRESERVATION":"PASS"
+  }
+}

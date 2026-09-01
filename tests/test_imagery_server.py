@@ -143,6 +143,7 @@ def test_build_server_registers_three_tools():
     import asyncio
 
     mcp = server.build_server()
-    tools = asyncio.run(mcp.get_tools())
+    list_tools = getattr(mcp, "list_tools", None)
+    tools = asyncio.run(list_tools() if callable(list_tools) else mcp.get_tools())
     names = set(tools.keys()) if isinstance(tools, dict) else {t.name for t in tools}
     assert {"fetch_imagery", "query_imagery_metadata", "compare_imagery"} <= names

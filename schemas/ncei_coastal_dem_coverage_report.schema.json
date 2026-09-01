@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/spiderweb-pr/ncei_coastal_dem_coverage_report.schema.json",
+  "title": "NCEI Coastal DEM Coverage Report",
+  "type": "object",
+  "required": [
+    "adapter",
+    "aoi",
+    "expected_datasets",
+    "status_counts",
+    "coverage_pct_available_live",
+    "datasets"
+  ],
+  "properties": {
+    "adapter": {"const": "ncei_coastal_dem"},
+    "aoi": {"type": "string"},
+    "expected_datasets": {"type": "integer", "minimum": 0},
+    "status_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "coverage_pct_available_live": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "dataset_id",
+          "area",
+          "priority",
+          "coverage_status",
+          "vertical_datum",
+          "resolution_arcsec",
+          "source_url"
+        ],
+        "properties": {
+          "dataset_id": {"type": "string"},
+          "area": {"type": "string"},
+          "priority": {"type": "string", "enum": ["P0", "P1", "P2"]},
+          "coverage_status": {
+            "type": "string",
+            "enum": [
+              "available_live",
+              "cataloged_only",
+              "planned_pdf_only",
+              "downloaded_local",
+              "derived_local",
+              "blocked_by_datum",
+              "review_required"
+            ]
+          },
+          "vertical_datum": {"type": "string"},
+          "resolution_arcsec": {"type": "string"},
+          "source_url": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

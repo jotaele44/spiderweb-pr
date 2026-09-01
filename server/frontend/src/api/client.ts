@@ -241,8 +241,10 @@ export function streamPipeline(
 
 /**
  * Stream a RAG query to the backend.
- * Calls onToken for each output line, onDone when the response ends, and onError
- * (if provided) when the request fails or returns no readable stream.
+ * Calls onToken for each output line, onDone when a terminal SSE event arrives,
+ * and onError when HTTP/transport failure, a non-zero backend return code, an
+ * empty successful response, or a truncated stream would otherwise look like a
+ * successful blank answer.
  */
 export function streamRagQuery(
   query: string,
@@ -253,6 +255,50 @@ export function streamRagQuery(
   let cancelled = false;
 
   void (async () => {
+    let sawToken = false;
+    let terminalSeen = false;
+    let pendingEvent: string | null = null;
+
+    function finishError(message: string) {
+      if (!cancelled) onError?.(message);
+      if (!cancelled) onDone();
+    }
+
+    function consumeLine(line: string): boolean {
+      if (line.startsWith("event:")) {
+        pendingEvent = line.slice(6).trim();
+        return false;
+      }
+      if (line.startsWith("data:")) {
+        const payload = line.slice(5).trim();
+        if (pendingEvent === "done") {
+          terminalSeen = true;
+          let returncode: number | undefined;
+          try {
+            returncode = (JSON.parse(payload) as { returncode?: number }).returncode;
+          } catch {
+            finishError("RAG backend returned an invalid terminal status");
+            return true;
+          }
+          if (returncode !== 0) {
+            finishError(`RAG backend exited with code ${String(returncode ?? "unknown")}`);
+            return true;
+          }
+          if (!sawToken) {
+            finishError("RAG backend completed without producing output");
+            return true;
+          }
+          if (!cancelled) onDone();
+          return true;
+        }
+        sawToken = true;
+        if (!cancelled) onToken(payload);
+        return false;
+      }
+      if (line === "") pendingEvent = null;
+      return false;
+    }
+
     try {
       const res = await fetchWithTimeout(`${BASE}/rag/query`, {
         method: "POST",
@@ -260,13 +306,11 @@ export function streamRagQuery(
         body: JSON.stringify({ query, top_k: 5 }),
       });
       if (!res.ok) {
-        onError?.(`RAG backend returned ${res.status}`);
-        onDone();
+        finishError(`RAG backend returned ${res.status}`);
         return;
       }
       if (!res.body) {
-        onError?.("RAG backend returned no response stream");
-        onDone();
+        finishError("RAG backend returned no response stream");
         return;
       }
       const reader = res.body.getReader();
@@ -274,24 +318,22 @@ export function streamRagQuery(
       let buf = "";
       while (true) {
         const { value, done } = await reader.read();
-        if (done || cancelled) break;
-        buf += dec.decode(value, { stream: true });
+        if (cancelled) return;
+        buf += dec.decode(value ?? new Uint8Array(), { stream: !done });
         const lines = buf.split("\n");
         buf = lines.pop() ?? "";
         for (const line of lines) {
-          if (line.startsWith("data:")) {
-            onToken(line.slice(5).trim());
-          }
-          if (line.startsWith("event: done")) {
-            onDone();
-            return;
-          }
+          if (consumeLine(line)) return;
         }
+        if (done) break;
       }
-      onDone();
+      if (buf && consumeLine(buf)) return;
+      if (!cancelled && !terminalSeen) {
+        finishError("RAG response stream ended without terminal status");
+      }
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : "RAG request failed");
-      onDone();
+      if (cancelled) return;
+      finishError(err instanceof Error ? err.message : "RAG request failed");
     }
   })();
 

@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "scope": "Current A-lane candidate relationship ledger for the three distinct GNIS Las Lavanderas manifestations in the Ceiba/Cayo Icacos area",
+  "rules": {
+    "stable_id_controls": true,
+    "name_merge": "forbidden",
+    "proximity_merge": "forbidden",
+    "group_parent_inference": "not promoted without explicit source lineage/crosswalk",
+    "noaa_hazard_geometry": "corroboration/morphology candidate only; not identity or footprint proof",
+    "usgs_topo_labels": "independent current label corroboration only; map label does not create a stable-ID crosswalk"
+  },
+  "current_usgs_topo": {
+    "authority": "U.S. Geological Survey",
+    "product": "US Topo 7.5-minute map for Cayo Icacos, PR",
+    "edition": "2018",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Maps/USTopo/PDF/PR/PR_Cayo_Icacos_20181016_TM_geo.pdf",
+    "observed_labels": ["Las Lavanderas", "Las Lavanderas del Este", "Las Lavanderas del Oeste", "Piragua de Adentro", "Piragua de Afuera"],
+    "interpretation": "The three Las Lavanderas labels are separately rendered in the same current USGS quadrangle; this independently defeats any NAME_ONLY collapse into one manifestation. It does not by itself establish a parent/group topology or exact canonical footprint."
+  },
+  "source_manifestations": [
+    {
+      "gnis_feature_id": "1611371",
+      "gnis_name": "Las Lavanderas del Este",
+      "county_name": "Ceiba",
+      "source_native_representation": "POINT",
+      "polygon_union_state": "NONCONTAINED",
+      "nearest_frozen_noaa_cusp_shoreline_m": 967.1331,
+      "current_usgs_label_corroborated": true,
+      "canonical_identity_state": "SOURCE_ID_DISTINCT_CANONICAL_RELATION_OPEN",
+      "canonical_footprint_state": "OPEN"
+    },
+    {
+      "gnis_feature_id": "1611372",
+      "gnis_name": "Las Lavanderas del Oeste",
+      "county_name": "Ceiba",
+      "source_native_representation": "POINT",
+      "polygon_union_state": "NONCONTAINED",
+      "nearest_frozen_noaa_cusp_shoreline_m": 2154.7617,
+      "nearest_frozen_noaa_all_line_candidate": {
+        "distance_m": 20.3,
+        "class": "DANGER AREA",
+        "attribute": "Foul",
+        "project": "PR1401C-TB-N",
+        "interpretation": "morphology/location corroboration candidate only"
+      },
+      "current_usgs_label_corroborated": true,
+      "canonical_identity_state": "SOURCE_ID_DISTINCT_CANONICAL_RELATION_OPEN",
+      "canonical_footprint_state": "OPEN"
+    },
+    {
+      "gnis_feature_id": "2575426",
+      "gnis_name": "Las Lavanderas",
+      "county_name": "Ceiba",
+      "source_native_representation": "POINT",
+      "polygon_union_state": "NONCONTAINED",
+      "nearest_frozen_noaa_cusp_shoreline_m": 2004.2839,
+      "nearest_frozen_noaa_all_line_candidate": {
+        "distance_m": 978.9,
+        "class": "DANGER AREA",
+        "attribute": "Foul",
+        "interpretation": "morphology/location corroboration candidate only"
+      },
+      "current_usgs_label_corroborated": true,
+      "canonical_identity_state": "SOURCE_ID_DISTINCT_CANONICAL_RELATION_OPEN",
+      "canonical_footprint_state": "OPEN"
+    }
+  ],
+  "pairwise_source_point_distances_m": [
+    {"a":"1611371","b":"1611372","distance_m_approx":2089,"relation":"DISTINCT_SOURCE_POINTS"},
+    {"a":"1611371","b":"2575426","distance_m_approx":1098,"relation":"DISTINCT_SOURCE_POINTS"},
+    {"a":"1611372","b":"2575426","distance_m_approx":1101,"relation":"DISTINCT_SOURCE_POINTS"}
+  ],
+  "candidate_relationships": [
+    {
+      "candidate": "2575426 may denote a collective/group manifestation related to 1611371 and 1611372",
+      "state": "HYPOTHESIS_NOT_BINDING",
+      "support": ["generic/East/West naming pattern", "current USGS co-labeling in same quadrangle"],
+      "blocking_evidence": "No explicit current stable-ID lineage/crosswalk or authoritative parent-child relation recovered."
+    }
+  ],
+  "arithmetic": {
+    "input_source_manifestations": 3,
+    "source_ids_preserved_distinct": 3,
+    "canonical_merges_promoted": 0,
+    "canonical_relationships_unresolved": 3,
+    "closed": true
+  },
+  "certification": {
+    "LAS_LAVANDERAS_SOURCE_MANIFESTATION_DISTINCTION": "PASS",
+    "LAS_LAVANDERAS_CANONICAL_RELATIONSHIP": "OPEN",
+    "LAS_LAVANDERAS_CANONICAL_FOOTPRINT": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

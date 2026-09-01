@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "scope": "Noncontrolling public-source corroboration for the four SIGE insular rows that remain canonically unresolved after frozen GNIS/SIGE candidate expansion",
+  "rules": {
+    "controlling_identity_source": "unchanged frozen GNIS|SIGE evidence graph",
+    "external_sources": "corroboration only unless an explicit stable crosswalk or hard geometry/lineage binding is recovered",
+    "prohibited_promotion": "NAME_ONLY|NORMALIZED_NAME_ONLY|COUNT_EQUALITY|NEAREST_ONLY|PROXIMITY_ONLY",
+    "temporal_caution": "older plans/reports can corroborate names and places but cannot independently certify present-day identity/status"
+  },
+  "rows": [
+    {
+      "sige_objectid": 168,
+      "sige_name_raw": "Cayo de Ratones",
+      "existing_best_candidate": {"gnis_feature_id":"1609837","gnis_official_name":"Cayos de Ratones","county_name":"Salinas","representative_point_distance_m":256.9},
+      "external_evidence": [
+        {
+          "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+          "url": "https://www.drna.pr.gov/deslindes-zmt/aviso-deslindes-zmt/remodelacion-estructuras-cayo-ratones-salinas/",
+          "evidence": "DRNA zoning-maritime-boundary notice explicitly identifies Cayo de Ratones in the Municipality of Salinas.",
+          "role": "NAME_AND_MUNICIPALITY_CORROBORATION_ONLY"
+        }
+      ],
+      "adjudication": "CORROBORATED_LOCATION_NOT_IDENTITY",
+      "state": "UNRESOLVED",
+      "reason": "Singular/plural and individual-vs-group semantics remain; no explicit SIGE↔GNIS stable-ID crosswalk or hard geometry binding recovered."
+    },
+    {
+      "sige_objectid": 175,
+      "sige_name_raw": "Cabeza de Perros",
+      "existing_candidates": [
+        {"gnis_feature_id":"1609661","gnis_official_name":"Cabeza de Perro","county_name":"Ceiba","representative_point_distance_m":311.9},
+        {"gnis_feature_id":"1613398","gnis_official_name":"Cabeza de Perro","county_name":"Ceiba","representative_point_distance_m":315.8},
+        {"gnis_feature_id":"1990733","gnis_official_name":"Cabezo de Perro","county_name":"Ceiba","representative_point_distance_m":243.5}
+      ],
+      "external_evidence": [
+        {
+          "authority": "Puerto Rico / Roosevelt Roads master-plan publication",
+          "url": "https://docs.pr.gov/files/RooseveltRoads/Plan%20Maestro%202011%2008%2023%20FINAL.pdf",
+          "evidence": "The master-plan map labels Cabeza de Perros in the Roosevelt Roads/Ceiba coastal area.",
+          "role": "LOCATION_AND_HISTORICAL_NAME_CORROBORATION_ONLY"
+        }
+      ],
+      "adjudication": "N_N_CANDIDATE_AMBIGUITY",
+      "state": "UNRESOLVED",
+      "reason": "Three separate current GNIS stable IDs occupy the same small Ceiba area; external map labeling does not select one stable GNIS identity."
+    },
+    {
+      "sige_objectid": 186,
+      "sige_name_raw": "Isla Maguelles",
+      "existing_best_candidate": {"gnis_feature_id":"1611186","gnis_official_name":"Isla Magueyes","county_name":"Lajas","representative_point_distance_m":698.7},
+      "external_evidence": [
+        {
+          "authority": "University of Puerto Rico at Mayagüez, Department of Marine Sciences",
+          "url": "https://www.uprm.edu/cima/contact-information-2/",
+          "evidence": "UPRM identifies Isla Magueyes at La Parguera on the coast of Lajas and gives the Isla Magueyes laboratory address.",
+          "role": "AUTHORITATIVE_NAME_AND_LOCATION_CORROBORATION_ONLY"
+        }
+      ],
+      "adjudication": "LIKELY_ORTHOGRAPHIC_VARIANT_NOT_IDENTITY",
+      "state": "UNRESOLVED",
+      "reason": "The evidence strongly supports Magueyes as the local island name, but no source explicitly states SIGE 'Maguelles' is a typo/variant of GNIS Feature ID 1611186."
+    },
+    {
+      "sige_objectid": 188,
+      "sige_name_raw": "Cayo de Caña Gorda",
+      "existing_best_candidate": {"gnis_feature_id":"1609835","gnis_official_name":"Cayos de Caña Gorda","county_name":"Guánica","representative_point_distance_m":339.1},
+      "external_evidence": [
+        {
+          "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+          "url": "https://www.drna.pr.gov/wp-content/uploads/formidable/Garcia-Sais-et-al-2001-Coral-Reef-Communities-from-Natural-Reserves-in-Puerto-Rico-Volume-1.pdf",
+          "evidence": "DRNA report describes Caña Gorda Reef and states it is also known as Cayo de Caña Gorda in the Guánica Reserve.",
+          "role": "NAME_LOCATION_AND_SOURCE_TAXONOMY_CORROBORATION"
+        }
+      ],
+      "adjudication": "TAXONOMY_CONTRADICTION_EXPLICIT",
+      "state": "UNRESOLVED",
+      "reason": "DRNA treats the named feature as a reef while GNIS source taxonomy is Island/Cayos; the mismatch must remain explicit rather than being normalized away."
+    }
+  ],
+  "arithmetic": {
+    "input_unresolved": 4,
+    "externally_corroborated": 4,
+    "canonically_promoted": 0,
+    "remaining_unresolved": 4,
+    "closed": true
+  },
+  "certification": {
+    "EXTERNAL_CORROBORATION_LANE": "PASS_NONCONTROLLING_EVIDENCE_ONLY",
+    "SIGE_CANONICAL_IDENTITY": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

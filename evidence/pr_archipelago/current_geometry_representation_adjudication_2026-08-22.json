@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0",
+  "scope": "Representation-aware adjudication of the 35 GNIS current Island-class manifestations not contained by the frozen Census+SIGE+NOAA derived polygon union; no identity promotion",
+  "inputs": {
+    "gnis_current_island_feature_ids": 148,
+    "polygon_union_covered": 113,
+    "polygon_noncontainment": 35,
+    "noaa_project_archive_manifest_sha256": "734244411db9baee90218dd98f410c0249c20872f703009811f0af9b681831ce",
+    "cusp_index_manifest_sha256": "dc78521bb75738b4263a6caa511e865816ae22e692a64503b4325bb88accd406",
+    "census_coastline_sha256": "c88e68274b72e7cfded0bb0846c8c78f2c078e5f361973792a84c67b0975459c",
+    "sige_source_manifestation_state": "frozen previously; not reacquired"
+  },
+  "rules": {
+    "polygon_absence": "does not imply geometry absence",
+    "source_native_point": "GNIS representative point is a valid source-native POINT manifestation but does not establish footprint/extent",
+    "shoreline_distance": "corroboration/candidate diagnostic only; never identity or footprint promotion",
+    "noaa_point_distance": "candidate diagnostic only; nearest record is reported for audit convenience while the complete NOAA point-feature universe remains preserved in the frozen archives",
+    "identity": "NAME_ONLY|NORMALIZED_NAME_ONLY|COUNT_EQUALITY|NEAREST_ONLY|PROXIMITY_ONLY forbidden",
+    "taxonomy": "GNIS Island source class and NOAA feature classes remain raw source taxonomies, not canonical feature type"
+  },
+  "arithmetic": {
+    "gnis_total": 148,
+    "polygon_covered": 113,
+    "polygon_noncontained": 35,
+    "closed": true,
+    "polygon_noncontained_shoreline_distance_cumulative": {
+      "lte_25m": 12,
+      "lte_100m": 20,
+      "lte_250m": 23,
+      "lte_500m": 26,
+      "lte_1000m": 31,
+      "gt_1000m": 4
+    },
+    "polygon_noncontained_nearest_noaa_point_distance_cumulative": {
+      "lte_25m": 4,
+      "lte_100m": 10,
+      "lte_250m": 15,
+      "lte_500m": 17,
+      "lte_1000m": 20,
+      "gt_1000m": 15
+    },
+    "shoreline_distance_partition_closed": true
+  },
+  "stable_id_disambiguation": {
+    "apparent_name_conflict": "Piragua de Afuera",
+    "resolution": "NO_CONTRADICTION_STABLE_ID_DISAMBIGUATED",
+    "covered_gnis_feature_id": "1611676",
+    "polygon_noncontained_gnis_feature_id": "1613390",
+    "note": "The same official name occurs on two distinct GNIS Feature IDs; name equality must not collapse them."
+  },
+  "records": [
+    {"gnis_feature_id":"1609809","gnis_name":"Cayo Arenas","county_name":"Ponce","gnis_point":[-66.6740625,17.95969],"nearest_combined_shoreline_m":763.9581,"nearest_noaa_project_shoreline_m":763.9581,"nearest_cusp_shoreline_m":766.2295,"nearest_noaa_point_candidate":{"project":"PR1801D-TB-C","feature_id":"177450.0","feature":101.0,"attribute":"Pile.Bare","class":"FREESTANDING MARINE FEATURE","source_id":"GC11532","src_date":"20190419","distance_m":821.7771}},
+    {"gnis_feature_id":"1609822","gnis_name":"Cayo Largo","county_name":"Fajardo","gnis_point":[-65.5784944,18.3152319],"nearest_combined_shoreline_m":2786.4173,"nearest_noaa_project_shoreline_m":2786.4174,"nearest_cusp_shoreline_m":2786.4173,"nearest_noaa_point_candidate":{"project":"PR1401C-TB-N","feature_id":"164400.0","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","source_id":"GC11663","src_date":"20141114","distance_m":3066.3288}},
+    {"gnis_feature_id":"1609826","gnis_name":"Cayo Morrillo","county_name":"Salinas","gnis_point":[-66.2729457,17.9269127],"nearest_combined_shoreline_m":35.9586,"nearest_noaa_project_shoreline_m":35.9586,"nearest_cusp_shoreline_m":37.7280,"nearest_noaa_point_candidate":{"project":"PR1801D-TB-C","feature":141.0,"attribute":"Marine Light.Tower","class":"AID TO NAVIGATION","distance_m":1297.4853}},
+    {"gnis_feature_id":"1611176","gnis_name":"Isla de Cerro Gordo","county_name":"Vega Alta","gnis_point":[-66.3487807,18.4863336],"nearest_combined_shoreline_m":283.4376,"nearest_noaa_project_shoreline_m":283.4376,"nearest_cusp_shoreline_m":283.5271,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":381.7033}},
+    {"gnis_feature_id":"1611185","gnis_name":"Isla La Cancora","county_name":"Loíza","gnis_point":[-65.9973876,18.4657782],"nearest_combined_shoreline_m":21.4824,"nearest_noaa_project_shoreline_m":21.4824,"nearest_cusp_shoreline_m":21.5973,"nearest_noaa_point_candidate":{"project":"PR1801A-TB-C","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":23.7999}},
+    {"gnis_feature_id":"1611192","gnis_name":"Isla Piedra","county_name":"San Juan","gnis_point":[-66.0448879,18.464667],"nearest_combined_shoreline_m":66.5608,"nearest_noaa_project_shoreline_m":66.5608,"nearest_cusp_shoreline_m":71.4060,"nearest_noaa_point_candidate":{"project":"PR1801A-TB-C","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":1107.6873}},
+    {"gnis_feature_id":"1611194","gnis_name":"Isla Verde","county_name":"Carolina","gnis_point":[-66.0165543,18.4480011],"nearest_combined_shoreline_m":51.1249,"nearest_noaa_project_shoreline_m":51.1249,"nearest_cusp_shoreline_m":51.4827,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":141.0,"attribute":"Marine Light.Tower","class":"AID TO NAVIGATION","distance_m":1564.9634}},
+    {"gnis_feature_id":"1611243","gnis_name":"La Cordillera","county_name":"Fajardo","gnis_point":[-65.5662725,18.3813406],"nearest_combined_shoreline_m":138.3047,"nearest_noaa_project_shoreline_m":138.3047,"nearest_cusp_shoreline_m":138.9356,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":318.4927}},
+    {"gnis_feature_id":"1611352","gnis_name":"Las Cabritas","county_name":"Toa Baja","gnis_point":[-66.1343331,18.473278],"nearest_combined_shoreline_m":1.7034,"nearest_noaa_project_shoreline_m":1.7034,"nearest_cusp_shoreline_m":1.7034,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":108.9918}},
+    {"gnis_feature_id":"1611370","gnis_name":"Las Hermanas","county_name":"Culebra","gnis_point":[-65.3523812,18.3146782],"nearest_combined_shoreline_m":42.7292,"nearest_noaa_project_shoreline_m":42.7292,"nearest_cusp_shoreline_m":42.7292,"nearest_noaa_point_candidate":{"project":"PR1801C-TB-C","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":128.6469}},
+    {"gnis_feature_id":"1611371","gnis_name":"Las Lavanderas del Este","county_name":"Ceiba","gnis_point":[-65.5397222,18.2652778],"nearest_combined_shoreline_m":967.1331,"nearest_noaa_project_shoreline_m":967.1331,"nearest_cusp_shoreline_m":970.3602,"nearest_noaa_point_candidate":{"project":"PR1801B-TB-C","feature":141.0,"attribute":"Marine Light.Tower","class":"AID TO NAVIGATION","distance_m":4068.8639}},
+    {"gnis_feature_id":"1611372","gnis_name":"Las Lavanderas del Oeste","county_name":"Ceiba","gnis_point":[-65.5591667,18.2619444],"nearest_combined_shoreline_m":2154.7617,"nearest_noaa_project_shoreline_m":2165.1534,"nearest_cusp_shoreline_m":2154.7617,"nearest_noaa_point_candidate":{"project":"PR1401C-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":2156.2046}},
+    {"gnis_feature_id":"1611437","gnis_name":"Los Negritos","county_name":"Arecibo","gnis_point":[-66.6046177,18.4932775],"nearest_combined_shoreline_m":51.8685,"nearest_noaa_project_shoreline_m":51.8685,"nearest_cusp_shoreline_m":53.1067,"nearest_noaa_point_candidate":{"project":"PR1801A-TB-C","feature":61.0,"attribute":"Rock.Bare","class":"OBSTRUCTION POINT","distance_m":61.9376}},
+    {"gnis_feature_id":"1611675","gnis_name":"Piragua de Adentro","county_name":"Ceiba","gnis_point":[-65.5312716,18.2682902],"nearest_combined_shoreline_m":17.0719,"nearest_noaa_project_shoreline_m":17.0719,"nearest_cusp_shoreline_m":18.0991,"nearest_noaa_point_candidate":{"project":"PR1801B-TB-C","feature":141.0,"attribute":"Marine Light.Tower","class":"AID TO NAVIGATION","distance_m":3988.5618}},
+    {"gnis_feature_id":"1612633","gnis_name":"Roca Cocinera","county_name":"Arecibo","gnis_point":[-66.703786,18.4799447],"nearest_combined_shoreline_m":13.6733,"nearest_noaa_project_shoreline_m":15.4689,"nearest_cusp_shoreline_m":13.6733,"nearest_noaa_point_candidate":{"project":"PR1801A-TB-C","feature":61.0,"attribute":"Rock.Bare","class":"OBSTRUCTION POINT","distance_m":139.3401}},
+    {"gnis_feature_id":"1612636","gnis_name":"Roca Ola","county_name":"Cabo Rojo","gnis_point":[-67.1821237,17.9474657],"nearest_combined_shoreline_m":857.5417,"nearest_noaa_project_shoreline_m":857.5417,"nearest_cusp_shoreline_m":860.4081,"nearest_noaa_point_candidate":{"project":"PR1801E-TB-C","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":102.2794}},
+    {"gnis_feature_id":"1612637","gnis_name":"Roca Resuello","county_name":"Arecibo","gnis_point":[-66.7182306,18.4782782],"nearest_combined_shoreline_m":14.4523,"nearest_noaa_project_shoreline_m":14.4523,"nearest_cusp_shoreline_m":14.4523,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":23.8214}},
+    {"gnis_feature_id":"1612638","gnis_name":"Roca Velásquez","county_name":"Cabo Rojo","gnis_point":[-67.1776793,18.0232958],"nearest_combined_shoreline_m":321.5180,"nearest_noaa_project_shoreline_m":321.5180,"nearest_cusp_shoreline_m":321.7398,"nearest_noaa_point_candidate":{"project":"PR1801E-TB-C","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":800.7339}},
+    {"gnis_feature_id":"1612790","gnis_name":"Tres Hermanas","county_name":"Barceloneta","gnis_point":[-66.5743393,18.4910555],"nearest_combined_shoreline_m":10.4891,"nearest_noaa_project_shoreline_m":10.4891,"nearest_cusp_shoreline_m":10.4891,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":11.7719}},
+    {"gnis_feature_id":"1612791","gnis_name":"Tres Hermanos","county_name":"Arecibo","gnis_point":[-66.7032304,18.4816113],"nearest_combined_shoreline_m":30.0438,"nearest_noaa_project_shoreline_m":30.0438,"nearest_cusp_shoreline_m":31.1809,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":54.4794}},
+    {"gnis_feature_id":"1612950","gnis_name":"Roca Cucaracha","county_name":"Vieques","gnis_point":[-65.3226578,18.1546849],"nearest_combined_shoreline_m":602.5207,"nearest_noaa_project_shoreline_m":602.5207,"nearest_cusp_shoreline_m":602.5207,"nearest_noaa_point_candidate":{"project":"PR1801C-TB-C","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":62.9299}},
+    {"gnis_feature_id":"1612960","gnis_name":"Cayo Terremoto","county_name":"Guánica","gnis_point":[-66.9723985,17.9299678],"nearest_combined_shoreline_m":103.4369,"nearest_noaa_project_shoreline_m":103.4369,"nearest_cusp_shoreline_m":103.4369,"nearest_noaa_point_candidate":{"project":"PR1801E-TB-C","feature":61.0,"attribute":"Rock.Bare","class":"OBSTRUCTION POINT","distance_m":1556.1351}},
+    {"gnis_feature_id":"1612972","gnis_name":"Bajo Evelyn","county_name":"Naguabo","gnis_point":[-65.7409949,18.1513502],"nearest_combined_shoreline_m":699.8743,"nearest_noaa_project_shoreline_m":699.8743,"nearest_cusp_shoreline_m":699.8743,"nearest_noaa_point_candidate":{"project":"PR1401C-TB-N","feature":61.0,"attribute":"Rock.Bare","class":"OBSTRUCTION POINT","distance_m":931.2950}},
+    {"gnis_feature_id":"1613029","gnis_name":"Cayo del Agua","county_name":"Culebra","gnis_point":[-65.3476589,18.3119005],"nearest_combined_shoreline_m":5.6529,"nearest_noaa_project_shoreline_m":5.6529,"nearest_cusp_shoreline_m":5.6529,"nearest_noaa_point_candidate":{"project":"PR1801C-TB-C","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":63.5181}},
+    {"gnis_feature_id":"1613030","gnis_name":"Cayo Alfeñique","county_name":"Santa Isabel","gnis_point":[-66.3518356,17.9269128],"nearest_combined_shoreline_m":258.3151,"nearest_noaa_project_shoreline_m":258.3151,"nearest_cusp_shoreline_m":280.8877,"nearest_noaa_point_candidate":{"project":"PR1801D-TB-C","feature":58.0,"attribute":"Coral.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":1894.2034}},
+    {"gnis_feature_id":"1613034","gnis_name":"Cayo Corral","county_name":"Lajas","gnis_point":[-67.0193436,17.9358005],"nearest_combined_shoreline_m":29.5739,"nearest_noaa_project_shoreline_m":29.5739,"nearest_cusp_shoreline_m":31.3427,"nearest_noaa_point_candidate":{"project":"PR1401A-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":1089.2343}},
+    {"gnis_feature_id":"1613035","gnis_name":"Cayo Fanduca","county_name":"Cabo Rojo","gnis_point":[-67.2149025,18.0869039],"nearest_combined_shoreline_m":1508.3470,"nearest_noaa_project_shoreline_m":1508.3470,"nearest_cusp_shoreline_m":1510.0898,"nearest_noaa_point_candidate":{"project":"PR1401A-TB-N","feature":61.0,"attribute":"Rock.Bare","class":"OBSTRUCTION POINT","distance_m":1797.3025}},
+    {"gnis_feature_id":"1613131","gnis_name":"Isla Monito","county_name":"Mayagüez","gnis_point":[-67.9496314,18.1613416],"nearest_combined_shoreline_m":15.4330,"nearest_noaa_project_shoreline_m":54486.0537,"nearest_cusp_shoreline_m":15.4330,"nearest_noaa_point_candidate":{"project":"PR1801E-TB-C","feature":61.0,"attribute":"Rock.Bare","class":"OBSTRUCTION POINT","distance_m":54716.3334}},
+    {"gnis_feature_id":"1613382","gnis_name":"Roca Culumna","county_name":"Culebra","gnis_point":[-65.3918266,18.3327329],"nearest_combined_shoreline_m":1.4252,"nearest_noaa_project_shoreline_m":1.4252,"nearest_cusp_shoreline_m":1.9900,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":29.9479}},
+    {"gnis_feature_id":"1613383","gnis_name":"El Ancón","county_name":"Culebra","gnis_point":[-65.3429367,18.3516215],"nearest_combined_shoreline_m":23.0122,"nearest_noaa_project_shoreline_m":23.0122,"nearest_cusp_shoreline_m":23.0122,"nearest_noaa_point_candidate":{"project":"PR1801C-TB-C","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":91.8668}},
+    {"gnis_feature_id":"1613390","gnis_name":"Piragua de Afuera","county_name":"Ceiba","gnis_point":[-65.5087715,18.2727346],"nearest_combined_shoreline_m":19.6285,"nearest_noaa_project_shoreline_m":19.6285,"nearest_cusp_shoreline_m":19.6285,"nearest_noaa_point_candidate":{"project":"PR1801B-TB-C","feature":141.0,"attribute":"Marine Light.Tower","class":"AID TO NAVIGATION","distance_m":4417.8730}},
+    {"gnis_feature_id":"2575420","gnis_name":"Cayo Desgraciado","county_name":"Ponce","gnis_point":[-66.5655556,17.9658333],"nearest_combined_shoreline_m":70.0842,"nearest_noaa_project_shoreline_m":70.0843,"nearest_cusp_shoreline_m":70.0842,"nearest_noaa_point_candidate":{"project":"PR1801D-TB-C","feature":61.0,"attribute":"Rock.Bare","class":"OBSTRUCTION POINT","distance_m":2349.8024}},
+    {"gnis_feature_id":"2575426","gnis_name":"Las Lavanderas","county_name":"Ceiba","gnis_point":[-65.55,18.2666667],"nearest_combined_shoreline_m":2004.2839,"nearest_noaa_project_shoreline_m":2004.2839,"nearest_cusp_shoreline_m":2006.4425,"nearest_noaa_point_candidate":{"project":"PR1401C-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":3242.9642}},
+    {"gnis_feature_id":"2575428","gnis_name":"Isla de Jueyes","county_name":"Ponce","gnis_point":[-66.59,17.9611111],"nearest_combined_shoreline_m":157.5981,"nearest_noaa_project_shoreline_m":157.5981,"nearest_cusp_shoreline_m":162.0216,"nearest_noaa_point_candidate":{"project":"PR1801D-TB-C","feature":58.0,"attribute":"Coral.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":237.9737}},
+    {"gnis_feature_id":"2575431","gnis_name":"Cayo Botijuela","county_name":"Culebra","gnis_point":[-65.3766506,18.3712531],"nearest_combined_shoreline_m":3.0764,"nearest_noaa_project_shoreline_m":3.0764,"nearest_cusp_shoreline_m":3.0764,"nearest_noaa_point_candidate":{"project":"PR1401D-TB-N","feature":62.0,"attribute":"Rock.Covers/Uncovers","class":"OBSTRUCTION POINT","distance_m":16.7156}}
+  ],
+  "certification": {
+    "SOURCE_NATIVE_POINT_REPRESENTATION": "PASS_FOR_148_GNIS_MANIFESTATIONS",
+    "POLYGON_FOOTPRINT_COMPLETE": false,
+    "GEOMETRY_REPRESENTATION_ADJUDICATION": "PARTIAL_PASS_SOURCE_NATIVE_POINT_ONLY",
+    "CANONICAL_FOOTPRINT_ADJUDICATION": "OPEN",
+    "IDENTITY_ADJUDICATION": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN"
+  }
+}

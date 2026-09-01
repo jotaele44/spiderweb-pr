@@ -31,9 +31,12 @@ are now retired to `docs/legacy/`:
 | `GET /events/{flight_id}/track` + `/events` aircraft columns | per-point flight track playback |
 | `pipeline/rlsm_ontology_gate.py`, `scripts/rlsm_unlabeled.py`, `configs/rlsm_operational_ontology.yaml`, `schemas/rlsm_*.json` | RLSM route-line-segment mining (skywatcher owns RLSM) |
 | `dashboard/` (whole viewer) + `scripts/{export_static_dashboard,gen_snapshot}.py` | Aircraft Catalog / Flight Log / **FR24 Review Queue** tabs |
+| `pipeline/{flight_analyzer,hardened_pipeline}.py`, `scripts/ocr_{checkpoint,full,parallel}.py` | Residual executable screenshot OCR and database builders missed by the first migration audit |
+| `run_all.py` phases 0-1, screenshot/home-base/RLSM flags, legacy dashboard JSON export | CLI entry points into removed or already-absent modules |
 
 `/events` survives as a **generic** spatial/operational event stream (contract,
-imagery, report, outage, permit, field). It no longer carries aircraft fields.
+imagery, report, outage, permit, field, filing, sighting, other). It no longer
+carries aircraft fields or a `flight` event kind.
 
 **The old FR24 handoff was broken on both ends** and is not being rebuilt here:
 skywatcher's documented adapter (`fr24/spiderweb_adapter.py` →
@@ -54,6 +57,11 @@ this drift fails a maintenance audit instead of accumulating silently.
 
 Any future federation/consumer code added here must be a thin client of the canonical
 control plane, not a second copy of it.
+
+As of 2026-08-26, the direct consumer remains blocked. Skywatcher has not yet
+emitted a live non-synthetic canonical package for TheHub to validate and
+aggregate. Its producer-specific `bridge_records.jsonl` package is not an
+admitted Hub stream and cannot be used as a substitute.
 
 ## Retired in-repo query-hub (2026-06-10)
 spiderweb previously ran a local query-hub that ingested other producers' packages and

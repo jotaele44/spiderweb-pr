@@ -1,0 +1,33 @@
+{
+  "repo": "spiderweb-pr",
+  "generatedAt": "2026-08-24",
+  "federationPackage": null,
+  "shadcn": null,
+  "notes": {
+    "federationPackage": "Confirmed absent, not merely unchecked: no `@pr-federation/react` dependency in server/frontend/package.json, and no import of it anywhere under server/frontend/src. spiderweb-pr is the one repo in the PRII family that does not consume the shared design package.",
+    "shadcn": "Confirmed absent: no components.json anywhere in the repo, no shadcn/ui-generated files under server/frontend/src/components. All controls are hand-written.",
+    "styling": "Two hand-written stylesheets: server/frontend/src/styles/federation.css (design tokens — colors, fonts, spacing, focus-visible ring, --fd-* namespace, light/dark palettes) and server/frontend/src/styles/app.css (component-level rules built on top of those tokens: .act, .navbtn, .tab, .badge, .pill, .empty-state, etc.). server/frontend/src/styles/tokens.css is a thin legacy alias layer mapping old --x names onto the canonical --fd-x tokens."
+  },
+  "controlSourceMap": {
+    "button": "hand-written; no shared <Button> component — every caller renders a native <button> styled by a utility class. Primary variants: `.act` / `.act.primary` (styles/app.css:151-152, e.g. RUN PIPELINE, EXPORT CSV/BRIEF), `.navbtn` (styles/app.css:100-106, left-rail nav/source/watchlist rows), `.tab` (styles/app.css:110-116, tab strip). All inherit the global focus-visible ring from styles/federation.css:90-93.",
+    "dialog": "none present — no <dialog> element, no modal/overlay component anywhere in server/frontend/src (grep for dialog|Dialog|modal|Modal in .tsx/.css returned zero component matches). The closest analog is the always-visible, non-overlay Inspector side panel (server/frontend/src/components/Inspector.tsx, InspectorShell.tsx, styled by .inspector/.panel-head in styles/app.css:119-125), which renders inline in the persistent 3-column layout rather than as a dismissible dialog.",
+    "badge": "hand-written, server/frontend/src/components/Badges.tsx — TierBadge, Pill, ConfidenceMeter, AnomalyScore, ContradictionFlag. Styled via `.badge` and `.pill[data-tone]` in styles/app.css:153-161, plus `.navbtn[data-status]` status-color rules at styles/app.css:205-206.",
+    "toggle": "no dedicated Toggle/Switch component — every toggle is a plain <button aria-pressed> or a button with a data-on/data-active attribute. Examples: theme toggle (components/CommandBar.tsx, '◐ LIGHT'/'◑ DARK'), STUB/RAG LIVE toggle (modules/QueryLayer.tsx), 8 layer toggles (modules/SpatialIntelligence.tsx). Styled via `.act[data-on=\"true\"]` and `.navbtn[data-active=\"true\"]` in styles/app.css:151-152/101.",
+    "empty-state": "hand-written, `.empty-state` / `.empty-state[data-tone=\"error\"]` in styles/app.css:178-179. Used in components/RailSection.tsx, components/EntityLinkList.tsx, modules/InvestigationGraph.tsx, modules/AnomalyWorkbench.tsx, and the Inspector's 'No selection' default state in App.tsx."
+  },
+  "themeSupport": {
+    "light": true,
+    "dark": true,
+    "toggleFound": true,
+    "details": "Full light/dark theme support via a `[data-theme]` attribute on <html>, defined in styles/federation.css (light values on :root, dark overrides under [data-theme=\"dark\"]). A visible toggle button in the command bar (components/CommandBar.tsx, theme.ts) flips it and persists the choice to localStorage['spiderweb_theme']; on first load with no stored preference it seeds from prefers-color-scheme. Live-verified: clicking the toggle flipped document.documentElement.dataset.theme from 'light' to 'dark' and re-rendered the whole chrome (see theme-dark-desktop-1280x800.png)."
+  },
+  "screenshots": [
+    { "file": "a11y-evidence/control-buttons-mobile-390x844.png", "viewport": "390x844", "shows": "Command Center chrome at mobile width — theme toggle, RUN PIPELINE button, module nav buttons, source/investigation buttons. Also documents the mobile layout-overflow finding (see A11Y_AUDIT.md)." },
+    { "file": "a11y-evidence/control-buttons-desktop-1280x800.png", "viewport": "1280x800", "shows": "Command Center chrome at desktop width — full 3-column layout with all button variants (.act, .navbtn, .tab) visible." },
+    { "file": "a11y-evidence/badges-mobile-390x844.png", "viewport": "390x844", "shows": "Left-rail tier badges (T1/T2/T3) and status pills (ONLINE/PARTIAL) at mobile width; the Anomaly Workbench's score/category badges are off-screen due to the mobile overflow finding." },
+    { "file": "a11y-evidence/badges-desktop-1280x800.png", "viewport": "1280x800", "shows": "Anomaly Workbench badges/pills — SCORE pills, category pill (CROSS-DOMAIN), tier badges, confidence-meter bars, T3/T4-ARE-LEADS pill." },
+    { "file": "a11y-evidence/panel-mobile-390x844.png", "viewport": "390x844", "shows": "Inspector panel (closest analog to a dialog/detail panel) after selecting an anomaly, at mobile width." },
+    { "file": "a11y-evidence/panel-desktop-1280x800.png", "viewport": "1280x800", "shows": "Inspector panel populated with anomaly A-014's detail (site, confidence, factors, contradiction control) after clicking a cluster-queue card." },
+    { "file": "a11y-evidence/theme-dark-desktop-1280x800.png", "viewport": "1280x800", "shows": "Dark theme after toggling — supplemental evidence for themeSupport.dark." }
+  ]
+}

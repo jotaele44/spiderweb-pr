@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "certification_scope": "PR_ARCHIPELAGO_GEOGRAPHY",
+  "rules": {
+    "named_not_geometry": true,
+    "source_taxonomy_not_identity": true,
+    "discovery_not_identity": true,
+    "freeze_before_certification": true
+  },
+  "sources": [
+    {
+      "source_id": "USGS_BGN_GNIS_DOMESTIC_PR",
+      "authority_role": ["NAME_AUTHORITY", "STABLE_FEATURE_ID", "SOURCE_TAXONOMY", "POINT_LOCATION"],
+      "denominator_role": "NAMED_CURRENT",
+      "url": "https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts%2FGeographicNames%2FDomesticNames%2F",
+      "acquisition": "S3_PREFIX_RESOLUTION",
+      "mutable": true,
+      "notes": "Puerto Rico state-extent DomesticNames product; GNIS Island class is source taxonomy only."
+    },
+    {
+      "source_id": "USGS_BGN_GNIS_FULLMODEL_PR",
+      "authority_role": ["NAME_AUTHORITY", "STABLE_FEATURE_ID", "RELATIONAL_GNIS_MANIFESTATION"],
+      "denominator_role": "NAMED_CURRENT_CORROBORATION",
+      "url": "https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts%2FGeographicNames%2FFullModel%2F",
+      "acquisition": "S3_PREFIX_RESOLUTION",
+      "mutable": true
+    },
+    {
+      "source_id": "NOAA_NGS_PR_SHORELINE",
+      "authority_role": ["SHORELINE_GEOMETRY", "IMAGERY_DERIVED_GEOMETRY", "LINEAGE"],
+      "denominator_role": "GEOMETRIC_CURRENT",
+      "url": "https://www.ngs.noaa.gov/NSDE/",
+      "acquisition": "PROJECT_MANIFEST_THEN_VECTOR_DOWNLOAD",
+      "mutable": true,
+      "known_project_inport_ids": [60847, 63492, 71219, 71306, 71771],
+      "notes": "Project coverage must be unioned and gap-audited; no individual project is presumed Puerto-Rico-wide."
+    },
+    {
+      "source_id": "CENSUS_TIGER_2026_PR",
+      "authority_role": ["LEGAL_ADMIN_GEOMETRY", "COASTLINE_CORROBORATION"],
+      "denominator_role": "GEOMETRIC_CURRENT_CORROBORATION",
+      "url": "https://www2.census.gov/geo/tiger/TIGER2026/",
+      "acquisition": "DIRECTORY_INDEX_THEN_EXACT_LAYER_DOWNLOAD",
+      "mutable": true
+    },
+    {
+      "source_id": "PRITS_PR_GEODATA_WFS",
+      "authority_role": ["PR_GOV_LOCAL_GEOMETRY", "COASTAL_HYDROGRAPHY", "LEGAL_BOUNDARY_CORROBORATION"],
+      "denominator_role": "GEOMETRIC_CURRENT_LOCAL_AUTHORITY",
+      "url": "http://geoserver2.pr.gov/geoserver/pr_geodata/wfs",
+      "acquisition": "WFS_GETCAPABILITIES_THEN_LAYER_FREEZE",
+      "mutable": true,
+      "notes": "Official Puerto Rico GIS portal documents approximately 400 geodatasets over WFS; exact eligible layers must be enumerated from GetCapabilities and frozen independently."
+    },
+    {
+      "source_id": "PRITS_HIDROGRAFIA_DETALLADA",
+      "authority_role": ["COASTLINE", "WATER_AREA", "LOCAL_GOV_CORROBORATION"],
+      "denominator_role": "GEOMETRIC_CURRENT_LOCAL_AUTHORITY",
+      "url": "https://gis.pr.gov/descargaGeodatos/ambientales/Pages/Hidrograf%C3%ADa.aspx",
+      "acquisition": "PORTAL_MANIFEST_TO_WFS_OR_DOWNLOAD",
+      "mutable": true,
+      "notes": "Portal lists detailed linear water/coasts and water-area geodata sourced to CRIM/OGP."
+    },
+    {
+      "source_id": "GNIS_HISTORICAL_FEATURES_NATIONAL",
+      "authority_role": ["HISTORICAL_NAME_MANIFESTATION"],
+      "denominator_role": "HISTORICAL",
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/Topical/HistoricalFeatures_National_Text.zip",
+      "acquisition": "DIRECT_DOWNLOAD",
+      "mutable": true
+    },
+    {
+      "source_id": "GNIS_ALL_NAMES_NATIONAL",
+      "authority_role": ["OFFICIAL_AND_VARIANT_NAME_MANIFESTATIONS", "NAME_SOURCE_LINEAGE"],
+      "denominator_role": "HISTORICAL_AND_ALIAS",
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/Topical/AllNames_National_Text.zip",
+      "acquisition": "DIRECT_DOWNLOAD",
+      "mutable": true
+    }
+  ]
+}

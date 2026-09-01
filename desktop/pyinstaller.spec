@@ -37,6 +37,11 @@ if not (DIST_DIR / "index.html").is_file():
 datas = [
     (str(DIST_DIR), "server/frontend/dist"),
     (str(BRANDING / "icon-256.png"), "assets/branding"),
+    (str(REPO_ROOT / "configs" / "layer_catalog.yaml"), "configs"),
+    (
+        str(REPO_ROOT / "server" / "database" / "schema_sqlite.sql"),
+        "server/database",
+    ),
 ]
 if (REPO_ROOT / "outputs").exists():
     datas.append((str(REPO_ROOT / "outputs"), "outputs"))

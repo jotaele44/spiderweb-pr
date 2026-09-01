@@ -1,0 +1,27 @@
+{
+  "schema": "spiderweb.subsurface.aoi-freeze.v1",
+  "fixture_id": "SANTIAGO_TRIANGLE",
+  "fixture_name": "The Santiago Triangle",
+  "source_path": "tests/fixtures/subsurface/santiago_triangle.kml",
+  "source_format": "KML",
+  "source_crs": "OGC:CRS84",
+  "source_sha256": "c8bf698be741bcd439228901cfd3f9304b86a73c8a968c5f7c9f2343d36de34f",
+  "canonical_sha256": "4b4109c31681f8d510b8dba9ca0a9018d165ab88ecc05a0625c8a98ce3aca3c8",
+  "source_feature_count": 1,
+  "source_geometry_type": "Polygon",
+  "source_has_z": true,
+  "analysis_geometry_type": "Polygon",
+  "analysis_dimension_loss": ["Z"],
+  "bounds": [-66.56454144076723, 18.01550664285417, -66.01850153750115, 18.16435705124312],
+  "canonical_geojson": {
+    "type": "Polygon",
+    "coordinates": [[
+      [-66.56454144076723, 18.01550664285417],
+      [-66.29022746754467, 18.16435705124312],
+      [-66.01850153750115, 18.01784305432528],
+      [-66.56454144076723, 18.01550664285417]
+    ]]
+  },
+  "freeze_basis": "user-supplied KML received 2026-08-20; canonicalized by spiderweb.subsurface.aoi semantics",
+  "certification": "PASS"
+}

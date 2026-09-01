@@ -145,6 +145,7 @@ def test_health_endpoint_reports_integrity(tmp_path, monkeypatch):
     assert body["db_exists"] is True
     assert body["integrity_ok"] is True
     assert body["table_count"] >= 1
+    assert body["service"] == "spiderweb-priis-api"
     assert body["status"] == "ok"
 
 
@@ -157,5 +158,6 @@ def test_health_endpoint_degraded_when_db_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(backend, "DB_PATH", tmp_path / "absent.db")
     with TestClient(backend.app) as c:
         body = c.get("/health").json()
+    assert body["service"] == "spiderweb-priis-api"
     assert body["status"] == "degraded"
     assert body["db_exists"] is False

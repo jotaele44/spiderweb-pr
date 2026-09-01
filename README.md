@@ -23,6 +23,9 @@
 > `docs/legacy/`. Spiderweb retains its own spatial ILAP/AASB bridges, which
 > drive a gating export stage (see `docs/DUPLICATION_REGISTER.md`).
 > `maintenance/adapters/local.py::check_migration_remnants` enforces this.
+> The follow-up boundary closure removes the last executable screenshot/OCR
+> processors. A direct Skywatcher consumer remains intentionally absent until
+> every prerequisite in `docs/ADR_SKYWATCHER_SPIDERWEB_INTEGRATION.md` passes.
 
 > **Status:** diagnostic / integration-ready only after validation gates pass. Run `--validate` and review `integration_report.json` before promoting outputs.
 
@@ -48,15 +51,27 @@ Cross-producer correlation is owned by the Hub and downstream consumers. Spiderw
 | Puerto Rico historical case corpus | `OVNIS` / `ovnis-pr` |
 | Producer discovery, validation, aggregation, and cross-producer correlation | `thehub-pr` |
 
+## Desktop app
+
+Double-click launchers at the repo root start the local desktop app (first run
+installs dependencies, later runs work offline). This is the diagnostic
+dashboard described above (ADR 0001, Phase 2), not the federation's supported
+product surface:
+
+- `PRII-SPIDERWEB.command` (macOS) / `PRII-SPIDERWEB.app`
+- `PRII-SPIDERWEB.bat` (Windows)
+- `PRII-SPIDERWEB.sh` (Linux)
+
+See [`desktop/README.md`](desktop/README.md) for details.
+
 ## Quick start
 
 ```bash
-# thehub-pr must be a sibling checkout; the shared prii-* libs resolve from
-# ../thehub-pr/packages via [tool.uv.sources], so install with uv:
-[ -d ../thehub-pr ] || git clone https://github.com/jotaele44/thehub-pr.git ../thehub-pr
+# The shared prii-* libs resolve via the pinned git+https reference in
+# [tool.uv.sources] — no thehub-pr sibling checkout needed:
 pip install uv && uv pip install -e ".[airspace]"
-python run_all.py --status
-python run_all.py --images 10
+python run_all.py --help
+python run_all.py --db flight_database.db --status
 python run_all.py --db flight_database.db --validate
 python run_all.py --db flight_database.db --export-pr-intel ./outputs/pr_intel
 python run_all.py --db flight_database.db --export-spiderweb ./outputs/spiderweb

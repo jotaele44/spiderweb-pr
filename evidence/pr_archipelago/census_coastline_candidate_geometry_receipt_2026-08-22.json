@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "scope": "Derived candidate geometry audit from frozen Census TIGER/Line 2025 national COASTLINE",
+  "input": {
+    "source": "tl_2025_us_coastline.zip",
+    "sha256": "c88e68274b72e7cfded0bb0846c8c78f2c078e5f361973792a84c67b0975459c",
+    "feature_count_national": 4240,
+    "source_geometry": "polyline"
+  },
+  "derivation": {
+    "discovery_bbox": [-68.1, 17.7, -64.9, 18.7],
+    "coastline_features_intersecting_discovery_bbox": 248,
+    "polygonization": "unary_union + polygonize",
+    "polygon_candidates_discovery_bbox": 179,
+    "pr_candidate_envelope": [-68.05, 17.8, -65.15, 18.6],
+    "polygon_candidates_in_pr_candidate_envelope": 134,
+    "envelope_state": "DISCOVERY_ONLY",
+    "warning": "derived polygons are geometry candidates only; linework polygonization can produce noncanonical land/water manifestations"
+  },
+  "gnis_point_test": {
+    "current_gnis_island_ids": 148,
+    "points_contained_or_touching_one_derived_polygon": 106,
+    "points_not_contained_or_touching": 42,
+    "note": "GNIS coordinates are representative points; containment failure does not prove feature or geometry absence"
+  },
+  "unmatched_distance_bands_m": {
+    "lte_25": 10,
+    "lte_100": 16,
+    "lte_250": 19,
+    "lte_500": 25,
+    "lte_1000": 32,
+    "gt_1000": 10
+  },
+  "certification": {
+    "CENSUS_COASTLINE_DERIVED_GEOMETRY": "CANDIDATE_NOT_IDENTITY",
+    "GEOMETRIC_CURRENT": "OPEN",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN",
+    "reason": "42 of 148 GNIS representative points are outside all derived polygons and the derived polygon set itself has unresolved geometry-only candidates"
+  }
+}
