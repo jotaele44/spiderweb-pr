@@ -3,6 +3,6 @@
   "repo": "spiderweb-pr",
   "central_baseline": "2026-08-31",
   "central_governance_pr": 218,
-  "disposition": "COMPATIBLE",
+  "disposition": "UPDATED",
   "contracts": ["repo_federation_manifest@1", "federation_export_manifest@1", "contract_finance_bundle@1"]
 }
