@@ -1,0 +1,50 @@
+{
+  "schema": "prii.repo-readiness-delta/v1",
+  "repository": "jotaele44/spiderweb-pr",
+  "base_report": "audit/repo_readiness/2026-08-24.json",
+  "base_commit_sha": "d11b74ac5e42812755282356f1d14fffc996809c",
+  "rule": "preserve the frozen observation; append later evidence rather than rewriting it",
+  "observations": [
+    {
+      "artifact": "PR #300 / audit/gui-runtime-matrix-20260824",
+      "prior_state": "PASS",
+      "new_state": "OPEN",
+      "contradiction_class": "CLASS",
+      "reason": "Post-freeze pull-request review identified two unresolved defects: mobile rails are hidden without leaving the focus order or preserving working chrome toggles, and page errors are accumulated across module cells, making the per-module runtime matrix misleading.",
+      "disposition": "SUPERSEDED prior PASS observation; PR returned to draft pending remediation"
+    },
+    {
+      "artifact": "PR #301 / audit/repo-readiness-control-v0-1",
+      "prior_state": "OPEN",
+      "new_state": "PASS",
+      "contradiction_class": "CLASS",
+      "reason": "An unused-import review finding was repaired; replacement head edf7c07f3f89dd3ccbea5c0469c844dd87956b01 passed Repository readiness policy, CI, Secret scan, Federation template drift, PRII Smoke Gate, Semgrep, and CodeQL and is mergeable.",
+      "disposition": "ready for review; overall Spiderweb certification remains FAIL"
+    },
+    {
+      "artifact": "PR #302 / audit/current-test-denominator-20260824",
+      "prior_state": "OPEN",
+      "new_state": "PASS",
+      "contradiction_class": "CLASS",
+      "reason": "Current-base one-line test-denominator repair passed CI, Secret scan, Federation template drift, PRII Smoke Gate, Semgrep, and CodeQL; no unresolved review threads; mergeable.",
+      "disposition": "ready for review; supersedes stale implementation intent of PR #250 without asserting byte identity"
+    },
+    {
+      "artifact": "PR #303 / audit/gui-functional-blockers-20260824",
+      "prior_state": "UNKNOWN",
+      "new_state": "OPEN",
+      "contradiction_class": "CLASS",
+      "reason": "Current-base remediation exists for visible-value Finance filtering and RAG path/terminal semantics with positive and negative regression tests; current workflow denominator is still running.",
+      "disposition": "draft until exact-head checks and review residue close"
+    }
+  ],
+  "certification_state": "FAIL",
+  "remaining_high_priority_residue": [
+    "Spatial basemap failure can strand successful backend layers in loading state",
+    "Unreachable historical CommandBar filter-chip path remains dead code",
+    "Permanent bidirectional capability-to-GUI parity control is not on frozen main",
+    "Scheduled maintenance still clones a sibling thehub-pr checkout",
+    "PPP geometry path still has sibling moneysweep-pr coupling pending independent package-boundary adjudication",
+    "Full local clean-room execution is blocked in the current audit container by github.com DNS resolution"
+  ]
+}

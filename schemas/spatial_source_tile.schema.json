@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/spatial_source_tile.schema.json",
+  "title": "Spiderweb Spatial Source Tile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dataset_id",
+    "tile_id",
+    "source_filename",
+    "bbox_native",
+    "source_crs",
+    "width",
+    "height"
+  ],
+  "properties": {
+    "dataset_id": {"type": "string", "minLength": 1},
+    "tile_id": {"type": "string", "minLength": 1},
+    "source_filename": {"type": "string", "minLength": 1},
+    "bbox_native": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "number"},
+        {"type": "number"},
+        {"type": "number"},
+        {"type": "number"}
+      ],
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "source_crs": {"type": "string", "minLength": 1},
+    "width": {"type": "integer", "minimum": 1},
+    "height": {"type": "integer", "minimum": 1},
+    "source_url": {"type": ["string", "null"]},
+    "expected_size_bytes": {"type": ["integer", "null"], "minimum": 1},
+    "expected_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{64}$"
+    }
+  }
+}

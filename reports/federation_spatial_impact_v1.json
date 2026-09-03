@@ -1,0 +1,23 @@
+{
+  "contract_version":"federation-spatial-impact/1.0",
+  "producer_repo":"spiderweb-pr",
+  "branch":"feat/federation-gis-max-v1",
+  "base_sha":"02169e73bf7ae110eeccb8cfaf47a4f7dfa2989f",
+  "head_sha":null,
+  "changes":{
+    "contracts":["federation-spatial-contract/1.0","federation-map-runtime/1.0","fedgeopack/1.0","federation-spatial-manifest/1.0"],
+    "schemas":["feature","layer","map runtime","offline package","impact report","spatial sidecar"],
+    "geometry_semantics":["WGS84 Vincenty distance","typed spatial relations","CANDIDATE_NOT_IDENTITY default"],
+    "crs":["OGC:CRS84 canonical interchange","EPSG:4326 PostGIS storage","EPSG:3857 MVT rendering"],
+    "api":["additive spatial sidecar and relation helpers"]
+  },
+  "affected_consumers":[
+    {"repo":"spiderweb-pr","impact":"REQUIRED","reason":"implements investigation-side spatial relation and offline/runtime contracts","migration":"adopt v1 sidecar and PostGIS migrations when deployed"},
+    {"repo":"moneysweep-pr","impact":"OPTIONAL","reason":"publishes compatible capital/project geometries","migration":null},
+    {"repo":"aguayluz-pr","impact":"OPTIONAL","reason":"publishes compatible infrastructure/hydro geometries","migration":null},
+    {"repo":"skywatcher-pr","impact":"OPTIONAL","reason":"publishes compatible trajectory/airspace geometries","migration":null}
+  ],
+  "backward_compatible":true,
+  "rollback":"revert branch commits; no database mutation has been executed by this PR",
+  "gates":{"schema":"OPEN","geometry":"OPEN","tests":"OPEN","security":"OPEN","performance":"OPEN","desktop":"OPEN","ios":"OPEN","federation":"BLOCKED"}
+}

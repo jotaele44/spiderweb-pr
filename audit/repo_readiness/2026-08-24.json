@@ -1,0 +1,146 @@
+{
+  "schema": "prii.repo-readiness-report/v1",
+  "repository": "jotaele44/spiderweb-pr",
+  "scope": "bounded GitHub-observable completion, user-friendliness, professionalism, and certification audit",
+  "snapshot": {
+    "retrieved_local_date": "2026-08-24",
+    "timezone": "America/Puerto_Rico",
+    "base_branch": "main",
+    "commit_sha": "d11b74ac5e42812755282356f1d14fffc996809c",
+    "tree_sha": "a9dac6c908c02e0f7f5a7a16963cdf40ff7f90ce",
+    "branches_total_at_freeze": 48,
+    "open_prs_at_freeze": 36,
+    "open_issues_at_freeze": 1
+  },
+  "execution_boundary": {
+    "local_clone": "BLOCKED",
+    "reason": "current audit container could not resolve github.com for a fresh checkout",
+    "replacement_evidence": "exact-head GitHub Actions logs and existing live GUI audit evidence",
+    "universal_exhaustion_claimed": false
+  },
+  "exact_head_evidence": {
+    "ci": "PASS",
+    "secret_scan": "PASS",
+    "prii_smoke_gate": "PASS",
+    "federation_template_drift": "PASS",
+    "semgrep": "PASS",
+    "codeql": "PASS",
+    "python_3_12_tests": {
+      "passed": 1121,
+      "skipped": 39,
+      "deselected": 4,
+      "coverage_percent": 65.43,
+      "coverage_floor_percent": 62,
+      "explicitly_ignored_tests": ["tests/test_io.py", "tests/test_terrain.py"]
+    },
+    "release_check_scope": "skip-tests + demo mode against empty DB"
+  },
+  "domains": {
+    "repository_completion": {
+      "state": "OPEN",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "48-branch and 36-open-PR freeze denominators contain unadjudicated residue; one open issue also remains."
+    },
+    "startup": {
+      "state": "FAIL",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Frozen main requires a sibling thehub-pr checkout/local prii_desktop path in CI and documents a sibling checkout in Quick Start. PR #299 repairs this but was not merged into the frozen snapshot."
+    },
+    "gui_route_closure": {
+      "state": "OPEN",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Permanent bidirectional capability-to-GUI parity control is absent from frozen main; older PR #237 contains a reusable but stale implementation."
+    },
+    "data_integrity": {
+      "state": "PROVISIONAL",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Schema/export gates pass on the declared CI fixtures and empty DB, but that denominator is not equivalent to real production-data integrity."
+    },
+    "evidence_integrity": {
+      "state": "PROVISIONAL",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Evidence-chain and temporal gates pass in CI, but repository-wide operational evidence semantics are not fully exercised by the empty-DB release path."
+    },
+    "provenance": {
+      "state": "OPEN",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "The repository audit snapshot is frozen to commit/tree identity, but source-by-source production provenance has not been re-certified across the full active capability denominator in this run."
+    },
+    "ux": {
+      "state": "FAIL",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 4,
+      "note": "Live GUI audit confirms visible-value finance filtering failure, spatial loading-state coupling, RAG LIVE silent failure, and an unreachable filter-chip path; accessibility audit adds mobile/focus/contrast residue."
+    },
+    "professionalism": {
+      "state": "PROVISIONAL",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Repository structure and documentation are substantial, but the user-facing failure semantics and setup coupling prevent a finished-product claim."
+    },
+    "security": {
+      "state": "PROVISIONAL",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Secret Scan, Semgrep, and CodeQL pass at exact head; pip-audit is explicitly advisory rather than an enforcing dependency-vulnerability gate."
+    },
+    "testing": {
+      "state": "OPEN",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Declared CI passes, but 39 tests are skipped, 4 deselected, two tests explicitly ignored, and several production modules have zero or low measured coverage."
+    },
+    "documentation": {
+      "state": "PROVISIONAL",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "README/docs are extensive, but Quick Start still encodes the sibling-checkout coupling and scope language requires final adjudication against current ownership boundaries."
+    },
+    "deployment_readiness": {
+      "state": "BLOCKED",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Release-check success is bounded to demo mode against an empty DB and cannot certify production deployment readiness."
+    },
+    "scope_boundary": {
+      "state": "OPEN",
+      "evidence_class": "FACT",
+      "mandatory_unresolved_residue": 1,
+      "note": "Frozen main still exposes flight/image-processing phases and retains FR24 screenshot/route processing while README assigns FR24 ingestion/airspace observations to skywatcher-pr; the intended exception boundary needs explicit closure."
+    }
+  },
+  "known_reusable_artifacts": [
+    {
+      "artifact": "PR #299",
+      "state": "PASS",
+      "purpose": "remove sibling thehub-pr runtime/CI setup coupling",
+      "post_freeze_change": "promoted from draft to ready for review during this audit"
+    },
+    {
+      "artifact": "audit/gui-runtime-matrix-20260824",
+      "state": "PASS",
+      "purpose": "cross-browser/viewports GUI runtime matrix and compact responsive rules",
+      "post_freeze_change": "opened as PR #300 during this audit; mergeability remains unresolved"
+    },
+    {
+      "artifact": "PR #237",
+      "state": "SUPERSEDED",
+      "purpose": "source implementation for bidirectional GUI capability parity ratchet",
+      "post_freeze_change": "reuse logic on a current-base implementation; do not merge stale branch by age/name alone"
+    },
+    {
+      "artifact": "skill/spiderweb-self-auditing-implementer-v0-1",
+      "state": "SUPERSEDED",
+      "purpose": "source implementation for permanent self-auditing completion control",
+      "post_freeze_change": "reuse as source material for a current-base skill upgrade"
+    }
+  ],
+  "certification_state": "FAIL",
+  "certification_reason": "Mandatory domains contain FAIL, OPEN, BLOCKED, and PROVISIONAL residue; zero-unresolved certification criterion is not met."
+}

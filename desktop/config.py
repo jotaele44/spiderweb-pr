@@ -53,8 +53,16 @@ DEFAULT_DB = (
 # server/frontend/src/config.ts); blank it at build time so a developer
 # .env.local cannot point the desktop build at an external backend, and so the
 # bundle stays same-origin against whichever ephemeral port the wrapper binds.
+#
+# The desktop app also runs desktop.app_server:app directly (see APP_IMPORT
+# above), which is FastAPI's bare `main.app` — not the `production.py`
+# wrapper that mounts the Martin tile-delivery router at /tiles. There is no
+# Martin server process in a desktop install, so the municipios layer must
+# use the GeoJSON delivery path (served by main.app's own /geo/*.geojson
+# route) rather than the Martin-only default used by server deployments.
 EXTRA_BUILD_ENV = {
     "VITE_API_BASE": "",
+    "VITE_MUNICIPIOS_DELIVERY": "geojson",
 }
 
 # Health endpoint used to detect that the server is up.
