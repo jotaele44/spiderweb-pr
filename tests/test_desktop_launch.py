@@ -64,3 +64,13 @@ def test_frozen_bundle_includes_seed_schema():
 
     assert 'REPO_ROOT / "server" / "database" / "schema_sqlite.sql"' in spec
     assert '"server/database"' in spec
+
+
+def test_desktop_build_defaults_municipios_to_geojson():
+    # No Martin tile server runs alongside a desktop install (desktop.app_server
+    # imports the bare backend app, not server/backend/production.py's
+    # Martin-router wrapper), so the packaged build must use the certified
+    # GeoJSON rollback path (docs/architecture/MARTIN_INTEGRATION.md) instead
+    # of the server-deployment default of "martin" — otherwise the municipios
+    # layer 502s against a nonexistent http://127.0.0.1:3000 upstream.
+    assert config.EXTRA_BUILD_ENV["VITE_MUNICIPIOS_DELIVERY"] == "geojson"
