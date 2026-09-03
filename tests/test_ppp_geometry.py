@@ -2,12 +2,13 @@
 
 The lane resolves a moneysweep-pr concession project's municipality to a real
 point from spiderweb's committed reference geographies, then hands it back to the
-Hub as an anchored observation. These tests use a synthetic producer package so
-they do not depend on a moneysweep-pr sibling checkout being present.
+Hub as an anchored observation. Test packages are content-addressed synthetic
+Moneysweep exports, so no sibling checkout is required.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -41,13 +42,32 @@ def _entity(name, municipality, entity_type="project", eid="ent_" + "a" * 32):
     return row
 
 
+def _sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 @pytest.fixture
 def package(tmp_path):
-    def _make(rows):
+    def _make(rows, *, producer="moneysweep-pr"):
         pkg = tmp_path / "pkg"
         pkg.mkdir(exist_ok=True)
-        (pkg / "entities.jsonl").write_text(
-            "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+        entities = pkg / "entities.jsonl"
+        entities.write_text(
+            "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows), encoding="utf-8"
+        )
+        manifest = {
+            "package_id": "pkg_test_content_addressed",
+            "producer": producer,
+            "files": [{
+                "filename": "entities.jsonl",
+                "stream": "entities",
+                "record_count": len(rows),
+                "sha256": _sha(entities),
+                "schema_id": "federation_entity.schema.json",
+            }],
+        }
+        (pkg / "manifest.json").write_text(
+            json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
         )
         return pkg
 
@@ -62,9 +82,9 @@ def test_resolves_airport_from_committed_registry(package):
     assert row["resolver"] == "airport_registry"
     assert row["municipality"] == "Carolina"
     assert (round(row["lat"], 3), round(row["lon"], 3)) == (18.439, -66.002)
-    # Must outrank moneysweep's municipality attribution so a consumer choosing
-    # the best available location picks the surveyed point.
     assert row["geometry_confidence"] > row["producer_attribution_confidence"]
+    assert row["producer_package_id"] == "pkg_test_content_addressed"
+    assert row["producer_entities_sha256"] == out["producer_package"]["entities_sha256"]
 
 
 def test_accent_folding_matches_either_spelling(package):
@@ -73,10 +93,6 @@ def test_accent_folding_matches_either_spelling(package):
 
 
 def test_municipality_mismatch_blocks_a_name_match(package):
-    """Both producers must independently agree on the municipality.
-
-    Without this guard a name collision would place a project in the wrong town.
-    """
     pkg = package([_entity("Luis Muñoz Marín Airport", "Ponce")])
     out = pg.resolve_projects(pkg)
     assert out["resolved_count"] == 0
@@ -84,7 +100,6 @@ def test_municipality_mismatch_blocks_a_name_match(package):
 
 
 def test_projects_without_a_municipality_are_not_candidates(package):
-    """Island-wide and corridor concessions arrive with no location at all."""
     pkg = package([_entity("LUMA Energy T&D System", None)])
     out = pg.resolve_projects(pkg)
     assert out["producer_projects"] == 0
@@ -97,17 +112,51 @@ def test_non_project_entities_are_ignored(package):
 
 
 def test_unmatched_project_goes_to_the_geocode_queue(package):
-    """No committed reference geography means no point — never a guessed one."""
     pkg = package([_entity("Teodoro Moscoso Bridge Concession", "San Juan")])
     out = pg.resolve_projects(pkg)
     assert out["resolved_count"] == 0
     assert out["unresolved"][0]["reason"]
 
 
-def test_missing_producer_package_degrades_to_empty(tmp_path):
-    out = pg.resolve_projects(tmp_path / "absent")
-    assert out["resolved_count"] == 0
-    assert out["producer_projects"] == 0
+def test_missing_or_implicit_producer_package_fails_closed(tmp_path):
+    with pytest.raises(pg.PPPGeometryError, match="explicit moneysweep export package required"):
+        pg.resolve_projects()
+    with pytest.raises(pg.PPPGeometryError, match="missing moneysweep manifest"):
+        pg.resolve_projects(tmp_path / "absent")
+
+
+def test_wrong_producer_identity_fails_closed(package):
+    pkg = package([_entity("Luis Muñoz Marín Airport", "Carolina")], producer="other-pr")
+    with pytest.raises(pg.PPPGeometryError, match="unexpected producer identity"):
+        pg.resolve_projects(pkg)
+
+
+def test_entities_hash_mismatch_fails_closed(package):
+    pkg = package([_entity("Luis Muñoz Marín Airport", "Carolina")])
+    with (pkg / "entities.jsonl").open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(_entity("Tampered", "Ponce", eid="ent_" + "c" * 32)) + "\n")
+    with pytest.raises(pg.PPPGeometryError, match="sha256 mismatch"):
+        pg.resolve_projects(pkg)
+
+
+def test_entities_record_count_mismatch_fails_closed(package):
+    pkg = package([_entity("Luis Muñoz Marín Airport", "Carolina")])
+    manifest_path = pkg / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["files"][0]["record_count"] = 999
+    manifest_path.write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
+    with pytest.raises(pg.PPPGeometryError, match="record_count mismatch"):
+        pg.resolve_projects(pkg)
+
+
+def test_verified_package_metadata_is_content_addressed(package):
+    pkg = package([_entity("Luis Muñoz Marín Airport", "Carolina")])
+    meta = pg.verify_moneysweep_package(pkg)
+    assert meta["producer"] == "moneysweep-pr"
+    assert meta["package_id"] == "pkg_test_content_addressed"
+    assert meta["entities_sha256"] == _sha(pkg / "entities.jsonl")
+    assert meta["manifest_sha256"] == _sha(pkg / "manifest.json")
+    assert meta["entities_record_count"] == 1
 
 
 # --------------------------------------------------------------------------
@@ -116,8 +165,6 @@ def test_missing_producer_package_degrades_to_empty(tmp_path):
 
 
 def test_observation_is_anchored_to_an_emitted_entity(package):
-    """correlate_observations drops any observation whose anchor is absent from
-    the aggregate, so the lane must emit the anchor entity too."""
     pkg = package([_entity("Luis Muñoz Marín Airport", "Carolina")])
     built = fx.build_ppp_geometry_streams(pg.resolve_projects(pkg), NOW)
     assert len(built["observations"]) == 1
@@ -126,8 +173,6 @@ def test_observation_is_anchored_to_an_emitted_entity(package):
 
 
 def test_observation_carries_both_point_and_municipality(package):
-    """The Hub joins entities to observations on municipality; the point is what
-    makes the join worth doing."""
     pkg = package([_entity("Luis Muñoz Marín Airport", "Carolina")])
     obs = fx.build_ppp_geometry_streams(pg.resolve_projects(pkg), NOW)["observations"][0]
     assert obs["location"]["municipality"] == "Carolina"
@@ -137,8 +182,6 @@ def test_observation_carries_both_point_and_municipality(package):
 
 
 def test_lane_cites_its_real_inputs(package):
-    """Lineage must name the producer package and reference geography, not the
-    envelope streams the rest of the exporter reads."""
     pkg = package([_entity("Luis Muñoz Marín Airport", "Carolina")])
     obs = fx.build_ppp_geometry_streams(pg.resolve_projects(pkg), NOW)["observations"][0]
     inputs = obs["lineage"]["source_inputs"]
