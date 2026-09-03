@@ -1,0 +1,93 @@
+version: spatial_boundary_v0_1
+generated_at: "2026-07-29T00:00:00Z"
+
+boundaries:
+  - boundary_id: PR_CORE_BOUNDARY
+    kind: core
+    label: Puerto Rico terrestrial and insular core
+    status: resolved
+    source_authority: "U.S. Census Bureau, TIGER/Line"
+    retrieval_date: "2026-07-29T21:10:39Z"
+    edition_date: "2025"
+    source_crs: "EPSG:4269 (NAD83, as published)"
+    normalized_crs: "EPSG:4326"
+    geometry_hash: "sha256:6f1e0f9e4ce2d69aa5faf1c550a5c9a5598deecb28aeb3f18e36d8e819bd3440"
+    source_url: "https://www2.census.gov/geo/tiger/TIGER2025/STATE/tl_2025_us_state.zip"
+    notes: >
+      TIGER/Line national STATE file filtered to STATEFP=72, matching the
+      vintage and source lineage of the other TIGER/Line PR layers already
+      ingested via server/ingestion/ingest_tiger_pr.py (municipios, tracts,
+      places, barrios). One feature, MultiPolygon with 3 parts (Census's
+      generalized state boundary — main island plus its largest near-shore
+      pieces; this is Census's own simplification level, not something this
+      ingest chose). Regenerate via
+      `python server/ingestion/ingest_pr_boundaries.py --core-only`.
+    geometry: null
+    geometry_ref: data/pr_core_boundary.geojson
+
+  - boundary_id: PR_EEZ_LEGAL_BOUNDARY
+    kind: eez_legal
+    label: Puerto Rico Exclusive Economic Zone (legal maritime reference)
+    status: resolved
+    source_authority: "NOAA Office of Coast Survey — U.S. Maritime Limits and Boundaries"
+    retrieval_date: "2026-07-29T21:10:40Z"
+    edition_date: "2003-12-01 approved / 2006-01-01 published (per PUB_DATE/APPRV_DATE fields)"
+    source_crs: "EPSG:4326 (as published)"
+    normalized_crs: "EPSG:4326"
+    geometry_hash: "sha256:bc8878967c1a619a063d154b1e40026b1860ef88cc16f84250a08140dfeefd91"
+    source_url: "https://maritimeboundaries.noaa.gov/arcgis/rest/services/MaritimeBoundaries/US_Maritime_Limits_Boundaries/MapServer/3/query?where=REGION%3D%27Puerto+Rico+and+U.S.+Virgin+Islands%27&outFields=%2A&returnGeometry=true&f=geojson"
+    notes: >
+      14 LineString features (REGION='Puerto Rico and U.S. Virgin Islands')
+      from NOAA's "200NM EEZ and Maritime Boundaries" layer (MapServer/3):
+      the EEZ limit itself (Presidential Proclamation No. 5030, March 1983)
+      plus adjacent bilateral treaty boundary lines (US/UK British Virgin
+      Islands and Anguilla, US/Venezuela). Geometry is polyline — the
+      boundary itself, matching NOAA's authoritative representation — not a
+      filled polygon; do not treat it as one without an explicit closure
+      step. Regenerate via
+      `python server/ingestion/ingest_pr_boundaries.py --eez-only`.
+    geometry: null
+    geometry_ref: data/pr_eez_legal_boundary.geojson
+
+  - boundary_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    kind: analytical_domain
+    label: Spiderweb technical research and rendering extent
+    status: provisional
+    source_authority: "spiderweb-pr internal design proposal (DESIGN_SPIDERWEB_PUERTO_RICO_REGIONAL_3D_SCENE_v0_2), not an authoritative geographic source"
+    retrieval_date: "2026-07-29"
+    edition_date: ""
+    source_crs: "EPSG:4326"
+    normalized_crs: "EPSG:4326"
+    geometry_hash: ""
+    source_url: ""
+    notes: >
+      Provisional technical bounding box, not a legal boundary — must never be
+      presented as one. Final coordinates should be regenerated from
+      PR_CORE_BOUNDARY and PR_EEZ_LEGAL_BOUNDARY once both are resolved, plus
+      any operationally justified cross-boundary areas (shelf/trench/passage
+      coverage). Center is a working reference point, not a boundary vertex.
+    geometry:
+      type: bbox
+      center: [-66.45, 18.15]
+      west: -71.0
+      south: 14.5
+      east: -62.0
+      north: 22.5
+
+context_buffer:
+  default_km: 100
+  min_km: 50
+  max_km: 250
+  overrides:
+    - label: Municipal and terrestrial infrastructure
+      km_note: "0-10 km"
+    - label: Watersheds and hydrography
+      km_note: "25 km"
+    - label: Faults and tectonic structures
+      km_note: "100-250 km"
+    - label: Bathymetry and submarine canyons
+      km_note: "100-250 km"
+    - label: Weather or oceanographic context
+      km_note: "250 km"
+    - label: Federation point overlays
+      km_note: "50-100 km"

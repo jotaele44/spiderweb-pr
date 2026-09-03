@@ -26,8 +26,6 @@ jobs:
           cache-dependency-path: server/frontend/package-lock.json
       - name: Install frontend dependencies
         run: npm ci --no-audit --no-fund
-      - name: Install bounded browser harness
-        run: npm install --no-save --no-package-lock playwright@1.56.1
       - name: Install Chromium Firefox and WebKit
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Start workbench

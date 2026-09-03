@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spatial_boundary",
+  "title": "Spiderweb-PR Spatial Boundary Registry",
+  "description": "Four distinct boundary objects for the Puerto Rico regional scene: PR_CORE_BOUNDARY (terrestrial/insular core), PR_EEZ_LEGAL_BOUNDARY (legal maritime reference), SPIDERWEB_ANALYTICAL_DOMAIN (technical clipping/rendering extent), CONTEXT_BUFFER (buffer policy around the analytical domain). These are deliberately kept separate — see notes on each entry. A boundary with status='unresolved' MUST have geometry=null: this registry records what has NOT been sourced yet as honestly as what has.",
+  "type": "object",
+  "required": ["version", "boundaries", "context_buffer"],
+  "properties": {
+    "version": {"type": "string", "pattern": "^spatial_boundary_v"},
+    "generated_at": {"type": "string"},
+    "boundaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/definitions/boundary"}
+    },
+    "context_buffer": {"$ref": "#/definitions/contextBuffer"}
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "boundary": {
+      "type": "object",
+      "required": ["boundary_id", "kind", "label", "status", "notes"],
+      "properties": {
+        "boundary_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+        "kind": {"enum": ["core", "eez_legal", "analytical_domain"]},
+        "label": {"type": "string", "minLength": 1},
+        "status": {"enum": ["unresolved", "provisional", "resolved"]},
+        "source_authority": {"type": "string"},
+        "retrieval_date": {"type": "string"},
+        "edition_date": {"type": "string"},
+        "source_crs": {"type": "string"},
+        "normalized_crs": {"type": "string"},
+        "geometry_hash": {"type": "string"},
+        "source_url": {"type": "string"},
+        "notes": {"type": "string", "minLength": 1},
+        "geometry": {
+          "description": "Small inline GeoJSON (e.g. a bbox) for simple/provisional cases. For real sourced boundary data, use geometry_ref instead — large geometry belongs in a regenerable data/ file, not this committed config (see docs/DATA_POLICY.md). Must be null when status is unresolved.",
+          "type": ["object", "null"]
+        },
+        "geometry_ref": {
+          "description": "Repo-relative path to a GeoJSON file (under data/, gitignored, produced by an ingestion script — see server/ingestion/) holding the actual boundary geometry. Must be null when status is unresolved.",
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false,
+      "if": {"properties": {"status": {"const": "unresolved"}}},
+      "then": {"properties": {"geometry": {"const": null}, "geometry_ref": {"const": null}}}
+    },
+    "contextBuffer": {
+      "type": "object",
+      "required": ["default_km", "min_km", "max_km", "overrides"],
+      "properties": {
+        "default_km": {"type": "number", "minimum": 0},
+        "min_km": {"type": "number", "minimum": 0},
+        "max_km": {"type": "number", "minimum": 0},
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "km_note"],
+            "properties": {
+              "label": {"type": "string", "minLength": 1},
+              "km_note": {"type": "string", "minLength": 1}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

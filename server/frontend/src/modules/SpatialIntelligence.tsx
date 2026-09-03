@@ -8,24 +8,12 @@ import { AnomalyCard } from "../components/AnomalyCard";
 import {
   API_BASE,
   MUNICIPIOS_DELIVERY,
-  TILE_ATTRIBUTION,
-  TILE_URL,
   martinTileJsonUrl,
   martinTileUrlTemplate,
 } from "../config";
-
-const rasterStyle: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: "raster",
-      tiles: [TILE_URL],
-      tileSize: 256,
-      attribution: TILE_ATTRIBUTION,
-    },
-  },
-  layers: [{ id: "osm", type: "raster", source: "osm" }],
-};
+import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
+import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
+import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type PointLayerKey = "gazetteer_pr_domestic_names";
@@ -359,12 +347,21 @@ export function SpatialIntelligence({
   leftCollapsed?: boolean;
   rightCollapsed?: boolean;
 }) {
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const [spatialMode, setSpatialMode] = useState<SpatialRuntimeMode>(
+    () => (localStorage.getItem("priis_spatial_mode") === "cesium" ? "cesium" : "maplibre"),
+  );
+  const {
+    hostRef,
+    mapRef,
+    runtimeRef,
+    ready: mapReady,
+    tilesFailed,
+    setTilesFailed,
+    activeMode,
+    fallbackReason,
+  } = useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG, spatialMode);
   const markersRef = useRef<maplibregl.Marker[]>([]);
-  const [mapReady, setMapReady] = useState(false);
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
-  const [tilesFailed, setTilesFailed] = useState(false);
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
     () => localStorage.getItem("spiderweb_layer_collapsed") === "true",
   );
@@ -415,26 +412,12 @@ export function SpatialIntelligence({
     setStatus("gazetteer_pr_domestic_names"),
   );
 
+  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime now;
+  // this effect only handles the marker-specific part of unmount cleanup.
   useEffect(() => {
-    if (!hostRef.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: hostRef.current,
-      style: rasterStyle,
-      center: [-66.35, 18.22],
-      zoom: 8.4,
-    });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
-    map.on("error", (event: maplibregl.ErrorEvent) => {
-      if ("sourceId" in event && event.sourceId === "osm") setTilesFailed(true);
-    });
-    mapRef.current = map;
-    setMapReady(true);
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
-      map.remove();
-      mapRef.current = null;
-      setMapReady(false);
     };
   }, []);
 
@@ -479,19 +462,28 @@ export function SpatialIntelligence({
         .addTo(map);
       markersRef.current.push(marker);
     });
-  }, [data, layers, setSelection]);
+  }, [data, layers, setSelection, mapRef]);
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || selection?.kind !== "site") return;
+    const runtime = runtimeRef.current;
+    if (!runtime || selection?.kind !== "site") return;
     const site = byId(data.sites, selection.id);
-    if (site) map.flyTo({ center: [site.lng, site.lat], zoom: 11, speed: 0.8 });
-  }, [data.sites, selection]);
+    if (site) runtime.setView({ center: [site.lng, site.lat], zoom: 11 }, { animate: true, speed: 0.8 });
+  }, [data.sites, selection, runtimeRef]);
 
   useEffect(() => {
     localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
   }, [layerPanelCollapsed]);
 
+  // Persist the requested 2D/3D mode. Note this is the *requested* mode
+  // (spatialMode), not activeMode — if Cesium fails and useSpatialRuntime
+  // falls back to MapLibre, we still remember "cesium" was requested so the
+  // next visit retries it rather than silently sticking on the fallback.
+  useEffect(() => {
+    localStorage.setItem("priis_spatial_mode", spatialMode);
+  }, [spatialMode]);
+
+  // "L" toggles the layer panel. Ignore while typing in an input/textarea.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -506,9 +498,9 @@ export function SpatialIntelligence({
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => mapRef.current?.resize(), 320);
+    const timer = window.setTimeout(() => runtimeRef.current?.resize(), 320);
     return () => window.clearTimeout(timer);
-  }, [leftCollapsed, rightCollapsed, layerPanelCollapsed]);
+  }, [leftCollapsed, rightCollapsed, layerPanelCollapsed, runtimeRef]);
 
   const failedLayers = BACKEND_LAYER_KEYS.filter((k) => layers[k] && layerStatus[k] === "error");
 
@@ -529,9 +521,22 @@ export function SpatialIntelligence({
           >
             {layerPanelCollapsed ? "Show layers" : "Hide layers"}
           </button>
-          <Pill tone="info">MapLibre GL JS</Pill>
+          <button
+            className="act"
+            data-on={spatialMode === "cesium"}
+            onClick={() => setSpatialMode((m) => (m === "cesium" ? "maplibre" : "cesium"))}
+            title="Toggle 2D/3D scene"
+          >
+            {spatialMode === "cesium" ? "3D (regional preview)" : "2D"}
+          </button>
+          <Pill tone="info">{activeMode === "cesium" ? "Cesium (regional)" : "MapLibre GL JS"}</Pill>
         </div>
       </div>
+      {fallbackReason && (
+        <div className="map-note" role="status">
+          <span>3D scene unavailable ({fallbackReason}) — showing 2D instead.</span>
+        </div>
+      )}
       <div
         className="map-shell"
         data-layer-collapsed={layerPanelCollapsed}
@@ -539,7 +544,7 @@ export function SpatialIntelligence({
       >
         <div className="map-col">
           <div ref={hostRef} className="map-host" />
-          {failedLayers.length > 0 && (
+          {activeMode === "maplibre" && failedLayers.length > 0 && (
             <div className="map-error" role="alert">
               <span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span>
             </div>

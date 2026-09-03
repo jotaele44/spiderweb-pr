@@ -1,0 +1,81 @@
+# Spatial rendering metadata for layers already named in configs/layer_catalog.yaml.
+# Kept separate from that file on purpose — see schemas/spatial_layer_binding.schema.json
+# for why. Every layer_id below must exist in layer_catalog.yaml; enforced by
+# tests/test_spatial_layer_bindings.py.
+#
+# min_camera_height_m / max_camera_height_m are intentionally omitted for every
+# entry: those are LOD-tuning decisions that need measurement against real
+# rendered output, not numbers picked in the abstract. Add them once a runtime
+# actually renders these layers and the thresholds can be tuned by eye.
+version: spatial_layer_binding_v0_1
+generated_at: "2026-07-29T00:00:00Z"
+
+bindings:
+  # Backend-served today via GET /geo/{layer}.geojson (server/backend/main.py
+  # _FALLBACK_LAYERS / _ALLOWED_LAYERS) and rendered by the MapLibre runtime in
+  # workbench/priis-v1/app/src/modules/SpatialIntelligence.tsx.
+  - layer_id: municipios
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: true
+  - layer_id: tracts
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: true
+  - layer_id: places
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: true
+  - layer_id: barrios
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: true
+  - layer_id: flights
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: false
+  - layer_id: sites
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: false
+  - layer_id: anomalies
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: false
+  - layer_id: corridors
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: false
+  - layer_id: heatmap
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: false
+  - layer_id: puma
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: true
+  - layer_id: nid_dams
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: true
+  - layer_id: gazetteer_pr_domestic_names
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: true
+  - layer_id: wetlands_nwi_prvi
+    extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
+    format: geojson
+    runtime: {maplibre_enabled: true, cesium_enabled: false}
+    offline_include: true

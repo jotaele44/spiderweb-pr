@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spatial_layer_binding",
+  "title": "Spiderweb-PR Spatial Layer Binding Registry",
+  "description": "Rendering/spatial metadata for layers already named in configs/layer_catalog.yaml (the labels-only catalog). Kept as a separate file so the labels catalog's tested invariant — no geometry/coordinates bound, every layer status=deferred — is never touched by this registry. Each entry's layer_id must exist in layer_catalog.yaml (enforced by tests/test_spatial_layer_bindings.py, not by this schema, since cross-file references aren't expressible in JSON Schema alone).",
+  "type": "object",
+  "required": ["version", "bindings"],
+  "properties": {
+    "version": {"type": "string", "pattern": "^spatial_layer_binding_v"},
+    "generated_at": {"type": "string"},
+    "bindings": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/binding"}
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "binding": {
+      "type": "object",
+      "required": ["layer_id", "extent_id", "format", "runtime"],
+      "properties": {
+        "layer_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "extent_id": {
+          "type": "string",
+          "description": "References a boundary_id in configs/spatial_boundaries.yaml (typically the analytical domain) used to validate/clip requests for this layer."
+        },
+        "format": {"enum": ["geojson", "pmtiles", "raster", "terrain", "3dtiles"]},
+        "min_camera_height_m": {"type": "number", "minimum": 0},
+        "max_camera_height_m": {"type": "number", "minimum": 0},
+        "vertical_datum": {
+          "type": "string",
+          "description": "Required for layers carrying elevation/depth values (terrain/bathymetry). Omitted for purely planimetric layers."
+        },
+        "runtime": {
+          "type": "object",
+          "required": ["maplibre_enabled", "cesium_enabled"],
+          "properties": {
+            "maplibre_enabled": {"type": "boolean"},
+            "cesium_enabled": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "offline_include": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

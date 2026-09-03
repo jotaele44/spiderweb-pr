@@ -61,7 +61,10 @@ for (const [engineName, engine] of Object.entries(engines)) {
           })
         }
 
-        await page.keyboard.press('Tab')
+        const keyboardTarget = page.getByRole('tab', { name: 'Finance', exact: true })
+        await keyboardTarget.focus()
+        await page.keyboard.press('Enter')
+        await page.waitForTimeout(50)
         const focused = await page.evaluate(() => {
           const el = document.activeElement
           if (!el || el === document.body) return null
@@ -77,8 +80,10 @@ for (const [engineName, engine] of Object.entries(engines)) {
           engine: engineName,
           viewport: viewport.width,
           mode: 'keyboard-only',
-          status: focused?.visible ? 'PASS' : 'FAIL',
+          status: focused?.visible && (await keyboardTarget.getAttribute('aria-selected')) === 'true' ? 'PASS' : 'FAIL',
           focused,
+          target: 'Finance tab',
+          key: 'Enter',
         })
 
         await page.evaluate(() => { document.documentElement.style.zoom = '2' })
