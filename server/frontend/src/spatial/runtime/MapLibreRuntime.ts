@@ -1,4 +1,4 @@
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import type { CameraView, SpatialRuntime, SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
 
 export class MapLibreRuntime implements SpatialRuntime {
@@ -18,8 +18,8 @@ export class MapLibreRuntime implements SpatialRuntime {
     // Scoping to basemapSourceId keeps benign per-tile/abort noise for other
     // sources (backend GeoJSON layers report their own status separately) out
     // of the basemap-error signal.
-    map.on("error", (e: { sourceId?: string }) => {
-      if (e.sourceId === this.basemapSourceId) {
+    map.on("error", (e: maplibregl.ErrorEvent) => {
+      if ("sourceId" in e && e.sourceId === this.basemapSourceId) {
         this.basemapErrorListeners.forEach((listener) => listener());
       }
     });

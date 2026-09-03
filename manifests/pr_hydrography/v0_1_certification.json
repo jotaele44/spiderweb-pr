@@ -1,0 +1,45 @@
+{
+  "certification_id": "SPIDERWEB_PR_AUTHORITATIVE_HYDROGRAPHY_ACQUISITION_PLANE_v0_1",
+  "base_commit": "dc5e995b7b437b1c3e0505b439681c4622369255",
+  "branch": "codex/pr-hydrography-acquisition-v0_1",
+  "pull_request": 267,
+  "source_registry": "manifests/pr_hydrography/source_registry.csv",
+  "offline_regression_workflow_run": 31640376525,
+  "offline_regression": "PASS",
+  "frozen_baseline_expectations": {
+    "nhd_total": 3213,
+    "nhd_ftype_390": 2560,
+    "nhd_ftype_436": 653,
+    "nid_pr": 36,
+    "v4_pr": 6,
+    "v4_nid_hard_bindings": 5
+  },
+  "baseline_expectation_role": "REGRESSION_EXPECTATION_NOT_SELECTION_LOGIC",
+  "step_state": {
+    "STEP_1_SOURCE_REGISTRY_AND_SNAPSHOT_CONTRACT": "PASS",
+    "STEP_2_FOUR_AUTHORITATIVE_SOURCE_ADAPTERS": "PASS_CODE_COMPLETE_LIVE_FULL_PULL_NOT_YET_FROZEN",
+    "STEP_3_REPRODUCE_FROZEN_BASELINES": "PASS_OFFLINE_REGRESSION_BLOCKED_LIVE_BYTE_LEVEL_REPRODUCTION",
+    "STEP_4_PREFLIGHT_NORMALIZATION_GEOMETRY_AND_CLOSURE_GATES": "PASS",
+    "STEP_5_REFRESH_NO_CHANGE_SCHEMA_DRIFT_AND_IMMUTABILITY": "PASS",
+    "STEP_6_GENERIC_RELATIONSHIP_RESOLVER_CONTRACT": "PASS",
+    "STEP_7_CLI": "PASS_MODULE_CLI_AND_RELATIONSHIP_CLI",
+    "STEP_8_FRESHNESS_WORKFLOW": "PASS",
+    "STEP_9_OFFLINE_REGRESSIONS": "PASS",
+    "STEP_10_MIGRATE_CURRENT_RESERVOIR_WORKFLOW": "BLOCKED_PRIOR_CANONICAL_LOCAL_BYTES_NOT_AVAILABLE_TO_GITHUB_RUNNER"
+  },
+  "preservation": {
+    "main_mutated": false,
+    "raw_payloads_committed_to_git": false,
+    "actions_artifacts_are_canonical_raw_storage": false,
+    "prior_manual_certifications_superseded": false
+  },
+  "required_migration_gate": {
+    "description": "Import the prior PR_RESERVOIR_DATA canonical raw inputs into persistent Spiderweb runtime storage, bind their SHA-256 values to registered snapshot records, then rerun live source adapters and adjudicate any byte/schema/denominator drift before promoting the new acquisition plane as the sole reservoir source path.",
+    "required_prior_sha256": {
+      "nhd_pr_lakepond_reservoir_gpkg": "08a216d247a1ed7a59046d94a4a8f858ffbd9e9164175ce8927ccd8e791cc45a",
+      "nid_nation_csv": "67890b6bc0eca8976fa646080bc527a619b8729166dcf7bf7ec694db1bb3f82e",
+      "v4_to_nhd_spatial_crosswalk_csv": "747dcdda28535f83074aa486bdb01411e291f43733da8729cf418e62307a9a45"
+    }
+  },
+  "certification_state": "PASS_ARCHITECTURE_AND_OFFLINE_REGRESSION_WITH_LIVE_BYTE_MIGRATION_OPEN"
+}

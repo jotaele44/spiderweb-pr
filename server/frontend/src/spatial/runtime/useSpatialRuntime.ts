@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type maplibregl from "maplibre-gl";
+import type * as maplibregl from "maplibre-gl";
 import type { SpatialRuntime, SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
 import { createSpatialRuntime, createCesiumRuntime, type SpatialRuntimeMode } from "./RuntimeFactory";
 import type { MapLibreRuntime } from "./MapLibreRuntime";

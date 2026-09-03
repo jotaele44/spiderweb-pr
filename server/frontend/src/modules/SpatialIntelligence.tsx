@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
+import type { GeoJSON } from "geojson";
+import * as maplibregl from "maplibre-gl";
 import { byId, fmtMoney } from "../lib/format";
 import type { PriisData, Selection } from "../types/priis";
 import { Pill } from "../components/Badges";
@@ -15,8 +16,9 @@ import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
+type PointLayerKey = "gazetteer_pr_domestic_names";
 type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
-type BackendLayerKey = PolygonLayerKey;
+type BackendLayerKey = PolygonLayerKey | PointLayerKey;
 type LayerKey = MarkerLayerKey | BackendLayerKey;
 export type LayerStatus = "idle" | "loading" | "source-ready" | "loaded" | "error";
 
@@ -36,7 +38,23 @@ const POLYGON_LAYERS: Record<PolygonLayerKey, PolygonLayerConfig> = {
 };
 
 const POLYGON_LAYER_KEYS = Object.keys(POLYGON_LAYERS) as PolygonLayerKey[];
-const BACKEND_LAYER_KEYS: BackendLayerKey[] = [...POLYGON_LAYER_KEYS];
+
+interface PointLayerConfig {
+  color: string;
+  radius: number;
+  defaultOn: boolean;
+  label: string;
+}
+
+// Rendered as a native GL circle layer, not maplibregl.Marker DOM elements
+// (the pattern MarkerLayerKey/site markers below use): at ~2,000 features,
+// one DOM node per point would be a real rendering-performance regression.
+const POINT_LAYERS: Record<PointLayerKey, PointLayerConfig> = {
+  gazetteer_pr_domestic_names: { color: "#5eead4", radius: 2.5, defaultOn: false, label: "Natural features" },
+};
+
+const POINT_LAYER_KEYS = Object.keys(POINT_LAYERS) as PointLayerKey[];
+const BACKEND_LAYER_KEYS: BackendLayerKey[] = [...POLYGON_LAYER_KEYS, ...POINT_LAYER_KEYS];
 
 const MARKER_LABELS: Record<MarkerLayerKey, string> = {
   contracts: "Contracts",
@@ -48,11 +66,16 @@ const MARKER_LABELS: Record<MarkerLayerKey, string> = {
 function isPolygonKey(key: LayerKey): key is PolygonLayerKey {
   return key in POLYGON_LAYERS;
 }
+function isPointKey(key: LayerKey): key is PointLayerKey {
+  return key in POINT_LAYERS;
+}
 function isBackendKey(key: LayerKey): key is BackendLayerKey {
   return (BACKEND_LAYER_KEYS as string[]).includes(key);
 }
 function layerLabel(key: LayerKey): string {
-  return isPolygonKey(key) ? POLYGON_LAYERS[key].label : MARKER_LABELS[key];
+  if (isPolygonKey(key)) return POLYGON_LAYERS[key].label;
+  if (isPointKey(key)) return POINT_LAYERS[key].label;
+  return MARKER_LABELS[key];
 }
 
 export function layerStatusText(enabled: boolean, status?: LayerStatus): string {
@@ -100,6 +123,26 @@ function removePolygonPaintLayers(map: maplibregl.Map, sourceId: string) {
   if (map.getLayer(`${sourceId}-fill`)) map.removeLayer(`${sourceId}-fill`);
 }
 
+function addCirclePaintLayer(map: maplibregl.Map, key: PointLayerKey, sourceId: string) {
+  const cfg = POINT_LAYERS[key];
+  map.addLayer({
+    id: `${sourceId}-circle`,
+    type: "circle",
+    source: sourceId,
+    paint: {
+      "circle-radius": cfg.radius,
+      "circle-color": cfg.color,
+      "circle-opacity": 0.75,
+      "circle-stroke-color": "#0b1220",
+      "circle-stroke-width": 0.5,
+    },
+  });
+}
+
+function removeCirclePaintLayer(map: maplibregl.Map, sourceId: string) {
+  if (map.getLayer(`${sourceId}-circle`)) map.removeLayer(`${sourceId}-circle`);
+}
+
 function useGeoJsonLayer(opts: {
   mapRef: React.MutableRefObject<maplibregl.Map | null>;
   ready: boolean;
@@ -140,7 +183,7 @@ function useGeoJsonLayer(opts: {
       try {
         const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const geojson = (await res.json()) as GeoJSON.GeoJSON;
+        const geojson = (await res.json()) as GeoJSON;
         if (cancelled) return;
         // Backend/source retrieval succeeded. Do not call this rendered until
         // MapLibre's style is actually ready and the source/layers are attached.
@@ -200,8 +243,8 @@ function useVectorTileLayer(opts: {
 
     const controller = new AbortController();
     let cancelled = false;
-    const onMapError = (event: { sourceId?: string }) => {
-      if (event.sourceId === sourceId) onStatus("error");
+    const onMapError = (event: maplibregl.ErrorEvent) => {
+      if ("sourceId" in event && event.sourceId === sourceId) onStatus("error");
     };
     map.on("error", onMapError);
 
@@ -271,6 +314,26 @@ function usePolygonLayer(
   });
 }
 
+function usePointLayer(
+  mapRef: React.MutableRefObject<maplibregl.Map | null>,
+  ready: boolean,
+  key: PointLayerKey,
+  isOn: boolean,
+  onStatus: (status: LayerStatus) => void,
+) {
+  const sourceId = `geo-${key}`;
+  useGeoJsonLayer({
+    mapRef,
+    ready,
+    sourceId,
+    url: `${API_BASE}/geo/${key}.geojson`,
+    isOn,
+    onStatus,
+    addLayers: (map: maplibregl.Map, id: string) => addCirclePaintLayer(map, key, id),
+    removeLayers: (map: maplibregl.Map) => removeCirclePaintLayer(map, sourceId),
+  });
+}
+
 export function SpatialIntelligence({
   data,
   selection,
@@ -310,6 +373,9 @@ export function SpatialIntelligence({
     ...(Object.fromEntries(
       POLYGON_LAYER_KEYS.map((k) => [k, POLYGON_LAYERS[k].defaultOn]),
     ) as Record<PolygonLayerKey, boolean>),
+    ...(Object.fromEntries(
+      POINT_LAYER_KEYS.map((k) => [k, POINT_LAYERS[k].defaultOn]),
+    ) as Record<PointLayerKey, boolean>),
   }));
 
   const setStatus = (key: BackendLayerKey) => (status: LayerStatus) =>
@@ -338,6 +404,13 @@ export function SpatialIntelligence({
   usePolygonLayer(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts"));
   usePolygonLayer(mapRef, mapReady, "places", layers.places, setStatus("places"));
   usePolygonLayer(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios"));
+  usePointLayer(
+    mapRef,
+    mapReady,
+    "gazetteer_pr_domestic_names",
+    layers.gazetteer_pr_domestic_names,
+    setStatus("gazetteer_pr_domestic_names"),
+  );
 
   // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime now;
   // this effect only handles the marker-specific part of unmount cleanup.

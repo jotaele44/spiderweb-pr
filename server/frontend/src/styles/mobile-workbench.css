@@ -1,0 +1,164 @@
+/* Mobile workbench contract.
+   React owns collapsed/open state. CSS only maps that state to a usable drawer
+   layout; collapsed drawers are removed from pointer/focus interaction. */
+
+.workbench[data-left-collapsed="true"] .rail,
+.workbench[data-right-collapsed="true"] .inspector {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .workbench {
+    --cmd-h: 92px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--cmd-h) minmax(0, 1fr) var(--time-h);
+    grid-template-areas:
+      "cmd"
+      "center"
+      "time";
+    position: relative;
+    overflow: hidden;
+  }
+
+  .brand,
+  .chips {
+    display: none;
+  }
+
+  .cmdbar {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .query {
+    order: 1;
+    flex: 1 1 100%;
+    min-width: 0;
+    height: 44px;
+    padding-inline: 10px;
+    border-right: 0;
+  }
+
+  .query > .subtle,
+  .kbd {
+    display: none;
+  }
+
+  .runstate {
+    order: 2;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .runstate > span {
+    display: none;
+  }
+
+  .runstate-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .center {
+    grid-area: center;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tabstrip {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-inline: 4px;
+    scrollbar-width: thin;
+  }
+
+  .tabs {
+    flex: 0 0 auto;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+
+  .tab-meta {
+    display: none;
+  }
+
+  .rail,
+  .inspector {
+    position: fixed;
+    top: calc(18px + var(--cmd-h) + 34px);
+    bottom: var(--time-h);
+    width: min(86vw, 320px);
+    max-width: 320px;
+    z-index: 850;
+    overflow: auto;
+    visibility: visible;
+    pointer-events: auto;
+    box-shadow: 0 12px 28px rgb(0 0 0 / 0.24);
+  }
+
+  .rail {
+    left: 0;
+    border-right: 1px solid var(--line);
+  }
+
+  .inspector {
+    right: 0;
+    border-left: 1px solid var(--line);
+  }
+
+  .workbench[data-left-collapsed="true"] .rail,
+  .workbench[data-right-collapsed="true"] .inspector {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .workspace,
+  .panel,
+  .panel-grid,
+  .table-wrap,
+  .map-col {
+    min-width: 0;
+  }
+
+  .panel-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .panel-grid {
+    padding: 10px;
+  }
+
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .map-shell {
+    display: block !important;
+    min-width: 0;
+  }
+
+  .map-shell .layer-panel {
+    max-height: 38vh;
+    overflow: auto;
+  }
+
+  .act,
+  .navbtn,
+  .tab,
+  .linklike {
+    min-height: 44px;
+  }
+}
