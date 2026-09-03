@@ -318,7 +318,23 @@ _ALLOWED_LAYERS = {
 _EMPTY_FC: dict = {"type": "FeatureCollection", "features": []}
 
 
+# Layers whose canonical artifact doesn't live at the generic outputs/data/root
+# paths _find_geojson otherwise checks. gazetteer_pr_domestic_names in particular
+# is the natural-features gazetteer registry (1,982 points), checked in under
+# registry/ rather than named after its own layer_id — without this override,
+# GET /geo/gazetteer_pr_domestic_names.geojson silently returned an empty
+# FeatureCollection despite the data existing and being production-ready.
+_LAYER_PATH_OVERRIDES: dict[str, Path] = {
+    "gazetteer_pr_domestic_names": (
+        ROOT / "registry" / "natural_features" / "pr_natural_features.geojson"
+    ),
+}
+
+
 def _find_geojson(layer: str) -> Optional[Path]:
+    override = _LAYER_PATH_OVERRIDES.get(layer)
+    if override is not None:
+        return override if override.exists() else None
     candidates = [
         OUTPUT_DIR / f"{layer}.geojson",
         ROOT / "data" / f"{layer}.geojson",
