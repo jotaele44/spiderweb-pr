@@ -1,0 +1,57 @@
+name: GUI runtime matrix
+
+on:
+  push:
+    branches:
+      - audit/mobile-workbench-remediation-20260824
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workbench-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: server/frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install bounded browser harness
+        run: npm install --no-save --no-package-lock playwright@1.56.1
+      - name: Install Chromium Firefox and WebKit
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Start workbench
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev -- --host 127.0.0.1 --port 5173 --strictPort > /tmp/spiderweb-vite.log 2>&1 &
+          echo $! > /tmp/spiderweb-vite.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:5173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/spiderweb-vite.log
+          exit 1
+      - name: Execute six-module matrix
+        run: node tests/gui-runtime-matrix.mjs
+      - name: Upload GUI evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: spiderweb-gui-runtime-matrix
+          path: server/frontend/artifacts/gui-runtime-matrix/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Dump server log on failure
+        if: failure()
+        run: cat /tmp/spiderweb-vite.log || true
