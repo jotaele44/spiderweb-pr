@@ -1,0 +1,10 @@
+{
+  "binding_count": 0,
+  "binding_state": "UNRESOLVED",
+  "bindings": [],
+  "geometry_certification_state": "PROVISIONAL",
+  "note": "Cell-to-source bindings are withheld while the grid transform is PROVISIONAL. This mirrors the stance tools/spatial_aoi_fetcher already takes with UNAVAILABLE_CANONICAL_GRID_UNGEOREFERENCED: an uncertified georeference must not be used to assert which provider object covers which cell, because a wrong transform would silently bind every cell to the wrong tile. The manifestation registry and the deduplicated fetch plan are unaffected -- they resolve an area of interest in WGS84 directly against provider footprints and never need the cell grid. Populating this file is gated on TRANSFORM_CERTIFICATION_GATE.",
+  "schema": "schemas/cell_source_binding.schema.json",
+  "schema_version": "spiderweb.cell_source_binding.v0.1",
+  "unresolved_reason": "CANONICAL_GRID_GEOREFERENCE_PROVISIONAL"
+}
