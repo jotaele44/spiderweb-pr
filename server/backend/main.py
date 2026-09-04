@@ -17,6 +17,7 @@ import sqlite3
 import subprocess
 import sys
 import uuid
+from collections import Counter
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Literal, Optional
@@ -394,6 +395,58 @@ async def geo_layer(layer: str):
     if layer == "anomalies":
         return JSONResponse(await _anomalies_from_db(), media_type="application/geo+json")
     return JSONResponse(_EMPTY_FC, media_type="application/geo+json")
+
+
+@app.get("/geo/municipios/density")
+async def geo_municipios_density(layer: str = "gazetteer_pr_domestic_names"):
+    """Feature count of `layer` per municipio, keyed by GEOID.
+
+    Joins on each feature's own `municipality` name property against the
+    TIGER municipios boundary file's NAME/GEOID (ingest_tiger_pr.py writes
+    data/municipios.geojson by default — the same file _find_geojson's
+    generic candidate search already looks for). Name-based, not a spatial
+    join: mirrors aguayluz-pr's proven event_density pattern, since every
+    layer this endpoint supports already carries a municipality field.
+    Degrades to an all-unmatched response if municipios data isn't loaded
+    yet, the same graceful-empty contract every other geo endpoint here
+    follows.
+    """
+    if layer not in _ALLOWED_LAYERS:
+        raise HTTPException(400, f"unknown layer '{layer}'")
+    layer_path = _find_geojson(layer)
+    features = (
+        json.loads(layer_path.read_text(encoding="utf-8")).get("features", [])
+        if layer_path is not None
+        else []
+    )
+
+    muni_path = _find_geojson("municipios")
+    name_to_geoid: dict[str, str] = {}
+    if muni_path is not None:
+        muni_doc = json.loads(muni_path.read_text(encoding="utf-8"))
+        for f in muni_doc.get("features", []):
+            props = f.get("properties") or {}
+            name = props.get("NAME") or props.get("name")
+            geoid = props.get("GEOID") or props.get("geoid")
+            if name and geoid:
+                name_to_geoid[name] = str(geoid)
+
+    by_geoid: Counter[str] = Counter()
+    unmatched = 0
+    for f in features:
+        name = (f.get("properties") or {}).get("municipality")
+        geoid = name_to_geoid.get(name) if name else None
+        if geoid is None:
+            unmatched += 1
+            continue
+        by_geoid[geoid] += 1
+
+    return {
+        "by_geoid": dict(by_geoid),
+        "total_features": len(features),
+        "unmatched": unmatched,
+        "layer": layer,
+    }
 
 
 @app.get("/catalog")

@@ -1,6 +1,7 @@
-import { useEffect, useEffectEvent, useRef, useState } from "react";
-import type { GeoJSON } from "geojson";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import type { Feature, GeoJSON, Point } from "geojson";
 import * as maplibregl from "maplibre-gl";
+import { point } from "@turf/helpers";
 import { byId, fmtMoney } from "../lib/format";
 import type { PriisData, Selection } from "../types/priis";
 import { Pill } from "../components/Badges";
@@ -14,6 +15,7 @@ import {
 import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
 import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
+import { useSpatialTools, SpatialToolsPanel } from "./SpatialToolsPanel";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type PointLayerKey = "gazetteer_pr_domestic_names";
@@ -152,8 +154,10 @@ function useGeoJsonLayer(opts: {
   addLayers: (map: maplibregl.Map, sourceId: string) => void;
   removeLayers: (map: maplibregl.Map) => void;
   onStatus: (status: LayerStatus) => void;
+  /** Property to key feature-state by (e.g. "GEOID" for the density overlay). */
+  promoteId?: string;
 }) {
-  const { mapRef, ready, sourceId, url, isOn } = opts;
+  const { mapRef, ready, sourceId, url, isOn, promoteId } = opts;
   const addLayers = useEffectEvent(opts.addLayers);
   const removeLayers = useEffectEvent(opts.removeLayers);
   const onStatus = useEffectEvent(opts.onStatus);
@@ -190,7 +194,7 @@ function useGeoJsonLayer(opts: {
         onStatus("source-ready");
         whenStyleReady(map, () => {
           if (cancelled || map.getSource(sourceId)) return;
-          map.addSource(sourceId, { type: "geojson", data: geojson });
+          map.addSource(sourceId, { type: "geojson", data: geojson, ...(promoteId ? { promoteId } : {}) });
           addLayers(map, sourceId);
           onStatus("loaded");
         });
@@ -206,7 +210,7 @@ function useGeoJsonLayer(opts: {
       controller.abort();
       if (map.isStyleLoaded()) teardown();
     };
-  }, [mapRef, ready, sourceId, url, isOn]);
+  }, [mapRef, ready, sourceId, url, isOn, promoteId]);
 }
 
 function useVectorTileLayer(opts: {
@@ -219,8 +223,10 @@ function useVectorTileLayer(opts: {
   addLayers: (map: maplibregl.Map, sourceId: string, sourceLayer: string) => void;
   removeLayers: (map: maplibregl.Map) => void;
   onStatus: (status: LayerStatus) => void;
+  /** Property to key feature-state by (e.g. "GEOID" for the density overlay). */
+  promoteId?: string;
 }) {
-  const { mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn } = opts;
+  const { mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn, promoteId } = opts;
   const addLayers = useEffectEvent(opts.addLayers);
   const removeLayers = useEffectEvent(opts.removeLayers);
   const onStatus = useEffectEvent(opts.onStatus);
@@ -274,6 +280,7 @@ function useVectorTileLayer(opts: {
             tiles: [martinTileUrlTemplate(martinSourceId)],
             minzoom: tilejson.minzoom ?? 0,
             maxzoom: tilejson.maxzoom ?? 14,
+            ...(promoteId ? { promoteId: { [sourceLayer]: promoteId } } : {}),
           });
           addLayers(map, sourceId, sourceLayer);
           onStatus("loaded");
@@ -291,7 +298,7 @@ function useVectorTileLayer(opts: {
       map.off("error", onMapError);
       if (map.isStyleLoaded()) teardown();
     };
-  }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn]);
+  }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn, promoteId]);
 }
 
 function usePolygonLayer(
@@ -300,6 +307,7 @@ function usePolygonLayer(
   key: PolygonLayerKey,
   isOn: boolean,
   onStatus: (status: LayerStatus) => void,
+  promoteId?: string,
 ) {
   const sourceId = `geo-${key}`;
   useGeoJsonLayer({
@@ -309,6 +317,7 @@ function usePolygonLayer(
     url: `${API_BASE}/geo/${key}.geojson`,
     isOn,
     onStatus,
+    promoteId,
     addLayers: (map: maplibregl.Map, id: string) => addPolygonPaintLayers(map, key, id),
     removeLayers: (map: maplibregl.Map) => removePolygonPaintLayers(map, sourceId),
   });
@@ -391,6 +400,7 @@ export function SpatialIntelligence({
     sourceLayer: "municipios",
     isOn: layers.municipios && municipiosViaMartin,
     onStatus: setStatus("municipios"),
+    promoteId: "GEOID",
     addLayers: (map, sourceId, sourceLayer) => addPolygonPaintLayers(map, "municipios", sourceId, sourceLayer),
     removeLayers: (map) => removePolygonPaintLayers(map, "mvt-municipios"),
   });
@@ -400,7 +410,9 @@ export function SpatialIntelligence({
     "municipios",
     layers.municipios && !municipiosViaMartin,
     setStatus("municipios"),
+    "GEOID",
   );
+  const municipiosSourceId = municipiosViaMartin ? "mvt-municipios" : "geo-municipios";
   usePolygonLayer(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts"));
   usePolygonLayer(mapRef, mapReady, "places", layers.places, setStatus("places"));
   usePolygonLayer(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios"));
@@ -470,6 +482,85 @@ export function SpatialIntelligence({
     const site = byId(data.sites, selection.id);
     if (site) runtime.setView({ center: [site.lng, site.lat], zoom: 11 }, { animate: true, speed: 0.8 });
   }, [data.sites, selection, runtimeRef]);
+
+  const spatialToolTargets = useMemo(() => ({
+    Sites: () =>
+      data.sites.map((site) =>
+        point([site.lng, site.lat], { name: site.name, id: site.id }),
+      ),
+    "Natural features": () => {
+      const map = mapRef.current;
+      if (!map || !layers.gazetteer_pr_domestic_names) return [];
+      return map.querySourceFeatures("geo-gazetteer_pr_domestic_names") as unknown as Feature<Point>[];
+    },
+  }), [data.sites, layers.gazetteer_pr_domestic_names, mapRef]);
+  // Only attaches when the MapLibre (2D) runtime is active — mapRef stays
+  // null in Cesium mode, so these tools simply don't render there yet.
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets });
+
+  // Gazetteer-density choropleth: off by default, and only meaningful with
+  // the municipios boundary layer itself on (there's nothing to shade
+  // otherwise). Reuses the municipios source's GEOID promoteId above for
+  // feature-state, the same technique as aguayluz-pr's drought/event-density
+  // fills.
+  const [densityOn, setDensityOn] = useState(false);
+  const [densityByGeoid, setDensityByGeoid] = useState<Record<string, number> | null>(null);
+  const toggleDensity = () => {
+    setDensityOn((v) => {
+      if (v) setDensityByGeoid(null);
+      return !v;
+    });
+  };
+  useEffect(() => {
+    if (!densityOn) return;
+    const controller = new AbortController();
+    fetch(`${API_BASE}/geo/municipios/density?layer=gazetteer_pr_domestic_names`, { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((body: { by_geoid: Record<string, number> }) => setDensityByGeoid(body.by_geoid))
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setDensityByGeoid({});
+      });
+    return () => controller.abort();
+  }, [densityOn]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const densityLayerId = "municipios-density-fill";
+    function apply() {
+      if (!map) return;
+      if (!densityOn || !densityByGeoid || !map.getSource(municipiosSourceId)) {
+        if (map.getLayer(densityLayerId)) map.removeLayer(densityLayerId);
+        return;
+      }
+      const maxCount = Math.max(1, ...Object.values(densityByGeoid));
+      for (const [geoid, count] of Object.entries(densityByGeoid)) {
+        map.setFeatureState(
+          { source: municipiosSourceId, id: geoid, ...(municipiosViaMartin ? { sourceLayer: "municipios" } : {}) },
+          { density: count / maxCount },
+        );
+      }
+      if (!map.getLayer(densityLayerId)) {
+        map.addLayer({
+          id: densityLayerId,
+          type: "fill",
+          source: municipiosSourceId,
+          ...(municipiosViaMartin ? { "source-layer": "municipios" } : {}),
+          paint: {
+            "fill-color": [
+              "interpolate", ["linear"], ["coalesce", ["feature-state", "density"], 0],
+              0, "rgba(94, 234, 212, 0.05)",
+              1, "rgba(94, 234, 212, 0.75)",
+            ],
+            "fill-opacity": 1,
+          },
+        });
+      }
+    }
+    if (map.isStyleLoaded()) apply();
+    else map.once("styledata", apply);
+  }, [densityOn, densityByGeoid, mapReady, mapRef, municipiosSourceId, municipiosViaMartin]);
 
   useEffect(() => {
     localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
@@ -557,6 +648,12 @@ export function SpatialIntelligence({
           )}
         </div>
         <aside className="layer-panel">
+          {activeMode === "maplibre" && (
+            <>
+              <SpatialToolsPanel {...spatialTools} />
+              <div className="hr" />
+            </>
+          )}
           <h2>Layer control</h2>
           {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => {
             const status = isBackendKey(key) && value ? layerStatus[key] : undefined;
@@ -574,6 +671,18 @@ export function SpatialIntelligence({
               </button>
             );
           })}
+          {activeMode === "maplibre" && layers.municipios && (
+            <button
+              className="navbtn"
+              data-active={densityOn}
+              aria-pressed={densityOn}
+              onClick={toggleDensity}
+              title="Shade municipios by natural-features (gazetteer) density"
+            >
+              <span>Gazetteer density</span>
+              <span>{densityOn ? (densityByGeoid ? "on" : "loading…") : "off"}</span>
+            </button>
+          )}
           <div className="hr" />
           <h2>Top spatial anomalies</h2>
           <div className="col">
