@@ -1,0 +1,5 @@
+trigger_schema=spiderweb.archipelago.identity-materialization.v0.3
+source_release=pr-archipelago-freeze-2026-08-22
+source_snapshot_sha256=6e8a29fc87178264584c5e88add8ac63d8e0e9a72b9f05f63795c6edec2c92e4
+producer_source_head=f46546ef24c7dc2164b3f203d1af57e7d2570219
+requested_utc=2026-09-04T20:42:58Z
