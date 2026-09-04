@@ -120,3 +120,35 @@ def test_municipios_geoids_start_with_state_fips_72(client):
     assert geoids, "no GEOIDs in municipios payload"
     bad = [g for g in geoids if not g.startswith("72")]
     assert not bad, f"non-PR GEOIDs leaked through filter: {bad[:5]}"
+
+
+def test_municipios_density_unknown_layer_rejected(client):
+    resp = client.get("/geo/municipios/density?layer=not_a_real_layer")
+    assert resp.status_code == 400
+
+
+@pytest.mark.smoke
+def test_municipios_density_reconciles_against_total(client):
+    """by_geoid's sum plus unmatched must always equal total_features,
+    whether or not municipios.geojson is loaded in this checkout — the same
+    reconciliation invariant aguayluz-pr's event_density is tested against."""
+    resp = client.get("/geo/municipios/density?layer=gazetteer_pr_domestic_names")
+    assert resp.status_code == 200
+    payload = resp.json()
+    matched_total = sum(payload["by_geoid"].values()) + payload["unmatched"]
+    assert matched_total == payload["total_features"]
+
+
+@pytest.mark.smoke
+def test_municipios_density_matches_when_municipios_loaded(client):
+    """When municipios data is present, gazetteer features (which all carry
+    a real PR municipality name) should mostly match rather than land in
+    unmatched — a regression guard against the name/GEOID join silently
+    breaking (e.g. a NAME-casing or accent mismatch)."""
+    _skip_if_missing("municipios")
+    resp = client.get("/geo/municipios/density?layer=gazetteer_pr_domestic_names")
+    payload = resp.json()
+    assert payload["total_features"] > 0
+    matched = payload["total_features"] - payload["unmatched"]
+    total = payload["total_features"]
+    assert matched / total > 0.9, f"only {matched}/{total} gazetteer features matched"
