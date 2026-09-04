@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -8,6 +9,7 @@ SCRIPT = ROOT / "scripts" / "audit_gui_executability.py"
 SPEC = importlib.util.spec_from_file_location("audit_gui_executability", SCRIPT)
 assert SPEC and SPEC.loader
 MOD = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = MOD
 SPEC.loader.exec_module(MOD)
 
 
