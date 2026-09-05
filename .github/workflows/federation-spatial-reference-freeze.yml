@@ -1,0 +1,28 @@
+name: Federation Spatial Reference Freeze
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/federation-spatial-reference-freeze.yml'
+      - 'registry/spatial/reference_source_candidates_v1_1.json'
+      - 'scripts/freeze_federation_reference_v1_1.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-current-admin-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch and freeze current 2026 Census manifestations
+        run: |
+          python3 scripts/freeze_federation_reference_v1_1.py \
+            --output-dir artifacts/federation-spatial-reference-freeze
+      - name: Upload frozen reference manifestations
+        uses: actions/upload-artifact@v4
+        with:
+          name: federation-spatial-reference-freeze
+          path: artifacts/federation-spatial-reference-freeze
+          if-no-files-found: error
