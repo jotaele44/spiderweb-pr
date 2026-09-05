@@ -1,13 +1,73 @@
 {
   "contract_version": "federation-spatial-contract/1.1",
-  "source_manifestations": [],
-  "geometry_manifestations": [],
+  "source_manifestations": [
+    {
+      "manifestation_id": "census-tiger-2025-pr-municipios-zip",
+      "source_id": "USCB_TIGER2025_COUNTY",
+      "source_url": "https://www2.census.gov/geo/tiger/TIGER2025/COUNTY/tl_2025_us_county.zip",
+      "retrieved_at": "2026-07-16T15:39:46Z",
+      "refresh_date": "2025-01-01",
+      "query": "STATEFP=72 extracted by ingest_tiger_pr.py",
+      "page_offset": null,
+      "byte_sha256": "9c6e9d9076abce2670d1de255de3710c35ecca00a7005d88e012dec52d95f763",
+      "schema_sha256": null,
+      "row_count": 78,
+      "provenance": {
+        "authority": "U.S. Census Bureau",
+        "manifest": "data/tiger/2025/manifest.json",
+        "ingestor": "ingest_tiger_pr.py",
+        "source_role": "authoritative_admin_boundary_manifestation"
+      }
+    },
+    {
+      "manifestation_id": "census-tiger-2025-pr-barrios-zip",
+      "source_id": "USCB_TIGER2025_COUSUB",
+      "source_url": "https://www2.census.gov/geo/tiger/TIGER2025/COUSUB/tl_2025_72_cousub.zip",
+      "retrieved_at": "2026-07-16T15:39:46Z",
+      "refresh_date": "2025-01-01",
+      "query": "Puerto Rico state-based county subdivisions",
+      "page_offset": null,
+      "byte_sha256": "6930acc0987823109e570a04507c48991a4e446802648054d3661b104aab989c",
+      "schema_sha256": null,
+      "row_count": 939,
+      "provenance": {
+        "authority": "U.S. Census Bureau",
+        "manifest": "data/tiger/2025/manifest.json",
+        "ingestor": "ingest_tiger_pr.py",
+        "source_role": "authoritative_admin_boundary_manifestation"
+      }
+    }
+  ],
+  "geometry_manifestations": [
+    {
+      "geometry_manifestation_id": "tiger-2025-pr-municipios-epsg4326",
+      "source_manifestation_id": "census-tiger-2025-pr-municipios-zip",
+      "geometry": null,
+      "crs": "EPSG:4326",
+      "geometry_type": "MultiPolygon/Polygon collection",
+      "has_z": false,
+      "has_m": false,
+      "geometry_status": "PROVISIONAL",
+      "logical_sha256": "adebd4e779e36ca4aecb69291af9e153e430a829cc4ca8a676f7d5f5197a5d76"
+    },
+    {
+      "geometry_manifestation_id": "tiger-2025-pr-barrios-epsg4326",
+      "source_manifestation_id": "census-tiger-2025-pr-barrios-zip",
+      "geometry": null,
+      "crs": "EPSG:4326",
+      "geometry_type": "MultiPolygon/Polygon collection",
+      "has_z": false,
+      "has_m": false,
+      "geometry_status": "PROVISIONAL",
+      "logical_sha256": "5f9e41f5adf1349885fd8824dab6f31097016a74ba242d575b34048ece0eb32c"
+    }
+  ],
   "canonical_entities": [],
   "identity_bindings": [],
   "unresolved": [
-    {"scope":"municipios","reason":"Authoritative source manifestations and stable-ID bindings not yet frozen into v1.1 registry","state":"OPEN"},
-    {"scope":"barrios","reason":"Authoritative source manifestations and stable-ID bindings not yet frozen into v1.1 registry","state":"OPEN"},
-    {"scope":"coastline_archipelago","reason":"Cross-source NOAA/Census/SIGE manifestations require explicit geometric adjudication before canonical promotion","state":"OPEN"},
+    {"scope":"municipios","reason":"2025 authoritative Census TIGER source/output manifestations are frozen (78 features), but 2026 current-vintage refresh and per-GEOID canonical entity enumeration/topology proof remain open","state":"OPEN"},
+    {"scope":"barrios","reason":"2025 authoritative Census TIGER source/output manifestations are frozen (939 features), but 2026 current-vintage refresh and per-GEOID canonical entity enumeration/topology proof remain open","state":"OPEN"},
+    {"scope":"coastline_archipelago","reason":"NOAA CUSP is selected as contemporary shoreline reference candidate; exact Puerto Rico vector manifestation and cross-source Census/NOAA geometry adjudication are not yet frozen","state":"OPEN"},
     {"scope":"parcels","reason":"CRIM source manifestations and stable parcel identifiers are not yet incorporated federation-wide","state":"OPEN"},
     {"scope":"roads","reason":"DTOP/FHWA road manifestations require source/version and segment-identity reconciliation","state":"OPEN"},
     {"scope":"hydrology","reason":"NHDPlus/USGS/EPA/local hydrologic manifestations require canonical feature binding","state":"OPEN"},
