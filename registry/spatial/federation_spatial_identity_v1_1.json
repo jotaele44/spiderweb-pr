@@ -1,0 +1,19 @@
+{
+  "contract_version": "federation-spatial-contract/1.1",
+  "source_manifestations": [],
+  "geometry_manifestations": [],
+  "canonical_entities": [],
+  "identity_bindings": [],
+  "unresolved": [
+    {"scope":"municipios","reason":"Authoritative source manifestations and stable-ID bindings not yet frozen into v1.1 registry","state":"OPEN"},
+    {"scope":"barrios","reason":"Authoritative source manifestations and stable-ID bindings not yet frozen into v1.1 registry","state":"OPEN"},
+    {"scope":"coastline_archipelago","reason":"Cross-source NOAA/Census/SIGE manifestations require explicit geometric adjudication before canonical promotion","state":"OPEN"},
+    {"scope":"parcels","reason":"CRIM source manifestations and stable parcel identifiers are not yet incorporated federation-wide","state":"OPEN"},
+    {"scope":"roads","reason":"DTOP/FHWA road manifestations require source/version and segment-identity reconciliation","state":"OPEN"},
+    {"scope":"hydrology","reason":"NHDPlus/USGS/EPA/local hydrologic manifestations require canonical feature binding","state":"OPEN"},
+    {"scope":"infrastructure","reason":"Cross-repository asset manifestations require authoritative ID and geometry reconciliation","state":"OPEN"},
+    {"scope":"poi","reason":"Federation POI identity plane has not yet been adjudicated against source manifestations","state":"OPEN"},
+    {"scope":"aviation","reason":"Airports/airspace/ground-infrastructure identities remain producer-owned until canonical bindings are frozen","state":"OPEN"},
+    {"scope":"bathymetry","reason":"Bathymetric datasets are raster/source manifestations and require explicit feature-identity semantics before canonical entity promotion","state":"OPEN"}
+  ]
+}
