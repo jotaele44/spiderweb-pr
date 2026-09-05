@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Fail-closed structural/invariant validator for federation-spatial-contract/1.1."""
+"""Structural and certification validator for federation-spatial-contract/1.1.
+
+Default mode validates structural/cardinality/identity invariants. --certify also
+requires zero unresolved residue and a non-empty frozen registry.
+"""
 from __future__ import annotations
 import json
 import sys
@@ -11,7 +15,6 @@ REGISTRY = ROOT / "registry/spatial/federation_spatial_identity_v1_1.json"
 ALLOWED_CARDINALITY = {"1:1", "1:N", "N:1", "N:N", "0:1", "UNRESOLVED"}
 ALLOWED_SPATIAL = {"FULLY_WITHIN", "PARTIAL", "TOUCH_ONLY", "OUTSIDE", "NULL_EMPTY", "UNRESOLVED"}
 FORBIDDEN_SOLE_IDENTITY = {"NAME_ONLY", "NORMALIZED_NAME_ONLY", "COUNT_EQUALITY", "NEAREST_ONLY", "PROXIMITY_ONLY", "SAME_CATEGORY", "SOURCE_ABSENCE"}
-ACCEPTED_IDENTITY = {"PASS"}
 
 
 def duplicates(values):
@@ -24,16 +27,16 @@ def duplicates(values):
 
 
 def main() -> int:
+    certify = "--certify" in sys.argv[1:]
     problems = []
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     if schema.get("$id") != "https://federation.local/schemas/federation_spatial_identity_v1_1.schema.json":
         problems.append("schema $id mismatch")
     if schema.get("properties", {}).get("contract_version", {}).get("const") != "federation-spatial-contract/1.1":
         problems.append("contract version mismatch")
-
     if not REGISTRY.exists():
-        print("OPEN: registry not yet instantiated; schema gate PASS, data gate OPEN")
-        return 2 if problems else 0
+        print("BLOCKED: canonical registry is absent")
+        return 1
 
     data = json.loads(REGISTRY.read_text(encoding="utf-8"))
     if data.get("contract_version") != "federation-spatial-contract/1.1":
@@ -84,19 +87,28 @@ def main() -> int:
         if right is None and card not in {"0:1", "UNRESOLVED"}:
             problems.append(f"binding {b.get('binding_id')} null right_id incompatible with {card}")
         basis = set(b.get("evidence_basis", []))
-        if b.get("identity_state") in ACCEPTED_IDENTITY and basis and basis <= FORBIDDEN_SOLE_IDENTITY:
+        if b.get("identity_state") == "PASS" and (not basis or basis <= FORBIDDEN_SOLE_IDENTITY):
             problems.append(f"binding {b.get('binding_id')} promotes heuristic-only identity")
 
     for i, row in enumerate(unresolved):
         if not row.get("reason"):
             problems.append(f"unresolved[{i}] missing reason")
 
+    if certify:
+        if unresolved:
+            problems.append(f"certification requires zero unresolved residue; found {len(unresolved)}")
+        if not sources or not geoms or not entities:
+            problems.append("certification requires non-empty source, geometry, and canonical-entity registries")
+        if any(b.get("identity_state") in {"OPEN", "BLOCKED", "PROVISIONAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED"} for b in bindings):
+            problems.append("certification contains non-final identity binding state")
+
     if problems:
-        print("FAIL")
+        print("FAIL" if certify else "STRUCTURAL_FAIL")
         for p in problems:
             print(f"- {p}")
         return 1
-    print(f"PASS sources={len(sources)} geometries={len(geoms)} entities={len(entities)} bindings={len(bindings)} unresolved={len(unresolved)}")
+    state = "CERTIFICATION_PASS" if certify else "STRUCTURAL_PASS"
+    print(f"{state} sources={len(sources)} geometries={len(geoms)} entities={len(entities)} bindings={len(bindings)} unresolved={len(unresolved)}")
     return 0
 
 
