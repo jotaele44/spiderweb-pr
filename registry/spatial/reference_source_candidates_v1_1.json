@@ -1,0 +1,107 @@
+{
+  "contract_version": "federation-spatial-reference-candidates/1.1",
+  "generated_date": "2026-09-05",
+  "rule": "Candidate/source authority does not imply canonical identity or certified geometry. Byte hash is required before promotion into source_manifestations.",
+  "strata": {
+    "municipios": {
+      "selected_authority": "U.S. Census Bureau TIGER",
+      "current_candidate": {
+        "vintage": "2026-01-01",
+        "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/82",
+        "stable_id": "GEOID",
+        "state_filter": "72",
+        "geometry_type": "Polygon",
+        "source_crs": "EPSG:3857 service; request canonical interchange in EPSG:4326",
+        "freeze_state": "OPEN"
+      },
+      "local_competing_manifestation": {
+        "authority": "Puerto Rico Planning Board / PACAT / DTOP",
+        "service": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/2",
+        "freeze_state": "OPEN"
+      }
+    },
+    "barrios": {
+      "selected_authority": "U.S. Census Bureau TIGER County Subdivisions",
+      "current_candidate": {
+        "vintage": "2026-01-01",
+        "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/1",
+        "stable_id": "GEOID",
+        "state_filter": "72",
+        "geometry_type": "Polygon",
+        "freeze_state": "OPEN"
+      },
+      "local_competing_manifestation": {
+        "authority": "Puerto Rico Planning Board / PACAT / DTOP",
+        "service": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/3",
+        "freeze_state": "OPEN"
+      }
+    },
+    "coastline_archipelago": {
+      "selected_reference": {
+        "authority": "NOAA National Geodetic Survey",
+        "dataset": "Continually Updated Shoreline Product (CUSP)",
+        "catalog": "https://www.fisheries.noaa.gov/inport/item/60812",
+        "download": "https://www.ngs.noaa.gov/CUSP/",
+        "horizontal_datum": "NAD83",
+        "identity_semantics": "SHORELINE_MANIFESTATION_NOT_LAND_IDENTITY",
+        "freeze_state": "OPEN"
+      },
+      "comparison_required": ["Census/TIGER land-water boundary", "Puerto Rico local coastal manifestations where authoritative"]
+    },
+    "roads": {
+      "selected_local_authority": {
+        "authority": "DTOP / Puerto Rico Planning Board",
+        "service": "https://sigejp.pr.gov/server/rest/services/DTOP/carreteras_pr/MapServer/0",
+        "source_vintage_label": "Feb 2021",
+        "source_crs": "EPSG:32161",
+        "freeze_state": "OPEN"
+      },
+      "competing_manifestation": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/7"
+    },
+    "parcels": {
+      "selected_authority": {
+        "authority": "CRIM Puerto Rico",
+        "portal_item_id": "49ba27a94b2c418c8432364dc2b19038",
+        "item": "https://catastropr.crimpr.net/portal/home/item.html?id=49ba27a94b2c418c8432364dc2b19038",
+        "stable_identifiers": ["Parcela", "Catastro"],
+        "expected_attributes": ["Parcela de procedencia", "Parcela", "Tipo", "Catastro", "Municipio", "Dueño", "Dirección física", "Dirección postal", "Cabida", "Tomo", "Folio", "Finca", "Escritura"],
+        "update_semantics": "automated Monday-Friday",
+        "geometry_caveat": "tax-purpose cadastral geometry; not suitable as survey-grade legal geometry",
+        "freeze_state": "OPEN"
+      }
+    },
+    "hydrology": {
+      "selected_authorities": [
+        {"authority":"USGS","dataset":"NHDPlus High Resolution","coverage":"Puerto Rico included","catalog":"https://www.usgs.gov/national-hydrography/nhdplus-high-resolution","freeze_state":"OPEN"},
+        {"authority":"EPA WATERS / NHDPlus V2.1","producer":"aguayluz-pr","identity_role":"navigation/enrichment manifestation","freeze_state":"PARTIAL_EXISTING"}
+      ]
+    },
+    "infrastructure": {
+      "selected_local_candidates": [
+        {"authority":"Puerto Rico Planning Board / source agencies","service":"https://sigejp.pr.gov/server/rest/services/Instalaciones_Cr%C3%ADticas_para_Manejo_de_Emergencias_MIL1/MapServer","layers":["Aeropuertos","Puertos","Plantas de Generación","Subestaciones","Planta de Alcantarillado Sanitario","Plantas de Filtración de Agua","Represas","Torres de Comunicaciones"],"stable_id_note":"Several layers expose FacilityID; identity must be adjudicated per producer/source agency","freeze_state":"OPEN"},
+        {"authority":"PRPB / DDEC / PRIDCO","service":"https://sigejp.pr.gov/server/rest/services/Public_Assets/Data_Public_Assets/MapServer","freeze_state":"OPEN"}
+      ]
+    },
+    "poi": {
+      "selected_authority": null,
+      "rule": "No single source is authoritative for all federation POIs. Preserve source manifestations and adjudicate canonical identity by stable IDs/evidence; OSM/name/proximity cannot self-promote.",
+      "freeze_state": "OPEN"
+    },
+    "aviation": {
+      "selected_authority": {
+        "authority": "FAA",
+        "dataset": "28 Day NASR Subscription",
+        "catalog": "https://www.faa.gov/air_traffic/flight_info/aeronav/Aero_Data/NASR_Subscription/",
+        "available_groups": ["APT", "ARB", "CLS_ARSP", "NAV", "RDR", "MTR", "MAA", "PJA"],
+        "cycle_note": "FAA page exposes August 06, 2026 as Current and September 03, 2026 as Preview on the inspected manifestation; effective-state contradiction must be resolved before freeze",
+        "freeze_state": "OPEN"
+      }
+    },
+    "bathymetry": {
+      "selected_authorities": [
+        {"authority":"NOAA NCEI","dataset":"Puerto Rico CUDEM 1/9 arc-second bathymetric-topographic tiles","horizontal_crs":"EPSG:4269","vertical_datum":"Puerto Rico Vertical Datum of 2002","freeze_state":"OPEN"},
+        {"authority":"GEBCO","producer":"skywatcher-pr","role":"secondary/global bathymetry manifestation and terrain derivatives","freeze_state":"PARTIAL_EXISTING"}
+      ]
+    }
+  }
+}
