@@ -8,6 +8,7 @@ available. Unit gates always verify that runtime installation is disabled.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -76,7 +77,13 @@ def test_connect_disables_extension_network_before_load(monkeypatch):
         ("execute", "SET autoload_known_extensions = false"),
         ("load_extension", "spatial"),
     ]
-    assert not any("INSTALL" in statement.upper() for _, statement in fake.calls)
+    # Word-boundary match: an `INSTALL <ext>` statement, not the unrelated
+    # `autoinstall_known_extensions` setting name (which also contains the
+    # substring "INSTALL" and would otherwise false-positive here).
+    assert not any(
+        re.search(r"\bINSTALL\b", statement, re.IGNORECASE)
+        for _, statement in fake.calls
+    )
 
 
 def test_connect_loads_explicit_local_extension(monkeypatch, tmp_path):
