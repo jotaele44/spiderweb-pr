@@ -7,33 +7,25 @@ geospatial question.
 ## When to use it
 
 - **Ad hoc spatial joins or predicate queries** across GeoJSON artifacts
-  already on disk (`data/municipios.geojson`, TIGER layers, gazetteer
-  output, ...) — a `spatial_join()` call and a predicate name, instead of
-  loading both files into GeoPandas and writing a join by hand.
-- **One-off exploratory queries** an analyst wants to run interactively.
+  already on disk (`data/municipios.geojson`, TIGER layers, gazetteer output,
+  and similar sources).
+- **One-off exploratory queries** that benefit from SQL predicates and joins.
 
-## When *not* to use it
+## When not to use it
 
 - `scripts/geocode_pr.py`'s `municipio_from_point` stays the hot path for
-  harvester reverse-geocoding — it's stdlib-only by design, with no runtime
-  dependency to install. `duckdb_engine.municipio_from_point` is an
-  additive, SQL-based alternative for new call sites that specifically want
-  it, not a replacement.
-- Anything already expressed cleanly with GeoPandas/Shapely (the `geo`
-  extra) doesn't need to be rewritten in SQL just because this module
-  exists.
+  harvester reverse-geocoding. It is standard-library-only by design.
+- Existing GeoPandas/Shapely workflows do not need to be rewritten merely
+  because the DuckDB adapter exists.
 
-## Why DuckDB, not Spark/Sedona/Wherobots
+## Why DuckDB, not a hosted spatial service
 
-Every dataset this repo processes is Puerto-Rico-scoped and megabytes in
-size (see `RECOMMENDATIONS.md`) — there's no documented scaling bottleneck
-anywhere in this codebase. DuckDB's `spatial` extension gives real spatial
-SQL (joins, predicates, `ST_*` functions) without a cluster, an external
-service, or a new operational surface — the right amount of tooling for
-this repo's actual scale. Reach for something heavier only if a producer
-starts ingesting data that no longer fits single-machine memory.
+The repository's active datasets are Puerto-Rico-scoped and fit local
+single-machine processing. DuckDB spatial supplies useful `ST_*` operations
+without a cluster, hosted database, account, or metered service. The mature
+local GIS stack remains preserved.
 
-## Install
+## Python dependency
 
 ```bash
 pip install -r requirements-spatial.txt
@@ -41,28 +33,62 @@ pip install -r requirements-spatial.txt
 pip install -c constraints.txt -e ".[spatial]"
 ```
 
-The `spatial` DuckDB extension itself is installed/loaded at runtime
-(`INSTALL spatial; LOAD spatial;`, handled by `duckdb_engine.connect()`) —
-not a separate pip package.
+Installing the Python package does not authorize a later runtime extension
+download.
+
+## Spatial extension acquisition boundary
+
+`duckdb_engine.connect()` now disables DuckDB's known-extension auto-install
+and auto-load settings before loading spatial. It never executes `INSTALL`.
+
+A release or analysis environment must provide spatial through one of these
+local paths:
+
+1. DuckDB's already populated local extension directory; or
+2. a retained extension file named by
+   `SPIDERWEB_DUCKDB_SPATIAL_EXTENSION`.
+
+```bash
+export SPIDERWEB_DUCKDB_SPATIAL_EXTENSION=/opt/spiderweb/extensions/spatial.duckdb_extension
+```
+
+The extension file must eventually appear in the offline dependency manifest
+with, at minimum:
+
+- DuckDB version and platform/architecture binding;
+- original acquisition source;
+- retrieval UTC;
+- byte size;
+- SHA-256;
+- license and redistribution status;
+- the release profiles that consume it.
+
+If no local extension is available, the adapter raises
+`SpatialExtensionUnavailable`. It does not attempt the network and does not
+silently fall back to incomplete geometry behavior.
+
+The current PR closes the **runtime download** defect only. It does not certify
+`SELF_CONTAINED_RELEASE` or `OFFLINE_REPRODUCIBLE_BUILD` until the actual
+extension bytes and manifest are frozen and the disconnected tests run.
 
 ## API
 
 ```python
 from spiderweb.spatial.duckdb_engine import municipio_from_point, spatial_join
 
-# Point-in-polygon reverse geocode (same contract as scripts/geocode_pr.py).
 municipio_from_point(18.42, -66.07)  # -> "San Juan"
 
-# Spatial join between any two GeoJSON files.
 spatial_join(
     "data/municipios.geojson",
     "data/some_layer.geojson",
-    predicate="ST_Intersects",  # or ST_Contains / ST_Within / ST_Touches / ST_Crosses / ST_Overlaps
+    predicate="ST_Intersects",
 )
 ```
 
-`predicate` is checked against an explicit allow-list of DuckDB spatial's
-binary predicate functions, so it can't be used to inject arbitrary SQL.
+`predicate` is checked against an explicit allowlist of DuckDB spatial binary
+predicate functions, preventing arbitrary SQL injection through that argument.
 
-See `tests/test_duckdb_spatial.py` for more examples, including parity
-checks against `scripts/geocode_pr.py`'s hand-rolled point-in-polygon.
+`tests/test_duckdb_spatial.py` always verifies the no-install behavior with a
+controlled connection. Geometry parity tests execute when locally retained
+spatial-extension bytes are available and otherwise skip with an explicit
+reason rather than reaching the network.
