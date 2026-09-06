@@ -23,7 +23,11 @@ SCHEMA_VERSION = "1.0.0-poc"
 FINAL_STATES = {"WIRED", "DEAD_SURFACE", "STUB", "UNRESOLVED"}
 SIDE_EFFECT_CLASS = "UNKNOWN_BLOCKED"
 SOURCE_SUFFIXES = {".jsx", ".tsx"}
-BUTTON_RE = re.compile(r"<button\b(?P<attrs>[^>]*)>(?P<body>.*?)</button\s*>", re.I | re.S)
+# The attrs group must not terminate on the `>` inside a `=>` arrow-function
+# body (e.g. `onClick={() => choose('x')}`) — `=>` is matched as one unit,
+# ahead of the bare-`>` fallback, so the opening tag's own closing `>` is
+# still what ends the match.
+BUTTON_RE = re.compile(r"<button\b(?P<attrs>(?:=>|[^>])*)>(?P<body>.*?)</button\s*>", re.I | re.S)
 ONCLICK_RE = re.compile(r"\bonClick\s*=\s*\{(?P<expr>[^{}]*(?:\{[^{}]*\}[^{}]*)*)\}", re.S)
 TYPE_RE = re.compile(r"\btype\s*=\s*[\"'](?P<type>[^\"']+)[\"']", re.I)
 DISABLED_RE = re.compile(r"\bdisabled(?:\s*=\s*(?:\{?true\}?|[\"']disabled[\"']))?\b", re.I)
