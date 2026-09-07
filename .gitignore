@@ -396,3 +396,8 @@ outputs/ncei_coastal_dem/**/*.tiff
 outputs/ncei_coastal_dem/**/*.vrt
 outputs/ncei_coastal_dem/**/*.ovr
 outputs/ncei_coastal_dem/**/*.aux.xml
+
+# Federation spatial geometry layer: derivable build product (~62 MiB).
+# Regenerate with `python -m pipeline.build_cell_geometry`; CI compares sha256
+# against registry/spatial/geometry/pr_grid_geometry_sha256.txt.
+registry/spatial/geometry/pr_grid_cell_geometry.geojsonl
