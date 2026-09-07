@@ -1,4 +1,4 @@
-name: Federation Spatial Reference Freeze
+name: Federation Current-Service Spatial Reference Freeze
 
 on:
   pull_request:
@@ -16,11 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch and freeze current 2026 Census manifestations
+      - name: Fetch and freeze current-service Census manifestations
         run: |
           python3 scripts/freeze_federation_reference_v1_1.py \
             --output-dir artifacts/federation-spatial-reference-freeze
+      - name: Validate freeze pagination and provenance regressions
+        run: python3 -m pytest -q tests/test_freeze_federation_reference_v1_1.py
       - name: Upload frozen reference manifestations
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: federation-spatial-reference-freeze

@@ -18,6 +18,8 @@ Define the bounded GIS responsibility model for aguayluz-pr, moneysweep-pr, skyw
 10. Hard evidence overrides heuristics.
 11. Every cross-repo join must assert source count, retained count, excluded count, join cardinality, no unintended multiplication, and arithmetic closure.
 12. Certification requires frozen inputs, explicit inclusion/exclusion, passed positive/negative regression gates, zero material unresolved residue inside the claim, and frozen hashes.
+13. Mutable ArcGIS freezes preserve the independent count response and every ordered raw page by path, byte size, and SHA-256; generated logical composites are labeled separately and never presented as source-byte identity.
+14. Configured vintage labels remain ASSUMPTION until independently supported; the raw layer metadata response is frozen before counts/features and its stable-ID field type and record cap are validated.
 
 ## Repository roles
 ### spiderweb-pr — spatial substrate owner

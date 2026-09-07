@@ -1,7 +1,21 @@
 {
   "allowed_change_paths": [
     ".claude/skillpacks/",
+    ".github/workflows/federation-spatial-reference-freeze.yml",
     ".github/workflows/unified-skillpack-conformance.yml",
+    "docs/FEDERATION_SPATIAL_ARCHITECTURE_V1.md",
+    "federation/spatial_service_v1_1.py",
+    "registry/spatial/federation_spatial_identity_v1_1.json",
+    "registry/spatial/reference_source_candidates_v1_1.json",
+    "schemas/federation_spatial_identity_v1_1.schema.json",
+    "schemas/federation_spatial_migration_receipt_v1_1.schema.json",
+    "scripts/freeze_federation_reference_v1_1.py",
+    "scripts/validate_federation_spatial_identity_v1_1.py",
+    "scripts/validate_federation_spatial_migration_receipt_v1_1.py",
+    "tests/test_federation_spatial_identity_v1_1.py",
+    "tests/test_federation_spatial_migration_receipt_v1_1.py",
+    "tests/test_federation_spatial_service_v1_1.py",
+    "tests/test_freeze_federation_reference_v1_1.py",
     "tools/validate_unified_skillpacks.py",
     "tests/test_unified_skillpack_conformance.py"
   ],

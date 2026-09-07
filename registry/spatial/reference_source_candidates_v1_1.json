@@ -6,7 +6,8 @@
     "municipios": {
       "selected_authority": "U.S. Census Bureau TIGER",
       "current_candidate": {
-        "vintage": "2026-01-01",
+        "declared_vintage": "2026-01-01",
+        "declared_vintage_evidence_state": "ASSUMPTION",
         "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/82",
         "stable_id": "GEOID",
         "state_filter": "72",
@@ -23,7 +24,8 @@
     "barrios": {
       "selected_authority": "U.S. Census Bureau TIGER County Subdivisions",
       "current_candidate": {
-        "vintage": "2026-01-01",
+        "declared_vintage": "2026-01-01",
+        "declared_vintage_evidence_state": "ASSUMPTION",
         "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/1",
         "stable_id": "GEOID",
         "state_filter": "72",

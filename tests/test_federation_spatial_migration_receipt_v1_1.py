@@ -1,8 +1,13 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "validate_federation_spatial_migration_receipt_v1_1.py"
+SCRIPT = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "validate_federation_spatial_migration_receipt_v1_1.py"
+)
 spec = importlib.util.spec_from_file_location("spatial_migration_receipt", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
@@ -43,7 +48,9 @@ def test_one_to_one_multiplication_fails():
 
 
 def test_one_to_many_requires_explicit_multiplication_receipt():
-    problems = module.validate(receipt(declared_cardinality="1:N", join_output_count=12))
+    problems = module.validate(
+        receipt(declared_cardinality="1:N", join_output_count=12)
+    )
     assert any("multiplication not declared" in problem for problem in problems)
 
 
@@ -53,7 +60,9 @@ def test_one_to_many_explicit_multiplication_passes():
             declared_cardinality="1:N",
             join_output_count=12,
             multiplication_expected=True,
-            multiplication_reason="one source asset binds to multiple historical geometry manifestations",
+            multiplication_reason=(
+                "one source asset binds to multiple historical geometry manifestations"
+            ),
         )
     )
     assert problems == []
@@ -76,3 +85,42 @@ def test_unresolved_cardinality_requires_unresolved_rows():
         )
     )
     assert any("requires unresolved_count" in problem for problem in problems)
+
+
+@pytest.mark.parametrize("value", ["false", 0, 1, None])
+def test_multiplication_expected_requires_real_boolean(value):
+    problems = module.validate(receipt(multiplication_expected=value))
+    assert any("must be a boolean" in problem for problem in problems)
+
+
+def test_declared_multiplication_must_be_observed():
+    problems = module.validate(
+        receipt(
+            multiplication_expected=True,
+            multiplication_reason="expected one-to-many expansion",
+        )
+    )
+    assert any("was not observed" in problem for problem in problems)
+
+
+def test_manifestation_lists_reject_duplicates_and_blanks():
+    problems = module.validate(
+        receipt(
+            source_manifestation_ids=["source-1", "source-1"],
+            output_manifestation_ids=[" "],
+        )
+    )
+    assert any(
+        "source_manifestation_ids must not contain duplicates" in problem
+        for problem in problems
+    )
+    assert any(
+        "output_manifestation_ids must contain only non-empty strings" in problem
+        for problem in problems
+    )
+
+
+def test_unknown_fields_and_producers_fail_closed():
+    problems = module.validate(receipt(producer_repo="unknown-pr", invented=True))
+    assert any("unsupported producer_repo" in problem for problem in problems)
+    assert any("unexpected fields" in problem for problem in problems)
