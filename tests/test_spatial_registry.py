@@ -52,7 +52,11 @@ def _catalog_layer_ids() -> set[str]:
 # ─── Boundary registry ──────────────────────────────────────────────────────────
 
 
-def test_boundary_registry_has_all_four_kinds():
+def test_boundary_registry_has_all_three_boundary_kinds():
+    """Three *boundary* kinds. The fourth object in the design — the context
+    buffer — is a distance policy, not a boundary, so it lives in its own
+    top-level `context_buffer` key rather than in `boundaries` (see
+    test_context_buffer_bounds_are_consistent)."""
     reg = _boundaries()
     kinds = {b["kind"] for b in reg["boundaries"]}
     assert kinds == {"core", "eez_legal", "analytical_domain"}, kinds
@@ -239,3 +243,35 @@ def test_spatial_boundary_geometry_route(client):
 def test_spatial_boundary_geometry_route_404s_unknown_id(client):
     resp = client.get("/spatial/boundaries/NOT_A_REAL_BOUNDARY.geojson")
     assert resp.status_code == 404
+
+
+@pytest.mark.parametrize(
+    "registry",
+    [
+        pytest.param(
+            {"boundaries": [{"status": "resolved"}]},
+            id="entry-missing-boundary-id",
+        ),
+        pytest.param(
+            {"boundaries": [None, "not-a-mapping", 7]},
+            id="entries-not-mappings",
+        ),
+        pytest.param(
+            {"boundaries": [{"boundary_id": "PR_CORE_BOUNDARY"}]},
+            id="entry-missing-status-and-geometry-ref",
+        ),
+        pytest.param({"boundaries": "not-a-list"}, id="boundaries-not-a-list"),
+        pytest.param({}, id="boundaries-key-absent"),
+    ],
+)
+def test_malformed_boundary_registry_never_500s(client, monkeypatch, registry):
+    """A hand-edited or half-written registry must degrade to a 4xx/503 for the
+    affected entry, not a 500. The loader is deliberately defensive about
+    unparseable YAML; structurally-parseable-but-wrong-shaped YAML gets past it,
+    so the route has to be defensive too."""
+    from server.backend import main as backend_main
+
+    monkeypatch.setattr(backend_main, "_BOUNDARY_REGISTRY", registry)
+    resp = client.get("/spatial/boundaries/PR_CORE_BOUNDARY.geojson")
+    assert resp.status_code != 500, resp.text
+    assert resp.status_code in (404, 503), resp.text
