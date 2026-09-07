@@ -127,6 +127,13 @@ def test_municipios_density_unknown_layer_rejected(client):
     assert resp.status_code == 400
 
 
+def test_municipios_density_rejects_allowlisted_layer_without_municipality_contract(client):
+    resp = client.get("/geo/municipios/density?layer=sites")
+
+    assert resp.status_code == 400
+    assert "not eligible" in resp.json()["detail"]
+
+
 @pytest.mark.smoke
 def test_municipios_density_reconciles_against_total(client):
     """by_geoid's sum plus unmatched must always equal total_features,
@@ -137,6 +144,11 @@ def test_municipios_density_reconciles_against_total(client):
     payload = resp.json()
     matched_total = sum(payload["by_geoid"].values()) + payload["unmatched"]
     assert matched_total == payload["total_features"]
+    assert payload["matched_count"] == sum(payload["by_geoid"].values())
+    assert sum(payload["unresolved_by_name"].values()) == payload["unmatched"]
+    assert payload["scope"]["identity_effect"] == "NONE"
+    assert payload["scope"]["normalization"] == "NONE"
+    assert payload["provenance"]["layer_source"]["row_count"] == payload["total_features"]
 
 
 @pytest.mark.smoke
@@ -152,3 +164,23 @@ def test_municipios_density_matches_when_municipios_loaded(client):
     matched = payload["total_features"] - payload["unmatched"]
     total = payload["total_features"]
     assert matched / total > 0.9, f"only {matched}/{total} gazetteer features matched"
+
+
+@pytest.mark.parametrize(
+    "features",
+    [
+        [
+            {"properties": {"NAME": "A", "GEOID": "1"}},
+            {"properties": {"NAME": "A", "GEOID": "2"}},
+        ],
+        [
+            {"properties": {"NAME": "A", "GEOID": "1"}},
+            {"properties": {"NAME": "B", "GEOID": "1"}},
+        ],
+    ],
+)
+def test_municipio_density_index_rejects_duplicate_names_and_geoids(features):
+    from server.backend.main import _build_municipio_geoid_index
+
+    with pytest.raises(ValueError):
+        _build_municipio_geoid_index(features)

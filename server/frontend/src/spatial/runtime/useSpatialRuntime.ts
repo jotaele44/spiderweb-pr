@@ -37,6 +37,7 @@ export function useSpatialRuntime(
 
     const bootMapLibre = async (): Promise<{ runtime: SpatialRuntime; mapLibre: MapLibreRuntime }> => {
       const runtime = createSpatialRuntime("maplibre");
+      runtimeRef.current = runtime;
       await runtime.initialize(host, config);
       return { runtime, mapLibre: runtime };
     };

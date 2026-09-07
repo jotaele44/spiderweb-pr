@@ -11,6 +11,7 @@ Start: uvicorn server.backend.main:app --reload --port 8000
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import sqlite3
@@ -317,6 +318,7 @@ _ALLOWED_LAYERS = {
     for layer in fam.get("layers", [])
 } or _FALLBACK_LAYERS
 _EMPTY_FC: dict = {"type": "FeatureCollection", "features": []}
+_DENSITY_LAYERS = {"gazetteer_pr_domestic_names"}
 
 
 # Layers whose canonical artifact doesn't live at the generic outputs/data/root
@@ -342,6 +344,55 @@ def _find_geojson(layer: str) -> Optional[Path]:
         ROOT / f"{layer}.geojson",
     ]
     return next((p for p in candidates if p.exists()), None)
+
+
+async def _load_geojson_source(path: Optional[Path], expected_path: Path) -> tuple[list[dict], dict]:
+    if path is None:
+        return [], {
+            "path": str(expected_path.relative_to(ROOT)),
+            "exists": False,
+            "sha256": None,
+            "row_count": 0,
+        }
+    raw = await asyncio.to_thread(path.read_bytes)
+    try:
+        document = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise HTTPException(500, f"invalid GeoJSON source: {path.name}") from exc
+    features = document.get("features")
+    if document.get("type") != "FeatureCollection" or not isinstance(features, list):
+        raise HTTPException(500, f"invalid FeatureCollection source: {path.name}")
+    try:
+        display_path = str(path.relative_to(ROOT))
+    except ValueError:
+        display_path = str(path)
+    return features, {
+        "path": display_path,
+        "exists": True,
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "row_count": len(features),
+    }
+
+
+def _build_municipio_geoid_index(features: list[dict]) -> dict[str, str]:
+    name_to_geoid: dict[str, str] = {}
+    geoid_to_name: dict[str, str] = {}
+    for feature in features:
+        properties = feature.get("properties")
+        if not isinstance(properties, dict):
+            raise ValueError("municipio feature properties must be an object")
+        name = properties.get("NAME") or properties.get("name")
+        geoid = properties.get("GEOID") or properties.get("geoid")
+        if not isinstance(name, str) or not name or geoid in (None, ""):
+            raise ValueError("municipio feature requires non-empty NAME/name and GEOID/geoid")
+        geoid = str(geoid)
+        if name in name_to_geoid:
+            raise ValueError(f"duplicate municipio name: {name}")
+        if geoid in geoid_to_name:
+            raise ValueError(f"duplicate municipio GEOID: {geoid}")
+        name_to_geoid[name] = geoid
+        geoid_to_name[geoid] = name
+    return name_to_geoid
 
 
 async def _sites_from_db() -> dict:
@@ -411,41 +462,64 @@ async def geo_municipios_density(layer: str = "gazetteer_pr_domestic_names"):
     yet, the same graceful-empty contract every other geo endpoint here
     follows.
     """
-    if layer not in _ALLOWED_LAYERS:
-        raise HTTPException(400, f"unknown layer '{layer}'")
+    if layer not in _DENSITY_LAYERS:
+        raise HTTPException(400, f"layer '{layer}' is not eligible for municipio density")
     layer_path = _find_geojson(layer)
-    features = (
-        json.loads(layer_path.read_text(encoding="utf-8")).get("features", [])
-        if layer_path is not None
-        else []
+    features, layer_manifest = await _load_geojson_source(
+        layer_path,
+        _LAYER_PATH_OVERRIDES[layer],
     )
 
     muni_path = _find_geojson("municipios")
-    name_to_geoid: dict[str, str] = {}
-    if muni_path is not None:
-        muni_doc = json.loads(muni_path.read_text(encoding="utf-8"))
-        for f in muni_doc.get("features", []):
-            props = f.get("properties") or {}
-            name = props.get("NAME") or props.get("name")
-            geoid = props.get("GEOID") or props.get("geoid")
-            if name and geoid:
-                name_to_geoid[name] = str(geoid)
+    municipio_features, municipio_manifest = await _load_geojson_source(
+        muni_path,
+        ROOT / "data" / "municipios.geojson",
+    )
+    try:
+        name_to_geoid = _build_municipio_geoid_index(municipio_features)
+    except ValueError as exc:
+        raise HTTPException(500, str(exc)) from exc
 
     by_geoid: Counter[str] = Counter()
-    unmatched = 0
-    for f in features:
-        name = (f.get("properties") or {}).get("municipality")
+    unresolved_by_name: Counter[str] = Counter()
+    for feature in features:
+        properties = feature.get("properties") or {}
+        name = properties.get("municipality") if isinstance(properties, dict) else None
         geoid = name_to_geoid.get(name) if name else None
         if geoid is None:
-            unmatched += 1
+            unresolved_by_name[name if isinstance(name, str) and name else "__NULL__"] += 1
             continue
         by_geoid[geoid] += 1
 
+    matched_count = sum(by_geoid.values())
+    unmatched = sum(unresolved_by_name.values())
+    total_features = len(features)
+    scope_state = (
+        "UNRESOLVED"
+        if total_features > 0 and matched_count == 0
+        else "CANDIDATE_NOT_IDENTITY"
+        if unmatched > 0
+        else "PASS"
+    )
     return {
         "by_geoid": dict(by_geoid),
-        "total_features": len(features),
+        "matched_count": matched_count,
+        "total_features": total_features,
         "unmatched": unmatched,
+        "unresolved_by_name": dict(unresolved_by_name),
         "layer": layer,
+        "scope": {
+            "aggregation_key": "feature.properties.municipality exact source string",
+            "normalization": "NONE",
+            "identity_effect": "NONE",
+            "geometry_effect": "NONE",
+            "state": scope_state,
+        },
+        "provenance": {
+            "layer_source": layer_manifest,
+            "municipio_source": municipio_manifest,
+            "loaded_at": "request_time",
+        },
     }
 
 
