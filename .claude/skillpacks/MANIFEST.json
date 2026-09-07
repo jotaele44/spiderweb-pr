@@ -3,7 +3,13 @@
     ".claude/skillpacks/",
     ".github/workflows/unified-skillpack-conformance.yml",
     "tools/validate_unified_skillpacks.py",
-    "tests/test_unified_skillpack_conformance.py"
+    "tests/test_unified_skillpack_conformance.py",
+    ".federation/flight_telemetry_binding.json",
+    ".federation/flight_telemetry_contract.json",
+    ".github/workflows/flight-telemetry-contract.yml",
+    "scripts/discover_flight_provider_capabilities.py",
+    "scripts/validate_flight_telemetry_contract.py",
+    "scripts/validate_flight_telemetry_federation_lockstep.py"
   ],
   "capabilities": [
     {
