@@ -6,8 +6,10 @@ on:
       - '.github/workflows/federation-sige-admin-reference-freeze.yml'
       - 'registry/spatial/admin_boundary_adjudication_v1_1.json'
       - 'registry/spatial/current_service_metadata_evidence_v1_1.json'
+      - 'registry/spatial/pr_archipelago_evidence_bridge_v1_1.json'
       - 'scripts/freeze_sige_admin_reference_v1_1.py'
       - 'scripts/adjudicate_admin_boundaries_v1_1.py'
+      - 'scripts/validate_pr_archipelago_evidence_bridge_v1_1.py'
       - 'tests/test_freeze_sige_admin_reference_v1_1.py'
       - 'tests/test_adjudicate_admin_boundaries_v1_1.py'
   workflow_dispatch:
@@ -27,6 +29,8 @@ jobs:
           python3 -m pytest -q
           tests/test_freeze_sige_admin_reference_v1_1.py
           tests/test_adjudicate_admin_boundaries_v1_1.py
+      - name: Validate frozen archipelago evidence bridge
+        run: python3 scripts/validate_pr_archipelago_evidence_bridge_v1_1.py
       - name: Freeze SIGE source-native and comparison manifestations
         run: >-
           python3 scripts/freeze_sige_admin_reference_v1_1.py
