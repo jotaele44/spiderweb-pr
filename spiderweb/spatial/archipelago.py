@@ -60,6 +60,18 @@ class GeometryOrigin(str, Enum):
     UNRESOLVED = "UNRESOLVED"
 
 
+class GeometryDerivationState(str, Enum):
+    """Processing lineage; never canonical geographic identity."""
+
+    SOURCE_NATIVE = "SOURCE_NATIVE"
+    FULL = "FULL"
+    CANONICALIZED_FULL = "CANONICALIZED_FULL"
+    SIMPLIFIED = "SIMPLIFIED"
+    DELIVERY_MINIMIZED = "DELIVERY_MINIMIZED"
+    MVT = "MVT"
+    UNRESOLVED = "UNRESOLVED"
+
+
 class ArchipelagicPosition(str, Enum):
     ON_MAIN_ISLAND = "ON_MAIN_ISLAND"
     ON_OUTLYING_ISLAND = "ON_OUTLYING_ISLAND"
@@ -120,6 +132,10 @@ class GeometryManifestation:
     snapshot_sha256: Optional[str] = None
     valid_from: Optional[str] = None
     valid_to: Optional[str] = None
+    # Optional defaults preserve legacy readers; strict DAG admission rejects
+    # unresolved lineage rather than inventing a parent for historical records.
+    parent_manifestation_id: Optional[str] = None
+    derivation_state: GeometryDerivationState = GeometryDerivationState.UNRESOLVED
 
 
 @dataclass(frozen=True)
