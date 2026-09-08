@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import type * as maplibregl from "maplibre-gl";
 import type { SpatialRuntime, SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
 import { createSpatialRuntime, createCesiumRuntime, type SpatialRuntimeMode } from "./RuntimeFactory";
-import type { MapLibreRuntime } from "./MapLibreRuntime";
+import { createMapLibreSpatialAdapters } from "./MapLibreSpatialAdapters";
+import { createCameraOnlySpatialAdapters } from "./LimitedSpatialAdapters";
+import type { SpatialAdapters, SpatialCapabilitySet } from "./SpatialAdapters";
 
 /**
- * Wires a SpatialRuntime's lifecycle to a host element. `mapRef` exposes the
- * raw maplibregl.Map instance as a transitional escape hatch for existing
- * layer/marker code that hasn't moved onto a generic layer adapter yet — see
- * MapLibreRuntime.getMapLibreInstance. It's null whenever the active runtime
- * is Cesium.
+ * Wires a SpatialRuntime's lifecycle to a host element and exposes only the
+ * semantic adapter contract to domain modules. Raw MapLibre/Cesium objects stay
+ * inside renderer infrastructure and cannot leak into SpatialIntelligence.
  *
  * `mode` requests "maplibre" or "cesium"; `activeMode` reports what's
- * actually running — they differ when Cesium fails to initialize (no WebGL,
- * etc.) and this hook falls back to MapLibre, surfacing why via
- * `fallbackReason` so the caller can show a notice instead of failing silently.
+ * actually running — they differ when Cesium fails to initialize and this
+ * hook falls back to MapLibre while surfacing the reason.
  */
 export function useSpatialRuntime(
   config: SpatialSceneConfig,
@@ -22,7 +20,8 @@ export function useSpatialRuntime(
 ) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const runtimeRef = useRef<SpatialRuntime | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const adaptersRef = useRef<SpatialAdapters | null>(null);
+  const [capabilities, setCapabilities] = useState<SpatialCapabilitySet | null>(null);
   const [ready, setReady] = useState(false);
   const [tilesFailed, setTilesFailed] = useState(false);
   const [activeMode, setActiveMode] = useState<SpatialRuntimeMode>(mode);
@@ -35,36 +34,42 @@ export function useSpatialRuntime(
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     let unsubscribeError: Unsubscribe = () => {};
 
-    const bootMapLibre = async (): Promise<{ runtime: SpatialRuntime; mapLibre: MapLibreRuntime }> => {
-      const runtime = createSpatialRuntime("maplibre");
-      await runtime.initialize(host, config);
-      return { runtime, mapLibre: runtime };
+    const bootMapLibre = async (): Promise<{ runtime: SpatialRuntime; adapters: SpatialAdapters }> => {
+      const mapLibre = createSpatialRuntime("maplibre");
+      await mapLibre.initialize(host, config);
+      const map = mapLibre.getMapLibreInstance();
+      if (!map) {
+        mapLibre.destroy();
+        throw new Error("MapLibre initialized without a map instance");
+      }
+      return { runtime: mapLibre, adapters: createMapLibreSpatialAdapters(map, mapLibre) };
     };
 
     const boot = async () => {
       let resolvedMode: SpatialRuntimeMode = mode;
       let fallback: string | null = null;
       let runtime: SpatialRuntime;
-      let mapLibre: MapLibreRuntime | null = null;
+      let adapters: SpatialAdapters;
 
       if (mode === "cesium") {
         const cesiumRuntime = await createCesiumRuntime();
         try {
           await cesiumRuntime.initialize(host, config);
           runtime = cesiumRuntime;
+          adapters = createCameraOnlySpatialAdapters("cesium", cesiumRuntime);
         } catch (err) {
           cesiumRuntime.destroy();
           console.error("Cesium runtime failed to initialize — falling back to MapLibre:", err);
           const fallbackBoot = await bootMapLibre();
           runtime = fallbackBoot.runtime;
-          mapLibre = fallbackBoot.mapLibre;
+          adapters = fallbackBoot.adapters;
           resolvedMode = "maplibre";
           fallback = err instanceof Error ? err.message : "3D runtime unavailable";
         }
       } else {
         const mapLibreBoot = await bootMapLibre();
         runtime = mapLibreBoot.runtime;
-        mapLibre = mapLibreBoot.mapLibre;
+        adapters = mapLibreBoot.adapters;
       }
 
       if (cancelled) {
@@ -73,7 +78,8 @@ export function useSpatialRuntime(
       }
       unsubscribeError = runtime.onBasemapError(() => setTilesFailed(true));
       runtimeRef.current = runtime;
-      mapRef.current = mapLibre?.getMapLibreInstance() ?? null;
+      adaptersRef.current = adapters;
+      setCapabilities({ ...adapters.capabilities });
       setActiveMode(resolvedMode);
       setFallbackReason(fallback);
       setReady(true);
@@ -86,21 +92,16 @@ export function useSpatialRuntime(
       unsubscribeError();
       runtimeRef.current?.destroy();
       runtimeRef.current = null;
-      mapRef.current = null;
+      adaptersRef.current = null;
+      setCapabilities(null);
       setReady(false);
     };
     // config is a stable module-level constant (DEFAULT_REGIONAL_SCENE_CONFIG);
     // mode changes intentionally tear down and reboot the runtime (2D/3D switch).
   }, [config, mode]);
 
-  // Container-size tracking, independent of the boot effect above. MapLibre's
-  // canvas auto-fills its container via its own internal ResizeObserver;
-  // Cesium's does not — it only sizes its canvas at construction and on
-  // window resize, so a layout shift that doesn't change the window size
-  // (e.g. the header row growing when the mode-toggle label changes) leaves
-  // its canvas stuck at a stale size. One ResizeObserver here covers both
-  // runtimes generically rather than hand-wiring every layout-shifting state
-  // value into a resize effect.
+  // Container-size tracking stays renderer-neutral and uses the runtime
+  // lifecycle itself, never a raw renderer instance.
   useEffect(() => {
     const host = hostRef.current;
     if (!host || typeof ResizeObserver === "undefined") return;
@@ -117,7 +118,7 @@ export function useSpatialRuntime(
       if (frame !== null) window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
         frame = null;
-        runtimeRef.current?.resize();
+        adaptersRef.current?.camera.resize();
       });
     });
     observer.observe(host);
@@ -129,8 +130,9 @@ export function useSpatialRuntime(
 
   return {
     hostRef,
-    mapRef,
+    adaptersRef,
     runtimeRef,
+    capabilities,
     ready,
     tilesFailed,
     setTilesFailed,
