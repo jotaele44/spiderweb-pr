@@ -53,7 +53,6 @@ interface PointLayerConfig {
   label: string;
 }
 
-// Kept as a renderer-native point layer rather than thousands of DOM markers.
 const POINT_LAYERS: Record<PointLayerKey, PointLayerConfig> = {
   gazetteer_pr_domestic_names: { color: "#5eead4", radius: 2.5, defaultOn: false, label: "Natural features" },
 };
@@ -128,6 +127,9 @@ function useGeoJsonLayer(opts: {
 }) {
   const { adaptersRef, capabilities, ready, id, url, isOn, kind, style } = opts;
   const onStatus = useEffectEvent(opts.onStatus);
+  const styleRef = useRef(style);
+  styleRef.current = style;
+  const styleSignature = JSON.stringify(style);
 
   useEffect(() => {
     const adapters = adaptersRef.current;
@@ -155,9 +157,10 @@ function useGeoJsonLayer(opts: {
         const geojson = (await res.json()) as GeoJSON;
         if (cancelled) return;
         onStatus("source-ready");
+        const currentStyle = styleRef.current;
         const created = kind === "polygon"
-          ? await adapters.layer.addGeoJsonPolygonLayer({ id, data: geojson, style: style as PolygonRenderStyle })
-          : await adapters.layer.addGeoJsonCircleLayer({ id, data: geojson, style: style as CircleRenderStyle });
+          ? await adapters.layer.addGeoJsonPolygonLayer({ id, data: geojson, style: currentStyle as PolygonRenderStyle })
+          : await adapters.layer.addGeoJsonCircleLayer({ id, data: geojson, style: currentStyle as CircleRenderStyle });
         if (cancelled) {
           created.remove();
           return;
@@ -176,7 +179,7 @@ function useGeoJsonLayer(opts: {
       controller.abort();
       handle?.remove();
     };
-  }, [adaptersRef, capabilities, ready, id, url, isOn, kind, style]);
+  }, [adaptersRef, capabilities, ready, id, url, isOn, kind, styleSignature]);
 }
 
 function useVectorTileLayer(opts: {
@@ -192,6 +195,9 @@ function useVectorTileLayer(opts: {
 }) {
   const { adaptersRef, capabilities, ready, id, martinSourceId, sourceLayer, isOn, style } = opts;
   const onStatus = useEffectEvent(opts.onStatus);
+  const styleRef = useRef(style);
+  styleRef.current = style;
+  const styleSignature = JSON.stringify(style);
 
   useEffect(() => {
     const adapters = adaptersRef.current;
@@ -234,7 +240,7 @@ function useVectorTileLayer(opts: {
           sourceLayer,
           minZoom: tilejson.minzoom ?? 0,
           maxZoom: tilejson.maxzoom ?? 14,
-          style,
+          style: styleRef.current,
           onError: () => onStatus("error"),
         });
         if (cancelled) {
@@ -255,7 +261,7 @@ function useVectorTileLayer(opts: {
       controller.abort();
       handle?.remove();
     };
-  }, [adaptersRef, capabilities, ready, id, martinSourceId, sourceLayer, isOn, style]);
+  }, [adaptersRef, capabilities, ready, id, martinSourceId, sourceLayer, isOn, styleSignature]);
 }
 
 function usePolygonLayer(
@@ -336,20 +342,13 @@ export function SpatialIntelligence({
     infrastructure: true,
     sensitive: true,
     anomaly: true,
-    ...(Object.fromEntries(
-      POLYGON_LAYER_KEYS.map((k) => [k, POLYGON_LAYERS[k].defaultOn]),
-    ) as Record<PolygonLayerKey, boolean>),
-    ...(Object.fromEntries(
-      POINT_LAYER_KEYS.map((k) => [k, POINT_LAYERS[k].defaultOn]),
-    ) as Record<PointLayerKey, boolean>),
+    ...(Object.fromEntries(POLYGON_LAYER_KEYS.map((key) => [key, POLYGON_LAYERS[key].defaultOn])) as Record<PolygonLayerKey, boolean>),
+    ...(Object.fromEntries(POINT_LAYER_KEYS.map((key) => [key, POINT_LAYERS[key].defaultOn])) as Record<PointLayerKey, boolean>),
   }));
 
   const setStatus = (key: BackendLayerKey) => (status: LayerStatus) =>
-    setLayerStatus((prev) => (prev[key] === status ? prev : { ...prev, [key]: status }));
+    setLayerStatus((previous) => (previous[key] === status ? previous : { ...previous, [key]: status }));
 
-  // Martin remains the preferred MapLibre delivery path. A renderer that does
-  // not implement vector tiles falls back to the same canonical GeoJSON rather
-  // than silently losing municipios.
   const municipiosViaMartin = MUNICIPIOS_DELIVERY === "martin" && capabilities?.vectorTilePolygon === true;
 
   useVectorTileLayer({
@@ -363,25 +362,11 @@ export function SpatialIntelligence({
     style: polygonStyle("municipios"),
     onStatus: setStatus("municipios"),
   });
-  usePolygonLayer(
-    adaptersRef,
-    capabilities,
-    mapReady,
-    "municipios",
-    layers.municipios && !municipiosViaMartin,
-    setStatus("municipios"),
-  );
+  usePolygonLayer(adaptersRef, capabilities, mapReady, "municipios", layers.municipios && !municipiosViaMartin, setStatus("municipios"));
   usePolygonLayer(adaptersRef, capabilities, mapReady, "tracts", layers.tracts, setStatus("tracts"));
   usePolygonLayer(adaptersRef, capabilities, mapReady, "places", layers.places, setStatus("places"));
   usePolygonLayer(adaptersRef, capabilities, mapReady, "barrios", layers.barrios, setStatus("barrios"));
-  usePointLayer(
-    adaptersRef,
-    capabilities,
-    mapReady,
-    "gazetteer_pr_domestic_names",
-    layers.gazetteer_pr_domestic_names,
-    setStatus("gazetteer_pr_domestic_names"),
-  );
+  usePointLayer(adaptersRef, capabilities, mapReady, "gazetteer_pr_domestic_names", layers.gazetteer_pr_domestic_names, setStatus("gazetteer_pr_domestic_names"));
 
   useEffect(() => () => {
     markersRef.current.forEach((marker) => marker.remove());
@@ -396,9 +381,7 @@ export function SpatialIntelligence({
     if (!adapters.marker.supported) return;
 
     data.sites.forEach((site) => {
-      const contractTotal = data.contracts
-        .filter((contract) => contract.site === site.id)
-        .reduce((sum, contract) => sum + contract.amount, 0);
+      const contractTotal = data.contracts.filter((contract) => contract.site === site.id).reduce((sum, contract) => sum + contract.amount, 0);
       const anomaly = data.anomalies.find((item) => item.siteId === site.id);
       const visible =
         (layers.sensitive && (site.sensitive ?? false)) ||
@@ -474,85 +457,37 @@ export function SpatialIntelligence({
           <span className="subtle">Renderer-neutral layer control · contract, infrastructure, anomaly convergence</span>
         </div>
         <div className="row">
-          <button
-            className="act"
-            data-on={!layerPanelCollapsed}
-            aria-pressed={!layerPanelCollapsed}
-            onClick={() => setLayerPanelCollapsed((value) => !value)}
-            title="Toggle layer panel (L)"
-          >
+          <button className="act" data-on={!layerPanelCollapsed} aria-pressed={!layerPanelCollapsed} onClick={() => setLayerPanelCollapsed((value) => !value)} title="Toggle layer panel (L)">
             {layerPanelCollapsed ? "Show layers" : "Hide layers"}
           </button>
-          <button
-            className="act"
-            data-on={spatialMode === "cesium"}
-            onClick={() => setSpatialMode((mode) => (mode === "cesium" ? "maplibre" : "cesium"))}
-            title="Toggle 2D/3D scene"
-          >
+          <button className="act" data-on={spatialMode === "cesium"} onClick={() => setSpatialMode((mode) => (mode === "cesium" ? "maplibre" : "cesium"))} title="Toggle 2D/3D scene">
             {spatialMode === "cesium" ? "3D (regional preview)" : "2D"}
           </button>
           <Pill tone="info">{activeMode === "cesium" ? "Cesium (regional)" : "MapLibre GL JS"}</Pill>
         </div>
       </div>
-      {fallbackReason && (
-        <div className="map-note" role="status">
-          <span>3D scene unavailable ({fallbackReason}) — showing 2D instead.</span>
-        </div>
-      )}
-      <div
-        className="map-shell"
-        data-layer-collapsed={layerPanelCollapsed}
-        style={{ gridTemplateColumns: layerPanelCollapsed ? "1fr 0px" : "1fr 280px" }}
-      >
+      {fallbackReason && <div className="map-note" role="status"><span>3D scene unavailable ({fallbackReason}) — showing 2D instead.</span></div>}
+      <div className="map-shell" data-layer-collapsed={layerPanelCollapsed} style={{ gridTemplateColumns: layerPanelCollapsed ? "1fr 0px" : "1fr 280px" }}>
         <div className="map-col">
           <div ref={hostRef} className="map-host" />
-          {failedLayers.length > 0 && (
-            <div className="map-error" role="alert">
-              <span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span>
-            </div>
-          )}
-          {unsupportedLayers.length > 0 && (
-            <div className="map-note" role="status">
-              <span>Active renderer does not support: {unsupportedLayers.map(layerLabel).join(", ")}</span>
-            </div>
-          )}
-          {tilesFailed && (
-            <div className="map-note" role="status">
-              <span>Base map tiles unavailable (offline?)</span>
-              <button className="linklike" onClick={() => setTilesFailed(false)} aria-label="Dismiss base map note">dismiss</button>
-            </div>
-          )}
+          {failedLayers.length > 0 && <div className="map-error" role="alert"><span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span></div>}
+          {unsupportedLayers.length > 0 && <div className="map-note" role="status"><span>Active renderer does not support: {unsupportedLayers.map(layerLabel).join(", ")}</span></div>}
+          {tilesFailed && <div className="map-note" role="status"><span>Base map tiles unavailable (offline?)</span><button className="linklike" onClick={() => setTilesFailed(false)} aria-label="Dismiss base map note">dismiss</button></div>}
         </div>
         <aside className="layer-panel">
           <h2>Layer control</h2>
           {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => {
             const status = isBackendKey(key) && value ? layerStatus[key] : undefined;
             return (
-              <button
-                key={key}
-                className="navbtn"
-                data-active={value}
-                data-status={status}
-                aria-pressed={value}
-                onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))}
-              >
-                <span>{layerLabel(key)}</span>
-                <span>{layerStatusText(value, status)}</span>
+              <button key={key} className="navbtn" data-active={value} data-status={status} aria-pressed={value} onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))}>
+                <span>{layerLabel(key)}</span><span>{layerStatusText(value, status)}</span>
               </button>
             );
           })}
           <div className="hr" />
           <h2>Top spatial anomalies</h2>
           <div className="col">
-            {data.anomalies.map((anomaly) => (
-              <AnomalyCard
-                key={anomaly.id}
-                anomaly={anomaly}
-                heading={anomaly.id}
-                body={byId(data.sites, anomaly.siteId)?.name}
-                onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })}
-              />
-            ))}
+            {data.anomalies.map((anomaly) => <AnomalyCard key={anomaly.id} anomaly={anomaly} heading={anomaly.id} body={byId(data.sites, anomaly.siteId)?.name} onClick={() => setSelection({ kind: "anomaly", id: anomaly.id })} />)}
           </div>
         </aside>
       </div>
