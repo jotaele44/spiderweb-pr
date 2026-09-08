@@ -9,12 +9,20 @@ import {
   type SpatialMarkerSpec,
 } from "./SpatialAdapters";
 
+export interface AppleOverlayCapabilities {
+  geoJsonPolygon: boolean;
+  geoJsonCircle: boolean;
+  investigationMarker: boolean;
+}
+
 /**
  * The live MapKit JS bridge implements only semantic overlay operations. It
  * must not expose Apple tile URLs, raster bytes, caches, or internal provider
- * objects to domain code. Tests inject a credential-free fake bridge.
+ * objects to domain code. Every supported capability is declared explicitly;
+ * construction does not imply parity.
  */
 export interface AppleOverlayBridge {
+  readonly capabilities: AppleOverlayCapabilities;
   addGeoJsonPolygonLayer(spec: GeoJsonPolygonLayerSpec): Promise<SpatialLayerHandle>;
   addGeoJsonCircleLayer(spec: GeoJsonCircleLayerSpec): Promise<SpatialLayerHandle>;
   addMarker(spec: SpatialMarkerSpec): SpatialMarkerHandle;
@@ -35,43 +43,53 @@ function unavailableCamera(): SpatialCameraAdapter {
   };
 }
 
-/**
- * `cameraBridge` is deliberately optional. Apple overlay parity can be tested
- * credential-free before camera parity, but the adapter advertises camera=false
- * until a measured zoom↔camera-distance bridge is supplied. This prevents a
- * deterministic approximation from being mislabeled as evidence of parity.
- */
 export function createAppleSpatialAdapters(
   overlayBridge: AppleOverlayBridge,
   cameraBridge?: SpatialCameraAdapter,
 ): SpatialAdapters {
   const camera = cameraBridge ?? unavailableCamera();
+  const supports = overlayBridge.capabilities;
   return {
     renderer: "apple-mapkit",
     capabilities: {
-      geoJsonPolygon: true,
-      geoJsonCircle: true,
+      geoJsonPolygon: supports.geoJsonPolygon,
+      geoJsonCircle: supports.geoJsonCircle,
       vectorTilePolygon: false,
-      investigationMarker: true,
+      investigationMarker: supports.investigationMarker,
       camera: camera.supported,
       popup: false,
       featureSelection: false,
     },
     layer: {
       capabilities: {
-        geoJsonPolygon: true,
-        geoJsonCircle: true,
+        geoJsonPolygon: supports.geoJsonPolygon,
+        geoJsonCircle: supports.geoJsonCircle,
         vectorTilePolygon: false,
       },
-      addGeoJsonPolygonLayer: (spec) => overlayBridge.addGeoJsonPolygonLayer(spec),
-      addGeoJsonCircleLayer: (spec) => overlayBridge.addGeoJsonCircleLayer(spec),
+      addGeoJsonPolygonLayer(spec) {
+        if (!supports.geoJsonPolygon) {
+          return Promise.reject(new UnsupportedSpatialCapabilityError("apple-mapkit", "geoJsonPolygon"));
+        }
+        return overlayBridge.addGeoJsonPolygonLayer(spec);
+      },
+      addGeoJsonCircleLayer(spec) {
+        if (!supports.geoJsonCircle) {
+          return Promise.reject(new UnsupportedSpatialCapabilityError("apple-mapkit", "geoJsonCircle"));
+        }
+        return overlayBridge.addGeoJsonCircleLayer(spec);
+      },
       async addVectorTilePolygonLayer() {
         throw new UnsupportedSpatialCapabilityError("apple-mapkit", "vectorTilePolygon");
       },
     },
     marker: {
-      supported: true,
-      addMarker: (spec) => overlayBridge.addMarker(spec),
+      supported: supports.investigationMarker,
+      addMarker(spec) {
+        if (!supports.investigationMarker) {
+          throw new UnsupportedSpatialCapabilityError("apple-mapkit", "investigationMarker");
+        }
+        return overlayBridge.addMarker(spec);
+      },
     },
     camera,
   };
