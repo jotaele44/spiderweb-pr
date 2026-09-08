@@ -409,3 +409,46 @@ def test_capture_thread_start_failure_reaps_child(monkeypatch, tmp_path):
     assert len(children) == 1
     assert children[0].poll() is not None
     assert children[0].stdout.closed
+
+
+@pytest.mark.parametrize("send_failure", [False, True])
+def test_rag_response_cleans_up_when_stream_never_starts(
+    monkeypatch, tmp_path, send_failure
+):
+    from server.backend import main as backend
+
+    (tmp_path / "query_llm.py").write_text(
+        "import time\nprint('ready',flush=True)\ntime.sleep(60)\n"
+    )
+    registry = JobRegistry()
+    monkeypatch.setattr(backend, "_jobs", registry)
+    monkeypatch.setattr(backend, "ROOT", tmp_path)
+
+    async def request():
+        response = await backend.rag_query(backend.RagQueryRequest(query="fixture"))
+        owned = registry.get(registry.snapshot()[0]["job_id"])
+
+        async def send(message):
+            if send_failure:
+                raise RuntimeError("fixture transport failure")
+            await asyncio.sleep(0.2)
+
+        async def receive():
+            if send_failure:
+                await asyncio.sleep(60)
+            return {"type": "http.disconnect"}
+
+        if send_failure:
+            with pytest.raises(RuntimeError, match="transport failure"):
+                await response({"type": "http"}, receive, send)
+        else:
+            await response({"type": "http"}, receive, send)
+        assert registry.snapshot() == []
+        assert owned.done.is_set()
+        assert owned.proc.poll() is not None
+        assert owned.closed
+
+    try:
+        asyncio.run(request())
+    finally:
+        registry.close()

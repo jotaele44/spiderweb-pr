@@ -580,10 +580,27 @@ async def _stream_rag(query: str, top_k: int, no_context: bool):
         await events.aclose()
 
 
+class _OwnedJobResponse(EventSourceResponse):
+    """Clean up a RAG child even when its iterator never starts."""
+
+    def __init__(self, job_id: str, job: ManagedJob, registry: JobRegistry):
+        super().__init__(job.events())
+        self._job_id = job_id
+        self._registry = registry
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            await asyncio.shield(
+                asyncio.to_thread(self._registry.remove, self._job_id)
+            )
+
+
 @app.post("/rag/query")
 async def rag_query(req: RagQueryRequest):
     job_id, job = await _start_rag(req.query, req.top_k, req.no_context)
-    return EventSourceResponse(_rag_events(job_id, job))
+    return _OwnedJobResponse(job_id, job, _jobs)
 
 
 @app.post("/rag/index")
