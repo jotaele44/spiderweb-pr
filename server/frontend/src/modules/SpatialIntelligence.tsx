@@ -1,6 +1,5 @@
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type MutableRefObject } from "react";
 import type { GeoJSON } from "geojson";
-import * as maplibregl from "maplibre-gl";
 import { byId, fmtMoney } from "../lib/format";
 import type { PriisData, Selection } from "../types/priis";
 import { Pill } from "../components/Badges";
@@ -14,13 +13,21 @@ import {
 import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
 import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
+import type {
+  PolygonRenderStyle,
+  CircleRenderStyle,
+  SpatialAdapters,
+  SpatialCapabilitySet,
+  SpatialLayerHandle,
+  SpatialMarkerHandle,
+} from "../spatial/runtime/SpatialAdapters";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type PointLayerKey = "gazetteer_pr_domestic_names";
 type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
 type BackendLayerKey = PolygonLayerKey | PointLayerKey;
 type LayerKey = MarkerLayerKey | BackendLayerKey;
-export type LayerStatus = "idle" | "loading" | "source-ready" | "loaded" | "error";
+export type LayerStatus = "idle" | "loading" | "source-ready" | "loaded" | "unsupported" | "error";
 
 interface PolygonLayerConfig {
   fillOpacity: number;
@@ -46,9 +53,7 @@ interface PointLayerConfig {
   label: string;
 }
 
-// Rendered as a native GL circle layer, not maplibregl.Marker DOM elements
-// (the pattern MarkerLayerKey/site markers below use): at ~2,000 features,
-// one DOM node per point would be a real rendering-performance regression.
+// Kept as a renderer-native point layer rather than thousands of DOM markers.
 const POINT_LAYERS: Record<PointLayerKey, PointLayerConfig> = {
   gazetteer_pr_domestic_names: { color: "#5eead4", radius: 2.5, defaultOn: false, label: "Natural features" },
 };
@@ -83,117 +88,82 @@ export function layerStatusText(enabled: boolean, status?: LayerStatus): string 
   if (status === "loading") return "loading…";
   if (status === "source-ready") return "source ready";
   if (status === "loaded") return "rendered";
+  if (status === "unsupported") return "unsupported";
   if (status === "error") return "error";
   return "on";
 }
 
-function whenStyleReady(map: maplibregl.Map, fn: () => void) {
-  if (map.isStyleLoaded()) { fn(); return; }
-  const handler = () => {
-    if (map.isStyleLoaded()) { map.off("styledata", handler); fn(); }
-  };
-  map.on("styledata", handler);
-}
-
-function addPolygonPaintLayers(
-  map: maplibregl.Map,
-  key: PolygonLayerKey,
-  sourceId: string,
-  sourceLayer?: string,
-) {
+function polygonStyle(key: PolygonLayerKey): PolygonRenderStyle {
   const cfg = POLYGON_LAYERS[key];
-  const common = sourceLayer ? { source: sourceId, "source-layer": sourceLayer } : { source: sourceId };
-  map.addLayer({
-    id: `${sourceId}-fill`,
-    type: "fill",
-    ...common,
-    paint: { "fill-color": cfg.fillColor, "fill-opacity": cfg.fillOpacity },
-  });
-  map.addLayer({
-    id: `${sourceId}-line`,
-    type: "line",
-    ...common,
-    layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": cfg.lineColor, "line-width": 0.8, "line-opacity": 0.6 },
-  });
+  return {
+    fillOpacity: cfg.fillOpacity,
+    fillColor: cfg.fillColor,
+    lineColor: cfg.lineColor,
+    lineWidth: 0.8,
+    lineOpacity: 0.6,
+  };
 }
 
-function removePolygonPaintLayers(map: maplibregl.Map, sourceId: string) {
-  if (map.getLayer(`${sourceId}-line`)) map.removeLayer(`${sourceId}-line`);
-  if (map.getLayer(`${sourceId}-fill`)) map.removeLayer(`${sourceId}-fill`);
-}
-
-function addCirclePaintLayer(map: maplibregl.Map, key: PointLayerKey, sourceId: string) {
+function circleStyle(key: PointLayerKey): CircleRenderStyle {
   const cfg = POINT_LAYERS[key];
-  map.addLayer({
-    id: `${sourceId}-circle`,
-    type: "circle",
-    source: sourceId,
-    paint: {
-      "circle-radius": cfg.radius,
-      "circle-color": cfg.color,
-      "circle-opacity": 0.75,
-      "circle-stroke-color": "#0b1220",
-      "circle-stroke-width": 0.5,
-    },
-  });
-}
-
-function removeCirclePaintLayer(map: maplibregl.Map, sourceId: string) {
-  if (map.getLayer(`${sourceId}-circle`)) map.removeLayer(`${sourceId}-circle`);
+  return {
+    color: cfg.color,
+    radius: cfg.radius,
+    opacity: 0.75,
+    strokeColor: "#0b1220",
+    strokeWidth: 0.5,
+  };
 }
 
 function useGeoJsonLayer(opts: {
-  mapRef: React.MutableRefObject<maplibregl.Map | null>;
+  adaptersRef: MutableRefObject<SpatialAdapters | null>;
+  capabilities: SpatialCapabilitySet | null;
   ready: boolean;
-  sourceId: string;
+  id: string;
   url: string;
   isOn: boolean;
-  addLayers: (map: maplibregl.Map, sourceId: string) => void;
-  removeLayers: (map: maplibregl.Map) => void;
+  kind: "polygon" | "circle";
+  style: PolygonRenderStyle | CircleRenderStyle;
   onStatus: (status: LayerStatus) => void;
 }) {
-  const { mapRef, ready, sourceId, url, isOn } = opts;
-  const addLayers = useEffectEvent(opts.addLayers);
-  const removeLayers = useEffectEvent(opts.removeLayers);
+  const { adaptersRef, capabilities, ready, id, url, isOn, kind, style } = opts;
   const onStatus = useEffectEvent(opts.onStatus);
 
   useEffect(() => {
-    const candidate = mapRef.current;
-    if (candidate === null) return;
-    const map: maplibregl.Map = candidate;
-
-    function teardown() {
-      removeLayers(map);
-      if (map.getSource(sourceId)) map.removeSource(sourceId);
-    }
-
+    const adapters = adaptersRef.current;
+    if (!ready || !adapters) return;
     if (!isOn) {
-      if (map.isStyleLoaded()) teardown();
       onStatus("idle");
       return;
     }
+    const supported = kind === "polygon" ? capabilities?.geoJsonPolygon : capabilities?.geoJsonCircle;
+    if (supported === false) {
+      onStatus("unsupported");
+      return;
+    }
+    if (supported !== true) return;
 
     const controller = new AbortController();
     let cancelled = false;
+    let handle: SpatialLayerHandle | null = null;
 
     async function load() {
-      if (cancelled || map.getSource(sourceId)) return;
       onStatus("loading");
       try {
         const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const geojson = (await res.json()) as GeoJSON;
         if (cancelled) return;
-        // Backend/source retrieval succeeded. Do not call this rendered until
-        // MapLibre's style is actually ready and the source/layers are attached.
         onStatus("source-ready");
-        whenStyleReady(map, () => {
-          if (cancelled || map.getSource(sourceId)) return;
-          map.addSource(sourceId, { type: "geojson", data: geojson });
-          addLayers(map, sourceId);
-          onStatus("loaded");
-        });
+        const created = kind === "polygon"
+          ? await adapters.layer.addGeoJsonPolygonLayer({ id, data: geojson, style: style as PolygonRenderStyle })
+          : await adapters.layer.addGeoJsonCircleLayer({ id, data: geojson, style: style as CircleRenderStyle });
+        if (cancelled) {
+          created.remove();
+          return;
+        }
+        handle = created;
+        onStatus("loaded");
       } catch (err) {
         if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
         onStatus("error");
@@ -204,52 +174,43 @@ function useGeoJsonLayer(opts: {
     return () => {
       cancelled = true;
       controller.abort();
-      if (map.isStyleLoaded()) teardown();
+      handle?.remove();
     };
-  }, [mapRef, ready, sourceId, url, isOn]);
+  }, [adaptersRef, capabilities, ready, id, url, isOn, kind, style]);
 }
 
 function useVectorTileLayer(opts: {
-  mapRef: React.MutableRefObject<maplibregl.Map | null>;
+  adaptersRef: MutableRefObject<SpatialAdapters | null>;
+  capabilities: SpatialCapabilitySet | null;
   ready: boolean;
-  sourceId: string;
+  id: string;
   martinSourceId: string;
   sourceLayer: string;
   isOn: boolean;
-  addLayers: (map: maplibregl.Map, sourceId: string, sourceLayer: string) => void;
-  removeLayers: (map: maplibregl.Map) => void;
+  style: PolygonRenderStyle;
   onStatus: (status: LayerStatus) => void;
 }) {
-  const { mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn } = opts;
-  const addLayers = useEffectEvent(opts.addLayers);
-  const removeLayers = useEffectEvent(opts.removeLayers);
+  const { adaptersRef, capabilities, ready, id, martinSourceId, sourceLayer, isOn, style } = opts;
   const onStatus = useEffectEvent(opts.onStatus);
 
   useEffect(() => {
-    const candidate = mapRef.current;
-    if (candidate === null) return;
-    const map: maplibregl.Map = candidate;
-
-    function teardown() {
-      removeLayers(map);
-      if (map.getSource(sourceId)) map.removeSource(sourceId);
-    }
-
+    const adapters = adaptersRef.current;
+    if (!ready || !adapters) return;
     if (!isOn) {
-      if (map.isStyleLoaded()) teardown();
       onStatus("idle");
       return;
     }
+    if (capabilities?.vectorTilePolygon === false) {
+      onStatus("unsupported");
+      return;
+    }
+    if (capabilities?.vectorTilePolygon !== true) return;
 
     const controller = new AbortController();
     let cancelled = false;
-    const onMapError = (event: maplibregl.ErrorEvent) => {
-      if ("sourceId" in event && event.sourceId === sourceId) onStatus("error");
-    };
-    map.on("error", onMapError);
+    let handle: SpatialLayerHandle | null = null;
 
     async function load() {
-      if (cancelled || map.getSource(sourceId)) return;
       onStatus("loading");
       try {
         const res = await fetch(martinTileJsonUrl(martinSourceId), { signal: controller.signal });
@@ -267,17 +228,21 @@ function useVectorTileLayer(opts: {
         }
         if (cancelled) return;
         onStatus("source-ready");
-        whenStyleReady(map, () => {
-          if (cancelled || map.getSource(sourceId)) return;
-          map.addSource(sourceId, {
-            type: "vector",
-            tiles: [martinTileUrlTemplate(martinSourceId)],
-            minzoom: tilejson.minzoom ?? 0,
-            maxzoom: tilejson.maxzoom ?? 14,
-          });
-          addLayers(map, sourceId, sourceLayer);
-          onStatus("loaded");
+        const created = await adapters.layer.addVectorTilePolygonLayer({
+          id,
+          tiles: [martinTileUrlTemplate(martinSourceId)],
+          sourceLayer,
+          minZoom: tilejson.minzoom ?? 0,
+          maxZoom: tilejson.maxzoom ?? 14,
+          style,
+          onError: () => onStatus("error"),
         });
+        if (cancelled) {
+          created.remove();
+          return;
+        }
+        handle = created;
+        onStatus("loaded");
       } catch (err) {
         if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
         onStatus("error");
@@ -288,49 +253,50 @@ function useVectorTileLayer(opts: {
     return () => {
       cancelled = true;
       controller.abort();
-      map.off("error", onMapError);
-      if (map.isStyleLoaded()) teardown();
+      handle?.remove();
     };
-  }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn]);
+  }, [adaptersRef, capabilities, ready, id, martinSourceId, sourceLayer, isOn, style]);
 }
 
 function usePolygonLayer(
-  mapRef: React.MutableRefObject<maplibregl.Map | null>,
+  adaptersRef: MutableRefObject<SpatialAdapters | null>,
+  capabilities: SpatialCapabilitySet | null,
   ready: boolean,
   key: PolygonLayerKey,
   isOn: boolean,
   onStatus: (status: LayerStatus) => void,
 ) {
-  const sourceId = `geo-${key}`;
   useGeoJsonLayer({
-    mapRef,
+    adaptersRef,
+    capabilities,
     ready,
-    sourceId,
+    id: `geo-${key}`,
     url: `${API_BASE}/geo/${key}.geojson`,
     isOn,
+    kind: "polygon",
+    style: polygonStyle(key),
     onStatus,
-    addLayers: (map: maplibregl.Map, id: string) => addPolygonPaintLayers(map, key, id),
-    removeLayers: (map: maplibregl.Map) => removePolygonPaintLayers(map, sourceId),
   });
 }
 
 function usePointLayer(
-  mapRef: React.MutableRefObject<maplibregl.Map | null>,
+  adaptersRef: MutableRefObject<SpatialAdapters | null>,
+  capabilities: SpatialCapabilitySet | null,
   ready: boolean,
   key: PointLayerKey,
   isOn: boolean,
   onStatus: (status: LayerStatus) => void,
 ) {
-  const sourceId = `geo-${key}`;
   useGeoJsonLayer({
-    mapRef,
+    adaptersRef,
+    capabilities,
     ready,
-    sourceId,
+    id: `geo-${key}`,
     url: `${API_BASE}/geo/${key}.geojson`,
     isOn,
+    kind: "circle",
+    style: circleStyle(key),
     onStatus,
-    addLayers: (map: maplibregl.Map, id: string) => addCirclePaintLayer(map, key, id),
-    removeLayers: (map: maplibregl.Map) => removeCirclePaintLayer(map, sourceId),
   });
 }
 
@@ -352,15 +318,15 @@ export function SpatialIntelligence({
   );
   const {
     hostRef,
-    mapRef,
-    runtimeRef,
+    adaptersRef,
+    capabilities,
     ready: mapReady,
     tilesFailed,
     setTilesFailed,
     activeMode,
     fallbackReason,
   } = useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG, spatialMode);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const markersRef = useRef<SpatialMarkerHandle[]>([]);
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
     () => localStorage.getItem("spiderweb_layer_collapsed") === "true",
@@ -381,109 +347,101 @@ export function SpatialIntelligence({
   const setStatus = (key: BackendLayerKey) => (status: LayerStatus) =>
     setLayerStatus((prev) => (prev[key] === status ? prev : { ...prev, [key]: status }));
 
-  const municipiosViaMartin = MUNICIPIOS_DELIVERY === "martin";
+  // Martin remains the preferred MapLibre delivery path. A renderer that does
+  // not implement vector tiles falls back to the same canonical GeoJSON rather
+  // than silently losing municipios.
+  const municipiosViaMartin = MUNICIPIOS_DELIVERY === "martin" && capabilities?.vectorTilePolygon === true;
 
   useVectorTileLayer({
-    mapRef,
+    adaptersRef,
+    capabilities,
     ready: mapReady,
-    sourceId: "mvt-municipios",
+    id: "mvt-municipios",
     martinSourceId: "municipios",
     sourceLayer: "municipios",
     isOn: layers.municipios && municipiosViaMartin,
+    style: polygonStyle("municipios"),
     onStatus: setStatus("municipios"),
-    addLayers: (map, sourceId, sourceLayer) => addPolygonPaintLayers(map, "municipios", sourceId, sourceLayer),
-    removeLayers: (map) => removePolygonPaintLayers(map, "mvt-municipios"),
   });
   usePolygonLayer(
-    mapRef,
+    adaptersRef,
+    capabilities,
     mapReady,
     "municipios",
     layers.municipios && !municipiosViaMartin,
     setStatus("municipios"),
   );
-  usePolygonLayer(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts"));
-  usePolygonLayer(mapRef, mapReady, "places", layers.places, setStatus("places"));
-  usePolygonLayer(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios"));
+  usePolygonLayer(adaptersRef, capabilities, mapReady, "tracts", layers.tracts, setStatus("tracts"));
+  usePolygonLayer(adaptersRef, capabilities, mapReady, "places", layers.places, setStatus("places"));
+  usePolygonLayer(adaptersRef, capabilities, mapReady, "barrios", layers.barrios, setStatus("barrios"));
   usePointLayer(
-    mapRef,
+    adaptersRef,
+    capabilities,
     mapReady,
     "gazetteer_pr_domestic_names",
     layers.gazetteer_pr_domestic_names,
     setStatus("gazetteer_pr_domestic_names"),
   );
 
-  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime now;
-  // this effect only handles the marker-specific part of unmount cleanup.
-  useEffect(() => {
-    return () => {
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-    };
+  useEffect(() => () => {
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
   }, []);
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    markersRef.current.forEach((m) => m.remove());
+    const adapters = adaptersRef.current;
+    if (!mapReady || !adapters) return;
+    markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
+    if (!adapters.marker.supported) return;
+
     data.sites.forEach((site) => {
       const contractTotal = data.contracts
-        .filter((c) => c.site === site.id)
-        .reduce((sum, c) => sum + c.amount, 0);
-      const anomaly = data.anomalies.find((a) => a.siteId === site.id);
+        .filter((contract) => contract.site === site.id)
+        .reduce((sum, contract) => sum + contract.amount, 0);
+      const anomaly = data.anomalies.find((item) => item.siteId === site.id);
       const visible =
         (layers.sensitive && (site.sensitive ?? false)) ||
         (layers.infrastructure && !!site.infrastructure_class) ||
         (layers.contracts && contractTotal > 0) ||
         (layers.anomaly && !!anomaly);
       if (!visible) return;
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = "map-marker";
-      const size = `${Math.max(14, Math.sqrt(contractTotal / 1_000_000) * 5)}px`;
-      Object.assign(el.style, {
-        width: size,
-        height: size,
-        borderRadius: "999px",
-        border: "2px solid var(--surface-2)",
-        background: anomaly ? "var(--alert)" : site.sensitive ? "var(--warn)" : "var(--t1)",
-        boxShadow: "0 0 0 1px var(--ink)",
-      });
+
+      const sizePx = Math.max(14, Math.sqrt(contractTotal / 1_000_000) * 5);
       const markerLabel = `${site.name} · ${fmtMoney(contractTotal)} · ${anomaly?.id ?? "no anomaly"}`;
-      el.title = markerLabel;
-      el.setAttribute("aria-label", markerLabel);
-      el.onclick = () =>
-        setSelection({
+      markersRef.current.push(adapters.marker.addMarker({
+        coordinate: [site.lng, site.lat],
+        label: markerLabel,
+        sizePx,
+        tone: anomaly ? "alert" : site.sensitive ? "warning" : "primary",
+        onActivate: () => setSelection({
           kind: anomaly && layers.anomaly ? "anomaly" : "site",
           id: anomaly && layers.anomaly ? anomaly.id : site.id,
-        });
-      const marker = new maplibregl.Marker({ element: el })
-        .setLngLat([site.lng, site.lat])
-        .addTo(map);
-      markersRef.current.push(marker);
+        }),
+      }));
     });
-  }, [data, layers, setSelection, mapRef]);
+
+    return () => {
+      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current = [];
+    };
+  }, [data, layers, setSelection, adaptersRef, capabilities, mapReady]);
 
   useEffect(() => {
-    const runtime = runtimeRef.current;
-    if (!runtime || selection?.kind !== "site") return;
+    const camera = adaptersRef.current?.camera;
+    if (!camera?.supported || selection?.kind !== "site") return;
     const site = byId(data.sites, selection.id);
-    if (site) runtime.setView({ center: [site.lng, site.lat], zoom: 11 }, { animate: true, speed: 0.8 });
-  }, [data.sites, selection, runtimeRef]);
+    if (site) camera.setView({ center: [site.lng, site.lat], zoom: 11 }, { animate: true, speed: 0.8 });
+  }, [data.sites, selection, adaptersRef, capabilities]);
 
   useEffect(() => {
     localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
   }, [layerPanelCollapsed]);
 
-  // Persist the requested 2D/3D mode. Note this is the *requested* mode
-  // (spatialMode), not activeMode — if Cesium fails and useSpatialRuntime
-  // falls back to MapLibre, we still remember "cesium" was requested so the
-  // next visit retries it rather than silently sticking on the fallback.
   useEffect(() => {
     localStorage.setItem("priis_spatial_mode", spatialMode);
   }, [spatialMode]);
 
-  // "L" toggles the layer panel. Ignore while typing in an input/textarea.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -498,18 +456,22 @@ export function SpatialIntelligence({
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => runtimeRef.current?.resize(), 320);
+    const timer = window.setTimeout(() => {
+      const camera = adaptersRef.current?.camera;
+      if (camera?.supported) camera.resize();
+    }, 320);
     return () => window.clearTimeout(timer);
-  }, [leftCollapsed, rightCollapsed, layerPanelCollapsed, runtimeRef]);
+  }, [leftCollapsed, rightCollapsed, layerPanelCollapsed, adaptersRef, capabilities]);
 
-  const failedLayers = BACKEND_LAYER_KEYS.filter((k) => layers[k] && layerStatus[k] === "error");
+  const failedLayers = BACKEND_LAYER_KEYS.filter((key) => layers[key] && layerStatus[key] === "error");
+  const unsupportedLayers = BACKEND_LAYER_KEYS.filter((key) => layers[key] && layerStatus[key] === "unsupported");
 
   return (
     <section className="panel">
       <div className="panel-head">
         <div>
           <h1>Spatial Intelligence</h1>
-          <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence</span>
+          <span className="subtle">Renderer-neutral layer control · contract, infrastructure, anomaly convergence</span>
         </div>
         <div className="row">
           <button
@@ -524,7 +486,7 @@ export function SpatialIntelligence({
           <button
             className="act"
             data-on={spatialMode === "cesium"}
-            onClick={() => setSpatialMode((m) => (m === "cesium" ? "maplibre" : "cesium"))}
+            onClick={() => setSpatialMode((mode) => (mode === "cesium" ? "maplibre" : "cesium"))}
             title="Toggle 2D/3D scene"
           >
             {spatialMode === "cesium" ? "3D (regional preview)" : "2D"}
@@ -544,9 +506,14 @@ export function SpatialIntelligence({
       >
         <div className="map-col">
           <div ref={hostRef} className="map-host" />
-          {activeMode === "maplibre" && failedLayers.length > 0 && (
+          {failedLayers.length > 0 && (
             <div className="map-error" role="alert">
               <span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span>
+            </div>
+          )}
+          {unsupportedLayers.length > 0 && (
+            <div className="map-note" role="status">
+              <span>Active renderer does not support: {unsupportedLayers.map(layerLabel).join(", ")}</span>
             </div>
           )}
           {tilesFailed && (
@@ -567,7 +534,7 @@ export function SpatialIntelligence({
                 data-active={value}
                 data-status={status}
                 aria-pressed={value}
-                onClick={() => setLayers((cur) => ({ ...cur, [key]: !cur[key] }))}
+                onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))}
               >
                 <span>{layerLabel(key)}</span>
                 <span>{layerStatusText(value, status)}</span>
