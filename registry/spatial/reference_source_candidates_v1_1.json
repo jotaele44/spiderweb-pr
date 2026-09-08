@@ -1,19 +1,20 @@
 {
   "contract_version": "federation-spatial-reference-candidates/1.1",
-  "generated_date": "2026-09-05",
+  "generated_date": "2026-09-08",
   "rule": "Candidate/source authority does not imply canonical identity or certified geometry. Byte hash is required before promotion into source_manifestations.",
   "strata": {
     "municipios": {
       "selected_authority": "U.S. Census Bureau TIGER",
       "current_candidate": {
         "declared_vintage": "2026-01-01",
-        "declared_vintage_evidence_state": "ASSUMPTION",
+        "declared_vintage_evidence_state": "SERVICE_METADATA_VERIFIED",
+        "metadata_evidence": "registry/spatial/current_service_metadata_evidence_v1_1.json",
         "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/82",
         "stable_id": "GEOID",
         "state_filter": "72",
         "geometry_type": "Polygon",
         "source_crs": "EPSG:3857 service; request canonical interchange in EPSG:4326",
-        "freeze_state": "OPEN"
+        "freeze_state": "INFRA_BLOCKED"
       },
       "local_competing_manifestation": {
         "authority": "Puerto Rico Planning Board / PACAT / DTOP",
@@ -25,12 +26,13 @@
       "selected_authority": "U.S. Census Bureau TIGER County Subdivisions",
       "current_candidate": {
         "declared_vintage": "2026-01-01",
-        "declared_vintage_evidence_state": "ASSUMPTION",
+        "declared_vintage_evidence_state": "SERVICE_METADATA_VERIFIED",
+        "metadata_evidence": "registry/spatial/current_service_metadata_evidence_v1_1.json",
         "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/1",
         "stable_id": "GEOID",
         "state_filter": "72",
         "geometry_type": "Polygon",
-        "freeze_state": "OPEN"
+        "freeze_state": "INFRA_BLOCKED"
       },
       "local_competing_manifestation": {
         "authority": "Puerto Rico Planning Board / PACAT / DTOP",
