@@ -16,8 +16,13 @@ function runtimeStub(): SpatialRuntime {
   };
 }
 
-function appleBridgeStub(): AppleOverlayBridge {
+function appleBridgeStub(capabilities = {
+  geoJsonPolygon: true,
+  geoJsonCircle: false,
+  investigationMarker: true,
+}): AppleOverlayBridge {
   return {
+    capabilities,
     addGeoJsonPolygonLayer: vi.fn(async () => ({ remove: vi.fn() })),
     addGeoJsonCircleLayer: vi.fn(async () => ({ remove: vi.fn() })),
     addMarker: vi.fn(() => ({ remove: vi.fn() })),
@@ -51,6 +56,18 @@ describe("renderer-neutral spatial capability gates", () => {
     })).rejects.toBeInstanceOf(UnsupportedSpatialCapabilityError);
   });
 
+  it("derives Apple overlay capabilities from the bridge rather than construction", async () => {
+    const adapters = createAppleSpatialAdapters(appleBridgeStub());
+    expect(adapters.capabilities.geoJsonPolygon).toBe(true);
+    expect(adapters.capabilities.geoJsonCircle).toBe(false);
+    expect(adapters.capabilities.investigationMarker).toBe(true);
+    await expect(adapters.layer.addGeoJsonCircleLayer({
+      id: "points",
+      data: { type: "FeatureCollection", features: [] },
+      style: { color: "#fff", radius: 2.5 },
+    })).rejects.toBeInstanceOf(UnsupportedSpatialCapabilityError);
+  });
+
   it("does not advertise Apple camera parity until a measured camera bridge is supplied", () => {
     const adapters = createAppleSpatialAdapters(appleBridgeStub());
     expect(adapters.capabilities.camera).toBe(false);
@@ -76,6 +93,7 @@ describe("renderer-neutral spatial capability gates", () => {
       features: [{ type: "Feature", properties: { stable_id: "MUNI-001" }, geometry: null }],
     };
     const bridge = appleBridgeStub();
+    const addPolygon = bridge.addGeoJsonPolygonLayer as ReturnType<typeof vi.fn>;
     const adapters = createAppleSpatialAdapters(bridge);
     const before = JSON.stringify(data);
     await adapters.layer.addGeoJsonPolygonLayer({
@@ -83,8 +101,8 @@ describe("renderer-neutral spatial capability gates", () => {
       data,
       style: { fillOpacity: 0.08, fillColor: "#4dc4d6", lineColor: "#4dc4d6", lineWidth: 0.8, lineOpacity: 0.6 },
     });
-    expect(bridge.addGeoJsonPolygonLayer).toHaveBeenCalledOnce();
-    expect((bridge.addGeoJsonPolygonLayer as ReturnType<typeof vi.fn>).mock.calls[0]?.[0].data).toBe(data);
+    expect(addPolygon).toHaveBeenCalledOnce();
+    expect(addPolygon.mock.calls[0]?.[0].data).toBe(data);
     expect(JSON.stringify(data)).toBe(before);
   });
 });
