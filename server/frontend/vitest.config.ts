@@ -29,6 +29,11 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   test: {
+    // Bound simultaneous jsdom instances on shared developer/CI hosts. Axe
+    // keeps a scan active until its promise settles, so a premature timeout
+    // can otherwise cascade into "Axe is already running" for later cases.
+    maxWorkers: 2,
+    testTimeout: 15_000,
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["src/test/setup.ts"],

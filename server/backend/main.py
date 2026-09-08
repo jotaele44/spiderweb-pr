@@ -228,7 +228,7 @@ class PipelineRunRequest(BaseModel):
 @app.post("/pipeline/run")
 async def pipeline_run(req: PipelineRunRequest = PipelineRunRequest()):
     job_id = str(uuid.uuid4())
-    cmd = ["python", str(ROOT / "run_all.py")]
+    cmd = [sys.executable, "-u", str(ROOT / "run_all.py")]
     if req.phase is not None:
         cmd += ["--phase", str(req.phase)]
     proc = subprocess.Popen(
@@ -260,7 +260,8 @@ async def _stream_stdout(proc: subprocess.Popen) -> AsyncGenerator[dict, None]:
         if not line:
             break
         yield {"data": line.rstrip()}
-    yield {"event": "done", "data": json.dumps({"returncode": proc.poll()})}
+    rc = await loop.run_in_executor(None, proc.wait)
+    yield {"event": "done", "data": json.dumps({"returncode": rc})}
 
 
 @app.get("/pipeline/events/{job_id}")
@@ -512,13 +513,13 @@ class RagQueryRequest(BaseModel):
 
 
 async def _stream_rag(query: str, top_k: int, no_context: bool) -> AsyncGenerator[dict, None]:
-    cmd = ["python", str(ROOT / "query_llm.py"), query, "--top-k", str(top_k)]
+    cmd = [sys.executable, "-u", str(ROOT / "query_llm.py"), query, "--top-k", str(top_k)]
     if no_context:
         cmd.append("--no-context")
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
         cwd=str(ROOT),
     )
@@ -528,7 +529,7 @@ async def _stream_rag(query: str, top_k: int, no_context: bool) -> AsyncGenerato
         if not line:
             break
         yield {"data": line.rstrip()}
-    rc = proc.wait()
+    rc = await loop.run_in_executor(None, proc.wait)
     yield {"event": "done", "data": json.dumps({"returncode": rc})}
 
 
@@ -541,7 +542,7 @@ async def rag_query(req: RagQueryRequest):
 async def rag_index():
     job_id = str(uuid.uuid4())
     proc = subprocess.Popen(
-        ["python", str(ROOT / "rag_pipeline.py")],
+        [sys.executable, "-u", "-m", "llm.rag_pipeline", "--build"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

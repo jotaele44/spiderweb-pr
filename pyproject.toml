@@ -156,7 +156,8 @@ include = [
     "earthgpt*",
     "llm*",
     "imagery*",
-    "spiderweb.subsurface*",
+    "spiderweb",
+    "spiderweb.*",
 ]
 
 # ---------------------------------------------------------------------------
