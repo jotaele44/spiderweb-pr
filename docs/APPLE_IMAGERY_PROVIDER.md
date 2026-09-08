@@ -1,76 +1,67 @@
-# Apple imagery external render provider
+# Apple imagery external-render provider
 
-**Status:** PROVISIONAL  
-**Provider:** `apple-mapkit`  
-**Federation authority:** `spiderweb-pr`  
-**Classification:** `EXTERNAL_RENDER_PROVIDER` / `NONCANONICAL`
+Status: **PROVISIONAL / NOT CERTIFIED**
 
-## Scope
+Apple MapKit JS is integrated on this branch as a noncanonical external renderer candidate. Apple Map Data is not a federation-owned source dataset and Apple provider pixels are not persisted, harvested, prefetched into offline archives, or promoted into a secondary map database.
 
-Apple Maps satellite and hybrid presentations may be exposed as interactive reference basemaps through documented Apple MapKit APIs. Apple Map Data is not a federation source manifestation and must not be harvested, persisted, mosaicked, republished, or used as the sole basis for entity identity.
+## Implemented credential-free foundation
 
-Canonical geometry, attributes, source provenance, and investigation evidence remain independent of the render provider. Switching providers must change presentation only.
+- `governance/external_render_provider_v1.json` — provider authority/retention boundary.
+- `governance/imagery_provider_registry_v1.json` — federation render/source manifestation registry and fallback states.
+- `governance/imagery_source_bindings_v1.json` — exact retained imagery source bindings kept separate from render providers.
+- `ExternalRenderProvider.ts` — typed render capability and observation provenance model.
+- `SpatialAdapters.ts` — renderer-neutral layer, marker, camera, capability and unsupported-state contracts.
+- `MapLibreSpatialAdapters.ts` — MapLibre implementation preserving existing source/layer/marker/camera behavior.
+- `LimitedSpatialAdapters.ts` — explicit camera-only capability surface for the current Cesium domain implementation.
+- `AppleSpatialAdapters.ts` — Apple capabilities derived from the supplied/tested bridge; unsupported capabilities fail closed.
+- `AppleMapKitRuntime.ts` — provider-native MapKit lifecycle using center + camera distance.
+- `MapKitJsLiveBridge.ts` — documented MapKit JS initialization/map-type/polygon/custom-marker bridge with injected authorization callback and no embedded credentials.
+- `SpatialIntelligence.tsx` — migrated off raw `maplibre-gl`; semantic adapters only.
+- renderer/provider regression tests and `RENDERER_NEUTRAL_PARITY_MATRIX.md`.
 
-## Architecture
+## Current Apple semantic capability state
 
-```text
-canonical federation geometry
-        |
-        +--> MapLibre runtime (current canonical browser renderer)
-        |
-        +--> external render provider boundary
-                |
-                +--> Apple MapKit (standard / satellite / hybrid)
-```
+Implemented in credential-free bridge code:
 
-`SpatialRuntime` is currently MapLibre-shaped at scene configuration and the live Spiderweb overlay path still uses `MapLibreRuntime.getMapLibreInstance()`. Therefore provider declaration and observation provenance can land now, but Apple cannot be declared overlay-parity complete until overlays are moved behind a renderer-neutral adapter.
+- standard / satellite / hybrid map type selection;
+- provider-native WGS84 center;
+- provider-native camera distance in meters;
+- GeoJSON Polygon/MultiPolygon → MapKit `PolygonOverlay` semantic path;
+- investigation marker → custom MapKit annotation semantic path;
+- semantic overlay/annotation cleanup.
 
-## Required gates
+Explicitly unsupported/unverified:
 
-| Gate | Required state before live enablement |
-|---|---|
-| Provider policy contract | PASS |
-| No pixel persistence | PASS |
-| No tile harvesting/prefetch archive | PASS |
-| No derived Apple map database | PASS |
-| Attribution preserved | PASS |
-| Credential-free mock tests | PASS |
-| Generic layer adapter | PASS |
-| Canonical overlay parity | PASS |
-| Camera round-trip | PASS |
-| Provider failure fallback | PASS |
-| Observation provenance | PASS |
-| Tracking-use policy gate | PASS where applicable |
-| Apple credentials | provision LAST |
+- canonical MapLibre zoom ↔ Apple camera-distance equivalence;
+- high-volume GeoJSON point-circle parity;
+- Martin vector-tile delivery inside Apple (domain falls back to canonical GeoJSON where supported);
+- live Apple authorization/runtime smoke;
+- live basemap failure mapping/fallback;
+- live attribution layout regression.
 
-## Observation provenance
+## Canonical-data invariant
 
-A durable observation stores only federation-owned metadata:
+Provider switching changes presentation only. It must not mutate canonical geometry, stable IDs, source bytes/hashes, entity identity, source/evidence classification, investigation provenance, or retained imagery assets.
 
-- local observation identifier;
-- provider identifier (`apple-mapkit`);
-- observation UTC;
-- center coordinates and zoom/camera state;
-- selected map type;
-- optional local target entity identifier;
-- investigator-authored note;
-- evidence class `VISUAL_CORROBORATION`;
-- identity effect `NONE`.
+Any human observation made while viewing Apple imagery is an `OBSERVATION` / `VISUAL_CORROBORATION` record with `identityEffect = NONE` unless independently supported by authoritative identity evidence.
 
-Provider pixels are not stored in the observation record.
+## Credential policy
 
-## Historical imagery
+No Apple Maps token, private key, Team ID secret material, or other production credential belongs in this branch. `MapKitJsLiveBridge.ts` accepts an injected authorization callback so the real token provider can be provisioned only after credential-free code/tests/invariants otherwise pass.
 
-Apple imagery is not the federation historical-imagery authority. Dated orthophotos, aerials, or other historical raster sources require an independently permitted source manifestation, acquisition date, provenance record, and retention rights.
+## Current blockers
 
-## Current residue
+1. GitHub Actions jobs are failing before executable steps/logs are provided, so authored tests are not execution PASS.
+2. Apple canonical camera conversion requires measured viewport/latitude/device-pixel-ratio evidence; no guessed transform is permitted.
+3. Live MapKit JS behavior and attribution cannot be certified without the deferred authorization stage.
+4. High-volume point-circle equivalence is unresolved and advertises unsupported.
+5. Cesium overlay parity is outside its currently implemented camera-only domain adapter.
+6. Cross-repo Apple runtime smoke remains OPEN.
+7. Skywatcher tracking-use policy remains separately gated.
+8. Final branch freeze must incorporate the current `main` head before certification.
 
-- `OPEN`: renderer-neutral layer/overlay adapter.
-- `OPEN`: Apple MapKit runtime implementation and mock runtime tests.
-- `OPEN`: camera and overlay parity regression suite.
-- `OPEN`: provider-unavailable fallback UI.
-- `OPEN`: downstream repository adapters.
-- `BLOCKED_BY_POLICY_GATE`: Skywatcher tracking presentation until the intended Apple MapKit usage is proven compatible with the applicable Apple Maps terms/platform context.
-- `DEFERRED`: Apple Maps identifiers, keys, tokens, and live authorization.
+See `docs/RENDERER_NEUTRAL_PARITY_MATRIX.md` for capability set algebra and exact certification residue.
 
-No `APPLE_MAPKIT_EXTERNAL_RENDER_PROVIDER CERTIFIED` claim is permitted while any item above remains open or blocked.
+## Certification rule
+
+Neither `RENDERER_NEUTRAL_SPATIAL_RUNTIME_PASS` nor `APPLE_MAPKIT_EXTERNAL_RENDER_PROVIDER CERTIFIED` may be issued until their declared scope has zero material unresolved residue and every required test has actually executed against frozen inputs/runtime revisions.
