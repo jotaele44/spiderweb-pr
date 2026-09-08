@@ -121,6 +121,8 @@ all = [
     "spiderweb-pr[airspace,rag,earthgpt,server,federation,imagery,geo,dem,remote_monitoring,spatial]",
 ]
 dev = [
+    # Package-discovery regressions exercise the configured build backend.
+    "setuptools>=61",
     "pytest>=9.0.2,<10",
     "pytest-cov>=7.0,<8",
     "httpx>=0.27,<1",
