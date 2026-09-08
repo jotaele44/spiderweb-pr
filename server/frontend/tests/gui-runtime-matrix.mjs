@@ -125,10 +125,16 @@ for (const [engineName, engine] of Object.entries(engines)) {
 
     const reduced = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' })
     const reducedPage = await reduced.newPage()
+    const reducedErrors = []
+    reducedPage.on('pageerror', (error) => reducedErrors.push(String(error)))
+    reducedPage.on('console', (message) => {
+      if (/The above error occurred|Unhandled render error/i.test(message.text())) reducedErrors.push(message.text())
+    })
     try {
       await reducedPage.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await reducedPage.getByRole('heading', { name: 'Command Center', exact: true }).waitFor({ timeout: 60000 })
       const matches = await reducedPage.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)
-      record({ engine: engineName, viewport: 1280, mode: 'reduced-motion', status: matches ? 'PASS' : 'FAIL' })
+      record({ engine: engineName, viewport: 1280, mode: 'reduced-motion', status: matches && reducedErrors.length === 0 ? 'PASS' : 'FAIL', runtime_errors: reducedErrors })
     } catch (error) {
       record({ engine: engineName, viewport: 1280, mode: 'reduced-motion', status: 'FAIL', error: String(error) })
     } finally {
