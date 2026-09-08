@@ -120,7 +120,7 @@ export function createMapLibreSpatialAdapters(
     },
     async addGeoJsonPolygonLayer(spec: GeoJsonPolygonLayerSpec): Promise<SpatialLayerHandle> {
       await waitForStyle(map);
-      const sourceId = `${spec.id}-source`;
+      const sourceId = spec.id;
       if (map.getSource(sourceId)) throw new Error(`spatial source already exists: ${sourceId}`);
       map.addSource(sourceId, { type: "geojson", data: spec.data });
       addPolygonPaint(map, spec.id, sourceId, spec.style);
@@ -128,7 +128,7 @@ export function createMapLibreSpatialAdapters(
     },
     async addGeoJsonCircleLayer(spec: GeoJsonCircleLayerSpec): Promise<SpatialLayerHandle> {
       await waitForStyle(map);
-      const sourceId = `${spec.id}-source`;
+      const sourceId = spec.id;
       if (map.getSource(sourceId)) throw new Error(`spatial source already exists: ${sourceId}`);
       map.addSource(sourceId, { type: "geojson", data: spec.data });
       addCirclePaint(map, spec.id, sourceId, spec.style);
@@ -136,7 +136,7 @@ export function createMapLibreSpatialAdapters(
     },
     async addVectorTilePolygonLayer(spec: VectorTilePolygonLayerSpec): Promise<SpatialLayerHandle> {
       await waitForStyle(map);
-      const sourceId = `${spec.id}-source`;
+      const sourceId = spec.id;
       if (map.getSource(sourceId)) throw new Error(`spatial source already exists: ${sourceId}`);
       const onError = (event: maplibregl.ErrorEvent) => {
         if ("sourceId" in event && event.sourceId === sourceId) spec.onError?.();
