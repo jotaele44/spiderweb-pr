@@ -1,7 +1,7 @@
 # Spatial rendering metadata for layers already named in configs/layer_catalog.yaml.
 # Kept separate from that file on purpose — see schemas/spatial_layer_binding.schema.json
 # for why. Every layer_id below must exist in layer_catalog.yaml; enforced by
-# tests/test_spatial_layer_bindings.py.
+# tests/test_spatial_registry.py.
 #
 # min_camera_height_m / max_camera_height_m are intentionally omitted for every
 # entry: those are LOD-tuning decisions that need measurement against real

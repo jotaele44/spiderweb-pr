@@ -485,18 +485,46 @@ async def spatial_boundary_geometry(boundary_id: str):
     serves it. 404 for an unknown boundary_id; 503 if geometry_ref is set but
     the file hasn't been generated yet on this deployment.
     """
+    # Read defensively, matching _load_spatial_yaml: a hand-edited or partially
+    # written registry must degrade to a 404/503 for the affected entry, never a
+    # 500. Entries that aren't mappings (or lack boundary_id) are skipped rather
+    # than raising, so one malformed entry can't take the whole route down.
+    if not isinstance(_BOUNDARY_REGISTRY, dict):
+        raise HTTPException(503, "spatial boundary registry is malformed")
     boundaries = _BOUNDARY_REGISTRY.get("boundaries", [])
-    entry = next((b for b in boundaries if b["boundary_id"] == boundary_id), None)
-    if entry is None:
+    if not isinstance(boundaries, list):
+        raise HTTPException(503, "spatial boundary registry is malformed")
+    candidates = [
+        b
+        for b in boundaries
+        if isinstance(b, dict) and b.get("boundary_id") == boundary_id
+    ]
+    if not candidates:
         raise HTTPException(404, f"unknown boundary '{boundary_id}'")
+    if len(candidates) != 1:
+        raise HTTPException(
+            503, f"boundary '{boundary_id}' has duplicate registry entries"
+        )
+    entry = candidates[0]
     ref = entry.get("geometry_ref")
-    if not ref:
+    if ref is None or ref == "":
+        status = entry.get("status", "unknown")
         raise HTTPException(
             404,
-            f"boundary '{boundary_id}' has no geometry_ref (status={entry['status']})",
+            f"boundary '{boundary_id}' has no geometry_ref (status={status})",
         )
-    path = ROOT / ref
-    if not path.exists():
+    if not isinstance(ref, str):
+        raise HTTPException(503, f"boundary '{boundary_id}' has an invalid geometry_ref")
+    try:
+        path = (ROOT / ref).resolve()
+        if not path.is_relative_to((ROOT / "data").resolve()):
+            raise ValueError("geometry_ref must remain inside data/")
+        available = path.is_file()
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise HTTPException(
+            503, f"boundary '{boundary_id}' has an invalid geometry_ref"
+        ) from exc
+    if not available:
         raise HTTPException(
             503,
             f"geometry for '{boundary_id}' not generated yet — "
