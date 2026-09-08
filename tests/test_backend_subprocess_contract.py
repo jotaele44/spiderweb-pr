@@ -17,30 +17,31 @@ from server.backend import main as backend
 
 @pytest.mark.parametrize("phase", [None, 2, 3, 4])
 def test_pipeline_uses_active_interpreter(monkeypatch, phase):
-    popen = Mock()
-    monkeypatch.setattr(backend.subprocess, "Popen", popen)
-    monkeypatch.setattr(backend, "_jobs", {})
+    registry = Mock()
+    monkeypatch.setattr(backend, "_jobs", registry)
     result = asyncio.run(backend.pipeline_run(backend.PipelineRunRequest(phase=phase)))
-    cmd = popen.call_args.args[0]
+    cmd = registry.submit.call_args.args[1]
     assert cmd == [sys.executable, "-u", str(backend.ROOT / "run_all.py")] + (
         [] if phase is None else ["--phase", str(phase)]
     )
-    assert backend._jobs[result["job_id"]] is popen.return_value
+    assert registry.submit.call_args.args[0] == result["job_id"]
+    assert registry.submit.call_args.kwargs["cwd"] == backend.ROOT
 
 
 def test_index_invokes_existing_module_in_build_mode(monkeypatch):
-    popen = Mock()
-    monkeypatch.setattr(backend.subprocess, "Popen", popen)
-    monkeypatch.setattr(backend, "_jobs", {})
+    registry = Mock()
+    monkeypatch.setattr(backend, "_jobs", registry)
     asyncio.run(backend.rag_index())
-    assert popen.call_args.args[0] == [
+    assert registry.submit.call_args.args[1] == [
         sys.executable,
         "-u",
         "-m",
         "llm.rag_pipeline",
         "--build",
     ]
-    assert (Path(popen.call_args.kwargs["cwd"]) / "llm/rag_pipeline.py").is_file()
+    assert (
+        Path(registry.submit.call_args.kwargs["cwd"]) / "llm/rag_pipeline.py"
+    ).is_file()
 
 
 def test_pipeline_done_waits_for_real_exit_code():
