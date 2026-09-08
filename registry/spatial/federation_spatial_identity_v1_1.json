@@ -65,15 +65,55 @@
   "canonical_entities": [],
   "identity_bindings": [],
   "unresolved": [
-    {"scope":"municipios","reason":"2025 authoritative Census TIGER source/output manifestations are frozen (78 features), but 2026 current-vintage refresh and per-GEOID canonical entity enumeration/topology proof remain open","state":"OPEN"},
-    {"scope":"barrios","reason":"2025 authoritative Census TIGER source/output manifestations are frozen (939 features), but 2026 current-vintage refresh and per-GEOID canonical entity enumeration/topology proof remain open","state":"OPEN"},
-    {"scope":"coastline_archipelago","reason":"NOAA CUSP is selected as contemporary shoreline reference candidate; exact Puerto Rico vector manifestation and cross-source Census/NOAA geometry adjudication are not yet frozen","state":"OPEN"},
-    {"scope":"parcels","reason":"CRIM source manifestations and stable parcel identifiers are not yet incorporated federation-wide","state":"OPEN"},
-    {"scope":"roads","reason":"DTOP/FHWA road manifestations require source/version and segment-identity reconciliation","state":"OPEN"},
-    {"scope":"hydrology","reason":"NHDPlus/USGS/EPA/local hydrologic manifestations require canonical feature binding","state":"OPEN"},
-    {"scope":"infrastructure","reason":"Cross-repository asset manifestations require authoritative ID and geometry reconciliation","state":"OPEN"},
-    {"scope":"poi","reason":"Federation POI identity plane has not yet been adjudicated against source manifestations","state":"OPEN"},
-    {"scope":"aviation","reason":"Airports/airspace/ground-infrastructure identities remain producer-owned until canonical bindings are frozen","state":"OPEN"},
-    {"scope":"bathymetry","reason":"Bathymetric datasets are raster/source manifestations and require explicit feature-identity semantics before canonical entity promotion","state":"OPEN"}
+    {
+      "scope": "municipios",
+      "reason": "2025 Census TIGER source/output manifestations are frozen at 78 features; 2026 Census service metadata and GEOID field are verified, but current response-byte freeze is INFRA_BLOCKED by zero-step GitHub Actions and Census↔SIGE per-GEOID geometry adjudication has not executed on frozen 2026/SIGE bytes.",
+      "state": "BLOCKED"
+    },
+    {
+      "scope": "barrios",
+      "reason": "2025 Census TIGER source/output manifestations are frozen at 939 features; 2026 Census county-subdivision metadata and 10-character GEOID are verified, but current response-byte freeze is INFRA_BLOCKED and parent-scoped Census↔SIGE barrio adjudication has not executed on frozen current bytes.",
+      "state": "BLOCKED"
+    },
+    {
+      "scope": "coastline_archipelago",
+      "reason": "Existing PR_ARCHIPELAGO_GEOGRAPHY evidence already freezes Census TIGER/Line 2025 coastline, 15/15 NOAA current project archives and 2/2 NOAA CUSP packages with closed source-level arithmetic. The v1.1 evidence bridge preserves 42,891 source manifestations/records as retained+excluded+candidate with zero unexplained source residue, but canonical identity and canonical geometry denominators remain OPEN; 148 GNIS current Island-class source IDs partition to 113 polygon-covered and 35 polygon-noncontained, and four SIGE insular identity rows remain unresolved. Legacy receipts also lack exact per-manifestation retrieval timestamps required for strict v1.1 source rows, so timestamps are not fabricated.",
+      "state": "OPEN"
+    },
+    {
+      "scope": "parcels",
+      "reason": "CRIM source manifestations and stable parcel identifiers are not yet incorporated federation-wide",
+      "state": "OPEN"
+    },
+    {
+      "scope": "roads",
+      "reason": "DTOP/FHWA road manifestations require source/version and segment-identity reconciliation",
+      "state": "OPEN"
+    },
+    {
+      "scope": "hydrology",
+      "reason": "NHDPlus/USGS/EPA/local hydrologic manifestations require canonical feature binding",
+      "state": "OPEN"
+    },
+    {
+      "scope": "infrastructure",
+      "reason": "Cross-repository asset manifestations require authoritative ID and geometry reconciliation",
+      "state": "OPEN"
+    },
+    {
+      "scope": "poi",
+      "reason": "Federation POI identity plane has not yet been adjudicated against source manifestations",
+      "state": "OPEN"
+    },
+    {
+      "scope": "aviation",
+      "reason": "Airports/airspace/ground-infrastructure identities remain producer-owned until canonical bindings are frozen",
+      "state": "OPEN"
+    },
+    {
+      "scope": "bathymetry",
+      "reason": "Bathymetric datasets are raster/source manifestations and require explicit feature-identity semantics before canonical entity promotion",
+      "state": "OPEN"
+    }
   ]
 }
