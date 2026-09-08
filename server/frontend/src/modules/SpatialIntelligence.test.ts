@@ -7,8 +7,12 @@ describe("layerStatusText", () => {
     expect(layerStatusText(true, "source-ready")).toBe("source ready");
   });
 
-  it("only reports rendered after the map layer reaches loaded", () => {
+  it("only reports rendered after the adapter layer reaches loaded", () => {
     expect(layerStatusText(true, "loaded")).toBe("rendered");
+  });
+
+  it("surfaces unsupported renderer capability explicitly", () => {
+    expect(layerStatusText(true, "unsupported")).toBe("unsupported");
   });
 
   it("preserves disabled and error states", () => {
