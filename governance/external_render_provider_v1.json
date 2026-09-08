@@ -1,0 +1,59 @@
+{
+  "contract": "federation-external-render-provider/1.0",
+  "authority": "spiderweb-pr",
+  "purpose": "Bound external basemap renderers without promoting provider pixels or map data into federation source authority.",
+  "identity_classes": {
+    "source_manifestation": "Durable source bytes/data governed by federation provenance rules.",
+    "render_manifestation": "Ephemeral provider-rendered presentation; never canonical source data.",
+    "observation": "Durable investigator statement about what was visually inspected; contains no provider pixels."
+  },
+  "providers": {
+    "apple-mapkit": {
+      "class": "EXTERNAL_RENDER_PROVIDER",
+      "authority": "NONE",
+      "status": "PROVISIONAL",
+      "map_types": ["standard", "satellite", "hybrid"],
+      "allowed": {
+        "interactive_display": true,
+        "federation_overlay_display": true,
+        "coordinate_navigation": true,
+        "provider_switching": true,
+        "observation_provenance": true
+      },
+      "forbidden": {
+        "bulk_download": true,
+        "tile_harvest": true,
+        "persistent_cache": true,
+        "prefetch_for_archive": true,
+        "raster_mosaic": true,
+        "secondary_or_derived_map_database": true,
+        "commit_provider_pixels": true,
+        "provider_pixels_as_identity_proof": true,
+        "remove_or_obscure_attribution": true
+      },
+      "credentials": {
+        "required_for_live_runtime": true,
+        "provision_stage": "FINAL_INTEGRATION_ONLY",
+        "committed_to_repository": false
+      },
+      "certification": {
+        "display_reference_scope": "OPEN",
+        "overlay_parity": "OPEN",
+        "historical_imagery_scope": "NONCANONICAL",
+        "source_authority_scope": "NONCANONICAL"
+      }
+    }
+  },
+  "invariants": [
+    "APPLE_MAP_DATA_NEVER_BECOMES_SOURCE_MANIFESTATION",
+    "NO_PROVIDER_PIXEL_PERSISTENCE",
+    "NO_PROVIDER_TILE_HARVEST",
+    "NO_PROVIDER_DATA_DERIVED_DATABASE",
+    "ATTRIBUTION_REMAINS_VISIBLE",
+    "FEDERATION_GEOMETRY_REMAINS_PROVIDER_INDEPENDENT",
+    "APPLE_RUNTIME_FAILURE_CANNOT_DROP_OR_MUTATE_CANONICAL_GEOMETRY",
+    "APPLE_RUNTIME_WITHOUT_CREDENTIALS_FAILS_CLOSED",
+    "OBSERVATION_RECORDS_CONTAIN_NO_PROVIDER_PIXELS",
+    "TRACKING_WORKFLOWS_MUST_PASS_PROVIDER_USE_POLICY_GATE"
+  ]
+}
