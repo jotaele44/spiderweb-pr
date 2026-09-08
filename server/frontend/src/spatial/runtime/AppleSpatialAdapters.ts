@@ -1,9 +1,9 @@
-import type { AppleMapKitRuntime } from "./AppleMapKitRuntime";
 import {
   UnsupportedSpatialCapabilityError,
   type GeoJsonCircleLayerSpec,
   type GeoJsonPolygonLayerSpec,
   type SpatialAdapters,
+  type SpatialCameraAdapter,
   type SpatialLayerHandle,
   type SpatialMarkerHandle,
   type SpatialMarkerSpec,
@@ -20,10 +20,32 @@ export interface AppleOverlayBridge {
   addMarker(spec: SpatialMarkerSpec): SpatialMarkerHandle;
 }
 
+function unavailableCamera(): SpatialCameraAdapter {
+  return {
+    supported: false,
+    setView() {
+      throw new UnsupportedSpatialCapabilityError("apple-mapkit", "camera");
+    },
+    getView() {
+      throw new UnsupportedSpatialCapabilityError("apple-mapkit", "camera");
+    },
+    resize() {
+      throw new UnsupportedSpatialCapabilityError("apple-mapkit", "camera");
+    },
+  };
+}
+
+/**
+ * `cameraBridge` is deliberately optional. Apple overlay parity can be tested
+ * credential-free before camera parity, but the adapter advertises camera=false
+ * until a measured zoom↔camera-distance bridge is supplied. This prevents a
+ * deterministic approximation from being mislabeled as evidence of parity.
+ */
 export function createAppleSpatialAdapters(
-  runtime: AppleMapKitRuntime,
   overlayBridge: AppleOverlayBridge,
+  cameraBridge?: SpatialCameraAdapter,
 ): SpatialAdapters {
+  const camera = cameraBridge ?? unavailableCamera();
   return {
     renderer: "apple-mapkit",
     capabilities: {
@@ -31,7 +53,7 @@ export function createAppleSpatialAdapters(
       geoJsonCircle: true,
       vectorTilePolygon: false,
       investigationMarker: true,
-      camera: true,
+      camera: camera.supported,
       popup: false,
       featureSelection: false,
     },
@@ -51,23 +73,6 @@ export function createAppleSpatialAdapters(
       supported: true,
       addMarker: (spec) => overlayBridge.addMarker(spec),
     },
-    camera: {
-      supported: true,
-      setView(view, options) {
-        // A canonical zoom→Apple camera-distance conversion is intentionally
-        // not guessed here. The live bridge must supply a measured conversion
-        // before this adapter is wired into useSpatialRuntime.
-        void view;
-        void options;
-        throw new UnsupportedSpatialCapabilityError("apple-mapkit", "camera");
-      },
-      getView() {
-        throw new UnsupportedSpatialCapabilityError("apple-mapkit", "camera");
-      },
-      resize() {
-        // MapKit JS owns its host resize behavior; no provider pixel access is
-        // exposed. Live parity still requires an observed resize regression.
-      },
-    },
+    camera,
   };
 }
