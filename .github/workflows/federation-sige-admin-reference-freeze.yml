@@ -1,0 +1,40 @@
+name: Federation SIGE Admin Reference Freeze
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/federation-sige-admin-reference-freeze.yml'
+      - 'registry/spatial/admin_boundary_adjudication_v1_1.json'
+      - 'registry/spatial/current_service_metadata_evidence_v1_1.json'
+      - 'scripts/freeze_sige_admin_reference_v1_1.py'
+      - 'scripts/adjudicate_admin_boundaries_v1_1.py'
+      - 'tests/test_freeze_sige_admin_reference_v1_1.py'
+      - 'tests/test_adjudicate_admin_boundaries_v1_1.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-sige-admin-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bounded geometry test dependencies
+        run: python3 -m pip install --disable-pip-version-check pytest shapely pyproj
+      - name: Validate freezer and adjudication regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_freeze_sige_admin_reference_v1_1.py
+          tests/test_adjudicate_admin_boundaries_v1_1.py
+      - name: Freeze SIGE source-native and comparison manifestations
+        run: >-
+          python3 scripts/freeze_sige_admin_reference_v1_1.py
+          --output-dir artifacts/federation-sige-admin-reference-freeze
+      - name: Upload frozen SIGE manifestations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: federation-sige-admin-reference-freeze
+          path: artifacts/federation-sige-admin-reference-freeze
+          if-no-files-found: error
