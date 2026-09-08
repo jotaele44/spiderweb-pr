@@ -7,6 +7,7 @@ const outDir = path.resolve(process.env.GUI_ARTIFACT_DIR || 'artifacts/gui-runti
 fs.mkdirSync(outDir, { recursive: true })
 
 const modules = ['Command', 'Finance', 'Spatial', 'Anomaly', 'Graph', 'Query']
+const headings = { Command: 'Command Center', Finance: 'Finance Intelligence', Spatial: 'Spatial Intelligence', Anomaly: 'Anomaly Workbench', Graph: 'Investigation Graph', Query: 'Query Layer' }
 const viewports = [320, 375, 768, 1280, 1440, 1920].map((width) => ({ width, height: width < 768 ? 844 : 900 }))
 const engines = { chromium, firefox, webkit }
 const results = []
@@ -14,6 +15,8 @@ let failed = false
 
 function record(entry) {
   results.push(entry)
+  fs.appendFileSync(path.join(outDir, 'results.jsonl'), JSON.stringify(entry) + '\n')
+  if (entry.status === 'FAIL') console.error(JSON.stringify(entry))
   if (entry.status === 'FAIL') failed = true
 }
 
@@ -25,6 +28,11 @@ for (const [engineName, engine] of Object.entries(engines)) {
       const page = await context.newPage()
       const pageErrors = []
       page.on('pageerror', (error) => pageErrors.push(String(error)))
+      page.on('console', (message) => {
+        if (/The above error occurred|Unhandled render error|There is no style added|feature id is required|maplibre-gl-worker/i.test(message.text())) {
+          pageErrors.push(`console ${message.type()}: ${message.text()}`)
+        }
+      })
 
       try {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 })
@@ -34,7 +42,14 @@ for (const [engineName, engine] of Object.entries(engines)) {
           const errorOffset = pageErrors.length
           const tab = page.getByRole('tab', { name: moduleName, exact: true })
           await tab.click()
-          await page.waitForTimeout(150)
+          await page.getByRole('tabpanel').getByRole('heading', { name: headings[moduleName], exact: true }).waitFor({ timeout: 60000 })
+          if (moduleName === 'Spatial') {
+            await page.locator('.map-host[data-spatial-ready="true"]').waitFor({ timeout: 60000 })
+          }
+          if (await page.getByRole('heading', { name: 'Something went wrong', exact: true }).count()) {
+            throw new Error(`${moduleName} reached the render-error fallback`)
+          }
+          await page.waitForTimeout(250)
           const selected = await tab.getAttribute('aria-selected')
           const moduleErrors = pageErrors.slice(errorOffset)
           const layout = await page.evaluate(() => ({
@@ -103,6 +118,7 @@ for (const [engineName, engine] of Object.entries(engines)) {
       } catch (error) {
         record({ engine: engineName, viewport: viewport.width, status: 'FAIL', error: String(error), page_errors: pageErrors })
       } finally {
+        if (pageErrors.length) record({ engine: engineName, viewport: viewport.width, mode: 'whole-page-runtime-errors', status: 'FAIL', page_errors: pageErrors })
         await context.close()
       }
     }

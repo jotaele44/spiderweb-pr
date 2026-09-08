@@ -169,7 +169,7 @@ function useGeoJsonLayer(opts: {
     }
 
     if (!isOn) {
-      if (map.isStyleLoaded()) teardown();
+      if (map.getStyle()) teardown();
       onStatus("idle");
       return;
     }
@@ -204,7 +204,7 @@ function useGeoJsonLayer(opts: {
     return () => {
       cancelled = true;
       controller.abort();
-      if (map.isStyleLoaded()) teardown();
+      if (map.getStyle()) teardown();
     };
   }, [mapRef, ready, sourceId, url, isOn]);
 }
@@ -236,7 +236,7 @@ function useVectorTileLayer(opts: {
     }
 
     if (!isOn) {
-      if (map.isStyleLoaded()) teardown();
+      if (map.getStyle()) teardown();
       onStatus("idle");
       return;
     }
@@ -289,7 +289,7 @@ function useVectorTileLayer(opts: {
       cancelled = true;
       controller.abort();
       map.off("error", onMapError);
-      if (map.isStyleLoaded()) teardown();
+      if (map.getStyle()) teardown();
     };
   }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn]);
 }
@@ -359,6 +359,7 @@ export function SpatialIntelligence({
     setTilesFailed,
     activeMode,
     fallbackReason,
+    initializationError,
   } = useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG, spatialMode);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
@@ -412,15 +413,12 @@ export function SpatialIntelligence({
     setStatus("gazetteer_pr_domestic_names"),
   );
 
-  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime now;
-  // this effect only handles the marker-specific part of unmount cleanup.
-  useEffect(() => {
-    return () => {
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-    };
-  }, []);
-
+  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime; this
+  // effect owns the markers, including their teardown. `mapReady` is in the
+  // deps on purpose: a 2D/3D switch swaps mapRef.current behind the same ref
+  // object, which would not re-trigger this effect on its own — markers would
+  // be missing on the rebuilt MapLibre map until some unrelated state changed,
+  // and the ones bound to the destroyed map would leak.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -462,7 +460,12 @@ export function SpatialIntelligence({
         .addTo(map);
       markersRef.current.push(marker);
     });
-  }, [data, layers, setSelection, mapRef]);
+
+    return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+    };
+  }, [data, layers, setSelection, mapRef, mapReady]);
 
   useEffect(() => {
     const runtime = runtimeRef.current;
@@ -537,13 +540,16 @@ export function SpatialIntelligence({
           <span>3D scene unavailable ({fallbackReason}) — showing 2D instead.</span>
         </div>
       )}
+      {initializationError && (
+        <div className="map-error" role="alert">Map unavailable: {initializationError}</div>
+      )}
       <div
         className="map-shell"
         data-layer-collapsed={layerPanelCollapsed}
         style={{ gridTemplateColumns: layerPanelCollapsed ? "1fr 0px" : "1fr 280px" }}
       >
         <div className="map-col">
-          <div ref={hostRef} className="map-host" />
+          <div ref={hostRef} className="map-host" data-spatial-ready={mapReady} />
           {activeMode === "maplibre" && failedLayers.length > 0 && (
             <div className="map-error" role="alert">
               <span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span>

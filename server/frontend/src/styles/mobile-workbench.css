@@ -8,8 +8,10 @@
   pointer-events: none;
 }
 
-@media (max-width: 767px) {
-  .workbench {
+@media (max-width: 1023px) {
+  .workbench,
+  .workbench[data-left-collapsed="true"],
+  .workbench[data-right-collapsed="true"] {
     --cmd-h: 92px;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: var(--cmd-h) minmax(0, 1fr) var(--time-h);
@@ -92,10 +94,22 @@
     display: none;
   }
 
+  .tabstrip > .chrome-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+
+  .timeline {
+    display: grid;
+  }
+
   .rail,
   .inspector {
+    display: block;
     position: fixed;
-    top: calc(18px + var(--cmd-h) + 34px);
+    top: calc(18px + var(--cmd-h) + 44px);
     bottom: var(--time-h);
     width: min(86vw, 320px);
     max-width: 320px;
@@ -148,11 +162,21 @@
   .map-shell {
     display: block !important;
     min-width: 0;
+    overflow-y: auto;
+  }
+
+  .map-shell .map-col {
+    height: clamp(240px, 45vh, 480px);
+    min-height: 240px;
   }
 
   .map-shell .layer-panel {
     max-height: 38vh;
     overflow: auto;
+  }
+
+  .map-shell[data-layer-collapsed="true"] .layer-panel {
+    display: none;
   }
 
   .act,
