@@ -27,21 +27,26 @@ export function useSpatialRuntime(
   const [tilesFailed, setTilesFailed] = useState(false);
   const [activeMode, setActiveMode] = useState<SpatialRuntimeMode>(mode);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [initializationError, setInitializationError] = useState<string | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
     let cancelled = false;
+    let initializingRuntime: SpatialRuntime | null = null;
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     let unsubscribeError: Unsubscribe = () => {};
 
     const bootMapLibre = async (): Promise<{ runtime: SpatialRuntime; mapLibre: MapLibreRuntime }> => {
       const runtime = createSpatialRuntime("maplibre");
+      initializingRuntime = runtime;
       await runtime.initialize(host, config);
       return { runtime, mapLibre: runtime };
     };
 
     const boot = async () => {
+      setTilesFailed(false);
+      setInitializationError(null);
       let resolvedMode: SpatialRuntimeMode = mode;
       let fallback: string | null = null;
       let runtime: SpatialRuntime;
@@ -49,11 +54,17 @@ export function useSpatialRuntime(
 
       if (mode === "cesium") {
         const cesiumRuntime = await createCesiumRuntime();
+        if (cancelled) {
+          cesiumRuntime.destroy();
+          return;
+        }
+        initializingRuntime = cesiumRuntime;
         try {
           await cesiumRuntime.initialize(host, config);
           runtime = cesiumRuntime;
         } catch (err) {
           cesiumRuntime.destroy();
+          if (cancelled) return;
           console.error("Cesium runtime failed to initialize — falling back to MapLibre:", err);
           const fallbackBoot = await bootMapLibre();
           runtime = fallbackBoot.runtime;
@@ -79,11 +90,17 @@ export function useSpatialRuntime(
       setReady(true);
     };
 
-    void boot();
+    void boot().catch((error: unknown) => {
+      initializingRuntime?.destroy();
+      if (!cancelled) {
+        setInitializationError(error instanceof Error ? error.message : "Map initialization failed");
+      }
+    });
 
     return () => {
       cancelled = true;
       unsubscribeError();
+      if (initializingRuntime !== runtimeRef.current) initializingRuntime?.destroy();
       runtimeRef.current?.destroy();
       runtimeRef.current = null;
       mapRef.current = null;
@@ -136,5 +153,6 @@ export function useSpatialRuntime(
     setTilesFailed,
     activeMode,
     fallbackReason,
+    initializationError,
   };
 }

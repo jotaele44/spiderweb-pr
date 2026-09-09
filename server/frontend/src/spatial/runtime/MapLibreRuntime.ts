@@ -1,8 +1,12 @@
 import * as maplibregl from "maplibre-gl";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { CameraView, SpatialRuntime, SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
+
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 export class MapLibreRuntime implements SpatialRuntime {
   private map: maplibregl.Map | null = null;
+  private finishInitialization: (() => void) | null = null;
   private basemapSourceId = "";
   private readonly basemapErrorListeners = new Set<() => void>();
 
@@ -24,10 +28,20 @@ export class MapLibreRuntime implements SpatialRuntime {
       }
     });
     this.map = map;
-    return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const finish = () => {
+        map.off("style.load", finish);
+        if (this.finishInitialization === finish) this.finishInitialization = null;
+        resolve();
+      };
+      this.finishInitialization = finish;
+      map.on("style.load", finish);
+    });
   }
 
   destroy(): void {
+    this.finishInitialization?.();
+    this.finishInitialization = null;
     this.map?.remove();
     this.map = null;
     this.basemapErrorListeners.clear();

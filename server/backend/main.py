@@ -19,14 +19,16 @@ import sys
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator, Literal, Optional
+from typing import Annotated, Any, AsyncGenerator, Literal, Optional
 
 import aiosqlite
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict
 from sse_starlette.sse import EventSourceResponse
+
+from server.backend.jobs import JobCapacityError, JobRegistry, ManagedJob
 
 log = logging.getLogger("priis.backend")
 SERVICE_ID = "spiderweb-priis-api"
@@ -66,7 +68,10 @@ async def lifespan(app: FastAPI):
             log.warning("startup migrations skipped: %s", exc)
     else:
         log.info("priis.db missing at %s; skipping startup migrations", DB_PATH)
-    yield
+    try:
+        yield
+    finally:
+        await asyncio.to_thread(_jobs.close)
 
 # ─── App setup ─────────────────────────────────────────────────────────────────
 
@@ -79,8 +84,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory job registry: job_id → subprocess.Popen
-_jobs: dict = {}
+# Process-local diagnostic jobs own output capture independently of viewers.
+_jobs = JobRegistry()
 
 # ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -228,57 +233,63 @@ class PipelineRunRequest(BaseModel):
 @app.post("/pipeline/run")
 async def pipeline_run(req: PipelineRunRequest = PipelineRunRequest()):
     job_id = str(uuid.uuid4())
-    cmd = ["python", str(ROOT / "run_all.py")]
+    cmd = [sys.executable, "-u", str(ROOT / "run_all.py")]
     if req.phase is not None:
         cmd += ["--phase", str(req.phase)]
-    proc = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        cwd=str(ROOT),
-    )
-    _jobs[job_id] = proc
+    try:
+        await asyncio.to_thread(_jobs.submit, job_id, cmd, cwd=ROOT)
+    except JobCapacityError as exc:
+        raise HTTPException(429, str(exc)) from exc
     return {"job_id": job_id, "status": "running"}
 
 
 @app.get("/pipeline/status/{job_id}")
 async def pipeline_status(job_id: str):
-    proc = _jobs.get(job_id)
-    if proc is None:
+    job = await asyncio.to_thread(_jobs.get, job_id)
+    if job is None:
         raise HTTPException(404, "job not found")
-    rc = proc.poll()
-    if rc is None:
-        return {"job_id": job_id, "status": "running"}
-    return {"job_id": job_id, "status": "done" if rc == 0 else "error", "returncode": rc}
+    return {"job_id": job_id, **job.status()}
+
+
+@app.get("/pipeline/jobs")
+async def pipeline_jobs():
+    """Discover owned jobs when a launch response or stream was lost."""
+    return await asyncio.to_thread(_jobs.snapshot)
 
 
 async def _stream_stdout(proc: subprocess.Popen) -> AsyncGenerator[dict, None]:
-    loop = asyncio.get_event_loop()
-    while True:
-        line = await loop.run_in_executor(None, proc.stdout.readline)
-        if not line:
-            break
-        yield {"data": line.rstrip()}
-    yield {"event": "done", "data": json.dumps({"returncode": proc.poll()})}
+    job = ManagedJob(proc, max_output_bytes=16 * 1024 * 1024)
+    try:
+        async for event in job.events():
+            yield event
+    finally:
+        await asyncio.to_thread(job.close)
 
 
 @app.get("/pipeline/events/{job_id}")
-async def pipeline_events(job_id: str):
-    proc = _jobs.get(job_id)
-    if proc is None:
+async def pipeline_events(
+    job_id: str, last_event_id: Annotated[str | None, Header()] = None
+):
+    job = await asyncio.to_thread(_jobs.get, job_id)
+    if job is None:
         raise HTTPException(404, "job not found")
-    return EventSourceResponse(_stream_stdout(proc))
+    try:
+        offset = int(last_event_id) if last_event_id is not None else 0
+        if not 0 <= offset <= job.output_bytes:
+            raise ValueError("cursor outside retained output")
+    except ValueError as exc:
+        raise HTTPException(400, "invalid Last-Event-ID output cursor") from exc
+    return EventSourceResponse(job.events(offset))
 
 
 @app.delete("/pipeline/{job_id}")
 async def pipeline_stop(job_id: str):
-    proc = _jobs.get(job_id)
-    if proc is None:
+    job = await asyncio.to_thread(_jobs.get, job_id)
+    if job is None:
         raise HTTPException(404, "job not found")
-    proc.terminate()
-    _jobs.pop(job_id, None)
-    return {"job_id": job_id, "status": "terminated"}
+    if not await asyncio.to_thread(job.stop):
+        raise HTTPException(503, "job termination is still pending")
+    return {"job_id": job_id, **job.status()}
 
 # ─── GeoJSON layers ────────────────────────────────────────────────────────────
 
@@ -484,18 +495,46 @@ async def spatial_boundary_geometry(boundary_id: str):
     serves it. 404 for an unknown boundary_id; 503 if geometry_ref is set but
     the file hasn't been generated yet on this deployment.
     """
+    # Read defensively, matching _load_spatial_yaml: a hand-edited or partially
+    # written registry must degrade to a 404/503 for the affected entry, never a
+    # 500. Entries that aren't mappings (or lack boundary_id) are skipped rather
+    # than raising, so one malformed entry can't take the whole route down.
+    if not isinstance(_BOUNDARY_REGISTRY, dict):
+        raise HTTPException(503, "spatial boundary registry is malformed")
     boundaries = _BOUNDARY_REGISTRY.get("boundaries", [])
-    entry = next((b for b in boundaries if b["boundary_id"] == boundary_id), None)
-    if entry is None:
+    if not isinstance(boundaries, list):
+        raise HTTPException(503, "spatial boundary registry is malformed")
+    candidates = [
+        b
+        for b in boundaries
+        if isinstance(b, dict) and b.get("boundary_id") == boundary_id
+    ]
+    if not candidates:
         raise HTTPException(404, f"unknown boundary '{boundary_id}'")
+    if len(candidates) != 1:
+        raise HTTPException(
+            503, f"boundary '{boundary_id}' has duplicate registry entries"
+        )
+    entry = candidates[0]
     ref = entry.get("geometry_ref")
-    if not ref:
+    if ref is None or ref == "":
+        status = entry.get("status", "unknown")
         raise HTTPException(
             404,
-            f"boundary '{boundary_id}' has no geometry_ref (status={entry['status']})",
+            f"boundary '{boundary_id}' has no geometry_ref (status={status})",
         )
-    path = ROOT / ref
-    if not path.exists():
+    if not isinstance(ref, str):
+        raise HTTPException(503, f"boundary '{boundary_id}' has an invalid geometry_ref")
+    try:
+        path = (ROOT / ref).resolve()
+        if not path.is_relative_to((ROOT / "data").resolve()):
+            raise ValueError("geometry_ref must remain inside data/")
+        available = path.is_file()
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise HTTPException(
+            503, f"boundary '{boundary_id}' has an invalid geometry_ref"
+        ) from exc
+    if not available:
         raise HTTPException(
             503,
             f"geometry for '{boundary_id}' not generated yet — "
@@ -511,41 +550,67 @@ class RagQueryRequest(BaseModel):
     no_context: bool = False
 
 
-async def _stream_rag(query: str, top_k: int, no_context: bool) -> AsyncGenerator[dict, None]:
-    cmd = ["python", str(ROOT / "query_llm.py"), query, "--top-k", str(top_k)]
+async def _start_rag(query: str, top_k: int, no_context: bool):
+    cmd = [sys.executable, "-u", str(ROOT / "query_llm.py"), query, "--top-k", str(top_k)]
     if no_context:
         cmd.append("--no-context")
-    proc = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        cwd=str(ROOT),
-    )
-    loop = asyncio.get_event_loop()
-    while True:
-        line = await loop.run_in_executor(None, proc.stdout.readline)
-        if not line:
-            break
-        yield {"data": line.rstrip()}
-    rc = proc.wait()
-    yield {"event": "done", "data": json.dumps({"returncode": rc})}
+    job_id = str(uuid.uuid4())
+    try:
+        job = await asyncio.to_thread(_jobs.submit, job_id, cmd, cwd=ROOT)
+    except JobCapacityError as exc:
+        raise HTTPException(429, str(exc)) from exc
+    return job_id, job
+
+
+async def _rag_events(job_id: str, job: ManagedJob):
+    try:
+        async for event in job.events():
+            yield event
+    finally:
+        await asyncio.to_thread(_jobs.remove, job_id)
+
+
+async def _stream_rag(query: str, top_k: int, no_context: bool):
+    job_id, job = await _start_rag(query, top_k, no_context)
+    events = _rag_events(job_id, job)
+    try:
+        async for event in events:
+            yield event
+    finally:
+        await events.aclose()
+
+
+class _OwnedJobResponse(EventSourceResponse):
+    """Clean up a RAG child even when its iterator never starts."""
+
+    def __init__(self, job_id: str, job: ManagedJob, registry: JobRegistry):
+        super().__init__(job.events())
+        self._job_id = job_id
+        self._registry = registry
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            await asyncio.shield(
+                asyncio.to_thread(self._registry.remove, self._job_id)
+            )
 
 
 @app.post("/rag/query")
 async def rag_query(req: RagQueryRequest):
-    return EventSourceResponse(_stream_rag(req.query, req.top_k, req.no_context))
+    job_id, job = await _start_rag(req.query, req.top_k, req.no_context)
+    return _OwnedJobResponse(job_id, job, _jobs)
 
 
 @app.post("/rag/index")
 async def rag_index():
     job_id = str(uuid.uuid4())
-    proc = subprocess.Popen(
-        ["python", str(ROOT / "rag_pipeline.py")],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        cwd=str(ROOT),
-    )
-    _jobs[job_id] = proc
+    try:
+        await asyncio.to_thread(
+            _jobs.submit, job_id,
+            [sys.executable, "-u", "-m", "llm.rag_pipeline", "--build"], cwd=ROOT,
+        )
+    except JobCapacityError as exc:
+        raise HTTPException(429, str(exc)) from exc
     return {"job_id": job_id, "status": "indexing"}

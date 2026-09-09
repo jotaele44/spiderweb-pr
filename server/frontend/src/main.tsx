@@ -33,7 +33,7 @@ document.documentElement.dataset.theme = resolveInitialTheme(
 // the side rails cover the tab strip before React can offer their toggles. Seed
 // the existing React-owned collapse state before the first render. This is only
 // a viewport default; the operator can reopen either drawer immediately.
-if (window.matchMedia("(max-width: 767px)").matches) {
+if (window.matchMedia("(max-width: 1023px)").matches) {
   localStorage.setItem("priis_left_collapsed", "true");
   localStorage.setItem("priis_right_collapsed", "true");
 }

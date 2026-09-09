@@ -7,7 +7,7 @@
 # Grows as more modules are cleaned in later themes.
 LINT_PATHS := provenance_utils.py run_modes.py integration/mbil.py \
 	pipeline/db_utils.py pipeline/terrain_hook.py federation/envelope.py \
-	federation/readiness.py pipeline/logging_config.py pipeline/config_loader.py \
+	federation/readiness.py federation/namespace.py pipeline/logging_config.py pipeline/config_loader.py \
 	pipeline/seeding.py pipeline/verbosity.py pipeline/path_safety.py
 
 help:  ## Show this help

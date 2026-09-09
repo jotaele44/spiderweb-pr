@@ -52,7 +52,11 @@ def _catalog_layer_ids() -> set[str]:
 # ─── Boundary registry ──────────────────────────────────────────────────────────
 
 
-def test_boundary_registry_has_all_four_kinds():
+def test_boundary_registry_has_all_three_boundary_kinds():
+    """Three *boundary* kinds. The fourth object in the design — the context
+    buffer — is a distance policy, not a boundary, so it lives in its own
+    top-level `context_buffer` key rather than in `boundaries` (see
+    test_context_buffer_bounds_are_consistent)."""
     reg = _boundaries()
     kinds = {b["kind"] for b in reg["boundaries"]}
     assert kinds == {"core", "eez_legal", "analytical_domain"}, kinds
@@ -239,3 +243,102 @@ def test_spatial_boundary_geometry_route(client):
 def test_spatial_boundary_geometry_route_404s_unknown_id(client):
     resp = client.get("/spatial/boundaries/NOT_A_REAL_BOUNDARY.geojson")
     assert resp.status_code == 404
+
+
+@pytest.mark.parametrize(
+    "registry",
+    [
+        pytest.param(
+            {"boundaries": [{"status": "resolved"}]},
+            id="entry-missing-boundary-id",
+        ),
+        pytest.param(
+            {"boundaries": [None, "not-a-mapping", 7]},
+            id="entries-not-mappings",
+        ),
+        pytest.param(
+            {"boundaries": [{"boundary_id": "PR_CORE_BOUNDARY"}]},
+            id="entry-missing-status-and-geometry-ref",
+        ),
+        pytest.param({"boundaries": "not-a-list"}, id="boundaries-not-a-list"),
+        pytest.param({}, id="boundaries-key-absent"),
+        pytest.param(None, id="registry-null"),
+        pytest.param([], id="registry-list"),
+        pytest.param({"boundaries": None}, id="boundaries-null"),
+    ],
+)
+def test_malformed_boundary_registry_never_500s(client, monkeypatch, registry):
+    """A hand-edited or half-written registry must degrade to a 4xx/503 for the
+    affected entry, not a 500. The loader is deliberately defensive about
+    unparseable YAML; structurally-parseable-but-wrong-shaped YAML gets past it,
+    so the route has to be defensive too."""
+    from server.backend import main as backend_main
+
+    monkeypatch.setattr(backend_main, "_BOUNDARY_REGISTRY", registry)
+    resp = client.get("/spatial/boundaries/PR_CORE_BOUNDARY.geojson")
+    assert resp.status_code != 500, resp.text
+    assert resp.status_code in (404, 503), resp.text
+
+
+@pytest.mark.parametrize(
+    "ref", [7, False, {}, [], "../outside.geojson", "data/bad\x00name"]
+)
+def test_boundary_route_rejects_invalid_references(client, monkeypatch, tmp_path, ref):
+    from server.backend import main as backend_main
+
+    monkeypatch.setattr(backend_main, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        backend_main,
+        "_BOUNDARY_REGISTRY",
+        {"boundaries": [{"boundary_id": "test", "geometry_ref": ref}]},
+    )
+    response = client.get("/spatial/boundaries/test.geojson")
+    assert response.status_code == 503
+
+
+def test_boundary_route_rejects_duplicate_ids(client, monkeypatch):
+    from server.backend import main as backend_main
+
+    entry = {"boundary_id": "test", "geometry_ref": "data/test.geojson"}
+    monkeypatch.setattr(
+        backend_main, "_BOUNDARY_REGISTRY", {"boundaries": [entry, dict(entry)]}
+    )
+    response = client.get("/spatial/boundaries/test.geojson")
+    assert response.status_code == 503
+    assert "duplicate" in response.json()["detail"]
+
+
+def test_boundary_route_preserves_valid_bytes_and_rejects_symlink_escape(
+    client, monkeypatch, tmp_path
+):
+    from server.backend import main as backend_main
+
+    root = tmp_path / "repo"
+    (root / "data").mkdir(parents=True)
+    path = root / "data/test.geojson"
+    payload = b'{"type": "FeatureCollection", "features": []}\n'
+    path.write_bytes(payload)
+    monkeypatch.setattr(backend_main, "ROOT", root)
+    monkeypatch.setattr(
+        backend_main,
+        "_BOUNDARY_REGISTRY",
+        {
+            "boundaries": [
+                None,
+                {"boundary_id": "other"},
+                {"boundary_id": "test", "geometry_ref": "data/test.geojson"},
+            ]
+        },
+    )
+    response = client.get("/spatial/boundaries/test.geojson")
+    assert response.status_code == 200
+    assert response.content == payload
+    assert response.headers["content-type"] == "application/geo+json"
+    path.unlink()
+    outside = tmp_path / "outside.geojson"
+    outside.write_bytes(payload)
+    path.symlink_to(outside)
+    assert client.get("/spatial/boundaries/test.geojson").status_code == 503
+    path.unlink()
+    path.mkdir()
+    assert client.get("/spatial/boundaries/test.geojson").status_code == 503
