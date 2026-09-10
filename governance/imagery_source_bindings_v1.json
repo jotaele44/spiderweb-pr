@@ -1,0 +1,84 @@
+{
+  "schema": "federation-imagery-source-bindings/1.0",
+  "as_of_utc": "2026-09-08T23:40:00Z",
+  "parent_registry": "governance/imagery_provider_registry_v1.json",
+  "bindings": [
+    {
+      "binding_id": "noaa-digital-coast-pr-naip-2021-2023",
+      "provider_id": "noaa-digital-coast",
+      "source_family": "source-usda-naip-family",
+      "manifestation_type": "SOURCE_MANIFESTATION",
+      "endpoint": "https://coast.noaa.gov/htdata/raster7/imagery/PR_NAIP_2021_9825/stac/noaa_imagery_item_collection_m9825.json",
+      "catalog_type": "STAC FeatureCollection",
+      "repository_source_id": "noaa-pr-naip-2021-2023-stac",
+      "collection_id": "noaa_imagery_collection_m9825",
+      "observed_asset_media_type": "image/tiff",
+      "observed_bands": ["red", "green", "blue", "nir"],
+      "observed_crs_example": "EPSG:26920",
+      "observed_pixel_size_example_m": 0.6,
+      "observed_datetime_example": "2022-01-29T00:00:00Z",
+      "license_field_observed": "NLPL",
+      "asset_format_state": "GEOTIFF_CONFIRMED_COG_UNRESOLVED",
+      "coverage_label": "2021–2023 Puerto Rico + USVI NAIP 4-band",
+      "authority": "SOURCE_NATIVE_AERIAL_OBSERVATION",
+      "retention": "CANDIDATE_ALLOWED_BUT_LICENSE_CODE_MUST_BE_ADJUDICATED_BEFORE_CERTIFIED_REDISTRIBUTION",
+      "status": "BOUND_PROVISIONAL",
+      "evidence": [
+        "thehub-pr:server/frontend/src/gis/sourceRegistry.js",
+        "live STAC response inspected 2026-09-08 UTC"
+      ]
+    },
+    {
+      "binding_id": "usgs-landsat-c2l2-sr-stac",
+      "provider_id": "usgs-landsat",
+      "source_family": "source-usgs-landsat-archive",
+      "manifestation_type": "SOURCE_MANIFESTATION",
+      "endpoint": "https://landsatlook.usgs.gov/stac-server",
+      "catalog_type": "STAC API",
+      "repository_source_id": "usgs-landsat-stac-sr",
+      "collection_id": "landsat-c2l2-sr",
+      "asset_format_state": "COG_BY_AUTHORITATIVE_COLLECTION_REPOSITORY_BINDING",
+      "authority": "AUTHORITATIVE_SOURCE_MANIFESTATION",
+      "retention": "PUBLIC_DOMAIN_SOURCE_ASSETS_MAY_BE_FROZEN",
+      "status": "BOUND_PROVISIONAL_RUNTIME",
+      "evidence": [
+        "thehub-pr:server/frontend/src/gis/sourceRegistry.js",
+        "USGS STAC endpoint live 2026-09-08 UTC"
+      ]
+    },
+    {
+      "binding_id": "copernicus-cdse-sentinel-2-l2a-stac",
+      "provider_id": "copernicus-cdse",
+      "source_family": "source-copernicus-sentinel-2-l2a",
+      "manifestation_type": "SOURCE_MANIFESTATION",
+      "endpoint": "https://stac.dataspace.copernicus.eu/v1",
+      "catalog_type": "STAC API",
+      "repository_source_id": "copernicus-cdse-sentinel-2-l2a",
+      "collection_id": "sentinel-2-l2a",
+      "authority": "SOURCE_NATIVE_OPTICAL_OBSERVATION",
+      "retention": "SENTINEL_DATA_OPEN_USE_SUBJECT_TO_LEGAL_NOTICE",
+      "status": "BOUND_PROVISIONAL_RUNTIME",
+      "evidence": [
+        "thehub-pr:server/frontend/src/gis/sourceRegistry.js",
+        "Copernicus STAC endpoint live 2026-09-08 UTC"
+      ]
+    }
+  ],
+  "invariants": [
+    "binding_id unique",
+    "repository source id never substitutes for provider-native asset id",
+    "catalog endpoint identity never proves individual asset identity",
+    "every retained asset requires its own URL, native metadata, retrieval UTC, byte hash, CRS and temporal metadata",
+    "different TIFF hashes prove byte difference only",
+    "render manifestations never replace retained source manifestations"
+  ],
+  "certification": {
+    "state": "PROVISIONAL",
+    "open": [
+      "enumerate exact Puerto Rico NAIP asset set and freeze asset-level hashes",
+      "resolve NLPL license code against authoritative metadata/terms",
+      "verify COG structure rather than inferring from TIFF media type",
+      "freeze Landsat and Sentinel asset-level manifests for selected AOIs/epochs"
+    ]
+  }
+}
