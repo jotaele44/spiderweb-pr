@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": ["Cell_ID", "Row_Index", "Column_Index", "Pixel_X_Min", "Pixel_Y_Min", "Pixel_X_Max", "Pixel_Y_Max", "Centroid_X", "Centroid_Y", "Dark_Pixel_Count", "Total_Pixel_Count", "Land_Pixel_Ratio", "Classification"],
   "properties": {
-    "Cell_ID": {"type": "string", "pattern": "^R\\d{3}_C\\d{3}$"},
+    "Cell_ID": {"type": "string", "pattern": "^R(?:0|[1-9][0-9]{0,2})_C(?:0|[1-9][0-9]{0,2})$", "description": "Canonical unpadded cell address, e.g. R0_C0 or R255_C383. The frozen CSV is not zero-padded; a ^R\\d{3}_C\\d{3}$ pattern rejects 54,000 of the 98,304 real identifiers. Exactly one lexical form is permitted so cross-repo joins cannot diverge."},
     "Row_Index": {"type": "integer", "minimum": 0, "maximum": 255},
     "Column_Index": {"type": "integer", "minimum": 0, "maximum": 383},
     "Pixel_X_Min": {"type": "integer", "minimum": 0},

@@ -15,7 +15,10 @@
       "cell_binding": {
         "canonical_grid": "registry/spatial/pr_grid_full_cell_index_saturated.csv",
         "status": "blocked_pending_certified_georeference",
-        "reason": "canonical grid currently stores pixel-space bounds and centroids without a certified geographic transform"
+        "reason": "canonical grid stores pixel-space bounds and centroids; the recovered geographic transform is PROVISIONAL, so cell bindings are withheld",
+        "transform_record": "registry/spatial/geometry/pr_grid_transform.json",
+        "gate": "TRANSFORM_CERTIFICATION_GATE (scripts/validate_spatial_registry.py)",
+        "unblocks_when": "authoring parameters, a world file, or the generator script are supplied and pass both the RESIDUAL and ISLAND_DIMENSION assertions"
       }
     }
   }

@@ -1,0 +1,93 @@
+{
+  "assertions": {
+    "island_span_tolerance": 0.1,
+    "residual_floor_km": 1.86,
+    "residual_tolerance_km": 2.5
+  },
+  "canvas": {
+    "height_px": 1024,
+    "width_px": 1536
+  },
+  "canvas_bounds_wgs84": {
+    "east": -65.00626367598097,
+    "north": 18.91298820580336,
+    "south": 17.357930364324677,
+    "west": -67.338850438199
+  },
+  "certification_failures": [
+    "PROVENANCE: parameters were fitted to the same coastline cells used to score them, so the assertions are circular and cannot certify. Supply authoring bounds, a world file, or the generator script to certify."
+  ],
+  "certification_state": "PROVISIONAL",
+  "control_source": {
+    "dataset": "pr_natural_features",
+    "group": "coastal",
+    "path": "registry/natural_features/pr_natural_features.geojson",
+    "source": "USGS GNIS DomesticNames (Puerto Rico)",
+    "source_sha256": "0f54a19daa37316a3ff84c756b49880ec90a1f34300ea107b712b124bb13bf63",
+    "west_limit": -67.35
+  },
+  "documented_bounds": {
+    "canvas_height_px": 1024,
+    "canvas_width_px": 1536,
+    "east": -65.2,
+    "evaluation": {
+      "certification_state": "PROVISIONAL",
+      "failures": [
+        "RESIDUAL: trimmed ground residual 5.738 km exceeds 2.500 km",
+        "ISLAND_DIMENSION: implied lon span 1.7937 deg differs from reference 2.0497 deg by 12.5% (tolerance 10%)",
+        "ISLAND_DIMENSION: implied lat span 0.2966 deg differs from reference 0.6330 deg by 53.2% (tolerance 10%)"
+      ],
+      "metrics": {
+        "anisotropy": 0.5214285714285707,
+        "cell_count": 794.0,
+        "implied_lat_span_deg": 0.2965625000000003,
+        "implied_lon_span_deg": 1.7937499999999886,
+        "lat_span_error": 0.5315175632041544,
+        "lon_span_error": 0.12489199886620556,
+        "reference_lat_span_deg": 0.6330279999999995,
+        "reference_lon_span_deg": 2.0497469999999964,
+        "residual_median_km": 5.058856864943333,
+        "residual_p90_km": 21.623633093060587,
+        "residual_trimmed_km": 5.737977228454233
+      }
+    },
+    "north": 18.65,
+    "note": "Authored/documented bounds, retained as provenance only. Applied to the 1536x1024 canvas they imply 1.918x anisotropic pixels and compress the archipelago to roughly half its true north-south extent, so geometry is not derived from them. Recorded so the claim stays auditable.",
+    "south": 17.92,
+    "status": "DOCUMENTED_UNVERIFIED",
+    "west": -67.3
+  },
+  "geometry_version": "pr_grid_geometry_v0_1",
+  "grid": {
+    "cell_px": 4,
+    "columns": 384,
+    "rows": 256
+  },
+  "grid_source": {
+    "path": "registry/spatial/pr_grid_full_cell_index_saturated.csv",
+    "sha256": "17733f3f18c8a644e31c1eb25fb27b73b4bf353c6de57d5203c4311e05d64483"
+  },
+  "grid_version": "pr_grid_full_cell_index_saturated_v1",
+  "metrics": {
+    "anisotropy": 1.0,
+    "cell_count": 794.0,
+    "implied_lat_span_deg": 0.6317422481007142,
+    "implied_lon_span_deg": 1.992417859394564,
+    "lat_span_error": 0.0020311137884663237,
+    "lon_span_error": 0.027968886211533654,
+    "reference_lat_span_deg": 0.6330279999999995,
+    "reference_lon_span_deg": 2.0497469999999964,
+    "residual_median_km": 1.8352232189828832,
+    "residual_p90_km": 22.4996762572509,
+    "residual_trimmed_km": 1.8545486004831477
+  },
+  "model": "plate_carree_wgs84_to_scale",
+  "model_note": "Source image authored to scale on WGS84; uniform degrees-per-pixel, no rotation. Confirmed independently: fitted anisotropy is ~1.02.",
+  "parameter_provenance": "FITTED",
+  "transform": {
+    "deg_per_px_x": 0.001518611173319026,
+    "deg_per_px_y": 0.001518611173319026,
+    "lat0": 18.91298820580336,
+    "lon0": -67.338850438199
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "spiderweb.capabilities.v0.1",
+  "note": "A capability is what a user wants, not how a provider ships it. Provider selection rules live here in registry policy, never in GUI code. Only DEM is seeded; the rest are declared so later waves extend this file rather than inventing a parallel taxonomy.",
+  "capabilities": {
+    "DEM": {
+      "Capability_ID": "DEM",
+      "label": "Bare-earth elevation",
+      "Preferred_Source_Family": "USGS_3DEP",
+      "state": "SEEDED",
+      "Canonicality_Rules": {
+        "rule": "MULTIPLE_CURRENT_MANIFESTATIONS + COMPLETE_EQUIVALENT_AOI_COVERAGE -> one deterministic canonical, others preserved as ALTERNATE_COMPLETE",
+        "deterministic_tiebreak": "UTM zone 19N over 20N for the PR_PuertoRicoUSVI collection",
+        "never": "Do not merge overlapping manifestations in different CRSs except inside an explicit comparison."
+      },
+      "Refresh_Policy": "Discover new collections; never mutate a frozen binding. A newer collection is adjudicated, not auto-promoted.",
+      "Temporal_Semantics": "SNAPSHOT",
+      "Fallback_Order": ["CANONICAL", "ALTERNATE_COMPLETE", "GAP_FILL", "HISTORICAL"],
+      "Preview_Renderer": "raster_footprint",
+      "Compare_Method": "raster_difference",
+      "Download_Mode": "DEDUPLICATED_PROVIDER_OBJECTS"
+    }
+  },
+  "declared_for_later_waves": {
+    "note": "Spans the archipelago from summit to seafloor, plus the karst/void and contractor-facing layers the domain repos bind in Wave 4.",
+    "capabilities": [
+      "ORTHOIMAGERY",
+      "GEOLOGY",
+      "SOILS",
+      "NFHL",
+      "LANDSLIDE",
+      "HYDROGRAPHY",
+      "GROUNDWATER",
+      "KARST_SUBSURFACE",
+      "BATHYMETRY",
+      "INFRASTRUCTURE",
+      "ROAD_NETWORK",
+      "AVIATION",
+      "PERMITS",
+      "CONTRACTS"
+    ]
+  }
+}

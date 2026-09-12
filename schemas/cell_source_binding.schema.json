@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/federation/schemas/cell_source_binding.schema.json",
+  "title": "Cell to Source Manifestation Binding",
+  "description": "Many-to-many crosswalk between a canonical Cell_ID and the provider objects that can satisfy a capability over it. Invariant: for a given Cell_ID x Capability x time there is exactly one default, or the binding is UNRESOLVED. Silent ambiguity is never permitted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Cell_ID", "Capability", "Manifestation_ID", "Spatial_Relation", "Binding_State"],
+  "properties": {
+    "Cell_ID": {"type": "string", "pattern": "^R(?:0|[1-9][0-9]{0,2})_C(?:0|[1-9][0-9]{0,2})$"},
+    "Capability": {"type": "string"},
+    "Manifestation_ID": {"type": "string"},
+    "Overlap_Area_m2": {"type": "number", "minimum": 0},
+    "Cell_Coverage_Fraction": {"type": "number", "minimum": 0, "maximum": 1},
+    "Manifestation_Coverage_Fraction": {"type": "number", "minimum": 0, "maximum": 1},
+    "Spatial_Relation": {"type": "string", "enum": ["CONTAINS_CELL", "COVERS_CELL", "INTERSECTS_CELL", "TOUCHES_CELL", "PARTIAL_COVERAGE"]},
+    "Priority": {"type": "integer", "minimum": 0},
+    "Is_Default": {"type": "boolean"},
+    "Binding_State": {"type": "string", "enum": ["DISCOVERED", "FOOTPRINT_VERIFIED", "COVERAGE_VERIFIED", "VERSION_ADJUDICATED", "HASHED", "VERIFIED", "CANONICAL", "ALTERNATE", "UNRESOLVED", "UNVERIFIED"]},
+    "Binding_Method": {"type": "string"},
+    "Binding_Version": {"type": "string"},
+    "Binding_SHA256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "Geometry_Certification_State": {"type": "string", "enum": ["VERIFIED", "PROVISIONAL"]},
+    "Valid_From": {"type": ["string", "null"]},
+    "Valid_To": {"type": ["string", "null"]}
+  }
+}
