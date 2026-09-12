@@ -1,0 +1,65 @@
+{
+  "contract_version": "federation-spatial-admin-boundary-adjudication/1.1",
+  "generated_date": "2026-09-08",
+  "identity_authority": {
+    "municipios": "U.S. Census Bureau GEOID county-equivalent identifiers",
+    "barrios": "U.S. Census Bureau GEOID county-subdivision identifiers"
+  },
+  "competing_geometry_authority": {
+    "authority": "Puerto Rico Planning Board / SIGE",
+    "legal_basis": "Ley 68 del 7 de mayo de 1945 and cited Planning Board territorial-boundary resolutions",
+    "municipio_layer": {
+      "service": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/2",
+      "name": "Límite de Municipio",
+      "source_crs": "EPSG:32161",
+      "stable_identifier": null,
+      "candidate_name_field": "Nombre",
+      "metadata_update": "2015-10 topology review / rectification noted in service description"
+    },
+    "barrio_layer": {
+      "service": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/3",
+      "name": "Límite de Barrio",
+      "source_crs": "EPSG:32161",
+      "stable_identifier": null,
+      "candidate_parent_field": "MUNICIPIO",
+      "candidate_name_field": "BARRIO",
+      "metadata_update": "2015-10 topology review / rectification noted in service description"
+    }
+  },
+  "invariants": [
+    "SIGE name fields are candidate-generation evidence only and cannot establish canonical identity alone",
+    "Census GEOID identity may exist independently of SIGE geometry equivalence",
+    "barrios must preserve Census parent municipio GEOID and may not be matched across municipio parents",
+    "all SIGE geometries must preserve source EPSG:32161 and any EPSG:4326 derivative must carry explicit transformation provenance",
+    "invalid/null/empty geometries remain unresolved",
+    "duplicate normalized candidate keys remain unresolved",
+    "geometry overlap or equality cannot establish semantic identity without the Census stable identifier anchor",
+    "no unmatched source feature may be silently discarded"
+  ],
+  "candidate_key_strategy": {
+    "municipios": "normalized Census BASENAME/NAME ↔ normalized SIGE Nombre",
+    "barrios": "Census parent municipio GEOID + normalized Census BASENAME ↔ uniquely resolved SIGE MUNICIPIO + normalized SIGE BARRIO"
+  },
+  "geometry_metrics_required": [
+    "is_valid",
+    "intersection_area_m2",
+    "union_area_m2",
+    "symmetric_difference_area_m2",
+    "symmetric_difference_ratio",
+    "overlap_ratio",
+    "hausdorff_distance_m",
+    "area_delta_ratio"
+  ],
+  "provisional_geometry_thresholds": {
+    "minimum_overlap_ratio": 0.995,
+    "maximum_symmetric_difference_ratio": 0.005,
+    "maximum_hausdorff_distance_m": 100.0,
+    "maximum_area_delta_ratio": 0.005,
+    "semantics": "Passing these thresholds yields GEOMETRY_CANDIDATE_PASS only; never canonical identity certification. Threshold failures remain REVIEW rather than automatic rejection."
+  },
+  "required_arithmetic": {
+    "formula": "SOURCE = RETAINED + EXCLUDED + UNRESOLVED",
+    "required_for": ["Census municipios", "SIGE municipios", "Census barrios", "SIGE barrios"]
+  },
+  "certification_state": "NON_CERTIFYING"
+}

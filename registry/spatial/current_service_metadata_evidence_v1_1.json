@@ -1,0 +1,59 @@
+{
+  "contract_version": "federation-spatial-current-service-metadata-evidence/1.1",
+  "observed_utc_date": "2026-09-08",
+  "scope": "Puerto Rico administrative reference plane",
+  "promotion_rule": "Service metadata may verify source identity, vintage, fields and query capabilities, but cannot substitute for frozen query-response bytes or canonical geometry adjudication.",
+  "sources": [
+    {
+      "scope": "municipios",
+      "authority": "U.S. Census Bureau",
+      "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/82",
+      "layer_id": 82,
+      "layer_name": "Counties",
+      "description": "Counties (or statistically equivalent entities); January 1, 2026 vintage",
+      "vintage": "2026-01-01",
+      "vintage_evidence_state": "SERVICE_METADATA_VERIFIED",
+      "geometry_type": "esriGeometryPolygon",
+      "source_spatial_reference": {"wkid": 102100, "latest_wkid": 3857},
+      "stable_id": {"field": "GEOID", "type": "esriFieldTypeString", "length": 5},
+      "state_field": {"field": "STATE", "type": "esriFieldTypeString", "length": 2},
+      "max_record_count": 100000,
+      "supports_geojson": true,
+      "supports_pagination": true,
+      "has_z": false,
+      "has_m": false,
+      "identity_state": "SOURCE_METADATA_ONLY",
+      "geometry_state": "UNFROZEN_CURRENT_SERVICE"
+    },
+    {
+      "scope": "barrios",
+      "authority": "U.S. Census Bureau",
+      "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/1",
+      "layer_id": 1,
+      "layer_name": "County Subdivisions",
+      "description": "County Subdivisions; January 1, 2026 vintage",
+      "vintage": "2026-01-01",
+      "vintage_evidence_state": "SERVICE_METADATA_VERIFIED",
+      "geometry_type": "esriGeometryPolygon",
+      "source_spatial_reference": {"wkid": 102100, "latest_wkid": 3857},
+      "stable_id": {"field": "GEOID", "type": "esriFieldTypeString", "length": 10},
+      "state_field": {"field": "STATE", "type": "esriFieldTypeString", "length": 2},
+      "max_record_count": 100000,
+      "supports_geojson": true,
+      "supports_pagination": true,
+      "identity_state": "SOURCE_METADATA_ONLY",
+      "geometry_state": "UNFROZEN_CURRENT_SERVICE"
+    }
+  ],
+  "current_service_freeze": {
+    "workflow": "Federation Current-Service Spatial Reference Freeze",
+    "latest_observed_run_id": 34158151052,
+    "run_number": 3,
+    "conclusion": "failure",
+    "job_steps_observed": 0,
+    "artifacts_observed": 0,
+    "classification": "INFRA_FAILURE",
+    "reason": "The freeze job and unrelated CI jobs on the same head all completed with zero recorded steps; no freeze artifact or failure receipt was produced. Do not classify this as a Census acquisition/parser failure without an executed step trace."
+  },
+  "certification_state": "NON_CERTIFYING"
+}

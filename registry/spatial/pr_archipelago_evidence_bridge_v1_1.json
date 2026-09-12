@@ -1,0 +1,132 @@
+{
+  "contract_version": "federation-spatial-archipelago-evidence-bridge/1.1",
+  "generated_date": "2026-09-08",
+  "scope": "Reuse already-frozen PR_ARCHIPELAGO_GEOGRAPHY evidence inside the federation spatial identity plane without reinterpreting source-level closure as canonical closure.",
+  "rules": [
+    "No mutable source is reacquired merely to populate this bridge.",
+    "Legacy evidence receipts remain authoritative for their exact frozen manifestations and hashes.",
+    "A source denominator PASS does not imply canonical identity or canonical geometry PASS.",
+    "POINT, LINE, POLYGON and DERIVED representations remain distinct.",
+    "GNIS stable Feature IDs are source identity anchors; source taxonomy does not establish canonical subtype.",
+    "Census, SIGE, NOAA project shoreline and CUSP linework are geometry manifestations/candidates, not canonical land identity.",
+    "Proximity, containment and exact geometry equality remain candidate/corroboration evidence only."
+  ],
+  "durable_freeze": {
+    "tag": "pr-archipelago-freeze-2026-08-22",
+    "source_evidence_preservation": "PASS",
+    "release_assets_verified": 11,
+    "current_noaa_project_archives": {"expected": 15, "frozen": 15, "closed": true},
+    "current_noaa_cusp_packages": {"expected": 2, "frozen": 2, "closed": true},
+    "historical_noaa_archives_b_only": {"expected": 8, "frozen": 8, "closed": true}
+  },
+  "evidence_receipts": [
+    {
+      "path": "evidence/pr_archipelago/acquisition_receipt_2026-08-22.json",
+      "git_blob_sha": "d5ab6ff8e6be9651f97e96d9afb3944b8684283c",
+      "role": "GNIS/current source acquisition and initial freeze receipt"
+    },
+    {
+      "path": "evidence/pr_archipelago/census_coastline_candidate_geometry_receipt_2026-08-22.json",
+      "git_blob_sha": "fe2988502f1374bfdd0e4d2c4495975fea073fd1",
+      "role": "Frozen Census TIGER/Line 2025 coastline candidate geometry audit"
+    },
+    {
+      "path": "evidence/pr_archipelago/current_geometry_manifestation_denominator_receipt_2026-08-22.json",
+      "git_blob_sha": "727b16454225bafc6b45dec13d2247c78874ece7",
+      "role": "Representation-preserving current geometry manifestation denominator"
+    },
+    {
+      "path": "evidence/pr_archipelago/current_geometry_representation_adjudication_2026-08-22.json",
+      "git_blob_sha": "cbe06deabe63e7269f97f89074819c0d27ff7bdd",
+      "role": "Representation-aware adjudication of polygon noncontainment cases"
+    },
+    {
+      "path": "evidence/pr_archipelago/current_certification_gate_ledger_2026-08-22.json",
+      "git_blob_sha": "fd5855f039401b3612cbb647c56b706e0162574c",
+      "role": "Controlling source-vs-canonical certification ledger"
+    }
+  ],
+  "frozen_manifestations": {
+    "gnis_current_island_points": {
+      "source_manifestations": 148,
+      "stable_feature_ids": 148,
+      "duplicate_feature_ids": 0,
+      "representation": "POINT",
+      "origin": "SOURCE_NATIVE",
+      "source_state": "PASS",
+      "canonical_state": "OPEN"
+    },
+    "sige_insular_reference_points": {
+      "source_manifestations": 29,
+      "candidate_not_identity": 25,
+      "known_identity_unresolved": 4,
+      "canonical_promotions": 0,
+      "source_partition_closed": true,
+      "canonical_state": "OPEN"
+    },
+    "census_2025_coastline": {
+      "source": "tl_2025_us_coastline.zip",
+      "source_sha256": "c88e68274b72e7cfded0bb0846c8c78f2c078e5f361973792a84c67b0975459c",
+      "national_source_features": 4240,
+      "pr_discovery_scope_source_features": 248,
+      "representation": "LINE",
+      "derived_candidate_polygons": 179,
+      "canonical_promotions": 0,
+      "state": "CANDIDATE_NOT_IDENTITY"
+    },
+    "noaa_current_project_geometry": {
+      "archives": 15,
+      "source_records_total": 28693,
+      "candidate_archipelago_records": 22732,
+      "excluded_non_archipelago_or_project_boundary_records": 5961,
+      "exact_geometry_duplicate_groups": 160,
+      "canonical_promotions": 0,
+      "state": "CANDIDATE_NOT_IDENTITY"
+    },
+    "noaa_cusp_current": {
+      "cells": ["N15W065", "N15W070"],
+      "source_manifestations": 13773,
+      "representation": "LINE",
+      "canonical_promotions": 0,
+      "state": "CANDIDATE_NOT_IDENTITY"
+    }
+  },
+  "source_manifestation_denominator": {
+    "source_manifestations": 42891,
+    "retained": 148,
+    "excluded": 5961,
+    "candidate": 36782,
+    "unresolved": 0,
+    "explained_total": 42891,
+    "unexplained_residue": 0,
+    "arithmetic_closed": true,
+    "state": "PASS_SOURCE_PARTITION_ONLY"
+  },
+  "current_geometry_audit": {
+    "gnis_source_ids": 148,
+    "polygon_covered": 113,
+    "polygon_noncontained": 35,
+    "partition_closed": true,
+    "noncontained_within_1km_of_frozen_shoreline": 31,
+    "noncontained_gt_1km": 4,
+    "gt_1km_hard_morphology_adjudicated": 2,
+    "gt_1km_current_morphology_open": 2,
+    "proximity_identity_promotions": 0
+  },
+  "canonical_gates": {
+    "canonical_identity_denominator_closed": false,
+    "canonical_geometry_denominator_closed": false,
+    "known_unresolved_sige_identity_bindings": 4,
+    "canonical_identity_residue": "NOT_YET_COMPUTABLE",
+    "canonical_geometry_residue": "NOT_YET_COMPUTABLE",
+    "runtime_activation": "BLOCKED",
+    "CURRENT_PR_ARCHIPELAGO": "OPEN",
+    "GEOMETRIC_CURRENT": "OPEN"
+  },
+  "v1_1_ingestion_state": {
+    "strict_source_manifestation_rows": "BLOCKED_PENDING_EXACT_RETRIEVAL_TIMESTAMP_MAPPING_FOR_LEGACY_RECEIPTS",
+    "reason": "federation-spatial-contract/1.1 requires retrieved_at date-time per source manifestation; legacy receipts prove frozen bytes/hashes but not every exact retrieval timestamp in repository-visible evidence. Do not fabricate timestamps.",
+    "evidence_bridge": "PASS"
+  },
+  "certification_state": "NON_CERTIFYING"
+}

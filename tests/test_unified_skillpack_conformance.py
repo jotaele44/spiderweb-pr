@@ -72,6 +72,37 @@ class UnifiedSkillpackConformanceTests(unittest.TestCase):
             target = entry["unified_target"].split("#", 1)[1]
             self.assertIn(f'<a id="{target}"></a>', skill, entry["capability_id"])
 
+    def test_spatial_architecture_allowlist_is_exact(self) -> None:
+        manifest = json.loads((ROOT / ".claude/skillpacks/MANIFEST.json").read_text())
+        allowed = manifest["allowed_change_paths"]
+        intended = {
+            ".github/workflows/federation-spatial-reference-freeze.yml",
+            "docs/FEDERATION_SPATIAL_ARCHITECTURE_V1.md",
+            "federation/spatial_service_v1_1.py",
+            "registry/spatial/federation_spatial_identity_v1_1.json",
+            "registry/spatial/reference_source_candidates_v1_1.json",
+            "schemas/federation_spatial_identity_v1_1.schema.json",
+            "schemas/federation_spatial_migration_receipt_v1_1.schema.json",
+            "scripts/freeze_federation_reference_v1_1.py",
+            "scripts/validate_federation_spatial_identity_v1_1.py",
+            "scripts/validate_federation_spatial_migration_receipt_v1_1.py",
+            "tests/test_federation_spatial_identity_v1_1.py",
+            "tests/test_federation_spatial_migration_receipt_v1_1.py",
+            "tests/test_federation_spatial_service_v1_1.py",
+            "tests/test_freeze_federation_reference_v1_1.py",
+        }
+        self.assertTrue(intended.issubset(allowed))
+        for near_miss in (
+            ".github/workflows/federation-spatial-reference-freeze.yml.bak",
+            "docs/FEDERATION_SPATIAL_ARCHITECTURE_V1.md/extra",
+            "federation/spatial_service_v1_1.pyc",
+            "registry/spatial/federation_spatial_identity_v1_1.json.bak",
+            "schemas/federation_spatial_identity_v1_1.schema.json/extra",
+            "scripts/freeze_federation_reference_v1_1.pyc",
+            "tests/test_freeze_federation_reference_v1_1.py.bak",
+        ):
+            self.assertFalse(MODULE.is_allowed_path(near_miss, allowed), near_miss)
+
 
 if __name__ == "__main__":
     unittest.main()
