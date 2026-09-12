@@ -30,6 +30,14 @@ try {
     await page.goto(baseUrl, { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "Spatial" }).click();
     await page.getByRole("button", { name: "Recenter map on Puerto Rico" }).waitFor();
+    const spatialHost = page.locator("[data-spatial-basemap]").first();
+    await spatialHost.waitFor();
+    const basemap = await spatialHost.getAttribute("data-spatial-basemap");
+    if (basemap !== "grid") {
+      throw new Error(
+        `Refusing to store ${profile.name}: expected deterministic grid, rendered ${basemap ?? "unknown"}`,
+      );
+    }
     await page.waitForTimeout(1_500);
 
     const overlay = page.locator("vite-error-overlay");
