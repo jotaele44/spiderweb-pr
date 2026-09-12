@@ -56,6 +56,7 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
 
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void> {
     const realWorldEnabled = CESIUM_ION_TOKEN.length > 0;
+    container.dataset.spatialBasemap = realWorldEnabled ? "cesium-ion" : "grid";
     const viewer = new Cesium.Viewer(container, {
       baseLayer: realWorldEnabled
         ? Cesium.ImageryLayer.fromProviderAsync(Cesium.createWorldImageryAsync({
