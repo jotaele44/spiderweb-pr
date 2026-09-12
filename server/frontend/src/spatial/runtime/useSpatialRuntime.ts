@@ -43,6 +43,13 @@ export function useSpatialRuntime(
     };
 
     const boot = async () => {
+      // Basemap-error state belongs to the runtime instance that raised it.
+      // Without this reset a failure from a previous boot stays latched: the
+      // "base map tiles unavailable" notice would survive a successful
+      // re-init, and would even show while Cesium (which has no basemap tile
+      // source at all) is the active runtime.
+      setTilesFailed(false);
+
       let resolvedMode: SpatialRuntimeMode = mode;
       let fallback: string | null = null;
       let runtime: SpatialRuntime;

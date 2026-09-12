@@ -476,15 +476,12 @@ export function SpatialIntelligence({
     setStatus("gazetteer_pr_domestic_names"),
   );
 
-  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime now;
-  // this effect only handles the marker-specific part of unmount cleanup.
-  useEffect(() => {
-    return () => {
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-    };
-  }, []);
-
+  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime; this
+  // effect owns the markers, including their teardown. `mapReady` is in the
+  // deps on purpose: a 2D/3D switch swaps mapRef.current behind the same ref
+  // object, which would not re-trigger this effect on its own — markers would
+  // be missing on the rebuilt MapLibre map until some unrelated state changed,
+  // and the ones bound to the destroyed map would leak.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -528,7 +525,12 @@ export function SpatialIntelligence({
         .addTo(map);
       markersRef.current.push(marker);
     });
-  }, [data, layers, setSelection, mapRef]);
+
+    return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+    };
+  }, [data, layers, setSelection, mapRef, mapReady]);
 
   useEffect(() => {
     const runtime = runtimeRef.current;
