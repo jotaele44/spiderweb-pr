@@ -38,6 +38,8 @@ datas = [
     (str(DIST_DIR), "server/frontend/dist"),
     (str(BRANDING / "icon-256.png"), "assets/branding"),
     (str(REPO_ROOT / "configs" / "layer_catalog.yaml"), "configs"),
+    (str(REPO_ROOT / "configs" / "spatial_boundaries.yaml"), "configs"),
+    (str(REPO_ROOT / "configs" / "spatial_layer_bindings.yaml"), "configs"),
     (
         str(REPO_ROOT / "server" / "database" / "schema_sqlite.sql"),
         "server/database",
