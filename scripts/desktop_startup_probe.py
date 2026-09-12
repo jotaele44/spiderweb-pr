@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Exercise a real local desktop API and built SPA; not a full operator journey."""
+
 from __future__ import annotations
 
 import argparse
@@ -41,7 +42,9 @@ def probe(app_import: str, health_path: str, timeout: float = 30) -> dict:
     sock.listen(128)
     port = sock.getsockname()[1]
     base = f"http://127.0.0.1:{port}"
-    server = uvicorn.Server(uvicorn.Config(app_import, log_level="error", access_log=False))
+    server = uvicorn.Server(
+        uvicorn.Config(app_import, log_level="error", access_log=False)
+    )
     failures = []
 
     def serve():
@@ -52,9 +55,13 @@ def probe(app_import: str, health_path: str, timeout: float = 30) -> dict:
 
     thread = threading.Thread(target=serve, daemon=True)
     thread.start()
+
     class LocalRedirects(HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
-            if urlparse(newurl).netloc != urlparse(base).netloc or urlparse(newurl).scheme != "http":
+            if (
+                urlparse(newurl).netloc != urlparse(base).netloc
+                or urlparse(newurl).scheme != "http"
+            ):
                 raise ValueError("redirect outside the local app refused")
             return super().redirect_request(req, fp, code, msg, headers, newurl)
 
@@ -63,15 +70,27 @@ def probe(app_import: str, health_path: str, timeout: float = 30) -> dict:
 
     def fetch(path):
         url = urljoin(base + "/", path)
-        if urlparse(url).netloc != urlparse(base).netloc or urlparse(url).scheme != "http":
-            raise ValueError("external frontend dependency requires explicit configuration")
+        if (
+            urlparse(url).netloc != urlparse(base).netloc
+            or urlparse(url).scheme != "http"
+        ):
+            raise ValueError(
+                "external frontend dependency requires explicit configuration"
+            )
         with opener.open(url, timeout=5) as response:
             if urlparse(response.url).netloc != urlparse(base).netloc:
                 raise ValueError("redirected outside the local app")
             content = response.read()
             kind = response.headers.get_content_type()
-            requests.append({"path": path, "status": response.status, "content_type": kind,
-                             "bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()})
+            requests.append(
+                {
+                    "path": path,
+                    "status": response.status,
+                    "content_type": kind,
+                    "bytes": len(content),
+                    "sha256": hashlib.sha256(content).hexdigest(),
+                }
+            )
             return content, kind
 
     problem = None
@@ -97,10 +116,16 @@ def probe(app_import: str, health_path: str, timeout: float = 30) -> dict:
             body, kind = fetch(source)
             if not body or kind not in {"application/javascript", "text/javascript"}:
                 raise ValueError("frontend script missing or shadowed by SPA fallback")
-        return {"schema_version": "desktop_startup_probe.v1", "state": "PASS",
-                "certification": "AUDIT_ONLY", "scope": "local API, SPA HTML and script delivery",
-                "operator_journey": "UNVERIFIED", "started_utc": started,
-                "completed_utc": datetime.now(timezone.utc).isoformat(), "requests": requests}
+        return {
+            "schema_version": "desktop_startup_probe.v1",
+            "state": "PASS",
+            "certification": "AUDIT_ONLY",
+            "scope": "local API, SPA HTML and script delivery",
+            "operator_journey": "UNVERIFIED",
+            "started_utc": started,
+            "completed_utc": datetime.now(timezone.utc).isoformat(),
+            "requests": requests,
+        }
     except BaseException as exc:
         problem = exc
         raise
@@ -121,10 +146,20 @@ def main() -> int:
     sys.path.insert(0, str(root))
     try:
         config = importlib.import_module("desktop.config")
-        result = probe("desktop.app_server:app", getattr(config, "HEALTH_PATH", "/health"), args.timeout)
+        # SpiderWeb's adapter intentionally exposes the API before the shared
+        # desktop runtime attaches the SPA. Exercise the same wrapped ASGI app
+        # that the operator launcher uses, rather than the bare adapter.
+        from prii_desktop import DesktopConfig, make_desktop_app
+
+        app = make_desktop_app(DesktopConfig.from_module(config))
+        result = probe(app, getattr(config, "HEALTH_PATH", "/health"), args.timeout)
     except (Exception, SystemExit) as exc:
-        result = {"schema_version": "desktop_startup_probe.v1", "state": "FAIL",
-                  "certification": "AUDIT_ONLY", "error": str(exc)}
+        result = {
+            "schema_version": "desktop_startup_probe.v1",
+            "state": "FAIL",
+            "certification": "AUDIT_ONLY",
+            "error": str(exc),
+        }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("x", encoding="utf-8") as target:
         json.dump(result, target, indent=2)
