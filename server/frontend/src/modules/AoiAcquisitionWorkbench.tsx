@@ -1,254 +1,47 @@
-import { useMemo } from "react";
+import { useState } from "react";
+import { auditPlanArithmetic } from "./aoiContract";
+import type { FrozenAcquisitionPlan } from "./aoiContract";
+export { auditPlanArithmetic } from "./aoiContract";
+export type { FrozenAcquisitionPlan, AcquisitionPlanCounts } from "./aoiContract";
 
-export type AoiWorkflowState =
-  | "NO_AOI"
-  | "AOI_EDITING"
-  | "AOI_VALIDATING"
-  | "AOI_VALID"
-  | "DISCOVERING"
-  | "PLAN_READY"
-  | "REVIEWED"
-  | "ACQUIRING"
-  | "VALIDATING"
-  | "COVERAGE_COMPUTING"
-  | "PASS"
-  | "OPEN"
-  | "FAIL"
-  | "BLOCKED";
-
-export type SpatialRelation =
-  | "FULLY_WITHIN"
-  | "PARTIAL"
-  | "TOUCH_ONLY"
-  | "OUTSIDE"
-  | "NULL_EMPTY"
-  | "UNRESOLVED";
-
-export type AssetState =
-  | "QUEUED"
-  | "CACHE_HIT"
-  | "DOWNLOADING"
-  | "DOWNLOADED"
-  | "HASHING"
-  | "VALIDATING"
-  | "PASS"
-  | "FAIL"
-  | "UNRESOLVED";
-
-export interface AoiDiagnostics {
-  geometryType: "Polygon" | "MultiPolygon" | "UNRESOLVED";
-  crs: string | null;
-  vertexCount: number;
-  areaKm2: number | null;
-  valid: boolean;
-  messages: string[];
-}
-
-export interface AcquisitionAssetRow {
-  assetId: string;
-  source: string;
-  datasetId: string;
-  product: string;
-  acquisitionDate?: string | null;
-  resolution?: string | null;
-  relation: SpatialRelation;
-  cacheState: string;
-  sizeBytes?: number | null;
-  sourceStatus: string;
-  acquisitionState: AssetState;
-  validationState: string;
-  blockedReason?: string | null;
-}
-
-export interface AcquisitionPlanCounts {
-  discovered: number;
-  retained: number;
-  excluded: number;
-  unresolved: number;
-  required: number;
-  cacheValid: number;
-  fetchRequired: number;
-  blockedRequired: number;
-}
-
-export interface CoverageSummary {
-  aoiAreaKm2: number;
-  validAreaKm2: number;
-  gapAreaKm2: number;
-  percent: number;
-  state: "UNKNOWN" | "PROVISIONAL" | "PASS" | "OPEN" | "FAIL";
-}
-
-export interface FrozenAcquisitionPlan {
-  planId: string;
-  planSha256: string;
-  generatedAtUtc: string;
-  state: AoiWorkflowState;
-  diagnostics: AoiDiagnostics;
-  counts: AcquisitionPlanCounts;
-  estimatedDownloadBytesKnown: number;
-  coverage?: CoverageSummary | null;
-  assets: AcquisitionAssetRow[];
-  unresolvedReasons: string[];
-}
-
-export interface AoiAcquisitionWorkbenchProps {
-  plan: FrozenAcquisitionPlan | null;
-  busy?: boolean;
-  canDryRun?: boolean;
-  onDraw?: () => void;
-  onImport?: () => void;
-  onEdit?: () => void;
-  onClear?: () => void;
-  onDryRun?: () => void;
-  onFetch?: () => void;
-  onExportManifest?: () => void;
-}
-
-export interface ArithmeticAudit {
-  discoveredClosed: boolean;
-  requiredClosed: boolean;
-  pass: boolean;
-}
-
-export function auditPlanArithmetic(counts: AcquisitionPlanCounts): ArithmeticAudit {
-  const discoveredClosed = counts.discovered === counts.retained + counts.excluded + counts.unresolved;
-  const requiredClosed = counts.required === counts.cacheValid + counts.fetchRequired + counts.blockedRequired;
-  return { discoveredClosed, requiredClosed, pass: discoveredClosed && requiredClosed };
-}
-
-function formatBytes(bytes: number) {
-  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B known";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let value = bytes;
-  let index = 0;
-  while (value >= 1024 && index < units.length - 1) {
-    value /= 1024;
-    index += 1;
-  }
-  return `${value.toFixed(index >= 3 ? 2 : 1)} ${units[index]}`;
-}
-
-function StateLine({ label, value }: { label: string; value: string | number }) {
-  return <p><span className="subtle">{label}</span> <strong>{value}</strong></p>;
-}
-
-export function AoiAcquisitionWorkbench({
-  plan,
-  busy = false,
-  canDryRun = false,
-  onDraw,
-  onImport,
-  onEdit,
-  onClear,
-  onDryRun,
-  onFetch,
-  onExportManifest,
-}: AoiAcquisitionWorkbenchProps) {
-  const arithmetic = useMemo(() => plan ? auditPlanArithmetic(plan.counts) : null, [plan]);
-  const fetchBlocked = !plan
-    || !arithmetic?.pass
-    || plan.counts.blockedRequired > 0
-    || plan.counts.unresolved > 0
-    || !["PLAN_READY", "REVIEWED", "OPEN"].includes(plan.state);
-
-  return (
-    <section className="tools-panel" aria-label="AOI acquisition workbench">
-      <h2>AOI acquisition</h2>
-      <div className="row">
-        <button className="navbtn" onClick={onDraw} disabled={busy}>Draw</button>
-        <button className="navbtn" onClick={onImport} disabled={busy}>Import</button>
-        <button className="navbtn" onClick={onEdit} disabled={busy || !plan}>Edit</button>
-        <button className="navbtn" onClick={onClear} disabled={busy || !plan}>Clear</button>
+export function AoiAcquisitionWorkbench({ plan, busy, canDryRun, onDryRun, onExportManifest }: {
+  plan: FrozenAcquisitionPlan | null; busy: boolean; canDryRun: boolean;
+  onDryRun: () => void; onExportManifest: () => void;
+}) {
+  const [page, setPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil((plan?.assets.length ?? 0) / 100));
+  const current = Math.min(page, pageCount - 1);
+  return <section aria-label="AOI acquisition workbench" style={{ minWidth: 0 }}>
+    <h3>Acquisition plan</h3>
+    <div className="row">
+      <button className="act" type="button" onClick={onDryRun} disabled={busy || !canDryRun}>Dry run</button>
+      <button className="act" type="button" disabled title="Acquisition worker and validated cache are not connected">Fetch disabled</button>
+      <button className="act" type="button" onClick={onExportManifest} disabled={!plan || busy}>Export plan</button>
+    </div>
+    <p>Polygon authoritative. Bbox discovery-only. No source bytes are downloaded by Dry Run.</p>
+    {busy && <p role="status">Validating geometry and planning against configured catalog snapshots…</p>}
+    {!plan && !busy && <p>No current backend plan. Finish or import an AOI, then run Dry Run.</p>}
+    {plan && <>
+      <p role="status">Planning: <strong>{plan.planning_gate}</strong> · Workflow: {plan.state} · Certification: OPEN</p>
+      <p>{plan.diagnostics.geometry_type} · {plan.diagnostics.vertex_count} vertices · {plan.diagnostics.area_km2.toFixed(4)} km² · {plan.diagnostics.crs}</p>
+      <p>Discovered {plan.counts.discovered} = retained {plan.counts.retained} + excluded {plan.counts.excluded} + unresolved {plan.counts.unresolved}.</p>
+      <p>Required {plan.counts.required} = validated cache {plan.counts.cache_valid} + transfer candidates {plan.counts.fetch_required} + blocked {plan.counts.blocked_required}.</p>
+      <p>Arithmetic: {auditPlanArithmetic(plan.counts).pass ? "PASS" : "FAIL"} · Known bytes: {plan.estimated_download_bytes_known.toLocaleString()} · Unknown-size assets: {plan.unknown_size_assets}.</p>
+      <p>Cache: NOT CHECKED. Usable-data coverage: UNKNOWN. Footprints are not valid-data masks.</p>
+      {plan.unresolved_reasons.length > 0 && <div role="alert"><strong>Unresolved planning residue</strong>{plan.unresolved_reasons.map((reason, i) => <p key={i}>{reason}</p>)}</div>}
+      <p>Execution blocked: {plan.execution_blockers.join("; ")}</p>
+      <div style={{ overflowX: "auto", maxHeight: "28dvh" }} tabIndex={0} aria-label="Complete candidate set, paginated">
+        <table><caption>All {plan.assets.length} rows; page {current + 1} of {pageCount}. Exclusions are not removed.</caption>
+          <thead><tr><th>Row / asset</th><th>Source / product</th><th>AOI / processing</th><th>Decision</th><th>Cache / acquire / validate</th><th>Reasons</th></tr></thead>
+          <tbody>{plan.assets.slice(current * 100, (current + 1) * 100).map((asset) => <tr key={asset.row_id}>
+            <td>{asset.row_id}<br />{asset.asset_id}</td><td>{asset.source}<br />{asset.product}</td>
+            <td>{asset.relation}<br />{asset.processing_relation}</td><td>{asset.disposition}</td>
+            <td>{asset.cache_state}<br />{asset.acquisition_state}<br />{asset.validation_state}</td><td>{asset.reasons.join("; ") || "—"}</td>
+          </tr>)}</tbody>
+        </table>
       </div>
-
-      {!plan && (
-        <div className="tools-readout">
-          <p>No frozen AOI plan loaded.</p>
-          <p>Polygon is authoritative; any bbox is discovery-only.</p>
-        </div>
-      )}
-
-      {plan && (
-        <>
-          <div className="tools-readout">
-            <StateLine label="State" value={plan.state} />
-            <StateLine label="Plan" value={plan.planId} />
-            <StateLine label="Geometry" value={`${plan.diagnostics.geometryType} · ${plan.diagnostics.valid ? "VALID" : "INVALID"}`} />
-            <StateLine label="CRS" value={plan.diagnostics.crs ?? "UNRESOLVED"} />
-            <StateLine label="Vertices" value={plan.diagnostics.vertexCount} />
-            {plan.diagnostics.areaKm2 !== null && <StateLine label="AOI area" value={`${plan.diagnostics.areaKm2.toFixed(3)} km²`} />}
-            {plan.diagnostics.messages.map((message) => <p key={message} role={plan.diagnostics.valid ? undefined : "alert"}>{message}</p>)}
-          </div>
-
-          <div className="hr" />
-          <div className="tools-readout">
-            <StateLine label="Discovered" value={plan.counts.discovered} />
-            <StateLine label="Retained" value={plan.counts.retained} />
-            <StateLine label="Excluded" value={plan.counts.excluded} />
-            <StateLine label="Unresolved" value={plan.counts.unresolved} />
-            <StateLine label="Required" value={plan.counts.required} />
-            <StateLine label="Cache valid" value={plan.counts.cacheValid} />
-            <StateLine label="Fetch required" value={plan.counts.fetchRequired} />
-            <StateLine label="Blocked required" value={plan.counts.blockedRequired} />
-            <StateLine label="Transfer known" value={formatBytes(plan.estimatedDownloadBytesKnown)} />
-            <p>Arithmetic: <strong>{arithmetic?.pass ? "PASS" : "FAIL"}</strong></p>
-            {!arithmetic?.discoveredClosed && <p role="alert">Discovery arithmetic does not close.</p>}
-            {!arithmetic?.requiredClosed && <p role="alert">Required-asset arithmetic does not close.</p>}
-          </div>
-
-          {plan.coverage && (
-            <>
-              <div className="hr" />
-              <div className="tools-readout">
-                <StateLine label="Coverage state" value={plan.coverage.state} />
-                <StateLine label="Valid coverage" value={`${plan.coverage.percent.toFixed(2)}%`} />
-                <StateLine label="Valid area" value={`${plan.coverage.validAreaKm2.toFixed(3)} km²`} />
-                <StateLine label="Gap" value={`${plan.coverage.gapAreaKm2.toFixed(3)} km²`} />
-                <p>Files present/downloaded are not treated as usable coverage.</p>
-              </div>
-            </>
-          )}
-
-          {plan.unresolvedReasons.length > 0 && (
-            <div className="tools-readout" role="alert">
-              <strong>Unresolved residue</strong>
-              {plan.unresolvedReasons.map((reason) => <p key={reason}>{reason}</p>)}
-            </div>
-          )}
-
-          <div className="hr" />
-          <div className="row">
-            <button className="act" onClick={onDryRun} disabled={busy || !canDryRun}>Dry run</button>
-            <button className="act" onClick={onFetch} disabled={busy || fetchBlocked}>Fetch {plan.counts.fetchRequired}</button>
-            <button className="act" onClick={onExportManifest} disabled={busy}>Export manifest</button>
-          </div>
-
-          <div className="tools-readout" style={{ overflowX: "auto" }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Asset</th><th>Source</th><th>Product</th><th>Spatial</th><th>Cache</th><th>Acquire</th><th>Validate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plan.assets.map((asset) => (
-                  <tr key={`${asset.source}:${asset.datasetId}:${asset.assetId}`}>
-                    <td>{asset.assetId}</td>
-                    <td>{asset.source}</td>
-                    <td>{asset.product}</td>
-                    <td>{asset.relation}</td>
-                    <td>{asset.cacheState}</td>
-                    <td>{asset.acquisitionState}</td>
-                    <td>{asset.validationState}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="subtle">Plan SHA-256: {plan.planSha256}</p>
-        </>
-      )}
-    </section>
-  );
+      <div className="row"><button type="button" disabled={current === 0} onClick={() => setPage(current - 1)}>Previous rows</button><button type="button" disabled={current + 1 >= pageCount} onClick={() => setPage(current + 1)}>Next rows</button></div>
+      <p style={{ overflowWrap: "anywhere" }}>Frozen plan: {plan.plan_id}</p>
+    </>}
+  </section>;
 }
