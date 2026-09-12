@@ -1,4 +1,4 @@
-import type { GeoJSON, Geometry, Polygon, MultiPolygon } from "geojson";
+import type { GeoJSON, Geometry } from "geojson";
 import type { ExternalRenderMapType } from "./ExternalRenderProvider";
 import type { AppleMapHandle, AppleMapKitFactory } from "./AppleMapKitRuntime";
 import type { AppleOverlayBridge } from "./AppleSpatialAdapters";
@@ -67,7 +67,7 @@ export function createMapKitJsFactory(
 ): AppleMapKitFactory {
   let initialized = false;
   return {
-    async create(container, options): Promise<AppleMapHandle> {
+    create(container, options): Promise<AppleMapHandle> {
       if (!initialized) {
         mapkit.init({ authorizationCallback: authorizationProvider });
         initialized = true;
@@ -81,7 +81,7 @@ export function createMapKitJsFactory(
         cameraDistance: options.initialView.cameraDistanceMeters,
       });
       onMapCreated?.(map);
-      return {
+      return Promise.resolve({
         setCenter(next, _animated) {
           assertFiniteWgs84Coordinate(next);
           map.center = new mapkit.Coordinate(next[1], next[0]);
@@ -102,14 +102,14 @@ export function createMapKitJsFactory(
         destroy() {
           map.destroy?.();
         },
-      };
+      });
     },
   };
 }
 
 function polygonParts(geometry: Geometry): number[][][][] {
-  if (geometry.type === "Polygon") return [(geometry as Polygon).coordinates];
-  if (geometry.type === "MultiPolygon") return (geometry as MultiPolygon).coordinates;
+  if (geometry.type === "Polygon") return [geometry.coordinates];
+  if (geometry.type === "MultiPolygon") return geometry.coordinates;
   return [];
 }
 
@@ -176,21 +176,20 @@ export function createMapKitJsOverlayBridge(
       geoJsonCircle: false,
       investigationMarker: true,
     },
-    async addGeoJsonPolygonLayer(spec): Promise<SpatialLayerHandle> {
+    addGeoJsonPolygonLayer(spec): Promise<SpatialLayerHandle> {
       const overlays = polygonOverlays(mapkit, spec.data, spec);
       overlays.forEach((overlay) => map.addOverlay(overlay));
       let removed = false;
-      return {
+      return Promise.resolve({
         remove() {
           if (removed) return;
           removed = true;
           overlays.forEach((overlay) => map.removeOverlay(overlay));
         },
-      };
+      });
     },
-    async addGeoJsonCircleLayer() {
-      throw new UnsupportedSpatialCapabilityError("apple-mapkit", "geoJsonCircle");
-    },
+    addGeoJsonCircleLayer: () =>
+      Promise.reject(new UnsupportedSpatialCapabilityError("apple-mapkit", "geoJsonCircle")),
     addMarker(spec): SpatialMarkerHandle {
       assertFiniteWgs84Coordinate(spec.coordinate);
       const coordinate = new mapkit.Coordinate(spec.coordinate[1], spec.coordinate[0]);
@@ -200,14 +199,14 @@ export function createMapKitJsOverlayBridge(
       });
       const onSelect = () => spec.onActivate();
       annotation.addEventListener("select", onSelect);
-      map.addAnnotation(annotation as object);
+      map.addAnnotation(annotation);
       let removed = false;
       return {
         remove() {
           if (removed) return;
           removed = true;
           annotation.removeEventListener?.("select", onSelect);
-          map.removeAnnotation(annotation as object);
+          map.removeAnnotation(annotation);
         },
       };
     },

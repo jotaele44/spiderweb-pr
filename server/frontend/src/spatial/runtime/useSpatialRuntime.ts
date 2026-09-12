@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type * as maplibregl from "maplibre-gl";
 import type { SpatialRuntime, SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
 import { createSpatialRuntime, createCesiumRuntime, type SpatialRuntimeMode } from "./RuntimeFactory";
 import { createMapLibreSpatialAdapters } from "./MapLibreSpatialAdapters";
@@ -20,6 +21,7 @@ export function useSpatialRuntime(
 ) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const runtimeRef = useRef<SpatialRuntime | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
   const adaptersRef = useRef<SpatialAdapters | null>(null);
   const [capabilities, setCapabilities] = useState<SpatialCapabilitySet | null>(null);
   const [ready, setReady] = useState(false);
@@ -34,7 +36,7 @@ export function useSpatialRuntime(
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     let unsubscribeError: Unsubscribe = () => {};
 
-    const bootMapLibre = async (): Promise<{ runtime: SpatialRuntime; adapters: SpatialAdapters }> => {
+    const bootMapLibre = async (): Promise<{ runtime: SpatialRuntime; adapters: SpatialAdapters; map: maplibregl.Map }> => {
       const mapLibre = createSpatialRuntime("maplibre");
       await mapLibre.initialize(host, config);
       const map = mapLibre.getMapLibreInstance();
@@ -42,7 +44,7 @@ export function useSpatialRuntime(
         mapLibre.destroy();
         throw new Error("MapLibre initialized without a map instance");
       }
-      return { runtime: mapLibre, adapters: createMapLibreSpatialAdapters(map, mapLibre) };
+      return { runtime: mapLibre, adapters: createMapLibreSpatialAdapters(map, mapLibre), map };
     };
 
     const boot = async () => {
@@ -50,6 +52,7 @@ export function useSpatialRuntime(
       let fallback: string | null = null;
       let runtime: SpatialRuntime;
       let adapters: SpatialAdapters;
+      let mapLibreMap: maplibregl.Map | null = null;
 
       if (mode === "cesium") {
         const cesiumRuntime = await createCesiumRuntime();
@@ -63,6 +66,7 @@ export function useSpatialRuntime(
           const fallbackBoot = await bootMapLibre();
           runtime = fallbackBoot.runtime;
           adapters = fallbackBoot.adapters;
+          mapLibreMap = fallbackBoot.map;
           resolvedMode = "maplibre";
           fallback = err instanceof Error ? err.message : "3D runtime unavailable";
         }
@@ -70,6 +74,7 @@ export function useSpatialRuntime(
         const mapLibreBoot = await bootMapLibre();
         runtime = mapLibreBoot.runtime;
         adapters = mapLibreBoot.adapters;
+        mapLibreMap = mapLibreBoot.map;
       }
 
       if (cancelled) {
@@ -79,6 +84,7 @@ export function useSpatialRuntime(
       unsubscribeError = runtime.onBasemapError(() => setTilesFailed(true));
       runtimeRef.current = runtime;
       adaptersRef.current = adapters;
+      mapRef.current = mapLibreMap;
       setCapabilities({ ...adapters.capabilities });
       setActiveMode(resolvedMode);
       setFallbackReason(fallback);
@@ -92,6 +98,7 @@ export function useSpatialRuntime(
       unsubscribeError();
       runtimeRef.current?.destroy();
       runtimeRef.current = null;
+      mapRef.current = null;
       adaptersRef.current = null;
       setCapabilities(null);
       setReady(false);
@@ -130,6 +137,7 @@ export function useSpatialRuntime(
 
   return {
     hostRef,
+    mapRef,
     adaptersRef,
     runtimeRef,
     capabilities,

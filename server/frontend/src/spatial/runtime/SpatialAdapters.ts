@@ -37,6 +37,7 @@ export interface GeoJsonPolygonLayerSpec {
   id: string;
   data: GeoJSON;
   style: PolygonRenderStyle;
+  promoteId?: string;
 }
 
 export interface GeoJsonCircleLayerSpec {
@@ -52,6 +53,7 @@ export interface VectorTilePolygonLayerSpec {
   minZoom: number;
   maxZoom: number;
   style: PolygonRenderStyle;
+  promoteId?: string;
   onError?: () => void;
 }
 

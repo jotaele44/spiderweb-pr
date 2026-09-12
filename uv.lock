@@ -5220,6 +5220,7 @@ dev = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "requests" },
     { name = "ruff" },
 ]
 earthgpt = [
@@ -5309,6 +5310,7 @@ requires-dist = [
     { name = "pyyaml", marker = "extra == 'airspace'", specifier = ">=6.0,<7" },
     { name = "pyyaml", marker = "extra == 'remote-monitoring'", specifier = ">=6.0,<7" },
     { name = "rasterio", marker = "extra == 'dem'", specifier = ">=1.4,<2" },
+    { name = "requests", marker = "extra == 'dev'", specifier = ">=2.31.0,<3" },
     { name = "requests", marker = "extra == 'earthgpt'", specifier = ">=2.31.0,<3" },
     { name = "requests", marker = "extra == 'geo'", specifier = ">=2.31.0,<3" },
     { name = "requests", marker = "extra == 'imagery'", specifier = ">=2.31.0,<3" },

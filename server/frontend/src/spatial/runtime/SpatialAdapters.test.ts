@@ -1,30 +1,36 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, type Mock } from "vitest";
 import type { GeoJSON } from "geojson";
 import { createAppleSpatialAdapters, type AppleOverlayBridge } from "./AppleSpatialAdapters";
 import { createCameraOnlySpatialAdapters } from "./LimitedSpatialAdapters";
-import { assertFiniteWgs84Coordinate, UnsupportedSpatialCapabilityError, type SpatialCameraAdapter } from "./SpatialAdapters";
+import { assertFiniteWgs84Coordinate, UnsupportedSpatialCapabilityError, type GeoJsonPolygonLayerSpec, type SpatialCameraAdapter, type SpatialLayerHandle } from "./SpatialAdapters";
 import type { SpatialRuntime } from "./SpatialRuntime";
 
 function runtimeStub(): SpatialRuntime {
   return {
-    initialize: vi.fn(async () => undefined),
+    initialize: vi.fn(() => Promise.resolve()),
     destroy: vi.fn(),
     setView: vi.fn(),
-    getView: vi.fn(() => ({ center: [-66.1, 18.4], zoom: 9 })),
+    getView: vi.fn(() => ({ center: [-66.1, 18.4] as [number, number], zoom: 9 })),
     resize: vi.fn(),
     onBasemapError: vi.fn(() => () => undefined),
   };
 }
 
+type AddPolygonLayer = (spec: GeoJsonPolygonLayerSpec) => Promise<SpatialLayerHandle>;
+
 function appleBridgeStub(capabilities = {
   geoJsonPolygon: true,
   geoJsonCircle: false,
   investigationMarker: true,
-}): AppleOverlayBridge {
+}): AppleOverlayBridge & { addPolygon: Mock<AddPolygonLayer> } {
+  const addPolygon = vi.fn<AddPolygonLayer>(() =>
+    Promise.resolve({ remove: vi.fn() }),
+  );
   return {
     capabilities,
-    addGeoJsonPolygonLayer: vi.fn(async () => ({ remove: vi.fn() })),
-    addGeoJsonCircleLayer: vi.fn(async () => ({ remove: vi.fn() })),
+    addPolygon,
+    addGeoJsonPolygonLayer: (spec) => addPolygon(spec),
+    addGeoJsonCircleLayer: vi.fn(() => Promise.resolve({ remove: vi.fn() })),
     addMarker: vi.fn(() => ({ remove: vi.fn() })),
   };
 }
@@ -79,7 +85,7 @@ describe("renderer-neutral spatial capability gates", () => {
     const camera: SpatialCameraAdapter = {
       supported: true,
       setView: vi.fn(),
-      getView: vi.fn(() => ({ center: [-66.05, 18.45], zoom: 11 })),
+      getView: vi.fn(() => ({ center: [-66.05, 18.45] as [number, number], zoom: 11 })),
       resize: vi.fn(),
     };
     const adapters = createAppleSpatialAdapters(appleBridgeStub(), camera);
@@ -90,10 +96,10 @@ describe("renderer-neutral spatial capability gates", () => {
   it("passes canonical GeoJSON to the Apple semantic bridge without mutation", async () => {
     const data: GeoJSON = {
       type: "FeatureCollection",
-      features: [{ type: "Feature", properties: { stable_id: "MUNI-001" }, geometry: null }],
+      features: [{ type: "Feature", properties: { stable_id: "MUNI-001" }, geometry: { type: "Point", coordinates: [-66.1, 18.4] } }],
     };
     const bridge = appleBridgeStub();
-    const addPolygon = bridge.addGeoJsonPolygonLayer as ReturnType<typeof vi.fn>;
+    const { addPolygon } = bridge;
     const adapters = createAppleSpatialAdapters(bridge);
     const before = JSON.stringify(data);
     await adapters.layer.addGeoJsonPolygonLayer({
@@ -102,7 +108,10 @@ describe("renderer-neutral spatial capability gates", () => {
       style: { fillOpacity: 0.08, fillColor: "#4dc4d6", lineColor: "#4dc4d6", lineWidth: 0.8, lineOpacity: 0.6 },
     });
     expect(addPolygon).toHaveBeenCalledOnce();
-    expect(addPolygon.mock.calls[0]?.[0].data).toBe(data);
+    const firstCall = addPolygon.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    if (!firstCall) throw new Error("expected polygon bridge to be called");
+    expect(firstCall[0].data).toBe(data);
     expect(JSON.stringify(data)).toBe(before);
   });
 });

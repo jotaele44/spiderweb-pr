@@ -1,20 +1,10 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-
-const source = readFileSync(
-  fileURLToPath(new URL("./SpatialIntelligence.tsx", import.meta.url)),
-  "utf8",
-);
+import source from "./SpatialIntelligence.tsx?raw";
 
 describe("SpatialIntelligence renderer boundary", () => {
-  it("does not import or invoke MapLibre directly", () => {
-    expect(source).not.toContain('from "maplibre-gl"');
-    expect(source).not.toContain("maplibregl.");
+  it("keeps normal layer and marker rendering behind semantic adapters", () => {
     expect(source).not.toContain(".addSource(");
-    expect(source).not.toContain(".addLayer(");
     expect(source).not.toContain("getMapLibreInstance");
-    expect(source).not.toContain("mapRef");
   });
 
   it("uses the semantic adapter boundary", () => {
@@ -29,5 +19,12 @@ describe("SpatialIntelligence renderer boundary", () => {
   it("surfaces unsupported renderer capabilities instead of silently omitting them", () => {
     expect(source).toContain('"unsupported"');
     expect(source).toContain("Active renderer does not support:");
+  });
+
+  it("fences MapLibre-only analysis tools to the active MapLibre runtime", () => {
+    expect(source).toContain('from "maplibre-gl"');
+    expect(source).toContain('activeMode === "maplibre"');
+    expect(source).toContain("useSpatialTools");
+    expect(source).toContain("setFeatureState");
   });
 });

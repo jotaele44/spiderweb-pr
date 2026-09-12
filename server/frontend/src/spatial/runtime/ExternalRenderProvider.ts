@@ -34,7 +34,7 @@ export const APPLE_MAPKIT_CAPABILITY: ExternalRenderProviderCapability = Object.
   id: "apple-mapkit",
   classification: "EXTERNAL_RENDER_PROVIDER",
   authority: "NONE",
-  mapTypes: ["standard", "satellite", "hybrid"],
+  mapTypes: ["standard", "satellite", "hybrid"] as const,
   credentialsRequired: true,
   pixelPersistenceAllowed: false,
   tileHarvestAllowed: false,

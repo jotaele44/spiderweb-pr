@@ -122,7 +122,7 @@ export function createMapLibreSpatialAdapters(
       await waitForStyle(map);
       const sourceId = spec.id;
       if (map.getSource(sourceId)) throw new Error(`spatial source already exists: ${sourceId}`);
-      map.addSource(sourceId, { type: "geojson", data: spec.data });
+      map.addSource(sourceId, { type: "geojson", data: spec.data, ...(spec.promoteId ? { promoteId: spec.promoteId } : {}) });
       addPolygonPaint(map, spec.id, sourceId, spec.style);
       return removable(map, sourceId, () => removePolygonPaint(map, spec.id));
     },
@@ -147,6 +147,7 @@ export function createMapLibreSpatialAdapters(
         tiles: spec.tiles,
         minzoom: spec.minZoom,
         maxzoom: spec.maxZoom,
+        ...(spec.promoteId ? { promoteId: { [spec.sourceLayer]: spec.promoteId } } : {}),
       });
       addPolygonPaint(map, spec.id, sourceId, spec.style, spec.sourceLayer);
       return removable(
@@ -177,7 +178,7 @@ export function createMapLibreSpatialAdapters(
       });
       el.title = spec.label;
       el.setAttribute("aria-label", spec.label);
-      el.onclick = spec.onActivate;
+      el.onclick = () => spec.onActivate();
       const instance = new maplibregl.Marker({ element: el }).setLngLat(spec.coordinate).addTo(map);
       return { remove: () => instance.remove() };
     },

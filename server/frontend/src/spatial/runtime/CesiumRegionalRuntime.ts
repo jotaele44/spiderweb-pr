@@ -6,6 +6,7 @@ import * as Cesium from "cesium";
 // it doesn't load until 3D mode is actually used, matching everything else
 // in this file.
 import "cesium/Build/Cesium/Widgets/widgets.css";
+import { clampRegionalCameraHeight, REGIONAL_CAMERA_CONSTRAINTS } from "../config/regionalScene";
 import type { CameraView, SpatialRuntime, SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
 
 // Cesium resolves Workers/ThirdParty/Assets/Widgets via runtime string paths
@@ -78,6 +79,10 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
       glowWidth: 2,
       backgroundColor: Cesium.Color.fromCssColorString("#0a2633"),
     }));
+    const controller = viewer.scene.screenSpaceCameraController;
+    controller.minimumZoomDistance = REGIONAL_CAMERA_CONSTRAINTS.cesium.minimumHeightMeters;
+    controller.maximumZoomDistance = REGIONAL_CAMERA_CONSTRAINTS.cesium.maximumHeightMeters;
+
     this.viewer = viewer;
     const [longitude, latitude] = config.initialView.center;
     const previewExtent = Cesium.Rectangle.fromDegrees(
@@ -121,10 +126,14 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
       },
     });
     viewer.camera.setView({
-      destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, 450_000),
+      destination: Cesium.Cartesian3.fromDegrees(
+        longitude,
+        latitude,
+        REGIONAL_CAMERA_CONSTRAINTS.cesium.initialHeightMeters,
+      ),
       orientation: {
-        heading: 0,
-        pitch: -Cesium.Math.PI_OVER_TWO,
+        heading: Cesium.Math.toRadians(REGIONAL_CAMERA_CONSTRAINTS.cesium.headingDegrees),
+        pitch: Cesium.Math.toRadians(REGIONAL_CAMERA_CONSTRAINTS.cesium.pitchDegrees),
         roll: 0,
       },
     });
@@ -150,15 +159,15 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
     const destination = Cesium.Cartesian3.fromDegrees(
       view.center[0],
       view.center[1],
-      zoomToAltitude(view.zoom),
+      clampRegionalCameraHeight(zoomToAltitude(view.zoom)),
     );
     // Orientation must be explicit: setView/flyTo inherit the camera's current
     // pitch when it's omitted, so moving to a low regional altitude while the
     // camera still holds the default global-view pitch aims it at the horizon
     // (empty space) instead of the ground — a black scene, not an error.
     const orientation = {
-      heading: 0,
-      pitch: -Cesium.Math.PI_OVER_TWO,
+      heading: Cesium.Math.toRadians(REGIONAL_CAMERA_CONSTRAINTS.cesium.headingDegrees),
+      pitch: Cesium.Math.toRadians(REGIONAL_CAMERA_CONSTRAINTS.cesium.pitchDegrees),
       roll: 0,
     };
     if (options?.animate === false) {

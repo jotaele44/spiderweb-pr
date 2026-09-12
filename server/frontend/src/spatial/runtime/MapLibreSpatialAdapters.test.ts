@@ -6,10 +6,10 @@ import type { SpatialRuntime } from "./SpatialRuntime";
 
 function runtimeStub(): SpatialRuntime {
   return {
-    initialize: vi.fn(async () => undefined),
+    initialize: vi.fn(() => Promise.resolve()),
     destroy: vi.fn(),
     setView: vi.fn(),
-    getView: vi.fn(() => ({ center: [-66.4, 18.2], zoom: 9 })),
+    getView: vi.fn(() => ({ center: [-66.4, 18.2] as [number, number], zoom: 9 })),
     resize: vi.fn(),
     onBasemapError: vi.fn(() => () => undefined),
   };

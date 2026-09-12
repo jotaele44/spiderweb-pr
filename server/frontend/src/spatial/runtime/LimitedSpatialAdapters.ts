@@ -28,6 +28,8 @@ export function createCameraOnlySpatialAdapters(
   const unsupported = (capability: keyof SpatialCapabilitySet): never => {
     throw new UnsupportedSpatialCapabilityError(renderer, capability);
   };
+  const rejected = (capability: keyof SpatialCapabilitySet) =>
+    Promise.reject(new UnsupportedSpatialCapabilityError(renderer, capability));
 
   return {
     renderer,
@@ -38,9 +40,9 @@ export function createCameraOnlySpatialAdapters(
         geoJsonCircle: false,
         vectorTilePolygon: false,
       },
-      addGeoJsonPolygonLayer: async () => unsupported("geoJsonPolygon"),
-      addGeoJsonCircleLayer: async () => unsupported("geoJsonCircle"),
-      addVectorTilePolygonLayer: async () => unsupported("vectorTilePolygon"),
+      addGeoJsonPolygonLayer: () => rejected("geoJsonPolygon"),
+      addGeoJsonCircleLayer: () => rejected("geoJsonCircle"),
+      addVectorTilePolygonLayer: () => rejected("vectorTilePolygon"),
     },
     marker: {
       supported: false,

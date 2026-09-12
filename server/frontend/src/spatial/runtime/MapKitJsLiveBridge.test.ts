@@ -6,14 +6,14 @@ function fakeMapKit() {
     constructor(public latitude: number, public longitude: number) {}
   }
   class Style {
-    constructor(public options: object) {}
+    constructor(public options: Record<string, unknown>) {}
   }
   class PolygonOverlay {
-    constructor(public points: Coordinate[] | Coordinate[][], public options: object) {}
+    constructor(public points: Coordinate[] | Coordinate[][], public options: { style: object }) {}
   }
   class Annotation {
     listeners = new Map<string, Set<() => void>>();
-    constructor(public coordinate: Coordinate, public factory: () => HTMLElement, public options: object) {}
+    constructor(public coordinate: Coordinate, public factory: () => HTMLElement, public options: object = {}) {}
     addEventListener(type: string, listener: () => void) {
       const listeners = this.listeners.get(type) ?? new Set();
       listeners.add(listener);
@@ -45,14 +45,14 @@ function fakeMapKit() {
     destroy() { this.destroyed = true; }
   }
   const init = vi.fn();
-  return { namespace: { init, Map: MapObject, Coordinate, Style, PolygonOverlay, Annotation }, init, MapObject, Annotation, PolygonOverlay };
+  return { namespace: { init, Map: MapObject, Coordinate, Style, PolygonOverlay, Annotation }, init, MapObject, Style, Annotation, PolygonOverlay };
 }
 
 describe("MapKit JS live bridge boundary", () => {
   it("initializes with injected authorization and supports standard/satellite/hybrid without embedded credentials", async () => {
     const fake = fakeMapKit();
     const authorization = vi.fn((_done: (token: string) => void) => undefined);
-    let map: InstanceType<typeof fake.MapObject> | null = null;
+    let map: InstanceType<typeof fake.MapObject> | undefined;
     const factory = createMapKitJsFactory(fake.namespace, authorization, (created) => { map = created as InstanceType<typeof fake.MapObject>; });
     const host = document.createElement("div");
     const handle = await factory.create(host, {
@@ -61,13 +61,16 @@ describe("MapKit JS live bridge boundary", () => {
     });
 
     expect(fake.init).toHaveBeenCalledOnce();
-    expect(map?.mapType).toBe("standard");
+    expect(map).toBeDefined();
+    const createdMap = map;
+    if (!createdMap) throw new Error("expected fake MapKit map to be created");
+    expect(createdMap.mapType).toBe("standard");
     handle.setMapType("satellite");
-    expect(map?.mapType).toBe("satellite");
+    expect(createdMap.mapType).toBe("satellite");
     handle.setMapType("hybrid");
-    expect(map?.mapType).toBe("hybrid");
+    expect(createdMap.mapType).toBe("hybrid");
     handle.destroy();
-    expect(map?.destroyed).toBe(true);
+    expect(createdMap.destroyed).toBe(true);
   });
 
   it("round-trips provider-native center and camera distance without claiming canonical zoom equivalence", async () => {
@@ -100,7 +103,15 @@ describe("MapKit JS live bridge boundary", () => {
     });
     expect(map.overlays).toHaveLength(2);
     const first = map.overlays[0] as InstanceType<typeof fake.PolygonOverlay>;
-    expect(first.options).toMatchObject({ style: expect.objectContaining({ options: expect.objectContaining({ fillColor: "#4dc4d6", fillOpacity: 0.08, strokeColor: "#4dc4d6", strokeOpacity: 0.6, lineWidth: 0.8 }) }) });
+    expect(first.options.style).toBeInstanceOf(fake.Style);
+    const style = first.options.style as InstanceType<typeof fake.Style>;
+    expect(style.options).toMatchObject({
+      fillColor: "#4dc4d6",
+      fillOpacity: 0.08,
+      strokeColor: "#4dc4d6",
+      strokeOpacity: 0.6,
+      lineWidth: 0.8,
+    });
     handle.remove();
     handle.remove();
     expect(map.overlays).toHaveLength(0);

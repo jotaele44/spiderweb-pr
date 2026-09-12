@@ -2,24 +2,36 @@ import { describe, expect, it, vi } from "vitest";
 
 import { AppleMapKitRuntime, type AppleMapHandle, type AppleMapKitFactory } from "./AppleMapKitRuntime";
 
-function fakeFactory(): { factory: AppleMapKitFactory; handle: AppleMapHandle } {
+function fakeFactory(): {
+  factory: AppleMapKitFactory;
+  handle: AppleMapHandle;
+  create: ReturnType<typeof vi.fn>;
+  setMapType: ReturnType<typeof vi.fn>;
+  destroy: ReturnType<typeof vi.fn>;
+} {
   let view = { center: [-66.4, 18.2] as [number, number], cameraDistanceMeters: 20_000 };
+  const create = vi.fn(() => Promise.resolve(handle));
+  const setMapType = vi.fn();
+  const destroy = vi.fn();
   const handle: AppleMapHandle = {
     setCenter: vi.fn((center: [number, number]) => { view = { ...view, center }; }),
     setCameraDistanceMeters: vi.fn((distance: number) => { view = { ...view, cameraDistanceMeters: distance }; }),
-    setMapType: vi.fn(),
+    setMapType,
     getCameraView: vi.fn(() => view),
-    destroy: vi.fn(),
+    destroy,
   };
   return {
     handle,
-    factory: { create: vi.fn(async () => handle) },
+    create,
+    setMapType,
+    destroy,
+    factory: { create },
   };
 }
 
 describe("AppleMapKitRuntime", () => {
   it("runs through an injected factory without embedding credentials", async () => {
-    const { factory, handle } = fakeFactory();
+    const { factory, create, setMapType, destroy } = fakeFactory();
     const runtime = new AppleMapKitRuntime(factory);
     const container = document.createElement("div");
 
@@ -30,12 +42,12 @@ describe("AppleMapKitRuntime", () => {
     runtime.setMapType("hybrid");
     runtime.setView({ center: [-66.1, 18.45], cameraDistanceMeters: 8_000 }, false);
 
-    expect(factory.create).toHaveBeenCalledOnce();
-    expect(handle.setMapType).toHaveBeenCalledWith("hybrid");
+    expect(create).toHaveBeenCalledOnce();
+    expect(setMapType).toHaveBeenCalledWith("hybrid");
     expect(runtime.getView()).toEqual({ center: [-66.1, 18.45], cameraDistanceMeters: 8_000 });
 
     runtime.destroy();
-    expect(handle.destroy).toHaveBeenCalledOnce();
+    expect(destroy).toHaveBeenCalledOnce();
   });
 
   it("fails closed before initialization and for invalid WGS84 camera state", async () => {

@@ -78,9 +78,8 @@ export function createAppleSpatialAdapters(
         }
         return overlayBridge.addGeoJsonCircleLayer(spec);
       },
-      async addVectorTilePolygonLayer() {
-        throw new UnsupportedSpatialCapabilityError("apple-mapkit", "vectorTilePolygon");
-      },
+      addVectorTilePolygonLayer: () =>
+        Promise.reject(new UnsupportedSpatialCapabilityError("apple-mapkit", "vectorTilePolygon")),
     },
     marker: {
       supported: supports.investigationMarker,

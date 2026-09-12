@@ -11,12 +11,14 @@ Start: uvicorn server.backend.main:app --reload --port 8000
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import sqlite3
 import subprocess
 import sys
 import uuid
+from collections import Counter
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Literal, Optional
@@ -316,6 +318,7 @@ _ALLOWED_LAYERS = {
     for layer in fam.get("layers", [])
 } or _FALLBACK_LAYERS
 _EMPTY_FC: dict = {"type": "FeatureCollection", "features": []}
+_DENSITY_LAYERS = {"gazetteer_pr_domestic_names"}
 
 
 # Layers whose canonical artifact doesn't live at the generic outputs/data/root
@@ -341,6 +344,55 @@ def _find_geojson(layer: str) -> Optional[Path]:
         ROOT / f"{layer}.geojson",
     ]
     return next((p for p in candidates if p.exists()), None)
+
+
+async def _load_geojson_source(path: Optional[Path], expected_path: Path) -> tuple[list[dict], dict]:
+    if path is None:
+        return [], {
+            "path": str(expected_path.relative_to(ROOT)),
+            "exists": False,
+            "sha256": None,
+            "row_count": 0,
+        }
+    raw = await asyncio.to_thread(path.read_bytes)
+    try:
+        document = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise HTTPException(500, f"invalid GeoJSON source: {path.name}") from exc
+    features = document.get("features")
+    if document.get("type") != "FeatureCollection" or not isinstance(features, list):
+        raise HTTPException(500, f"invalid FeatureCollection source: {path.name}")
+    try:
+        display_path = str(path.relative_to(ROOT))
+    except ValueError:
+        display_path = str(path)
+    return features, {
+        "path": display_path,
+        "exists": True,
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "row_count": len(features),
+    }
+
+
+def _build_municipio_geoid_index(features: list[dict]) -> dict[str, str]:
+    name_to_geoid: dict[str, str] = {}
+    geoid_to_name: dict[str, str] = {}
+    for feature in features:
+        properties = feature.get("properties")
+        if not isinstance(properties, dict):
+            raise ValueError("municipio feature properties must be an object")
+        name = properties.get("NAME") or properties.get("name")
+        geoid = properties.get("GEOID") or properties.get("geoid")
+        if not isinstance(name, str) or not name or geoid in (None, ""):
+            raise ValueError("municipio feature requires non-empty NAME/name and GEOID/geoid")
+        geoid = str(geoid)
+        if name in name_to_geoid:
+            raise ValueError(f"duplicate municipio name: {name}")
+        if geoid in geoid_to_name:
+            raise ValueError(f"duplicate municipio GEOID: {geoid}")
+        name_to_geoid[name] = geoid
+        geoid_to_name[geoid] = name
+    return name_to_geoid
 
 
 async def _sites_from_db() -> dict:
@@ -394,6 +446,81 @@ async def geo_layer(layer: str):
     if layer == "anomalies":
         return JSONResponse(await _anomalies_from_db(), media_type="application/geo+json")
     return JSONResponse(_EMPTY_FC, media_type="application/geo+json")
+
+
+@app.get("/geo/municipios/density")
+async def geo_municipios_density(layer: str = "gazetteer_pr_domestic_names"):
+    """Feature count of `layer` per municipio, keyed by GEOID.
+
+    Joins on each feature's own `municipality` name property against the
+    TIGER municipios boundary file's NAME/GEOID (ingest_tiger_pr.py writes
+    data/municipios.geojson by default — the same file _find_geojson's
+    generic candidate search already looks for). Name-based, not a spatial
+    join: mirrors aguayluz-pr's proven event_density pattern, since every
+    layer this endpoint supports already carries a municipality field.
+    Degrades to an all-unmatched response if municipios data isn't loaded
+    yet, the same graceful-empty contract every other geo endpoint here
+    follows.
+    """
+    if layer not in _DENSITY_LAYERS:
+        raise HTTPException(400, f"layer '{layer}' is not eligible for municipio density")
+    layer_path = _find_geojson(layer)
+    features, layer_manifest = await _load_geojson_source(
+        layer_path,
+        _LAYER_PATH_OVERRIDES[layer],
+    )
+
+    muni_path = _find_geojson("municipios")
+    municipio_features, municipio_manifest = await _load_geojson_source(
+        muni_path,
+        ROOT / "data" / "municipios.geojson",
+    )
+    try:
+        name_to_geoid = _build_municipio_geoid_index(municipio_features)
+    except ValueError as exc:
+        raise HTTPException(500, str(exc)) from exc
+
+    by_geoid: Counter[str] = Counter()
+    unresolved_by_name: Counter[str] = Counter()
+    for feature in features:
+        properties = feature.get("properties") or {}
+        name = properties.get("municipality") if isinstance(properties, dict) else None
+        geoid = name_to_geoid.get(name) if name else None
+        if geoid is None:
+            unresolved_by_name[name if isinstance(name, str) and name else "__NULL__"] += 1
+            continue
+        by_geoid[geoid] += 1
+
+    matched_count = sum(by_geoid.values())
+    unmatched = sum(unresolved_by_name.values())
+    total_features = len(features)
+    scope_state = (
+        "UNRESOLVED"
+        if total_features > 0 and matched_count == 0
+        else "CANDIDATE_NOT_IDENTITY"
+        if unmatched > 0
+        else "PASS"
+    )
+    return {
+        "by_geoid": dict(by_geoid),
+        "matched_count": matched_count,
+        "total_features": total_features,
+        "unmatched": unmatched,
+        "unresolved_by_name": dict(unresolved_by_name),
+        "layer": layer,
+        "scope": {
+            "aggregation_key": "feature.properties.municipality exact source string",
+            "normalization": "NONE",
+            "identity_effect": "NONE",
+            "geometry_effect": "NONE",
+            "state": scope_state,
+        },
+        "provenance": {
+            "layer_source": layer_manifest,
+            "municipio_source": municipio_manifest,
+            "loaded_at": "request_time",
+        },
+    }
 
 
 @app.get("/catalog")
