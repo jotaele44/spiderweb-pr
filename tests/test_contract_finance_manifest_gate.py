@@ -34,6 +34,19 @@ def test_valid_manifest_passes_gate():
     assert "outputs/contract_finance/contract_finance_geo_rows.csv" in report["declared_paths"]
 
 
+def test_exact_expected_producer_commit_passes_and_stale_commit_fails():
+    commit = _manifest()["producer"]["commit"]
+    report = validate_contract_finance_manifest(FIXTURE, expected_producer_commit=commit)
+    assert report["producer_commit_matches_expected"] is True
+    assert report["expected_producer_commit"] == commit
+
+    with pytest.raises(ContractFinanceManifestGateError, match="producer.commit mismatch"):
+        validate_contract_finance_manifest(
+            FIXTURE,
+            expected_producer_commit="0" * 40,
+        )
+
+
 def test_manifest_assessment_reports_blocked_without_raising(tmp_path):
     payload = _manifest()
     payload["validation"]["readiness_passed"] = False
