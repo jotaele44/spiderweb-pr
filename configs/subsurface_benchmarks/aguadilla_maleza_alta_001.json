@@ -1,0 +1,122 @@
+{
+  "schema": "spiderweb.subsurface.benchmark.v1",
+  "benchmark_id": "AGUADILLA_MALEZA_ALTA_SUBSURFACE_001",
+  "status": "PROVISIONAL",
+  "anchor": {
+    "lat": 18.5091743,
+    "lon": -67.1140566,
+    "crs": "EPSG:4326",
+    "source": "user-supplied dropped pin",
+    "identity_state": "PASS"
+  },
+  "metric_windows": [
+    {"id": "Z1", "radius_m": 5000, "purpose": "regional geology/karst/hydrology"},
+    {"id": "Z2", "radius_m": 1000, "purpose": "catchment/depression/drainage system"},
+    {"id": "Z3", "radius_m": 250, "purpose": "feature-scale depression/lineament adjudication"},
+    {"id": "Z4", "radius_m": 50, "purpose": "micro-scale surface morphology and entrance/outlet screening"}
+  ],
+  "coastal_corridor": {
+    "required": true,
+    "rule": "extend from anchor through shoreline and offshore; do not infer conduit identity from alignment",
+    "offshore_analysis_state": "UNRESOLVED"
+  },
+  "classification_states": ["OBSERVED", "CANDIDATE", "UNRESOLVED", "VERIFIED"],
+  "forbidden_promotions_without_independent_evidence": [
+    "CAVE",
+    "VOID",
+    "SUBSURFACE_CONDUIT",
+    "SUBMARINE_SPRING",
+    "OCEAN_OUTLET"
+  ],
+  "required_source_families": [
+    "exact_geology",
+    "bare_earth_lidar_or_dem",
+    "surface_hydrography",
+    "springs_and_wells",
+    "caves_and_sinkholes",
+    "historical_imagery",
+    "coastline",
+    "bathymetry"
+  ],
+  "authoritative_candidates": [
+    {
+      "source_id": "USGS_I569_AGUADILLA_GEOLOGY",
+      "authority": "USGS",
+      "role": "exact_geology_reference",
+      "url": "https://pubs.usgs.gov/publication/i569",
+      "binding_state": "OPEN_POINT_IN_POLYGON"
+    },
+    {
+      "source_id": "PRPB_GEOLOGY_3",
+      "authority": "Puerto Rico Planning Board",
+      "role": "queryable_geology",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/MapServer/3",
+      "binding_state": "OPEN_POINT_QUERY"
+    },
+    {
+      "source_id": "PRPB_SINKHOLES_4",
+      "authority": "Puerto Rico Planning Board",
+      "role": "sinkhole_inventory",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/4",
+      "binding_state": "OPEN_AOI_QUERY"
+    },
+    {
+      "source_id": "PRPB_CAVES_31",
+      "authority": "Puerto Rico Planning Board",
+      "role": "cave_inventory",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/31",
+      "binding_state": "OPEN_AOI_QUERY"
+    },
+    {
+      "source_id": "USGS_MONITORING_LOCATIONS_PR",
+      "authority": "USGS",
+      "role": "wells_springs_monitoring",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items",
+      "binding_state": "OPEN_AOI_QUERY"
+    },
+    {
+      "source_id": "NOAA_CUDEM_PR_1_9",
+      "authority": "NOAA NCEI",
+      "role": "integrated_topobathy",
+      "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_ninth_Topobathy_PuertoRico_9525/index.html",
+      "horizontal_reference": "NAD83",
+      "vertical_reference": "PRVD02",
+      "binding_state": "OPEN_TILE_BINDING"
+    }
+  ],
+  "visual_fixtures": [
+    {"name": "IMG_5162.jpeg", "sha256": "c5c6c196ff6c2e83fdc28fb317b4ddf6bfe8048c3b7d800141ff58ea117d4956", "size_bytes": 416234, "width": 1536, "height": 710},
+    {"name": "IMG_5163.jpeg", "sha256": "f9d67e1c32055ebaaed6edaf0ccb8406ac5e72d91201eda9447397941b1b60a7", "size_bytes": 470841, "width": 1536, "height": 710},
+    {"name": "IMG_5164.jpeg", "sha256": "79713d6bd0909857c8ab339c052ec0eda63b14d1e5b4564728ae92adf1ea3581", "size_bytes": 451850, "width": 710, "height": 1536},
+    {"name": "IMG_5165.jpeg", "sha256": "a0dd443394ac2db361d47a2c0331e2b20d41929350c06b685924e5b2fd78884f", "size_bytes": 509008, "width": 710, "height": 1536},
+    {"name": "IMG_5167.jpeg", "sha256": "4446c5c60ccf47a5c8f66cc03b9179bc05f2650b95332930dc750a237cfea197", "size_bytes": 491764, "width": 1170, "height": 2532}
+  ],
+  "false_positive_classes": [
+    "surface_drainage",
+    "road_or_trail",
+    "property_or_land_use_boundary",
+    "vegetation_succession",
+    "illumination_or_shadow",
+    "reef_or_submerged_rock",
+    "breaking_wave",
+    "sand_channel",
+    "sediment_or_turbidity_plume",
+    "imagery_seam",
+    "sun_glint"
+  ],
+  "certification_gates": {
+    "exact_geology_bound": false,
+    "terrain_source_frozen": false,
+    "hydrography_source_frozen": false,
+    "spring_well_source_frozen": false,
+    "cave_sinkhole_source_frozen": false,
+    "historical_imagery_source_frozen": false,
+    "coastline_source_frozen": false,
+    "bathymetry_source_frozen": false,
+    "four_zoom_analysis_executed": false,
+    "temporal_persistence_executed": false,
+    "candidate_false_positive_adjudication_complete": false,
+    "zero_unresolved_inside_certified_scope": false,
+    "skill_training_allowed": false
+  }
+}

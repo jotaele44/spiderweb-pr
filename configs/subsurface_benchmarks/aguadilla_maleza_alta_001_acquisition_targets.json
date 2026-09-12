@@ -1,0 +1,123 @@
+{
+  "schema": "spiderweb.subsurface.benchmark_acquisition_targets.v1",
+  "benchmark_id": "AGUADILLA_MALEZA_ALTA_SUBSURFACE_001",
+  "anchor": {"lat": 18.5091743, "lon": -67.1140566, "crs": "EPSG:4326"},
+  "discovery_windows": {
+    "Z1": {"radius_m": 5000, "bbox_wgs84": [-67.1614065, 18.4640016, -67.0667067, 18.5543470]},
+    "Z2": {"radius_m": 1000, "bbox_wgs84": [-67.1235266, 18.5001398, -67.1045866, 18.5182088]},
+    "Z3": {"radius_m": 250, "bbox_wgs84": [-67.1164241, 18.5069157, -67.1116891, 18.5114329]},
+    "Z4": {"radius_m": 50, "bbox_wgs84": [-67.1145301, 18.5087226, -67.1135831, 18.5096260]}
+  },
+  "targets": [
+    {
+      "source_id": "PRPB_GEOLOGY_3",
+      "family": "exact_geology",
+      "authority": "Puerto Rico Planning Board",
+      "endpoint": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/3",
+      "request_type": "ARCGIS_POINT_INTERSECT",
+      "stable_id_fields": ["OBJECTID", "GlobalID"],
+      "expected_geometry_type": "esriGeometryPolygon",
+      "source_crs": "EPSG:32161",
+      "acquisition_state": "READY_NOT_FROZEN"
+    },
+    {
+      "source_id": "PRPB_SINKHOLES_4",
+      "family": "caves_and_sinkholes",
+      "authority": "Puerto Rico Planning Board",
+      "endpoint": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/4",
+      "request_type": "ARCGIS_BBOX_INTERSECT",
+      "window": "Z1",
+      "acquisition_state": "READY_NOT_FROZEN"
+    },
+    {
+      "source_id": "PRPB_CAVES_31",
+      "family": "caves_and_sinkholes",
+      "authority": "Puerto Rico Planning Board",
+      "endpoint": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/31",
+      "request_type": "ARCGIS_BBOX_INTERSECT",
+      "window": "Z1",
+      "acquisition_state": "READY_NOT_FROZEN"
+    },
+    {
+      "source_id": "PRPB_SPRINGS_19",
+      "family": "springs_and_wells",
+      "authority": "Puerto Rico Planning Board",
+      "endpoint": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/19",
+      "request_type": "ARCGIS_BBOX_INTERSECT",
+      "window": "Z1",
+      "acquisition_state": "READY_NOT_FROZEN"
+    },
+    {
+      "source_id": "PRPB_WELLS_JCA_20",
+      "family": "springs_and_wells",
+      "authority": "Puerto Rico Planning Board",
+      "endpoint": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/20",
+      "request_type": "ARCGIS_BBOX_INTERSECT",
+      "window": "Z1",
+      "acquisition_state": "READY_NOT_FROZEN"
+    },
+    {
+      "source_id": "PRPB_WELLS_AAA_21",
+      "family": "springs_and_wells",
+      "authority": "Puerto Rico Planning Board",
+      "endpoint": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/21",
+      "request_type": "ARCGIS_BBOX_INTERSECT",
+      "window": "Z1",
+      "acquisition_state": "READY_NOT_FROZEN"
+    },
+    {
+      "source_id": "USGS_MONITORING_LOCATIONS_PR",
+      "family": "springs_and_wells",
+      "authority": "USGS",
+      "endpoint": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items",
+      "request_type": "OGC_BBOX",
+      "window": "Z1",
+      "extra_query": {"state_code": "72"},
+      "stable_id_fields": ["id", "monitoring_location_number"],
+      "acquisition_state": "READY_NOT_FROZEN"
+    },
+    {
+      "source_id": "NOAA_CUDEM_PR_N18X50_W067X25_2022V2",
+      "family": "bare_earth_lidar_or_dem",
+      "authority": "NOAA NCEI / Office for Coastal Management",
+      "role": "integrated_topobathy_primary",
+      "dataset": "Puerto Rico CUDEM 1/9 arc-second Bathymetric-Topographic Tiles",
+      "dataset_metadata": "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ngdc.mgg.dem%3A399919",
+      "tile_index": "https://chs.coast.noaa.gov/htdata/raster5/elevation/NCEI_ninth_Topobathy_PuertoRico_9525/",
+      "tile_name": "ncei19_n18x50_w067x25_2022v2.tif",
+      "tile_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_ninth_Topobathy_PuertoRico_9525/ncei19_n18x50_w067x25_2022v2.tif",
+      "listed_size": "204.92 MB",
+      "horizontal_reference": "NAD83 / EPSG:4269",
+      "vertical_reference": "PRVD02",
+      "vertical_units": "metres",
+      "resolution": "1/9 arc-second",
+      "tile_binding_basis": "anchor coordinate falls in n18x50-w067x25 quarter-degree tile naming extent; source STAC/tile-index geometry must be frozen before geometric certification",
+      "acquisition_state": "TILE_IDENTIFIED_BYTES_NOT_FROZEN"
+    },
+    {
+      "source_id": "USGS_PP1012_KARST_HYDROGEOLOGY",
+      "family": "hydrogeologic_context",
+      "authority": "USGS",
+      "role": "regional_hydrologic_prior_not_local_identity",
+      "publication": "Hydrogeology of the Karst of Puerto Rico, Professional Paper 1012",
+      "acquisition_state": "REFERENCE_VERIFIED"
+    },
+    {
+      "source_id": "USGS_SIM3296_HYDROGEOLOGY",
+      "family": "hydrogeologic_context",
+      "authority": "USGS",
+      "role": "regional_aquifer_and_groundwater_context_not_local_identity",
+      "publication": "Hydrogeology of Puerto Rico and the Outlying Islands of Vieques, Culebra, and Mona, SIM 3296",
+      "acquisition_state": "REFERENCE_VERIFIED"
+    }
+  ],
+  "invariants": {
+    "no_name_only_identity": true,
+    "bbox_is_discovery_only": true,
+    "tile_name_is_not_byte_identity": true,
+    "raw_bytes_required_for_frozen_manifestation": true,
+    "source_native_stable_ids_required_when_available": true,
+    "exact_geology_requires_point_in_polygon": true,
+    "regional_hydrogeology_cannot_verify_local_conduit_or_outlet": true
+  }
+}
