@@ -32,6 +32,17 @@ Cesium.Ion.defaultAccessToken = CESIUM_ION_TOKEN;
 // roughly the same scale." Do not rely on it for anything that needs exact
 // parity between 2D and 3D camera framing.
 const ZOOM0_ALTITUDE_M = 40_000_000;
+const GOOGLE_TILESET_LOAD_TIMEOUT_MS = 15_000;
+
+function addDeterministicGrid(viewer: Cesium.Viewer): void {
+  viewer.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
+    cells: 8,
+    color: Cesium.Color.fromCssColorString("#3b8793").withAlpha(0.75),
+    glowColor: Cesium.Color.fromCssColorString("#06111a").withAlpha(0.35),
+    glowWidth: 2,
+    backgroundColor: Cesium.Color.fromCssColorString("#0a2633"),
+  }));
+}
 
 function zoomToAltitude(zoom: number): number {
   return ZOOM0_ALTITUDE_M / Math.pow(2, zoom);
@@ -52,11 +63,14 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
   private firstFrame: number | null = null;
   private initialCenter: [number, number] | null = null;
   private basemapFailed = false;
+  private providerLoadTimeout: number | null = null;
+  private providerLoadGeneration = 0;
   private readonly basemapErrorListeners = new Set<() => void>();
 
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void> {
     const realWorldEnabled = CESIUM_ION_TOKEN.length > 0;
-    container.dataset.spatialBasemap = realWorldEnabled ? "google-photorealistic" : "grid";
+    const loadGeneration = ++this.providerLoadGeneration;
+    container.dataset.spatialBasemap = realWorldEnabled ? "google-loading" : "grid";
     const viewer = new Cesium.Viewer(container, {
       baseLayer: false,
       baseLayerPicker: false,
@@ -78,13 +92,7 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
     // with Google content. The token-free fallback keeps the globe visible.
     viewer.scene.globe.show = !realWorldEnabled;
     if (!realWorldEnabled) {
-      viewer.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
-        cells: 8,
-        color: Cesium.Color.fromCssColorString("#3b8793").withAlpha(0.75),
-        glowColor: Cesium.Color.fromCssColorString("#06111a").withAlpha(0.35),
-        glowWidth: 2,
-        backgroundColor: Cesium.Color.fromCssColorString("#0a2633"),
-      }));
+      addDeterministicGrid(viewer);
     } else {
       // The scene exposes no geocoder. If one is added later, Google's usage
       // rules require that it be the Google geocoder; keep this acknowledgment
@@ -95,9 +103,25 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
         showCreditsOnScreen: true,
       })
         .then((tileset) => {
-          if (this.viewer === viewer && !viewer.isDestroyed()) viewer.scene.primitives.add(tileset);
+          if (
+            this.viewer !== viewer
+            || viewer.isDestroyed()
+            || loadGeneration !== this.providerLoadGeneration
+            || this.basemapFailed
+          ) {
+            tileset.destroy();
+            return;
+          }
+          this.clearProviderLoadTimeout();
+          viewer.scene.primitives.add(tileset);
+          container.dataset.spatialBasemap = "google-photorealistic";
+          viewer.scene.requestRender();
         })
-        .catch(() => this.reportBasemapFailure());
+        .catch(() => this.activateGridFallback(viewer, container, loadGeneration));
+      this.providerLoadTimeout = window.setTimeout(
+        () => this.activateGridFallback(viewer, container, loadGeneration),
+        GOOGLE_TILESET_LOAD_TIMEOUT_MS,
+      );
     }
     const controller = viewer.scene.screenSpaceCameraController;
     controller.minimumZoomDistance = REGIONAL_CAMERA_CONSTRAINTS.cesium.minimumHeightMeters;
@@ -169,6 +193,8 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
   }
 
   destroy(): void {
+    this.clearProviderLoadTimeout();
+    this.providerLoadGeneration += 1;
     if (this.firstFrame !== null) window.cancelAnimationFrame(this.firstFrame);
     this.firstFrame = null;
     this.viewer?.destroy();
@@ -244,5 +270,30 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
   private reportBasemapFailure(): void {
     this.basemapFailed = true;
     this.basemapErrorListeners.forEach((listener) => listener());
+  }
+
+  private clearProviderLoadTimeout(): void {
+    if (this.providerLoadTimeout === null) return;
+    window.clearTimeout(this.providerLoadTimeout);
+    this.providerLoadTimeout = null;
+  }
+
+  private activateGridFallback(
+    viewer: Cesium.Viewer,
+    container: HTMLElement,
+    loadGeneration: number,
+  ): void {
+    if (
+      this.viewer !== viewer
+      || viewer.isDestroyed()
+      || loadGeneration !== this.providerLoadGeneration
+      || this.basemapFailed
+    ) return;
+    this.clearProviderLoadTimeout();
+    viewer.scene.globe.show = true;
+    addDeterministicGrid(viewer);
+    container.dataset.spatialBasemap = "grid-fallback";
+    viewer.scene.requestRender();
+    this.reportBasemapFailure();
   }
 }
