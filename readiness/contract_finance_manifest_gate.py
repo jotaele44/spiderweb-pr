@@ -44,7 +44,11 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     return payload
 
 
-def assess_contract_finance_manifest(manifest_path: str | Path) -> dict[str, Any]:
+def assess_contract_finance_manifest(
+    manifest_path: str | Path,
+    *,
+    expected_producer_commit: str | None = None,
+) -> dict[str, Any]:
     manifest = _load_manifest(Path(manifest_path))
     errors: list[str] = []
 
@@ -58,8 +62,14 @@ def assess_contract_finance_manifest(manifest_path: str | Path) -> dict[str, Any
 
     if producer.get("repository") != EXPECTED_PRODUCER_REPO:
         errors.append("producer.repository must be jotaele44/moneysweep-pr")
-    if not producer.get("commit"):
+    producer_commit = producer.get("commit")
+    if not producer_commit:
         errors.append("producer.commit is required")
+    if expected_producer_commit is not None and producer_commit != expected_producer_commit:
+        errors.append(
+            "producer.commit mismatch: "
+            f"expected {expected_producer_commit}, got {producer_commit!r}"
+        )
 
     consumer_contract = manifest.get("consumer_contract")
     if not isinstance(consumer_contract, dict):
@@ -137,15 +147,26 @@ def assess_contract_finance_manifest(manifest_path: str | Path) -> dict[str, Any
         "status": "READY" if not errors else "BLOCKED",
         "errors": errors,
         "producer_repository": producer.get("repository"),
-        "producer_commit": producer.get("commit"),
+        "producer_commit": producer_commit,
+        "expected_producer_commit": expected_producer_commit,
+        "producer_commit_matches_expected": (
+            expected_producer_commit is None or producer_commit == expected_producer_commit
+        ),
         "artifact_count": len(artifacts),
         "required_artifact_count": EXPECTED_REQUIRED_ARTIFACT_COUNT,
         "declared_paths": sorted(declared_paths),
     }
 
 
-def validate_contract_finance_manifest(manifest_path: str | Path) -> dict[str, Any]:
-    report = assess_contract_finance_manifest(manifest_path)
+def validate_contract_finance_manifest(
+    manifest_path: str | Path,
+    *,
+    expected_producer_commit: str | None = None,
+) -> dict[str, Any]:
+    report = assess_contract_finance_manifest(
+        manifest_path,
+        expected_producer_commit=expected_producer_commit,
+    )
     if report["errors"]:
         raise ContractFinanceManifestGateError("; ".join(report["errors"]))
     return report
