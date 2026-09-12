@@ -1,5 +1,6 @@
 import * as maplibregl from "maplibre-gl";
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+import { REGIONAL_CAMERA_CONSTRAINTS } from "../config/regionalScene";
 import type { CameraView, SpatialRuntime, SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
 
 maplibregl.setWorkerUrl(maplibreWorkerUrl);
@@ -17,6 +18,9 @@ export class MapLibreRuntime implements SpatialRuntime {
       style: config.basemapStyle,
       center: config.initialView.center,
       zoom: config.initialView.zoom,
+      minZoom: REGIONAL_CAMERA_CONSTRAINTS.mapLibre.minimumZoom,
+      maxZoom: REGIONAL_CAMERA_CONSTRAINTS.mapLibre.maximumZoom,
+      maxBounds: REGIONAL_CAMERA_CONSTRAINTS.bounds,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
     // Scoping to basemapSourceId keeps benign per-tile/abort noise for other
