@@ -42,10 +42,10 @@ function altitudeToZoom(altitudeM: number): number {
 }
 
 /**
- * Regional 3D visualization. A URL-restricted ion token enables Bing aerial
- * imagery, Cesium World Terrain, and OSM Buildings. Without it the existing
- * token-free grid shell remains available. Provider terrain is presentation
- * context only and never satisfies analytical GEBCO/datum certification.
+ * Regional 3D visualization. A URL-restricted ion token enables Google's
+ * Photorealistic 3D Tiles through Cesium ion. Without it the token-free grid
+ * shell remains available. The Google mesh is display-only context and never
+ * satisfies analytical GEBCO/datum certification or offline source needs.
  */
 export class CesiumRegionalRuntime implements SpatialRuntime {
   private viewer: Cesium.Viewer | null = null;
@@ -57,14 +57,7 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void> {
     const realWorldEnabled = CESIUM_ION_TOKEN.length > 0;
     const viewer = new Cesium.Viewer(container, {
-      baseLayer: realWorldEnabled
-        ? Cesium.ImageryLayer.fromProviderAsync(Cesium.createWorldImageryAsync({
-          style: Cesium.IonWorldImageryStyle.AERIAL_WITH_LABELS,
-        }))
-        : false,
-      terrain: realWorldEnabled
-        ? Cesium.Terrain.fromWorldTerrain({ requestVertexNormals: true, requestWaterMask: true })
-        : undefined,
+      baseLayer: false,
       baseLayerPicker: false,
       geocoder: false,
       homeButton: false,
@@ -79,7 +72,10 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
     });
     viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#06111a");
     viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0a1a2a");
-    viewer.scene.globe.show = true;
+    // Google's textured 3D mesh supplies both surface and buildings. Hiding
+    // the globe prevents z-fighting and ensures no other basemap is combined
+    // with Google content. The token-free fallback keeps the globe visible.
+    viewer.scene.globe.show = !realWorldEnabled;
     if (!realWorldEnabled) {
       viewer.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
         cells: 8,
@@ -89,7 +85,14 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
         backgroundColor: Cesium.Color.fromCssColorString("#0a2633"),
       }));
     } else {
-      void Cesium.createOsmBuildingsAsync()
+      // The scene exposes no geocoder. If one is added later, Google's usage
+      // rules require that it be the Google geocoder; keep this acknowledgment
+      // explicit so a Cesium default cannot be introduced silently.
+      void Cesium.createGooglePhotorealistic3DTileset({
+        onlyUsingWithGoogleGeocoder: true,
+      }, {
+        showCreditsOnScreen: true,
+      })
         .then((tileset) => {
           if (this.viewer === viewer && !viewer.isDestroyed()) viewer.scene.primitives.add(tileset);
         })

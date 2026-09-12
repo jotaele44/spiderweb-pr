@@ -2,7 +2,8 @@
 
 Run the frontend without `VITE_CESIUM_ION_TOKEN`, then run `npm run visual:iphone`.
 The token-free grid shell is intentional: mutable third-party imagery is not a
-deterministic regression source. The capture produces:
+deterministic regression source, and Google Photorealistic 3D Tiles must not be
+cached or stored as regression artifacts. The capture produces:
 
 - `iphone-portrait.png` at 390×844 CSS pixels, device scale factor 3;
 - `iphone-landscape.png` at 844×390 CSS pixels, device scale factor 3.
