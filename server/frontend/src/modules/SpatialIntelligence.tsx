@@ -1,6 +1,7 @@
-import { useEffect, useEffectEvent, useRef, useState } from "react";
-import type { GeoJSON } from "geojson";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import type { Feature, GeoJSON, Point } from "geojson";
 import * as maplibregl from "maplibre-gl";
+import { point } from "@turf/helpers";
 import { byId, fmtMoney } from "../lib/format";
 import type { PriisData, Selection } from "../types/priis";
 import { Pill } from "../components/Badges";
@@ -14,6 +15,7 @@ import {
 import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
 import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
+import { useSpatialTools, SpatialToolsPanel } from "./SpatialToolsPanel";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type PointLayerKey = "gazetteer_pr_domestic_names";
@@ -21,6 +23,68 @@ type MarkerLayerKey = "contracts" | "infrastructure" | "sensitive" | "anomaly";
 type BackendLayerKey = PolygonLayerKey | PointLayerKey;
 type LayerKey = MarkerLayerKey | BackendLayerKey;
 export type LayerStatus = "idle" | "loading" | "source-ready" | "loaded" | "error";
+
+interface DensityEnvelope {
+  byGeoid: Record<string, number>;
+  matchedCount: number;
+  totalFeatures: number;
+  unmatchedCount: number;
+  scopeState: string;
+}
+
+export type DensityLoadState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; data: DensityEnvelope }
+  | { status: "error"; message: string };
+
+function objectValue(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("density response must be an object");
+  }
+  return value as Record<string, unknown>;
+}
+
+function nonNegativeInteger(value: unknown, field: string) {
+  if (!Number.isInteger(value) || Number(value) < 0) throw new Error(`${field} must be a non-negative integer`);
+  return Number(value);
+}
+
+export function parseDensityEnvelope(value: unknown): DensityEnvelope {
+  const body = objectValue(value);
+  const rawByGeoid = objectValue(body.by_geoid);
+  const byGeoid: Record<string, number> = {};
+  for (const [geoid, count] of Object.entries(rawByGeoid)) {
+    byGeoid[geoid] = nonNegativeInteger(count, `by_geoid.${geoid}`);
+  }
+  const matchedCount = nonNegativeInteger(body.matched_count, "matched_count");
+  const unmatchedCount = nonNegativeInteger(body.unmatched, "unmatched");
+  const totalFeatures = nonNegativeInteger(body.total_features, "total_features");
+  if (matchedCount !== Object.values(byGeoid).reduce((sum, count) => sum + count, 0)) {
+    throw new Error("matched_count does not equal the by_geoid sum");
+  }
+  if (matchedCount + unmatchedCount !== totalFeatures) {
+    throw new Error("density arithmetic does not close");
+  }
+  const scope = objectValue(body.scope);
+  if (scope.identity_effect !== "NONE") throw new Error("density identity_effect must be NONE");
+  return {
+    byGeoid,
+    matchedCount,
+    totalFeatures,
+    unmatchedCount,
+    scopeState: typeof scope.state === "string" ? scope.state : "UNRESOLVED",
+  };
+}
+
+export function densityStatusText(enabled: boolean, state: DensityLoadState) {
+  if (!enabled) return "off";
+  if (state.status === "loading" || state.status === "idle") return "loading…";
+  if (state.status === "error") return "error";
+  if (state.data.matchedCount > 0) return "rendered";
+  if (state.data.totalFeatures > 0) return "unresolved";
+  return "empty source";
+}
 
 interface PolygonLayerConfig {
   fillOpacity: number;
@@ -87,14 +151,6 @@ export function layerStatusText(enabled: boolean, status?: LayerStatus): string 
   return "on";
 }
 
-function whenStyleReady(map: maplibregl.Map, fn: () => void) {
-  if (map.isStyleLoaded()) { fn(); return; }
-  const handler = () => {
-    if (map.isStyleLoaded()) { map.off("styledata", handler); fn(); }
-  };
-  map.on("styledata", handler);
-}
-
 function addPolygonPaintLayers(
   map: maplibregl.Map,
   key: PolygonLayerKey,
@@ -152,8 +208,10 @@ function useGeoJsonLayer(opts: {
   addLayers: (map: maplibregl.Map, sourceId: string) => void;
   removeLayers: (map: maplibregl.Map) => void;
   onStatus: (status: LayerStatus) => void;
+  /** Property to key feature-state by (e.g. "GEOID" for the density overlay). */
+  promoteId?: string;
 }) {
-  const { mapRef, ready, sourceId, url, isOn } = opts;
+  const { mapRef, ready, sourceId, url, isOn, promoteId } = opts;
   const addLayers = useEffectEvent(opts.addLayers);
   const removeLayers = useEffectEvent(opts.removeLayers);
   const onStatus = useEffectEvent(opts.onStatus);
@@ -169,7 +227,7 @@ function useGeoJsonLayer(opts: {
     }
 
     if (!isOn) {
-      if (map.isStyleLoaded()) teardown();
+      if (map.getStyle()) teardown();
       onStatus("idle");
       return;
     }
@@ -188,12 +246,10 @@ function useGeoJsonLayer(opts: {
         // Backend/source retrieval succeeded. Do not call this rendered until
         // MapLibre's style is actually ready and the source/layers are attached.
         onStatus("source-ready");
-        whenStyleReady(map, () => {
-          if (cancelled || map.getSource(sourceId)) return;
-          map.addSource(sourceId, { type: "geojson", data: geojson });
-          addLayers(map, sourceId);
-          onStatus("loaded");
-        });
+        if (cancelled || map.getSource(sourceId)) return;
+        map.addSource(sourceId, { type: "geojson", data: geojson, ...(promoteId ? { promoteId } : {}) });
+        addLayers(map, sourceId);
+        onStatus("loaded");
       } catch (err) {
         if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
         onStatus("error");
@@ -204,9 +260,9 @@ function useGeoJsonLayer(opts: {
     return () => {
       cancelled = true;
       controller.abort();
-      if (map.isStyleLoaded()) teardown();
+      if (map.getStyle()) teardown();
     };
-  }, [mapRef, ready, sourceId, url, isOn]);
+  }, [mapRef, ready, sourceId, url, isOn, promoteId]);
 }
 
 function useVectorTileLayer(opts: {
@@ -219,8 +275,10 @@ function useVectorTileLayer(opts: {
   addLayers: (map: maplibregl.Map, sourceId: string, sourceLayer: string) => void;
   removeLayers: (map: maplibregl.Map) => void;
   onStatus: (status: LayerStatus) => void;
+  /** Property to key feature-state by (e.g. "GEOID" for the density overlay). */
+  promoteId?: string;
 }) {
-  const { mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn } = opts;
+  const { mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn, promoteId } = opts;
   const addLayers = useEffectEvent(opts.addLayers);
   const removeLayers = useEffectEvent(opts.removeLayers);
   const onStatus = useEffectEvent(opts.onStatus);
@@ -236,7 +294,7 @@ function useVectorTileLayer(opts: {
     }
 
     if (!isOn) {
-      if (map.isStyleLoaded()) teardown();
+      if (map.getStyle()) teardown();
       onStatus("idle");
       return;
     }
@@ -267,17 +325,16 @@ function useVectorTileLayer(opts: {
         }
         if (cancelled) return;
         onStatus("source-ready");
-        whenStyleReady(map, () => {
-          if (cancelled || map.getSource(sourceId)) return;
-          map.addSource(sourceId, {
-            type: "vector",
-            tiles: [martinTileUrlTemplate(martinSourceId)],
-            minzoom: tilejson.minzoom ?? 0,
-            maxzoom: tilejson.maxzoom ?? 14,
-          });
-          addLayers(map, sourceId, sourceLayer);
-          onStatus("loaded");
+        if (cancelled || map.getSource(sourceId)) return;
+        map.addSource(sourceId, {
+          type: "vector",
+          tiles: [martinTileUrlTemplate(martinSourceId)],
+          minzoom: tilejson.minzoom ?? 0,
+          maxzoom: tilejson.maxzoom ?? 14,
+          ...(promoteId ? { promoteId: { [sourceLayer]: promoteId } } : {}),
         });
+        addLayers(map, sourceId, sourceLayer);
+        onStatus("loaded");
       } catch (err) {
         if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
         onStatus("error");
@@ -289,9 +346,9 @@ function useVectorTileLayer(opts: {
       cancelled = true;
       controller.abort();
       map.off("error", onMapError);
-      if (map.isStyleLoaded()) teardown();
+      if (map.getStyle()) teardown();
     };
-  }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn]);
+  }, [mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn, promoteId]);
 }
 
 function usePolygonLayer(
@@ -300,6 +357,7 @@ function usePolygonLayer(
   key: PolygonLayerKey,
   isOn: boolean,
   onStatus: (status: LayerStatus) => void,
+  promoteId?: string,
 ) {
   const sourceId = `geo-${key}`;
   useGeoJsonLayer({
@@ -309,6 +367,7 @@ function usePolygonLayer(
     url: `${API_BASE}/geo/${key}.geojson`,
     isOn,
     onStatus,
+    promoteId,
     addLayers: (map: maplibregl.Map, id: string) => addPolygonPaintLayers(map, key, id),
     removeLayers: (map: maplibregl.Map) => removePolygonPaintLayers(map, sourceId),
   });
@@ -361,6 +420,8 @@ export function SpatialIntelligence({
     fallbackReason,
   } = useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG, spatialMode);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const spatialToolActiveRef = useRef(false);
+  const densityGeoidsRef = useRef<Set<string>>(new Set());
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
     () => localStorage.getItem("spiderweb_layer_collapsed") === "true",
@@ -391,6 +452,7 @@ export function SpatialIntelligence({
     sourceLayer: "municipios",
     isOn: layers.municipios && municipiosViaMartin,
     onStatus: setStatus("municipios"),
+    promoteId: "GEOID",
     addLayers: (map, sourceId, sourceLayer) => addPolygonPaintLayers(map, "municipios", sourceId, sourceLayer),
     removeLayers: (map) => removePolygonPaintLayers(map, "mvt-municipios"),
   });
@@ -400,7 +462,9 @@ export function SpatialIntelligence({
     "municipios",
     layers.municipios && !municipiosViaMartin,
     setStatus("municipios"),
+    "GEOID",
   );
+  const municipiosSourceId = municipiosViaMartin ? "mvt-municipios" : "geo-municipios";
   usePolygonLayer(mapRef, mapReady, "tracts", layers.tracts, setStatus("tracts"));
   usePolygonLayer(mapRef, mapReady, "places", layers.places, setStatus("places"));
   usePolygonLayer(mapRef, mapReady, "barrios", layers.barrios, setStatus("barrios"));
@@ -452,11 +516,13 @@ export function SpatialIntelligence({
       const markerLabel = `${site.name} · ${fmtMoney(contractTotal)} · ${anomaly?.id ?? "no anomaly"}`;
       el.title = markerLabel;
       el.setAttribute("aria-label", markerLabel);
-      el.onclick = () =>
+      el.onclick = () => {
+        if (spatialToolActiveRef.current) return;
         setSelection({
           kind: anomaly && layers.anomaly ? "anomaly" : "site",
           id: anomaly && layers.anomaly ? anomaly.id : site.id,
         });
+      };
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([site.lng, site.lat])
         .addTo(map);
@@ -470,6 +536,134 @@ export function SpatialIntelligence({
     const site = byId(data.sites, selection.id);
     if (site) runtime.setView({ center: [site.lng, site.lat], zoom: 11 }, { animate: true, speed: 0.8 });
   }, [data.sites, selection, runtimeRef]);
+
+  const spatialToolTargets = useMemo(() => ({
+    Sites: () =>
+      data.sites.map((site) =>
+        point([site.lng, site.lat], { name: site.name, id: site.id }),
+      ),
+    "Natural features": () => {
+      const map = mapRef.current;
+      if (!map || !layers.gazetteer_pr_domestic_names) return [];
+      return map.querySourceFeatures("geo-gazetteer_pr_domestic_names") as unknown as Feature<Point>[];
+    },
+  }), [data.sites, layers.gazetteer_pr_domestic_names, mapRef]);
+  // Only attaches when the MapLibre (2D) runtime is active — mapRef stays
+  // null in Cesium mode, so these tools simply don't render there yet.
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef });
+
+  // Gazetteer-density choropleth: off by default, and only meaningful with
+  // the municipios boundary layer itself on (there's nothing to shade
+  // otherwise). Reuses the municipios source's GEOID promoteId above for
+  // feature-state, the same technique as aguayluz-pr's drought/event-density
+  // fills.
+  const [densityOn, setDensityOn] = useState(false);
+  const [densityState, setDensityState] = useState<DensityLoadState>({ status: "idle" });
+  const [densityRequest, setDensityRequest] = useState(0);
+  const densityByGeoid = densityState.status === "ready" ? densityState.data.byGeoid : null;
+  const toggleDensity = () => {
+    if (densityOn) {
+      setDensityOn(false);
+      setDensityState({ status: "idle" });
+      return;
+    }
+    setDensityState({ status: "loading" });
+    setDensityOn(true);
+  };
+  const retryDensity = () => {
+    setDensityState({ status: "loading" });
+    setDensityRequest((request) => request + 1);
+  };
+  useEffect(() => {
+    if (!densityOn) return;
+    const controller = new AbortController();
+    async function loadDensity() {
+      try {
+        const response = await fetch(
+          `${API_BASE}/geo/municipios/density?layer=gazetteer_pr_domestic_names`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const rawBody = await response.json() as unknown;
+        setDensityState({ status: "ready", data: parseDensityEnvelope(rawBody) });
+      } catch (error: unknown) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setDensityState({ status: "error", message: error instanceof Error ? error.message : String(error) });
+      }
+    }
+    void loadDensity();
+    return () => controller.abort();
+  }, [densityOn, densityRequest]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const densityMap = map;
+    const densityLayerId = "municipios-density-fill";
+    const featureTarget = {
+      source: municipiosSourceId,
+      ...(municipiosViaMartin ? { sourceLayer: "municipios" } : {}),
+    };
+    function clearDensityState() {
+      for (const geoid of densityGeoidsRef.current) {
+        densityMap.removeFeatureState({ ...featureTarget, id: geoid }, "density");
+      }
+      densityGeoidsRef.current.clear();
+    }
+    function removeDensityLayer() {
+      try {
+        clearDensityState();
+      } catch { /* source may not be ready or may have just been removed */ }
+      if (densityMap.getLayer(densityLayerId)) densityMap.removeLayer(densityLayerId);
+    }
+    function apply() {
+      if (!map) return;
+      if (!densityOn || !densityByGeoid || !map.getSource(municipiosSourceId)) {
+        removeDensityLayer();
+        return;
+      }
+      try {
+        clearDensityState();
+      } catch { /* sourcedata will retry once the source is available */ }
+      if (Object.keys(densityByGeoid).length === 0) {
+        if (map.getLayer(densityLayerId)) map.removeLayer(densityLayerId);
+        return;
+      }
+      const maxCount = Math.max(1, ...Object.values(densityByGeoid));
+      for (const [geoid, count] of Object.entries(densityByGeoid)) {
+        map.setFeatureState(
+          { source: municipiosSourceId, id: geoid, ...(municipiosViaMartin ? { sourceLayer: "municipios" } : {}) },
+          { density: count / maxCount },
+        );
+        densityGeoidsRef.current.add(geoid);
+      }
+      if (!map.getLayer(densityLayerId)) {
+        map.addLayer({
+          id: densityLayerId,
+          type: "fill",
+          source: municipiosSourceId,
+          ...(municipiosViaMartin ? { "source-layer": "municipios" } : {}),
+          paint: {
+            "fill-color": [
+              "interpolate", ["linear"], ["coalesce", ["feature-state", "density"], 0],
+              0, "rgba(94, 234, 212, 0.05)",
+              1, "rgba(94, 234, 212, 0.75)",
+            ],
+            "fill-opacity": 1,
+          },
+        });
+      }
+    }
+    const onSourceData = (event: maplibregl.MapSourceDataEvent) => {
+      if (event.sourceId === municipiosSourceId && event.isSourceLoaded) apply();
+    };
+    if (map.isStyleLoaded()) apply();
+    else map.once("styledata", apply);
+    map.on("sourcedata", onSourceData);
+    return () => {
+      map.off("sourcedata", onSourceData);
+    };
+  }, [densityOn, densityByGeoid, mapReady, mapRef, municipiosSourceId, municipiosViaMartin]);
 
   useEffect(() => {
     localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
@@ -557,6 +751,12 @@ export function SpatialIntelligence({
           )}
         </div>
         <aside className="layer-panel">
+          {activeMode === "maplibre" && (
+            <>
+              <SpatialToolsPanel {...spatialTools} />
+              <div className="hr" />
+            </>
+          )}
           <h2>Layer control</h2>
           {(Object.entries(layers) as [LayerKey, boolean][]).map(([key, value]) => {
             const status = isBackendKey(key) && value ? layerStatus[key] : undefined;
@@ -574,6 +774,29 @@ export function SpatialIntelligence({
               </button>
             );
           })}
+          {activeMode === "maplibre" && layers.municipios && (
+            <button
+              className="navbtn"
+              data-active={densityOn}
+              aria-pressed={densityOn}
+              onClick={toggleDensity}
+              title="Shade municipios by natural-features (gazetteer) density"
+            >
+              <span>Gazetteer density</span>
+              <span>{densityStatusText(densityOn, densityState)}</span>
+            </button>
+          )}
+          {activeMode === "maplibre" && layers.municipios && densityOn && densityState.status === "error" && (
+            <div className="map-error" role="alert">
+              <span>Density unavailable; no zero-feature inference was made. {densityState.message}</span>
+              <button className="linklike" onClick={retryDensity}>retry</button>
+            </div>
+          )}
+          {activeMode === "maplibre" && layers.municipios && densityOn && densityState.status === "ready" && (
+            <div className="map-note" role="status">
+              <span>{densityState.data.matchedCount} matched · {densityState.data.unmatchedCount} unresolved · {densityState.data.totalFeatures} total · identity effect NONE · {densityState.data.scopeState}</span>
+            </div>
+          )}
           <div className="hr" />
           <h2>Top spatial anomalies</h2>
           <div className="col">
