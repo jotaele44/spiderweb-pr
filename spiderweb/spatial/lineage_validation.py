@@ -9,6 +9,21 @@ from .archipelago import GeometryDerivationState as D
 from .archipelago import GeometryManifestation, GeometryOrigin
 
 
+# Child admission, not just acyclicity. A lossy derivative may never regain
+# full/source-native authority by passing through an intermediate label.
+ALLOWED_DERIVATION_CHILDREN = {
+    D.SOURCE_NATIVE: frozenset({D.FULL, D.CANONICALIZED_FULL, D.SIMPLIFIED,
+                                D.DELIVERY_MINIMIZED, D.MVT}),
+    D.FULL: frozenset({D.FULL, D.CANONICALIZED_FULL, D.SIMPLIFIED,
+                       D.DELIVERY_MINIMIZED, D.MVT}),
+    D.CANONICALIZED_FULL: frozenset({D.FULL, D.CANONICALIZED_FULL,
+                                     D.SIMPLIFIED, D.DELIVERY_MINIMIZED, D.MVT}),
+    D.SIMPLIFIED: frozenset({D.SIMPLIFIED, D.DELIVERY_MINIMIZED, D.MVT}),
+    D.DELIVERY_MINIMIZED: frozenset({D.SIMPLIFIED, D.DELIVERY_MINIMIZED, D.MVT}),
+    D.MVT: frozenset({D.MVT}),
+}
+
+
 @dataclass(frozen=True)
 class LineageReceipt:
     node_count: int
@@ -20,7 +35,7 @@ class LineageReceipt:
 
 
 def validate_manifestation_dag(rows: Iterable[GeometryManifestation]) -> LineageReceipt:
-    """Reject duplicates, missing parents, cycles and MVT authority reversal.
+    """Reject invalid graphs and lossy-to-full authority reversal.
 
     Legacy records can still be constructed, but UNRESOLVED lineage cannot pass
     this gate. Validation is performed on the complete candidate graph before
@@ -69,6 +84,11 @@ def validate_manifestation_dag(rows: Iterable[GeometryManifestation]) -> Lineage
             indegree[key] += 1
             if states[parent] == D.MVT and states[key] != D.MVT:
                 raise ValueError(f"MVT_AUTHORITY_REVERSAL:{parent}:{key}")
+            if states[key] not in ALLOWED_DERIVATION_CHILDREN[states[parent]]:
+                raise ValueError(
+                    f"LOSSY_AUTHORITY_REVERSAL:{parent}:{key}:"
+                    f"{states[parent].value}->{states[key].value}"
+                )
 
     roots = tuple(sorted(k for k, v in indegree.items() if not v))
     queue = deque(roots)
