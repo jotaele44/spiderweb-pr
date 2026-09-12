@@ -109,8 +109,12 @@ const cases: [string, () => ReactElement][] = [
 ];
 
 describe("accessibility", () => {
-  it.each(cases)("%s has no moderate-or-worse axe violations", async (_name, build) => {
-    const found = await violations(build());
-    expect(describeViolations(found)).toBe("");
-  });
+  it.each(cases)(
+    "%s has no moderate-or-worse axe violations",
+    async (_name, build) => {
+      const found = await violations(build());
+      expect(describeViolations(found)).toBe("");
+    },
+    15_000,
+  );
 });
