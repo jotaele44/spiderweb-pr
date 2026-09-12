@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://federation.local/schemas/aoi_acquisition_plan_v1.schema.json",
+  "title": "Spiderweb AOI Acquisition Plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plan_id",
+    "plan_sha256",
+    "generated_at_utc",
+    "state",
+    "diagnostics",
+    "counts",
+    "estimated_download_bytes_known",
+    "assets",
+    "unresolved_reasons"
+  ],
+  "properties": {
+    "plan_id": {"type": "string", "minLength": 1},
+    "plan_sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "generated_at_utc": {"type": "string", "format": "date-time"},
+    "state": {
+      "enum": ["NO_AOI", "AOI_EDITING", "AOI_VALIDATING", "AOI_VALID", "DISCOVERING", "PLAN_READY", "REVIEWED", "ACQUIRING", "VALIDATING", "COVERAGE_COMPUTING", "PASS", "OPEN", "FAIL", "BLOCKED"]
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["geometry_type", "crs", "vertex_count", "area_km2", "valid", "messages"],
+      "properties": {
+        "geometry_type": {"enum": ["Polygon", "MultiPolygon", "UNRESOLVED"]},
+        "crs": {"type": ["string", "null"]},
+        "vertex_count": {"type": "integer", "minimum": 0},
+        "area_km2": {"type": ["number", "null"], "minimum": 0},
+        "valid": {"type": "boolean"},
+        "messages": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["discovered", "retained", "excluded", "unresolved", "required", "cache_valid", "fetch_required", "blocked_required"],
+      "properties": {
+        "discovered": {"type": "integer", "minimum": 0},
+        "retained": {"type": "integer", "minimum": 0},
+        "excluded": {"type": "integer", "minimum": 0},
+        "unresolved": {"type": "integer", "minimum": 0},
+        "required": {"type": "integer", "minimum": 0},
+        "cache_valid": {"type": "integer", "minimum": 0},
+        "fetch_required": {"type": "integer", "minimum": 0},
+        "blocked_required": {"type": "integer", "minimum": 0}
+      }
+    },
+    "estimated_download_bytes_known": {"type": "integer", "minimum": 0},
+    "coverage": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["aoi_area_km2", "valid_area_km2", "gap_area_km2", "percent", "state"],
+      "properties": {
+        "aoi_area_km2": {"type": "number", "minimum": 0},
+        "valid_area_km2": {"type": "number", "minimum": 0},
+        "gap_area_km2": {"type": "number", "minimum": 0},
+        "percent": {"type": "number", "minimum": 0, "maximum": 100},
+        "state": {"enum": ["UNKNOWN", "PROVISIONAL", "PASS", "OPEN", "FAIL"]}
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["asset_id", "source", "dataset_id", "product", "relation", "cache_state", "source_status", "acquisition_state", "validation_state"],
+        "properties": {
+          "asset_id": {"type": "string", "minLength": 1},
+          "source": {"type": "string", "minLength": 1},
+          "dataset_id": {"type": "string", "minLength": 1},
+          "product": {"type": "string", "minLength": 1},
+          "acquisition_date": {"type": ["string", "null"]},
+          "resolution": {"type": ["string", "null"]},
+          "relation": {"enum": ["FULLY_WITHIN", "PARTIAL", "TOUCH_ONLY", "OUTSIDE", "NULL_EMPTY", "UNRESOLVED"]},
+          "cache_state": {"type": "string"},
+          "size_bytes": {"type": ["integer", "null"], "minimum": 0},
+          "source_status": {"type": "string"},
+          "acquisition_state": {"enum": ["QUEUED", "CACHE_HIT", "DOWNLOADING", "DOWNLOADED", "HASHING", "VALIDATING", "PASS", "FAIL", "UNRESOLVED"]},
+          "validation_state": {"type": "string"},
+          "blocked_reason": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "unresolved_reasons": {"type": "array", "items": {"type": "string"}}
+  }
+}
