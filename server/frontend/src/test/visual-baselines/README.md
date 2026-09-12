@@ -10,4 +10,6 @@ cached or stored as regression artifacts. The capture produces:
 
 The capture fails on a blank page, Vite error overlay, missing Spatial module,
 or missing Puerto Rico recenter control. Generated images must be visually
-reviewed before replacing prior baselines.
+reviewed before replacing prior baselines. The runner also verifies the
+rendered runtime marker and fails before writing a PNG unless the active
+basemap is exactly `grid`.
