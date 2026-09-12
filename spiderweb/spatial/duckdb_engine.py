@@ -20,10 +20,15 @@ anywhere in this repo). An embedded, dependency-light SQL engine is the right
 amount of tooling for that: no cluster, no external service, no new
 operational surface. Reach for something heavier only if a producer starts
 ingesting data that no longer fits single-machine memory.
+
+The spatial extension is never installed from this runtime. A certified
+release must supply it in DuckDB's local extension directory or set
+``SPIDERWEB_DUCKDB_SPATIAL_EXTENSION`` to a retained, checksum-bound file.
 """
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -31,6 +36,7 @@ import duckdb
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_MUNICIPIOS = REPO_ROOT / "data" / "municipios.geojson"
+SPATIAL_EXTENSION_ENV = "SPIDERWEB_DUCKDB_SPATIAL_EXTENSION"
 
 # DuckDB spatial's binary predicate functions. Kept as an explicit allow-list
 # so `predicate` can never be used to inject arbitrary SQL into spatial_join.
@@ -44,11 +50,48 @@ _ALLOWED_PREDICATES = {
 }
 
 
-def connect() -> "duckdb.DuckDBPyConnection":
-    """Open an in-memory DuckDB connection with the `spatial` extension loaded."""
+class SpatialExtensionUnavailable(RuntimeError):
+    """Raised when the locally retained DuckDB spatial extension cannot load."""
+
+
+def _extension_locator(extension_path: Path | str | None) -> str:
+    configured = extension_path or os.environ.get(SPATIAL_EXTENSION_ENV)
+    if configured is None:
+        return "spatial"
+    path = Path(configured).expanduser().resolve()
+    if not path.is_file():
+        raise SpatialExtensionUnavailable(
+            f"DuckDB spatial extension does not exist: {path}. "
+            f"Set {SPATIAL_EXTENSION_ENV} to a retained extension file."
+        )
+    return str(path)
+
+
+def connect(
+    *, extension_path: Path | str | None = None
+) -> "duckdb.DuckDBPyConnection":
+    """Open an in-memory connection and load a local spatial extension.
+
+    DuckDB's known-extension auto-install and auto-load features are disabled
+    before loading. This function never executes ``INSTALL`` and therefore
+    cannot silently turn an offline query into a runtime package download.
+    """
+
+    locator = _extension_locator(extension_path)
     con = duckdb.connect(":memory:")
-    con.execute("INSTALL spatial")
-    con.execute("LOAD spatial")
+    try:
+        con.execute("SET autoinstall_known_extensions = false")
+        con.execute("SET autoload_known_extensions = false")
+        con.load_extension(locator)
+    except Exception as exc:
+        con.close()
+        if isinstance(exc, SpatialExtensionUnavailable):
+            raise
+        raise SpatialExtensionUnavailable(
+            "DuckDB spatial could not be loaded from local storage. "
+            f"Pre-stage and checksum the extension, then set {SPATIAL_EXTENSION_ENV}; "
+            "runtime installation is prohibited."
+        ) from exc
     return con
 
 
