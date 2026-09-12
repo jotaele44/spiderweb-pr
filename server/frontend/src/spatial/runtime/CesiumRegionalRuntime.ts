@@ -6,6 +6,7 @@ import * as Cesium from "cesium";
 // it doesn't load until 3D mode is actually used, matching everything else
 // in this file.
 import "cesium/Build/Cesium/Widgets/widgets.css";
+import { CESIUM_ION_TOKEN } from "../../config";
 import { clampRegionalCameraHeight, REGIONAL_CAMERA_CONSTRAINTS } from "../config/regionalScene";
 import type { CameraView, SpatialRuntime, SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
 
@@ -19,10 +20,9 @@ import type { CameraView, SpatialRuntime, SpatialSceneConfig, Unsubscribe } from
 // vite-plugin-cesium's job.
 (globalThis as { CESIUM_BASE_URL?: string }).CESIUM_BASE_URL = "/cesium/";
 
-// No Cesium ion account/token is used anywhere in this runtime (no default
-// imagery, no ion terrain, geocoder disabled) — set an empty token so Cesium
-// doesn't warn about the shared demo token on every load.
-Cesium.Ion.defaultAccessToken = "";
+// The token is a public browser credential and must be URL-restricted and
+// read-only. An empty value deliberately selects the deterministic grid shell.
+Cesium.Ion.defaultAccessToken = CESIUM_ION_TOKEN;
 
 // Rough zoom(0-22, MapLibre-style)→altitude(meters) mapping so the same
 // SpatialSceneConfig.initialView works for both runtimes. This is NOT a
@@ -42,21 +42,29 @@ function altitudeToZoom(altitudeM: number): number {
 }
 
 /**
- * Regional 3D shell — Phase 2. Deliberately minimal: no imagery layer (no
- * Cesium ion token, no network dependency for the base globe — just the
- * default ellipsoid), no terrain provider (flat WGS84 ellipsoid; real
- * terrain is Phase 4, pending the GEBCO vertical-datum work), no stock
- * Cesium UI widgets (this is a producer-local diagnostic scene, not a
- * general-purpose Cesium app shell). Site markers, boundary overlays, and
- * altitude-dependent LOD are later Phase 2/3 increments, not this file.
+ * Regional 3D visualization. A URL-restricted ion token enables Bing aerial
+ * imagery, Cesium World Terrain, and OSM Buildings. Without it the existing
+ * token-free grid shell remains available. Provider terrain is presentation
+ * context only and never satisfies analytical GEBCO/datum certification.
  */
 export class CesiumRegionalRuntime implements SpatialRuntime {
   private viewer: Cesium.Viewer | null = null;
   private firstFrame: number | null = null;
+  private initialCenter: [number, number] | null = null;
+  private basemapFailed = false;
+  private readonly basemapErrorListeners = new Set<() => void>();
 
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void> {
+    const realWorldEnabled = CESIUM_ION_TOKEN.length > 0;
     const viewer = new Cesium.Viewer(container, {
-      baseLayer: false,
+      baseLayer: realWorldEnabled
+        ? Cesium.ImageryLayer.fromProviderAsync(Cesium.createWorldImageryAsync({
+          style: Cesium.IonWorldImageryStyle.AERIAL_WITH_LABELS,
+        }))
+        : false,
+      terrain: realWorldEnabled
+        ? Cesium.Terrain.fromWorldTerrain({ requestVertexNormals: true, requestWaterMask: true })
+        : undefined,
       baseLayerPicker: false,
       geocoder: false,
       homeButton: false,
@@ -72,19 +80,28 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
     viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#06111a");
     viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0a1a2a");
     viewer.scene.globe.show = true;
-    viewer.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
-      cells: 8,
-      color: Cesium.Color.fromCssColorString("#3b8793").withAlpha(0.75),
-      glowColor: Cesium.Color.fromCssColorString("#06111a").withAlpha(0.35),
-      glowWidth: 2,
-      backgroundColor: Cesium.Color.fromCssColorString("#0a2633"),
-    }));
+    if (!realWorldEnabled) {
+      viewer.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
+        cells: 8,
+        color: Cesium.Color.fromCssColorString("#3b8793").withAlpha(0.75),
+        glowColor: Cesium.Color.fromCssColorString("#06111a").withAlpha(0.35),
+        glowWidth: 2,
+        backgroundColor: Cesium.Color.fromCssColorString("#0a2633"),
+      }));
+    } else {
+      void Cesium.createOsmBuildingsAsync()
+        .then((tileset) => {
+          if (this.viewer === viewer && !viewer.isDestroyed()) viewer.scene.primitives.add(tileset);
+        })
+        .catch(() => this.reportBasemapFailure());
+    }
     const controller = viewer.scene.screenSpaceCameraController;
     controller.minimumZoomDistance = REGIONAL_CAMERA_CONSTRAINTS.cesium.minimumHeightMeters;
     controller.maximumZoomDistance = REGIONAL_CAMERA_CONSTRAINTS.cesium.maximumHeightMeters;
 
     this.viewer = viewer;
     const [longitude, latitude] = config.initialView.center;
+    this.initialCenter = [longitude, latitude];
     const previewExtent = Cesium.Rectangle.fromDegrees(
       longitude - 1.6,
       latitude - 0.8,
@@ -152,6 +169,26 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
     this.firstFrame = null;
     this.viewer?.destroy();
     this.viewer = null;
+    this.initialCenter = null;
+    this.basemapFailed = false;
+    this.basemapErrorListeners.clear();
+  }
+
+  resetView(options?: { animate?: boolean }): void {
+    if (!this.viewer || !this.initialCenter) return;
+    const [longitude, latitude] = this.initialCenter;
+    const destination = Cesium.Cartesian3.fromDegrees(
+      longitude,
+      latitude,
+      REGIONAL_CAMERA_CONSTRAINTS.cesium.initialHeightMeters,
+    );
+    const orientation = {
+      heading: Cesium.Math.toRadians(REGIONAL_CAMERA_CONSTRAINTS.cesium.headingDegrees),
+      pitch: Cesium.Math.toRadians(REGIONAL_CAMERA_CONSTRAINTS.cesium.pitchDegrees),
+      roll: 0,
+    };
+    if (options?.animate === false) this.viewer.camera.setView({ destination, orientation });
+    else void this.viewer.camera.flyTo({ destination, orientation, duration: 1.2 });
   }
 
   setView(view: CameraView, options?: { animate?: boolean; speed?: number }): void {
@@ -194,10 +231,14 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
     this.viewer?.resize();
   }
 
-  onBasemapError(_listener: () => void): Unsubscribe {
-    // No imagery layer is loaded (baseLayer: false, no ion token) — there is
-    // nothing that can fail the way MapLibre's raster tile source can.
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    return () => {};
+  onBasemapError(listener: () => void): Unsubscribe {
+    this.basemapErrorListeners.add(listener);
+    if (this.basemapFailed) listener();
+    return () => this.basemapErrorListeners.delete(listener);
+  }
+
+  private reportBasemapFailure(): void {
+    this.basemapFailed = true;
+    this.basemapErrorListeners.forEach((listener) => listener());
   }
 }

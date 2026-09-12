@@ -13,6 +13,7 @@ import {
   martinTileUrlTemplate,
 } from "../config";
 import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
+import { readSpatialMode, writeSpatialMode } from "../spatial/config/spatialModePreference";
 import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 import { useSpatialTools, SpatialToolsPanel } from "./SpatialToolsPanel";
@@ -406,9 +407,7 @@ export function SpatialIntelligence({
   leftCollapsed?: boolean;
   rightCollapsed?: boolean;
 }) {
-  const [spatialMode, setSpatialMode] = useState<SpatialRuntimeMode>(
-    () => (localStorage.getItem("priis_spatial_mode") === "cesium" ? "cesium" : "maplibre"),
-  );
+  const [spatialMode, setSpatialMode] = useState<SpatialRuntimeMode>(readSpatialMode);
   const {
     hostRef,
     mapRef,
@@ -674,7 +673,7 @@ export function SpatialIntelligence({
   // falls back to MapLibre, we still remember "cesium" was requested so the
   // next visit retries it rather than silently sticking on the fallback.
   useEffect(() => {
-    localStorage.setItem("priis_spatial_mode", spatialMode);
+    writeSpatialMode(spatialMode);
   }, [spatialMode]);
 
   // "L" toggles the layer panel. Ignore while typing in an input/textarea.
@@ -706,6 +705,14 @@ export function SpatialIntelligence({
           <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence</span>
         </div>
         <div className="row">
+          <button
+            className="act"
+            onClick={() => runtimeRef.current?.resetView({ animate: true })}
+            title="Recenter on Puerto Rico"
+            aria-label="Recenter map on Puerto Rico"
+          >
+            Recenter PR
+          </button>
           <button
             className="act"
             data-on={!layerPanelCollapsed}
