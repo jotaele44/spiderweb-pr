@@ -1,0 +1,12 @@
+{
+  "schema": "floot-archive-provenance/1.0",
+  "app": "Spiderweb PR",
+  "source_archive": "Spiderweb PR.zip",
+  "retrieved_context_date": "2026-09-12",
+  "sha256": "7746bf2da3fc9a7d59e0e0a495120068e2ec7d15499c7778ff9a8a00fb1c9ad9",
+  "byte_size": 703191,
+  "zip_member_count": 288,
+  "archive_role": "HISTORICAL_DONOR_SNAPSHOT",
+  "canonicality": "NONCANONICAL",
+  "rules": {"overwrite_current_main": false, "schema_is_canonical_by_age": false, "infer_database_contents_from_schema": false, "preserve_raw_before_normalization": true}
+}
