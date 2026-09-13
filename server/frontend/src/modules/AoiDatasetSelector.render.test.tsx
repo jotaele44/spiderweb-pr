@@ -14,7 +14,7 @@ function Harness() {
 describe("AOI dataset selector", () => {
   it("starts with no preferred or automatically selected source", () => {
     render(<Harness />);
-    const choices = screen.getAllByRole("checkbox") as HTMLInputElement[];
+    const choices = screen.getAllByRole<HTMLInputElement>("checkbox");
     expect(choices).toHaveLength(2);
     expect(choices.every((choice) => !choice.checked)).toBe(true);
     expect(screen.getByText(/0 datasets selected/)).toBeTruthy();
