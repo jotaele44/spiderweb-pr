@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from .aoi_planner import MAX_BYTES, build_plan, strict_json
+from .aoi_relevance import build_recommendations
 
 ROOT = Path(__file__).resolve().parents[2]
 router = APIRouter(prefix="/spatial/aoi", tags=["AOI acquisition planning"])
@@ -23,8 +24,7 @@ def load_registry(root: Path) -> dict:
         return {}
 
 
-@router.post("/plan")
-async def plan_aoi(request: Request):
+async def _respond(request: Request, *, recommendations: bool = False):
     if request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
         raise HTTPException(415, "application/json is required")
     raw = bytearray()
@@ -35,7 +35,8 @@ async def plan_aoi(request: Request):
     try:
         payload = strict_json(bytes(raw))
         registry = await asyncio.to_thread(load_registry, ROOT)
-        plan = await asyncio.to_thread(build_plan, payload, registry, ROOT)
+        builder = build_recommendations if recommendations else build_plan
+        plan = await asyncio.to_thread(builder, payload, registry, ROOT)
     except ImportError as exc:
         raise HTTPException(503, "AOI geometry dependencies unavailable; install [server,geo]") from exc
     except (ValueError, TypeError, KeyError, OverflowError) as exc:
@@ -43,3 +44,13 @@ async def plan_aoi(request: Request):
     # Round trip forbids non-JSON numerical states before publishing a frozen plan.
     plan = json.loads(json.dumps(plan, allow_nan=False))
     return JSONResponse(plan, headers={"Cache-Control": "no-store"})
+
+
+@router.post("/plan")
+async def plan_aoi(request: Request):
+    return await _respond(request)
+
+
+@router.post("/recommendations")
+async def recommend_aoi(request: Request):
+    return await _respond(request, recommendations=True)
