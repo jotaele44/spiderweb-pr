@@ -2,11 +2,12 @@
 import copy
 import hashlib
 import json
-from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+pytest.importorskip("pyproj", reason="AOI relevance tests require the geo extra; skip is not PASS")
 
 from server.backend import aoi_api
 from server.backend.aoi_planner import build_plan, digest
