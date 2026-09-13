@@ -23,7 +23,59 @@
       "discovery_url": "https://coast.noaa.gov/htdata/raster2/elevation/USGS_PostMaria_PuertoRico_DEM_2018_9101/",
       "state": "DISCOVERED_UNBOUND",
       "exact_file_denominator": "UNRESOLVED",
-      "note": "Collection IDs retain publisher imagery spelling. Product class is not identity. Raw catalog bytes and complete URL/item closure are mandatory before activation."
+      "note": "Collection IDs retain publisher imagery spelling. Product class is not identity. Raw catalog bytes and complete URL/item closure are mandatory before activation.",
+      "catalog_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/stac/catalog.json",
+      "url_list_auxiliaries": [
+        {
+          "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/lof.txt",
+          "role": "file_inventory",
+          "evidence_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+          "basis": "Exact published m9101 URL-list entry, separately classified; not a dataset/file identity by name."
+        },
+        {
+          "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/USGS_PostMaria_PeurtoRico_DEM_9101_m9101_met.xml",
+          "role": "metadata",
+          "evidence_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+          "basis": "Exact published m9101 URL-list entry, separately classified; not a dataset/file identity by name."
+        },
+        {
+          "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/USGS_PostMaria_PeurtoRico_DEM_m9101_met.xml",
+          "role": "metadata",
+          "evidence_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+          "basis": "Exact published m9101 URL-list entry, separately classified; not a dataset/file identity by name."
+        },
+        {
+          "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/USGS_PostMaria_PuertoRico_DEM_m9101_met.xml",
+          "role": "metadata",
+          "evidence_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+          "basis": "Exact published m9101 URL-list entry, separately classified; not a dataset/file identity by name."
+        },
+        {
+          "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/USGS_PostMaria_PeurtoRico_DEM_9101_m9101_met_forHumans.html",
+          "role": "metadata",
+          "evidence_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+          "basis": "Exact published m9101 URL-list entry, separately classified; not a dataset/file identity by name."
+        },
+        {
+          "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/USGS_PostMaria_PuertoRico_DEM_m9101_met_forHumans.html",
+          "role": "metadata",
+          "evidence_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+          "basis": "Exact published m9101 URL-list entry, separately classified; not a dataset/file identity by name."
+        },
+        {
+          "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/tileindex_USGS_PostMaria_PuertoRico_DEM_2018.zip",
+          "role": "tile_index",
+          "evidence_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+          "basis": "Exact published m9101 URL-list entry, separately classified; not a dataset/file identity by name."
+        },
+        {
+          "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/USGS_PostMaria_PuertoRico_DEM_2018_m9101_EPSG-6566.vrt",
+          "role": "virtual_raster",
+          "evidence_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+          "basis": "Exact published m9101 URL-list entry, separately classified; not a dataset/file identity by name."
+        }
+      ],
+      "url_list_evidence_status": "WEB_PARSED_DISCOVERY_NOT_RAW_CATALOG_CERTIFICATION"
     },
     "NOAA_OCM_m8571": {
       "dataset_id": "NOAA_OCM_m8571",
