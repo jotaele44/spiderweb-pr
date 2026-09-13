@@ -30,6 +30,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict
 from sse_starlette.sse import EventSourceResponse
 
+from server.backend.aoi_api import router as aoi_router
+
 log = logging.getLogger("priis.backend")
 SERVICE_ID = "spiderweb-priis-api"
 
@@ -80,6 +82,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(aoi_router)
 
 # In-memory job registry: job_id → subprocess.Popen
 _jobs: dict = {}
