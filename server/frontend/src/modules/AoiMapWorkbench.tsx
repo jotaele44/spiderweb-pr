@@ -135,8 +135,8 @@ export function AoiMapWorkbench({ mapRef, mapReady, mode, setMode }: {
         map.addLayer({ id: LAYERS[2], type: "circle", source: SOURCE,
           filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 5, "circle-color": "#facc15" } });
       } else {
-        const source = map.getSource(SOURCE) as maplibregl.GeoJSONSource;
-        void source.setData(data);
+        const source = map.getSource<maplibregl.GeoJSONSource>(SOURCE);
+        if (source) void source.setData(data);
       }
     };
     paint(); map.on("style.load", paint);
