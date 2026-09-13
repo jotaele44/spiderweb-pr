@@ -8,11 +8,12 @@ export type { ToolMode } from "./SpatialToolsLegacy";
 /** Extend the existing SpatialIntelligence mount without replacing its tools. */
 export function useSpatialTools(options: Parameters<typeof useLegacyTools>[0]) {
   const legacy = useLegacyTools(options);
+  const { interactionLockRef } = options;
   const [aoiMode, setAoiModeState] = useState<AoiMode>("idle");
   useEffect(() => {
-    options.interactionLockRef.current = legacy.mode !== "off" || aoiMode !== "idle";
-    return () => { options.interactionLockRef.current = false; };
-  }, [options.interactionLockRef, legacy.mode, aoiMode]);
+    interactionLockRef.current = legacy.mode !== "off" || aoiMode !== "idle";
+    return () => { interactionLockRef.current = false; };
+  }, [interactionLockRef, legacy.mode, aoiMode]);
   const setAoiMode = (mode: AoiMode) => {
     if (mode !== "idle") legacy.setMode("off");
     setAoiModeState(mode);
