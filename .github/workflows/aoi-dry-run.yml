@@ -11,6 +11,7 @@ on:
       - 'tests/test_aoi_relevance.py'
       - 'tests/test_aoi_catalog_snapshot.py'
       - 'tests/test_aoi_url_inventory.py'
+      - 'tests/test_aoi_noaa_profile.py'
       - 'tools/aoi_catalog_snapshot.py'
       - 'configs/aoi_catalog_sources.json'
       - 'configs/spatial_dataset_providers.json'
@@ -37,7 +38,7 @@ jobs:
       - name: Require GIS dependencies and run bounded regressions
         run: |
           python -c 'import pyproj, shapely, fastapi, jsonschema'
-          python -m pytest tests/test_aoi_planner.py tests/test_aoi_relevance.py tests/test_aoi_catalog_snapshot.py tests/test_aoi_url_inventory.py -q
+          python -m pytest tests/test_aoi_planner.py tests/test_aoi_relevance.py tests/test_aoi_catalog_snapshot.py tests/test_aoi_url_inventory.py tests/test_aoi_noaa_profile.py -q
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -52,8 +53,9 @@ jobs:
           cache-dependency-path: server/frontend/package-lock.json
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
-      - name: AOI unit and React render regressions
-        run: npm test -- src/modules/AoiAcquisitionWorkbench.test.ts src/modules/AoiAcquisitionWorkbench.render.test.tsx src/modules/AoiDatasetSelector.render.test.tsx
+      - run: npm run lint
+      - name: Full frontend unit and React render regressions
+        run: npm test
       - name: Cross-language recommendation contract
         run: |
           ./node_modules/.bin/tsc src/modules/aoiRecommendations.ts --strict --target ES2022 --module commonjs --lib ES2022,DOM --outDir /tmp/aoi-recommendations
