@@ -4,8 +4,12 @@ import * as maplibregl from "maplibre-gl";
 import type { Feature, FeatureCollection } from "geojson";
 import { API_BASE } from "../config";
 import { AoiAcquisitionWorkbench } from "./AoiAcquisitionWorkbench";
-import { assertPlanMatchesAoi, moveVertex, parseFrozenPlan, PlanRevisionGate, polygonParts, readGeometry } from "./aoiContract";
-import type { AoiGeometry, AoiMode, FrozenAcquisitionPlan, Position } from "./aoiContract";
+import { assertPlanMatchesAoi, moveVertex, PlanRevisionGate, polygonParts, readGeometry } from "./aoiContract";
+import type { AoiGeometry, AoiMode, Position } from "./aoiContract";
+
+import { AoiDatasetSelector } from "./AoiDatasetSelector";
+import { parseDatasetRecommendations, selectedApplicableRows } from "./aoiRecommendations";
+import type { DatasetRecommendations } from "./aoiRecommendations";
 
 const SOURCE = "aoi-workbench-overlay";
 const LAYERS = [`${SOURCE}-fill`, `${SOURCE}-line`, `${SOURCE}-point`];
@@ -20,7 +24,10 @@ export function AoiMapWorkbench({ mapRef, mapReady, mode, setMode }: {
   const [draft, setDraft] = useState<Position[]>([]);
   const [rawImport, setRawImport] = useState<string | null>(null);
   const [history, setHistory] = useState<AoiGeometry[]>([]);
-  const [plan, setPlan] = useState<FrozenAcquisitionPlan | null>(null);
+  const [recommendations, setRecommendations] = useState<DatasetRecommendations | null>(null);
+  const [selectedDatasetIds, setSelectedDatasetIds] = useState<string[]>([]);
+  const [showAllFootprints, setShowAllFootprints] = useState(false);
+  const plan = recommendations?.plan ?? null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showBbox, setShowBbox] = useState(false);
@@ -37,7 +44,7 @@ export function AoiMapWorkbench({ mapRef, mapReady, mode, setMode }: {
 
   const invalidate = () => {
     revision.current.invalidate(); request.current?.abort(); request.current = null;
-    setPlan(null); setBusy(false); setError(null);
+    setRecommendations(null); setSelectedDatasetIds([]); setBusy(false); setError(null);
   };
   const replaceGeometry = (next: AoiGeometry) => {
     invalidate();
@@ -105,7 +112,8 @@ export function AoiMapWorkbench({ mapRef, mapReady, mode, setMode }: {
     for (const position of draft) features.push({ type: "Feature", geometry: { type: "Point", coordinates: position }, properties: { kind: "AOI" } });
     if (plan) {
       features.push({ type: "Feature", geometry: plan.processing_geometry, properties: { kind: "PROCESSING" } });
-      for (const asset of plan.assets) {
+      const visibleAssets = showAllFootprints ? plan.assets : recommendations ? selectedApplicableRows(recommendations, selectedDatasetIds) : [];
+      for (const asset of visibleAssets) {
         if (asset.source_footprint) features.push({ type: "Feature", geometry: asset.source_footprint,
           properties: { kind: "SOURCE", row_id: asset.row_id, decision: asset.disposition } });
       }
@@ -133,7 +141,7 @@ export function AoiMapWorkbench({ mapRef, mapReady, mode, setMode }: {
     };
     paint(); map.on("style.load", paint);
     return () => { map.off("style.load", paint); };
-  }, [mapRef, mapReady, geometry, draft, plan, showBbox]);
+  }, [mapRef, mapReady, geometry, draft, plan, showBbox, recommendations, selectedDatasetIds, showAllFootprints]);
   useEffect(() => {
     const map = mapRef.current;
     return () => {
@@ -195,7 +203,7 @@ export function AoiMapWorkbench({ mapRef, mapReady, mode, setMode }: {
     if (!Number.isFinite(Number(buffer)) || Number(buffer) < 0 || (resolution !== "" && (!Number.isFinite(Number(resolution)) || Number(resolution) <= 0))) { setError("Invalid buffer or resolution"); return; }
     const controller = new AbortController(); request.current = controller; setBusy(true);
     try {
-      const response = await fetch(`${API_BASE}/spatial/aoi/plan`, {
+      const response = await fetch(`${API_BASE}/spatial/aoi/recommendations`, {
         method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aoi: geometry, raw_import_text: rawImport,
           input_kind: rawImport ? "IMPORTED_GEOJSON_WITH_EDIT_HISTORY" : "DRAWN",
@@ -207,17 +215,21 @@ export function AoiMapWorkbench({ mapRef, mapReady, mode, setMode }: {
       });
       const body: unknown = await response.json();
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${JSON.stringify(body)}`);
-      const frozen = parseFrozenPlan(body);
-      assertPlanMatchesAoi(frozen, geometry);
-      if (revision.current.current(token)) setPlan(frozen);
+      const frozen = parseDatasetRecommendations(body);
+      assertPlanMatchesAoi(frozen.plan, geometry);
+      if (revision.current.current(token)) setRecommendations(frozen);
     } catch (err) {
       if (revision.current.current(token) && !(err instanceof DOMException && err.name === "AbortError")) setError(err instanceof Error ? err.message : String(err));
     } finally { if (revision.current.current(token)) setBusy(false); }
   };
   const exportPlan = () => {
-    if (!plan) return;
-    const url = URL.createObjectURL(new Blob([JSON.stringify(plan, null, 2)], { type: "application/json" }));
-    const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${plan.plan_id}.json`; anchor.click();
+    if (!recommendations) return;
+    const exported = { schema_version: "aoi_comparison_selection.v1.0", recommendations,
+      selected_dataset_ids: selectedDatasetIds,
+      selected_file_row_ids: selectedApplicableRows(recommendations, selectedDatasetIds).map((row) => row.row_id),
+      selection_state: "USER_SELECTION_NOT_ACQUISITION_AUTHORIZATION" };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(exported, null, 2)], { type: "application/json" }));
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${recommendations.response_id}-selection.json`; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
   };
   return <details className="tools-panel" open data-testid="aoi-map-workbench" style={{ maxHeight: "52dvh", overflowY: "auto", minWidth: 0 }}>
@@ -242,6 +254,8 @@ export function AoiMapWorkbench({ mapRef, mapReady, mode, setMode }: {
       <label>Processing buffer (m) <input type="number" min="0" max="10000" value={buffer} onChange={(event) => { invalidate(); setBuffer(event.target.value); }} /></label>
       <label><input type="checkbox" checked={showBbox} onChange={(event) => setShowBbox(event.target.checked)} />Show backend discovery bbox (diagnostic only)</label>
     </fieldset>
+    <label><input type="checkbox" checked={showAllFootprints} onChange={(event) => setShowAllFootprints(event.target.checked)} />Show all catalog footprints (audit; default map shows selected files only)</label>
+    {recommendations && <AoiDatasetSelector key={recommendations.response_id} response={recommendations} selectedIds={selectedDatasetIds} onSelectionChange={setSelectedDatasetIds} />}
     {error && <p role="alert" style={{ overflowWrap: "anywhere" }}>{error}</p>}
     <AoiAcquisitionWorkbench plan={plan} busy={busy} canDryRun={Boolean(geometry) && mode === "idle"} onDryRun={() => void dryRun()} onExportManifest={exportPlan} />
   </details>;
