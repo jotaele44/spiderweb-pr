@@ -148,7 +148,7 @@ def test_registry_auxiliary_bindings_do_not_activate_live_catalogs():
     root=Path(__file__).resolve().parents[1]
     sources=json.loads((root/"configs/aoi_catalog_sources.json").read_text())["sources"]
     m9101=sources["NOAA_OCM_m9101"]
-    assert len(m9101["url_list_auxiliaries"])==8
+    assert len(m9101["url_list_auxiliaries"])==10
     assert m9101["state"]=="DISCOVERED_UNBOUND"
     assert any("PeurtoRico" in r["url"] for r in m9101["url_list_auxiliaries"])
 
