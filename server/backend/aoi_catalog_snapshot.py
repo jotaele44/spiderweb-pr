@@ -7,9 +7,11 @@ self links, asset keys and exact URL sets bind the records; filenames do not.
 from __future__ import annotations
 
 import copy
+from collections import Counter, defaultdict
 import hashlib
 import json
 import os
+import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -76,6 +78,13 @@ def convert_snapshot(collection_raw: bytes, items_raw: bytes, urls_raw: bytes, s
     for key in ("numberMatched", "numberReturned"):
         if key in items:
             require(type(items[key]) is int and items[key] == len(features), "INCOMPLETE_ITEMCOLLECTION")
+    profile = spec.get("source_profile", "strict_explicit_bindings")
+    require(profile in {"strict_explicit_bindings", "noaa_cog_single_asset_v1"},
+            "UNKNOWN_SOURCE_PROFILE")
+    identity_scope = spec.get("item_identity_scope", "item_id")
+    require(identity_scope in {"item_id", "collection_linked_self_url"}, "UNKNOWN_ITEM_IDENTITY_SCOPE")
+    expected_item_set = set(expected_items)
+    listed_url_set = set(urls_raw.decode("utf-8-sig", errors="strict").splitlines())
     source_ids, self_links, asset_urls, rows, asset_receipts = [], [], [], [], []
     for index, item in enumerate(features):
         require(isinstance(item, dict) and item.get("type") == "Feature", "INVALID_ITEM")
@@ -84,10 +93,18 @@ def convert_snapshot(collection_raw: bytes, items_raw: bytes, urls_raw: bytes, s
         item_id = item.get("id")
         require(isinstance(item_id, str) and bool(item_id), "MISSING_STABLE_ITEM_ID")
         source_ids.append(item_id)
-        require(item.get("collection") == collection["id"], "ITEM_COLLECTION_BINDING_MISMATCH")
+        explicit_collection = "collection" in item
+        if explicit_collection or profile == "strict_explicit_bindings":
+            require(item.get("collection") == collection["id"], "ITEM_COLLECTION_BINDING_MISMATCH")
         self_urls = _links(item, "self", spec["items_url"], prefixes)
         require(len(self_urls) == 1, "EXACT_ITEM_SELF_LINK_REQUIRED")
         self_url = self_urls[0]; self_links.append(self_url)
+        require(self_url in expected_item_set, "ITEM_NOT_LINKED_BY_COLLECTION")
+        collection_links = _links(item, "collection", self_url, prefixes)
+        require(not collection_links or collection_links == [spec["collection_url"]],
+                "CONTRADICTORY_ITEM_COLLECTION_LINK")
+        collection_basis = ("EXPLICIT_ID_AND_COLLECTION_ITEM_LINK" if explicit_collection
+                            else "EXACT_COLLECTION_ITEM_LINK_AND_ITEM_SELF_LINK")
         properties, assets = item.get("properties"), item.get("assets")
         require(isinstance(properties, dict) and isinstance(assets, dict) and bool(assets), "INVALID_ITEM_PROPERTIES_OR_ASSETS")
         data_count = 0
@@ -97,6 +114,30 @@ def convert_snapshot(collection_raw: bytes, items_raw: bytes, urls_raw: bytes, s
             require(isinstance(roles, list) and all(isinstance(role, str) for role in roles), "INVALID_ASSET_ROLES")
             declared = key in spec.get("data_asset_keys", [])
             data = "data" in roles or declared
+            data_basis = "EXPLICIT_DATA_ROLE_OR_CONFIGURED_ASSET_KEY"
+            if (not data and profile == "noaa_cog_single_asset_v1" and "roles" not in asset
+                    and len(assets) == 1):
+                # NOAA's frozen 2026 STAC publication omits optional roles and
+                # collection members. Bind via links + MIME/grid + exact URL-list
+                # membership, never the similar item/asset filename.
+                href = asset.get("href")
+                require(isinstance(href, str) and bool(href), "DATA_ASSET_URL_UNBOUND")
+                candidate_url = approved_url(urljoin(self_url, href), prefixes)
+                shape = asset.get("proj:shape")
+                transform = asset.get("proj:transform")
+                import math
+                require(asset.get("type") == "image/tiff; application=geotiff; profile=cloud-optimized"
+                        and candidate_url in listed_url_set
+                        and isinstance(shape, list) and len(shape) == 2
+                        and all(type(v) is int and v > 0 for v in shape)
+                        and isinstance(transform, list) and len(transform) in (6, 9)
+                        and all(type(v) in (int, float) and math.isfinite(v) for v in transform)
+                        and (len(transform) == 6 or transform[6:] == [0, 0, 1])
+                        and transform[0] * transform[4] - transform[1] * transform[3] != 0
+                        and type(asset.get("proj:epsg")) is int and asset["proj:epsg"] > 0,
+                        "ROLELESS_COG_BINDING_INCOMPLETE")
+                data = True
+                data_basis = "SINGLE_COG_MEDIA_GRID_AND_EXACT_PUBLISHED_URL"
             if not data:
                 require(bool(set(roles) & {"metadata", "thumbnail", "overview"}), "UNCLASSIFIED_ASSET_REQUIRES_REVIEW")
                 asset_receipts.append({"item_id": item_id, "asset_key_raw": key, "state": "AUXILIARY", "raw_asset": copy.deepcopy(asset)})
@@ -112,11 +153,17 @@ def convert_snapshot(collection_raw: bytes, items_raw: bytes, urls_raw: bytes, s
             require(size is None or (type(size) is int and size >= 0), "INVALID_FILE_SIZE")
             # STAC datetime is not automatically the lidar collection date.
             # Missing acquisition metadata/resolution remains unknown to filters.
-            asset_id = json.dumps([item_id, key], ensure_ascii=True, separators=(",", ":"))
+            # Source manifestation identity can be URI-qualified when a publisher
+            # repeats raw item IDs across blocks. Keep those raw IDs and collisions;
+            # never treat equal filenames as identical observations or drop a row.
+            scoped_item = self_url if identity_scope == "collection_linked_self_url" else item_id
+            asset_id = json.dumps([scoped_item, key], ensure_ascii=True, separators=(",", ":"))
             row = {"type": "Feature", "geometry": copy.deepcopy(item.get("geometry")), "properties": {
                 "asset_id": asset_id, "source_url": url, "product": spec["dataset_class"],
                 "size_bytes": size, "acquisition_date": None, "resolution_m": None,
                 "source_item_id_raw": item_id, "stac_asset_key_raw": key,
+                "collection_binding_basis": collection_basis, "data_binding_basis": data_basis,
+                "item_identity_scope": identity_scope,
                 "upstream_item_index": index, "upstream_item_self_url": self_url,
                 "geometry_basis": "PUBLISHED_STAC_ITEM_FOOTPRINT_NOT_VALID_DATA_MASK",
                 "stac_datetime_raw": properties.get("datetime"),
@@ -125,7 +172,14 @@ def convert_snapshot(collection_raw: bytes, items_raw: bytes, urls_raw: bytes, s
             asset_receipts.append({"item_id": item_id, "asset_key_raw": key, "state": "DATA", "source_url": url})
         require(data_count > 0, "ITEM_WITHOUT_CLASSIFIED_DATA")
         require(data_count == 1, "MULTIPLE_DATA_ASSETS_REQUIRE_PER_ASSET_FOOTPRINTS")
-    require(len(source_ids) == len(set(source_ids)), "DUPLICATE_ITEM_ID")
+    raw_counts = Counter(source_ids)
+    raw_id_collisions = {key: count for key, count in raw_counts.items() if count > 1}
+    if identity_scope == "item_id":
+        require(not raw_id_collisions, "DUPLICATE_ITEM_ID")
+    collision_members = defaultdict(list)
+    for raw_id, self_url in zip(source_ids, self_links):
+        if raw_id in raw_id_collisions:
+            collision_members[raw_id].append(self_url)
     require(len(self_links) == len(set(self_links)), "DUPLICATE_ITEM_SELF_LINK")
     item_relation = relation_sets(expected_items, self_links)
     require(not item_relation["SYMMETRIC_DIFFERENCE"], "COLLECTION_ITEM_SET_MISMATCH")
@@ -141,7 +195,13 @@ def convert_snapshot(collection_raw: bytes, items_raw: bytes, urls_raw: bytes, s
     result = {"type": "FeatureCollection", "features": rows}
     require(len(canonical_bytes(result)) <= MAX_CATALOG_BYTES, "OUTPUT_BYTE_LIMIT")
     receipt = {"schema_version": "aoi_stac_snapshot.v1.0", "dataset_id": spec["dataset_id"],
-               "collection_id_raw": collection["id"], "items": len(features), "data_assets": len(rows),
+               "collection_id_raw": collection["id"], "source_profile": profile,
+               "items": len(features), "data_assets": len(rows),
+               "item_identity_scope": identity_scope,
+               "raw_item_id_status": "NONCANONICAL_DUPLICATE_IDS" if raw_id_collisions else "UNIQUE",
+               "raw_item_id_collisions": dict(collision_members),
+               "raw_item_id_collision_groups": len(raw_id_collisions),
+               "raw_item_id_collision_rows": sum(raw_id_collisions.values()),
                "auxiliary_assets": sum(r["state"] == "AUXILIARY" for r in asset_receipts),
                "asset_classification": asset_receipts, "collection_item_relation": item_relation,
                "data_url_relation": url_relation, "url_inventory": inventory, "input_hashes": {
@@ -200,6 +260,13 @@ def acquire_metadata(url: str, directory: Path, name: str, prefixes: list[str]) 
     return raw, receipt
 
 
+def converter_manifest() -> dict:
+    """Bind a derivative to the actual transforming sources and JSON runtime."""
+    return {"adapter_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "url_inventory_sha256": hashlib.sha256(Path(__file__).with_name("aoi_url_inventory.py").read_bytes()).hexdigest(),
+            "python": sys.version, "serialization": "sorted-keys-ascii-json"}
+
+
 def freeze_catalog(spec: dict, work_dir: Path, root: Path) -> dict:
     """Fetch/reuse metadata only; build an immutable catalog and a registry proposal."""
     inputs, retrievals = {}, {}
@@ -216,7 +283,11 @@ def freeze_catalog(spec: dict, work_dir: Path, root: Path) -> dict:
         failure_id = digest(failure)
         write_once(work_dir / f"url-inventory-blocked-{failure_id}.json", canonical_bytes(failure))
         raise
-    snapshot = digest({"spec": spec, "input_hashes": receipt["input_hashes"]})
+    source_snapshot = digest({"spec": spec, "input_hashes": receipt["input_hashes"]})
+    receipt["source_snapshot_id"] = source_snapshot
+    receipt["converter"] = converter_manifest()
+    snapshot = digest({"source_snapshot_id": source_snapshot,
+                       "converter": receipt["converter"], "catalog_sha256": receipt["catalog_sha256"]})
     target = root / "registry" / "aoi" / "catalogs" / spec["dataset_id"] / snapshot
     require(target.resolve().is_relative_to(root.resolve()), "OUTPUT_OUTSIDE_ROOT")
     for kind, suffix in (("collection", "json"), ("items", "json"), ("urls", "txt")):
