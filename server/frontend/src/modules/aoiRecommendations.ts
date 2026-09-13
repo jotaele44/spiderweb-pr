@@ -34,13 +34,13 @@ function requireValue(ok: unknown, message: string): asserts ok { if (!ok) throw
 function nonnegative(value: unknown): value is number { return Number.isSafeInteger(value) && Number(value) >= 0; }
 function list(value: unknown): string[] {
   requireValue(Array.isArray(value) && value.every((v) => typeof v === "string"), "Expected string list");
-  return value as string[];
+  return value;
 }
 function sameIds(actual: unknown, expected: string[], label: string) {
   const ids = list(actual), unique = new Set(ids);
   requireValue(ids.length === unique.size && ids.length === expected.length && expected.every((id) => unique.has(id)), `${label} membership mismatch`);
 }
-function hash(value: unknown) { return typeof value === "string" && /^[a-f0-9]{64}$/.test(value); }
+function hash(value: unknown): value is string { return typeof value === "string" && /^[a-f0-9]{64}$/.test(value); }
 const positive = (row: AcquisitionAssetRow) => ["FULLY_WITHIN", "PARTIAL"].includes(row.relation);
 export function sourceUrl(row: AcquisitionAssetRow): string | null {
   const value = (row as unknown as Record<string, unknown>).source_url;
