@@ -4,11 +4,17 @@ on:
     paths:
       - 'server/backend/**'
       - 'server/frontend/src/modules/*Aoi*'
-      - 'server/frontend/src/modules/aoiContract.ts'
+      - 'server/frontend/src/modules/aoi*.ts'
       - 'server/frontend/src/modules/SpatialTools*'
       - 'schemas/aoi_acquisition_plan_v1.schema.json'
       - 'tests/test_aoi_planner.py'
       - 'tests/test_aoi_relevance.py'
+      - 'tests/test_aoi_catalog_snapshot.py'
+      - 'tools/aoi_catalog_snapshot.py'
+      - 'configs/aoi_catalog_sources.json'
+      - 'configs/spatial_dataset_providers.json'
+      - 'tests/aoi_recommendations_runtime.cjs'
+      - 'tests/fixtures/aoi_recommendations_v1.json'
       - 'tests/fixtures/aoi_plan_v1_1.json'
       - 'tests/aoi_contract_runtime.cjs'
       - '.github/workflows/aoi-dry-run.yml'
@@ -30,4 +36,25 @@ jobs:
       - name: Require GIS dependencies and run bounded regressions
         run: |
           python -c 'import pyproj, shapely, fastapi, jsonschema'
-          python -m pytest tests/test_aoi_planner.py tests/test_aoi_relevance.py -q
+          python -m pytest tests/test_aoi_planner.py tests/test_aoi_relevance.py tests/test_aoi_catalog_snapshot.py -q
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - name: AOI unit and React render regressions
+        run: npm test -- src/modules/AoiAcquisitionWorkbench.test.ts src/modules/AoiAcquisitionWorkbench.render.test.tsx src/modules/AoiDatasetSelector.render.test.tsx
+      - name: Cross-language recommendation contract
+        run: |
+          ./node_modules/.bin/tsc src/modules/aoiRecommendations.ts --strict --target ES2022 --module commonjs --lib ES2022,DOM --outDir /tmp/aoi-recommendations
+          node ../../tests/aoi_recommendations_runtime.cjs /tmp/aoi-recommendations/aoiRecommendations.js ../../tests/fixtures/aoi_recommendations_v1.json
+      - run: npm run build
