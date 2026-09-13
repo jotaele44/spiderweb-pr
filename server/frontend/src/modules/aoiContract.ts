@@ -59,7 +59,7 @@ export function readGeometry(value: unknown): AoiGeometry {
         if (!Array.isArray(p) || p.length !== 2 || !p.every((n: unknown) => typeof n === "number" && Number.isFinite(n))) throw new Error("Finite 2D coordinates required; Z is not discarded");
         if (Math.abs(Number(p[0])) > 180 || Math.abs(Number(p[1])) > 90) throw new Error("Coordinates outside CRS84 range");
       }
-      if (JSON.stringify(ring[0]) !== JSON.stringify(ring.at(-1))) throw new Error("Unclosed ring; no silent repair");
+      if (JSON.stringify(ring[0]) !== JSON.stringify(ring[ring.length - 1])) throw new Error("Unclosed ring; no silent repair");
       vertices += ring.length - 1;
     }
   }
