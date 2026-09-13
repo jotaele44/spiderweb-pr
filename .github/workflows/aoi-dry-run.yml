@@ -8,6 +8,7 @@ on:
       - 'server/frontend/src/modules/SpatialTools*'
       - 'schemas/aoi_acquisition_plan_v1.schema.json'
       - 'tests/test_aoi_planner.py'
+      - 'tests/test_aoi_relevance.py'
       - 'tests/fixtures/aoi_plan_v1_1.json'
       - 'tests/aoi_contract_runtime.cjs'
       - '.github/workflows/aoi-dry-run.yml'
@@ -29,4 +30,4 @@ jobs:
       - name: Require GIS dependencies and run bounded regressions
         run: |
           python -c 'import pyproj, shapely, fastapi, jsonschema'
-          python -m pytest tests/test_aoi_planner.py -q
+          python -m pytest tests/test_aoi_planner.py tests/test_aoi_relevance.py -q
