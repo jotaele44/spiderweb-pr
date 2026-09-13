@@ -1,0 +1,52 @@
+{
+  "schema_version": "aoi_catalog_sources.v1.0",
+  "scope": "two_published_collections_not_all_puerto_rico",
+  "sources": {
+    "NOAA_OCM_m9101": {
+      "dataset_id": "NOAA_OCM_m9101",
+      "provider_id": "NOAA_OCM",
+      "original_producer": "USGS",
+      "label_raw": "2018 USGS Lidar DEM: Post Hurricane Maria - Puerto Rico",
+      "dataset_class": "bare_earth_dem",
+      "collection_id_raw": "noaa_imagery_collection_m9101",
+      "collection_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/stac/collection.json",
+      "items_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/stac/noaa_item_collection_m9101.json",
+      "urls_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/urllist9101.txt",
+      "approved_url_prefixes": [
+        "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USGS_PostMaria_PuertoRico_DEM_2018_9101/"
+      ],
+      "data_suffixes": [
+        ".tif",
+        ".tiff"
+      ],
+      "data_asset_keys": [],
+      "discovery_url": "https://coast.noaa.gov/htdata/raster2/elevation/USGS_PostMaria_PuertoRico_DEM_2018_9101/",
+      "state": "DISCOVERED_UNBOUND",
+      "exact_file_denominator": "UNRESOLVED",
+      "note": "Collection IDs retain publisher imagery spelling. Product class is not identity. Raw catalog bytes and complete URL/item closure are mandatory before activation."
+    },
+    "NOAA_OCM_m8571": {
+      "dataset_id": "NOAA_OCM_m8571",
+      "provider_id": "NOAA_OCM",
+      "original_producer": "USACE / FEMA",
+      "label_raw": "2018 USACE FEMA Topobathy Lidar DEM: Main Island, Culebra, and Vieques, Puerto Rico",
+      "dataset_class": "topobathy",
+      "collection_id_raw": "noaa_imagery_collection_m8571",
+      "collection_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_PR_Topobathy_DEM_2018_8571/stac/collection.json",
+      "items_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_PR_Topobathy_DEM_2018_8571/stac/noaa_item_collection_m8571.json",
+      "urls_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_PR_Topobathy_DEM_2018_8571/urllist8571.txt",
+      "approved_url_prefixes": [
+        "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_PR_Topobathy_DEM_2018_8571/"
+      ],
+      "data_suffixes": [
+        ".tif",
+        ".tiff"
+      ],
+      "data_asset_keys": [],
+      "discovery_url": "https://coast.noaa.gov/htdata/raster2/elevation/USACE_PR_Topobathy_DEM_2018_8571/",
+      "state": "DISCOVERED_UNBOUND",
+      "exact_file_denominator": "UNRESOLVED",
+      "note": "Collection IDs retain publisher imagery spelling. Product class is not identity. Raw catalog bytes and complete URL/item closure are mandatory before activation."
+    }
+  }
+}
