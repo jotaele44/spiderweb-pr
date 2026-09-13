@@ -11,13 +11,13 @@ import hashlib
 import json
 import os
 import tempfile
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit, unquote
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 from .aoi_planner import MAX_CATALOG_BYTES, MAX_ROWS, canonical_bytes, digest, strict_json
+from .aoi_url_inventory import UrlInventoryError, audit_url_inventory
 
 
 def require(ok: bool, message: str) -> None:
@@ -129,20 +129,14 @@ def convert_snapshot(collection_raw: bytes, items_raw: bytes, urls_raw: bytes, s
     require(len(self_links) == len(set(self_links)), "DUPLICATE_ITEM_SELF_LINK")
     item_relation = relation_sets(expected_items, self_links)
     require(not item_relation["SYMMETRIC_DIFFERENCE"], "COLLECTION_ITEM_SET_MISMATCH")
-    text = urls_raw.decode("utf-8-sig", errors="strict")
-    raw_lines = text.splitlines()
-    expected_urls = []
-    for line in raw_lines:
-        if not line:
-            continue
-        url = approved_url(line, prefixes)
-        require(urlsplit(url).path.lower().endswith(tuple(spec["data_suffixes"])), "UNCLASSIFIED_URL_LIST_ENTRY")
-        expected_urls.append(url)
-    require(bool(expected_urls), "EMPTY_URL_LIST")
-    require(len(expected_urls) == len(set(expected_urls)), "DUPLICATE_URL_LIST_ENTRY")
-    require(len(asset_urls) == len(set(asset_urls)), "REPEATED_ASSET_URL_REQUIRES_ADJUDICATION")
-    url_relation = relation_sets(expected_urls, asset_urls)
-    require(not url_relation["SYMMETRIC_DIFFERENCE"] and Counter(expected_urls) == Counter(asset_urls), "ASSET_URL_SET_MISMATCH")
+    inventory = audit_url_inventory(
+        urls_raw, data_urls=asset_urls, item_urls=self_links,
+        structural_urls=[spec[key] for key in ("collection_url", "items_url", "urls_url", "catalog_url") if spec.get(key)],
+        auxiliary_bindings=spec.get("url_list_auxiliaries", []),
+        approve=lambda url: approved_url(url, prefixes),
+        data_suffixes=tuple(spec["data_suffixes"]),
+    )
+    url_relation = inventory["data_url_relation"]
     require(len(rows) <= MAX_ROWS, "OUTPUT_ROW_LIMIT")
     result = {"type": "FeatureCollection", "features": rows}
     require(len(canonical_bytes(result)) <= MAX_CATALOG_BYTES, "OUTPUT_BYTE_LIMIT")
@@ -150,7 +144,7 @@ def convert_snapshot(collection_raw: bytes, items_raw: bytes, urls_raw: bytes, s
                "collection_id_raw": collection["id"], "items": len(features), "data_assets": len(rows),
                "auxiliary_assets": sum(r["state"] == "AUXILIARY" for r in asset_receipts),
                "asset_classification": asset_receipts, "collection_item_relation": item_relation,
-               "data_url_relation": url_relation, "input_hashes": {
+               "data_url_relation": url_relation, "url_inventory": inventory, "input_hashes": {
                    "collection": hashlib.sha256(collection_raw).hexdigest(),
                    "items": hashlib.sha256(items_raw).hexdigest(), "urls": hashlib.sha256(urls_raw).hexdigest()},
                "catalog_sha256": hashlib.sha256(canonical_bytes(result)).hexdigest(),
@@ -212,7 +206,16 @@ def freeze_catalog(spec: dict, work_dir: Path, root: Path) -> dict:
     for kind, suffix in (("collection", "json"), ("items", "json"), ("urls", "txt")):
         inputs[kind], retrievals[kind] = acquire_metadata(spec[f"{kind}_url"], work_dir,
                                                         f"{kind}.raw.{suffix}", spec["approved_url_prefixes"])
-    catalog, receipt = convert_snapshot(inputs["collection"], inputs["items"], inputs["urls"], spec)
+    try:
+        catalog, receipt = convert_snapshot(inputs["collection"], inputs["items"], inputs["urls"], spec)
+    except UrlInventoryError as error:
+        # Preserve the exact failed vector without claiming a complete catalog.
+        failure = {"source_spec": copy.deepcopy(spec), "input_hashes": {
+            key: hashlib.sha256(raw).hexdigest() for key, raw in inputs.items()},
+            "audit": error.report}
+        failure_id = digest(failure)
+        write_once(work_dir / f"url-inventory-blocked-{failure_id}.json", canonical_bytes(failure))
+        raise
     snapshot = digest({"spec": spec, "input_hashes": receipt["input_hashes"]})
     target = root / "registry" / "aoi" / "catalogs" / spec["dataset_id"] / snapshot
     require(target.resolve().is_relative_to(root.resolve()), "OUTPUT_OUTSIDE_ROOT")
