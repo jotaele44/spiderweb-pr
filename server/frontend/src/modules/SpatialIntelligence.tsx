@@ -120,6 +120,14 @@ const POINT_LAYERS: Record<PointLayerKey, PointLayerConfig> = {
 const POINT_LAYER_KEYS = Object.keys(POINT_LAYERS) as PointLayerKey[];
 const BACKEND_LAYER_KEYS: BackendLayerKey[] = [...POLYGON_LAYER_KEYS, ...POINT_LAYER_KEYS];
 
+// AWS's free public Terrarium elevation tiles — no API key, same free-public-tile
+// precedent as the OSM basemap and already proven in aguayluz-pr/ovnis-pr/skywatcher-pr.
+// This is MapLibre-side raster-dem hillshade only; Cesium's real GEBCO-based terrain
+// remains Phase 4 (see CesiumRegionalRuntime.ts) and is untouched by this.
+const TERRAIN_DEM_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
+const TERRAIN_SOURCE_ID = "terrain-dem";
+const TERRAIN_ATTRIBUTION = "Terrain: AWS Terrarium (Mapzen/Joerd)";
+
 const MARKER_LABELS: Record<MarkerLayerKey, string> = {
   contracts: "Contracts",
   infrastructure: "Infrastructure",
@@ -665,6 +673,47 @@ export function SpatialIntelligence({
     };
   }, [densityOn, densityByGeoid, mapReady, mapRef, municipiosSourceId, municipiosViaMartin]);
 
+  // Raster-DEM hillshade terrain, MapLibre-side only. Off by default; toggling
+  // eases the camera to a pitch so the relief is visible, toggling off resets
+  // pitch to 0. Uses the same single-idempotent-apply pattern as the density
+  // effect above (mapReady fires before style.load in this runtime, so a
+  // create-once-effect/toggle-effect split would race).
+  const [showTerrain, setShowTerrain] = useState(false);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    function apply() {
+      if (!map) return;
+      if (!map.getSource(TERRAIN_SOURCE_ID)) {
+        map.addSource(TERRAIN_SOURCE_ID, {
+          type: "raster-dem",
+          tiles: [TERRAIN_DEM_URL],
+          tileSize: 256,
+          encoding: "terrarium",
+          attribution: TERRAIN_ATTRIBUTION,
+        });
+      }
+      if (!map.getLayer("hillshade")) {
+        map.addLayer(
+          {
+            id: "hillshade",
+            type: "hillshade",
+            source: TERRAIN_SOURCE_ID,
+            layout: { visibility: showTerrain ? "visible" : "none" },
+            paint: { "hillshade-exaggeration": 0.6 },
+          },
+          "osm",
+        );
+      } else {
+        map.setLayoutProperty("hillshade", "visibility", showTerrain ? "visible" : "none");
+      }
+      map.setTerrain(showTerrain ? { source: TERRAIN_SOURCE_ID, exaggeration: 1.3 } : null);
+      map.easeTo({ pitch: showTerrain ? 55 : 0, duration: 600 });
+    }
+    if (map.isStyleLoaded()) apply();
+    else map.once("styledata", apply);
+  }, [showTerrain, mapReady, mapRef]);
+
   useEffect(() => {
     localStorage.setItem("spiderweb_layer_collapsed", String(layerPanelCollapsed));
   }, [layerPanelCollapsed]);
@@ -723,6 +772,17 @@ export function SpatialIntelligence({
           >
             {spatialMode === "cesium" ? "3D (regional preview)" : "2D"}
           </button>
+          {activeMode === "maplibre" && (
+            <button
+              className="act"
+              data-on={showTerrain}
+              aria-pressed={showTerrain}
+              onClick={() => setShowTerrain((value) => !value)}
+              title="Toggle raster-DEM hillshade terrain"
+            >
+              Terrain
+            </button>
+          )}
           <Pill tone="info">{activeMode === "cesium" ? "Cesium (regional)" : "MapLibre GL JS"}</Pill>
         </div>
       </div>
@@ -795,6 +855,12 @@ export function SpatialIntelligence({
           {activeMode === "maplibre" && layers.municipios && densityOn && densityState.status === "ready" && (
             <div className="map-note" role="status">
               <span>{densityState.data.matchedCount} matched · {densityState.data.unmatchedCount} unresolved · {densityState.data.totalFeatures} total · identity effect NONE · {densityState.data.scopeState}</span>
+            </div>
+          )}
+          {activeMode === "maplibre" && layers.municipios && densityOn && densityByGeoid && (
+            <div className="density-legend">
+              <div className="density-legend-bar" />
+              <div className="density-legend-labels"><span>Low</span><span>High</span></div>
             </div>
           )}
           <div className="hr" />
