@@ -1,0 +1,21 @@
+{
+  "cell_count": 98304,
+  "certification_state": "PROVISIONAL",
+  "crs": "EPSG:4326",
+  "dataset": "pr_grid_cell_geometry",
+  "derivable": true,
+  "derivable_note": "Regenerate with `python -m pipeline.build_cell_geometry`. The layer is a deterministic function of the transform record and the frozen grid, so CI rebuilds it and compares sha256 rather than tracking the bytes.",
+  "duplicate_cell_ids": 0,
+  "format": "geojsonl",
+  "geometry_version": "pr_grid_geometry_v0_1",
+  "grid": {
+    "columns": 384,
+    "rows": 256
+  },
+  "grid_version": "pr_grid_full_cell_index_saturated_v1",
+  "missing_geometries": 0,
+  "orphan_geometries": 0,
+  "path": "registry/spatial/geometry/pr_grid_cell_geometry.geojsonl",
+  "sha256": "5a84abe39eb80bde21c95698002097cb6ea8fda3c951c71db5c795b02538a422",
+  "size_bytes": 65266439
+}
