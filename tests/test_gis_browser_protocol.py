@@ -3,6 +3,8 @@
 Exercises the production embedded JS event/capture/cleanup path without needing
 Martin or a MapLibre distribution. A separate real-engine smoke run is required.
 """
+import os
+from pathlib import Path
 import shutil
 
 import pytest
@@ -39,14 +41,55 @@ window.maplibregl={version:'TEST_PROTOCOL_STUB_NOT_MAPLIBRE',Map:class {
 @pytest.fixture(scope="module")
 def chromium():
     api = pytest.importorskip("playwright.sync_api")
-    binary = shutil.which("chromium")
-    if binary is None:
-        pytest.skip("Protocol test requires Chromium; real engine smoke remains separate")
+
     with api.sync_playwright() as p:
-        browser = p.chromium.launch(executable_path=binary,headless=True,
-                                   args=["--disable-dev-shm-usage"])
-        yield browser
-        browser.close()
+        candidates = []
+
+        explicit = os.environ.get("SPIDERWEB_CHROMIUM_EXECUTABLE")
+        if explicit:
+            candidates.append(explicit)
+
+        on_path = shutil.which("chromium")
+        if on_path:
+            candidates.append(on_path)
+
+        managed = p.chromium.executable_path
+        if managed:
+            candidates.append(managed)
+
+        attempted = []
+        browser = None
+
+        for candidate in dict.fromkeys(candidates):
+            path = Path(candidate)
+
+            if not path.is_file():
+                attempted.append(f"{candidate}:missing")
+                continue
+
+            try:
+                browser = p.chromium.launch(
+                    executable_path=str(path),
+                    headless=True,
+                    args=["--disable-dev-shm-usage"],
+                )
+                break
+            except Exception as exc:
+                attempted.append(
+                    f"{candidate}:{type(exc).__name__}:{exc}"
+                )
+
+        if browser is None:
+            pytest.skip(
+                "Protocol test requires a launchable Chromium; "
+                "real engine smoke remains separate. "
+                f"attempted={attempted}"
+            )
+
+        try:
+            yield browser
+        finally:
+            browser.close()
 
 
 @pytest.fixture
