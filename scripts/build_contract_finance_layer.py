@@ -16,6 +16,10 @@ from readiness.contract_finance_layer import (  # noqa: E402
     ContractFinanceLayerError,
     build_contract_finance_layer,
 )
+from readiness.contract_finance_manifest_gate import (  # noqa: E402
+    ContractFinanceManifestGateError,
+    validate_contract_finance_manifest,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,14 +31,34 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional moneysweep-pr artifact_manifest.json path. When supplied, the manifest gate must pass before scoring.",
     )
+    parser.add_argument(
+        "--expected-producer-commit",
+        default=None,
+        help="Exact MoneySweep commit expected by this run. Required whenever --artifact-manifest is supplied.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if bool(args.artifact_manifest) != bool(args.expected_producer_commit):
+        print(
+            "ERROR: --artifact-manifest and --expected-producer-commit must be supplied together",
+            file=sys.stderr,
+        )
+        return 2
     try:
-        report = build_contract_finance_layer(args.input, args.out, artifact_manifest=args.artifact_manifest)
-    except ContractFinanceLayerError as exc:
+        if args.artifact_manifest:
+            validate_contract_finance_manifest(
+                args.artifact_manifest,
+                expected_producer_commit=args.expected_producer_commit,
+            )
+        report = build_contract_finance_layer(
+            args.input,
+            args.out,
+            artifact_manifest=args.artifact_manifest,
+        )
+    except (ContractFinanceLayerError, ContractFinanceManifestGateError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(report, indent=2, sort_keys=True))
