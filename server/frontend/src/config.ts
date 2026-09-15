@@ -52,3 +52,11 @@ export const TILE_URL: string =
 /** Attribution shown on the base map. Override alongside `VITE_TILE_URL`. */
 export const TILE_ATTRIBUTION: string =
   import.meta.env.VITE_TILE_ATTRIBUTION ?? "© OpenStreetMap contributors";
+
+/**
+ * Public, application-scoped Cesium ion token used only by the browser's 3D
+ * visualization runtime. Keep empty to retain the deterministic grid shell.
+ * Never reuse a token with asset-write or account-management scopes here.
+ */
+export const CESIUM_ION_TOKEN: string =
+  import.meta.env.VITE_CESIUM_ION_TOKEN?.trim() ?? "";

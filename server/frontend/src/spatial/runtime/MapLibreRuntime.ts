@@ -8,11 +8,13 @@ maplibregl.setWorkerUrl(maplibreWorkerUrl);
 export class MapLibreRuntime implements SpatialRuntime {
   private map: maplibregl.Map | null = null;
   private finishInitialization: (() => void) | null = null;
+  private initialView: CameraView | null = null;
   private basemapSourceId = "";
   private readonly basemapErrorListeners = new Set<() => void>();
 
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void> {
     this.basemapSourceId = config.basemapSourceId;
+    this.initialView = config.initialView;
     const map = new maplibregl.Map({
       container,
       style: config.basemapStyle,
@@ -48,7 +50,13 @@ export class MapLibreRuntime implements SpatialRuntime {
     this.finishInitialization = null;
     this.map?.remove();
     this.map = null;
+    this.initialView = null;
     this.basemapErrorListeners.clear();
+  }
+
+  resetView(options?: { animate?: boolean }): void {
+    if (!this.initialView) return;
+    this.setView(this.initialView, { animate: options?.animate });
   }
 
   setView(view: CameraView, options?: { animate?: boolean; speed?: number }): void {
