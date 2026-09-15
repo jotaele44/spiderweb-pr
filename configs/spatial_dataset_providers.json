@@ -20,6 +20,34 @@
         "gate": "TRANSFORM_CERTIFICATION_GATE (scripts/validate_spatial_registry.py)",
         "unblocks_when": "authoring parameters, a world file, or the generator script are supplied and pass both the RESIDUAL and ISLAND_DIMENSION assertions"
       }
+    },
+    "NOAA_OCM_m9101": {
+      "provider_id": "NOAA_OCM",
+      "original_producer": "USGS",
+      "label": "2018 USGS Lidar DEM: Post Hurricane Maria - Puerto Rico",
+      "dataset_class": "bare_earth_dem",
+      "catalog_type": "geojson",
+      "catalog_path": null,
+      "catalog_sha256": null,
+      "catalog_record_count": null,
+      "bootstrap_spec": "configs/aoi_catalog_sources.json#sources/NOAA_OCM_m9101",
+      "source_status": "DISCOVERED_UNBOUND",
+      "publication_portal": "NOAA Digital Coast",
+      "note": "No verified source footprint catalog loaded. Do not recommend until the metadata snapshot and exact item/URL denominators pass."
+    },
+    "NOAA_OCM_m8571": {
+      "provider_id": "NOAA_OCM",
+      "original_producer": "USACE / FEMA",
+      "label": "2018 USACE FEMA Topobathy Lidar DEM: Main Island, Culebra, and Vieques, Puerto Rico",
+      "dataset_class": "topobathy",
+      "catalog_type": "geojson",
+      "catalog_path": null,
+      "catalog_sha256": null,
+      "catalog_record_count": null,
+      "bootstrap_spec": "configs/aoi_catalog_sources.json#sources/NOAA_OCM_m8571",
+      "source_status": "DISCOVERED_UNBOUND",
+      "publication_portal": "NOAA Digital Coast",
+      "note": "No verified source footprint catalog loaded. Do not recommend until the metadata snapshot and exact item/URL denominators pass."
     }
   }
 }
