@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/federation/schemas/record_cell_binding.schema.json",
+  "title": "Record to Cell Binding",
+  "description": "Shared federation primitive binding one domain record to one canonical Cell_ID. Spatial membership is computed once by the geometry authority; domain repositories store the resulting Cell_ID on their records and filter on it rather than repeating geometry work. A record may bind to many cells (a flight path to dozens, a watershed to hundreds), so this is deliberately many-to-many and never collapses a record to a single cell.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Repository", "Record_ID", "Cell_ID", "Spatial_Role", "Binding_Method"],
+  "properties": {
+    "Repository": {"type": "string", "enum": ["spiderweb-pr", "aguayluz-pr", "skywatcher-pr", "centinelas-pr", "moneysweep-pr", "ovnis-pr", "thehub-pr"]},
+    "Record_ID": {"type": "string", "minLength": 1},
+    "Cell_ID": {"type": "string", "pattern": "^R(?:0|[1-9][0-9]{0,2})_C(?:0|[1-9][0-9]{0,2})$"},
+    "Spatial_Role": {"type": "string", "enum": ["POINT_LOCATION", "INTERSECTS", "ORIGIN", "DESTINATION", "PATH", "PRIMARY", "SECONDARY", "AOI"]},
+    "Overlap_Fraction": {"type": "number", "minimum": 0, "maximum": 1},
+    "Binding_Method": {"type": "string", "enum": ["RESOLVER_POINT", "RESOLVER_BBOX", "RESOLVER_POLYGON", "PROVIDER_ASSERTED", "MANUAL"]},
+    "Binding_Version": {"type": "string"},
+    "Geometry_Version": {"type": "string"},
+    "Certification_State": {"type": "string", "enum": ["VERIFIED", "PROVISIONAL"]},
+    "Identity_Default": {"type": "string", "const": "CANDIDATE_NOT_IDENTITY", "description": "A Cell_ID is a spatial address, never an identity claim. Records sharing a cell are co-located, not the same entity."},
+    "Valid_From": {"type": ["string", "null"]},
+    "Valid_To": {"type": ["string", "null"]}
+  }
+}

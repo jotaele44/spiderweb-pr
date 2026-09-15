@@ -205,6 +205,15 @@ button.source-row { width: 100%; border: 0; background: transparent; color: inhe
 .navbtn[data-status="error"] > span:last-child { color: var(--alert); }
 .navbtn[data-status="loading"] > span:last-child { color: var(--muted); font-style: italic; }
 .map-shell { display: grid; grid-template-columns: minmax(0, 1fr) 280px; min-height: 0; height: 100%; overflow: hidden; transition: grid-template-columns .3s ease; }
+.density-legend { margin-top: 6px; padding: 4px 2px 0; }
+.density-legend-bar {
+  height: 8px; border-radius: 2px; border: 1px solid var(--line);
+  background: linear-gradient(to right, rgba(94, 234, 212, 0.05), rgba(94, 234, 212, 0.75));
+}
+.density-legend-labels {
+  display: flex; justify-content: space-between; margin-top: 2px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+}
 .layer-panel { border-left: 1px solid var(--line); background: var(--surface); padding: 12px; overflow: auto; }
 .map-shell[data-layer-collapsed="true"] .layer-panel { overflow: hidden; padding: 0; border-left: 0; }
 .graph-surface { position: relative; height: 100%; min-height: 420px; background: radial-gradient(circle at 50% 50%, var(--surface-3), var(--bg)); overflow: hidden; }
