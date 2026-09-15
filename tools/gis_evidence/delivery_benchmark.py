@@ -6,6 +6,7 @@ Browser measurements are cold-browser/warm-server, not Internet performance.
 """
 from __future__ import annotations
 import argparse
+from copy import deepcopy
 from collections import Counter
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -27,44 +28,62 @@ import urllib.request
 from urllib.parse import urlparse
 
 from .core import checked_bytes, canonical_json, digest, load_geojson, set_receipt, write_new
+from .viewport_parity import compare_rendered_trials
+from .lineage_admission import admit_source_lineage
 
 HTML = r'''<!doctype html><meta charset="utf-8"><style>
 html,body,#map {margin:0;width:100%;height:100%;overflow:hidden}
 .maplibregl-canvas {position:absolute;left:0;top:0}
 </style><div id="map"></div><script src="/maplibre.js"></script><script>
 window.measure = async function(config) {
-  const map = new maplibregl.Map({container:'map',style:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ffffff'}}]},center:config.center,zoom:config.zoom,fadeDuration:0,attributionControl:false,collectResourceTiming:true});
-  const errors=[];map.on('error',e=>errors.push(String(e.error || e)));
-  await new Promise((resolve,reject)=>{map.once('load',resolve);setTimeout(()=>reject(new Error('map shell timeout')),config.timeout_ms)});
-  performance.clearResourceTimings();
-  const start=performance.now();
-  let maximumMainHeap=null,stopped=false;
-  const heapTimer=setInterval(()=>{const value=performance.memory?.usedJSHeapSize;if(Number.isFinite(value))maximumMainHeap=Math.max(maximumMainHeap||0,value);},25);
+  const map = new maplibregl.Map({container:'map',style:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ffffff'}}]},center:config.center,zoom:config.zoom,pitch:0,bearing:0,fadeDuration:0,attributionControl:false,collectResourceTiming:true});
+  const errors=[];
+  map.on('error',e=>errors.push(String(e.error || e)));
+  let maximumMainHeap=null,stopped=false,heapTimer=null;
+  const waitFor = (event, predicate=()=>true) => new Promise((resolve,reject)=> {
+    let timer;
+    const cleanup=()=>{clearTimeout(timer);map.off(event,handler);map.off('error',onError)};
+    const handler=()=>{if(predicate()){cleanup();resolve()}};
+    const onError=e=>{cleanup();reject(new Error(String(e.error||e)))};
+    timer=setTimeout(()=>{cleanup();reject(new Error(event+' timeout'))},config.timeout_ms);
+    map.on(event,handler);map.on('error',onError);
+  });
+  const waitForData = () => waitFor('idle',()=>!!map.getSource('data') && map.isSourceLoaded('data') && map.areTilesLoaded() && !map.isMoving());
+  const capture = step_id => {
+    const features=map.queryRenderedFeatures({layers:['fill']});
+    const raw=features.map(f=>f.properties?.[config.id_field]);
+    if(raw.some(v=>typeof v!=='string'||!v.trim()))throw new Error('rendered feature has invalid stable ID');
+    const ids=[...new Set(raw)].sort();
+    if(config.expect_nonempty && !ids.length)throw new Error('expected visible data but no stable IDs rendered at '+step_id);
+    const center=map.getCenter(),canvas=map.getCanvas();
+    return {step_id,visible_ids:ids,rendered_fragment_count:raw.length,camera:{center:[center.lng,center.lat],zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing(),canvas_pixels:[canvas.width,canvas.height]}};
+  };
   try {
-    const complete=new Promise((resolve,reject)=>{
-      const timer=setTimeout(()=>reject(new Error('data/idle timeout')),config.timeout_ms);
-      map.once('idle',()=>{clearTimeout(timer);resolve()});
-    });
-    if(config.mode==='geojson') map.addSource('data',{type:'geojson',data:'/source.geojson',promoteId:config.id_field});
+    await waitFor('load');
+    performance.clearResourceTimings();
+    const start=performance.now();
+    heapTimer=setInterval(()=>{const value=performance.memory?.usedJSHeapSize;if(Number.isFinite(value))maximumMainHeap=Math.max(maximumMainHeap||0,value)},25);
+    const complete=waitForData();
+    if(config.mode==='geojson')map.addSource('data',{type:'geojson',data:'/source.geojson',promoteId:config.id_field});
     else map.addSource('data',{type:'vector',url:'/tilejson',promoteId:config.id_field});
     const sourceLayer=config.mode==='mvt'?{'source-layer':config.source_layer}:{};
     map.addLayer({id:'fill',type:'fill',source:'data',...sourceLayer,paint:{'fill-color':'#367eae','fill-opacity':0.45}});
     map.addLayer({id:'line',type:'line',source:'data',...sourceLayer,paint:{'line-color':'#17394d','line-width':0.7}});
     await complete;
     const idleMs=performance.now()-start;
-    const visible=map.queryRenderedFeatures({layers:['fill']});
-    const visibleIds=[...new Set(visible.map(f=>f.properties?.[config.id_field]).filter(v=>typeof v==='string'))].sort();
-    if(config.expect_nonempty && !visibleIds.length)throw new Error('expected visible data but no stable IDs rendered');
+    const snapshots=[capture('initial')];
     let previous=null;const intervals=[];
     function sample(t){if(stopped)return;if(previous!==null)intervals.push(t-previous);previous=t;requestAnimationFrame(sample)}
     requestAnimationFrame(sample);
-    for(const stop of config.pan_path) {
-      await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('pan timeout')),config.timeout_ms);map.once('idle',()=>{clearTimeout(timer);resolve()});map.easeTo({center:stop,zoom:config.zoom,duration:500,essential:true});});
+    for(let i=0;i<config.pan_path.length;i++) {
+      const done=waitForData();
+      map.easeTo({center:config.pan_path[i],zoom:config.zoom,duration:500,essential:true});
+      await done;snapshots.push(capture('pan:'+i));
     }
     stopped=true;
-    const dataResources=performance.getEntriesByType('resource').filter(e=>e.name.includes('/source.geojson')||e.name.includes('/tilejson')||e.name.includes('/tiles/'));
+    const resources=performance.getEntriesByType('resource').filter(e=>e.name.includes('/source.geojson')||e.name.includes('/tilejson')||e.name.includes('/tiles/'));
     if(errors.length)throw new Error(errors.join(';'));
-    return {maplibre_version:maplibregl.version,time_to_data_idle_ms:idleMs,visible_ids:visibleIds,raf_intervals_ms:intervals,peak_main_thread_js_heap_bytes:maximumMainHeap,heap_scope:'main-thread JS heap only; not total renderer/GPU/worker memory',resources:dataResources.map(e=>({name:e.name,transferSize:e.transferSize,encodedBodySize:e.encodedBodySize,decodedBodySize:e.decodedBodySize,duration:e.duration}))};
+    return {maplibre_version:maplibregl.version,time_to_data_idle_ms:idleMs,visible_ids:snapshots[0].visible_ids,viewport_snapshots:snapshots,raf_intervals_ms:intervals,peak_main_thread_js_heap_bytes:maximumMainHeap,heap_scope:'main-thread JS heap only; not total renderer/GPU/worker memory',resources:resources.map(e=>({name:e.name,transferSize:e.transferSize,encodedBodySize:e.encodedBodySize,decodedBodySize:e.decodedBodySize,duration:e.duration}))};
   } finally {stopped=true;clearInterval(heapTimer);map.remove();}
 }
 </script>'''
@@ -93,6 +112,10 @@ def preflight(spec: dict) -> dict:
                 if g.has_z:issues.append("UNDECLARED_Z_LOSS:"+key)
                 if not g.is_empty and not (-180<=g.bounds[0]<=g.bounds[2]<=180 and -85<=g.bounds[1]<=g.bounds[3]<=85):issues.append("OUTSIDE_SUPPORTED_TILE_SCOPE:"+key)
         except (OSError,ValueError,TypeError) as exc:issues.append(str(exc))
+    try:
+        admit_source_lineage(spec)
+    except (OSError, ValueError, TypeError) as exc:
+        issues.append("LINEAGE_ADMISSION:"+str(exc))
     for key in ("martin_binary","maplibre_js"):
         runtime=spec.get(key,{})
         if not isinstance(runtime,dict):
@@ -110,11 +133,14 @@ def preflight(spec: dict) -> dict:
         vid=v.get("id","")
         if not re.fullmatch(r"[a-zA-Z0-9_]+",str(vid)) or vid in view_ids:issues.append("INVALID_OR_DUPLICATE_VIEWPORT_ID")
         view_ids.add(vid)
-        if not isinstance(v.get("zoom"),(int,float)) or not math.isfinite(v["zoom"]) or not 0<=v["zoom"]<=22:issues.append("INVALID_VIEWPORT_ZOOM")
+        if isinstance(v.get("zoom"),bool) or not isinstance(v.get("zoom"),(int,float)) or not math.isfinite(v["zoom"]) or not 0<=v["zoom"]<=22:issues.append("INVALID_VIEWPORT_ZOOM")
         for pt in [v.get("center",[])]+v.get("pan_path",[]):
             if not isinstance(pt,list) or len(pt)!=2 or not all(isinstance(x,(float,int)) and not isinstance(x,bool) and math.isfinite(x) for x in pt):
                 issues.append("INVALID_VIEWPORT_COORDINATE")
             elif not (-180<=pt[0]<=180 and -85<=pt[1]<=85):issues.append("OUT_OF_BOUNDS_VIEWPORT")
+    pixels=spec.get("viewport_pixels",{"width":1280,"height":800})
+    if not isinstance(pixels,dict) or set(pixels)!={"width","height"} or any(type(v) is not int or not 1<=v<=8192 for v in pixels.values()):
+        issues.append("INVALID_VIEWPORT_PIXELS")
     if type(spec.get("identity_zoom")) is not int or not 0<=spec["identity_zoom"]<=14:issues.append("INVALID_IDENTITY_ZOOM")
     return {"state":"READY" if not issues else "BLOCKED","issues":issues,"source_loaded":source is not None,"source_feature_count":len(index) if index is not None else None,"source_acquisition_performed":False}
 
@@ -255,6 +281,14 @@ def run(spec: dict,out: Path) -> dict:
     if status["state"]!="READY":return {"layer_id":spec.get("layer_id"),"state":"BLOCKED","preflight":status,"delivery_decision":"UNRESOLVED_PENDING_BENCHMARK","mvt_canonical":False,"geojson_rollback_required":True}
     from playwright.sync_api import sync_playwright
     _,index=load_geojson(Path(spec["source_path"]),spec["source_sha256"],spec["stable_id_field"])
+    lineage=admit_source_lineage(spec)
+    original_spec=deepcopy(spec)
+    spec=deepcopy(spec)
+    payload=checked_bytes(Path(spec["source_path"]),spec["source_sha256"])
+    frozen_path=out/"input.source.geojson"
+    with frozen_path.open("xb") as stream:stream.write(payload)
+    frozen_path.chmod(0o444)
+    spec["source_path"]=str(frozen_path.resolve())
     trials=[]
     with martin_server(spec,out) as base:
         identity=reconstruct_ids(base,spec,index,out);write_new(out/"identity.json",identity)
@@ -284,7 +318,12 @@ def run(spec: dict,out: Path) -> dict:
                                 write_new(out/f'trial_{view["id"]}_{repetition}_{mode}.json',row)
                             finally:context.close()
             finally:browser.close()
-    return {"state":"MEASURED_NOT_PUBLISHED","layer_id":spec["layer_id"],"data_kind":spec["data_kind"],"spec_sha256":digest(canonical_json(spec)),"source_sha256":spec["source_sha256"],"identity":identity,"trials":trials,"summary":measured_summary(trials),"environment":{"browser":browser_version,"python":platform.python_version(),"platform":platform.platform(),"cache_condition":"warm Martin after identity scan; fresh browser context per trial; no-store fixture responses","network":"local loopback; not representative of user Internet latency"},"completed_at_utc":datetime.now(timezone.utc).isoformat()}
+    rendered=compare_rendered_trials(trials,spec,set(index))
+    write_new(out/"rendered-parity.json",rendered)
+    if rendered["state"]!="PASS_RENDERED_ID_PARITY":
+        return {"state":"FAIL_VIEWPORT_PARITY","identity":identity,"rendered_parity":rendered,"lineage_admission":lineage,"delivery_decision":"UNRESOLVED_RENDERED_ID_MISMATCH","geojson_rollback_required":True,"mvt_canonical":False}
+    checked_bytes(frozen_path,spec["source_sha256"])
+    return {"state":"MEASURED_NOT_PUBLISHED","rendered_parity":rendered,"lineage_admission":lineage,"layer_id":spec["layer_id"],"data_kind":spec["data_kind"],"spec_sha256":digest(canonical_json(original_spec)),"source_sha256":spec["source_sha256"],"identity":identity,"trials":trials,"summary":measured_summary(trials),"environment":{"browser":browser_version,"python":platform.python_version(),"platform":platform.platform(),"cache_condition":"warm Martin after identity scan; fresh browser context per trial; no-store fixture responses","network":"local loopback; not representative of user Internet latency","source_staging":"same read-only per-run source snapshot in both arms"},"completed_at_utc":datetime.now(timezone.utc).isoformat()}
 
 
 def main() -> int:
