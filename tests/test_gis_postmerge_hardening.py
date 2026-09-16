@@ -242,6 +242,11 @@ def test_runner_consumes_viewport_gate_not_just_standalone_function(tmp_path, mo
     from tools.gis_evidence import delivery_benchmark as module
     from tools.gis_evidence.synthetic_smoke import prepare_fixture
     spec=prepare_fixture(tmp_path/"inputs",{}, {"version":"UNIT_TEST_STUB"})
+    spec["chromium_runtime"]={
+        "path":"/synthetic/chrome",
+        "sha256":"0"*64,
+        "version":"UNIT_TEST_STUB_NOT_A_BROWSER",
+    }
     original_source=Path(spec["source_path"]).read_bytes()
     out=tmp_path/"outputs"; out.mkdir()
     monkeypatch.setattr(module,"preflight",lambda s:{"state":"READY"})
@@ -305,3 +310,251 @@ def test_runner_consumes_viewport_gate_not_just_standalone_function(tmp_path, mo
     else:
         assert result["rendered_parity"]["paired_checkpoint_count"]==30
         assert result["summary"]["automatic_publication"] is False
+
+
+def test_real_maplibre_fixture_uses_public_esm_version_accessor():
+    """The MapLibre 6.x ESM namespace exposes getVersion(), not .version."""
+    from tools.gis_evidence.delivery_benchmark import HTML
+
+    assert "maplibregl.getVersion()" in HTML
+    assert "maplibregl.version" not in HTML
+
+
+def test_maplibre_version_mismatch_gate_remains_fail_closed():
+    """Renderer identity must still be compared strictly after ESM migration."""
+    from pathlib import Path
+
+    source = Path(
+        "tools/gis_evidence/delivery_benchmark.py"
+    ).read_text()
+
+    assert (
+        'if m["maplibre_version"]!=spec["maplibre_js"]["version"]'
+        in source
+    )
+    assert 'raise ValueError("MAPLIBRE_VERSION_MISMATCH")' in source
+
+
+def test_chromium_runtime_lock_requires_exact_shape_and_bytes(tmp_path):
+    """Chromium is a frozen runtime manifestation, not a path hint."""
+    from tools.gis_evidence.core import digest
+    from tools.gis_evidence.delivery_benchmark import preflight
+
+    browser = tmp_path / "chrome"
+    browser.write_bytes(b"synthetic chromium binary")
+
+    # Deliberately incomplete overall spec: inspect the Chromium-specific residue.
+    base = {
+        "layer_id": "synthetic",
+        "chromium_runtime": {
+            "path": str(browser),
+            "sha256": digest(browser.read_bytes()),
+            "version": "TEST_BROWSER",
+        },
+    }
+
+    result = preflight(base)
+    assert not any(
+        issue.startswith("chromium_runtime:")
+        for issue in result["issues"]
+    )
+
+    bad_hash = deepcopy(base)
+    bad_hash["chromium_runtime"]["sha256"] = "0" * 64
+    result = preflight(bad_hash)
+    assert any(
+        issue.startswith("chromium_runtime:") and "SHA256_MISMATCH" in issue
+        for issue in result["issues"]
+    )
+
+    missing = deepcopy(base)
+    missing["chromium_runtime"]["path"] = str(tmp_path / "absent")
+    result = preflight(missing)
+    assert any(
+        issue.startswith("chromium_runtime:")
+        for issue in result["issues"]
+    )
+
+    extra = deepcopy(base)
+    extra["chromium_runtime"]["unexpected"] = True
+    result = preflight(extra)
+    assert "chromium_runtime:INVALID_RUNTIME_LOCK" in result["issues"]
+
+
+def test_runner_rejects_wrong_observed_chromium_version(tmp_path, monkeypatch):
+    """Correct browser bytes are insufficient when runtime identity disagrees."""
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    import sys
+
+    from tools.gis_evidence import delivery_benchmark as module
+    from tools.gis_evidence.synthetic_smoke import prepare_fixture
+
+    spec = prepare_fixture(
+        tmp_path / "inputs",
+        {},
+        {"version": "UNIT_TEST_STUB"},
+    )
+    spec["chromium_runtime"] = {
+        "path": "/synthetic/chrome",
+        "sha256": "0" * 64,
+        "version": "EXPECTED_BROWSER",
+    }
+
+    out = tmp_path / "outputs"
+    out.mkdir()
+
+    monkeypatch.setattr(module, "preflight", lambda s: {"state": "READY"})
+
+    @contextmanager
+    def fake_martin(s, _):
+        yield "http://127.0.0.1:3000"
+
+    @contextmanager
+    def fake_fixture(s, base):
+        yield "http://127.0.0.1:4000", []
+
+    class Browser:
+        version = "WRONG_BROWSER"
+        def close(self): pass
+
+    @contextmanager
+    def fake_playwright():
+        yield SimpleNamespace(
+            chromium=SimpleNamespace(launch=lambda **kwargs: Browser())
+        )
+
+    monkeypatch.setitem(
+        sys.modules,
+        "playwright.sync_api",
+        SimpleNamespace(sync_playwright=fake_playwright),
+    )
+    monkeypatch.setattr(module, "martin_server", fake_martin)
+    monkeypatch.setattr(module, "fixture_server", fake_fixture)
+    monkeypatch.setattr(
+        module,
+        "reconstruct_ids",
+        lambda *args: {"state": "PASS"},
+    )
+
+    with pytest.raises(ValueError, match="CHROMIUM_VERSION_MISMATCH"):
+        module.run(spec, out)
+
+
+@pytest.mark.parametrize(
+    "runtime_key,asset_name",
+    [
+        ("martin_binary", None),
+        ("maplibre_js", None),
+        ("maplibre_js", "maplibre-gl-shared.mjs"),
+        ("maplibre_js", "maplibre-gl-worker.mjs"),
+    ],
+)
+def test_runtime_manifestation_mutation_fails_preflight(
+    tmp_path, runtime_key, asset_name
+):
+    """Every executable/ESM manifestation is independently hash-bound."""
+    from tools.gis_evidence.core import digest
+    from tools.gis_evidence.delivery_benchmark import preflight
+
+    martin = tmp_path / "martin"
+    entry = tmp_path / "maplibre-gl.mjs"
+    shared = tmp_path / "maplibre-gl-shared.mjs"
+    worker = tmp_path / "maplibre-gl-worker.mjs"
+    chrome = tmp_path / "chrome"
+
+    for path, payload in (
+        (martin, b"martin"),
+        (entry, b"entry"),
+        (shared, b"shared"),
+        (worker, b"worker"),
+        (chrome, b"chrome"),
+    ):
+        path.write_bytes(payload)
+
+    spec = {
+        "layer_id": "synthetic",
+        "martin_binary": {
+            "path": str(martin),
+            "sha256": digest(martin.read_bytes()),
+            "version": "1",
+        },
+        "maplibre_js": {
+            "path": str(entry),
+            "sha256": digest(entry.read_bytes()),
+            "version": "6.6.0",
+            "assets": {
+                "maplibre-gl-shared.mjs": {
+                    "path": str(shared),
+                    "sha256": digest(shared.read_bytes()),
+                },
+                "maplibre-gl-worker.mjs": {
+                    "path": str(worker),
+                    "sha256": digest(worker.read_bytes()),
+                },
+            },
+        },
+        "chromium_runtime": {
+            "path": str(chrome),
+            "sha256": digest(chrome.read_bytes()),
+            "version": "TEST",
+        },
+    }
+
+    if runtime_key == "martin_binary":
+        spec[runtime_key]["sha256"] = "0" * 64
+        prefix = "martin_binary:"
+    elif asset_name is None:
+        spec[runtime_key]["sha256"] = "0" * 64
+        prefix = "maplibre_js:"
+    else:
+        spec[runtime_key]["assets"][asset_name]["sha256"] = "0" * 64
+        prefix = f"maplibre_js:{asset_name}:"
+
+    result = preflight(spec)
+
+    assert result["state"] == "BLOCKED"
+    assert any(
+        issue.startswith(prefix) and "SHA256_MISMATCH" in issue
+        for issue in result["issues"]
+    ), result
+
+
+def test_synthetic_fixture_trial_and_checkpoint_denominators_are_structural(
+    tmp_path,
+):
+    """Derive execution denominators from viewport topology."""
+    from tools.gis_evidence.synthetic_smoke import prepare_fixture
+
+    spec = prepare_fixture(
+        tmp_path / "fixture",
+        {},
+        {"version": "UNIT_TEST_STUB"},
+    )
+
+    viewports = spec["viewports"]
+    repetitions = spec["repetitions"]
+    modes = ("geojson", "mvt")
+
+    expected_trials = (
+        len(viewports)
+        * repetitions
+        * len(modes)
+    )
+
+    expected_paired_checkpoints = (
+        sum(
+            1 + len(view.get("pan_path", []))
+            for view in viewports
+        )
+        * repetitions
+    )
+
+    # Frozen synthetic-control topology.
+    assert len(viewports) == 2
+    assert repetitions == 5
+    assert len(modes) == 2
+
+    # Derived denominators.
+    assert expected_trials == 20
+    assert expected_paired_checkpoints == 30

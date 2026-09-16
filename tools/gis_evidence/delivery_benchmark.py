@@ -34,8 +34,15 @@ from .lineage_admission import admit_source_lineage
 HTML = r'''<!doctype html><meta charset="utf-8"><style>
 html,body,#map {margin:0;width:100%;height:100%;overflow:hidden}
 .maplibregl-canvas {position:absolute;left:0;top:0}
-</style><div id="map"></div><script src="/maplibre.js"></script><script>
+</style><div id="map"></div><script type="module">
+import * as maplibregl from "/maplibre/maplibre-gl.mjs";
+window.maplibregl = maplibregl;
+window.maplibreReady = true;
+</script><script>
 window.measure = async function(config) {
+  if (!window.maplibreReady || !window.maplibregl) {
+    throw new Error('MAPLIBRE_MODULE_NOT_READY');
+  }
   const map = new maplibregl.Map({container:'map',style:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ffffff'}}]},center:config.center,zoom:config.zoom,pitch:0,bearing:0,fadeDuration:0,attributionControl:false,collectResourceTiming:true});
   const errors=[];
   map.on('error',e=>errors.push(String(e.error || e)));
@@ -83,7 +90,7 @@ window.measure = async function(config) {
     stopped=true;
     const resources=performance.getEntriesByType('resource').filter(e=>e.name.includes('/source.geojson')||e.name.includes('/tilejson')||e.name.includes('/tiles/'));
     if(errors.length)throw new Error(errors.join(';'));
-    return {maplibre_version:maplibregl.version,time_to_data_idle_ms:idleMs,visible_ids:snapshots[0].visible_ids,viewport_snapshots:snapshots,raf_intervals_ms:intervals,peak_main_thread_js_heap_bytes:maximumMainHeap,heap_scope:'main-thread JS heap only; not total renderer/GPU/worker memory',resources:resources.map(e=>({name:e.name,transferSize:e.transferSize,encodedBodySize:e.encodedBodySize,decodedBodySize:e.decodedBodySize,duration:e.duration}))};
+    return {maplibre_version:maplibregl.getVersion(),time_to_data_idle_ms:idleMs,visible_ids:snapshots[0].visible_ids,viewport_snapshots:snapshots,raf_intervals_ms:intervals,peak_main_thread_js_heap_bytes:maximumMainHeap,heap_scope:'main-thread JS heap only; not total renderer/GPU/worker memory',resources:resources.map(e=>({name:e.name,transferSize:e.transferSize,encodedBodySize:e.encodedBodySize,decodedBodySize:e.decodedBodySize,duration:e.duration}))};
   } finally {stopped=true;clearInterval(heapTimer);map.remove();}
 }
 </script>'''
@@ -116,14 +123,37 @@ def preflight(spec: dict) -> dict:
         admit_source_lineage(spec)
     except (OSError, ValueError, TypeError) as exc:
         issues.append("LINEAGE_ADMISSION:"+str(exc))
-    for key in ("martin_binary","maplibre_js"):
+    for key in ("martin_binary","maplibre_js","chromium_runtime"):
         runtime=spec.get(key,{})
         if not isinstance(runtime,dict):
             issues.append(key+":INVALID_RUNTIME_LOCK");continue
         if not isinstance(runtime.get("version"),str) or not runtime["version"]:
             issues.append(key+":RUNTIME_VERSION_REQUIRED")
-        try:checked_bytes(Path(runtime.get("path","__MISSING__")),runtime.get("sha256",""))
-        except (OSError,ValueError) as exc:issues.append(key+":"+str(exc))
+        try:
+            checked_bytes(Path(runtime.get("path","__MISSING__")),runtime.get("sha256",""))
+        except (OSError,ValueError) as exc:
+            issues.append(key+":"+str(exc))
+        if key=="chromium_runtime":
+            if set(runtime)!={"path","sha256","version"}:
+                issues.append("chromium_runtime:INVALID_RUNTIME_LOCK")
+        if key=="maplibre_js":
+            assets=runtime.get("assets")
+            required={"maplibre-gl-shared.mjs","maplibre-gl-worker.mjs"}
+            if not isinstance(assets,dict) or set(assets)!=required:
+                issues.append("maplibre_js:INVALID_ASSET_CLOSURE")
+            else:
+                for name in sorted(required):
+                    asset=assets[name]
+                    if not isinstance(asset,dict):
+                        issues.append("maplibre_js:"+name+":INVALID_RUNTIME_LOCK")
+                        continue
+                    try:
+                        checked_bytes(
+                            Path(asset.get("path","__MISSING__")),
+                            asset.get("sha256",""),
+                        )
+                    except (OSError,ValueError) as exc:
+                        issues.append("maplibre_js:"+name+":"+str(exc))
     for package in ("playwright","mapbox_vector_tile"):
         if importlib.util.find_spec(package) is None:issues.append("MISSING_RUNTIME_DEPENDENCY:"+package)
     if type(spec.get("repetitions")) is not int or spec["repetitions"]<5:issues.append("AT_LEAST_FIVE_PAIRED_REPETITIONS_REQUIRED")
@@ -232,7 +262,16 @@ def martin_server(spec: dict,out: Path):
 
 @contextmanager
 def fixture_server(spec: dict,martin: str):
-    js=checked_bytes(Path(spec["maplibre_js"]["path"]),spec["maplibre_js"]["sha256"])
+    runtime=spec["maplibre_js"]
+    maplibre_assets={
+        "maplibre-gl.mjs": checked_bytes(
+            Path(runtime["path"]),runtime["sha256"]
+        )
+    }
+    for name,asset in runtime["assets"].items():
+        maplibre_assets[name]=checked_bytes(
+            Path(asset["path"]),asset["sha256"]
+        )
     source=checked_bytes(Path(spec["source_path"]),spec["source_sha256"])
     zipped=gzip.compress(source,mtime=0)
     traffic=[]
@@ -243,7 +282,11 @@ def fixture_server(spec: dict,martin: str):
             try:
                 enc=None
                 if p=="/":body,ctype=HTML.encode(),"text/html"
-                elif p=="/maplibre.js":body,ctype=js,"application/javascript"
+                elif p.startswith("/maplibre/"):
+                    name=p.removeprefix("/maplibre/")
+                    if name not in maplibre_assets:
+                        self.send_error(404);return
+                    body,ctype=maplibre_assets[name],"text/javascript"
                 elif p=="/source.geojson":body,ctype,enc=zipped,"application/geo+json","gzip"
                 elif p=="/tilejson":
                     data,_,_=request(martin+"/"+spec["layer_id"])
@@ -294,10 +337,17 @@ def run(spec: dict,out: Path) -> dict:
         identity=reconstruct_ids(base,spec,index,out);write_new(out/"identity.json",identity)
         if identity["state"]!="PASS":return {"state":"FAIL","identity":identity,"delivery_decision":"KEEP_GEOJSON_IDENTITY_GATE_FAILED"}
         with fixture_server(spec,base) as (url,traffic),sync_playwright() as p:
-            options={"headless":True,"args":["--enable-precise-memory-info"]}
-            if spec.get("chromium_executable"):options["executable_path"]=spec["chromium_executable"]
+            chromium=spec["chromium_runtime"]
+            options={
+                "headless":True,
+                "args":["--enable-precise-memory-info"],
+                "executable_path":chromium["path"],
+            }
             browser=p.chromium.launch(**options)
             browser_version=browser.version
+            if browser_version != chromium["version"]:
+                browser.close()
+                raise ValueError("CHROMIUM_VERSION_MISMATCH")
             try:
                 for view in spec["viewports"]:
                     for repetition in range(spec["repetitions"]):
@@ -306,7 +356,7 @@ def run(spec: dict,out: Path) -> dict:
                             context=browser.new_context(viewport=spec.get("viewport_pixels",{"width":1280,"height":800}),device_scale_factor=1,service_workers="block")
                             try:
                                 context.route("**/*",lambda route: route.continue_() if urlparse(route.request.url).hostname in {"127.0.0.1","localhost","::1"} else route.abort())
-                                page=context.new_page();page.goto(url);page.wait_for_function("typeof window.measure==='function'")
+                                page=context.new_page();page.goto(url);page.wait_for_function("window.maplibreReady===true && typeof window.measure==='function'")
                                 traffic.clear()
                                 cfg={"mode":mode,"center":view["center"],"zoom":view["zoom"],"source_layer":spec["source_layer"],"id_field":spec["stable_id_field"],"pan_path":view.get("pan_path",[]),"expect_nonempty":view.get("expect_nonempty",True),"timeout_ms":60000}
                                 m=page.evaluate("c => window.measure(c)",cfg)

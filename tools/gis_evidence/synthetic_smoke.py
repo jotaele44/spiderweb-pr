@@ -63,16 +63,39 @@ def prepare_fixture(out: Path, martin: dict, maplibre: dict) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--chromium-path")
+    parser.add_argument("--chromium-sha256")
+    parser.add_argument("--chromium-version")
     for kind in ("martin", "maplibre"):
         parser.add_argument(f"--{kind}-path", default="__UNBOUND_LOCAL_RUNTIME__")
         parser.add_argument(f"--{kind}-sha256")
         parser.add_argument(f"--{kind}-version")
     args = parser.parse_args()
     def runtime(kind: str) -> dict:
-        return {"path":getattr(args,kind+"_path"),
-                "sha256":getattr(args,kind+"_sha256"),
-                "version":getattr(args,kind+"_version")}
+        runtime={"path":getattr(args,kind+"_path"),
+                 "sha256":getattr(args,kind+"_sha256"),
+                 "version":getattr(args,kind+"_version")}
+        if kind=="maplibre":
+            entry=Path(runtime["path"])
+            runtime["assets"]={}
+            for name in ("maplibre-gl-shared.mjs","maplibre-gl-worker.mjs"):
+                asset=entry.with_name(name)
+                if not asset.is_file():
+                    raise SystemExit("MISSING_MAPLIBRE_ASSET:"+str(asset))
+                import hashlib
+                runtime["assets"][name]={
+                    "path":str(asset),
+                    "sha256":hashlib.sha256(asset.read_bytes()).hexdigest(),
+                }
+        return runtime
     spec = prepare_fixture(args.out,runtime("martin"),runtime("maplibre"))
+    if any((args.chromium_path,args.chromium_sha256,args.chromium_version)):
+        spec["chromium_runtime"]={
+            "path":args.chromium_path,
+            "sha256":args.chromium_sha256,
+            "version":args.chromium_version,
+        }
+        (args.out/"spec.json").write_bytes(canonical_json(spec))
     measured = args.out/"measurement"
     measured.mkdir()
     try:
