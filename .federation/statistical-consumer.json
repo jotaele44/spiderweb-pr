@@ -1,0 +1,10 @@
+{
+  "contract_version":"1.0.0",
+  "registry_authority":"thehub-pr/.federation/statistical-routing-manifest.json",
+  "repo":"spiderweb-pr",
+  "primary_domains":[],
+  "secondary_domains":["Economia y Finanzas","Trabajo","Tecnologia y Telecomunicaciones","Turismo y Cultura","Violencia y Justicia","Agricultura","Ambiente y Energia"],
+  "ingest_policy":"consume source-entity identities, aliases and relationships; avoid indiscriminate duplication of numeric statistical tables",
+  "identity_policy":"source-provided equality/alias strings are candidate bindings only; canonical identity requires independent evidence",
+  "guardrails":["name-only != identity","alias != succession","proximity != relationship proof","source absence != nonexistence"]
+}
