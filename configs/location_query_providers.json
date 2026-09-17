@@ -1,0 +1,21 @@
+{
+  "schema_version": "spiderweb.location_query_providers.v1.0",
+  "contract": "schemas/location_query.schema.json",
+  "readiness_states": ["READY","READY_WITH_CREDENTIALS","READY_SPECIALIZED","RESOLVER_ONLY","PROVIDER_BINDING_OPEN","SCHEMA_ONLY","NOT_IMPLEMENTED","BLOCKED"],
+  "providers": {
+    "USGS_3DEP_1M": {"family":"elevation","status":"READY","query_modes":["point","radius","bbox","polygon","geojson"],"discovery":"tools/source_manifestation_seed.py","acquisition":"tools/spatial_aoi_fetcher.py","manifestation_registry":"registry/spatial/source_manifestations.json"},
+    "PRVI_1m_DEM_2018": {"family":"elevation","status":"PROVIDER_BINDING_OPEN","query_modes":["point","radius","bbox","polygon","geojson"],"acquisition":"tools/spatial_aoi_fetcher.py","reason":"catalog/source URL binding remains open; Cell_ID geography remains blocked pending certified grid georeference"},
+    "NCEI_COASTAL_DEM": {"family":"coastal_elevation","status":"READY","query_modes":["bbox","polygon","geojson"],"adapter":"source_adapters.ncei_coastal_dem.cli"},
+    "NASA_GIBS_IMAGERY": {"family":"satellite_imagery","status":"READY","query_modes":["point","radius","bbox"],"adapter":"imagery.providers.gibs"},
+    "SENTINEL_HUB_IMAGERY": {"family":"satellite_imagery","status":"READY_WITH_CREDENTIALS","query_modes":["point","radius","bbox"],"adapter":"imagery.providers.sentinelhub","required_environment":["SENTINELHUB_CLIENT_ID","SENTINELHUB_CLIENT_SECRET"]},
+    "COPERNICUS_CDSE_IMAGERY": {"family":"satellite_imagery","status":"READY_WITH_CREDENTIALS","query_modes":["point","radius","bbox"],"adapter":"imagery.providers.copernicus","required_environment":["COPERNICUS_CLIENT_ID","COPERNICUS_CLIENT_SECRET"]},
+    "PRPB_GEOLOGY_KARST": {"family":"geology_karst","status":"RESOLVER_ONLY","query_modes":["point","radius","bbox","polygon","geojson"],"resolver":"spiderweb.subsurface.sources"},
+    "PR_AQUIFERS_WELLS_SPRINGS": {"family":"hydrogeology","status":"RESOLVER_ONLY","query_modes":["point","radius","bbox","polygon","geojson"],"resolver":"spiderweb.subsurface.sources"},
+    "PR_MARINE_LIDAR_TOPOBATHY": {"family":"marine_topobathy","status":"READY_SPECIALIZED","query_modes":["bbox","polygon","geojson"],"resolver":"pipeline.pr_marine_datasets"},
+    "SSURGO_SOILS": {"family":"soils","status":"NOT_IMPLEMENTED","query_modes":["point","radius","bbox","polygon","geojson"],"reason":"external certified workflow exists but repo adapter integration is open"},
+    "USGS_3DHP_NHD": {"family":"hydrography","status":"NOT_IMPLEMENTED","query_modes":["point","radius","bbox","polygon","geojson"]},
+    "USFWS_NWI": {"family":"wetlands","status":"NOT_IMPLEMENTED","query_modes":["point","radius","bbox","polygon","geojson"]},
+    "FEMA_NFHL": {"family":"flood_hazard","status":"NOT_IMPLEMENTED","query_modes":["point","radius","bbox","polygon","geojson"]},
+    "USACE_GENERAL_GIS": {"family":"federal_infrastructure","status":"RESOLVER_ONLY","query_modes":["point","radius","bbox","polygon","geojson"],"reason":"specialized USACE lanes exist; complete general AOI adapter remains open"}
+  }
+}
