@@ -107,3 +107,97 @@ def test_package_fails_when_raw_hash_drifted(tmp_path: Path, monkeypatch) -> Non
     )
     with pytest.raises(SystemExit, match="raw artifact verification failed"):
         mod.main()
+
+
+def test_package_binds_executor_plan_hash_and_parent_denominator(tmp_path: Path, monkeypatch) -> None:
+    raw = tmp_path / "source.raw"
+    raw.write_bytes(b"abc")
+    digest = mod.sha256_file(raw)
+
+    plan = {
+        "query": {"query_id": "q", "mode": "fetch"},
+        "provider_denominator_count": 1,
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "fetch_gate": "READY",
+        "request_count": 1,
+        "pass_count": 1,
+        "no_coverage_count": 0,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [{
+            "raw_path": str(raw),
+            "sha256": digest,
+            "parent_denominator_sha256": "a" * 64,
+        }],
+    })
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    assert mod.main() == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["plan"]["canonical_hash_matches_executor"] is True
+    assert result["parent_denominator_hash_count"] == 1
+    assert result["parent_denominator_sha256"] == ["a" * 64]
+
+
+def test_package_rejects_executor_plan_hash_drift(tmp_path: Path, monkeypatch) -> None:
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, {
+        "query": {"query_id": "q", "mode": "fetch"},
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    })
+    _write(receipt_path, {
+        "plan_sha256": "0" * 64,
+        "fetch_gate": "READY",
+        "request_count": 0,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    with pytest.raises(SystemExit, match="plan SHA drift"):
+        mod.main()
+
+
+def test_package_supports_discovery_stage_receipt(tmp_path: Path, monkeypatch) -> None:
+    plan = {
+        "query": {"query_id": "q", "mode": "plan"},
+        "provider_denominator_count": 1,
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "execution_scope": "DISCOVERY_OR_RESOLVER_STAGE",
+        "fetch_gate": "DISCOVERY_ONLY",
+        "request_count": 0,
+        "pass_count": 0,
+        "no_coverage_count": 0,
+        "failure_count": 0,
+        "state": "DISCOVERY_PASS",
+        "requests": [],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    assert mod.main() == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["state"] == "DISCOVERY_PASS"
