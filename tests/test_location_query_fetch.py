@@ -528,3 +528,20 @@ def test_wfs_declared_count_greater_than_members_is_incomplete(monkeypatch, tmp_
     result = mod.execute(plan, tmp_path)
     assert result["state"] == "PARTIAL_OR_BLOCKED"
     assert result["requests"][0]["state"] == "INCOMPLETE_POTENTIAL_WFS_TRUNCATION"
+
+
+def test_generic_executor_refuses_full_plan_with_specialized_calls(tmp_path: Path) -> None:
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [],
+        "specialized_calls": [{
+            "provider_id": "NASA_GIBS_IMAGERY",
+            "execution_kind": "IMAGERY_PROVIDER_CALL",
+            "provider": "gibs",
+            "bbox_wgs84": [-66.2, 18.0, -66.0, 18.2],
+            "date_range": "2026-09-01/2026-09-02",
+        }],
+    }
+    with pytest.raises(SystemExit, match="use scripts/location_query_run.py"):
+        mod.execute(plan, tmp_path)
