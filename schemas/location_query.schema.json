@@ -151,6 +151,19 @@
     "allow_partial": {
       "type": "boolean",
       "default": false
+    },
+    "temporal": {
+      "type": "object",
+      "required": [
+        "date_range"
+      ],
+      "properties": {
+        "date_range": {
+          "type": "string",
+          "minLength": 10
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false
