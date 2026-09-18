@@ -194,4 +194,15 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
             "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
         }]
 
+    if provider_id == "USACE_GENERAL_GIS":
+        return [{
+            "provider_id": provider_id,
+            "request_role": "services_root_denominator",
+            "method": "GET",
+            "url": provider["service_root"].rstrip("/") + "?f=pjson",
+            "media_type": "application/json",
+            "bbox_wgs84": list(bbox),
+            "identity_state": "DISCOVERY_FOR_SERVICE_DENOMINATOR",
+        }]
+
     return []
