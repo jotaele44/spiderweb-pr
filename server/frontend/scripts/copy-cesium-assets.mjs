@@ -3,24 +3,50 @@ import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-const appRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
-const cesiumBuild = path.join(appRoot, "node_modules", "cesium", "Build", "Cesium");
-const destination = path.join(appRoot, "public", "cesium");
+const scriptPath = fileURLToPath(import.meta.url);
+const defaultAppRoot = path.resolve(path.dirname(scriptPath), "..");
 const staticDirectories = ["Workers", "ThirdParty", "Assets", "Widgets"];
 
-if (!existsSync(cesiumBuild)) {
-  console.warn(`[copy-cesium-assets] ${cesiumBuild} not found; skipping`);
-  process.exit(0);
-}
+export function copyCesiumAssets(appRoot = defaultAppRoot) {
+  const cesiumBuild = path.join(appRoot, "node_modules", "cesium", "Build", "Cesium");
+  const destination = path.join(appRoot, "public", "cesium");
 
-mkdirSync(destination, { recursive: true });
-for (const directory of staticDirectories) {
-  const source = path.join(cesiumBuild, directory);
-  if (!existsSync(source)) {
-    console.warn(`[copy-cesium-assets] ${source} missing; skipping`);
-    continue;
+  if (!existsSync(cesiumBuild)) {
+    throw new Error(`[copy-cesium-assets] Cesium build not found: ${cesiumBuild}`);
   }
-  cpSync(source, path.join(destination, directory), { recursive: true });
+
+  const missing = staticDirectories.filter(
+    (directory) => !existsSync(path.join(cesiumBuild, directory)),
+  );
+  if (missing.length > 0) {
+    throw new Error(
+      `[copy-cesium-assets] incomplete Cesium build; missing: ${missing.join(", ")}`,
+    );
+  }
+
+  mkdirSync(destination, { recursive: true });
+  for (const directory of staticDirectories) {
+    cpSync(path.join(cesiumBuild, directory), path.join(destination, directory), {
+      recursive: true,
+    });
+  }
+
+  return {
+    source: cesiumBuild,
+    destination,
+    directories: [...staticDirectories],
+  };
 }
 
-console.log(`[copy-cesium-assets] copied ${staticDirectories.join(", ")} to public/cesium`);
+const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+if (invokedPath === scriptPath) {
+  try {
+    const result = copyCesiumAssets();
+    console.log(
+      `[copy-cesium-assets] copied ${result.directories.join(", ")} to ${result.destination}`,
+    );
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  }
+}
