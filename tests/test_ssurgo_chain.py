@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 
 import pytest
 
@@ -230,3 +231,44 @@ def test_child_certification_rejects_duplicate_stable_key() -> None:
             contract={"table": "chorizon", "parent_key": "cokey", "stable_key": "chkey"},
             certified_cokeys=parent,
         )
+
+
+def test_current_component_child_contract_is_22_and_time_supersedes_21() -> None:
+    root = Path(__file__).resolve().parents[1]
+    contract = json.loads(
+        (root / "configs/ssurgo_component_children.json").read_text(encoding="utf-8")
+    )
+    assert contract["schema_version"] == "spiderweb.ssurgo_component_children.v1.1"
+    assert contract["parent_table"] == "component"
+    assert contract["parent_key"] == "cokey"
+    assert contract["relationship_count"] == 22
+    assert len(contract["records"]) == 22
+    assert len({row["table"] for row in contract["records"]}) == 22
+    assert "coinundationtype" in {row["table"] for row in contract["records"]}
+    assert contract["lineage"]["prior_frozen_relationship_count"] == 21
+    assert contract["lineage"]["contradiction_class"] == "TIME"
+
+
+def test_stage3_records_canonical_child_contract_hash() -> None:
+    contract = {
+        "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+        "parent_table": "component",
+        "parent_key": "cokey",
+        "relationship_count": 1,
+        "records": [{
+            "table": "chorizon",
+            "stable_key": "chkey",
+            "parent_key": "cokey",
+        }],
+    }
+    plan = build_stage3_child_plan(
+        query={"query_id": "x"},
+        component_raw=COMPONENT,
+        component_receipt=component_receipt(),
+        child_contract=contract,
+    )
+    expected = hashlib.sha256(
+        json.dumps(contract, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    assert plan["child_table_denominator"]["canonical_contract_sha256"] == expected
+    assert plan["requests"][0]["ssurgo_child_contract_sha256"] == expected
