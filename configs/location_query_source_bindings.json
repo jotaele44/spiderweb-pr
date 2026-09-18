@@ -1,0 +1,61 @@
+{
+  "schema_version": "spiderweb.location_query_source_bindings.v1.0",
+  "verification_date_utc": "2026-09-18",
+  "bindings": {
+    "SSURGO_SOILS": {
+      "authority": "USDA NRCS Soil Data Access",
+      "spatial_wfs": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
+      "tabular_rest": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
+      "status": "BOUND_SPATIAL_TABULAR_CHAIN_OPEN",
+      "note": "WFS axis/CRS behavior must be adjudicated from returned source bytes; geometry normalization is derived, never source replacement"
+    },
+    "USGS_3DHP_NHD": {
+      "authority": "U.S. Geological Survey 3D Hydrography Program",
+      "feature_service": "https://3dhp.usgs.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer",
+      "status": "BOUND_LAYER_DENOMINATOR_OPEN",
+      "note": "service is authoritative; release layer membership must be frozen before bulk feature acquisition"
+    },
+    "USFWS_NWI": {
+      "authority": "U.S. Fish and Wildlife Service National Wetlands Inventory",
+      "rest_root": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest",
+      "wetlands_layer": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/FeatureServer/0",
+      "status": "BOUND"
+    },
+    "FEMA_NFHL": {
+      "authority": "Federal Emergency Management Agency",
+      "landing_page": "https://www.fema.gov/flood-maps/tools-resources/flood-map-products/national-flood-hazard-layer",
+      "wms_capabilities": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
+      "status": "BOUND_WMS_VECTOR_DENOMINATOR_OPEN"
+    },
+    "USACE_PORTS_NAV": {
+      "authority": "U.S. Army Corps of Engineers",
+      "service_root": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services",
+      "layers": [
+        {
+          "role": "ports",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/arcgis/rest/services/Port_Statistical_Area/FeatureServer/0"
+        },
+        {
+          "role": "principal_ports",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/arcgis/rest/services/Principal_Ports/FeatureServer/0"
+        },
+        {
+          "role": "navigation_facilities",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services/Docks/FeatureServer/0"
+        },
+        {
+          "role": "waterway_network_nodes",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services/Waterway_Networks/FeatureServer/0"
+        }
+      ],
+      "status": "BOUND_SUBSET",
+      "note": "subset is certified as ports/navigation routing; it does not certify the complete USACE enterprise denominator"
+    }
+  },
+  "invariants": {
+    "source_taxonomy_is_not_canonical_identity": true,
+    "source_absence_not_inferred_from_unbound_provider": true,
+    "no_coverage_not_source_absence": true,
+    "raw_bytes_before_derivation": true
+  }
+}
