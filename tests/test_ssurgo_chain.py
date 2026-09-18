@@ -9,6 +9,7 @@ from spiderweb.ssurgo_chain import (
     SSURGOChainError,
     build_stage2_plan,
     build_stage3_child_plan,
+    certify_child_table_response,
 )
 
 
@@ -135,4 +136,83 @@ def test_stage3_child_contract_count_drift_fails_closed() -> None:
                 "tables": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}],
                 "invariants": {"table_count": 2},
             },
+        )
+
+
+def test_child_certification_allows_zero_child_parents_and_closes_arithmetic() -> None:
+    raw = json.dumps({
+        "Table": [
+            ["cokey", "chkey", "hzname"],
+            ["27625770", "1001", "A"],
+            ["27625770", "1002", "B"],
+        ]
+    }).encode("utf-8")
+    parent = ["27625770", "27625771"]
+    receipt = {
+        "provider_id": "SSURGO_SOILS",
+        "request_role": "component_child:chorizon",
+        "state": "PASS",
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "parent_denominator_sha256": hashlib.sha256(("\n".join(parent) + "\n").encode()).hexdigest(),
+    }
+    out = certify_child_table_response(
+        raw=raw,
+        receipt=receipt,
+        contract={"table": "chorizon", "parent_key": "cokey", "stable_key": "chkey"},
+        certified_cokeys=parent,
+    )
+    assert out["state"] == "PASS"
+    assert out["row_count"] == 2
+    assert out["zero_child_parent_count"] == 1
+    assert out["zero_child_parent_keys"] == ["27625771"]
+    assert out["multi_child_parent_count"] == 1
+    assert out["arithmetic_closure"] is True
+
+
+def test_child_certification_rejects_foreign_parent() -> None:
+    raw = json.dumps({
+        "Table": [
+            ["cokey", "chkey"],
+            ["99999999", "1001"],
+        ]
+    }).encode("utf-8")
+    parent = ["27625770"]
+    receipt = {
+        "provider_id": "SSURGO_SOILS",
+        "request_role": "component_child:chorizon",
+        "state": "PASS",
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "parent_denominator_sha256": hashlib.sha256(("\n".join(parent) + "\n").encode()).hexdigest(),
+    }
+    with pytest.raises(SSURGOChainError, match="foreign parent COKEY"):
+        certify_child_table_response(
+            raw=raw,
+            receipt=receipt,
+            contract={"table": "chorizon", "parent_key": "cokey", "stable_key": "chkey"},
+            certified_cokeys=parent,
+        )
+
+
+def test_child_certification_rejects_duplicate_stable_key() -> None:
+    raw = json.dumps({
+        "Table": [
+            ["cokey", "chkey"],
+            ["27625770", "1001"],
+            ["27625770", "1001"],
+        ]
+    }).encode("utf-8")
+    parent = ["27625770"]
+    receipt = {
+        "provider_id": "SSURGO_SOILS",
+        "request_role": "component_child:chorizon",
+        "state": "PASS",
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "parent_denominator_sha256": hashlib.sha256(("\n".join(parent) + "\n").encode()).hexdigest(),
+    }
+    with pytest.raises(SSURGOChainError, match="duplicate stable keys"):
+        certify_child_table_response(
+            raw=raw,
+            receipt=receipt,
+            contract={"table": "chorizon", "parent_key": "cokey", "stable_key": "chkey"},
+            certified_cokeys=parent,
         )
