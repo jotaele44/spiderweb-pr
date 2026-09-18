@@ -23,6 +23,7 @@ EXPECTED_PROVIDERS = {
     "USGS_3DHP_NHD",
     "USFWS_NWI",
     "FEMA_NFHL",
+    "FEMA_PR_ABFE_1PCT",
     "USACE_GENERAL_GIS",
     "USACE_PORTS_NAV",
 }
@@ -41,6 +42,7 @@ PATH_BINDINGS = {
     "USGS_3DHP_NHD": ["spiderweb/location_query_sources.py"],
     "USFWS_NWI": ["spiderweb/location_query_sources.py", "scripts/location_query_fetch.py"],
     "FEMA_NFHL": ["spiderweb/location_query_sources.py"],
+    "FEMA_PR_ABFE_1PCT": ["spiderweb/location_query_sources.py"],
     "USACE_PORTS_NAV": ["spiderweb/location_query_sources.py", "scripts/location_query_fetch.py"],
 }
 
