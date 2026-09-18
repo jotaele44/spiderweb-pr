@@ -154,7 +154,7 @@
     },
     "USFWS_NWI": {
       "family": "wetlands",
-      "status": "READY_SPECIALIZED",
+      "status": "RESOLVER_ONLY",
       "query_modes": [
         "point",
         "radius",
@@ -163,8 +163,8 @@
         "geojson"
       ],
       "adapter": "spiderweb.location_query_sources",
-      "layer_url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/FeatureServer/0",
-      "reason": "authoritative NWI wetlands feature layer bound for AOI intersection"
+      "service_root": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest",
+      "reason": "Official NWI REST service root is bound; service/layer denominator must be frozen before feature-layer acquisition is promoted."
     },
     "FEMA_NFHL": {
       "family": "flood_hazard",
@@ -223,6 +223,20 @@
           "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services/Waterway_Networks/FeatureServer/0"
         }
       ]
+    },
+    "FEMA_PR_ABFE_1PCT": {
+      "family": "flood_hazard",
+      "status": "RESOLVER_ONLY",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "map_service": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
+      "reason": "Official Puerto Rico ABFE map service is bound; layer denominator must be frozen before feature acquisition is promoted."
     }
   }
 }
