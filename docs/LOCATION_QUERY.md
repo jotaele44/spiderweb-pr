@@ -53,7 +53,7 @@ python scripts/location_query_fetch.py outputs/location_query/hucar/acquisition_
 
 The executor preserves raw response bytes and SHA-256 receipts before any downstream interpretation. Production fetch remains fail-closed for incomplete providers. `--discovery-only` is a separate bounded scope that may execute only discovery metadata or explicit `RESOLVER_STAGE` requests; it cannot execute ordinary production source requests. `RESOLVER_ONLY` evidence is never promoted automatically.
 
-After acquisition, `scripts/location_query_package.py` re-hashes every raw denominator/batch artifact and freezes a package-level provenance manifest. `scripts/location_query_provider_health.py` probes metadata surfaces separately; endpoint health is explicitly not AOI coverage.
+After acquisition, `scripts/location_query_package.py` re-hashes every raw denominator/batch artifact and freezes a package-level provenance manifest. Canonical provider-health auditing is `scripts/audit_location_query_provider_health.py`; endpoint health is explicitly not AOI coverage. `scripts/location_query_provider_health.py` is retained only as NONCANONICAL compatibility.
 
 ## Routing states
 
@@ -115,9 +115,9 @@ The canonical control-plane authority is staged rather than monolithic:
 - `spiderweb/location_query.py` + `spiderweb/location_query_sources.py` — canonical routing/request planning.
 - `scripts/location_query_fetch.py` — canonical bounded byte-transfer/provenance executor.
 - `spiderweb/ssurgo_chain.py` — generic SSURGO MapunitPoly -> MUKEY -> SDA mapunit/component dependent-stage planner.
-- `scripts/location_query_ssurgo.py` — richer downstream SSURGO certification runner for geometry normalization, tabular hierarchy/cardinality, and component-child certification; it does not redefine LOCATION_QUERY provider identity.
+- `scripts/location_query_ssurgo.py` — NONCANONICAL compatibility-only monolithic runner; it requires `--allow-noncanonical-compat` and cannot certify the canonical modular SSURGO chain.
 - `spiderweb/place_resolver.py` + `scripts/place_resolve.py` — canonical staged place discovery/candidate binding.
-- `scripts/location_query_geocode.py` — compatibility direct geocoder lane; its output remains discovery-only and must not bypass explicit candidate binding.
+- `scripts/location_query_geocode.py` — NONCANONICAL compatibility direct geocoder; explicit override required, and its output cannot bypass canonical candidate binding.
 - `spiderweb/provider_denominators.py` + `spiderweb/denominator_chain.py` — canonical metadata-denominator freezing and dependent provider-stage planning.
 
 Where two tools overlap, the staged contract above is authoritative. Compatibility/specialized runners may add analysis or certification but must not silently redefine routing identity or provider readiness.
@@ -147,7 +147,7 @@ The router references rather than replaces:
 1. execute and certify the in-repo SSURGO staged chain, including the current component-child denominator, without flattening 1:N;
 2. resolve FEMA NFHL vector-feature manifestation(s) without conflating WMS display with feature identity;
 3. freeze the Puerto Rico ABFE service layer denominator separately from NFHL;
-4. execute `scripts/location_query_usace_inventory.py` to inventory 100% of the USACE enterprise service root before promoting `USACE_GENERAL_GIS`;
+4. close the recursive USACE root + folder service denominator through `provider_denominators.py`, `denominator_chain.py`, and `merge_location_service_denominators.py`; the root-only `location_query_usace_inventory.py` compatibility lane fails closed when folders exist;
 5. freeze 3DHP raw FeatureServer metadata and run stable layer-ID set adjudication before any readiness promotion;
 6. delegate existing USGS 3DEP, NCEI and imagery specialized adapters into the unified fetch executor without duplicating their acquisition logic;
 7. execute the frozen Puerto Rico reference-AOI regression corpus when runner infrastructure is available;
