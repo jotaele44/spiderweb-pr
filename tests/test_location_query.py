@@ -29,11 +29,12 @@ def test_registry_has_bounded_provider_denominator() -> None:
         "USGS_3DHP_NHD",
         "USFWS_NWI",
         "FEMA_NFHL",
+        "FEMA_PR_ABFE_1PCT",
         "USACE_GENERAL_GIS",
         "USACE_PORTS_NAV",
     }
     assert set(providers) == expected
-    assert len(providers) == 15
+    assert len(providers) == 16
 
 
 def test_bbox_plan_routes_without_fetching() -> None:
@@ -123,7 +124,7 @@ def test_ssurgo_plan_emits_two_bounded_wfs_requests() -> None:
     assert all(row["provider_id"] == "SSURGO_SOILS" for row in plan["requests"])
 
 
-def test_nwi_plan_is_direct_feature_query() -> None:
+def test_nwi_freezes_live_service_denominator_before_layer_query() -> None:
     query = {
         "query_id": "fixture-nwi",
         "geometry": {"type": "point", "lat": 18.3, "lon": -66.0},
@@ -131,9 +132,10 @@ def test_nwi_plan_is_direct_feature_query() -> None:
     }
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
     assert plan["provider_denominator_count"] == 1
-    assert plan["providers"][0]["route_state"] == "ROUTABLE"
+    assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
     assert plan["request_count"] == 1
-    assert "/Wetlands/FeatureServer/0/query?" in plan["requests"][0]["url"]
+    assert plan["requests"][0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
+    assert plan["requests"][0]["url"].endswith("/rest?f=json")
 
 
 def test_3dhp_remains_resolver_only_and_freezes_metadata_first() -> None:
@@ -194,3 +196,17 @@ def test_ssurgo_is_resolver_only_until_tabular_chain_is_in_repo() -> None:
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
     assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
     assert plan["request_count"] == 2
+
+def test_fema_pr_abfe_is_bounded_resolver_not_nfhl_substitute() -> None:
+    query = {
+        "query_id": "fixture-fema-abfe",
+        "geometry": {"type": "bbox", "west": -67.0, "south": 17.8, "east": -65.5, "north": 18.6},
+        "families": ["flood_hazard"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    by_id = {row["provider_id"]: row for row in plan["providers"]}
+    assert by_id["FEMA_PR_ABFE_1PCT"]["route_state"] == "RESOLVER_ONLY"
+    assert by_id["FEMA_NFHL"]["route_state"] == "RESOLVER_ONLY"
+    roles = {row["request_role"] for row in plan["requests"]}
+    assert "abfe_map_service_denominator" in roles
+    assert "nfhl_wms_capabilities" in roles
