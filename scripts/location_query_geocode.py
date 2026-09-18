@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Discovery-only place-name geocoder for Spiderweb LOCATION_QUERY.
+"""NONCANONICAL compatibility geocoder.
 
-Results are candidates, never canonical AOIs. Raw provider bytes are frozen
-before JSON interpretation. An operator or independently justified downstream
-rule must select a candidate and convert it to point/bbox/GeoJSON before the
-LOCATION_QUERY router may use it.
+Canonical place discovery is spiderweb.place_resolver + scripts/place_resolve.py,
+which preserves candidate structure and requires explicit candidate binding.
+This older direct-network script is retained only for compatibility and cannot
+certify canonical LOCATION_QUERY geometry.
 """
 from __future__ import annotations
 
@@ -30,7 +30,13 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--raw-output", type=Path)
     parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument("--allow-noncanonical-compat", action="store_true")
     args = parser.parse_args()
+    if not args.allow_noncanonical_compat:
+        raise SystemExit(
+            "FAIL: location_query_geocode.py is NONCANONICAL compatibility only; "
+            "use scripts/place_resolve.py or pass --allow-noncanonical-compat explicitly"
+        )
 
     params = {
         "q": args.place,
@@ -57,7 +63,9 @@ def main() -> int:
         raise SystemExit("FAIL: geocoder response is not a candidate list")
 
     result = {
-        "schema_version": "spiderweb.location_query_geocoder.v1.1",
+        "schema_version": "spiderweb.location_query_geocoder.v1.2",
+        "classification": "NONCANONICAL_COMPATIBILITY",
+        "canonical_certification": False,
         "query_raw": args.place,
         "state": "DISCOVERY_ONLY",
         "canonical_aoi": False,
