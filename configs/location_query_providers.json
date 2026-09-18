@@ -57,7 +57,14 @@
         "radius",
         "bbox"
       ],
-      "adapter": "imagery.providers.gibs"
+      "adapter": "imagery.providers.gibs",
+      "specialized_executor": {
+        "kind": "imagery",
+        "provider": "gibs",
+        "requires": [
+          "temporal.date_range"
+        ]
+      }
     },
     "SENTINEL_HUB_IMAGERY": {
       "family": "satellite_imagery",
@@ -71,7 +78,14 @@
       "required_environment": [
         "SENTINELHUB_CLIENT_ID",
         "SENTINELHUB_CLIENT_SECRET"
-      ]
+      ],
+      "specialized_executor": {
+        "kind": "imagery",
+        "provider": "sentinelhub",
+        "requires": [
+          "temporal.date_range"
+        ]
+      }
     },
     "COPERNICUS_CDSE_IMAGERY": {
       "family": "satellite_imagery",
@@ -85,7 +99,14 @@
       "required_environment": [
         "COPERNICUS_CLIENT_ID",
         "COPERNICUS_CLIENT_SECRET"
-      ]
+      ],
+      "specialized_executor": {
+        "kind": "imagery",
+        "provider": "copernicus",
+        "requires": [
+          "temporal.date_range"
+        ]
+      }
     },
     "PRPB_GEOLOGY_KARST": {
       "family": "geology_karst",
