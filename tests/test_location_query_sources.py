@@ -55,9 +55,17 @@ def test_ssurgo_specs_are_bounded_to_two_source_manifestations() -> None:
     assert all("BBOX=" in row["url"] for row in rows)
 
 
-def test_3dhp_metadata_is_discovery_not_source_identity() -> None:
+def test_3dhp_frozen_layer_denominator_has_six_source_manifestations() -> None:
     provider = {
-        "feature_service": "https://3dhp.usgs.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer",
+        "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
+        "layers": [
+            {"id": 20, "role": "hydrolocation_sink_spring_waterbody_outlet"},
+            {"id": 30, "role": "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet"},
+            {"id": 40, "role": "hydrolocation_reach_code_external_connection"},
+            {"id": 50, "role": "flowline"},
+            {"id": 60, "role": "waterbody"},
+            {"id": 80, "role": "catchment"},
+        ],
     }
     query = {
         "geometry": {
@@ -69,9 +77,9 @@ def test_3dhp_metadata_is_discovery_not_source_identity() -> None:
         }
     }
     rows = build_request_specs("USGS_3DHP_NHD", provider, query)
-    assert len(rows) == 1
-    assert rows[0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
-    assert rows[0]["url"].endswith("?f=json")
+    assert len(rows) == 6
+    assert all(row["identity_state"] == "SOURCE_MANIFESTATION" for row in rows)
+    assert {row["request_role"] for row in rows} == {item["role"] for item in provider["layers"]}
 
 
 def test_fema_wms_capabilities_remains_resolver_only() -> None:
@@ -117,3 +125,27 @@ def test_usace_ports_preserves_four_source_manifestations() -> None:
         "waterway_network_nodes",
     }
     assert all(row["identity_state"] == "SOURCE_MANIFESTATION" for row in rows)
+
+
+def test_point_bbox_is_nonzero_for_envelope_query() -> None:
+    west, south, east, north = query_bbox({
+        "geometry": {"type": "point", "lat": 18.3, "lon": -66.0}
+    })
+    assert west < -66.0 < east
+    assert south < 18.3 < north
+
+
+def test_feature_collection_bbox_uses_all_features() -> None:
+    bbox = query_bbox({
+        "geometry": {
+            "type": "geojson",
+            "geojson": {
+                "type": "FeatureCollection",
+                "features": [
+                    {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-66.2, 18.1]}},
+                    {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-65.8, 18.5]}},
+                ],
+            },
+        }
+    })
+    assert bbox == (-66.2, 18.1, -65.8, 18.5)
