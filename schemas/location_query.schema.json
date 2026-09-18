@@ -3,59 +3,155 @@
   "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/location_query.schema.json",
   "title": "Spiderweb LOCATION_QUERY",
   "type": "object",
-  "required": ["query_id", "geometry"],
+  "required": [
+    "query_id",
+    "geometry"
+  ],
   "properties": {
-    "query_id": {"type": "string", "minLength": 1},
+    "query_id": {
+      "type": "string",
+      "minLength": 1
+    },
     "geometry": {
       "oneOf": [
         {
           "type": "object",
-          "required": ["type", "lat", "lon"],
+          "required": [
+            "type",
+            "lat",
+            "lon"
+          ],
           "properties": {
-            "type": {"const": "point"},
-            "lat": {"type": "number", "minimum": -90, "maximum": 90},
-            "lon": {"type": "number", "minimum": -180, "maximum": 180}
+            "type": {
+              "const": "point"
+            },
+            "lat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "lon": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            }
           },
           "additionalProperties": false
         },
         {
           "type": "object",
-          "required": ["type", "lat", "lon", "radius_m"],
+          "required": [
+            "type",
+            "lat",
+            "lon",
+            "radius_m"
+          ],
           "properties": {
-            "type": {"const": "radius"},
-            "lat": {"type": "number", "minimum": -90, "maximum": 90},
-            "lon": {"type": "number", "minimum": -180, "maximum": 180},
-            "radius_m": {"type": "number", "exclusiveMinimum": 0}
+            "type": {
+              "const": "radius"
+            },
+            "lat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "lon": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "radius_m": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
           },
           "additionalProperties": false
         },
         {
           "type": "object",
-          "required": ["type", "west", "south", "east", "north"],
+          "required": [
+            "type",
+            "west",
+            "south",
+            "east",
+            "north"
+          ],
           "properties": {
-            "type": {"const": "bbox"},
-            "west": {"type": "number", "minimum": -180, "maximum": 180},
-            "south": {"type": "number", "minimum": -90, "maximum": 90},
-            "east": {"type": "number", "minimum": -180, "maximum": 180},
-            "north": {"type": "number", "minimum": -90, "maximum": 90},
-            "crs": {"type": "string", "default": "EPSG:4326"}
+            "type": {
+              "const": "bbox"
+            },
+            "west": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "south": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "east": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "north": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "crs": {
+              "type": "string",
+              "enum": [
+                "EPSG:4326",
+                "CRS84",
+                "OGC:CRS84"
+              ],
+              "default": "EPSG:4326"
+            }
           },
           "additionalProperties": false
         },
         {
           "type": "object",
-          "required": ["type", "geojson"],
+          "required": [
+            "type",
+            "geojson"
+          ],
           "properties": {
-            "type": {"enum": ["polygon", "geojson"]},
-            "geojson": {"type": "object"}
+            "type": {
+              "enum": [
+                "polygon",
+                "geojson"
+              ]
+            },
+            "geojson": {
+              "type": "object"
+            }
           },
           "additionalProperties": false
         }
       ]
     },
-    "families": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-    "mode": {"enum": ["plan", "cache_only", "fetch"], "default": "plan"},
-    "allow_partial": {"type": "boolean", "default": false}
+    "families": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "mode": {
+      "enum": [
+        "plan",
+        "cache_only",
+        "fetch"
+      ],
+      "default": "plan"
+    },
+    "allow_partial": {
+      "type": "boolean",
+      "default": false
+    }
   },
   "additionalProperties": false
 }
