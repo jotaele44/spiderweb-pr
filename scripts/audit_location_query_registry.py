@@ -38,11 +38,12 @@ PATH_BINDINGS = {
     "PRPB_GEOLOGY_KARST": ["spiderweb/subsurface/sources.py"],
     "PR_AQUIFERS_WELLS_SPRINGS": ["spiderweb/subsurface/sources.py"],
     "PR_MARINE_LIDAR_TOPOBATHY": ["pipeline/pr_marine_datasets.py"],
-    "SSURGO_SOILS": ["spiderweb/location_query_sources.py", "scripts/location_query_fetch.py"],
-    "USGS_3DHP_NHD": ["spiderweb/location_query_sources.py"],
+    "SSURGO_SOILS": ["spiderweb/location_query_sources.py", "spiderweb/ssurgo_chain.py", "scripts/location_query_fetch.py"],
+    "USGS_3DHP_NHD": ["spiderweb/location_query_sources.py", "spiderweb/provider_denominators.py"],
     "USFWS_NWI": ["spiderweb/location_query_sources.py", "scripts/location_query_fetch.py"],
-    "FEMA_NFHL": ["spiderweb/location_query_sources.py"],
-    "FEMA_PR_ABFE_1PCT": ["spiderweb/location_query_sources.py"],
+    "FEMA_NFHL": ["spiderweb/location_query_sources.py", "spiderweb/provider_denominators.py"],
+    "FEMA_PR_ABFE_1PCT": ["spiderweb/location_query_sources.py", "spiderweb/provider_denominators.py", "spiderweb/denominator_chain.py"],
+    "USACE_GENERAL_GIS": ["spiderweb/location_query_sources.py", "spiderweb/provider_denominators.py", "spiderweb/denominator_chain.py"],
     "USACE_PORTS_NAV": ["spiderweb/location_query_sources.py", "scripts/location_query_fetch.py"],
 }
 
