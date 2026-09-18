@@ -53,6 +53,18 @@ def main() -> int:
             "FAIL: package requires fetch-mode plan unless receipt is explicit discovery/resolver-stage execution"
         )
     canonical_plan_sha = canonical_json_sha256(plan)
+    provider_registry_sha = plan.get("provider_registry_sha256")
+    if plan.get("schema_version") == "spiderweb.location_query_plan.v1.1":
+        if (
+            not isinstance(provider_registry_sha, str)
+            or len(provider_registry_sha) != 64
+            or any(ch not in "0123456789abcdefABCDEF" for ch in provider_registry_sha)
+        ):
+            raise SystemExit(
+                "FAIL: top-level LOCATION_QUERY plan lacks valid provider_registry_sha256"
+            )
+        provider_registry_sha = provider_registry_sha.lower()
+
     receipt_plan_sha = fetch.get("plan_sha256")
     if (
         not isinstance(receipt_plan_sha, str)
@@ -183,7 +195,7 @@ def main() -> int:
         package_state = "BLOCKED_UNRESOLVED_EXECUTION_STATE"
 
     result = {
-        "schema_version": "spiderweb.location_query_package.v1.3",
+        "schema_version": "spiderweb.location_query_package.v1.4",
         "state": package_state,
         "fetch_gate": fetch_gate,
         "fetch_blocker_provider_ids": fetch.get("fetch_blocker_provider_ids", []),
@@ -199,6 +211,7 @@ def main() -> int:
             "path": str(args.fetch_receipt),
             "sha256": sha256_file(args.fetch_receipt),
         },
+        "provider_registry_sha256": provider_registry_sha,
         "provider_denominator_count": plan.get("provider_denominator_count"),
         "request_count": fetch.get("request_count"),
         "planned_request_count_for_execution_scope": len(expected_plan_requests),
@@ -219,6 +232,10 @@ def main() -> int:
             "plan_before_download": True,
             "raw_bytes_before_derivation": True,
             "raw_artifact_paths_unique": len(seen_raw_paths) == len(raw_records),
+            "provider_registry_hash_bound_when_top_level": (
+                plan.get("schema_version") != "spiderweb.location_query_plan.v1.1"
+                or isinstance(provider_registry_sha, str)
+            ),
             "source_manifestations_not_aggregated": True,
         },
     }
