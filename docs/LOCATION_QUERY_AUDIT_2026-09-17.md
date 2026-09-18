@@ -15,7 +15,7 @@ This audit is bounded to current `spiderweb-pr` repository manifestations. Searc
 
 ## Unified provider denominator
 
-The canonical v1 LOCATION_QUERY registry freezes 15 provider families/lanes with explicit readiness rather than flattening capability asymmetry:
+The canonical v1 LOCATION_QUERY registry currently freezes 16 provider families/lanes with explicit readiness rather than flattening capability asymmetry. This section supersedes the original 15-provider snapshot:
 
 | Provider | Family | State |
 |---|---|---|
@@ -32,6 +32,7 @@ The canonical v1 LOCATION_QUERY registry freezes 15 provider families/lanes with
 | USGS_3DHP_NHD | hydrography | RESOLVER_ONLY |
 | USFWS_NWI | wetlands | READY_SPECIALIZED |
 | FEMA_NFHL | flood_hazard | RESOLVER_ONLY |
+| FEMA_PR_ABFE_1PCT | flood_hazard | RESOLVER_ONLY |
 | USACE_GENERAL_GIS | federal_infrastructure | RESOLVER_ONLY |
 | USACE_PORTS_NAV | ports_navigation | READY_SPECIALIZED |
 
@@ -67,13 +68,12 @@ The canonical v1 LOCATION_QUERY registry freezes 15 provider families/lanes with
 
 ## Open implementation denominator
 
-1. integrate certified SSURGO AOI workflow as a repository adapter;
-2. implement USGS 3DHP/NHD provider;
-3. implement USFWS NWI provider;
-4. implement FEMA NFHL provider;
-5. unify the general USACE services catalog;
-6. add discovery-only place-name geocoding -> bounded AOI;
-7. execute/freeze the three reference AOIs when CI/runner infrastructure is available.
+1. execute/freeze SSURGO Stage 1 and dependent MUKEY->mapunit/component runtime receipts;
+2. freeze 3DHP FeatureServer metadata and adjudicate the stable layer-ID set against provisional candidates;
+3. freeze FEMA NFHL named-layer metadata and FEMA PR ABFE MapServer layer denominator;
+4. recursively close the general USACE service-root + folder service denominator;
+5. execute the already-implemented discovery-only place resolver and explicitly bind selected candidates before LOCATION_QUERY;
+6. execute/freeze the Húcar, San Juan and Boquerón reference AOIs when an executable runner is available.
 
 ## CI status
 
