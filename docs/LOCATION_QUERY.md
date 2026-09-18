@@ -51,7 +51,7 @@ python scripts/location_query_fetch.py outputs/location_query/hucar/acquisition_
   --output-dir data/cache/location_query/hucar
 ```
 
-The executor preserves raw response bytes and SHA-256 receipts before any downstream interpretation. `RESOLVER_ONLY` requests remain discovery/resolution evidence and are never promoted to canonical source identity automatically.
+The executor preserves raw response bytes and SHA-256 receipts before any downstream interpretation. Production fetch remains fail-closed for incomplete providers. `--discovery-only` is a separate bounded scope that may execute only discovery metadata or explicit `RESOLVER_STAGE` requests; it cannot execute ordinary production source requests. `RESOLVER_ONLY` evidence is never promoted automatically.
 
 After acquisition, `scripts/location_query_package.py` re-hashes every raw denominator/batch artifact and freezes a package-level provenance manifest. `scripts/location_query_provider_health.py` probes metadata surfaces separately; endpoint health is explicitly not AOI coverage.
 
@@ -86,7 +86,7 @@ The registry includes:
 - PR aquifers/wells/springs — `READY_SPECIALIZED` via PRPB + USGS Water Data queryable manifestations
 - PR marine lidar/topobathy — `READY_SPECIALIZED`
 - SSURGO — `RESOLVER_ONLY`: AOI SurveyAreaPoly/MapunitPoly requests are bound; MUKEY→COKEY→child production certification remains open in-repo
-- USGS 3DHP/NHD — `READY_SPECIALIZED`: current six-layer `3DHP_all` FeatureServer denominator is frozen (20/30/40/50/60/80)
+- USGS 3DHP/NHD — `RESOLVER_ONLY`: the authoritative `3DHP_all` FeatureServer is bound and six observed layer-ID candidates are preserved, but production routing remains metadata-first until raw service metadata + receipt are frozen and stable-ID set adjudication closes
 - USFWS NWI — `READY_SPECIALIZED`: Wetlands FeatureServer layer bound
 - FEMA NFHL — `RESOLVER_ONLY`: official public WMS/MSC surface bound; vector denominator remains open
 - FEMA Puerto Rico ABFE 1% — `RESOLVER_ONLY`: Puerto Rico-specific map service bound; layer denominator remains open and is separate from effective NFHL identity
@@ -108,6 +108,19 @@ For `mode=fetch`, the generic executor refuses to run unless `fetch_gate=READY`.
 
 ArcGIS FeatureServer acquisition is denominator-first: Spiderweb first requests `returnIdsOnly=true`, freezes the object-ID set, then fetches deterministic ID batches and requires returned-ID set equality. A single HTTP-200 feature response is never accepted as exhaustive AOI coverage.
 
+## Stage authority and compatibility
+
+The canonical control-plane authority is staged rather than monolithic:
+
+- `spiderweb/location_query.py` + `spiderweb/location_query_sources.py` — canonical routing/request planning.
+- `scripts/location_query_fetch.py` — canonical bounded byte-transfer/provenance executor.
+- `spiderweb/ssurgo_chain.py` — generic SSURGO MapunitPoly -> MUKEY -> SDA mapunit/component dependent-stage planner.
+- `scripts/location_query_ssurgo.py` — richer downstream SSURGO certification runner for geometry normalization, tabular hierarchy/cardinality, and component-child certification; it does not redefine LOCATION_QUERY provider identity.
+- `spiderweb/place_resolver.py` + `scripts/place_resolve.py` — canonical staged place discovery/candidate binding.
+- `scripts/location_query_geocode.py` — compatibility direct geocoder lane; its output remains discovery-only and must not bypass explicit candidate binding.
+- `spiderweb/provider_denominators.py` + `spiderweb/denominator_chain.py` — canonical metadata-denominator freezing and dependent provider-stage planning.
+
+Where two tools overlap, the staged contract above is authoritative. Compatibility/specialized runners may add analysis or certification but must not silently redefine routing identity or provider readiness.
 ## Existing authoritative lanes
 
 The router references rather than replaces:
@@ -131,10 +144,11 @@ The router references rather than replaces:
 
 ## Remaining integration denominator
 
-1. port the certified SSURGO MUKEY→COKEY→child-table production chain into the repo;
+1. execute and certify the in-repo SSURGO staged chain, including the current component-child denominator, without flattening 1:N;
 2. resolve FEMA NFHL vector-feature manifestation(s) without conflating WMS display with feature identity;
 3. freeze the Puerto Rico ABFE service layer denominator separately from NFHL;
 4. execute `scripts/location_query_usace_inventory.py` to inventory 100% of the USACE enterprise service root before promoting `USACE_GENERAL_GIS`;
-5. delegate existing USGS 3DEP, NCEI and imagery specialized adapters into the unified fetch executor without duplicating their acquisition logic;
-6. execute the frozen Puerto Rico reference-AOI regression corpus when runner infrastructure is available;
-7. keep place-name geocoding discovery-only until a selected candidate is converted to bounded geometry.
+5. freeze 3DHP raw FeatureServer metadata and run stable layer-ID set adjudication before any readiness promotion;
+6. delegate existing USGS 3DEP, NCEI and imagery specialized adapters into the unified fetch executor without duplicating their acquisition logic;
+7. execute the frozen Puerto Rico reference-AOI regression corpus when runner infrastructure is available;
+8. keep place-name geocoding discovery-only until a selected candidate is explicitly bound to bounded geometry.
