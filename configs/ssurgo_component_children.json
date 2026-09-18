@@ -100,7 +100,11 @@
       "parent_key": "cokey",
       "key_evidence": "TABLES_COLUMNS_DOCUMENTED_UNIQUE_KEY_FIELD",
       "cardinality": "0:N_or_1:N_table_specific",
-      "constraint_name_state": "UNRESOLVED"
+      "constraint_name_state": "UNRESOLVED",
+      "relationship_evidence": "TABLE_RELATIONSHIPS_REPORT_NOV_2025",
+      "parent_key_field_evidence": "TABLES_COLUMNS_REPORT_NOV_2025",
+      "stable_key_field_evidence": "TABLES_COLUMNS_REPORT_NOV_2025",
+      "unique_constraint_evidence": "UNRESOLVED_IN_THIS_REPO_SNAPSHOT"
     },
     {
       "table": "comonth",
@@ -224,5 +228,29 @@
       "raw_bytes_frozen_in_repo": false
     },
     "freeze_state": "URL_AND_EPOCH_BOUND_RAW_BYTES_OPEN"
+  },
+  "source_documents": {
+    "table_relationships": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/TableRelationshipsReport.pdf",
+      "document_epoch": "November 2025",
+      "supports": [
+        "component.cokey -> coinundationtype direct relationship"
+      ],
+      "byte_freeze_state": "EXTERNAL_CURRENT_DOCUMENT_VERIFIED_NOT_REPO_BYTE_FROZEN"
+    },
+    "tables_and_columns": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/TablesAndColumnsReport.pdf",
+      "document_epoch": "November 2025",
+      "supports": [
+        "coinundationtype.cokey field",
+        "coinundationtype.coinundationtypekey field"
+      ],
+      "byte_freeze_state": "EXTERNAL_CURRENT_DOCUMENT_VERIFIED_NOT_REPO_BYTE_FROZEN"
+    },
+    "unique_constraints": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/UniqueConstraintsReport.pdf",
+      "document_epoch": "November 2025",
+      "coinundationtype_constraint_state": "UNRESOLVED_IN_THIS_REPO_SNAPSHOT"
+    }
   }
 }
