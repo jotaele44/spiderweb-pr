@@ -19,6 +19,27 @@ def _write(path: Path, value: object) -> None:
     path.write_text(json.dumps(value) + "\n", encoding="utf-8")
 
 
+
+def _spec(role: str = "source") -> dict:
+    return {
+        "method": "GET",
+        "provider_id": "X",
+        "request_role": role,
+        "identity_state": "SOURCE_MANIFESTATION",
+        "url": f"https://example.invalid/{role}",
+        "media_type": "application/octet-stream",
+    }
+
+
+def _receipt_request(spec: dict, **extra) -> dict:
+    row = {
+        "provider_id": spec["provider_id"],
+        "request_role": spec["request_role"],
+        "request_spec_sha256": mod.canonical_json_sha256(spec),
+    }
+    row.update(extra)
+    return row
+
 def test_package_rehashes_raw_artifact(tmp_path: Path, monkeypatch) -> None:
     raw = tmp_path / "source.raw"
     raw.write_bytes(b"abc")
@@ -30,6 +51,7 @@ def test_package_rehashes_raw_artifact(tmp_path: Path, monkeypatch) -> None:
     plan = {
         "query": {"query_id": "q", "mode": "fetch"},
         "provider_denominator_count": 1,
+        "requests": [_spec()],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     _write(plan_path, plan)
@@ -41,7 +63,7 @@ def test_package_rehashes_raw_artifact(tmp_path: Path, monkeypatch) -> None:
         "no_coverage_count": 0,
         "failure_count": 0,
         "state": "PASS",
-        "requests": [{"raw_path": str(raw), "sha256": digest}],
+        "requests": [_receipt_request(_spec(), raw_path=str(raw), sha256=digest)],
     })
 
     monkeypatch.setattr(
@@ -62,6 +84,7 @@ def test_package_preserves_partial_execution_state(tmp_path: Path, monkeypatch) 
     plan = {
         "query": {"query_id": "q", "mode": "fetch"},
         "provider_denominator_count": 2,
+        "requests": [],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     _write(plan_path, plan)
@@ -95,6 +118,7 @@ def test_package_fails_when_raw_hash_drifted(tmp_path: Path, monkeypatch) -> Non
     output = tmp_path / "package.json"
     plan = {
         "query": {"query_id": "q", "mode": "fetch"},
+        "requests": [_spec()],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     _write(plan_path, plan)
@@ -104,7 +128,7 @@ def test_package_fails_when_raw_hash_drifted(tmp_path: Path, monkeypatch) -> Non
         "request_count": 1,
         "failure_count": 0,
         "state": "PASS",
-        "requests": [{"raw_path": str(raw), "sha256": "0" * 64}],
+        "requests": [_receipt_request(_spec(), raw_path=str(raw), sha256="0" * 64)],
     })
 
     monkeypatch.setattr(
@@ -123,6 +147,7 @@ def test_package_binds_executor_plan_hash_and_parent_denominator(tmp_path: Path,
     plan = {
         "query": {"query_id": "q", "mode": "fetch"},
         "provider_denominator_count": 1,
+        "requests": [_spec()],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     plan_path = tmp_path / "plan.json"
@@ -137,11 +162,12 @@ def test_package_binds_executor_plan_hash_and_parent_denominator(tmp_path: Path,
         "no_coverage_count": 0,
         "failure_count": 0,
         "state": "PASS",
-        "requests": [{
-            "raw_path": str(raw),
-            "sha256": digest,
-            "parent_denominator_sha256": "a" * 64,
-        }],
+        "requests": [_receipt_request(
+            _spec(),
+            raw_path=str(raw),
+            sha256=digest,
+            parent_denominator_sha256="a" * 64,
+        )],
     })
 
     monkeypatch.setattr(
@@ -161,6 +187,7 @@ def test_package_rejects_executor_plan_hash_drift(tmp_path: Path, monkeypatch) -
     output = tmp_path / "package.json"
     _write(plan_path, {
         "query": {"query_id": "q", "mode": "fetch"},
+        "requests": [],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     })
     _write(receipt_path, {
@@ -183,6 +210,7 @@ def test_package_supports_discovery_stage_receipt(tmp_path: Path, monkeypatch) -
     plan = {
         "query": {"query_id": "q", "mode": "plan"},
         "provider_denominator_count": 1,
+        "requests": [],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     plan_path = tmp_path / "plan.json"
@@ -239,6 +267,7 @@ def test_package_rejects_duplicate_raw_artifact_path(tmp_path: Path, monkeypatch
     digest = mod.sha256_file(raw)
     plan = {
         "query": {"query_id": "q", "mode": "fetch"},
+        "requests": [],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     plan_path = tmp_path / "plan.json"
@@ -253,8 +282,8 @@ def test_package_rejects_duplicate_raw_artifact_path(tmp_path: Path, monkeypatch
         "failure_count": 0,
         "state": "PASS",
         "requests": [
-            {"raw_path": str(raw), "sha256": digest},
-            {"raw_path": str(raw), "sha256": digest},
+            _receipt_request(spec_a, raw_path=str(raw), sha256=digest),
+            _receipt_request(spec_b, raw_path=str(raw), sha256=digest),
         ],
     })
     monkeypatch.setattr(
@@ -266,8 +295,11 @@ def test_package_rejects_duplicate_raw_artifact_path(tmp_path: Path, monkeypatch
 
 
 def test_package_refuses_manifest_overwrite(tmp_path: Path, monkeypatch) -> None:
+    spec_a = _spec("a")
+    spec_b = _spec("b")
     plan = {
         "query": {"query_id": "q", "mode": "fetch"},
+        "requests": [spec_a, spec_b],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     plan_path = tmp_path / "plan.json"
@@ -290,3 +322,72 @@ def test_package_refuses_manifest_overwrite(tmp_path: Path, monkeypatch) -> None
     )
     with pytest.raises(SystemExit, match="package manifest already exists"):
         mod.main()
+
+
+def test_package_rejects_missing_executed_request(tmp_path: Path, monkeypatch) -> None:
+    spec_a = _spec("a")
+    spec_b = _spec("b")
+    plan = {
+        "query": {"query_id": "q", "mode": "fetch"},
+        "requests": [spec_a, spec_b],
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "fetch_gate": "READY",
+        "request_count": 1,
+        "pass_count": 1,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [_receipt_request(spec_a)],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    with pytest.raises(SystemExit, match="request-spec vector mismatch"):
+        mod.main()
+
+
+def test_package_discovery_scope_matches_only_discovery_subset(tmp_path: Path, monkeypatch) -> None:
+    discovery = {
+        "method": "GET",
+        "provider_id": "X",
+        "request_role": "metadata",
+        "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
+        "url": "https://example.invalid/metadata",
+        "media_type": "application/json",
+    }
+    production = _spec("production")
+    plan = {
+        "query": {"query_id": "q", "mode": "plan"},
+        "requests": [discovery, production],
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "execution_scope": "DISCOVERY_OR_RESOLVER_STAGE",
+        "fetch_gate": "DISCOVERY_ONLY",
+        "request_count": 1,
+        "pass_count": 1,
+        "no_coverage_count": 0,
+        "failure_count": 0,
+        "state": "DISCOVERY_PASS",
+        "requests": [_receipt_request(discovery)],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    assert mod.main() == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["invariants"]["request_spec_vector_equal"] is True
+    assert result["planned_request_count_for_execution_scope"] == 1
