@@ -144,10 +144,12 @@ def test_package_binds_executor_plan_hash_and_parent_denominator(tmp_path: Path,
     raw.write_bytes(b"abc")
     digest = mod.sha256_file(raw)
 
+    request_spec = _spec()
+    request_spec["parent_denominator_sha256"] = "a" * 64
     plan = {
         "query": {"query_id": "q", "mode": "fetch"},
         "provider_denominator_count": 1,
-        "requests": [_spec()],
+        "requests": [request_spec],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     plan_path = tmp_path / "plan.json"
@@ -163,7 +165,7 @@ def test_package_binds_executor_plan_hash_and_parent_denominator(tmp_path: Path,
         "failure_count": 0,
         "state": "PASS",
         "requests": [_receipt_request(
-            _spec(),
+            request_spec,
             raw_path=str(raw),
             sha256=digest,
             parent_denominator_sha256="a" * 64,
@@ -453,3 +455,35 @@ def test_top_level_package_preserves_provider_registry_hash(tmp_path: Path, monk
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["provider_registry_sha256"] == registry_sha
     assert result["invariants"]["provider_registry_hash_bound_when_top_level"] is True
+
+
+def test_package_rejects_request_parent_denominator_lineage_mismatch(tmp_path: Path, monkeypatch) -> None:
+    request_spec = _spec()
+    request_spec["parent_denominator_sha256"] = "a" * 64
+    plan = {
+        "query": {"query_id": "q", "mode": "fetch"},
+        "requests": [request_spec],
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "fetch_gate": "READY",
+        "request_count": 1,
+        "pass_count": 1,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [_receipt_request(
+            request_spec,
+            parent_denominator_sha256="b" * 64,
+        )],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    with pytest.raises(SystemExit, match="parent-denominator lineage mismatch"):
+        mod.main()
