@@ -52,33 +52,60 @@ def build_usace_service_metadata_plan(
 ) -> dict[str, Any]:
     provider_id = "USACE_GENERAL_GIS"
     _require_pass(denominator, provider_id)
-    if denominator.get("schema_version") != "spiderweb.arcgis_service_denominator.v1.0":
+    if denominator.get("schema_version") not in {
+        "spiderweb.arcgis_service_denominator.v1.0",
+        "spiderweb.arcgis_service_denominator_merged.v1.0",
+    }:
         raise DenominatorChainError("USACE parent is not an ArcGIS service denominator")
 
     requests: list[dict[str, Any]] = []
+
+    # First recurse into any folders that have not yet been independently frozen.
+    for folder in denominator.get("folders", []):
+        if not isinstance(folder, str) or not folder:
+            raise DenominatorChainError("USACE folder manifestation is invalid")
+        encoded_folder = "/".join(quote(part, safe="") for part in folder.split("/"))
+        requests.append({
+            "provider_id": provider_id,
+            "request_role": f"folder_services:{folder}",
+            "identity_state": "DEPENDENT_DISCOVERY_FOR_SERVICE_DENOMINATOR",
+            "method": "GET",
+            "url": f"{service_root.rstrip('/')}/{encoded_folder}?f=pjson",
+            "media_type": "application/json",
+            "parent_denominator_sha256": denominator["canonical_records_sha256"],
+        })
+
+    # Then request metadata for every map/feature service manifestation already
+    # present in the frozen denominator. Scope is preserved separately from name.
     for record in denominator.get("records", []):
         if not isinstance(record, dict):
             raise DenominatorChainError("USACE denominator contains non-object record")
+        scope = str(record.get("scope_raw", ""))
         name = record.get("name_raw")
         service_type = record.get("type_raw")
         if not isinstance(name, str) or not name:
             raise DenominatorChainError("USACE service record lacks name_raw")
         if service_type not in {"MapServer", "FeatureServer"}:
             continue
-        encoded_name = "/".join(quote(part, safe="") for part in name.split("/"))
+
+        path_parts = [part for part in scope.split("/") if part] + [part for part in name.split("/") if part]
+        encoded_name = "/".join(quote(part, safe="") for part in path_parts)
         url = f"{service_root.rstrip('/')}/{encoded_name}/{service_type}?f=pjson"
         requests.append({
             "provider_id": provider_id,
-            "request_role": f"service_metadata:{name}:{service_type}",
+            "request_role": f"service_metadata:{scope}:{name}:{service_type}",
             "identity_state": "DEPENDENT_DISCOVERY_FOR_LAYER_DENOMINATOR",
             "method": "GET",
             "url": url,
             "media_type": "application/json",
             "parent_denominator_sha256": denominator["canonical_records_sha256"],
+            "service_scope_raw": scope,
+            "service_name_raw": name,
+            "service_type_raw": service_type,
         })
 
     return {
-        "schema_version": "spiderweb.usace_service_metadata_plan.v1.0",
+        "schema_version": "spiderweb.usace_service_metadata_plan.v1.1",
         "query": dict(query, mode="fetch"),
         "provider_denominator_count": 1,
         "route_state_counts": {"DEPENDENT_DISCOVERY": 1},
@@ -92,7 +119,13 @@ def build_usace_service_metadata_plan(
         "requests": requests,
         "parent_denominator": {
             "service_count": denominator.get("service_count"),
+            "folder_count": denominator.get("folder_count", len(denominator.get("folders", []))),
             "canonical_records_sha256": denominator["canonical_records_sha256"],
+        },
+        "policy": {
+            "folder_scope_preserved": True,
+            "service_name_not_identity_alone": True,
+            "recursive_folder_discovery_required": bool(denominator.get("folders")),
         },
     }
 
