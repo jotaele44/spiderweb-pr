@@ -6,11 +6,15 @@ import argparse
 import json
 from pathlib import Path
 
-from spiderweb.provider_denominators import merge_arcgis_service_denominators
+from spiderweb.provider_denominators import (
+    merge_arcgis_service_denominators,
+    merge_arcgis_service_contents_denominators,
+)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("kind", choices=["services", "contents"])
     parser.add_argument("denominators", nargs="+", type=Path)
     parser.add_argument("--provider-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -20,10 +24,12 @@ def main() -> int:
         json.loads(path.read_text(encoding="utf-8"))
         for path in args.denominators
     ]
-    result = merge_arcgis_service_denominators(
-        rows,
-        provider_id=args.provider_id,
+    merger = (
+        merge_arcgis_service_denominators
+        if args.kind == "services"
+        else merge_arcgis_service_contents_denominators
     )
+    result = merger(rows, provider_id=args.provider_id)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(result, indent=2, sort_keys=True) + "\n",
