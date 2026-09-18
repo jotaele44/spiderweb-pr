@@ -343,6 +343,13 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
         if receipt["state"] == "FAIL":
             failures += 1
 
+    if failures:
+        overall_state = "PARTIAL_OR_BLOCKED"
+    elif fetch_gate == "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS":
+        overall_state = "PARTIAL"
+    else:
+        overall_state = "PASS"
+
     result = {
         "schema_version": "spiderweb.location_query_fetch_receipt.v1.2",
         "query_mode": mode,
@@ -352,7 +359,7 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
         "pass_count": sum(r["state"] in {"PASS", "NO_COVERAGE"} for r in receipts),
         "no_coverage_count": sum(r["state"] == "NO_COVERAGE" for r in receipts),
         "failure_count": failures,
-        "state": "PASS" if failures == 0 else "PARTIAL_OR_BLOCKED",
+        "state": overall_state,
         "raw_bytes_preserved_before_derivation": True,
         "arcgis_id_denominator_required": True,
         "requests": receipts,
@@ -370,7 +377,7 @@ def main() -> int:
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
     result = execute(plan, args.output_dir, timeout=args.timeout)
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0 if result["failure_count"] == 0 else 1
+    return 0 if result["state"] in {"PASS", "PARTIAL"} else 1
 
 
 if __name__ == "__main__":
