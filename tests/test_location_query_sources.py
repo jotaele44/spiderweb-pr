@@ -149,3 +149,25 @@ def test_feature_collection_bbox_uses_all_features() -> None:
         }
     })
     assert bbox == (-66.2, 18.1, -65.8, 18.5)
+
+
+def test_arcgis_specs_require_object_id_denominator() -> None:
+    provider = {
+        "layer_url": "https://example.invalid/FeatureServer/0",
+    }
+    query = {
+        "geometry": {
+            "type": "bbox",
+            "west": -66.1,
+            "south": 18.2,
+            "east": -65.9,
+            "north": 18.4,
+        }
+    }
+    rows = build_request_specs("USFWS_NWI", provider, query)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["protocol"] == "ARCGIS_FEATURE_LAYER"
+    assert row["pagination_policy"] == "OBJECT_ID_DENOMINATOR_THEN_BATCH"
+    assert "returnIdsOnly=true" in row["url"]
+    assert row["layer_url"] == provider["layer_url"]
