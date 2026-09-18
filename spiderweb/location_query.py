@@ -182,7 +182,10 @@ def route_query(
             provider_requests = build_request_specs(provider_id, provider, normalized)
             requests.extend(provider_requests)
 
-        if provider_requests:
+        if provider_requests and provider.get("execution_requires_post_fetch"):
+            execution_kind = "REQUEST_SPECS_PLUS_POSTPROCESSOR"
+            generic_executor_ready = False
+        elif provider_requests:
             execution_kind = "BOUNDED_REQUEST_SPECS"
             generic_executor_ready = route_state == "ROUTABLE"
         elif route_state == "ROUTABLE" and (
@@ -226,7 +229,7 @@ def route_query(
     ]
     specialized_adapter_providers = [
         decision.provider_id for decision in decisions
-        if decision.execution_kind == "SPECIALIZED_ADAPTER"
+        if decision.execution_kind in {"SPECIALIZED_ADAPTER", "REQUEST_SPECS_PLUS_POSTPROCESSOR"}
     ]
     incomplete_providers = [
         decision.provider_id for decision in decisions
