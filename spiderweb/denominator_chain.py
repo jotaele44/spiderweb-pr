@@ -129,6 +129,7 @@ def build_usace_service_metadata_plan(
         }],
         "request_count": len(requests),
         "requests": requests,
+        "fetch_gate": "READY",
         "parent_denominator": {
             "service_count": denominator.get("service_count"),
             "folder_count": denominator.get("folder_count", len(denominator.get("folders", []))),
