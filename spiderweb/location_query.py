@@ -13,6 +13,8 @@ import os
 from pathlib import Path
 from typing import Any, Iterable
 
+from .location_query_sources import build_request_specs
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REGISTRY = REPO_ROOT / "configs/location_query_providers.json"
 
@@ -135,6 +137,7 @@ def route_query(
     requested_families = set(normalized.get("families", []))
     geometry_type = normalized["geometry"]["type"]
     decisions: list[ProviderDecision] = []
+    requests: list[dict[str, Any]] = []
     for provider_id, provider in sorted(registry["providers"].items()):
         family = str(provider.get("family", "unknown"))
         if requested_families and family not in requested_families:
@@ -167,6 +170,9 @@ def route_query(
                 missing_credentials=missing_credentials,
             )
         )
+        if route_state not in {"CREDENTIAL_REQUIRED", "BLOCKED", "NOT_IMPLEMENTED", "PROVIDER_BINDING_OPEN"}:
+            for request_spec in build_request_specs(provider_id, provider, normalized):
+                requests.append(request_spec)
     counts = dict()
     for decision in decisions:
         counts[decision.route_state] = counts.get(decision.route_state, 0) + 1
@@ -176,6 +182,8 @@ def route_query(
         "provider_denominator_count": len(decisions),
         "route_state_counts": dict(sorted(counts.items())),
         "providers": [decision.as_dict() for decision in decisions],
+        "request_count": len(requests),
+        "requests": requests,
         "policy": {
             "plan_before_download": True,
             "raw_bytes_before_derivation": True,
