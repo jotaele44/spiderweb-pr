@@ -1,0 +1,256 @@
+{
+  "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+  "authority": "USDA NRCS Soil Data Access official Tables/Columns, Unique Constraints, and Table Relationships reports",
+  "current_documentation_epoch": "November 2025",
+  "parent_table": "component",
+  "parent_key": "cokey",
+  "relationship_count": 22,
+  "records": [
+    {
+      "table": "chorizon",
+      "stable_key": "chkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cocanopycover",
+      "stable_key": "cocanopycovkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cocropyld",
+      "stable_key": "cocropyldkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "codiagfeatures",
+      "stable_key": "codiagfeatkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "coecoclass",
+      "stable_key": "coecoclasskey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "coeplants",
+      "stable_key": "coeplantskey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "coerosionacc",
+      "stable_key": "coeroacckey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "coforprod",
+      "stable_key": "cofprodkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cogeomordesc",
+      "stable_key": "cogeomdkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cohydriccriteria",
+      "stable_key": "cohydcritkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cointerp",
+      "stable_key": "cointerpkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT_KEY_COLUMN",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "coinundationtype",
+      "stable_key": "coinundationtypekey",
+      "parent_key": "cokey",
+      "key_evidence": "TABLES_COLUMNS_DOCUMENTED_UNIQUE_KEY_FIELD",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "UNRESOLVED",
+      "relationship_evidence": "TABLE_RELATIONSHIPS_REPORT_NOV_2025",
+      "parent_key_field_evidence": "TABLES_COLUMNS_REPORT_NOV_2025",
+      "stable_key_field_evidence": "TABLES_COLUMNS_REPORT_NOV_2025",
+      "unique_constraint_evidence": "UNRESOLVED_IN_THIS_REPO_SNAPSHOT"
+    },
+    {
+      "table": "comonth",
+      "stable_key": "comonthkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "copmgrp",
+      "stable_key": "copmgrpkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "copwindbreak",
+      "stable_key": "copwindbreakkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "corestrictions",
+      "stable_key": "corestrictkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cosurffrags",
+      "stable_key": "cosurffragskey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cotaxfmmin",
+      "stable_key": "cotaxfmminkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cotaxmoistcl",
+      "stable_key": "cotaxmckey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cotext",
+      "stable_key": "cotextkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cotreestomng",
+      "stable_key": "cotreestomngkey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    },
+    {
+      "table": "cotxfmother",
+      "stable_key": "cotaxfokey",
+      "parent_key": "cokey",
+      "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+      "cardinality": "0:N_or_1:N_table_specific",
+      "constraint_name_state": "NOT_REQUIRED_FOR_ROW_IDENTITY"
+    }
+  ],
+  "lineage": {
+    "prior_frozen_relationship_count": 21,
+    "prior_state": "SUPERSEDED_FOR_CURRENT_DENOMINATOR_BUT_PRESERVED_AS_HISTORICAL_MANIFESTATION",
+    "current_added_tables": [
+      "coinundationtype"
+    ],
+    "contradiction_class": "TIME",
+    "note": "The older SdaTableRelationships HTML snapshot exposed 21 direct component children; the November 2025 Table Relationships report exposes coinundationtype as an additional direct cokey child.",
+    "current_source_state": "CURRENT_AUTHORITATIVE_DOCUMENTATION_BOUND",
+    "prior_source_state": "HISTORICAL_FROZEN_MANIFESTATION"
+  },
+  "invariants": {
+    "table_count": 22,
+    "parent_key": "cokey",
+    "stable_key_unique_across_rows": true,
+    "flattening_prohibited": true,
+    "zero_child_parent_is_not_acquisition_failure_by_default": true,
+    "returned_parent_keys_must_be_subset_of_certified_cokey_denominator": true,
+    "stable_key_nulls_prohibited": true,
+    "stable_key_duplicates_prohibited": true,
+    "constraint_name_not_required_when_not_documented": true
+  },
+  "documentation_sources": {
+    "tables_and_columns": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/TablesAndColumnsReport.pdf",
+      "epoch_raw": "November 2025",
+      "role": "TABLE_SCHEMA_AND_KEY_FIELD_EVIDENCE",
+      "raw_bytes_frozen_in_repo": false
+    },
+    "table_relationships": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/TableRelationshipsReport.pdf",
+      "epoch_raw": "November 2025",
+      "role": "PARENT_CHILD_RELATIONSHIP_EVIDENCE",
+      "raw_bytes_frozen_in_repo": false
+    },
+    "unique_constraints": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/UniqueConstraintsReport.pdf",
+      "role": "STABLE_KEY_EVIDENCE_WHERE_DOCUMENTED",
+      "raw_bytes_frozen_in_repo": false
+    },
+    "freeze_state": "URL_AND_EPOCH_BOUND_RAW_BYTES_OPEN"
+  },
+  "source_documents": {
+    "table_relationships": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/TableRelationshipsReport.pdf",
+      "document_epoch": "November 2025",
+      "supports": [
+        "component.cokey -> coinundationtype direct relationship"
+      ],
+      "byte_freeze_state": "EXTERNAL_CURRENT_DOCUMENT_VERIFIED_NOT_REPO_BYTE_FROZEN"
+    },
+    "tables_and_columns": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/TablesAndColumnsReport.pdf",
+      "document_epoch": "November 2025",
+      "supports": [
+        "coinundationtype.cokey field",
+        "coinundationtype.coinundationtypekey field"
+      ],
+      "byte_freeze_state": "EXTERNAL_CURRENT_DOCUMENT_VERIFIED_NOT_REPO_BYTE_FROZEN"
+    },
+    "unique_constraints": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/UniqueConstraintsReport.pdf",
+      "document_epoch": "November 2025",
+      "coinundationtype_constraint_state": "UNRESOLVED_IN_THIS_REPO_SNAPSHOT"
+    }
+  }
+}

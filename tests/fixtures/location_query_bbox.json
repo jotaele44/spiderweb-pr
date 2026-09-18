@@ -1,0 +1,13 @@
+{
+  "query_id": "fixture-puerto-rico-bbox",
+  "geometry": {
+    "type": "bbox",
+    "west": -66.1,
+    "south": 18.2,
+    "east": -65.9,
+    "north": 18.45,
+    "crs": "EPSG:4326"
+  },
+  "mode": "plan",
+  "allow_partial": false
+}
