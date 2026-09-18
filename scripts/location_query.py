@@ -24,6 +24,11 @@ def main() -> int:
         "query_id": plan["query"]["query_id"],
         "provider_denominator_count": plan["provider_denominator_count"],
         "route_state_counts": plan["route_state_counts"],
+        "request_count": plan["request_count"],
+        "fetch_gate": plan["fetch_gate"],
+        "fetch_blocker_provider_ids": plan["fetch_blocker_provider_ids"],
+        "generic_executor_provider_ids": plan["generic_executor_provider_ids"],
+        "specialized_adapter_provider_ids": plan["specialized_adapter_provider_ids"],
         "output": str(args.out),
     }, indent=2, sort_keys=True))
     return 0
