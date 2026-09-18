@@ -120,6 +120,27 @@ def main() -> int:
             f"expected_count={len(expected_request_hashes)} actual_count={len(actual_request_hashes)}"
         )
 
+    parent_hash_mismatches = []
+    for index, (spec, request) in enumerate(
+        zip(expected_plan_requests, requests, strict=True),
+        start=1,
+    ):
+        expected_parent = spec.get("parent_denominator_sha256")
+        actual_parent = request.get("parent_denominator_sha256")
+        if expected_parent != actual_parent:
+            parent_hash_mismatches.append({
+                "request_index": index,
+                "provider_id": request.get("provider_id"),
+                "request_role": request.get("request_role"),
+                "expected_parent_denominator_sha256": expected_parent,
+                "actual_parent_denominator_sha256": actual_parent,
+            })
+    if parent_hash_mismatches:
+        raise SystemExit(
+            "FAIL: request parent-denominator lineage mismatch "
+            f"{parent_hash_mismatches[:20]}"
+        )
+
     raw_records = []
     missing_raw = []
     hash_mismatch = []
@@ -229,6 +250,7 @@ def main() -> int:
             "executor_plan_hash_matches": receipt_plan_sha == canonical_plan_sha,
             "request_spec_vector_equal": actual_request_hashes == expected_request_hashes,
             "parent_denominator_hashes_well_formed": True,
+            "request_parent_denominator_lineage_equal": not parent_hash_mismatches,
             "plan_before_download": True,
             "raw_bytes_before_derivation": True,
             "raw_artifact_paths_unique": len(seen_raw_paths) == len(raw_records),
