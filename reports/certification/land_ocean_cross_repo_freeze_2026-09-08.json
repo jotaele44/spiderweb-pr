@@ -1,0 +1,10 @@
+{
+  "freeze_version": "land-ocean-cross-repo/1.0",
+  "frozen_at_utc": "2026-09-08T23:20:00Z",
+  "state": "PROVISIONAL",
+  "spiderweb": {"pull_request": 348, "remote_head": "0d4635e3727ead9a1c720a24a23c6c6421b5b7bb", "local_evidence_commit": "f5bbc87", "artifacts": {"federation/surface_analysis.py": "6aba9d8ee6328022a2d6aa90337a9699598064c148b7a5e978e0f3e9e78f0971", "federation/surface_engine.py": "d6ad9b41ae5accc546417d73bb2257d0b8fc6c3d2c3fb903da59bd487849bc98", "federation/manifestation_adjudication.py": "dc02f2d6b3391f66e1326298240726e53b2242959f548a43db1d58203c42e2ed", "schemas/spatial_analysis_result_v1.schema.json": "25168d1aef8174850d52751888a96a5fa651e996ea73d80478574288a8d85427", "reports/certification/gebco_manifestation_adjudication_2026-09-08.json": "dcba759719dbb86061dd2a7f661d867c114e32345c09fd82a0d5f8778663f5f4"}},
+  "skywatcher": {"pull_request": 271, "remote_head": "f6dbbf7fccc25cc8eb6816e2ffdef8e446404be4", "local_evidence_commit": "5634a6a", "artifacts": {"src/skywatcher/spatial_context.py": "5fa2e4d34e78e832cb5d8a8b28ebb8ee7ad932be58e29f38b9651fbae6bf56c6", "src/skywatcher/corrim/ilap_airspace_bridge.py": "8d237c2f2e620206e2e758e989f2c8c1c87d1de1cacc1adffe6d20f7dde94704", "tests/test_spiderweb_spatial_consumer.py": "b60f5550341f5d82e9417d0b9a98336b469f5b623f2e1bdb4bb414033e39f537", "tests/test_ilap_spiderweb_migration.py": "fdf874264af63f1361fb3c00507eade3a27be5d7a553f5b0349f3359ee09d1a5"}},
+  "verified": {"spiderweb_assertions": 85, "skywatcher_assertions": 22, "manifest_structure": "PASS", "schema_round_trip": "PASS"},
+  "critical_residue": ["GEBCO source-native raster bytes absent from inspected snapshots", "all GitHub workflow jobs failed before executing steps", "Skywatcher rendered playback/mobile/offline integration not verified", "Puerto Rico production raster/track fixture not available"],
+  "certifications_issued": []
+}

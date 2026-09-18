@@ -1,0 +1,35 @@
+{
+  "report_version": "gebco-manifestation-adjudication/1.0",
+  "scope": "Git-tracked GEBCO-related manifestations in spiderweb-pr and skywatcher-pr local snapshots",
+  "snapshots": {
+    "spiderweb-pr": "589f6d3d9f9bcb4f32fafce3ef9da4d85334e71e",
+    "skywatcher-pr": "5597aae3019fa5668367f2f18e7b7e45d648e12e"
+  },
+  "retrieval_utc": "2026-09-08T23:00:00Z",
+  "source_taxonomy_is_not_identity": true,
+  "set_algebra": {
+    "intersection_relative_paths": ["gebco/__init__.py", "gebco/io.py", "gebco/terrain.py"],
+    "spiderweb_only": ["gebco/README.md", "gebco/marine_evidence.py", "gebco/py.typed", "requirements-gebco.txt"],
+    "skywatcher_only": ["reports/claude_runtime_gate_logs/skywatcher-pr_gebco_fetch.log", "schemas/gebco_tile_manifest.schema.json", "scripts/fetch_gebco_pr.py", "tests/test_gebco_additions.py"],
+    "union_count": 11,
+    "symmetric_difference_count": 8
+  },
+  "paired_manifestations": [
+    {"relative_path": "gebco/__init__.py", "spiderweb_sha256": "34b8574923c6bcf87991aaa03a892786170b0faddb55666b4c65ee0552aba7b9", "skywatcher_sha256": "b3fa8103a8a4406f131758c4ced6b402950d8c48f3acfcbe2b21b210d956d653", "classification": "DISTINCT_PAYLOADS", "identity_claim": "NONCOMPARABLE_CODE_MANIFESTATIONS"},
+    {"relative_path": "gebco/io.py", "spiderweb_sha256": "d76549bee596cc24e6483e193d4115bc681ec96c9e0be6cd7b4c5bc3498760d2", "skywatcher_sha256": "a1e6d2858e51145fa023596593c53e9f9e9768b83ab31d0dfb5fa113e6cb3dbf", "classification": "DISTINCT_PAYLOADS", "identity_claim": "NONCOMPARABLE_CODE_MANIFESTATIONS"},
+    {"relative_path": "gebco/terrain.py", "spiderweb_sha256": "8df9599997c464fc26342f803439d157fd4561c1929c452a76a232b6f70ef89d", "skywatcher_sha256": "baeb5fcb6e773a07775616a26761a597ce4267a3731bca72b9fc528906e945eb", "classification": "DISTINCT_PAYLOADS", "identity_claim": "NONCOMPARABLE_CODE_MANIFESTATIONS"}
+  ],
+  "raster_source_manifestations": {
+    "tracked_spiderweb_rasters": 0,
+    "tracked_skywatcher_rasters": 0,
+    "classification": "UNRESOLVED",
+    "reason": "No source-native .nc/.tif raster bytes are tracked in either inspected snapshot; common GEBCO naming and acquisition descriptions cannot prove byte, logical, schema, geometric, or source-manifestation identity.",
+    "required_next_evidence": ["exact source raster paths or frozen artifacts", "byte SHA-256", "archive member path+uncompressed size+SHA-256 where applicable", "grid/schema metadata", "coverage geometry", "horizontal and vertical reference", "transformation lineage"]
+  },
+  "authority_adjudication": {
+    "spatial_authority": "spiderweb-pr",
+    "skywatcher_status": "HISTORICAL_SOURCE_MANIFESTATION_ONLY_AFTER_MIGRATION",
+    "canonical_raster_identity": "UNRESOLVED",
+    "certification_state": "UNRESOLVED"
+  }
+}
