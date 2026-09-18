@@ -9,6 +9,7 @@ from pathlib import Path
 from spiderweb.provider_denominators import (
     freeze_arcgis_layer_denominator,
     freeze_arcgis_service_denominator,
+    freeze_arcgis_service_contents_denominator,
     freeze_wms_layer_denominator,
 )
 
@@ -16,6 +17,7 @@ from spiderweb.provider_denominators import (
 PARSERS = {
     "arcgis-layers": freeze_arcgis_layer_denominator,
     "arcgis-services": freeze_arcgis_service_denominator,
+    "arcgis-service-contents": freeze_arcgis_service_contents_denominator,
     "wms-layers": freeze_wms_layer_denominator,
 }
 
