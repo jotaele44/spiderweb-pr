@@ -28,6 +28,10 @@ def safe_name(provider: str, role: str, ordinal: int) -> str:
     return "".join(c if c.isalnum() or c in "._-" else "_" for c in token)
 
 def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
+    query = plan.get("query") or {}
+    mode = str(query.get("mode", "")).lower()
+    if mode != "fetch":
+        raise SystemExit(f"FAIL: network executor requires query.mode=fetch; got {mode or 'MISSING'}")
     requests = plan.get("requests", [])
     if not isinstance(requests, list):
         raise SystemExit("FAIL: plan.requests must be a list")
@@ -92,6 +96,7 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
 
     result = {
         "schema_version": "spiderweb.location_query_fetch_receipt.v1.0",
+        "query_mode": mode,
         "request_count": len(receipts),
         "pass_count": sum(r["state"] == "PASS" for r in receipts),
         "failure_count": failures,
