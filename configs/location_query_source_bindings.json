@@ -11,9 +11,36 @@
     },
     "USGS_3DHP_NHD": {
       "authority": "U.S. Geological Survey 3D Hydrography Program",
-      "feature_service": "https://3dhp.usgs.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer",
-      "status": "BOUND_LAYER_DENOMINATOR_OPEN",
-      "note": "service is authoritative; release layer membership must be frozen before bulk feature acquisition"
+      "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
+      "release_observed": "2026-08-05",
+      "layers": [
+        {
+          "id": 20,
+          "role": "hydrolocation_sink_spring_waterbody_outlet"
+        },
+        {
+          "id": 30,
+          "role": "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet"
+        },
+        {
+          "id": 40,
+          "role": "hydrolocation_reach_code_external_connection"
+        },
+        {
+          "id": 50,
+          "role": "flowline"
+        },
+        {
+          "id": 60,
+          "role": "waterbody"
+        },
+        {
+          "id": 80,
+          "role": "catchment"
+        }
+      ],
+      "status": "BOUND_SIX_LAYER_DENOMINATOR",
+      "note": "3DHP may report NHD lineage where EDH has not replaced legacy hydrography; lineage is preserved rather than inferred from geometry"
     },
     "USFWS_NWI": {
       "authority": "U.S. Fish and Wildlife Service National Wetlands Inventory",
@@ -50,6 +77,12 @@
       ],
       "status": "BOUND_SUBSET",
       "note": "subset is certified as ports/navigation routing; it does not certify the complete USACE enterprise denominator"
+    },
+    "FEMA_PR_ABFE_1PCT": {
+      "authority": "Federal Emergency Management Agency",
+      "map_service": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
+      "status": "BOUND_MAP_SERVICE_LAYER_DENOMINATOR_OPEN",
+      "note": "Puerto Rico-specific advisory flood surface is separate from effective NFHL identity"
     }
   },
   "invariants": {
