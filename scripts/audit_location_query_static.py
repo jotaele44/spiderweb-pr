@@ -23,6 +23,7 @@ EXPECTED_BOUND = {
     "USGS_3DHP_NHD",
     "USFWS_NWI",
     "FEMA_NFHL",
+    "FEMA_PR_ABFE_1PCT",
     "USACE_PORTS_NAV",
 }
 
@@ -45,10 +46,12 @@ def main() -> int:
 
     if providers["SSURGO_SOILS"]["status"] != "RESOLVER_ONLY":
         raise SystemExit("FAIL: SSURGO must remain RESOLVER_ONLY until tabular chain closes")
-    if providers["USGS_3DHP_NHD"]["status"] != "RESOLVER_ONLY":
-        raise SystemExit("FAIL: 3DHP must remain RESOLVER_ONLY until layer denominator closes")
+    if providers["USGS_3DHP_NHD"]["status"] != "READY_SPECIALIZED":
+        raise SystemExit("FAIL: 3DHP readiness drift")
     if providers["FEMA_NFHL"]["status"] != "RESOLVER_ONLY":
         raise SystemExit("FAIL: FEMA NFHL must remain RESOLVER_ONLY until vector denominator closes")
+    if providers["FEMA_PR_ABFE_1PCT"]["status"] != "RESOLVER_ONLY":
+        raise SystemExit("FAIL: FEMA Puerto Rico ABFE must remain RESOLVER_ONLY until layer denominator closes")
     if providers["USFWS_NWI"]["status"] != "READY_SPECIALIZED":
         raise SystemExit("FAIL: NWI readiness drift")
     if providers["USACE_PORTS_NAV"]["status"] != "READY_SPECIALIZED":
