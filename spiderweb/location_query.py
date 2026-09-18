@@ -201,6 +201,39 @@ def _missing_credentials(provider: dict[str, Any], env: dict[str, str]) -> tuple
     return tuple(name for name in required if not env.get(str(name)))
 
 
+def _specialized_call(
+    provider_id: str,
+    provider: dict[str, Any],
+    normalized: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
+    executor = provider.get("specialized_executor")
+    if not isinstance(executor, dict):
+        return None, None
+    kind = str(executor.get("kind", "")).strip()
+    if kind == "imagery":
+        temporal = normalized.get("temporal")
+        if not isinstance(temporal, dict) or not temporal.get("date_range"):
+            return None, "TEMPORAL_REQUIRED"
+        bbox = normalized["resolved_bbox_wgs84"]
+        call = {
+            "provider_id": provider_id,
+            "execution_kind": "IMAGERY_PROVIDER_CALL",
+            "identity_state": "SPECIALIZED_SOURCE_ACQUISITION",
+            "provider": str(executor.get("provider", "")).strip(),
+            "bbox_wgs84": [
+                bbox["west"],
+                bbox["south"],
+                bbox["east"],
+                bbox["north"],
+            ],
+            "date_range": temporal["date_range"],
+        }
+        if not call["provider"]:
+            raise LocationQueryError(f"{provider_id}: imagery specialized executor lacks provider")
+        return call, None
+    return None, f"UNSUPPORTED_SPECIALIZED_EXECUTOR:{kind or 'MISSING'}"
+
+
 def route_query(
     query: dict[str, Any],
     *,
@@ -214,6 +247,9 @@ def route_query(
     geometry_type = normalized["geometry"]["type"]
     decisions: list[ProviderDecision] = []
     requests: list[dict[str, Any]] = []
+    specialized_calls: list[dict[str, Any]] = []
+    specialized_executor_ready_ids: set[str] = set()
+    specialized_blockers: dict[str, str] = {}
     for provider_id, provider in sorted(registry["providers"].items()):
         family = str(provider.get("family", "unknown"))
         if requested_families and family not in requested_families:
@@ -238,17 +274,38 @@ def route_query(
             provider_requests = build_request_specs(provider_id, provider, normalized)
             requests.extend(provider_requests)
 
+        specialized_call = None
+        specialized_blocker = None
+        if route_state == "ROUTABLE" and not provider_requests and provider.get("specialized_executor"):
+            specialized_call, specialized_blocker = _specialized_call(
+                provider_id,
+                provider,
+                normalized,
+            )
+            if specialized_call is not None and normalized["mode"] == "fetch":
+                specialized_calls.append(specialized_call)
+                specialized_executor_ready_ids.add(provider_id)
+            elif specialized_blocker is not None and normalized["mode"] == "fetch":
+                specialized_blockers[provider_id] = specialized_blocker
+
         if provider_requests and provider.get("execution_requires_post_fetch"):
             execution_kind = "REQUEST_SPECS_PLUS_POSTPROCESSOR"
             generic_executor_ready = False
         elif provider_requests:
             execution_kind = "BOUNDED_REQUEST_SPECS"
             generic_executor_ready = route_state == "ROUTABLE"
+        elif specialized_call is not None and normalized["mode"] == "fetch":
+            execution_kind = "SPECIALIZED_CALL"
+            generic_executor_ready = False
+        elif specialized_blocker is not None and normalized["mode"] == "fetch":
+            execution_kind = specialized_blocker
+            generic_executor_ready = False
         elif route_state == "ROUTABLE" and (
             provider.get("adapter")
             or provider.get("resolver")
             or provider.get("discovery")
             or provider.get("acquisition")
+            or provider.get("specialized_executor")
         ):
             execution_kind = "SPECIALIZED_ADAPTER"
             generic_executor_ready = False
@@ -285,7 +342,11 @@ def route_query(
     ]
     specialized_adapter_providers = [
         decision.provider_id for decision in decisions
-        if decision.execution_kind in {"SPECIALIZED_ADAPTER", "REQUEST_SPECS_PLUS_POSTPROCESSOR"}
+        if decision.execution_kind in {
+            "SPECIALIZED_ADAPTER",
+            "SPECIALIZED_CALL",
+            "REQUEST_SPECS_PLUS_POSTPROCESSOR",
+        }
     ]
     incomplete_providers = [
         decision.provider_id for decision in decisions
@@ -293,7 +354,11 @@ def route_query(
     ]
     execution_gap_providers = [
         decision.provider_id for decision in decisions
-        if decision.route_state == "ROUTABLE" and not decision.generic_executor_ready
+        if (
+            decision.route_state == "ROUTABLE"
+            and not decision.generic_executor_ready
+            and decision.provider_id not in specialized_executor_ready_ids
+        )
     ]
     blockers = sorted(set(incomplete_providers + execution_gap_providers))
     if normalized["mode"] != "fetch":
@@ -319,6 +384,10 @@ def route_query(
         "requests": requests,
         "generic_executor_provider_ids": generic_executor_providers,
         "specialized_adapter_provider_ids": specialized_adapter_providers,
+        "specialized_executor_provider_ids": sorted(specialized_executor_ready_ids),
+        "specialized_execution_blockers": dict(sorted(specialized_blockers.items())),
+        "specialized_call_count": len(specialized_calls),
+        "specialized_calls": specialized_calls,
         "incomplete_provider_ids": incomplete_providers,
         "execution_gap_provider_ids": execution_gap_providers,
         "fetch_blocker_provider_ids": blockers,
