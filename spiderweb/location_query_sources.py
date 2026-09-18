@@ -63,12 +63,20 @@ def _arcgis_query(url: str, bbox: tuple[float, float, float, float], *, out_fiel
         "geometryType": "esriGeometryEnvelope",
         "inSR": "4326",
         "spatialRel": "esriSpatialRelIntersects",
-        "outFields": out_fields,
-        "returnGeometry": "true",
-        "outSR": "4326",
-        "f": "geojson",
+        "returnIdsOnly": "true",
+        "f": "json",
     }
-    return {"method": "GET", "url": url.rstrip("/") + "/query?" + urlencode(params), "media_type": "application/geo+json"}
+    layer_url = url.rstrip("/")
+    return {
+        "protocol": "ARCGIS_FEATURE_LAYER",
+        "method": "GET",
+        "url": layer_url + "/query?" + urlencode(params),
+        "layer_url": layer_url,
+        "bbox_wgs84": list(bbox),
+        "out_fields": out_fields,
+        "media_type": "application/json",
+        "pagination_policy": "OBJECT_ID_DENOMINATOR_THEN_BATCH",
+    }
 
 def _wfs_getfeature(base: str, typename: str, bbox: tuple[float, float, float, float]) -> dict[str, Any]:
     west, south, east, north = bbox
