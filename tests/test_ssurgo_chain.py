@@ -357,3 +357,21 @@ def test_stage3_records_missing_parent_mukey_without_identity_inference() -> Non
     assert plan["component_parent"]["missing_mukey_count"] == 1
     assert plan["component_parent"]["missing_mukeys"] == ["326638"]
     assert plan["component_parent"]["returned_parent_subset"] is True
+
+
+def test_coinundationtype_current_documentation_evidence_is_bounded() -> None:
+    root = Path(__file__).resolve().parents[1]
+    contract = json.loads(
+        (root / "configs/ssurgo_component_children.json").read_text(encoding="utf-8")
+    )
+    row = next(record for record in contract["records"] if record["table"] == "coinundationtype")
+    assert row["parent_key"] == "cokey"
+    assert row["stable_key"] == "coinundationtypekey"
+    assert row["relationship_evidence"] == "TABLE_RELATIONSHIPS_REPORT_NOV_2025"
+    assert row["parent_key_field_evidence"] == "TABLES_COLUMNS_REPORT_NOV_2025"
+    assert row["stable_key_field_evidence"] == "TABLES_COLUMNS_REPORT_NOV_2025"
+    assert row["unique_constraint_evidence"] == "UNRESOLVED_IN_THIS_REPO_SNAPSHOT"
+    assert row["constraint_name_state"] == "UNRESOLVED"
+    assert contract["source_documents"]["table_relationships"]["document_epoch"] == "November 2025"
+    assert contract["source_documents"]["tables_and_columns"]["document_epoch"] == "November 2025"
+    assert contract["lineage"]["contradiction_class"] == "TIME"
