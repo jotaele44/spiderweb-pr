@@ -63,3 +63,118 @@ def test_post_request_without_body_fails_closed() -> None:
 def test_unknown_method_fails_closed() -> None:
     with pytest.raises(SystemExit, match="unsupported method"):
         mod._request_from_spec({"method": "DELETE", "url": "https://example.invalid/"}, 1)
+
+
+class _FakeHeaders(dict):
+    def get(self, key: str, default: str = "") -> str:
+        return super().get(key, default)
+
+
+class _FakeResponse:
+    def __init__(self, payload: object, *, status: int = 200, content_type: str = "application/json") -> None:
+        self.status = status
+        self.headers = _FakeHeaders({"Content-Type": content_type})
+        self._raw = json.dumps(payload).encode("utf-8")
+
+    def read(self) -> bytes:
+        return self._raw
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        return False
+
+
+def _arcgis_spec() -> dict:
+    return {
+        "protocol": "ARCGIS_FEATURE_LAYER",
+        "method": "GET",
+        "provider_id": "USFWS_NWI",
+        "request_role": "wetlands",
+        "identity_state": "SOURCE_MANIFESTATION",
+        "url": "https://example.invalid/FeatureServer/0/query?returnIdsOnly=true&f=json",
+        "layer_url": "https://example.invalid/FeatureServer/0",
+        "out_fields": "*",
+    }
+
+
+def test_arcgis_executor_closes_object_id_denominator(monkeypatch, tmp_path: Path) -> None:
+    responses = iter([
+        _FakeResponse({"objectIdFieldName": "OBJECTID", "objectIds": [3, 1, 2]}),
+        _FakeResponse({
+            "type": "FeatureCollection",
+            "features": [
+                {"type": "Feature", "properties": {"OBJECTID": 1}, "geometry": None},
+                {"type": "Feature", "properties": {"OBJECTID": 2}, "geometry": None},
+                {"type": "Feature", "properties": {"OBJECTID": 3}, "geometry": None},
+            ],
+        }, content_type="application/geo+json"),
+    ])
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: next(responses))
+    plan = {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]}
+    result = mod.execute(plan, tmp_path)
+    receipt = result["requests"][0]
+    assert result["state"] == "PASS"
+    assert receipt["state"] == "PASS"
+    assert receipt["denominator_id_count"] == 3
+    assert receipt["returned_id_count"] == 3
+    assert receipt["batch_count"] == 1
+    assert receipt["id_set_equal"] is True
+    assert receipt["arithmetic_closure"] is True
+    assert Path(receipt["id_denominator_raw_path"]).is_file()
+    assert len(receipt["batches"]) == 1
+
+
+def test_arcgis_zero_ids_is_explicit_no_coverage(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        mod,
+        "urlopen",
+        lambda request, timeout=0: _FakeResponse(
+            {"objectIdFieldName": "OBJECTID", "objectIds": []}
+        ),
+    )
+    result = mod.execute(
+        {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]},
+        tmp_path,
+    )
+    receipt = result["requests"][0]
+    assert result["state"] == "PASS"
+    assert result["no_coverage_count"] == 1
+    assert receipt["state"] == "NO_COVERAGE"
+    assert receipt["denominator_id_count"] == 0
+    assert receipt["arithmetic_closure"] is True
+
+
+def test_arcgis_missing_returned_id_fails_closed(monkeypatch, tmp_path: Path) -> None:
+    responses = iter([
+        _FakeResponse({"objectIdFieldName": "OBJECTID", "objectIds": [1, 2, 3]}),
+        _FakeResponse({
+            "type": "FeatureCollection",
+            "features": [
+                {"type": "Feature", "properties": {"OBJECTID": 1}, "geometry": None},
+                {"type": "Feature", "properties": {"OBJECTID": 2}, "geometry": None},
+            ],
+        }, content_type="application/geo+json"),
+    ])
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: next(responses))
+    with pytest.raises(SystemExit, match="ID mismatch"):
+        mod.execute(
+            {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]},
+            tmp_path,
+        )
+
+
+def test_arcgis_duplicate_denominator_ids_fail_closed(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        mod,
+        "urlopen",
+        lambda request, timeout=0: _FakeResponse(
+            {"objectIdFieldName": "OBJECTID", "objectIds": [1, 1]}
+        ),
+    )
+    with pytest.raises(SystemExit, match="duplicate IDs in denominator"):
+        mod.execute(
+            {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]},
+            tmp_path,
+        )
