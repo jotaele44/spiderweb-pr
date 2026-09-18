@@ -265,9 +265,11 @@ def test_package_rejects_duplicate_raw_artifact_path(tmp_path: Path, monkeypatch
     raw = tmp_path / "source.raw"
     raw.write_bytes(b"abc")
     digest = mod.sha256_file(raw)
+    spec_a = _spec("a")
+    spec_b = _spec("b")
     plan = {
         "query": {"query_id": "q", "mode": "fetch"},
-        "requests": [],
+        "requests": [spec_a, spec_b],
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
     }
     plan_path = tmp_path / "plan.json"
@@ -391,3 +393,63 @@ def test_package_discovery_scope_matches_only_discovery_subset(tmp_path: Path, m
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["invariants"]["request_spec_vector_equal"] is True
     assert result["planned_request_count_for_execution_scope"] == 1
+
+
+def test_top_level_package_requires_provider_registry_hash(tmp_path: Path, monkeypatch) -> None:
+    plan = {
+        "schema_version": "spiderweb.location_query_plan.v1.1",
+        "query": {"query_id": "q", "mode": "fetch"},
+        "requests": [],
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "fetch_gate": "READY",
+        "request_count": 0,
+        "pass_count": 0,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    with pytest.raises(SystemExit, match="provider_registry_sha256"):
+        mod.main()
+
+
+def test_top_level_package_preserves_provider_registry_hash(tmp_path: Path, monkeypatch) -> None:
+    registry_sha = "a" * 64
+    plan = {
+        "schema_version": "spiderweb.location_query_plan.v1.1",
+        "provider_registry_sha256": registry_sha,
+        "query": {"query_id": "q", "mode": "fetch"},
+        "requests": [],
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "fetch_gate": "READY",
+        "request_count": 0,
+        "pass_count": 0,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    assert mod.main() == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["provider_registry_sha256"] == registry_sha
+    assert result["invariants"]["provider_registry_hash_bound_when_top_level"] is True
