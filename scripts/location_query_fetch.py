@@ -296,6 +296,12 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
     mode = str(query.get("mode", "")).lower()
     if mode != "fetch":
         raise SystemExit(f"FAIL: network executor requires query.mode=fetch; got {mode or 'MISSING'}")
+    fetch_gate = str(plan.get("fetch_gate", "MISSING"))
+    if fetch_gate not in {"READY", "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"}:
+        raise SystemExit(
+            f"FAIL: acquisition plan fetch_gate={fetch_gate}; "
+            f"blockers={plan.get('fetch_blocker_provider_ids', [])}"
+        )
     requests = plan.get("requests", [])
     if not isinstance(requests, list):
         raise SystemExit("FAIL: plan.requests must be a list")
@@ -340,6 +346,8 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
     result = {
         "schema_version": "spiderweb.location_query_fetch_receipt.v1.2",
         "query_mode": mode,
+        "fetch_gate": fetch_gate,
+        "fetch_blocker_provider_ids": plan.get("fetch_blocker_provider_ids", []),
         "request_count": len(receipts),
         "pass_count": sum(r["state"] in {"PASS", "NO_COVERAGE"} for r in receipts),
         "no_coverage_count": sum(r["state"] == "NO_COVERAGE" for r in receipts),
