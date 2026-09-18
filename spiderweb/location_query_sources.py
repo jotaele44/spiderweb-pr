@@ -226,6 +226,7 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
             "url": provider["map_service"].rstrip("/") + "?f=json",
             "protocol": "ARCGIS_METADATA",
             "media_type": "application/json",
+            "protocol": "ARCGIS_METADATA",
             "bbox_wgs84": list(bbox),
             "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
         }]
