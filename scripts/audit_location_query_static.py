@@ -14,6 +14,9 @@ FILES = [
     ROOT / "scripts/location_query_fetch.py",
     ROOT / "scripts/location_query_geocode.py",
     ROOT / "scripts/audit_location_query_registry.py",
+    ROOT / "scripts/location_query_package.py",
+    ROOT / "scripts/location_query_provider_health.py",
+    ROOT / "scripts/location_query_usace_inventory.py",
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
@@ -38,6 +41,9 @@ def main() -> int:
     bindings = json.loads(BINDINGS.read_text(encoding="utf-8"))
     providers = registry["providers"]
     bound = bindings["bindings"]
+
+    if len(providers) != 16:
+        raise SystemExit(f"FAIL: provider denominator != 16; got {len(providers)}")
 
     if not EXPECTED_BOUND <= set(bound):
         raise SystemExit(f"FAIL: missing source bindings {sorted(EXPECTED_BOUND-set(bound))}")
