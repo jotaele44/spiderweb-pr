@@ -29,13 +29,10 @@ def test_executor_rejects_plan_mode_before_network(tmp_path: Path) -> None:
         mod.execute(plan, tmp_path)
 
 
-def test_executor_accepts_empty_fetch_plan_without_network(tmp_path: Path) -> None:
+def test_executor_rejects_empty_fetch_plan(tmp_path: Path) -> None:
     plan = {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": []}
-    result = mod.execute(plan, tmp_path)
-    assert result["state"] == "PASS"
-    assert result["query_mode"] == "fetch"
-    assert result["request_count"] == 0
-    assert result["raw_bytes_preserved_before_derivation"] is True
+    with pytest.raises(SystemExit, match="refuses empty request set"):
+        mod.execute(plan, tmp_path)
 
 
 def test_safe_name_is_deterministic() -> None:
@@ -198,10 +195,8 @@ def test_executor_allows_explicit_partial_gate_without_requests(tmp_path: Path) 
         "fetch_blocker_provider_ids": ["NASA_GIBS_IMAGERY"],
         "requests": [],
     }
-    result = mod.execute(plan, tmp_path)
-    assert result["state"] == "PARTIAL"
-    assert result["fetch_gate"] == "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"
-    assert result["fetch_blocker_provider_ids"] == ["NASA_GIBS_IMAGERY"]
+    with pytest.raises(SystemExit, match="refuses empty request set"):
+        mod.execute(plan, tmp_path)
 
 
 def test_executor_refuses_to_overwrite_existing_snapshot(tmp_path: Path) -> None:
