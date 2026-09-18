@@ -59,4 +59,6 @@ def test_arcgis_layer_denominator_drives_aoi_queries_by_layer_id() -> None:
     assert plan["request_count"] == 2
     assert [r["layer_id"] for r in plan["requests"]] == [0, 3]
     assert all("geometry=" in r["url"] for r in plan["requests"])
+    assert all("returnIdsOnly=true" in r["url"] for r in plan["requests"])
+    assert all(r["protocol"] == "ARCGIS_FEATURE_LAYER" for r in plan["requests"])
     assert all(r["identity_state"] == "SOURCE_LAYER_MANIFESTATION" for r in plan["requests"])
