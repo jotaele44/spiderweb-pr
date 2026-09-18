@@ -28,7 +28,7 @@ def _receipt(
     fetch: dict[str, Any],
     provider_id: str,
     request_role: str,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     requests = fetch.get("requests")
     if not isinstance(requests, list):
         raise DenominatorClosureError("fetch receipt lacks requests list")
@@ -38,9 +38,11 @@ def _receipt(
         and row.get("provider_id") == provider_id
         and row.get("request_role") == request_role
     ]
+    if not rows:
+        return None
     if len(rows) != 1:
         raise DenominatorClosureError(
-            f"expected exactly one {provider_id}/{request_role} receipt; got {len(rows)}"
+            f"expected at most one {provider_id}/{request_role} receipt; got {len(rows)}"
         )
     return rows[0]
 
@@ -93,7 +95,7 @@ def close_discovery_denominators(
     # adjudication against the provisional registry candidate set.
     if "USGS_3DHP_NHD" in providers:
         receipt = _receipt(fetch, "USGS_3DHP_NHD", "feature_service_metadata")
-        if receipt.get("state") == "PASS":
+        if receipt is not None and receipt.get("state") == "PASS":
             denominator = freeze_arcgis_layer_denominator(
                 raw=_raw_bytes(receipt),
                 receipt=receipt,
@@ -121,7 +123,7 @@ def close_discovery_denominators(
     # itself promote vector feature identity.
     if "FEMA_NFHL" in providers:
         receipt = _receipt(fetch, "FEMA_NFHL", "nfhl_wms_capabilities")
-        if receipt.get("state") == "PASS":
+        if receipt is not None and receipt.get("state") == "PASS":
             denominator = freeze_wms_layer_denominator(
                 raw=_raw_bytes(receipt),
                 receipt=receipt,
@@ -141,7 +143,7 @@ def close_discovery_denominators(
     # frozen, but feature acquisition stays a dependent stage.
     if "FEMA_PR_ABFE_1PCT" in providers:
         receipt = _receipt(fetch, "FEMA_PR_ABFE_1PCT", "abfe_map_service_denominator")
-        if receipt.get("state") == "PASS":
+        if receipt is not None and receipt.get("state") == "PASS":
             denominator = freeze_arcgis_layer_denominator(
                 raw=_raw_bytes(receipt),
                 receipt=receipt,
@@ -161,7 +163,7 @@ def close_discovery_denominators(
     # explicitly OPEN until every folder listing is frozen and merged.
     if "USACE_GENERAL_GIS" in providers:
         receipt = _receipt(fetch, "USACE_GENERAL_GIS", "services_root_denominator")
-        if receipt.get("state") == "PASS":
+        if receipt is not None and receipt.get("state") == "PASS":
             denominator = freeze_arcgis_service_denominator(
                 raw=_raw_bytes(receipt),
                 receipt=receipt,
