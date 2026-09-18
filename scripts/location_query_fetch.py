@@ -417,7 +417,7 @@ def execute(
             identity = str(spec.get("identity_state", "")).upper()
             if "DISCOVERY" in identity or "RESOLVER_STAGE" in identity:
                 selected.append(spec)
-        if requests and not selected:
+        if not selected:
             raise SystemExit(
                 "FAIL: discovery-only execution found no discovery/resolver-stage request specs"
             )
@@ -432,6 +432,8 @@ def execute(
                 f"FAIL: acquisition plan fetch_gate={fetch_gate}; "
                 f"blockers={plan.get('fetch_blocker_provider_ids', [])}"
             )
+        if not requests:
+            raise SystemExit("FAIL: production executor refuses empty request set")
         execution_scope = "PRODUCTION_OR_BOUNDED_DEPENDENT"
         effective_gate = fetch_gate
 
