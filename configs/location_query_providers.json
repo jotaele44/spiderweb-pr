@@ -140,7 +140,7 @@
     },
     "USGS_3DHP_NHD": {
       "family": "hydrography",
-      "status": "RESOLVER_ONLY",
+      "status": "READY_SPECIALIZED",
       "query_modes": [
         "point",
         "radius",
@@ -149,12 +149,39 @@
         "geojson"
       ],
       "adapter": "spiderweb.location_query_sources",
-      "feature_service": "https://3dhp.usgs.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer",
-      "reason": "authoritative live FeatureServer bound; current release layer denominator must be frozen before bulk layer fetch"
+      "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
+      "release_observed": "2026-08-05",
+      "layers": [
+        {
+          "id": 20,
+          "role": "hydrolocation_sink_spring_waterbody_outlet"
+        },
+        {
+          "id": 30,
+          "role": "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet"
+        },
+        {
+          "id": 40,
+          "role": "hydrolocation_reach_code_external_connection"
+        },
+        {
+          "id": 50,
+          "role": "flowline"
+        },
+        {
+          "id": 60,
+          "role": "waterbody"
+        },
+        {
+          "id": 80,
+          "role": "catchment"
+        }
+      ],
+      "reason": "official current 3DHP_all six-layer denominator frozen; individual source lineage may remain NHD where EDH has not replaced legacy hydrography"
     },
     "USFWS_NWI": {
       "family": "wetlands",
-      "status": "RESOLVER_ONLY",
+      "status": "READY_SPECIALIZED",
       "query_modes": [
         "point",
         "radius",
@@ -164,7 +191,8 @@
       ],
       "adapter": "spiderweb.location_query_sources",
       "service_root": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest",
-      "reason": "Official NWI REST service root is bound; service/layer denominator must be frozen before feature-layer acquisition is promoted."
+      "layer_url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/FeatureServer/0",
+      "reason": "NWI REST surface and Wetlands feature layer are bound; feature identity remains source manifestation identity"
     },
     "FEMA_NFHL": {
       "family": "flood_hazard",
