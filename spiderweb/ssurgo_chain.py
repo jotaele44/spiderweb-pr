@@ -83,6 +83,7 @@ def build_stage2_plan(*, query: dict[str, Any], mapunitpoly_raw: bytes, mapunitp
             "url": SDA_TABULAR_ENDPOINT,
             "media_type": "application/json",
             "json_body": {"query": sql, "format": "JSON+COLUMNNAME"},
+            "parent_denominator_sha256": canonical_mukey_sha256(mukeys),
             "parent_denominator": {"key": "mukey", "count": len(mukeys), "canonical_set_sha256": canonical_mukey_sha256(mukeys)},
         })
     return {
@@ -108,7 +109,7 @@ def write_stage2_plan(*, query: dict[str, Any], mapunitpoly_raw_path: Path, mapu
     return plan
 
 
-def extract_cokeys_from_sda(raw: bytes) -> tuple[list[str], list[str]]:
+def extract_cokeys_from_sda(raw: bytes) -> tuple[list[str], list[str], list[str]]:
     if not raw:
         raise SSURGOChainError("component raw bytes are empty")
     try:
@@ -127,6 +128,7 @@ def extract_cokeys_from_sda(raw: bytes) -> tuple[list[str], list[str]]:
     mukey_idx = header.index("mukey")
     cokey_idx = header.index("cokey")
     cokeys: list[str] = []
+    mukeys: list[str] = []
     for row_number, row in enumerate(rows, 1):
         if not isinstance(row, list) or len(row) != len(header):
             raise SSURGOChainError(f"component row-width mismatch at row {row_number}")
@@ -136,12 +138,13 @@ def extract_cokeys_from_sda(raw: bytes) -> tuple[list[str], list[str]]:
             raise SSURGOChainError(f"component invalid MUKEY at row {row_number}")
         if not cokey or not cokey.isdigit():
             raise SSURGOChainError(f"component invalid COKEY at row {row_number}")
+        mukeys.append(mukey)
         cokeys.append(cokey)
     if not cokeys:
         raise SSURGOChainError("component response contains zero COKEY rows")
     if len(cokeys) != len(set(cokeys)):
         raise SSURGOChainError("component response contains duplicate COKEYs")
-    return sorted(cokeys, key=int), header
+    return sorted(cokeys, key=int), header, mukeys
 
 
 def canonical_cokey_sha256(cokeys: list[str]) -> str:
@@ -154,6 +157,7 @@ def build_stage3_child_plan(
     component_raw: bytes,
     component_receipt: dict[str, Any],
     child_contract: dict[str, Any],
+    certified_mukeys: list[str],
 ) -> dict[str, Any]:
     if component_receipt.get("provider_id") != "SSURGO_SOILS":
         raise SSURGOChainError("component receipt provider_id is not SSURGO_SOILS")
@@ -165,7 +169,27 @@ def build_stage3_child_plan(
     if component_receipt.get("sha256") != actual_sha:
         raise SSURGOChainError("component raw SHA256 does not match receipt")
 
-    cokeys, component_header = extract_cokeys_from_sda(component_raw)
+    normalized_parent_mukeys = [str(value).strip() for value in certified_mukeys]
+    if not normalized_parent_mukeys:
+        raise SSURGOChainError("certified MUKEY denominator is empty")
+    if any(not value.isdigit() for value in normalized_parent_mukeys):
+        raise SSURGOChainError("certified MUKEY denominator contains non-numeric value")
+    if len(normalized_parent_mukeys) != len(set(normalized_parent_mukeys)):
+        raise SSURGOChainError("certified MUKEY denominator contains duplicates")
+    normalized_parent_mukeys = sorted(normalized_parent_mukeys, key=int)
+    expected_mukey_sha = canonical_mukey_sha256(normalized_parent_mukeys)
+    if component_receipt.get("parent_denominator_sha256") != expected_mukey_sha:
+        raise SSURGOChainError("component receipt parent MUKEY denominator hash mismatch")
+
+    cokeys, component_header, returned_mukeys = extract_cokeys_from_sda(component_raw)
+    returned_mukey_set = set(returned_mukeys)
+    certified_mukey_set = set(normalized_parent_mukeys)
+    foreign_mukeys = sorted(returned_mukey_set - certified_mukey_set, key=int)
+    if foreign_mukeys:
+        raise SSURGOChainError(
+            f"component response contains foreign MUKEYs: {foreign_mukeys[:20]}"
+        )
+    missing_mukeys = sorted(certified_mukey_set - returned_mukey_set, key=int)
     if child_contract.get("schema_version") != "spiderweb.ssurgo_component_children.v1.1":
         raise SSURGOChainError(
             "unsupported component child contract schema_version"
@@ -249,6 +273,13 @@ def build_stage3_child_plan(
             "raw_sha256": actual_sha,
             "runtime_schema_columns": len(component_header),
             "row_count": len(cokeys),
+            "certified_mukey_count": len(normalized_parent_mukeys),
+            "returned_mukey_count": len(returned_mukey_set),
+            "foreign_mukey_count": 0,
+            "missing_mukey_count": len(missing_mukeys),
+            "missing_mukeys": missing_mukeys,
+            "parent_denominator_sha256": expected_mukey_sha,
+            "returned_parent_subset": returned_mukey_set <= certified_mukey_set,
         },
         "ssurgo_cokey_denominator": {
             "cokey_count": len(cokeys),
