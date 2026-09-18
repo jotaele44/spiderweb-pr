@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import Any, Iterable
 
-from .location_query_sources import build_request_specs
+from .location_query_sources import build_request_specs, query_bbox
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REGISTRY = REPO_ROOT / "configs/location_query_providers.json"
@@ -135,6 +135,25 @@ def validate_query(query: dict[str, Any]) -> dict[str, Any]:
     if families is not None:
         normalized["families"] = sorted({v.strip() for v in families})
     normalized["allow_partial"] = allow_partial
+
+    # Geometry must be intrinsically valid even when no provider/family routes it.
+    # This prevents malformed GeoJSON from silently becoming an empty valid plan.
+    try:
+        west, south, east, north = query_bbox(normalized)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LocationQueryError(f"invalid bounded geometry: {exc}") from exc
+    if not (-180 <= west < east <= 180 and -90 <= south < north <= 90):
+        raise LocationQueryError("geometry does not resolve to a valid nonzero WGS84 envelope")
+    if east - west > 180:
+        raise LocationQueryError(
+            "antimeridian-spanning geometry is not yet supported by LOCATION_QUERY"
+        )
+    normalized["resolved_bbox_wgs84"] = {
+        "west": west,
+        "south": south,
+        "east": east,
+        "north": north,
+    }
     return normalized
 
 
