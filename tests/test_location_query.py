@@ -295,10 +295,10 @@ def test_non_wgs84_bbox_crs_fails_closed() -> None:
             "query_id": "bad-crs",
             "geometry": {
                 "type": "bbox",
-                "west": 200000,
-                "south": 200000,
-                "east": 300000,
-                "north": 300000,
+                "west": -66.1,
+                "south": 18.2,
+                "east": -65.9,
+                "north": 18.4,
                 "crs": "EPSG:26920",
             },
         })
