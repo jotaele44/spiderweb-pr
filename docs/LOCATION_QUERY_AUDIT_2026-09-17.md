@@ -90,3 +90,26 @@ The initial PR workflow runs failed before executing steps (`steps=[]`) across C
 - Geology/karst and hydrogeology reuse the existing verified queryable subsurface source denominator and are `READY_SPECIALIZED` without promoting reference-only sources.
 - Place-name geocoding remains discovery-only and now freezes raw provider bytes before interpreting candidates.
 - GitHub Actions remains `BLOCKED_ACTIONS_INFRASTRUCTURE` where jobs terminate with zero executed steps; that is not code-test evidence.
+
+
+## 2026-09-17 denominator-closure update
+
+The provider denominator is now 16 after adding the bounded FEMA Puerto Rico ABFE lane separately from FEMA NFHL. Source taxonomy remains separate from canonical identity.
+
+New implementation artifacts:
+- `spiderweb/provider_denominators.py`: freezes ArcGIS layer, ArcGIS service-root, and WMS named-layer denominators from preserved raw bytes + matching acquisition receipt SHA-256.
+- `scripts/freeze_location_provider_denominator.py`: operator CLI for those denominator freezes.
+- `spiderweb/denominator_chain.py`: emits dependent metadata/query plans from a frozen parent denominator.
+- `scripts/build_location_denominator_stage.py`: CLI for USACE service-root -> per-service metadata and ArcGIS layer denominator -> AOI feature queries.
+- `spiderweb/ssurgo_chain.py`: MapunitPoly raw bytes -> exact numeric MUKEY denominator -> mapunit/component SDA POST plan.
+- `scripts/location_query_fetch.py` v1.1: bounded GET + explicit JSON POST with request-body SHA-256 and raw response preservation.
+- `spiderweb/place_resolver.py`: discovery-only geocoder preserving the full candidate set; explicit analyst candidate binding is required before LOCATION_QUERY geometry exists.
+
+Certification corrections:
+- USGS 3DHP/NHD is `RESOLVER_ONLY` again. Six observed layer candidates remain preserved as provisional registry context, but no frozen raw FeatureServer metadata receipt on this branch yet proves the release denominator. Production routing therefore emits only `feature_service_metadata` until that denominator is frozen.
+- NWI remains `READY_SPECIALIZED` because the exact Wetlands FeatureServer layer is explicitly bound; feature identity remains source-manifestation identity.
+- FEMA NFHL remains `RESOLVER_ONLY`; WMS named-layer inventory is metadata, not vector-feature identity.
+- FEMA PR ABFE remains `RESOLVER_ONLY` until its MapServer layer denominator is frozen and AOI layer-query behavior is executed.
+- USACE general GIS now emits an explicit service-root metadata request and can freeze the returned service denominator; the ports/navigation subset remains separately `READY_SPECIALIZED`.
+
+No provider may be promoted merely because a parser or planner exists. Runtime acquisition, denominator arithmetic, stable-ID/cardinality checks, and provenance hashes remain downstream certification gates.
