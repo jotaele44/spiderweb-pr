@@ -10,6 +10,7 @@ from spiderweb.provider_denominators import (
     freeze_arcgis_layer_denominator,
     freeze_arcgis_service_denominator,
     freeze_wms_layer_denominator,
+    merge_arcgis_service_denominators,
 )
 
 
@@ -62,6 +63,7 @@ def test_arcgis_service_denominator_closes_services_and_folders() -> None:
     )
     assert out["service_count"] == 2
     assert out["folders"] == ["a", "z"]
+    assert all(row["scope_raw"] == "" for row in out["records"])
 
 
 def test_wms_denominator_uses_named_layers_only() -> None:
@@ -82,3 +84,41 @@ def test_raw_hash_mismatch_fails_closed() -> None:
     bad["sha256"] = "0" * 64
     with pytest.raises(DenominatorError, match="SHA256"):
         freeze_arcgis_layer_denominator(raw=raw, receipt=bad, provider_id="X", request_role="Y")
+
+
+def test_merge_arcgis_service_denominators_preserves_folder_scope() -> None:
+    root = {
+        "schema_version": "spiderweb.arcgis_service_denominator.v1.0",
+        "provider_id": "USACE_GENERAL_GIS",
+        "state": "PASS",
+        "canonical_records_sha256": "1" * 64,
+        "folders": ["Navigation"],
+        "records": [{"scope_raw": "", "name_raw": "Ports", "type_raw": "FeatureServer"}],
+    }
+    folder = {
+        "schema_version": "spiderweb.arcgis_service_denominator.v1.0",
+        "provider_id": "USACE_GENERAL_GIS",
+        "state": "PASS",
+        "canonical_records_sha256": "2" * 64,
+        "folders": [],
+        "records": [{"scope_raw": "Navigation", "name_raw": "Ports", "type_raw": "FeatureServer"}],
+    }
+    out = merge_arcgis_service_denominators([root, folder], provider_id="USACE_GENERAL_GIS")
+    assert out["service_count"] == 2
+    assert {(r["scope_raw"], r["name_raw"]) for r in out["records"]} == {
+        ("", "Ports"),
+        ("Navigation", "Ports"),
+    }
+
+
+def test_merge_rejects_duplicate_scoped_service() -> None:
+    row = {
+        "schema_version": "spiderweb.arcgis_service_denominator.v1.0",
+        "provider_id": "USACE_GENERAL_GIS",
+        "state": "PASS",
+        "canonical_records_sha256": "3" * 64,
+        "folders": [],
+        "records": [{"scope_raw": "", "name_raw": "Ports", "type_raw": "FeatureServer"}],
+    }
+    with pytest.raises(DenominatorError, match="duplicate service across denominators"):
+        merge_arcgis_service_denominators([row, row], provider_id="USACE_GENERAL_GIS")
