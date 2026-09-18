@@ -307,6 +307,12 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
         raise SystemExit("FAIL: plan.requests must be a list")
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    final_receipt = output_dir / "fetch_receipt.json"
+    if final_receipt.exists():
+        raise SystemExit(
+            f"FAIL: output snapshot already exists: {final_receipt}; "
+            "use a new versioned output directory"
+        )
     receipts: list[dict] = []
     failures = 0
 
@@ -364,7 +370,7 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
         "arcgis_id_denominator_required": True,
         "requests": receipts,
     }
-    write_json(output_dir / "fetch_receipt.json", result)
+    write_json(final_receipt, result)
     return result
 
 
