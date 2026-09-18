@@ -138,24 +138,19 @@ def test_nwi_bound_feature_layer_is_routable() -> None:
     assert "/Wetlands/FeatureServer/0/query?" in plan["requests"][0]["url"]
 
 
-def test_3dhp_frozen_six_layer_denominator_is_routable() -> None:
+def test_3dhp_remains_metadata_first_until_raw_denominator_freeze() -> None:
     query = {
         "query_id": "fixture-3dhp",
         "geometry": {"type": "bbox", "west": -66.1, "south": 18.2, "east": -65.9, "north": 18.4},
         "families": ["hydrography"],
     }
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
-    assert plan["providers"][0]["route_state"] == "ROUTABLE"
-    assert plan["request_count"] == 6
-    assert {r["request_role"] for r in plan["requests"]} == {
-        "hydrolocation_sink_spring_waterbody_outlet",
-        "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet",
-        "hydrolocation_reach_code_external_connection",
-        "flowline",
-        "waterbody",
-        "catchment",
-    }
-    assert all(r["identity_state"] == "SOURCE_MANIFESTATION" for r in plan["requests"])
+    assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
+    assert plan["request_count"] == 1
+    request = plan["requests"][0]
+    assert request["request_role"] == "feature_service_metadata"
+    assert request["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
+    assert request["url"].endswith("?f=json")
 
 
 def test_usace_ports_navigation_has_four_bound_source_requests() -> None:
