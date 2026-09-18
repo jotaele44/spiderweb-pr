@@ -242,6 +242,9 @@ def route_query(
     blockers = sorted(set(incomplete_providers + execution_gap_providers))
     if normalized["mode"] != "fetch":
         fetch_gate = "NOT_REQUESTED"
+    elif not decisions:
+        fetch_gate = "BLOCKED_NO_MATCHING_PROVIDER"
+        blockers = ["__NO_MATCHING_PROVIDER__"]
     elif not blockers:
         fetch_gate = "READY"
     elif normalized["allow_partial"]:
