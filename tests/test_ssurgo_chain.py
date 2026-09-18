@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
 
 import pytest
 
-from spiderweb.ssurgo_chain import SSURGOChainError, build_stage2_plan
+from spiderweb.ssurgo_chain import (
+    SSURGOChainError,
+    build_stage2_plan,
+    build_stage3_child_plan,
+)
 
 
 GML = b"""<?xml version="1.0"?>
@@ -47,3 +52,87 @@ def test_stage2_fails_on_non_numeric_mukey() -> None:
     raw = GML.replace(b"326638", b"BADKEY")
     with pytest.raises(SSURGOChainError):
         build_stage2_plan(query={"query_id": "x"}, mapunitpoly_raw=raw, mapunitpoly_receipt=receipt(raw))
+
+
+COMPONENT = json.dumps({
+    "Table": [
+        ["compname", "mukey", "cokey"],
+        ["A", "326637", "27625770"],
+        ["B", "326638", "27625771"],
+    ]
+}).encode("utf-8")
+
+
+def component_receipt(raw: bytes = COMPONENT) -> dict:
+    return {
+        "provider_id": "SSURGO_SOILS",
+        "request_role": "component",
+        "state": "PASS",
+        "sha256": hashlib.sha256(raw).hexdigest(),
+    }
+
+
+def test_stage3_freezes_cokey_denominator_and_current_child_contract() -> None:
+    contract = {
+        "tables": [
+            {
+                "table": "chorizon",
+                "stable_key": "chkey",
+                "parent_key": "cokey",
+                "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+                "cardinality": "0:N_or_1:N_table_specific",
+            },
+            {
+                "table": "comonth",
+                "stable_key": "comonthkey",
+                "parent_key": "cokey",
+                "key_evidence": "UNIQUE_CONSTRAINT_REPORT",
+                "cardinality": "0:N_or_1:N_table_specific",
+            },
+        ],
+        "invariants": {"table_count": 2},
+    }
+    plan = build_stage3_child_plan(
+        query={"query_id": "x"},
+        component_raw=COMPONENT,
+        component_receipt=component_receipt(),
+        child_contract=contract,
+    )
+    assert plan["fetch_gate"] == "READY"
+    assert plan["ssurgo_cokey_denominator"]["cokeys"] == ["27625770", "27625771"]
+    assert plan["ssurgo_cokey_denominator"]["cokey_count"] == 2
+    assert plan["child_table_denominator"]["table_count"] == 2
+    assert plan["request_count"] == 2
+    assert all(r["protocol"] == "SDA_TABULAR" for r in plan["requests"])
+    assert all(r["parent_denominator_sha256"] == plan["ssurgo_cokey_denominator"]["canonical_cokey_set_sha256"] for r in plan["requests"])
+    assert all("WHERE cokey IN ('27625770', '27625771')" in r["json_body"]["query"] for r in plan["requests"])
+
+
+def test_stage3_duplicate_component_cokey_fails_closed() -> None:
+    raw = json.dumps({
+        "Table": [
+            ["mukey", "cokey"],
+            ["326637", "27625770"],
+            ["326637", "27625770"],
+        ]
+    }).encode("utf-8")
+    with pytest.raises(SSURGOChainError, match="duplicate COKEYs"):
+        build_stage3_child_plan(
+            query={"query_id": "x"},
+            component_raw=raw,
+            component_receipt=component_receipt(raw),
+            child_contract={"tables": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}], "invariants": {"table_count": 1}},
+        )
+
+
+def test_stage3_child_contract_count_drift_fails_closed() -> None:
+    with pytest.raises(SSURGOChainError, match="table_count invariant drift"):
+        build_stage3_child_plan(
+            query={"query_id": "x"},
+            component_raw=COMPONENT,
+            component_receipt=component_receipt(),
+            child_contract={
+                "tables": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}],
+                "invariants": {"table_count": 2},
+            },
+        )
