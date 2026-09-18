@@ -17,6 +17,16 @@ FILES = [
     ROOT / "scripts/location_query_package.py",
     ROOT / "scripts/location_query_provider_health.py",
     ROOT / "scripts/location_query_usace_inventory.py",
+    ROOT / "spiderweb/ssurgo_chain.py",
+    ROOT / "spiderweb/provider_denominators.py",
+    ROOT / "spiderweb/denominator_chain.py",
+    ROOT / "spiderweb/place_resolver.py",
+    ROOT / "spiderweb/provider_promotion.py",
+    ROOT / "scripts/ssurgo_location_stage2.py",
+    ROOT / "scripts/freeze_location_provider_denominator.py",
+    ROOT / "scripts/build_location_denominator_stage.py",
+    ROOT / "scripts/place_resolve.py",
+    ROOT / "scripts/adjudicate_location_provider.py",
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
@@ -52,8 +62,10 @@ def main() -> int:
 
     if providers["SSURGO_SOILS"]["status"] != "RESOLVER_ONLY":
         raise SystemExit("FAIL: SSURGO must remain RESOLVER_ONLY until tabular chain closes")
-    if providers["USGS_3DHP_NHD"]["status"] != "READY_SPECIALIZED":
-        raise SystemExit("FAIL: 3DHP readiness drift")
+    if providers["USGS_3DHP_NHD"]["status"] != "RESOLVER_ONLY":
+        raise SystemExit("FAIL: 3DHP must remain RESOLVER_ONLY until frozen raw metadata denominator closes")
+    if providers["USGS_3DHP_NHD"].get("denominator_state") != "OPEN_RAW_METADATA_FREEZE":
+        raise SystemExit("FAIL: 3DHP denominator state drift")
     if providers["FEMA_NFHL"]["status"] != "RESOLVER_ONLY":
         raise SystemExit("FAIL: FEMA NFHL must remain RESOLVER_ONLY until vector denominator closes")
     if providers["FEMA_PR_ABFE_1PCT"]["status"] != "RESOLVER_ONLY":
