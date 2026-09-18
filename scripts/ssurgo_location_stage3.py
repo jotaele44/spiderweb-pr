@@ -14,6 +14,7 @@ def main() -> int:
     parser.add_argument("--query", type=Path, required=True)
     parser.add_argument("--component-raw", type=Path, required=True)
     parser.add_argument("--component-receipt", type=Path, required=True)
+    parser.add_argument("--stage2-plan", type=Path, required=True)
     parser.add_argument(
         "--children",
         type=Path,
@@ -24,12 +25,17 @@ def main() -> int:
 
     query = json.loads(args.query.read_text(encoding="utf-8"))
     receipt = json.loads(args.component_receipt.read_text(encoding="utf-8"))
+    stage2 = json.loads(args.stage2_plan.read_text(encoding="utf-8"))
     contract = json.loads(args.children.read_text(encoding="utf-8"))
+    certified_mukeys = (stage2.get("ssurgo_denominator") or {}).get("mukeys")
+    if not isinstance(certified_mukeys, list):
+        raise SystemExit("FAIL: stage2 plan lacks certified MUKEY denominator")
     result = build_stage3_child_plan(
         query=query,
         component_raw=args.component_raw.read_bytes(),
         component_receipt=receipt,
         child_contract=contract,
+        certified_mukeys=[str(value) for value in certified_mukeys],
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
