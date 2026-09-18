@@ -38,11 +38,20 @@ Example:
 }
 ```
 
-Run:
+Run planning:
 
 ```bash
 python scripts/location_query.py query.json --out outputs/location_query/hucar/acquisition_plan.json
 ```
+
+Execute only the bounded request specs emitted by the plan:
+
+```bash
+python scripts/location_query_fetch.py outputs/location_query/hucar/acquisition_plan.json \\
+  --output-dir data/cache/location_query/hucar
+```
+
+The executor preserves raw response bytes and SHA-256 receipts before any downstream interpretation. `RESOLVER_ONLY` requests remain discovery/resolution evidence and are never promoted to canonical source identity automatically.
 
 ## Routing states
 
@@ -69,14 +78,15 @@ The v1 registry includes:
 - NASA GIBS — `READY`
 - Sentinel Hub — `READY_WITH_CREDENTIALS`
 - Copernicus Data Space — `READY_WITH_CREDENTIALS`
-- PRPB geology/karst/caves — `RESOLVER_ONLY`
-- PR aquifers/wells/springs — `RESOLVER_ONLY`
+- PRPB geology/karst/caves — `READY_SPECIALIZED` via the existing frozen subsurface source denominator
+- PR aquifers/wells/springs — `READY_SPECIALIZED` via PRPB + USGS Water Data queryable manifestations
 - PR marine lidar/topobathy — `READY_SPECIALIZED`
-- SSURGO — `NOT_IMPLEMENTED` in-repo (external certified workflow exists)
-- USGS 3DHP/NHD — `NOT_IMPLEMENTED`
-- USFWS NWI — `NOT_IMPLEMENTED`
-- FEMA NFHL — `NOT_IMPLEMENTED`
-- general USACE GIS — `RESOLVER_ONLY`
+- SSURGO — `RESOLVER_ONLY`: AOI SurveyAreaPoly/MapunitPoly requests are bound; MUKEY→COKEY→child production certification remains open in-repo
+- USGS 3DHP/NHD — `RESOLVER_ONLY`: official FeatureServer bound; current release layer denominator is discovery-first
+- USFWS NWI — `READY_SPECIALIZED`: Wetlands FeatureServer layer bound
+- FEMA NFHL — `RESOLVER_ONLY`: official public WMS/MSC surface bound; vector denominator remains open
+- USACE ports/navigation — `READY_SPECIALIZED`: ports, principal ports, navigation facilities and waterway-network nodes bound
+- general USACE GIS — `RESOLVER_ONLY`: enterprise service denominator remains open
 
 ## Existing authoritative lanes
 
@@ -99,14 +109,11 @@ The router references rather than replaces:
 - Plan precedes download.
 - Geographic `Cell_ID` binding remains blocked until the canonical grid transform is certified.
 
-## Next integration denominator
+## Remaining integration denominator
 
-The next missing-provider implementation sequence is:
-
-1. integrate the certified SSURGO AOI resolver;
-2. add USGS 3DHP/NHD hydrography;
-3. add USFWS NWI wetlands;
-4. add FEMA NFHL flood hazard;
-5. unify the general USACE ArcGIS/service catalog;
-6. add place-name geocoding as discovery-only AOI construction;
-7. run a frozen Puerto Rico reference-AOI regression corpus and certify bounded coverage.
+1. port the certified SSURGO MUKEY→COKEY→child-table production chain into the repo;
+2. freeze the current 3DHP FeatureServer layer denominator and promote bounded layer acquisition;
+3. resolve FEMA NFHL vector-feature manifestation(s) without conflating WMS display with feature identity;
+4. inventory 100% of the USACE enterprise service root before promoting `USACE_GENERAL_GIS`;
+5. execute the frozen Puerto Rico reference-AOI regression corpus when runner infrastructure is available;
+6. keep place-name geocoding discovery-only until a selected candidate is converted to bounded geometry.
