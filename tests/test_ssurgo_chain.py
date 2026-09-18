@@ -39,6 +39,11 @@ def test_stage2_freezes_unique_mukey_denominator_and_two_post_requests() -> None
     assert plan["request_count"] == 2
     assert {r["request_role"] for r in plan["requests"]} == {"mapunit", "component"}
     assert all(r["method"] == "POST" for r in plan["requests"])
+    assert all(
+        r["parent_denominator_sha256"]
+        == plan["ssurgo_denominator"]["canonical_mukey_set_sha256"]
+        for r in plan["requests"]
+    )
     assert all("WHERE mukey IN ('326637', '326638')" in r["json_body"]["query"] for r in plan["requests"])
     assert plan["policy"]["one_to_n_flattening"] is False
 
@@ -65,12 +70,19 @@ COMPONENT = json.dumps({
 }).encode("utf-8")
 
 
-def component_receipt(raw: bytes = COMPONENT) -> dict:
+def component_receipt(
+    raw: bytes = COMPONENT,
+    parent_mukeys: list[str] | None = None,
+) -> dict:
+    parent = ["326637", "326638"] if parent_mukeys is None else parent_mukeys
     return {
         "provider_id": "SSURGO_SOILS",
         "request_role": "component",
         "state": "PASS",
         "sha256": hashlib.sha256(raw).hexdigest(),
+        "parent_denominator_sha256": hashlib.sha256(
+            ("\n".join(sorted(parent, key=int)) + "\n").encode()
+        ).hexdigest(),
     }
 
 
@@ -104,6 +116,7 @@ def test_stage3_freezes_cokey_denominator_and_current_child_contract() -> None:
         component_raw=COMPONENT,
         component_receipt=component_receipt(),
         child_contract=contract,
+        certified_mukeys=["326637", "326638"],
     )
     assert plan["fetch_gate"] == "READY"
     assert plan["ssurgo_cokey_denominator"]["cokeys"] == ["27625770", "27625771"]
@@ -128,6 +141,7 @@ def test_stage3_duplicate_component_cokey_fails_closed() -> None:
             query={"query_id": "x"},
             component_raw=raw,
             component_receipt=component_receipt(raw),
+            certified_mukeys=["326637", "326638"],
             child_contract={
                 "schema_version": "spiderweb.ssurgo_component_children.v1.1",
                 "parent_table": "component",
@@ -144,6 +158,7 @@ def test_stage3_child_contract_count_drift_fails_closed() -> None:
             query={"query_id": "x"},
             component_raw=COMPONENT,
             component_receipt=component_receipt(),
+            certified_mukeys=["326637", "326638"],
             child_contract={
                 "schema_version": "spiderweb.ssurgo_component_children.v1.1",
                 "parent_table": "component",
@@ -266,9 +281,79 @@ def test_stage3_records_canonical_child_contract_hash() -> None:
         component_raw=COMPONENT,
         component_receipt=component_receipt(),
         child_contract=contract,
+        certified_mukeys=["326637", "326638"],
     )
     expected = hashlib.sha256(
         json.dumps(contract, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     ).hexdigest()
     assert plan["child_table_denominator"]["canonical_contract_sha256"] == expected
     assert plan["requests"][0]["ssurgo_child_contract_sha256"] == expected
+
+
+def test_stage3_rejects_component_parent_hash_mismatch() -> None:
+    bad = component_receipt()
+    bad["parent_denominator_sha256"] = "0" * 64
+    with pytest.raises(SSURGOChainError, match="parent MUKEY denominator hash mismatch"):
+        build_stage3_child_plan(
+            query={"query_id": "x"},
+            component_raw=COMPONENT,
+            component_receipt=bad,
+            child_contract={
+                "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+                "parent_table": "component",
+                "parent_key": "cokey",
+                "relationship_count": 1,
+                "records": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}],
+            },
+            certified_mukeys=["326637", "326638"],
+        )
+
+
+def test_stage3_rejects_foreign_component_mukey() -> None:
+    raw = json.dumps({
+        "Table": [
+            ["mukey", "cokey"],
+            ["326637", "27625770"],
+            ["999999", "27625771"],
+        ]
+    }).encode("utf-8")
+    with pytest.raises(SSURGOChainError, match="foreign MUKEYs"):
+        build_stage3_child_plan(
+            query={"query_id": "x"},
+            component_raw=raw,
+            component_receipt=component_receipt(raw),
+            child_contract={
+                "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+                "parent_table": "component",
+                "parent_key": "cokey",
+                "relationship_count": 1,
+                "records": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}],
+            },
+            certified_mukeys=["326637", "326638"],
+        )
+
+
+def test_stage3_records_missing_parent_mukey_without_identity_inference() -> None:
+    raw = json.dumps({
+        "Table": [
+            ["mukey", "cokey"],
+            ["326637", "27625770"],
+        ]
+    }).encode("utf-8")
+    plan = build_stage3_child_plan(
+        query={"query_id": "x"},
+        component_raw=raw,
+        component_receipt=component_receipt(raw),
+        child_contract={
+            "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+            "parent_table": "component",
+            "parent_key": "cokey",
+            "relationship_count": 1,
+            "records": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}],
+        },
+        certified_mukeys=["326637", "326638"],
+    )
+    assert plan["component_parent"]["foreign_mukey_count"] == 0
+    assert plan["component_parent"]["missing_mukey_count"] == 1
+    assert plan["component_parent"]["missing_mukeys"] == ["326638"]
+    assert plan["component_parent"]["returned_parent_subset"] is True
