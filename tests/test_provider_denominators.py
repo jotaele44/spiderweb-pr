@@ -11,6 +11,8 @@ from spiderweb.provider_denominators import (
     freeze_arcgis_service_denominator,
     freeze_wms_layer_denominator,
     merge_arcgis_service_denominators,
+    freeze_arcgis_service_contents_denominator,
+    merge_arcgis_service_contents_denominators,
 )
 
 
@@ -122,3 +124,59 @@ def test_merge_rejects_duplicate_scoped_service() -> None:
     }
     with pytest.raises(DenominatorError, match="duplicate service across denominators"):
         merge_arcgis_service_denominators([row, row], provider_id="USACE_GENERAL_GIS")
+
+
+def test_service_contents_preserve_layers_tables_and_service_binding() -> None:
+    raw = json.dumps({
+        "layers": [{"id": 0, "name": "Ports"}],
+        "tables": [{"id": 7, "name": "Statistics"}],
+    }).encode()
+    receipt_row = receipt("USACE_GENERAL_GIS", "service_metadata:Navigation:Waterways:FeatureServer", raw)
+    receipt_row["source_binding"] = {
+        "service_scope_raw": "Navigation",
+        "service_name_raw": "Waterways",
+        "service_type_raw": "FeatureServer",
+    }
+    out = freeze_arcgis_service_contents_denominator(
+        raw=raw,
+        receipt=receipt_row,
+        provider_id="USACE_GENERAL_GIS",
+        request_role="service_metadata:Navigation:Waterways:FeatureServer",
+    )
+    assert out["layer_count"] == 1
+    assert out["table_count"] == 1
+    assert out["service_scope_raw"] == "Navigation"
+    assert {(row["kind"], row["id"]) for row in out["records"]} == {("layer", 0), ("table", 7)}
+
+
+def test_service_contents_merge_keeps_same_id_in_different_services_distinct() -> None:
+    a = {
+        "schema_version": "spiderweb.arcgis_service_contents_denominator.v1.0",
+        "provider_id": "USACE_GENERAL_GIS",
+        "state": "PASS",
+        "canonical_records_sha256": "a" * 64,
+        "service_scope_raw": "",
+        "service_name_raw": "Ports",
+        "service_type_raw": "FeatureServer",
+        "records": [{"kind": "layer", "id": 0, "name_raw": "Ports"}],
+    }
+    b = {
+        "schema_version": "spiderweb.arcgis_service_contents_denominator.v1.0",
+        "provider_id": "USACE_GENERAL_GIS",
+        "state": "PASS",
+        "canonical_records_sha256": "b" * 64,
+        "service_scope_raw": "Navigation",
+        "service_name_raw": "Ports",
+        "service_type_raw": "FeatureServer",
+        "records": [{"kind": "layer", "id": 0, "name_raw": "Ports"}],
+    }
+    out = merge_arcgis_service_contents_denominators([a, b], provider_id="USACE_GENERAL_GIS")
+    assert out["record_count"] == 2
+    assert out["layer_count"] == 2
+    assert {
+        (row["service_scope_raw"], row["service_name_raw"], row["kind"], row["id"])
+        for row in out["records"]
+    } == {
+        ("", "Ports", "layer", 0),
+        ("Navigation", "Ports", "layer", 0),
+    }
