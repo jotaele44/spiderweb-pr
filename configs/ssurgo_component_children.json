@@ -190,7 +190,9 @@
       "coinundationtype"
     ],
     "contradiction_class": "TIME",
-    "note": "The older SdaTableRelationships HTML snapshot exposed 21 direct component children; the November 2025 Table Relationships report exposes coinundationtype as an additional direct cokey child."
+    "note": "The older SdaTableRelationships HTML snapshot exposed 21 direct component children; the November 2025 Table Relationships report exposes coinundationtype as an additional direct cokey child.",
+    "current_source_state": "CURRENT_AUTHORITATIVE_DOCUMENTATION_BOUND",
+    "prior_source_state": "HISTORICAL_FROZEN_MANIFESTATION"
   },
   "invariants": {
     "table_count": 22,
@@ -202,5 +204,25 @@
     "stable_key_nulls_prohibited": true,
     "stable_key_duplicates_prohibited": true,
     "constraint_name_not_required_when_not_documented": true
+  },
+  "documentation_sources": {
+    "tables_and_columns": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/TablesAndColumnsReport.pdf",
+      "epoch_raw": "November 2025",
+      "role": "TABLE_SCHEMA_AND_KEY_FIELD_EVIDENCE",
+      "raw_bytes_frozen_in_repo": false
+    },
+    "table_relationships": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/TableRelationshipsReport.pdf",
+      "epoch_raw": "November 2025",
+      "role": "PARENT_CHILD_RELATIONSHIP_EVIDENCE",
+      "raw_bytes_frozen_in_repo": false
+    },
+    "unique_constraints": {
+      "url": "https://sdmdataaccess.nrcs.usda.gov/documents/UniqueConstraintsReport.pdf",
+      "role": "STABLE_KEY_EVIDENCE_WHERE_DOCUMENTED",
+      "raw_bytes_frozen_in_repo": false
+    },
+    "freeze_state": "URL_AND_EPOCH_BOUND_RAW_BYTES_OPEN"
   }
 }
