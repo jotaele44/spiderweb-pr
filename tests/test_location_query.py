@@ -377,3 +377,76 @@ def test_normalized_query_records_resolved_bbox() -> None:
         "east": -66.0,
         "north": 18.2,
     }
+
+
+def test_imagery_fetch_requires_explicit_temporal_for_specialized_execution() -> None:
+    plan = route_query(
+        {
+            "query_id": "imagery-no-time",
+            "geometry": {
+                "type": "bbox",
+                "west": -66.2,
+                "south": 18.0,
+                "east": -66.0,
+                "north": 18.2,
+            },
+            "families": ["satellite_imagery"],
+            "mode": "fetch",
+        },
+        registry=load_registry(REGISTRY_PATH),
+        env={},
+    )
+    assert "NASA_GIBS_IMAGERY" in plan["execution_gap_provider_ids"]
+    assert plan["specialized_execution_blockers"]["NASA_GIBS_IMAGERY"] == "TEMPORAL_REQUIRED"
+    assert plan["specialized_call_count"] == 0
+    assert plan["fetch_gate"] == "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION"
+
+
+def test_gibs_temporal_fetch_emits_specialized_call_without_execution_gap() -> None:
+    plan = route_query(
+        {
+            "query_id": "gibs-time",
+            "geometry": {
+                "type": "bbox",
+                "west": -66.2,
+                "south": 18.0,
+                "east": -66.0,
+                "north": 18.2,
+            },
+            "families": ["satellite_imagery"],
+            "temporal": {"date_range": "2026-09-01/2026-09-02"},
+            "mode": "fetch",
+            "allow_partial": True,
+        },
+        registry=load_registry(REGISTRY_PATH),
+        env={},
+    )
+    by_id = {row["provider_id"]: row for row in plan["providers"]}
+    assert by_id["NASA_GIBS_IMAGERY"]["execution_kind"] == "SPECIALIZED_CALL"
+    assert "NASA_GIBS_IMAGERY" in plan["specialized_executor_provider_ids"]
+    assert "NASA_GIBS_IMAGERY" not in plan["execution_gap_provider_ids"]
+    calls = [row for row in plan["specialized_calls"] if row["provider_id"] == "NASA_GIBS_IMAGERY"]
+    assert len(calls) == 1
+    assert calls[0]["provider"] == "gibs"
+    assert calls[0]["date_range"] == "2026-09-01/2026-09-02"
+    assert calls[0]["bbox_wgs84"] == [-66.2, 18.0, -66.0, 18.2]
+
+
+def test_temporal_range_normalizes_single_date_and_rejects_reverse() -> None:
+    normalized = validate_query(
+        {
+            "query_id": "single-day",
+            "geometry": {"type": "point", "lat": 18.3, "lon": -66.0},
+            "temporal": {"date_range": "2026-09-01"},
+        }
+    )
+    assert normalized["temporal"]["date_range"] == "2026-09-01/2026-09-01"
+
+    with pytest.raises(LocationQueryError, match="end precedes start"):
+        validate_query(
+            {
+                "query_id": "reverse",
+                "geometry": {"type": "point", "lat": 18.3, "lon": -66.0},
+                "temporal": {"date_range": "2026-09-02/2026-09-01"},
+            }
+        )
