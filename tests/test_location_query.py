@@ -138,16 +138,24 @@ def test_nwi_freezes_live_service_denominator_before_layer_query() -> None:
     assert plan["requests"][0]["url"].endswith("/rest?f=json")
 
 
-def test_3dhp_remains_resolver_only_and_freezes_metadata_first() -> None:
+def test_3dhp_frozen_six_layer_denominator_is_routable() -> None:
     query = {
         "query_id": "fixture-3dhp",
         "geometry": {"type": "bbox", "west": -66.1, "south": 18.2, "east": -65.9, "north": 18.4},
         "families": ["hydrography"],
     }
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
-    assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
-    assert plan["request_count"] == 1
-    assert plan["requests"][0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
+    assert plan["providers"][0]["route_state"] == "ROUTABLE"
+    assert plan["request_count"] == 6
+    assert {r["request_role"] for r in plan["requests"]} == {
+        "hydrolocation_sink_spring_waterbody_outlet",
+        "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet",
+        "hydrolocation_reach_code_external_connection",
+        "flowline",
+        "waterbody",
+        "catchment",
+    }
+    assert all(r["identity_state"] == "SOURCE_MANIFESTATION" for r in plan["requests"])
 
 
 def test_usace_ports_navigation_has_four_bound_source_requests() -> None:
