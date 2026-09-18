@@ -151,6 +151,16 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
         return [row]
 
     if provider_id == "USGS_3DHP_NHD":
+        if provider.get("status") != "READY_SPECIALIZED":
+            return [{
+                "provider_id": provider_id,
+                "request_role": "feature_service_metadata",
+                "method": "GET",
+                "url": provider["feature_service"].rstrip("/") + "?f=json",
+                "media_type": "application/json",
+                "bbox_wgs84": list(bbox),
+                "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
+            }]
         for item in provider["layers"]:
             row = _arcgis_query(
                 f"{provider['feature_service'].rstrip('/')}/{int(item['id'])}",
