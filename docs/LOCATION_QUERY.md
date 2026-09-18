@@ -53,6 +53,8 @@ python scripts/location_query_fetch.py outputs/location_query/hucar/acquisition_
 
 The executor preserves raw response bytes and SHA-256 receipts before any downstream interpretation. `RESOLVER_ONLY` requests remain discovery/resolution evidence and are never promoted to canonical source identity automatically.
 
+After acquisition, `scripts/location_query_package.py` re-hashes every raw denominator/batch artifact and freezes a package-level provenance manifest. `scripts/location_query_provider_health.py` probes metadata surfaces separately; endpoint health is explicitly not AOI coverage.
+
 ## Routing states
 
 The unified registry `configs/location_query_providers.json` preserves deliberate capability asymmetry:
@@ -68,9 +70,11 @@ The unified registry `configs/location_query_providers.json` preserves deliberat
 
 These states are routing facts, not source-availability claims.
 
-## Initial provider denominator
+## Provider denominator
 
-The v1 registry includes:
+The v1 registry currently contains 16 provider entries. Provider readiness and unified-executor readiness are separate dimensions: a specialized adapter may be operational while the generic LOCATION_QUERY executor still reports an execution gap.
+
+The registry includes:
 
 - USGS 3DEP 1 m DEM — `READY`
 - legacy PRVI 2018 1 m DEM provider contract — `PROVIDER_BINDING_OPEN`
@@ -82,11 +86,27 @@ The v1 registry includes:
 - PR aquifers/wells/springs — `READY_SPECIALIZED` via PRPB + USGS Water Data queryable manifestations
 - PR marine lidar/topobathy — `READY_SPECIALIZED`
 - SSURGO — `RESOLVER_ONLY`: AOI SurveyAreaPoly/MapunitPoly requests are bound; MUKEY→COKEY→child production certification remains open in-repo
-- USGS 3DHP/NHD — `RESOLVER_ONLY`: official FeatureServer bound; current release layer denominator is discovery-first
+- USGS 3DHP/NHD — `READY_SPECIALIZED`: current six-layer `3DHP_all` FeatureServer denominator is frozen (20/30/40/50/60/80)
 - USFWS NWI — `READY_SPECIALIZED`: Wetlands FeatureServer layer bound
 - FEMA NFHL — `RESOLVER_ONLY`: official public WMS/MSC surface bound; vector denominator remains open
+- FEMA Puerto Rico ABFE 1% — `RESOLVER_ONLY`: Puerto Rico-specific map service bound; layer denominator remains open and is separate from effective NFHL identity
 - USACE ports/navigation — `READY_SPECIALIZED`: ports, principal ports, navigation facilities and waterway-network nodes bound
 - general USACE GIS — `RESOLVER_ONLY`: enterprise service denominator remains open
+
+## Execution coverage gate
+
+Every plan reports:
+
+- `generic_executor_provider_ids` — providers with bounded request specifications executable by `location_query_fetch.py`;
+- `specialized_adapter_provider_ids` — operational providers still requiring their authoritative specialized lane;
+- `incomplete_provider_ids` — resolver/binding/blocker states;
+- `execution_gap_provider_ids` — provider-ready lanes not yet delegated by the generic executor;
+- `fetch_blocker_provider_ids`;
+- `fetch_gate`.
+
+For `mode=fetch`, the generic executor refuses to run unless `fetch_gate=READY`. `allow_partial=true` produces `ALLOW_PARTIAL_WITH_EXPLICIT_GAPS`; it never silently converts an incomplete denominator into complete coverage.
+
+ArcGIS FeatureServer acquisition is denominator-first: Spiderweb first requests `returnIdsOnly=true`, freezes the object-ID set, then fetches deterministic ID batches and requires returned-ID set equality. A single HTTP-200 feature response is never accepted as exhaustive AOI coverage.
 
 ## Existing authoritative lanes
 
@@ -112,8 +132,9 @@ The router references rather than replaces:
 ## Remaining integration denominator
 
 1. port the certified SSURGO MUKEY→COKEY→child-table production chain into the repo;
-2. freeze the current 3DHP FeatureServer layer denominator and promote bounded layer acquisition;
-3. resolve FEMA NFHL vector-feature manifestation(s) without conflating WMS display with feature identity;
-4. inventory 100% of the USACE enterprise service root before promoting `USACE_GENERAL_GIS`;
-5. execute the frozen Puerto Rico reference-AOI regression corpus when runner infrastructure is available;
-6. keep place-name geocoding discovery-only until a selected candidate is converted to bounded geometry.
+2. resolve FEMA NFHL vector-feature manifestation(s) without conflating WMS display with feature identity;
+3. freeze the Puerto Rico ABFE service layer denominator separately from NFHL;
+4. execute `scripts/location_query_usace_inventory.py` to inventory 100% of the USACE enterprise service root before promoting `USACE_GENERAL_GIS`;
+5. delegate existing USGS 3DEP, NCEI and imagery specialized adapters into the unified fetch executor without duplicating their acquisition logic;
+6. execute the frozen Puerto Rico reference-AOI regression corpus when runner infrastructure is available;
+7. keep place-name geocoding discovery-only until a selected candidate is converted to bounded geometry.
