@@ -124,7 +124,7 @@ def test_ssurgo_plan_emits_two_bounded_wfs_requests() -> None:
     assert all(row["provider_id"] == "SSURGO_SOILS" for row in plan["requests"])
 
 
-def test_nwi_freezes_live_service_denominator_before_layer_query() -> None:
+def test_nwi_bound_feature_layer_is_routable() -> None:
     query = {
         "query_id": "fixture-nwi",
         "geometry": {"type": "point", "lat": 18.3, "lon": -66.0},
@@ -132,10 +132,10 @@ def test_nwi_freezes_live_service_denominator_before_layer_query() -> None:
     }
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
     assert plan["provider_denominator_count"] == 1
-    assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
+    assert plan["providers"][0]["route_state"] == "ROUTABLE"
     assert plan["request_count"] == 1
-    assert plan["requests"][0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
-    assert plan["requests"][0]["url"].endswith("/rest?f=json")
+    assert plan["requests"][0]["identity_state"] == "SOURCE_MANIFESTATION"
+    assert "/Wetlands/FeatureServer/0/query?" in plan["requests"][0]["url"]
 
 
 def test_3dhp_frozen_six_layer_denominator_is_routable() -> None:
@@ -218,3 +218,18 @@ def test_fema_pr_abfe_is_bounded_resolver_not_nfhl_substitute() -> None:
     roles = {row["request_role"] for row in plan["requests"]}
     assert "abfe_map_service_denominator" in roles
     assert "nfhl_wms_capabilities" in roles
+
+
+def test_usace_general_emits_service_denominator_request() -> None:
+    query = {
+        "query_id": "fixture-usace-general",
+        "geometry": {"type": "bbox", "west": -67.3, "south": 17.8, "east": -65.2, "north": 18.6},
+        "families": ["federal_infrastructure"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
+    assert plan["request_count"] == 1
+    request = plan["requests"][0]
+    assert request["request_role"] == "services_root_denominator"
+    assert request["identity_state"] == "DISCOVERY_FOR_SERVICE_DENOMINATOR"
+    assert request["url"].endswith("?f=pjson")
