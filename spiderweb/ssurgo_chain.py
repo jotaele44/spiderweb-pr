@@ -253,3 +253,109 @@ def build_stage3_child_plan(
             "stable_child_key_required": True,
         },
     }
+
+
+def certify_child_table_response(
+    *,
+    raw: bytes,
+    receipt: dict[str, Any],
+    contract: dict[str, Any],
+    certified_cokeys: list[str],
+) -> dict[str, Any]:
+    table = str(contract.get("table", "")).strip()
+    parent_key = str(contract.get("parent_key", "")).strip()
+    stable_key = str(contract.get("stable_key", "")).strip()
+    if not table or parent_key != "cokey" or not stable_key:
+        raise SSURGOChainError("malformed child-table contract")
+    if any(not value.isdigit() for value in certified_cokeys):
+        raise SSURGOChainError("certified COKEY denominator contains non-numeric value")
+    if len(certified_cokeys) != len(set(certified_cokeys)):
+        raise SSURGOChainError("certified COKEY denominator contains duplicates")
+    expected_parent_sha = canonical_cokey_sha256(certified_cokeys)
+
+    if receipt.get("provider_id") != "SSURGO_SOILS":
+        raise SSURGOChainError(f"{table}: receipt provider mismatch")
+    if receipt.get("request_role") != f"component_child:{table}":
+        raise SSURGOChainError(f"{table}: receipt role mismatch")
+    if receipt.get("state") != "PASS":
+        raise SSURGOChainError(f"{table}: acquisition receipt is not PASS")
+    actual_sha = sha256_bytes(raw)
+    if receipt.get("sha256") != actual_sha:
+        raise SSURGOChainError(f"{table}: raw SHA256 does not match receipt")
+    if receipt.get("parent_denominator_sha256") != expected_parent_sha:
+        raise SSURGOChainError(f"{table}: parent COKEY denominator hash mismatch")
+
+    try:
+        obj = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SSURGOChainError(f"{table}: response JSON parse failure: {exc}") from exc
+    payload = obj.get("Table") if isinstance(obj, dict) else None
+    if not isinstance(payload, list) or not payload:
+        raise SSURGOChainError(f"{table}: response lacks Table")
+    header = payload[0]
+    rows = payload[1:]
+    if not isinstance(header, list) or any(not isinstance(v, str) for v in header):
+        raise SSURGOChainError(f"{table}: malformed header")
+    if parent_key not in header or stable_key not in header:
+        raise SSURGOChainError(f"{table}: parent/stable key missing from runtime schema")
+
+    parent_idx = header.index(parent_key)
+    stable_idx = header.index(stable_key)
+    expected_parent_set = set(certified_cokeys)
+    returned_parents: list[str] = []
+    stable_values: list[str] = []
+
+    for row_number, row in enumerate(rows, 1):
+        if not isinstance(row, list) or len(row) != len(header):
+            raise SSURGOChainError(f"{table}: row-width mismatch at row {row_number}")
+        parent = "" if row[parent_idx] is None else str(row[parent_idx]).strip()
+        stable = "" if row[stable_idx] is None else str(row[stable_idx]).strip()
+        if not parent or not parent.isdigit():
+            raise SSURGOChainError(f"{table}: invalid parent COKEY at row {row_number}")
+        if parent not in expected_parent_set:
+            raise SSURGOChainError(f"{table}: foreign parent COKEY {parent}")
+        if not stable:
+            raise SSURGOChainError(f"{table}: null/empty stable key at row {row_number}")
+        returned_parents.append(parent)
+        stable_values.append(stable)
+
+    if len(stable_values) != len(set(stable_values)):
+        raise SSURGOChainError(f"{table}: duplicate stable keys")
+
+    counts = {value: 0 for value in certified_cokeys}
+    for parent in returned_parents:
+        counts[parent] += 1
+    if sum(counts.values()) != len(rows):
+        raise SSURGOChainError(f"{table}: parent-child arithmetic closure failed")
+
+    zero = sorted((key for key, count in counts.items() if count == 0), key=int)
+    one = sorted((key for key, count in counts.items() if count == 1), key=int)
+    multi = sorted((key for key, count in counts.items() if count > 1), key=int)
+    return {
+        "schema_version": "spiderweb.ssurgo_child_table_certification.v1.0",
+        "provider_id": "SSURGO_SOILS",
+        "table": table,
+        "state": "PASS",
+        "raw_sha256": actual_sha,
+        "parent_denominator_sha256": expected_parent_sha,
+        "parent_key": parent_key,
+        "stable_key": stable_key,
+        "runtime_schema_columns": len(header),
+        "row_count": len(rows),
+        "unique_stable_keys": len(stable_values),
+        "certified_parent_count": len(certified_cokeys),
+        "returned_parent_count": len(set(returned_parents)),
+        "foreign_parent_count": 0,
+        "zero_child_parent_count": len(zero),
+        "one_child_parent_count": len(one),
+        "multi_child_parent_count": len(multi),
+        "zero_child_parent_keys": zero,
+        "arithmetic_closure": sum(counts.values()) == len(rows),
+        "stable_key_uniqueness": len(stable_values) == len(set(stable_values)),
+        "policy": {
+            "zero_child_parent_is_not_failure_by_default": True,
+            "one_to_n_preserved": True,
+            "whole_rows_preserved_in_raw_bytes": True,
+            "count_equality_used_as_identity": False,
+        },
+    }
