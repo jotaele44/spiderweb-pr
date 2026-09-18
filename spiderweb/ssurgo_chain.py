@@ -93,6 +93,7 @@ def build_stage2_plan(*, query: dict[str, Any], mapunitpoly_raw: bytes, mapunitp
         "providers": [{"provider_id": "SSURGO_SOILS", "family": "soils", "status": "RESOLVER_ONLY", "route_state": "DEPENDENT_STAGE_ROUTABLE", "reason": "MapunitPoly MUKEY denominator frozen; tabular production acquisition may proceed"}],
         "request_count": len(requests),
         "requests": requests,
+        "fetch_gate": "READY",
         "ssurgo_denominator": {"mukey_count": len(mukeys), "mukeys": mukeys, "canonical_mukey_set_sha256": canonical_mukey_sha256(mukeys), "mapunitpoly_raw_sha256": actual_raw_sha, "historical_equivalence": "UNRESOLVED"},
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True, "whole_rows_preserved": True, "one_to_n_flattening": False, "count_equality_used_as_identity": False},
     }
