@@ -199,6 +199,6 @@ def test_executor_allows_explicit_partial_gate_without_requests(tmp_path: Path) 
         "requests": [],
     }
     result = mod.execute(plan, tmp_path)
-    assert result["state"] == "PASS"
+    assert result["state"] == "PARTIAL"
     assert result["fetch_gate"] == "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"
     assert result["fetch_blocker_provider_ids"] == ["NASA_GIBS_IMAGERY"]
