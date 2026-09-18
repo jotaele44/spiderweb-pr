@@ -35,6 +35,16 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def canonical_json_sha256(value: object) -> str:
+    body = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(body).hexdigest()
+
+
 def write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -164,6 +174,17 @@ def _find_request(fetch: dict, provider_id: str, role: str) -> dict:
     ]
     if len(rows) != 1:
         fail(f"expected exactly one {provider_id}/{role} fetch receipt; got {len(rows)}")
+    return rows[0]
+
+
+def _find_plan_request(plan: dict, provider_id: str, role: str) -> dict:
+    rows = [
+        row
+        for row in plan.get("requests", [])
+        if row.get("provider_id") == provider_id and row.get("request_role") == role
+    ]
+    if len(rows) != 1:
+        fail(f"expected exactly one {provider_id}/{role} plan request; got {len(rows)}")
     return rows[0]
 
 
@@ -355,12 +376,21 @@ def main() -> int:
     query = plan.get("query")
     if not isinstance(query, dict):
         fail("plan.query missing")
+    expected_plan_sha = canonical_json_sha256(plan)
+    if fetch.get("plan_sha256") != expected_plan_sha:
+        fail("fetch receipt plan SHA256 does not match acquisition plan")
     allow_partial = bool(query.get("allow_partial", False))
     aoi = aoi_geometry(query)
     aoi_bbox = tuple(float(v) for v in query_bbox(query))
 
     survey_receipt = _find_request(fetch, "SSURGO_SOILS", "SurveyAreaPoly")
     mapunit_receipt = _find_request(fetch, "SSURGO_SOILS", "MapunitPoly")
+    survey_spec = _find_plan_request(plan, "SSURGO_SOILS", "SurveyAreaPoly")
+    mapunit_spec = _find_plan_request(plan, "SSURGO_SOILS", "MapunitPoly")
+    if survey_receipt.get("request_spec_sha256") != canonical_json_sha256(survey_spec):
+        fail("SurveyAreaPoly receipt request-spec SHA256 mismatch")
+    if mapunit_receipt.get("request_spec_sha256") != canonical_json_sha256(mapunit_spec):
+        fail("MapunitPoly receipt request-spec SHA256 mismatch")
     if survey_receipt.get("state") == "NO_COVERAGE" or mapunit_receipt.get("state") == "NO_COVERAGE":
         result = {
             "schema_version": "spiderweb.location_query_ssurgo.v1.0",
@@ -378,6 +408,10 @@ def main() -> int:
     mapunit_raw = Path(str(mapunit_receipt.get("raw_path")))
     if not survey_raw.is_file() or not mapunit_raw.is_file():
         fail("SSURGO raw GML source manifestation missing")
+    if survey_receipt.get("sha256") != sha256_file(survey_raw):
+        fail("SurveyAreaPoly raw SHA256 does not match fetch receipt")
+    if mapunit_receipt.get("sha256") != sha256_file(mapunit_raw):
+        fail("MapunitPoly raw SHA256 does not match fetch receipt")
 
     survey_source, survey, survey_axis = normalize_wfs_gml(survey_raw, aoi_bbox)
     mapunit_source, mapunits, mapunit_axis = normalize_wfs_gml(mapunit_raw, aoi_bbox)
