@@ -146,7 +146,7 @@
     },
     "SSURGO_SOILS": {
       "family": "soils",
-      "status": "READY_SPECIALIZED",
+      "status": "RESOLVER_ONLY",
       "query_modes": [
         "point",
         "radius",
@@ -157,10 +157,19 @@
       "adapter": "spiderweb.location_query_sources",
       "wfs_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
       "tabular_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
-      "reason": "AOI SurveyAreaPoly/MapunitPoly acquisition plus in-repo MUKEY→COKEY→current documented component-child tabular certification is implemented as a required post-fetch stage",
-      "post_fetch_adapter": "scripts/location_query_ssurgo.py",
-      "execution_requires_post_fetch": true,
-      "required_extra": "geo"
+      "reason": "Canonical modular AOI→MUKEY→COKEY→22-child acquisition/certification chain is implemented but has not executed end-to-end in-repo; monolithic location_query_ssurgo.py is NONCANONICAL compatibility and cannot justify readiness promotion.",
+      "execution_requires_post_fetch": false,
+      "required_extra": "geo",
+      "implementation_state": "IMPLEMENTED_NOT_RUNTIME_CERTIFIED",
+      "canonical_chain": [
+        "spiderweb.location_query_sources",
+        "scripts/location_query_fetch.py --discovery-only",
+        "scripts/ssurgo_location_stage2.py",
+        "scripts/location_query_fetch.py",
+        "scripts/ssurgo_location_stage3.py",
+        "scripts/location_query_fetch.py",
+        "scripts/certify_ssurgo_child.py"
+      ]
     },
     "USGS_3DHP_NHD": {
       "family": "hydrography",
