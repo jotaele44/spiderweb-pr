@@ -159,3 +159,38 @@ def test_usace_ports_navigation_has_four_bound_source_requests() -> None:
     assert {r["request_role"] for r in plan["requests"]} == {
         "ports", "principal_ports", "navigation_facilities", "waterway_network_nodes"
     }
+
+
+def test_geology_reuses_existing_source_denominator() -> None:
+    query = {
+        "query_id": "fixture-geology",
+        "geometry": {"type": "bbox", "west": -66.8, "south": 17.9, "east": -66.4, "north": 18.3},
+        "families": ["geology_karst"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["providers"][0]["route_state"] == "ROUTABLE"
+    roles = {r["request_role"] for r in plan["requests"]}
+    assert {"PRPB_GEOLOGY_3", "PRPB_SINKHOLES_4", "PRPB_CAVES_31"} <= roles
+
+
+def test_hydrogeology_reuses_stable_id_source_specs() -> None:
+    query = {
+        "query_id": "fixture-hydrogeo",
+        "geometry": {"type": "bbox", "west": -66.2, "south": 18.1, "east": -65.8, "north": 18.5},
+        "families": ["hydrogeology"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["providers"][0]["route_state"] == "ROUTABLE"
+    assert plan["request_count"] >= 5
+    assert all("stable_id_fields" in r for r in plan["requests"])
+
+
+def test_ssurgo_is_resolver_only_until_tabular_chain_is_in_repo() -> None:
+    query = {
+        "query_id": "fixture-ssurgo-state",
+        "geometry": {"type": "bbox", "west": -66.05, "south": 18.29, "east": -65.93, "north": 18.39},
+        "families": ["soils"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
+    assert plan["request_count"] == 2
