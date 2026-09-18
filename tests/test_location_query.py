@@ -30,9 +30,10 @@ def test_registry_has_bounded_provider_denominator() -> None:
         "USFWS_NWI",
         "FEMA_NFHL",
         "USACE_GENERAL_GIS",
+        "USACE_PORTS_NAV",
     }
     assert set(providers) == expected
-    assert len(providers) == 14
+    assert len(providers) == 15
 
 
 def test_bbox_plan_routes_without_fetching() -> None:
@@ -107,3 +108,54 @@ def test_radius_requires_positive_distance() -> None:
                 },
             }
         )
+
+
+def test_ssurgo_plan_emits_two_bounded_wfs_requests() -> None:
+    query = {
+        "query_id": "fixture-ssurgo",
+        "geometry": {"type": "bbox", "west": -66.05, "south": 18.29, "east": -65.93, "north": 18.39},
+        "families": ["soils"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["request_count"] == 2
+    roles = {row["request_role"] for row in plan["requests"]}
+    assert roles == {"SurveyAreaPoly", "MapunitPoly"}
+    assert all(row["provider_id"] == "SSURGO_SOILS" for row in plan["requests"])
+
+
+def test_nwi_plan_is_direct_feature_query() -> None:
+    query = {
+        "query_id": "fixture-nwi",
+        "geometry": {"type": "point", "lat": 18.3, "lon": -66.0},
+        "families": ["wetlands"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["provider_denominator_count"] == 1
+    assert plan["providers"][0]["route_state"] == "ROUTABLE"
+    assert plan["request_count"] == 1
+    assert "/Wetlands/FeatureServer/0/query?" in plan["requests"][0]["url"]
+
+
+def test_3dhp_remains_resolver_only_and_freezes_metadata_first() -> None:
+    query = {
+        "query_id": "fixture-3dhp",
+        "geometry": {"type": "bbox", "west": -66.1, "south": 18.2, "east": -65.9, "north": 18.4},
+        "families": ["hydrography"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
+    assert plan["request_count"] == 1
+    assert plan["requests"][0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
+
+
+def test_usace_ports_navigation_has_four_bound_source_requests() -> None:
+    query = {
+        "query_id": "fixture-usace-ports",
+        "geometry": {"type": "bbox", "west": -66.2, "south": 18.1, "east": -65.8, "north": 18.5},
+        "families": ["ports_navigation"],
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["request_count"] == 4
+    assert {r["request_role"] for r in plan["requests"]} == {
+        "ports", "principal_ports", "navigation_facilities", "waterway_network_nodes"
+    }
