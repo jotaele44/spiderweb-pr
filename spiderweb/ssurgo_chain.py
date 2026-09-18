@@ -106,3 +106,150 @@ def write_stage2_plan(*, query: dict[str, Any], mapunitpoly_raw_path: Path, mapu
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return plan
+
+
+def extract_cokeys_from_sda(raw: bytes) -> tuple[list[str], list[str]]:
+    if not raw:
+        raise SSURGOChainError("component raw bytes are empty")
+    try:
+        obj = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SSURGOChainError(f"component JSON parse failure: {exc}") from exc
+    table = obj.get("Table") if isinstance(obj, dict) else None
+    if not isinstance(table, list) or len(table) < 1:
+        raise SSURGOChainError("component response lacks Table")
+    header = table[0]
+    rows = table[1:]
+    if not isinstance(header, list) or any(not isinstance(v, str) for v in header):
+        raise SSURGOChainError("component header malformed")
+    if "mukey" not in header or "cokey" not in header:
+        raise SSURGOChainError("component response lacks mukey/cokey")
+    mukey_idx = header.index("mukey")
+    cokey_idx = header.index("cokey")
+    cokeys: list[str] = []
+    for row_number, row in enumerate(rows, 1):
+        if not isinstance(row, list) or len(row) != len(header):
+            raise SSURGOChainError(f"component row-width mismatch at row {row_number}")
+        mukey = "" if row[mukey_idx] is None else str(row[mukey_idx]).strip()
+        cokey = "" if row[cokey_idx] is None else str(row[cokey_idx]).strip()
+        if not mukey or not mukey.isdigit():
+            raise SSURGOChainError(f"component invalid MUKEY at row {row_number}")
+        if not cokey or not cokey.isdigit():
+            raise SSURGOChainError(f"component invalid COKEY at row {row_number}")
+        cokeys.append(cokey)
+    if not cokeys:
+        raise SSURGOChainError("component response contains zero COKEY rows")
+    if len(cokeys) != len(set(cokeys)):
+        raise SSURGOChainError("component response contains duplicate COKEYs")
+    return sorted(cokeys, key=int), header
+
+
+def canonical_cokey_sha256(cokeys: list[str]) -> str:
+    return sha256_bytes(("\n".join(cokeys) + "\n").encode("utf-8"))
+
+
+def build_stage3_child_plan(
+    *,
+    query: dict[str, Any],
+    component_raw: bytes,
+    component_receipt: dict[str, Any],
+    child_contract: dict[str, Any],
+) -> dict[str, Any]:
+    if component_receipt.get("provider_id") != "SSURGO_SOILS":
+        raise SSURGOChainError("component receipt provider_id is not SSURGO_SOILS")
+    if component_receipt.get("request_role") != "component":
+        raise SSURGOChainError("component receipt request_role is not component")
+    if component_receipt.get("state") != "PASS":
+        raise SSURGOChainError("component acquisition receipt is not PASS")
+    actual_sha = sha256_bytes(component_raw)
+    if component_receipt.get("sha256") != actual_sha:
+        raise SSURGOChainError("component raw SHA256 does not match receipt")
+
+    cokeys, component_header = extract_cokeys_from_sda(component_raw)
+    records = child_contract.get("tables")
+    if not isinstance(records, list) or not records:
+        raise SSURGOChainError("component child contract lacks tables")
+    expected_count = (child_contract.get("invariants") or {}).get("table_count")
+    if expected_count is not None and expected_count != len(records):
+        raise SSURGOChainError("component child contract table_count invariant drift")
+
+    seen_tables: set[str] = set()
+    seen_stable_keys: set[str] = set()
+    in_clause = _quoted_in(cokeys)
+    requests: list[dict[str, Any]] = []
+
+    for row in records:
+        if not isinstance(row, dict):
+            raise SSURGOChainError("component child contract contains non-object")
+        table = str(row.get("table", "")).strip()
+        stable_key = str(row.get("stable_key", "")).strip()
+        parent_key = str(row.get("parent_key", "")).strip()
+        if not table or not stable_key or parent_key != "cokey":
+            raise SSURGOChainError(f"malformed component child contract row: {row!r}")
+        if table in seen_tables:
+            raise SSURGOChainError(f"duplicate child table in contract: {table}")
+        if stable_key in seen_stable_keys:
+            raise SSURGOChainError(f"duplicate child stable key in contract: {stable_key}")
+        seen_tables.add(table)
+        seen_stable_keys.add(stable_key)
+        sql = (
+            f"SELECT * FROM {table} "
+            f"WHERE cokey IN ({in_clause}) "
+            f"ORDER BY cokey, {stable_key}"
+        )
+        requests.append({
+            "provider_id": "SSURGO_SOILS",
+            "request_role": f"component_child:{table}",
+            "identity_state": "DEPENDENT_PRODUCTION_ACQUISITION",
+            "protocol": "SDA_TABULAR",
+            "method": "POST",
+            "url": SDA_TABULAR_ENDPOINT,
+            "media_type": "application/json",
+            "json_body": {"query": sql, "format": "JSON+COLUMNNAME"},
+            "parent_denominator_sha256": canonical_cokey_sha256(cokeys),
+            "ssurgo_child_contract": {
+                "table": table,
+                "parent_key": "cokey",
+                "stable_key": stable_key,
+                "key_evidence": row.get("key_evidence"),
+                "cardinality": row.get("cardinality"),
+            },
+        })
+
+    return {
+        "schema_version": "spiderweb.ssurgo_stage3_child_plan.v1.0",
+        "query": dict(query, mode="fetch"),
+        "fetch_gate": "READY",
+        "provider_denominator_count": 1,
+        "route_state_counts": {"DEPENDENT_STAGE_ROUTABLE": 1},
+        "providers": [{
+            "provider_id": "SSURGO_SOILS",
+            "family": "soils",
+            "status": "RESOLVER_ONLY",
+            "route_state": "DEPENDENT_STAGE_ROUTABLE",
+        }],
+        "request_count": len(requests),
+        "requests": requests,
+        "component_parent": {
+            "raw_sha256": actual_sha,
+            "runtime_schema_columns": len(component_header),
+            "row_count": len(cokeys),
+        },
+        "ssurgo_cokey_denominator": {
+            "cokey_count": len(cokeys),
+            "cokeys": cokeys,
+            "canonical_cokey_set_sha256": canonical_cokey_sha256(cokeys),
+        },
+        "child_table_denominator": {
+            "table_count": len(records),
+            "tables": [request["ssurgo_child_contract"] for request in requests],
+            "historical_21_table_equivalence": "SUPERSEDED_FOR_CURRENT_DENOMINATOR",
+        },
+        "policy": {
+            "whole_rows_preserved": True,
+            "one_to_n_flattening": False,
+            "zero_child_parent_is_failure": False,
+            "count_equality_used_as_identity": False,
+            "stable_child_key_required": True,
+        },
+    }
