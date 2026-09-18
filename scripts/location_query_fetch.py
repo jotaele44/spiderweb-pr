@@ -451,6 +451,15 @@ def execute(
     if not isinstance(requests, list):
         raise SystemExit("FAIL: plan.requests must be a list")
 
+    specialized_calls = plan.get("specialized_calls", [])
+    if not isinstance(specialized_calls, list):
+        raise SystemExit("FAIL: plan.specialized_calls must be a list")
+    if not discovery_only and specialized_calls:
+        raise SystemExit(
+            "FAIL: plan contains specialized_calls; use scripts/location_query_run.py "
+            "for complete execution rather than the generic byte executor alone"
+        )
+
     if discovery_only:
         if mode not in {"plan", "fetch"}:
             raise SystemExit(
