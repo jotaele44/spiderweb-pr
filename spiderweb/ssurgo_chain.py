@@ -78,6 +78,7 @@ def build_stage2_plan(*, query: dict[str, Any], mapunitpoly_raw: bytes, mapunitp
             "provider_id": "SSURGO_SOILS",
             "request_role": role,
             "identity_state": "DEPENDENT_PRODUCTION_ACQUISITION",
+            "protocol": "SDA_TABULAR",
             "method": "POST",
             "url": SDA_TABULAR_ENDPOINT,
             "media_type": "application/json",
