@@ -27,12 +27,14 @@ def test_package_rehashes_raw_artifact(tmp_path: Path, monkeypatch) -> None:
     plan_path = tmp_path / "plan.json"
     receipt_path = tmp_path / "fetch_receipt.json"
     output = tmp_path / "package.json"
-    _write(plan_path, {
+    plan = {
         "query": {"query_id": "q", "mode": "fetch"},
         "provider_denominator_count": 1,
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
-    })
+    }
+    _write(plan_path, plan)
     _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
         "fetch_gate": "READY",
         "request_count": 1,
         "pass_count": 1,
@@ -57,12 +59,14 @@ def test_package_preserves_partial_execution_state(tmp_path: Path, monkeypatch) 
     plan_path = tmp_path / "plan.json"
     receipt_path = tmp_path / "fetch_receipt.json"
     output = tmp_path / "package.json"
-    _write(plan_path, {
+    plan = {
         "query": {"query_id": "q", "mode": "fetch"},
         "provider_denominator_count": 2,
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
-    })
+    }
+    _write(plan_path, plan)
     _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
         "fetch_gate": "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS",
         "fetch_blocker_provider_ids": ["X"],
         "request_count": 0,
@@ -89,11 +93,13 @@ def test_package_fails_when_raw_hash_drifted(tmp_path: Path, monkeypatch) -> Non
     plan_path = tmp_path / "plan.json"
     receipt_path = tmp_path / "fetch_receipt.json"
     output = tmp_path / "package.json"
-    _write(plan_path, {
+    plan = {
         "query": {"query_id": "q", "mode": "fetch"},
         "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
-    })
+    }
+    _write(plan_path, plan)
     _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
         "fetch_gate": "READY",
         "request_count": 1,
         "failure_count": 0,
@@ -201,3 +207,86 @@ def test_package_supports_discovery_stage_receipt(tmp_path: Path, monkeypatch) -
     assert mod.main() == 0
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["state"] == "DISCOVERY_PASS"
+
+
+def test_package_rejects_missing_executor_plan_hash(tmp_path: Path, monkeypatch) -> None:
+    plan = {
+        "query": {"query_id": "q", "mode": "fetch"},
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "fetch_gate": "READY",
+        "request_count": 0,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    with pytest.raises(SystemExit, match="lacks a valid executor plan SHA256"):
+        mod.main()
+
+
+def test_package_rejects_duplicate_raw_artifact_path(tmp_path: Path, monkeypatch) -> None:
+    raw = tmp_path / "source.raw"
+    raw.write_bytes(b"abc")
+    digest = mod.sha256_file(raw)
+    plan = {
+        "query": {"query_id": "q", "mode": "fetch"},
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "fetch_gate": "READY",
+        "request_count": 2,
+        "pass_count": 2,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [
+            {"raw_path": str(raw), "sha256": digest},
+            {"raw_path": str(raw), "sha256": digest},
+        ],
+    })
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    with pytest.raises(SystemExit, match="duplicate raw artifact path"):
+        mod.main()
+
+
+def test_package_refuses_manifest_overwrite(tmp_path: Path, monkeypatch) -> None:
+    plan = {
+        "query": {"query_id": "q", "mode": "fetch"},
+        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True},
+    }
+    plan_path = tmp_path / "plan.json"
+    receipt_path = tmp_path / "fetch_receipt.json"
+    output = tmp_path / "package.json"
+    _write(plan_path, plan)
+    _write(receipt_path, {
+        "plan_sha256": mod.canonical_json_sha256(plan),
+        "fetch_gate": "READY",
+        "request_count": 0,
+        "pass_count": 0,
+        "failure_count": 0,
+        "state": "PASS",
+        "requests": [],
+    })
+    output.write_text("{}\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "sys.argv",
+        ["location_query_package.py", str(plan_path), str(receipt_path), "--output", str(output)],
+    )
+    with pytest.raises(SystemExit, match="package manifest already exists"):
+        mod.main()
