@@ -279,9 +279,12 @@ def freeze_arcgis_service_contents_denominator(
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise DenominatorError(f"ArcGIS service metadata JSON parse failure: {exc}") from exc
 
-    service_name = receipt.get("service_name_raw")
-    service_scope = receipt.get("service_scope_raw", "")
-    service_type = receipt.get("service_type_raw")
+    source_binding = receipt.get("source_binding") or {}
+    if not isinstance(source_binding, dict):
+        raise DenominatorError("receipt source_binding is malformed")
+    service_name = source_binding.get("service_name_raw")
+    service_scope = source_binding.get("service_scope_raw", "")
+    service_type = source_binding.get("service_type_raw")
     if service_name is not None and not isinstance(service_name, str):
         raise DenominatorError("service_name_raw in receipt is malformed")
     if not isinstance(service_scope, str):
