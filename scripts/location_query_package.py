@@ -38,6 +38,11 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
+    if args.output.exists():
+        raise SystemExit(
+            f"FAIL: package manifest already exists: {args.output}; use a new versioned output path"
+        )
+
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
     fetch = json.loads(args.fetch_receipt.read_text(encoding="utf-8"))
 
@@ -49,7 +54,13 @@ def main() -> int:
         )
     canonical_plan_sha = canonical_json_sha256(plan)
     receipt_plan_sha = fetch.get("plan_sha256")
-    if receipt_plan_sha and receipt_plan_sha != canonical_plan_sha:
+    if (
+        not isinstance(receipt_plan_sha, str)
+        or len(receipt_plan_sha) != 64
+        or any(ch not in "0123456789abcdefABCDEF" for ch in receipt_plan_sha)
+    ):
+        raise SystemExit("FAIL: fetch receipt lacks a valid executor plan SHA256")
+    if receipt_plan_sha != canonical_plan_sha:
         raise SystemExit(
             f"FAIL: fetch receipt plan SHA drift expected={receipt_plan_sha} actual={canonical_plan_sha}"
         )
@@ -62,6 +73,7 @@ def main() -> int:
     raw_records = []
     missing_raw = []
     hash_mismatch = []
+    seen_raw_paths: set[str] = set()
     parent_denominator_hashes: set[str] = set()
     for request in requests:
         parent_hash = request.get("parent_denominator_sha256")
@@ -85,6 +97,12 @@ def main() -> int:
                 paths.append((batch["raw_path"], batch.get("sha256")))
 
         for raw_path, expected in paths:
+            normalized_path = str(Path(raw_path))
+            if normalized_path in seen_raw_paths:
+                raise SystemExit(
+                    f"FAIL: duplicate raw artifact path in fetch receipt: {normalized_path}"
+                )
+            seen_raw_paths.add(normalized_path)
             path = Path(raw_path)
             if not path.is_file():
                 missing_raw.append(str(path))
@@ -108,6 +126,12 @@ def main() -> int:
         )
 
     total_raw_bytes = sum(row["bytes"] for row in raw_records)
+    policy = plan.get("policy") or {}
+    if policy.get("plan_before_download") is not True:
+        raise SystemExit("FAIL: acquisition plan lacks plan_before_download=true")
+    if policy.get("raw_bytes_before_derivation") is not True:
+        raise SystemExit("FAIL: acquisition plan lacks raw_bytes_before_derivation=true")
+
     fetch_gate = str(fetch.get("fetch_gate", "MISSING"))
     if fetch.get("failure_count"):
         package_state = "PARTIAL_OR_BLOCKED"
@@ -121,7 +145,7 @@ def main() -> int:
         package_state = "BLOCKED_UNRESOLVED_EXECUTION_STATE"
 
     result = {
-        "schema_version": "spiderweb.location_query_package.v1.1",
+        "schema_version": "spiderweb.location_query_package.v1.2",
         "state": package_state,
         "fetch_gate": fetch_gate,
         "fetch_blocker_provider_ids": fetch.get("fetch_blocker_provider_ids", []),
@@ -131,7 +155,7 @@ def main() -> int:
             "byte_sha256": sha256_file(args.plan),
             "canonical_json_sha256": canonical_plan_sha,
             "executor_plan_sha256": receipt_plan_sha,
-            "canonical_hash_matches_executor": receipt_plan_sha in {None, canonical_plan_sha},
+            "canonical_hash_matches_executor": receipt_plan_sha == canonical_plan_sha,
         },
         "fetch_receipt": {
             "path": str(args.fetch_receipt),
@@ -150,10 +174,11 @@ def main() -> int:
         "invariants": {
             "raw_artifacts_exist": not missing_raw,
             "raw_hashes_match_receipts": not hash_mismatch,
-            "executor_plan_hash_matches": receipt_plan_sha in {None, canonical_plan_sha},
+            "executor_plan_hash_matches": receipt_plan_sha == canonical_plan_sha,
             "parent_denominator_hashes_well_formed": True,
-            "plan_before_download": bool((plan.get("policy") or {}).get("plan_before_download")),
-            "raw_bytes_before_derivation": bool((plan.get("policy") or {}).get("raw_bytes_before_derivation")),
+            "plan_before_download": True,
+            "raw_bytes_before_derivation": True,
+            "raw_artifact_paths_unique": len(seen_raw_paths) == len(raw_records),
             "source_manifestations_not_aggregated": True,
         },
     }
