@@ -179,6 +179,14 @@ def build_stage3_child_plan(
     if expected_count != len(records):
         raise SSURGOChainError("component child contract relationship_count invariant drift")
 
+    contract_bytes = json.dumps(
+        child_contract,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    child_contract_sha = sha256_bytes(contract_bytes)
+
     seen_tables: set[str] = set()
     seen_stable_keys: set[str] = set()
     in_clause = _quoted_in(cokeys)
@@ -213,6 +221,7 @@ def build_stage3_child_plan(
             "media_type": "application/json",
             "json_body": {"query": sql, "format": "JSON+COLUMNNAME"},
             "parent_denominator_sha256": canonical_cokey_sha256(cokeys),
+            "ssurgo_child_contract_sha256": child_contract_sha,
             "ssurgo_child_contract": {
                 "table": table,
                 "parent_key": "cokey",
@@ -247,6 +256,8 @@ def build_stage3_child_plan(
             "canonical_cokey_set_sha256": canonical_cokey_sha256(cokeys),
         },
         "child_table_denominator": {
+            "schema_version": child_contract.get("schema_version"),
+            "canonical_contract_sha256": child_contract_sha,
             "table_count": len(records),
             "tables": [request["ssurgo_child_contract"] for request in requests],
             "documentation_epoch": child_contract.get("current_documentation_epoch"),
