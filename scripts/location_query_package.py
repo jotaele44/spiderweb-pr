@@ -16,6 +16,16 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def canonical_json_sha256(value: object) -> str:
+    body = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(body).hexdigest()
+
+
 def write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -32,8 +42,17 @@ def main() -> int:
     fetch = json.loads(args.fetch_receipt.read_text(encoding="utf-8"))
 
     query = plan.get("query") or {}
-    if query.get("mode") != "fetch":
-        raise SystemExit("FAIL: package requires a fetch-mode acquisition plan")
+    execution_scope = str(fetch.get("execution_scope", ""))
+    if query.get("mode") != "fetch" and execution_scope != "DISCOVERY_OR_RESOLVER_STAGE":
+        raise SystemExit(
+            "FAIL: package requires fetch-mode plan unless receipt is explicit discovery/resolver-stage execution"
+        )
+    canonical_plan_sha = canonical_json_sha256(plan)
+    receipt_plan_sha = fetch.get("plan_sha256")
+    if receipt_plan_sha and receipt_plan_sha != canonical_plan_sha:
+        raise SystemExit(
+            f"FAIL: fetch receipt plan SHA drift expected={receipt_plan_sha} actual={canonical_plan_sha}"
+        )
     requests = fetch.get("requests")
     if not isinstance(requests, list):
         raise SystemExit("FAIL: fetch receipt lacks requests list")
@@ -43,7 +62,19 @@ def main() -> int:
     raw_records = []
     missing_raw = []
     hash_mismatch = []
+    parent_denominator_hashes: set[str] = set()
     for request in requests:
+        parent_hash = request.get("parent_denominator_sha256")
+        if parent_hash is not None:
+            if (
+                not isinstance(parent_hash, str)
+                or len(parent_hash) != 64
+                or any(ch not in "0123456789abcdefABCDEF" for ch in parent_hash)
+            ):
+                raise SystemExit(
+                    f"FAIL: malformed parent_denominator_sha256 for {request.get('provider_id')}/{request.get('request_role')}"
+                )
+            parent_denominator_hashes.add(parent_hash.lower())
         paths = []
         if request.get("raw_path"):
             paths.append((request["raw_path"], request.get("sha256")))
@@ -84,18 +115,23 @@ def main() -> int:
         package_state = "PARTIAL"
     elif fetch_gate == "READY" and fetch.get("state") == "PASS":
         package_state = "PASS"
+    elif fetch_gate == "DISCOVERY_ONLY" and fetch.get("state") == "DISCOVERY_PASS":
+        package_state = "DISCOVERY_PASS"
     else:
         package_state = "BLOCKED_UNRESOLVED_EXECUTION_STATE"
 
     result = {
-        "schema_version": "spiderweb.location_query_package.v1.0",
+        "schema_version": "spiderweb.location_query_package.v1.1",
         "state": package_state,
         "fetch_gate": fetch_gate,
         "fetch_blocker_provider_ids": fetch.get("fetch_blocker_provider_ids", []),
         "query_id": query.get("query_id"),
         "plan": {
             "path": str(args.plan),
-            "sha256": sha256_file(args.plan),
+            "byte_sha256": sha256_file(args.plan),
+            "canonical_json_sha256": canonical_plan_sha,
+            "executor_plan_sha256": receipt_plan_sha,
+            "canonical_hash_matches_executor": receipt_plan_sha in {None, canonical_plan_sha},
         },
         "fetch_receipt": {
             "path": str(args.fetch_receipt),
@@ -108,10 +144,14 @@ def main() -> int:
         "failure_count": fetch.get("failure_count"),
         "raw_artifact_count": len(raw_records),
         "total_raw_bytes": total_raw_bytes,
+        "parent_denominator_hash_count": len(parent_denominator_hashes),
+        "parent_denominator_sha256": sorted(parent_denominator_hashes),
         "raw_artifacts": raw_records,
         "invariants": {
             "raw_artifacts_exist": not missing_raw,
             "raw_hashes_match_receipts": not hash_mismatch,
+            "executor_plan_hash_matches": receipt_plan_sha in {None, canonical_plan_sha},
+            "parent_denominator_hashes_well_formed": True,
             "plan_before_download": bool((plan.get("policy") or {}).get("plan_before_download")),
             "raw_bytes_before_derivation": bool((plan.get("policy") or {}).get("raw_bytes_before_derivation")),
             "source_manifestations_not_aggregated": True,
@@ -125,7 +165,7 @@ def main() -> int:
         "total_raw_bytes": total_raw_bytes,
         "output": str(args.output),
     }, indent=2, sort_keys=True))
-    return 0 if result["state"] in {"PASS", "PARTIAL"} else 1
+    return 0 if result["state"] in {"PASS", "PARTIAL", "DISCOVERY_PASS"} else 1
 
 
 if __name__ == "__main__":
