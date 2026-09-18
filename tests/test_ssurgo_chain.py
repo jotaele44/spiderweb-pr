@@ -75,7 +75,12 @@ def component_receipt(raw: bytes = COMPONENT) -> dict:
 
 def test_stage3_freezes_cokey_denominator_and_current_child_contract() -> None:
     contract = {
-        "tables": [
+        "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+        "parent_table": "component",
+        "parent_key": "cokey",
+        "relationship_count": 2,
+        "current_documentation_epoch": "fixture",
+        "records": [
             {
                 "table": "chorizon",
                 "stable_key": "chkey",
@@ -91,7 +96,7 @@ def test_stage3_freezes_cokey_denominator_and_current_child_contract() -> None:
                 "cardinality": "0:N_or_1:N_table_specific",
             },
         ],
-        "invariants": {"table_count": 2},
+        "lineage": {"prior_frozen_relationship_count": 1},
     }
     plan = build_stage3_child_plan(
         query={"query_id": "x"},
@@ -122,19 +127,28 @@ def test_stage3_duplicate_component_cokey_fails_closed() -> None:
             query={"query_id": "x"},
             component_raw=raw,
             component_receipt=component_receipt(raw),
-            child_contract={"tables": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}], "invariants": {"table_count": 1}},
+            child_contract={
+                "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+                "parent_table": "component",
+                "parent_key": "cokey",
+                "relationship_count": 1,
+                "records": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}],
+            },
         )
 
 
 def test_stage3_child_contract_count_drift_fails_closed() -> None:
-    with pytest.raises(SSURGOChainError, match="table_count invariant drift"):
+    with pytest.raises(SSURGOChainError, match="relationship_count invariant drift"):
         build_stage3_child_plan(
             query={"query_id": "x"},
             component_raw=COMPONENT,
             component_receipt=component_receipt(),
             child_contract={
-                "tables": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}],
-                "invariants": {"table_count": 2},
+                "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+                "parent_table": "component",
+                "parent_key": "cokey",
+                "relationship_count": 2,
+                "records": [{"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"}],
             },
         )
 
