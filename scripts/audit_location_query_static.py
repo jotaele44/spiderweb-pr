@@ -46,6 +46,9 @@ FILES = [
     ROOT / "tests/test_provider_denominators.py",
     ROOT / "tests/test_provider_promotion.py",
     ROOT / "tests/test_ssurgo_chain.py",
+    ROOT / "spiderweb/denominator_closure.py",
+    ROOT / "scripts/close_location_query_denominators.py",
+    ROOT / "tests/test_denominator_closure.py",
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
