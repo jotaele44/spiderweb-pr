@@ -160,7 +160,11 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
         base = provider["wfs_endpoint"]
         for typename in ("SurveyAreaPoly", "MapunitPoly"):
             row = _wfs_getfeature(base, typename, bbox)
-            row.update({"provider_id": provider_id, "request_role": typename, "identity_state": "SOURCE_MANIFESTATION"})
+            row.update({
+                "provider_id": provider_id,
+                "request_role": typename,
+                "identity_state": "RESOLVER_STAGE_SOURCE_MANIFESTATION",
+            })
             specs.append(row)
         return specs
 
@@ -226,7 +230,6 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
             "url": provider["map_service"].rstrip("/") + "?f=json",
             "protocol": "ARCGIS_METADATA",
             "media_type": "application/json",
-            "protocol": "ARCGIS_METADATA",
             "bbox_wgs84": list(bbox),
             "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
         }]
