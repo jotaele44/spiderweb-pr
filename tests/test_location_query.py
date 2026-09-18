@@ -278,3 +278,27 @@ def test_plan_mode_never_claims_fetch_ready() -> None:
     }
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
     assert plan["fetch_gate"] == "NOT_REQUESTED"
+
+
+def test_nonboolean_allow_partial_fails_closed() -> None:
+    with pytest.raises(LocationQueryError, match="allow_partial must be boolean"):
+        validate_query({
+            "query_id": "bad-partial",
+            "geometry": {"type": "point", "lat": 18.3, "lon": -66.0},
+            "allow_partial": "false",
+        })
+
+
+def test_non_wgs84_bbox_crs_fails_closed() -> None:
+    with pytest.raises(LocationQueryError, match="requires EPSG:4326/CRS84"):
+        validate_query({
+            "query_id": "bad-crs",
+            "geometry": {
+                "type": "bbox",
+                "west": 200000,
+                "south": 200000,
+                "east": 300000,
+                "north": 300000,
+                "crs": "EPSG:26920",
+            },
+        })
