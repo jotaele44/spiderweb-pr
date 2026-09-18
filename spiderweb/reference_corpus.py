@@ -40,6 +40,7 @@ def build_reference_corpus(
     if len(ids) != len(set(ids)):
         raise ReferenceCorpusError("reference AOI ids are not unique")
 
+    registry_sha = canonical_sha256(registry)
     plans: list[dict[str, Any]] = []
     total_provider_decisions = 0
     total_requests = 0
@@ -53,6 +54,8 @@ def build_reference_corpus(
             "allow_partial": False,
         }
         plan = route_query(query, registry=registry, env={} if env is None else env)
+        if plan.get("provider_registry_sha256") != registry_sha:
+            raise ReferenceCorpusError(f"{row['id']}: provider registry hash drift")
         if plan["query"]["mode"] != "plan" or plan["fetch_gate"] != "NOT_REQUESTED":
             raise ReferenceCorpusError(f"{row['id']}: planning gate drift")
         total_provider_decisions += int(plan["provider_denominator_count"])
@@ -80,7 +83,7 @@ def build_reference_corpus(
         "reference_aoi_count": len(rows),
         "reference_aoi_ids": ids,
         "reference_payload_sha256": canonical_sha256(reference_payload),
-        "provider_registry_sha256": canonical_sha256(registry),
+        "provider_registry_sha256": registry_sha,
         "total_provider_decisions": total_provider_decisions,
         "total_request_specs": total_requests,
         "aggregate_route_state_counts": dict(sorted(route_state_counts.items())),
@@ -92,6 +95,10 @@ def build_reference_corpus(
             "all_plan_mode": all(item["plan"]["query"]["mode"] == "plan" for item in plans),
             "all_fetch_gate_not_requested": all(item["fetch_gate"] == "NOT_REQUESTED" for item in plans),
             "network_requests_zero": True,
+            "all_provider_registry_hashes_equal": all(
+                item["plan"].get("provider_registry_sha256") == registry_sha
+                for item in plans
+            ),
         },
     }
 
