@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Continue a LOCATION_QUERY SSURGO spatial fetch into certified tabular data.
+"""Compatibility-only monolithic SSURGO continuation.
 
-Inputs are the frozen acquisition plan and raw fetch receipt. Raw WFS bytes are
-never rewritten. Derived geometry normalization is explicit and separate. SDA
-tabular responses are preserved batch-by-batch before any logical concatenation.
+The canonical Spiderweb SSURGO path is the modular LOCATION_QUERY chain:
+location_query -> location_query_fetch -> ssurgo_location_stage2 ->
+location_query_fetch -> ssurgo_location_stage3 -> location_query_fetch ->
+certify_ssurgo_child.
+
+This script is retained for backward compatibility only. It reimplements network
+and cardinality logic, so it is NONCANONICAL and cannot certify the canonical
+pipeline. Execution requires an explicit --allow-noncanonical-compat flag.
+Raw WFS bytes remain preserved before any derived normalization.
 """
 from __future__ import annotations
 
@@ -365,7 +371,17 @@ def main() -> int:
     parser.add_argument("--children", type=Path, default=Path("configs/ssurgo_component_children.json"))
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--timeout", type=int, default=180)
+    parser.add_argument(
+        "--allow-noncanonical-compat",
+        action="store_true",
+        help="explicitly run the retained monolithic compatibility workflow",
+    )
     args = parser.parse_args()
+    if not args.allow_noncanonical_compat:
+        fail(
+            "location_query_ssurgo.py is NONCANONICAL compatibility only; "
+            "use the modular SSURGO chain or pass --allow-noncanonical-compat explicitly"
+        )
 
     if (args.output_dir / "SSURGO_LOCATION_QUERY_RECEIPT.json").exists():
         fail("output snapshot already exists; use a new versioned output directory")
@@ -393,7 +409,8 @@ def main() -> int:
         fail("MapunitPoly receipt request-spec SHA256 mismatch")
     if survey_receipt.get("state") == "NO_COVERAGE" or mapunit_receipt.get("state") == "NO_COVERAGE":
         result = {
-            "schema_version": "spiderweb.location_query_ssurgo.v1.0",
+            "schema_version": "spiderweb.location_query_ssurgo.v1.1",
+            "classification": "NONCANONICAL_COMPATIBILITY",
             "state": "NO_COVERAGE",
             "query_id": query.get("query_id"),
             "raw_spatial_receipts": [survey_receipt, mapunit_receipt],
@@ -564,7 +581,9 @@ def main() -> int:
         fail("child-table execution denominator did not close")
 
     result = {
-        "schema_version": "spiderweb.location_query_ssurgo.v1.0",
+        "schema_version": "spiderweb.location_query_ssurgo.v1.1",
+        "classification": "NONCANONICAL_COMPATIBILITY",
+        "canonical_certification": False,
         "state": "PASS" if complete_coverage else "PARTIAL",
         "query_id": query.get("query_id"),
         "allow_partial": allow_partial,
@@ -606,7 +625,11 @@ def main() -> int:
             "one_to_n_flattening": False,
             "raw_bytes_preserved_before_derivation": True,
         },
-        "next_gate": "SSURGO_LOCATION_QUERY_COMPLETE" if complete_coverage else "PARTIAL_SSURGO_COVERAGE",
+        "next_gate": (
+            "REPLAY_WITH_CANONICAL_MODULAR_SSURGO_CHAIN"
+            if complete_coverage
+            else "PARTIAL_NONCANONICAL_COMPATIBILITY_RESULT"
+        ),
     }
     receipt = args.output_dir / "SSURGO_LOCATION_QUERY_RECEIPT.json"
     write_json(receipt, result)
