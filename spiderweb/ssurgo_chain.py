@@ -296,6 +296,8 @@ def build_stage3_child_plan(
             "historical_21_table_equivalence": "SUPERSEDED_FOR_CURRENT_DENOMINATOR",
         },
         "policy": {
+            "plan_before_download": True,
+            "raw_bytes_before_derivation": True,
             "whole_rows_preserved": True,
             "one_to_n_flattening": False,
             "zero_child_parent_is_failure": False,
