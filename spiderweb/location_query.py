@@ -8,6 +8,7 @@ Existing provider-specific adapters remain authoritative for discovery/fetch.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 import hashlib
 import json
 import os
@@ -146,6 +147,31 @@ def validate_query(query: dict[str, Any]) -> dict[str, Any]:
     if families is not None:
         normalized["families"] = sorted({v.strip() for v in families})
     normalized["allow_partial"] = allow_partial
+
+    temporal = query.get("temporal")
+    if temporal is not None:
+        if not isinstance(temporal, dict):
+            raise LocationQueryError("temporal must be an object")
+        date_range = str(temporal.get("date_range", "")).strip()
+        if not date_range:
+            raise LocationQueryError("temporal.date_range is required")
+        parts = date_range.split("/")
+        if len(parts) not in {1, 2}:
+            raise LocationQueryError(
+                "temporal.date_range must be YYYY-MM-DD or YYYY-MM-DD/YYYY-MM-DD"
+            )
+        try:
+            start = date.fromisoformat(parts[0])
+            end = date.fromisoformat(parts[-1])
+        except ValueError as exc:
+            raise LocationQueryError(f"invalid temporal.date_range: {exc}") from exc
+        if end < start:
+            raise LocationQueryError("temporal.date_range end precedes start")
+        normalized["temporal"] = {
+            "date_range": f"{start.isoformat()}/{end.isoformat()}",
+            "date_start": start.isoformat(),
+            "date_end": end.isoformat(),
+        }
 
     # Geometry must be intrinsically valid even when no provider/family routes it.
     # This prevents malformed GeoJSON from silently becoming an empty valid plan.
