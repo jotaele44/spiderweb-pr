@@ -30,7 +30,7 @@ def test_executor_rejects_plan_mode_before_network(tmp_path: Path) -> None:
 
 
 def test_executor_accepts_empty_fetch_plan_without_network(tmp_path: Path) -> None:
-    plan = {"query": {"mode": "fetch"}, "requests": []}
+    plan = {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": []}
     result = mod.execute(plan, tmp_path)
     assert result["state"] == "PASS"
     assert result["query_mode"] == "fetch"
@@ -112,7 +112,7 @@ def test_arcgis_executor_closes_object_id_denominator(monkeypatch, tmp_path: Pat
         }, content_type="application/geo+json"),
     ])
     monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: next(responses))
-    plan = {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]}
+    plan = {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": [_arcgis_spec()]}
     result = mod.execute(plan, tmp_path)
     receipt = result["requests"][0]
     assert result["state"] == "PASS"
@@ -135,7 +135,7 @@ def test_arcgis_zero_ids_is_explicit_no_coverage(monkeypatch, tmp_path: Path) ->
         ),
     )
     result = mod.execute(
-        {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]},
+        {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": [_arcgis_spec()]},
         tmp_path,
     )
     receipt = result["requests"][0]
@@ -178,3 +178,27 @@ def test_arcgis_duplicate_denominator_ids_fail_closed(monkeypatch, tmp_path: Pat
             {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]},
             tmp_path,
         )
+
+
+def test_executor_rejects_blocked_fetch_gate_before_network(tmp_path: Path) -> None:
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION",
+        "fetch_blocker_provider_ids": ["NASA_GIBS_IMAGERY"],
+        "requests": [],
+    }
+    with pytest.raises(SystemExit, match="fetch_gate=BLOCKED_INCOMPLETE_PROVIDER_EXECUTION"):
+        mod.execute(plan, tmp_path)
+
+
+def test_executor_allows_explicit_partial_gate_without_requests(tmp_path: Path) -> None:
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS",
+        "fetch_blocker_provider_ids": ["NASA_GIBS_IMAGERY"],
+        "requests": [],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PASS"
+    assert result["fetch_gate"] == "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"
+    assert result["fetch_blocker_provider_ids"] == ["NASA_GIBS_IMAGERY"]
