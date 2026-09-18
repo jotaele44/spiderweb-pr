@@ -37,6 +37,7 @@ EXPECTED_BOUND = {
     "USFWS_NWI",
     "FEMA_NFHL",
     "FEMA_PR_ABFE_1PCT",
+    "USACE_GENERAL_GIS",
     "USACE_PORTS_NAV",
 }
 
@@ -72,8 +73,14 @@ def main() -> int:
         raise SystemExit("FAIL: FEMA Puerto Rico ABFE must remain RESOLVER_ONLY until layer denominator closes")
     if providers["USFWS_NWI"]["status"] != "READY_SPECIALIZED":
         raise SystemExit("FAIL: NWI readiness drift")
+    if providers["USACE_GENERAL_GIS"]["status"] != "RESOLVER_ONLY":
+        raise SystemExit("FAIL: USACE general must remain RESOLVER_ONLY until recursive service denominator closes")
     if providers["USACE_PORTS_NAV"]["status"] != "READY_SPECIALIZED":
         raise SystemExit("FAIL: USACE ports/navigation readiness drift")
+    if bound["USGS_3DHP_NHD"]["status"] != "BOUND_FEATURE_SERVICE_DENOMINATOR_OPEN":
+        raise SystemExit("FAIL: 3DHP binding must remain denominator-open")
+    if bound["USACE_GENERAL_GIS"]["status"] != "BOUND_SERVICE_ROOT_DENOMINATOR_OPEN":
+        raise SystemExit("FAIL: USACE general service-root binding state drift")
 
     result = {
         "state": "PASS",
