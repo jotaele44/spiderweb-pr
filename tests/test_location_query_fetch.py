@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -39,3 +40,26 @@ def test_executor_accepts_empty_fetch_plan_without_network(tmp_path: Path) -> No
 
 def test_safe_name_is_deterministic() -> None:
     assert mod.safe_name("USFWS_NWI", "wetlands", 1) == "001_USFWS_NWI_wetlands"
+
+
+def test_post_request_requires_explicit_json_body_and_serializes_deterministically() -> None:
+    spec = {
+        "method": "POST",
+        "url": "https://example.invalid/post",
+        "json_body": {"query": "SELECT 1", "format": "JSON+COLUMNNAME"},
+    }
+    request, method = mod._request_from_spec(spec, 1)
+    assert method == "POST"
+    assert request.full_url == spec["url"]
+    assert json.loads(request.data.decode("utf-8")) == spec["json_body"]
+    assert request.get_header("Content-type") == "application/json"
+
+
+def test_post_request_without_body_fails_closed() -> None:
+    with pytest.raises(SystemExit, match="requires json_body object"):
+        mod._request_from_spec({"method": "POST", "url": "https://example.invalid/post"}, 1)
+
+
+def test_unknown_method_fails_closed() -> None:
+    with pytest.raises(SystemExit, match="unsupported method"):
+        mod._request_from_spec({"method": "DELETE", "url": "https://example.invalid/"}, 1)
