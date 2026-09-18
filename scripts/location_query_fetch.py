@@ -169,6 +169,25 @@ def _semantic_simple_state(spec: dict, payload: bytes) -> tuple[str, str | None]
             members = sum(name in {"featureMember", "member"} for name in locals_seen)
             if members == 0:
                 return "NO_COVERAGE", None
+            max_features = spec.get("wfs_max_features")
+            if isinstance(max_features, int) and not isinstance(max_features, bool):
+                if members >= max_features:
+                    return (
+                        "INCOMPLETE_POTENTIAL_WFS_TRUNCATION",
+                        f"returned feature members={members} reached requested MAXFEATURES={max_features}",
+                    )
+            root_count = (
+                root.attrib.get("numberOfFeatures")
+                or root.attrib.get("numberMatched")
+                or root.attrib.get("numberReturned")
+            )
+            if isinstance(root_count, str) and root_count.isdigit():
+                declared = int(root_count)
+                if declared > members:
+                    return (
+                        "INCOMPLETE_POTENTIAL_WFS_TRUNCATION",
+                        f"declared feature count={declared} > parsed members={members}",
+                    )
             return "PASS", None
 
         if protocol == "WMS_CAPABILITIES":
