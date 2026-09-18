@@ -103,6 +103,12 @@ def validate_query(query: dict[str, Any]) -> dict[str, Any]:
         north = _require_number(geometry.get("north"), "north", -90, 90)
         if west >= east or south >= north:
             raise LocationQueryError("bbox must satisfy west < east and south < north")
+        crs = str(geometry.get("crs", "EPSG:4326")).strip().upper()
+        if crs not in {"EPSG:4326", "CRS84", "OGC:CRS84"}:
+            raise LocationQueryError(
+                "LOCATION_QUERY bbox currently requires EPSG:4326/CRS84; "
+                "provider-specific reprojection occurs downstream"
+            )
     else:
         geojson = geometry.get("geojson")
         if not isinstance(geojson, dict):
@@ -114,13 +120,21 @@ def validate_query(query: dict[str, Any]) -> dict[str, Any]:
     if families is not None:
         if not isinstance(families, list) or any(not isinstance(v, str) or not v.strip() for v in families):
             raise LocationQueryError("families must be a list of non-empty strings")
+    allow_partial = query.get("allow_partial", False)
+    if not isinstance(allow_partial, bool):
+        raise LocationQueryError("allow_partial must be boolean")
+
     normalized = dict(query)
     normalized["query_id"] = query_id
     normalized["mode"] = mode
     normalized["geometry"] = dict(geometry, type=geometry_type)
+    if geometry_type == "bbox":
+        normalized["geometry"]["crs"] = str(
+            geometry.get("crs", "EPSG:4326")
+        ).strip().upper()
     if families is not None:
         normalized["families"] = sorted({v.strip() for v in families})
-    normalized["allow_partial"] = bool(query.get("allow_partial", False))
+    normalized["allow_partial"] = allow_partial
     return normalized
 
 
