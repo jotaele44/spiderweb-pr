@@ -66,6 +66,8 @@ def build_place_discovery_plan(request: dict[str, Any]) -> dict[str, Any]:
             "media_type": "application/json",
         }],
         "policy": {
+            "plan_before_download": True,
+            "raw_bytes_before_derivation": True,
             "candidate_set_preserved": True,
             "name_only_identity_prohibited": True,
             "nearest_only_identity_prohibited": True,
