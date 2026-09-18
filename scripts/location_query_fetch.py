@@ -20,6 +20,27 @@ USER_AGENT = "spiderweb-pr-location-query/1.0"
 ALLOWED_METHODS = {"GET", "POST"}
 ARCGIS_BATCH_SIZE = 100
 
+SOURCE_BINDING_FIELDS = (
+    "service_scope_raw",
+    "service_name_raw",
+    "service_type_raw",
+    "layer_id",
+    "layer_name_raw",
+    "stable_id_fields",
+    "evidence_role",
+    "ssurgo_child_contract_sha256",
+    "ssurgo_child_contract",
+)
+
+
+def source_binding_from_spec(spec: dict) -> dict:
+    return {
+        key: spec[key]
+        for key in SOURCE_BINDING_FIELDS
+        if key in spec
+    }
+
+
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -198,6 +219,7 @@ def _execute_arcgis(
     base = safe_name(provider, role, ordinal)
     request_spec_sha = canonical_json_sha256(spec)
     parent_denominator_sha = spec.get("parent_denominator_sha256")
+    source_binding = source_binding_from_spec(spec)
     denominator_req, _ = _request_from_spec(spec, ordinal)
     status, content_type, payload, error = _perform(denominator_req, timeout)
     denominator_raw = output_dir / (base + ".ids.raw")
@@ -211,6 +233,7 @@ def _execute_arcgis(
             "protocol": "ARCGIS_FEATURE_LAYER",
             "request_spec_sha256": request_spec_sha,
             "parent_denominator_sha256": parent_denominator_sha,
+            "source_binding": source_binding,
             "state": "FAIL",
             "http_status": status,
             "error": error,
@@ -246,6 +269,7 @@ def _execute_arcgis(
             "protocol": "ARCGIS_FEATURE_LAYER",
             "request_spec_sha256": request_spec_sha,
             "parent_denominator_sha256": parent_denominator_sha,
+            "source_binding": source_binding,
             "state": "NO_COVERAGE",
             "http_status": status,
             "object_id_field": oid_field,
@@ -334,6 +358,7 @@ def _execute_arcgis(
         "protocol": "ARCGIS_FEATURE_LAYER",
         "request_spec_sha256": request_spec_sha,
         "parent_denominator_sha256": parent_denominator_sha,
+        "source_binding": source_binding,
         "state": "PASS",
         "http_status": status,
         "object_id_field": oid_field,
@@ -361,6 +386,7 @@ def _execute_simple(
     req, method = _request_from_spec(spec, ordinal)
     request_spec_sha = canonical_json_sha256(spec)
     parent_denominator_sha = spec.get("parent_denominator_sha256")
+    source_binding = source_binding_from_spec(spec)
     base = safe_name(provider, role, ordinal)
     raw_path = output_dir / (base + ".raw")
     status, content_type, payload, error = _perform(req, timeout)
@@ -377,6 +403,7 @@ def _execute_simple(
         "protocol": spec.get("protocol"),
         "request_spec_sha256": request_spec_sha,
         "parent_denominator_sha256": parent_denominator_sha,
+        "source_binding": source_binding,
         "request_method": method,
         "request_url": str(spec.get("url", "")),
         "request_body_sha256": sha256_bytes(req.data) if req.data else None,
