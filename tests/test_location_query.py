@@ -190,15 +190,21 @@ def test_hydrogeology_reuses_stable_id_source_specs() -> None:
     assert all("stable_id_fields" in r for r in plan["requests"])
 
 
-def test_ssurgo_is_resolver_only_until_tabular_chain_is_in_repo() -> None:
+def test_ssurgo_requires_post_fetch_certification_stage() -> None:
     query = {
         "query_id": "fixture-ssurgo-state",
         "geometry": {"type": "bbox", "west": -66.05, "south": 18.29, "east": -65.93, "north": 18.39},
         "families": ["soils"],
+        "mode": "fetch",
     }
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
-    assert plan["providers"][0]["route_state"] == "RESOLVER_ONLY"
+    provider = plan["providers"][0]
+    assert provider["route_state"] == "ROUTABLE"
+    assert provider["execution_kind"] == "REQUEST_SPECS_PLUS_POSTPROCESSOR"
+    assert provider["generic_executor_ready"] is False
     assert plan["request_count"] == 2
+    assert plan["fetch_gate"] == "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION"
+    assert plan["execution_gap_provider_ids"] == ["SSURGO_SOILS"]
 
 def test_fema_pr_abfe_is_bounded_resolver_not_nfhl_substitute() -> None:
     query = {
