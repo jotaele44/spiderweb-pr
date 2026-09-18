@@ -1,0 +1,33 @@
+{
+  "schema_version": "federation.gui-backend-contract/1.0",
+  "repository": "Jotaele44/spiderweb-pr",
+  "source_commit": "f46546ef24c7dc2164b3f203d1af57e7d2570219",
+  "policy": {"require_zero_material_residue": true, "dimensions": ["executability", "semantic", "state", "auth", "data", "provenance", "device", "identity", "geometry", "authority"]},
+  "discovery": {
+    "backend_roots": ["server/backend", "desktop"],
+    "frontend_roots": ["server/frontend/src"],
+    "route_files": ["server/frontend/src/App.tsx"],
+    "navigation_files": ["server/frontend/src/App.tsx"],
+    "existing_gui_capability_manifests": []
+  },
+  "authority": {
+    "semantic_authority": "bounded-spatial-relations-and-spatial-analysis",
+    "mutation_authority": "spatial-substrate-state-only",
+    "identity_authority": "spatial-manifestation-identities-not-domain-entity-semantics",
+    "geometry_authority": "canonical-bounded-spatial-substrate",
+    "provenance_authority": "geometry-transformation-and-spatial-relation-provenance"
+  },
+  "auth": {"mutating_route_policy": "require_guard_or_explicit_public", "guard_patterns": ["Depends\\(", "require_admin", "require_write", "_WRITE_GUARD", "dependencies\\s*="], "explicit_public_mutations": []},
+  "provenance": {"required_fields_when_available": ["source_ref", "source_hash", "geometry_state", "crs", "authority"], "frontend_evidence_files": ["server/frontend/src/App.tsx", "server/frontend/src/config.ts"]},
+  "devices": {"desktop": true, "mobile_web": true, "native_ios": false, "native_evidence_files": [], "intentional_restrictions": []},
+  "backend_only_allowlist": [],
+  "gui_only_allowlist": [],
+  "state_claims": [],
+  "runtime_evidence": {
+    "data": {"state": "OPEN", "evidence": []},
+    "identity": {"state": "OPEN", "evidence": []},
+    "geometry": {"state": "OPEN", "evidence": []},
+    "device": {"state": "OPEN", "evidence": []}
+  },
+  "certification": {"state": "OPEN", "material_residue": ["Bootstrap repository-local contract and prove bounded spatial authority against rendered geometry."]}
+}
