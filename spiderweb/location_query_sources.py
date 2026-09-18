@@ -87,7 +87,7 @@ def _wfs_getfeature(base: str, typename: str, bbox: tuple[float, float, float, f
         "TYPENAME": typename,
         "BBOX": f"{west},{south},{east},{north},EPSG:4326",
     }
-    return {"method": "GET", "url": base + "?" + urlencode(params), "media_type": "application/gml+xml"}
+    return {"protocol": "WFS_FEATURES", "method": "GET", "url": base + "?" + urlencode(params), "media_type": "application/gml+xml"}
 
 
 def _ogc_items(url: str, bbox: tuple[float, float, float, float], extra: dict[str, str] | None = None) -> dict[str, Any]:
@@ -96,7 +96,7 @@ def _ogc_items(url: str, bbox: tuple[float, float, float, float], extra: dict[st
     if extra:
         params.update(extra)
     joiner = "&" if "?" in url else "?"
-    return {"method": "GET", "url": url + joiner + urlencode(params), "media_type": "application/geo+json"}
+    return {"protocol": "OGC_FEATURES", "method": "GET", "url": url + joiner + urlencode(params), "media_type": "application/geo+json"}
 
 def _subsurface_specs(provider_id: str, family: str, bbox: tuple[float, float, float, float]) -> list[dict[str, Any]]:
     # Reuse the existing frozen source denominator instead of duplicating URLs.
@@ -157,6 +157,7 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
                 "request_role": "feature_service_metadata",
                 "method": "GET",
                 "url": provider["feature_service"].rstrip("/") + "?f=json",
+                "protocol": "ARCGIS_METADATA",
                 "media_type": "application/json",
                 "bbox_wgs84": list(bbox),
                 "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
@@ -188,9 +189,10 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
             "request_role": "nfhl_wms_capabilities",
             "method": "GET",
             "url": provider["wms_capabilities"],
+            "protocol": "WMS_CAPABILITIES",
             "media_type": "application/xml",
             "bbox_wgs84": list(bbox),
-            "identity_state": "RESOLVER_ONLY",
+            "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
         }]
 
     if provider_id == "FEMA_PR_ABFE_1PCT":
@@ -199,6 +201,7 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
             "request_role": "abfe_map_service_denominator",
             "method": "GET",
             "url": provider["map_service"].rstrip("/") + "?f=json",
+            "protocol": "ARCGIS_METADATA",
             "media_type": "application/json",
             "bbox_wgs84": list(bbox),
             "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
@@ -210,6 +213,7 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
             "request_role": "services_root_denominator",
             "method": "GET",
             "url": provider["service_root"].rstrip("/") + "?f=pjson",
+            "protocol": "ARCGIS_METADATA",
             "media_type": "application/json",
             "bbox_wgs84": list(bbox),
             "identity_state": "DISCOVERY_FOR_SERVICE_DENOMINATOR",
