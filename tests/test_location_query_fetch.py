@@ -379,7 +379,7 @@ def test_discovery_only_executes_metadata_requests_despite_blocked_production_ga
     }
     result = mod.execute(plan, tmp_path, discovery_only=True)
     assert result["state"] == "DISCOVERY_PASS"
-    assert result["execution_scope"] == "DISCOVERY_ONLY"
+    assert result["execution_scope"] == "DISCOVERY_OR_RESOLVER_STAGE"
     assert result["fetch_gate"] == "DISCOVERY_ONLY"
     assert result["request_count"] == 1
     assert result["requests"][0]["request_role"] == "feature_service_metadata"
@@ -399,5 +399,36 @@ def test_discovery_only_refuses_source_only_plan(tmp_path: Path) -> None:
             "layer_url": "https://example.invalid",
         }],
     }
-    with pytest.raises(SystemExit, match="no discovery request specs"):
+    with pytest.raises(SystemExit, match="no discovery/resolver-stage request specs"):
         mod.execute(plan, tmp_path, discovery_only=True)
+
+
+def test_discovery_scope_can_execute_ssurgo_resolver_stage_only(monkeypatch, tmp_path: Path) -> None:
+    class _GmlResponse:
+        status = 200
+        headers = _FakeHeaders({"Content-Type": "application/gml+xml"})
+        def read(self) -> bytes:
+            return b"<wfs:FeatureCollection xmlns:wfs='http://www.opengis.net/wfs' xmlns:gml='http://www.opengis.net/gml'><gml:featureMember><x/></gml:featureMember></wfs:FeatureCollection>"
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc, tb) -> bool:
+            return False
+
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: _GmlResponse())
+    plan = {
+        "query": {"mode": "plan"},
+        "fetch_gate": "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION",
+        "requests": [{
+            "protocol": "WFS_FEATURES",
+            "method": "GET",
+            "provider_id": "SSURGO_SOILS",
+            "request_role": "MapunitPoly",
+            "identity_state": "RESOLVER_STAGE_SOURCE_MANIFESTATION",
+            "url": "https://example.invalid/wfs",
+            "media_type": "application/gml+xml",
+        }],
+    }
+    result = mod.execute(plan, tmp_path, discovery_only=True)
+    assert result["state"] == "DISCOVERY_PASS"
+    assert result["request_count"] == 1
+    assert result["requests"][0]["state"] == "PASS"
