@@ -77,9 +77,21 @@ def main() -> int:
         )
 
     total_raw_bytes = sum(row["bytes"] for row in raw_records)
+    fetch_gate = str(fetch.get("fetch_gate", "MISSING"))
+    if fetch.get("failure_count"):
+        package_state = "PARTIAL_OR_BLOCKED"
+    elif fetch_gate == "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS" or fetch.get("state") == "PARTIAL":
+        package_state = "PARTIAL"
+    elif fetch_gate == "READY" and fetch.get("state") == "PASS":
+        package_state = "PASS"
+    else:
+        package_state = "BLOCKED_UNRESOLVED_EXECUTION_STATE"
+
     result = {
         "schema_version": "spiderweb.location_query_package.v1.0",
-        "state": "PASS" if fetch.get("failure_count") == 0 else "PARTIAL_OR_BLOCKED",
+        "state": package_state,
+        "fetch_gate": fetch_gate,
+        "fetch_blocker_provider_ids": fetch.get("fetch_blocker_provider_ids", []),
         "query_id": query.get("query_id"),
         "plan": {
             "path": str(args.plan),
@@ -113,7 +125,7 @@ def main() -> int:
         "total_raw_bytes": total_raw_bytes,
         "output": str(args.output),
     }, indent=2, sort_keys=True))
-    return 0 if result["state"] == "PASS" else 1
+    return 0 if result["state"] in {"PASS", "PARTIAL"} else 1
 
 
 if __name__ == "__main__":
