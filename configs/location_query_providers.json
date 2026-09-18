@@ -125,7 +125,7 @@
     },
     "SSURGO_SOILS": {
       "family": "soils",
-      "status": "RESOLVER_ONLY",
+      "status": "READY_SPECIALIZED",
       "query_modes": [
         "point",
         "radius",
@@ -136,7 +136,10 @@
       "adapter": "spiderweb.location_query_sources",
       "wfs_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
       "tabular_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
-      "reason": "AOI SurveyAreaPoly/MapunitPoly requests are bound; in-repo MUKEY→COKEY→child-table production certification remains open, so full soils acquisition is not promoted"
+      "reason": "AOI SurveyAreaPoly/MapunitPoly acquisition plus in-repo MUKEY→COKEY→current documented component-child tabular certification is implemented as a required post-fetch stage",
+      "post_fetch_adapter": "scripts/location_query_ssurgo.py",
+      "execution_requires_post_fetch": true,
+      "required_extra": "geo"
     },
     "USGS_3DHP_NHD": {
       "family": "hydrography",
