@@ -22,6 +22,7 @@ EXPECTED_PROVIDERS = {
     "USGS_3DHP_NHD",
     "USFWS_NWI",
     "FEMA_NFHL",
+    "FEMA_PR_ABFE_1PCT",
     "USACE_GENERAL_GIS",
     "USACE_PORTS_NAV",
 }
@@ -39,7 +40,7 @@ def test_provider_status_and_query_modes_are_bounded() -> None:
     allowed_modes = {"point", "radius", "bbox", "polygon", "geojson"}
     providers = payload["providers"]
     assert set(providers) == EXPECTED_PROVIDERS
-    assert len(providers) == 15
+    assert len(providers) == 16
     for provider_id, provider in providers.items():
         assert provider["status"] in allowed_status, provider_id
         modes = provider.get("query_modes")
@@ -62,6 +63,8 @@ def test_ready_routes_bind_to_existing_implementation_files() -> None:
         "USGS_3DHP_NHD": ["spiderweb/location_query_sources.py"],
         "USFWS_NWI": ["spiderweb/location_query_sources.py"],
         "FEMA_NFHL": ["spiderweb/location_query_sources.py"],
+        "FEMA_PR_ABFE_1PCT": ["spiderweb/location_query_sources.py"],
+        "USACE_GENERAL_GIS": ["spiderweb/location_query_sources.py"],
         "USACE_PORTS_NAV": ["spiderweb/location_query_sources.py"],
     }
     for provider_id, paths in expected_paths.items():
@@ -75,6 +78,7 @@ def test_incomplete_families_remain_explicit_without_false_promotion() -> None:
     assert providers["SSURGO_SOILS"]["status"] == "RESOLVER_ONLY"
     assert providers["USGS_3DHP_NHD"]["status"] == "RESOLVER_ONLY"
     assert providers["FEMA_NFHL"]["status"] == "RESOLVER_ONLY"
+    assert providers["FEMA_PR_ABFE_1PCT"]["status"] == "RESOLVER_ONLY"
     assert providers["USACE_GENERAL_GIS"]["status"] == "RESOLVER_ONLY"
     assert providers["PRVI_1m_DEM_2018"]["status"] == "PROVIDER_BINDING_OPEN"
 
