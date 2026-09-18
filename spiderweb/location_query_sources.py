@@ -70,9 +70,49 @@ def _wfs_getfeature(base: str, typename: str, bbox: tuple[float, float, float, f
     }
     return {"method": "GET", "url": base + "?" + urlencode(params), "media_type": "application/gml+xml"}
 
+
+def _ogc_items(url: str, bbox: tuple[float, float, float, float], extra: dict[str, str] | None = None) -> dict[str, Any]:
+    west, south, east, north = bbox
+    params = {"bbox": f"{west},{south},{east},{north}", "f": "json"}
+    if extra:
+        params.update(extra)
+    joiner = "&" if "?" in url else "?"
+    return {"method": "GET", "url": url + joiner + urlencode(params), "media_type": "application/geo+json"}
+
+def _subsurface_specs(provider_id: str, family: str, bbox: tuple[float, float, float, float]) -> list[dict[str, Any]]:
+    # Reuse the existing frozen source denominator instead of duplicating URLs.
+    from spiderweb.subsurface.sources import DEFAULT_SOURCES, SourceKind, SourceStatus
+
+    rows: list[dict[str, Any]] = []
+    for source in DEFAULT_SOURCES:
+        if source.family != family or source.status != SourceStatus.VERIFIED_QUERYABLE:
+            continue
+        if source.kind == SourceKind.ARCGIS_LAYER:
+            row = _arcgis_query(f"{source.endpoint.rstrip('/')}/{source.layer_id}", bbox)
+        elif source.kind == SourceKind.OGC_FEATURES:
+            row = _ogc_items(source.endpoint, bbox, source.query_dict)
+        else:
+            continue
+        row.update({
+            "provider_id": provider_id,
+            "request_role": source.source_id,
+            "identity_state": "SOURCE_MANIFESTATION",
+            "stable_id_fields": list(source.stable_id_fields),
+            "evidence_role": source.evidence_role,
+        })
+        rows.append(row)
+    return rows
+
 def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[str, Any]) -> list[dict[str, Any]]:
     bbox = query_bbox(query)
     specs: list[dict[str, Any]] = []
+
+
+    if provider_id == "PRPB_GEOLOGY_KARST":
+        return _subsurface_specs(provider_id, "GEOLOGY_KARST_CAVES", bbox)
+
+    if provider_id == "PR_AQUIFERS_WELLS_SPRINGS":
+        return _subsurface_specs(provider_id, "AQUIFERS_WELLS_SPRINGS", bbox)
 
     if provider_id == "SSURGO_SOILS":
         base = provider["wfs_endpoint"]
