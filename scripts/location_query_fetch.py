@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import xml.etree.ElementTree as ET
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -81,6 +82,77 @@ def _json_bytes(payload: bytes, label: str) -> object:
         return json.loads(payload.decode("utf-8"))
     except Exception as exc:
         raise SystemExit(f"FAIL: {label} is not valid UTF-8 JSON: {exc}") from exc
+
+
+def _xml_local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _semantic_simple_state(spec: dict, payload: bytes) -> tuple[str, str | None]:
+    protocol = str(spec.get("protocol", ""))
+    expected_media = str(spec.get("media_type", "")).casefold()
+
+    if protocol in {"ARCGIS_METADATA", "OGC_FEATURES", "SDA_TABULAR"} or "json" in expected_media:
+        obj = _json_bytes(payload, f"{spec.get('provider_id')}/{spec.get('request_role')} response")
+        if isinstance(obj, dict) and obj.get("error"):
+            return "FAIL_PROVIDER_ERROR", f"provider error: {obj['error']}"
+
+        if protocol == "OGC_FEATURES":
+            if not isinstance(obj, dict):
+                return "FAIL_SEMANTIC", "OGC Features response is not an object"
+            features = obj.get("features")
+            if not isinstance(features, list):
+                return "FAIL_SEMANTIC", "OGC Features response lacks features list"
+            if not features:
+                return "NO_COVERAGE", None
+            matched = obj.get("numberMatched")
+            returned = obj.get("numberReturned")
+            if isinstance(matched, int) and isinstance(returned, int) and returned < matched:
+                return "INCOMPLETE_PAGINATION_REQUIRED", f"numberReturned={returned} < numberMatched={matched}"
+            links = obj.get("links", [])
+            if isinstance(links, list) and any(
+                isinstance(link, dict) and str(link.get("rel", "")).casefold() == "next"
+                for link in links
+            ):
+                return "INCOMPLETE_PAGINATION_REQUIRED", "OGC response advertises rel=next"
+            return "PASS", None
+
+        if protocol == "SDA_TABULAR":
+            if not isinstance(obj, dict) or not isinstance(obj.get("Table"), list):
+                return "FAIL_SEMANTIC", "SDA response lacks Table list"
+            return "PASS", None
+
+        return "PASS", None
+
+    if protocol in {"WFS_FEATURES", "WMS_CAPABILITIES"} or "xml" in expected_media or "gml" in expected_media:
+        try:
+            root = ET.fromstring(payload)
+        except ET.ParseError as exc:
+            return "FAIL_SEMANTIC", f"XML parse failure: {exc}"
+        locals_seen = [_xml_local(element.tag) for element in root.iter()]
+        if any(name in {"ExceptionReport", "ServiceExceptionReport", "Exception", "ServiceException"} for name in locals_seen):
+            return "FAIL_PROVIDER_ERROR", "OGC/WMS exception document returned"
+
+        if protocol == "WFS_FEATURES":
+            members = sum(name in {"featureMember", "member"} for name in locals_seen)
+            if members == 0:
+                return "NO_COVERAGE", None
+            return "PASS", None
+
+        if protocol == "WMS_CAPABILITIES":
+            named_layers = 0
+            for layer in root.iter():
+                if _xml_local(layer.tag) != "Layer":
+                    continue
+                if any(_xml_local(child.tag) == "Name" and (child.text or "").strip() for child in list(layer)):
+                    named_layers += 1
+            if named_layers == 0:
+                return "FAIL_SEMANTIC", "WMS capabilities contains zero named layers"
+            return "PASS", None
+
+        return "PASS", None
+
+    return "PASS", None
 
 
 def _extract_feature_ids(feature_collection: dict, oid_field: str) -> list[str]:
@@ -272,7 +344,11 @@ def _execute_simple(
     raw_path = output_dir / (base + ".raw")
     status, content_type, payload, error = _perform(req, timeout)
     raw_sha = _write_raw(raw_path, payload)
-    state = "PASS" if status == 200 and payload else "FAIL"
+    if status != 200 or not payload:
+        state = "FAIL"
+        semantic_error = error
+    else:
+        state, semantic_error = _semantic_simple_state(spec, payload)
     return {
         "provider_id": provider,
         "request_role": role,
@@ -287,6 +363,7 @@ def _execute_simple(
         "sha256": raw_sha,
         "raw_path": str(raw_path) if payload else None,
         "error": error,
+        "semantic_error": semantic_error,
         "state": state,
     }
 
@@ -346,7 +423,7 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
 
         write_json(output_dir / (safe_name(provider, role, ordinal) + ".json"), receipt)
         receipts.append(receipt)
-        if receipt["state"] == "FAIL":
+        if receipt["state"] not in {"PASS", "NO_COVERAGE"}:
             failures += 1
 
     if failures:
@@ -357,7 +434,7 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
         overall_state = "PASS"
 
     result = {
-        "schema_version": "spiderweb.location_query_fetch_receipt.v1.2",
+        "schema_version": "spiderweb.location_query_fetch_receipt.v1.3",
         "query_mode": mode,
         "fetch_gate": fetch_gate,
         "fetch_blocker_provider_ids": plan.get("fetch_blocker_provider_ids", []),
