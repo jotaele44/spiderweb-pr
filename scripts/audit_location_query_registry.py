@@ -24,6 +24,7 @@ EXPECTED_PROVIDERS = {
     "USFWS_NWI",
     "FEMA_NFHL",
     "USACE_GENERAL_GIS",
+    "USACE_PORTS_NAV",
 }
 
 PATH_BINDINGS = {
@@ -36,6 +37,11 @@ PATH_BINDINGS = {
     "PRPB_GEOLOGY_KARST": ["spiderweb/subsurface/sources.py"],
     "PR_AQUIFERS_WELLS_SPRINGS": ["spiderweb/subsurface/sources.py"],
     "PR_MARINE_LIDAR_TOPOBATHY": ["pipeline/pr_marine_datasets.py"],
+    "SSURGO_SOILS": ["spiderweb/location_query_sources.py", "scripts/location_query_fetch.py"],
+    "USGS_3DHP_NHD": ["spiderweb/location_query_sources.py"],
+    "USFWS_NWI": ["spiderweb/location_query_sources.py", "scripts/location_query_fetch.py"],
+    "FEMA_NFHL": ["spiderweb/location_query_sources.py"],
+    "USACE_PORTS_NAV": ["spiderweb/location_query_sources.py", "scripts/location_query_fetch.py"],
 }
 
 
