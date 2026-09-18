@@ -33,6 +33,19 @@ FILES = [
     ROOT / "scripts/ssurgo_location_stage3.py",
     ROOT / "scripts/certify_ssurgo_child.py",
     ROOT / "scripts/run_location_query_reference_corpus.py",
+    ROOT / "scripts/audit_location_query_provider_health.py",
+    ROOT / "scripts/audit_location_query_static.py",
+    ROOT / "tests/test_denominator_chain.py",
+    ROOT / "tests/test_location_query.py",
+    ROOT / "tests/test_location_query_fetch.py",
+    ROOT / "tests/test_location_query_package.py",
+    ROOT / "tests/test_location_query_reference_corpus.py",
+    ROOT / "tests/test_location_query_registry.py",
+    ROOT / "tests/test_location_query_sources.py",
+    ROOT / "tests/test_place_resolver.py",
+    ROOT / "tests/test_provider_denominators.py",
+    ROOT / "tests/test_provider_promotion.py",
+    ROOT / "tests/test_ssurgo_chain.py",
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
@@ -91,6 +104,7 @@ def main() -> int:
     result = {
         "state": "PASS",
         "syntax": syntax,
+        "syntax_file_count": len(FILES),
         "provider_count": len(providers),
         "source_binding_count": len(bound),
         "bounded_ready_specialized": sorted(
