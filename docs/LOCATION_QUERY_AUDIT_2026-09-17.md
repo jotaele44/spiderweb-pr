@@ -15,7 +15,7 @@ This audit is bounded to current `spiderweb-pr` repository manifestations. Searc
 
 ## Unified provider denominator
 
-The canonical v1 LOCATION_QUERY registry freezes 14 provider families/lanes with explicit readiness rather than flattening capability asymmetry:
+The canonical v1 LOCATION_QUERY registry freezes 15 provider families/lanes with explicit readiness rather than flattening capability asymmetry:
 
 | Provider | Family | State |
 |---|---|---|
@@ -25,14 +25,15 @@ The canonical v1 LOCATION_QUERY registry freezes 14 provider families/lanes with
 | NASA_GIBS_IMAGERY | satellite_imagery | READY |
 | SENTINEL_HUB_IMAGERY | satellite_imagery | READY_WITH_CREDENTIALS |
 | COPERNICUS_CDSE_IMAGERY | satellite_imagery | READY_WITH_CREDENTIALS |
-| PRPB_GEOLOGY_KARST | geology_karst | RESOLVER_ONLY |
-| PR_AQUIFERS_WELLS_SPRINGS | hydrogeology | RESOLVER_ONLY |
+| PRPB_GEOLOGY_KARST | geology_karst | READY_SPECIALIZED |
+| PR_AQUIFERS_WELLS_SPRINGS | hydrogeology | READY_SPECIALIZED |
 | PR_MARINE_LIDAR_TOPOBATHY | marine_topobathy | READY_SPECIALIZED |
-| SSURGO_SOILS | soils | NOT_IMPLEMENTED |
-| USGS_3DHP_NHD | hydrography | NOT_IMPLEMENTED |
-| USFWS_NWI | wetlands | NOT_IMPLEMENTED |
-| FEMA_NFHL | flood_hazard | NOT_IMPLEMENTED |
+| SSURGO_SOILS | soils | RESOLVER_ONLY |
+| USGS_3DHP_NHD | hydrography | RESOLVER_ONLY |
+| USFWS_NWI | wetlands | READY_SPECIALIZED |
+| FEMA_NFHL | flood_hazard | RESOLVER_ONLY |
 | USACE_GENERAL_GIS | federal_infrastructure | RESOLVER_ONLY |
+| USACE_PORTS_NAV | ports_navigation | READY_SPECIALIZED |
 
 ## Certification boundaries
 
@@ -77,3 +78,15 @@ The canonical v1 LOCATION_QUERY registry freezes 14 provider families/lanes with
 ## CI status
 
 The initial PR workflow runs failed before executing steps (`steps=[]`) across CI and federation gates. Those runs are classified `BLOCKED_ACTIONS_INFRASTRUCTURE`, not source-code test failures. Script success and file creation are not treated as certification.
+
+
+## 2026-09-17 hardening update
+
+- Provider denominator is now 15 after separating the bounded USACE ports/navigation subset from the still-open general USACE enterprise denominator.
+- SSURGO now emits bounded SurveyAreaPoly + MapunitPoly WFS request specifications but remains `RESOLVER_ONLY`; the in-repo MUKEY→COKEY→child production chain is still open.
+- 3DHP now freezes FeatureServer metadata first and remains `RESOLVER_ONLY` pending a release-layer denominator.
+- NWI has a bounded Wetlands FeatureServer layer and is `READY_SPECIALIZED`.
+- FEMA NFHL remains `RESOLVER_ONLY`; WMS capability binding is not vector-feature identity.
+- Geology/karst and hydrogeology reuse the existing verified queryable subsurface source denominator and are `READY_SPECIALIZED` without promoting reference-only sources.
+- Place-name geocoding remains discovery-only and now freezes raw provider bytes before interpreting candidates.
+- GitHub Actions remains `BLOCKED_ACTIONS_INFRASTRUCTURE` where jobs terminate with zero executed steps; that is not code-test evidence.
