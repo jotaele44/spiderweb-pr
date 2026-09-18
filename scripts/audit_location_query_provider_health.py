@@ -27,7 +27,7 @@ def canonical_hash(value: object) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 def health_url(provider: dict) -> str | None:
-    for key in ("feature_service", "service_root", "map_service", "wms_capabilities", "service_root"):
+    for key in ("feature_service", "service_root", "map_service", "wms_capabilities", "wfs_endpoint", "layer_url"):
         value = provider.get(key)
         if isinstance(value, str) and value:
             return value
@@ -39,17 +39,62 @@ def health_url(provider: dict) -> str | None:
     return None
 
 def probe(url: str, timeout: int) -> dict:
-    req = Request(url, headers={"User-Agent": "spiderweb-pr-location-query-health/1.0", "Accept": "*/*"})
+    req = Request(
+        url,
+        headers={
+            "User-Agent": "spiderweb-pr-location-query-health/1.0",
+            "Accept": "*/*",
+        },
+    )
     try:
         with urlopen(req, timeout=timeout) as response:  # noqa: S310
+            status = getattr(response, "status", 200)
+            content_type = response.headers.get("Content-Type", "")
             data = response.read(65536)
-            return {"state": "PASS", "http_status": getattr(response, "status", 200),
-                    "content_type": response.headers.get("Content-Type", ""),
-                    "sample_bytes": len(data), "sample_sha256": hashlib.sha256(data).hexdigest()}
     except HTTPError as exc:
-        return {"state": "FAIL", "http_status": exc.code, "error": f"HTTPError: {exc}"}
+        return {
+            "state": "FAIL_HTTP",
+            "http_status": exc.code,
+            "error": f"HTTPError: {exc}",
+            "coverage_inference_allowed": False,
+        }
     except (URLError, TimeoutError) as exc:
-        return {"state": "FAIL", "http_status": None, "error": f"{type(exc).__name__}: {exc}"}
+        return {
+            "state": "FAIL_TRANSPORT",
+            "http_status": None,
+            "error": f"{type(exc).__name__}: {exc}",
+            "coverage_inference_allowed": False,
+        }
+
+    state = "RESPONSIVE"
+    semantic_note = None
+    stripped = data.lstrip()
+    lowered = stripped[:4096].lower()
+
+    if b"<serviceexception" in lowered or b"<exceptionreport" in lowered:
+        state = "FAIL_PROVIDER_ERROR"
+        semantic_note = "OGC exception document observed in health sample"
+    elif "json" in content_type.casefold() or stripped.startswith((b"{", b"[")):
+        try:
+            obj = json.loads(data.decode("utf-8"))
+        except Exception:
+            state = "RESPONSIVE_UNPARSED_SAMPLE"
+            semantic_note = "sample may be truncated; no metadata certification inferred"
+        else:
+            if isinstance(obj, dict) and obj.get("error"):
+                state = "FAIL_PROVIDER_ERROR"
+                semantic_note = f"provider JSON error: {obj['error']}"
+
+    return {
+        "state": state,
+        "http_status": status,
+        "content_type": content_type,
+        "sample_bytes": len(data),
+        "sample_sha256": hashlib.sha256(data).hexdigest(),
+        "semantic_note": semantic_note,
+        "health_is_not_coverage": True,
+        "coverage_inference_allowed": False,
+    }
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -68,6 +113,7 @@ def main() -> int:
 
     rows = []
     counts: dict[str, int] = {}
+    network_failure_count = 0
     for provider_id, provider in sorted(providers.items()):
         status = provider.get("status")
         if status not in ALLOWED:
@@ -81,6 +127,8 @@ def main() -> int:
                "query_modes": modes, "health_url": url, "network_probe": "NOT_RUN"}
         if args.network and url:
             row["network_probe"] = probe(url, args.timeout)
+            if str(row["network_probe"].get("state", "")).startswith("FAIL"):
+                network_failure_count += 1
         rows.append(row)
 
     result = {
@@ -90,15 +138,22 @@ def main() -> int:
         "readiness_counts": dict(sorted(counts.items())),
         "canonical_registry_sha256": canonical_hash(obj),
         "network_enabled": args.network,
+        "network_failure_count": network_failure_count,
+        "health_is_not_coverage": True,
+        "health_failure_is_not_source_absence": True,
         "providers": rows,
-        "state": "PASS",
+        "state": (
+            "PASS"
+            if not args.network
+            else ("PASS" if network_failure_count == 0 else "PARTIAL_OR_BLOCKED")
+        ),
     }
     text = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(text, encoding="utf-8")
     print(text, end="")
-    return 0
+    return 0 if result["state"] == "PASS" else 1
 
 if __name__ == "__main__":
     raise SystemExit(main())
