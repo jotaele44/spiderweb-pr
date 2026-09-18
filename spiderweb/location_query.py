@@ -8,6 +8,7 @@ Existing provider-specific adapters remain authoritative for discovery/fetch.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,16 @@ VALID_GEOMETRY_TYPES = {"point", "radius", "bbox", "polygon", "geojson"}
 
 class LocationQueryError(ValueError):
     """Raised when the canonical LOCATION_QUERY contract is invalid."""
+
+
+def canonical_json_sha256(value: object) -> str:
+    body = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(body).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -272,7 +283,8 @@ def route_query(
         fetch_gate = "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION"
 
     return {
-        "schema_version": "spiderweb.location_query_plan.v1.0",
+        "schema_version": "spiderweb.location_query_plan.v1.1",
+        "provider_registry_sha256": canonical_json_sha256(registry),
         "query": normalized,
         "provider_denominator_count": len(decisions),
         "route_state_counts": dict(sorted(counts.items())),
@@ -297,7 +309,12 @@ def route_query(
 
 
 def write_plan(query: dict[str, Any], output: Path, *, registry_path: Path = DEFAULT_REGISTRY) -> dict[str, Any]:
-    plan = route_query(query, registry=load_registry(registry_path))
+    if output.exists():
+        raise LocationQueryError(
+            f"plan output already exists: {output}; use a new versioned path"
+        )
+    registry = load_registry(registry_path)
+    plan = route_query(query, registry=registry)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return plan
