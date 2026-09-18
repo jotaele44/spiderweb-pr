@@ -30,8 +30,31 @@ def _geojson_coords(value: Any):
     elif kind == "FeatureCollection":
         for feature in value.get("features") or []:
             yield from _geojson_coords(feature)
+    elif kind == "GeometryCollection":
+        for geometry in value.get("geometries") or []:
+            yield from _geojson_coords(geometry)
     else:
         yield from _iter_coords(value.get("coordinates"))
+
+
+def _bounded_bbox(coords: list[tuple[float, float]]) -> tuple[float, float, float, float]:
+    if not coords:
+        raise ValueError("GeoJSON geometry has no numeric coordinates")
+    if any(not (-180 <= lon <= 180 and -90 <= lat <= 90) for lon, lat in coords):
+        raise ValueError("GeoJSON coordinate outside WGS84 longitude/latitude domain")
+    xs = [p[0] for p in coords]
+    ys = [p[1] for p in coords]
+    west, south, east, north = min(xs), min(ys), max(xs), max(ys)
+    epsilon = 1e-7
+    if west == east:
+        west = max(-180.0, west - epsilon)
+        east = min(180.0, east + epsilon)
+    if south == north:
+        south = max(-90.0, south - epsilon)
+        north = min(90.0, north + epsilon)
+    if west >= east or south >= north:
+        raise ValueError("GeoJSON geometry cannot produce nonzero WGS84 query envelope")
+    return west, south, east, north
 
 def query_bbox(query: dict[str, Any]) -> tuple[float, float, float, float]:
     g = query["geometry"]
@@ -40,20 +63,20 @@ def query_bbox(query: dict[str, Any]) -> tuple[float, float, float, float]:
         return float(g["west"]), float(g["south"]), float(g["east"]), float(g["north"])
     if kind == "point":
         lon, lat = float(g["lon"]), float(g["lat"])
-        epsilon = 1e-7
-        return lon - epsilon, lat - epsilon, lon + epsilon, lat + epsilon
+        return _bounded_bbox([(lon, lat)])
     if kind == "radius":
         lon, lat, r = float(g["lon"]), float(g["lat"]), float(g["radius_m"])
         dy = r / PR_DEG_LAT_M
         dx = r / (PR_DEG_LAT_M * max(0.01, cos(radians(lat))))
-        return lon - dx, lat - dy, lon + dx, lat + dy
+        return (
+            max(-180.0, lon - dx),
+            max(-90.0, lat - dy),
+            min(180.0, lon + dx),
+            min(90.0, lat + dy),
+        )
     gj = g["geojson"]
     coords = list(_geojson_coords(gj))
-    if not coords:
-        raise ValueError("GeoJSON geometry has no numeric coordinates")
-    xs = [p[0] for p in coords]
-    ys = [p[1] for p in coords]
-    return min(xs), min(ys), max(xs), max(ys)
+    return _bounded_bbox(coords)
 
 def _arcgis_query(url: str, bbox: tuple[float, float, float, float], *, out_fields: str = "*") -> dict[str, Any]:
     west, south, east, north = bbox
