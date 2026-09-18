@@ -25,6 +25,16 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def canonical_json_sha256(value: object) -> str:
+    body = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return sha256_bytes(body)
+
+
 def write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -186,6 +196,8 @@ def _execute_arcgis(
     timeout: int,
 ) -> dict:
     base = safe_name(provider, role, ordinal)
+    request_spec_sha = canonical_json_sha256(spec)
+    parent_denominator_sha = spec.get("parent_denominator_sha256")
     denominator_req, _ = _request_from_spec(spec, ordinal)
     status, content_type, payload, error = _perform(denominator_req, timeout)
     denominator_raw = output_dir / (base + ".ids.raw")
@@ -197,6 +209,8 @@ def _execute_arcgis(
             "request_role": role,
             "identity_state": identity_state,
             "protocol": "ARCGIS_FEATURE_LAYER",
+            "request_spec_sha256": request_spec_sha,
+            "parent_denominator_sha256": parent_denominator_sha,
             "state": "FAIL",
             "http_status": status,
             "error": error,
@@ -230,6 +244,8 @@ def _execute_arcgis(
             "request_role": role,
             "identity_state": identity_state,
             "protocol": "ARCGIS_FEATURE_LAYER",
+            "request_spec_sha256": request_spec_sha,
+            "parent_denominator_sha256": parent_denominator_sha,
             "state": "NO_COVERAGE",
             "http_status": status,
             "object_id_field": oid_field,
@@ -316,6 +332,8 @@ def _execute_arcgis(
         "request_role": role,
         "identity_state": identity_state,
         "protocol": "ARCGIS_FEATURE_LAYER",
+        "request_spec_sha256": request_spec_sha,
+        "parent_denominator_sha256": parent_denominator_sha,
         "state": "PASS",
         "http_status": status,
         "object_id_field": oid_field,
@@ -341,6 +359,8 @@ def _execute_simple(
     timeout: int,
 ) -> dict:
     req, method = _request_from_spec(spec, ordinal)
+    request_spec_sha = canonical_json_sha256(spec)
+    parent_denominator_sha = spec.get("parent_denominator_sha256")
     base = safe_name(provider, role, ordinal)
     raw_path = output_dir / (base + ".raw")
     status, content_type, payload, error = _perform(req, timeout)
@@ -355,6 +375,8 @@ def _execute_simple(
         "request_role": role,
         "identity_state": identity_state,
         "protocol": spec.get("protocol"),
+        "request_spec_sha256": request_spec_sha,
+        "parent_denominator_sha256": parent_denominator_sha,
         "request_method": method,
         "request_url": str(spec.get("url", "")),
         "request_body_sha256": sha256_bytes(req.data) if req.data else None,
@@ -466,8 +488,9 @@ def execute(
         overall_state = "PASS"
 
     result = {
-        "schema_version": "spiderweb.location_query_fetch_receipt.v1.4",
+        "schema_version": "spiderweb.location_query_fetch_receipt.v1.5",
         "query_mode": mode,
+        "plan_sha256": canonical_json_sha256(plan),
         "execution_scope": execution_scope,
         "fetch_gate": effective_gate,
         "fetch_blocker_provider_ids": plan.get("fetch_blocker_provider_ids", []),
