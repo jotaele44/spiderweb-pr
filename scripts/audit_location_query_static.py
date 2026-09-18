@@ -49,6 +49,8 @@ FILES = [
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
+SSURGO_CHILDREN = ROOT / "configs/ssurgo_component_children.json"
+SSURGO_COMPAT = ROOT / "scripts/location_query_ssurgo.py"
 
 EXPECTED_BOUND = {
     "SSURGO_SOILS",
@@ -71,6 +73,8 @@ def main() -> int:
     bindings = json.loads(BINDINGS.read_text(encoding="utf-8"))
     providers = registry["providers"]
     bound = bindings["bindings"]
+    ssurgo_children = json.loads(SSURGO_CHILDREN.read_text(encoding="utf-8"))
+    ssurgo_compat_text = SSURGO_COMPAT.read_text(encoding="utf-8")
 
     if len(providers) != 16:
         raise SystemExit(f"FAIL: provider denominator != 16; got {len(providers)}")
@@ -101,12 +105,38 @@ def main() -> int:
     if bound["USACE_GENERAL_GIS"]["status"] != "BOUND_SERVICE_ROOT_DENOMINATOR_OPEN":
         raise SystemExit("FAIL: USACE general service-root binding state drift")
 
+    child_rows = ssurgo_children.get("records")
+    if ssurgo_children.get("schema_version") != "spiderweb.ssurgo_component_children.v1.1":
+        raise SystemExit("FAIL: SSURGO child contract schema drift")
+    if ssurgo_children.get("relationship_count") != 22:
+        raise SystemExit("FAIL: current SSURGO component-child denominator != 22")
+    if not isinstance(child_rows, list) or len(child_rows) != 22:
+        raise SystemExit("FAIL: SSURGO child row conservation != 22")
+    child_tables = [str(row.get("table", "")) for row in child_rows if isinstance(row, dict)]
+    if len(child_tables) != 22 or len(set(child_tables)) != 22:
+        raise SystemExit("FAIL: SSURGO child table uniqueness drift")
+    if "coinundationtype" not in child_tables:
+        raise SystemExit("FAIL: current SSURGO child denominator lacks coinundationtype")
+    lineage = ssurgo_children.get("lineage") or {}
+    if lineage.get("prior_frozen_relationship_count") != 21 or lineage.get("contradiction_class") != "TIME":
+        raise SystemExit("FAIL: SSURGO 21->22 lineage adjudication drift")
+    sources = ssurgo_children.get("documentation_sources") or {}
+    if sources.get("freeze_state") != "URL_AND_EPOCH_BOUND_RAW_BYTES_OPEN":
+        raise SystemExit("FAIL: SSURGO documentation freeze-state drift")
+    if "NONCANONICAL_COMPATIBILITY" not in ssurgo_compat_text:
+        raise SystemExit("FAIL: monolithic SSURGO compatibility classification missing")
+    if "--allow-noncanonical-compat" not in ssurgo_compat_text:
+        raise SystemExit("FAIL: monolithic SSURGO compatibility execution gate missing")
+
     result = {
         "state": "PASS",
         "syntax": syntax,
         "syntax_file_count": len(FILES),
         "provider_count": len(providers),
         "source_binding_count": len(bound),
+        "ssurgo_component_child_count": len(child_rows),
+        "ssurgo_prior_child_count": lineage.get("prior_frozen_relationship_count"),
+        "ssurgo_compatibility_state": "NONCANONICAL_COMPATIBILITY",
         "bounded_ready_specialized": sorted(
             key for key, value in providers.items()
             if value["status"] == "READY_SPECIALIZED"
