@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Freeze the USACE ArcGIS Online enterprise service denominator.
+"""Compatibility USACE root inventory.
 
-The root service list is preserved before per-service metadata retrieval. Every
-service manifestation gets its own raw bytes + SHA-256. The script inventories
-the whole public root first; Puerto Rico relevance is downstream classification,
-never a discovery filter.
+This script preserves root bytes and may inventory root-level services only when
+the ArcGIS service root advertises no folders. If folders are present it fails
+closed: the canonical recursive path is provider_denominators.py +
+denominator_chain.py so folder scope remains part of source-service identity.
 """
 from __future__ import annotations
 
@@ -63,6 +63,15 @@ def main() -> int:
     services = root_obj.get("services")
     if not isinstance(services, list):
         raise SystemExit("FAIL: USACE service root lacks services list")
+    folders = root_obj.get("folders") or []
+    if not isinstance(folders, list) or any(not isinstance(value, str) for value in folders):
+        raise SystemExit("FAIL: USACE service root folders malformed")
+    if folders:
+        raise SystemExit(
+            "FAIL: USACE service root advertises folders; root-only inventory is non-exhaustive. "
+            "Use LOCATION_QUERY services_root_denominator -> freeze_location_provider_denominator.py "
+            "-> build_location_denominator_stage.py -> merge_location_service_denominators.py"
+        )
 
     normalized = []
     seen = set()
@@ -137,6 +146,7 @@ def main() -> int:
             "root_first": True,
             "service_identity_unique": len(normalized) == len(seen),
             "source_absence_not_inferred_from_query_omission": True,
+            "folder_denominator_zero": True,
         },
     }
     write_json(args.output_dir / "USACE_SERVICE_DENOMINATOR.json", result)
