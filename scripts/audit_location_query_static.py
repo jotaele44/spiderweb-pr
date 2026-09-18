@@ -17,6 +17,7 @@ FILES = [
     ROOT / "scripts/location_query_package.py",
     ROOT / "scripts/location_query_provider_health.py",
     ROOT / "scripts/location_query_usace_inventory.py",
+    ROOT / "scripts/location_query_ssurgo.py",
     ROOT / "spiderweb/ssurgo_chain.py",
     ROOT / "spiderweb/provider_denominators.py",
     ROOT / "spiderweb/denominator_chain.py",
