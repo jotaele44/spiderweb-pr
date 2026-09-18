@@ -18,7 +18,7 @@ from urllib.request import Request, urlopen
 
 USER_AGENT = "spiderweb-pr-location-query/1.0"
 ALLOWED_METHODS = {"GET", "POST"}
-ARCGIS_BATCH_SIZE = 500
+ARCGIS_BATCH_SIZE = 100
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -65,7 +65,8 @@ def _perform(req: Request, timeout: int) -> tuple[int | None, str, bytes, str | 
                 None,
             )
     except HTTPError as exc:
-        return exc.code, exc.headers.get("Content-Type", ""), exc.read(), f"HTTPError: {exc}"
+        content_type = exc.headers.get("Content-Type", "") if exc.headers else ""
+        return exc.code, content_type, exc.read(), f"HTTPError: {exc}"
     except (URLError, TimeoutError) as exc:
         return None, "", b"", f"{type(exc).__name__}: {exc}"
 
