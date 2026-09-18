@@ -21,6 +21,18 @@ def _iter_coords(value: Any):
             for child in value:
                 yield from _iter_coords(child)
 
+def _geojson_coords(value: Any):
+    if not isinstance(value, dict):
+        return
+    kind = value.get("type")
+    if kind == "Feature":
+        yield from _geojson_coords(value.get("geometry") or {})
+    elif kind == "FeatureCollection":
+        for feature in value.get("features") or []:
+            yield from _geojson_coords(feature)
+    else:
+        yield from _iter_coords(value.get("coordinates"))
+
 def query_bbox(query: dict[str, Any]) -> tuple[float, float, float, float]:
     g = query["geometry"]
     kind = g["type"]
@@ -28,16 +40,15 @@ def query_bbox(query: dict[str, Any]) -> tuple[float, float, float, float]:
         return float(g["west"]), float(g["south"]), float(g["east"]), float(g["north"])
     if kind == "point":
         lon, lat = float(g["lon"]), float(g["lat"])
-        return lon, lat, lon, lat
+        epsilon = 1e-7
+        return lon - epsilon, lat - epsilon, lon + epsilon, lat + epsilon
     if kind == "radius":
         lon, lat, r = float(g["lon"]), float(g["lat"]), float(g["radius_m"])
         dy = r / PR_DEG_LAT_M
         dx = r / (PR_DEG_LAT_M * max(0.01, cos(radians(lat))))
         return lon - dx, lat - dy, lon + dx, lat + dy
     gj = g["geojson"]
-    coords = list(_iter_coords(gj.get("coordinates")))
-    if not coords and gj.get("type") == "Feature":
-        coords = list(_iter_coords((gj.get("geometry") or {}).get("coordinates")))
+    coords = list(_geojson_coords(gj))
     if not coords:
         raise ValueError("GeoJSON geometry has no numeric coordinates")
     xs = [p[0] for p in coords]
@@ -123,32 +134,28 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
         return specs
 
     if provider_id == "USFWS_NWI":
-        # The official REST root is authoritative, but service/layer membership
-        # is mutable. Freeze the live service denominator before selecting a
-        # feature layer; do not infer a layer URL from naming conventions.
-        return [{
+        row = _arcgis_query(provider["layer_url"], bbox)
+        row.update({
             "provider_id": provider_id,
-            "request_role": "nwi_rest_service_denominator",
-            "method": "GET",
-            "url": provider["service_root"].rstrip("/") + "?f=json",
-            "media_type": "application/json",
-            "bbox_wgs84": list(bbox),
-            "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
-        }]
+            "request_role": "wetlands",
+            "identity_state": "SOURCE_MANIFESTATION",
+        })
+        return [row]
 
     if provider_id == "USGS_3DHP_NHD":
-        # Layer membership is release-controlled, so execution first freezes
-        # service metadata; layer queries are emitted downstream from that frozen
-        # enumeration rather than hard-coding a stale layer list here.
-        return [{
-            "provider_id": provider_id,
-            "request_role": "feature_service_metadata",
-            "method": "GET",
-            "url": provider["feature_service"].rstrip("/") + "?f=json",
-            "media_type": "application/json",
-            "bbox_wgs84": list(bbox),
-            "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
-        }]
+        for item in provider["layers"]:
+            row = _arcgis_query(
+                f"{provider['feature_service'].rstrip('/')}/{int(item['id'])}",
+                bbox,
+            )
+            row.update({
+                "provider_id": provider_id,
+                "request_role": item["role"],
+                "identity_state": "SOURCE_MANIFESTATION",
+                "source_lineage_state": "EDH_OR_NHD_AS_REPORTED_BY_3DHP",
+            })
+            specs.append(row)
+        return specs
 
     if provider_id == "USACE_PORTS_NAV":
         for item in provider["layers"]:
