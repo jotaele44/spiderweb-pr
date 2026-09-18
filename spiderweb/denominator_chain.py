@@ -136,6 +136,8 @@ def build_usace_service_metadata_plan(
             "canonical_records_sha256": denominator["canonical_records_sha256"],
         },
         "policy": {
+            "plan_before_download": True,
+            "raw_bytes_before_derivation": True,
             "folder_scope_preserved": True,
             "service_name_not_identity_alone": True,
             "recursive_folder_discovery_required": bool(denominator.get("folders")),
@@ -198,6 +200,8 @@ def build_arcgis_layer_aoi_plan(
             "canonical_records_sha256": denominator["canonical_records_sha256"],
         },
         "policy": {
+            "plan_before_download": True,
+            "raw_bytes_before_derivation": True,
             "count_equality_used_as_identity": False,
             "source_layer_identity_preserved": True,
             "no_coverage_is_not_source_absence": True,
