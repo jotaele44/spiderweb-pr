@@ -140,7 +140,7 @@
     },
     "USGS_3DHP_NHD": {
       "family": "hydrography",
-      "status": "READY_SPECIALIZED",
+      "status": "RESOLVER_ONLY",
       "query_modes": [
         "point",
         "radius",
@@ -151,7 +151,8 @@
       "adapter": "spiderweb.location_query_sources",
       "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
       "release_observed": "2026-08-05",
-      "layers": [
+      "reason": "FeatureServer endpoint and six observed layer candidates are preserved, but no frozen raw metadata receipt on this branch yet proves the release layer denominator; metadata-first routing remains mandatory.",
+      "provisional_layers": [
         {
           "id": 20,
           "role": "hydrolocation_sink_spring_waterbody_outlet"
@@ -177,7 +178,7 @@
           "role": "catchment"
         }
       ],
-      "reason": "official current 3DHP_all six-layer denominator frozen; individual source lineage may remain NHD where EDH has not replaced legacy hydrography"
+      "denominator_state": "OPEN_RAW_METADATA_FREEZE"
     },
     "USFWS_NWI": {
       "family": "wetlands",
