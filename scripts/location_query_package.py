@@ -70,6 +70,44 @@ def main() -> int:
     if fetch.get("request_count") != len(requests):
         raise SystemExit("FAIL: fetch receipt request-count arithmetic drift")
 
+    planned_requests = plan.get("requests")
+    if not isinstance(planned_requests, list):
+        raise SystemExit("FAIL: acquisition plan lacks requests list")
+
+    if execution_scope == "DISCOVERY_OR_RESOLVER_STAGE":
+        expected_plan_requests = [
+            spec
+            for spec in planned_requests
+            if isinstance(spec, dict)
+            and (
+                "DISCOVERY" in str(spec.get("identity_state", "")).upper()
+                or "RESOLVER_STAGE" in str(spec.get("identity_state", "")).upper()
+            )
+        ]
+    else:
+        expected_plan_requests = planned_requests
+
+    expected_request_hashes = [
+        canonical_json_sha256(spec)
+        for spec in expected_plan_requests
+    ]
+    actual_request_hashes = [
+        request.get("request_spec_sha256")
+        for request in requests
+    ]
+    if any(
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(ch not in "0123456789abcdefABCDEF" for ch in value)
+        for value in actual_request_hashes
+    ):
+        raise SystemExit("FAIL: fetch receipt contains malformed/missing request_spec_sha256")
+    if actual_request_hashes != expected_request_hashes:
+        raise SystemExit(
+            "FAIL: plan/fetch request-spec vector mismatch "
+            f"expected_count={len(expected_request_hashes)} actual_count={len(actual_request_hashes)}"
+        )
+
     raw_records = []
     missing_raw = []
     hash_mismatch = []
@@ -145,7 +183,7 @@ def main() -> int:
         package_state = "BLOCKED_UNRESOLVED_EXECUTION_STATE"
 
     result = {
-        "schema_version": "spiderweb.location_query_package.v1.2",
+        "schema_version": "spiderweb.location_query_package.v1.3",
         "state": package_state,
         "fetch_gate": fetch_gate,
         "fetch_blocker_provider_ids": fetch.get("fetch_blocker_provider_ids", []),
@@ -163,6 +201,7 @@ def main() -> int:
         },
         "provider_denominator_count": plan.get("provider_denominator_count"),
         "request_count": fetch.get("request_count"),
+        "planned_request_count_for_execution_scope": len(expected_plan_requests),
         "pass_count": fetch.get("pass_count"),
         "no_coverage_count": fetch.get("no_coverage_count", 0),
         "failure_count": fetch.get("failure_count"),
@@ -175,6 +214,7 @@ def main() -> int:
             "raw_artifacts_exist": not missing_raw,
             "raw_hashes_match_receipts": not hash_mismatch,
             "executor_plan_hash_matches": receipt_plan_sha == canonical_plan_sha,
+            "request_spec_vector_equal": actual_request_hashes == expected_request_hashes,
             "parent_denominator_hashes_well_formed": True,
             "plan_before_download": True,
             "raw_bytes_before_derivation": True,
