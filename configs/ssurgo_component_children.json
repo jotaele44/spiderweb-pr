@@ -1,0 +1,144 @@
+{
+  "schema_version": "spiderweb.ssurgo_component_children.v1.0",
+  "authority": "USDA NRCS Soil Data Access official Tables/Columns, Unique Constraints, and Table Relationships reports",
+  "parent_table": "component",
+  "parent_key": "cokey",
+  "relationship_count": 21,
+  "records": [
+    {
+      "table": "chorizon",
+      "primary_key": "chkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cocanopycover",
+      "primary_key": "cocanopycovkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cocropyld",
+      "primary_key": "cocropyldkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "codiagfeatures",
+      "primary_key": "codiagfeatkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "coecoclass",
+      "primary_key": "coecoclasskey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "coeplants",
+      "primary_key": "coeplantskey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "coerosionacc",
+      "primary_key": "coeroacckey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "coforprod",
+      "primary_key": "cofprodkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cogeomordesc",
+      "primary_key": "cogeomdkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cohydriccriteria",
+      "primary_key": "cohydcritkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cointerp",
+      "primary_key": "cointerpkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "comonth",
+      "primary_key": "comonthkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "copmgrp",
+      "primary_key": "copmgrpkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "copwindbreak",
+      "primary_key": "copwindbreakkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "corestrictions",
+      "primary_key": "corestrictkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cosurffrags",
+      "primary_key": "cosurffragskey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cotaxfmmin",
+      "primary_key": "cotaxfmminkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cotaxmoistcl",
+      "primary_key": "cotaxmoistclkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cotext",
+      "primary_key": "cotextkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cotreestomng",
+      "primary_key": "cotreestomngkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    },
+    {
+      "table": "cotxfmother",
+      "primary_key": "cotxfmotherkey",
+      "parent_key": "cokey",
+      "cardinality": "0:N_or_1:N_table_specific"
+    }
+  ],
+  "invariants": {
+    "table_count": 21,
+    "parent_key": "cokey",
+    "flattening_prohibited": true,
+    "zero_child_parent_is_not_acquisition_failure_by_default": true,
+    "returned_parent_keys_must_be_subset_of_certified_cokey_denominator": true,
+    "primary_key_nulls_prohibited": true,
+    "primary_key_duplicates_prohibited": true
+  }
+}
