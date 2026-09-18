@@ -23,6 +23,7 @@ FILES = [
     ROOT / "spiderweb/denominator_chain.py",
     ROOT / "spiderweb/place_resolver.py",
     ROOT / "spiderweb/provider_promotion.py",
+    ROOT / "spiderweb/reference_corpus.py",
     ROOT / "scripts/ssurgo_location_stage2.py",
     ROOT / "scripts/freeze_location_provider_denominator.py",
     ROOT / "scripts/build_location_denominator_stage.py",
@@ -31,6 +32,7 @@ FILES = [
     ROOT / "scripts/merge_location_service_denominators.py",
     ROOT / "scripts/ssurgo_location_stage3.py",
     ROOT / "scripts/certify_ssurgo_child.py",
+    ROOT / "scripts/run_location_query_reference_corpus.py",
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
