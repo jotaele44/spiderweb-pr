@@ -51,14 +51,18 @@ def test_ssurgo_specs_are_bounded_to_two_source_manifestations() -> None:
     }
     rows = build_request_specs("SSURGO_SOILS", provider, query)
     assert [row["request_role"] for row in rows] == ["SurveyAreaPoly", "MapunitPoly"]
-    assert all(row["identity_state"] == "SOURCE_MANIFESTATION" for row in rows)
+    assert all(row["identity_state"] == "RESOLVER_STAGE_SOURCE_MANIFESTATION" for row in rows)
     assert all("BBOX=" in row["url"] for row in rows)
+    assert all("MAXFEATURES=250000" in row["url"] for row in rows)
+    assert all(row["wfs_max_features"] == 250000 for row in rows)
+    assert all(row["truncation_policy"] == "FAIL_IF_RETURNED_COUNT_REACHES_REQUEST_LIMIT" for row in rows)
 
 
-def test_3dhp_frozen_layer_denominator_has_six_source_manifestations() -> None:
+def test_3dhp_remains_metadata_first_until_frozen_denominator() -> None:
     provider = {
+        "status": "RESOLVER_ONLY",
         "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
-        "layers": [
+        "provisional_layers": [
             {"id": 20, "role": "hydrolocation_sink_spring_waterbody_outlet"},
             {"id": 30, "role": "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet"},
             {"id": 40, "role": "hydrolocation_reach_code_external_connection"},
@@ -77,9 +81,11 @@ def test_3dhp_frozen_layer_denominator_has_six_source_manifestations() -> None:
         }
     }
     rows = build_request_specs("USGS_3DHP_NHD", provider, query)
-    assert len(rows) == 6
-    assert all(row["identity_state"] == "SOURCE_MANIFESTATION" for row in rows)
-    assert {row["request_role"] for row in rows} == {item["role"] for item in provider["layers"]}
+    assert len(rows) == 1
+    assert rows[0]["request_role"] == "feature_service_metadata"
+    assert rows[0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
+    assert rows[0]["protocol"] == "ARCGIS_METADATA"
+    assert rows[0]["url"].endswith("?f=json")
 
 
 def test_fema_wms_capabilities_remains_resolver_only() -> None:
@@ -95,7 +101,8 @@ def test_fema_wms_capabilities_remains_resolver_only() -> None:
     }
     rows = build_request_specs("FEMA_NFHL", provider, query)
     assert len(rows) == 1
-    assert rows[0]["identity_state"] == "RESOLVER_ONLY"
+    assert rows[0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
+    assert rows[0]["protocol"] == "WMS_CAPABILITIES"
 
 
 def test_usace_ports_preserves_four_source_manifestations() -> None:
