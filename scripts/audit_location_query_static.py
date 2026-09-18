@@ -27,6 +27,9 @@ FILES = [
     ROOT / "scripts/build_location_denominator_stage.py",
     ROOT / "scripts/place_resolve.py",
     ROOT / "scripts/adjudicate_location_provider.py",
+    ROOT / "scripts/merge_location_service_denominators.py",
+    ROOT / "scripts/ssurgo_location_stage3.py",
+    ROOT / "scripts/certify_ssurgo_child.py",
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
