@@ -369,20 +369,45 @@ def _execute_simple(
     }
 
 
-def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
+def execute(
+    plan: dict,
+    output_dir: Path,
+    *,
+    timeout: int = 120,
+    discovery_only: bool = False,
+) -> dict:
     query = plan.get("query") or {}
     mode = str(query.get("mode", "")).lower()
-    if mode != "fetch":
-        raise SystemExit(f"FAIL: network executor requires query.mode=fetch; got {mode or 'MISSING'}")
     fetch_gate = str(plan.get("fetch_gate", "MISSING"))
-    if fetch_gate not in {"READY", "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"}:
-        raise SystemExit(
-            f"FAIL: acquisition plan fetch_gate={fetch_gate}; "
-            f"blockers={plan.get('fetch_blocker_provider_ids', [])}"
-        )
     requests = plan.get("requests", [])
     if not isinstance(requests, list):
         raise SystemExit("FAIL: plan.requests must be a list")
+
+    if discovery_only:
+        if mode not in {"plan", "fetch"}:
+            raise SystemExit(
+                f"FAIL: discovery-only executor requires query.mode=plan|fetch; got {mode or 'MISSING'}"
+            )
+        selected = [
+            spec for spec in requests
+            if isinstance(spec, dict)
+            and "DISCOVERY" in str(spec.get("identity_state", "")).upper()
+        ]
+        if requests and not selected:
+            raise SystemExit("FAIL: discovery-only execution found no discovery request specs")
+        requests = selected
+        execution_scope = "DISCOVERY_ONLY"
+        effective_gate = "DISCOVERY_ONLY"
+    else:
+        if mode != "fetch":
+            raise SystemExit(f"FAIL: network executor requires query.mode=fetch; got {mode or 'MISSING'}")
+        if fetch_gate not in {"READY", "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"}:
+            raise SystemExit(
+                f"FAIL: acquisition plan fetch_gate={fetch_gate}; "
+                f"blockers={plan.get('fetch_blocker_provider_ids', [])}"
+            )
+        execution_scope = "PRODUCTION_OR_BOUNDED_DEPENDENT"
+        effective_gate = fetch_gate
 
     output_dir.mkdir(parents=True, exist_ok=True)
     final_receipt = output_dir / "fetch_receipt.json"
@@ -429,15 +454,18 @@ def execute(plan: dict, output_dir: Path, *, timeout: int = 120) -> dict:
 
     if failures:
         overall_state = "PARTIAL_OR_BLOCKED"
+    elif discovery_only:
+        overall_state = "DISCOVERY_PASS"
     elif fetch_gate == "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS":
         overall_state = "PARTIAL"
     else:
         overall_state = "PASS"
 
     result = {
-        "schema_version": "spiderweb.location_query_fetch_receipt.v1.3",
+        "schema_version": "spiderweb.location_query_fetch_receipt.v1.4",
         "query_mode": mode,
-        "fetch_gate": fetch_gate,
+        "execution_scope": execution_scope,
+        "fetch_gate": effective_gate,
         "fetch_blocker_provider_ids": plan.get("fetch_blocker_provider_ids", []),
         "request_count": len(receipts),
         "pass_count": sum(r["state"] in {"PASS", "NO_COVERAGE"} for r in receipts),
@@ -457,11 +485,21 @@ def main() -> int:
     parser.add_argument("plan", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--timeout", type=int, default=120)
+    parser.add_argument(
+        "--discovery-only",
+        action="store_true",
+        help="execute only request specs whose identity_state is discovery metadata",
+    )
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
-    result = execute(plan, args.output_dir, timeout=args.timeout)
+    result = execute(
+        plan,
+        args.output_dir,
+        timeout=args.timeout,
+        discovery_only=args.discovery_only,
+    )
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0 if result["state"] in {"PASS", "PARTIAL"} else 1
+    return 0 if result["state"] in {"PASS", "PARTIAL", "DISCOVERY_PASS"} else 1
 
 
 if __name__ == "__main__":
