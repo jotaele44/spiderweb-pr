@@ -308,3 +308,72 @@ def test_non_wgs84_bbox_crs_fails_closed() -> None:
                 "crs": "EPSG:26920",
             },
         })
+
+
+def test_invalid_geojson_fails_before_provider_routing() -> None:
+    with pytest.raises(LocationQueryError, match="invalid bounded geometry"):
+        route_query(
+            {
+                "query_id": "bad-geojson",
+                "geometry": {
+                    "type": "geojson",
+                    "geojson": {"type": "Polygon", "coordinates": []},
+                },
+                "families": ["does_not_exist"],
+            },
+            registry=load_registry(REGISTRY_PATH),
+            env={},
+        )
+
+
+def test_out_of_range_geojson_coordinate_fails_closed() -> None:
+    with pytest.raises(LocationQueryError, match="invalid bounded geometry"):
+        validate_query(
+            {
+                "query_id": "bad-coordinate",
+                "geometry": {
+                    "type": "geojson",
+                    "geojson": {
+                        "type": "Point",
+                        "coordinates": [-200.0, 18.0],
+                    },
+                },
+            }
+        )
+
+
+def test_antimeridian_spanning_geojson_fails_until_supported() -> None:
+    with pytest.raises(LocationQueryError, match="antimeridian-spanning"):
+        validate_query(
+            {
+                "query_id": "antimeridian",
+                "geometry": {
+                    "type": "geojson",
+                    "geojson": {
+                        "type": "MultiPoint",
+                        "coordinates": [[179.0, 10.0], [-179.0, 10.0]],
+                    },
+                },
+            }
+        )
+
+
+def test_normalized_query_records_resolved_bbox() -> None:
+    normalized = validate_query(
+        {
+            "query_id": "bbox-record",
+            "geometry": {
+                "type": "bbox",
+                "west": -66.2,
+                "south": 18.0,
+                "east": -66.0,
+                "north": 18.2,
+            },
+        }
+    )
+    assert normalized["resolved_bbox_wgs84"] == {
+        "west": -66.2,
+        "south": 18.0,
+        "east": -66.0,
+        "north": 18.2,
+    }
