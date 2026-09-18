@@ -345,3 +345,59 @@ def test_simple_sda_requires_table_list(monkeypatch, tmp_path: Path) -> None:
     result = mod.execute(plan, tmp_path)
     assert result["state"] == "PARTIAL_OR_BLOCKED"
     assert result["requests"][0]["state"] == "FAIL_SEMANTIC"
+
+
+def test_discovery_only_executes_metadata_requests_despite_blocked_production_gate(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        mod,
+        "urlopen",
+        lambda request, timeout=0: _FakeResponse({"layers": [{"id": 0, "name": "A"}]}),
+    )
+    plan = {
+        "query": {"mode": "plan"},
+        "fetch_gate": "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION",
+        "requests": [
+            {
+                "protocol": "ARCGIS_METADATA",
+                "method": "GET",
+                "provider_id": "USGS_3DHP_NHD",
+                "request_role": "feature_service_metadata",
+                "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
+                "url": "https://example.invalid/FeatureServer?f=json",
+                "media_type": "application/json",
+            },
+            {
+                "protocol": "ARCGIS_FEATURE_LAYER",
+                "method": "GET",
+                "provider_id": "X",
+                "request_role": "source",
+                "identity_state": "SOURCE_MANIFESTATION",
+                "url": "https://example.invalid/FeatureServer/0/query?returnIdsOnly=true&f=json",
+                "layer_url": "https://example.invalid/FeatureServer/0",
+            },
+        ],
+    }
+    result = mod.execute(plan, tmp_path, discovery_only=True)
+    assert result["state"] == "DISCOVERY_PASS"
+    assert result["execution_scope"] == "DISCOVERY_ONLY"
+    assert result["fetch_gate"] == "DISCOVERY_ONLY"
+    assert result["request_count"] == 1
+    assert result["requests"][0]["request_role"] == "feature_service_metadata"
+
+
+def test_discovery_only_refuses_source_only_plan(tmp_path: Path) -> None:
+    plan = {
+        "query": {"mode": "plan"},
+        "fetch_gate": "NOT_REQUESTED",
+        "requests": [{
+            "protocol": "ARCGIS_FEATURE_LAYER",
+            "method": "GET",
+            "provider_id": "X",
+            "request_role": "source",
+            "identity_state": "SOURCE_MANIFESTATION",
+            "url": "https://example.invalid/query",
+            "layer_url": "https://example.invalid",
+        }],
+    }
+    with pytest.raises(SystemExit, match="no discovery request specs"):
+        mod.execute(plan, tmp_path, discovery_only=True)
