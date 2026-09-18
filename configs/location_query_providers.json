@@ -89,7 +89,7 @@
     },
     "PRPB_GEOLOGY_KARST": {
       "family": "geology_karst",
-      "status": "RESOLVER_ONLY",
+      "status": "READY_SPECIALIZED",
       "query_modes": [
         "point",
         "radius",
@@ -97,11 +97,12 @@
         "polygon",
         "geojson"
       ],
-      "resolver": "spiderweb.subsurface.sources"
+      "adapter": "spiderweb.location_query_sources",
+      "reason": "reuses verified queryable source manifestations from spiderweb.subsurface.sources; reference-only sources remain outside automatic fetch"
     },
     "PR_AQUIFERS_WELLS_SPRINGS": {
       "family": "hydrogeology",
-      "status": "RESOLVER_ONLY",
+      "status": "READY_SPECIALIZED",
       "query_modes": [
         "point",
         "radius",
@@ -109,7 +110,8 @@
         "polygon",
         "geojson"
       ],
-      "resolver": "spiderweb.subsurface.sources"
+      "adapter": "spiderweb.location_query_sources",
+      "reason": "reuses verified queryable PRPB and USGS Water Data source manifestations with stable-ID fields"
     },
     "PR_MARINE_LIDAR_TOPOBATHY": {
       "family": "marine_topobathy",
@@ -123,7 +125,7 @@
     },
     "SSURGO_SOILS": {
       "family": "soils",
-      "status": "READY_SPECIALIZED",
+      "status": "RESOLVER_ONLY",
       "query_modes": [
         "point",
         "radius",
@@ -134,7 +136,7 @@
       "adapter": "spiderweb.location_query_sources",
       "wfs_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
       "tabular_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
-      "reason": "AOI WFS acquisition is bound; MUKEY/COKEY and descendant tabular certification remains table-specific and fail-closed"
+      "reason": "AOI SurveyAreaPoly/MapunitPoly requests are bound; in-repo MUKEY→COKEY→child-table production certification remains open, so full soils acquisition is not promoted"
     },
     "USGS_3DHP_NHD": {
       "family": "hydrography",
