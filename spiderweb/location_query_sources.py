@@ -123,9 +123,18 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
         return specs
 
     if provider_id == "USFWS_NWI":
-        row = _arcgis_query(provider["layer_url"], bbox)
-        row.update({"provider_id": provider_id, "request_role": "wetlands", "identity_state": "SOURCE_MANIFESTATION"})
-        return [row]
+        # The official REST root is authoritative, but service/layer membership
+        # is mutable. Freeze the live service denominator before selecting a
+        # feature layer; do not infer a layer URL from naming conventions.
+        return [{
+            "provider_id": provider_id,
+            "request_role": "nwi_rest_service_denominator",
+            "method": "GET",
+            "url": provider["service_root"].rstrip("/") + "?f=json",
+            "media_type": "application/json",
+            "bbox_wgs84": list(bbox),
+            "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
+        }]
 
     if provider_id == "USGS_3DHP_NHD":
         # Layer membership is release-controlled, so execution first freezes
@@ -157,6 +166,17 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
             "media_type": "application/xml",
             "bbox_wgs84": list(bbox),
             "identity_state": "RESOLVER_ONLY",
+        }]
+
+    if provider_id == "FEMA_PR_ABFE_1PCT":
+        return [{
+            "provider_id": provider_id,
+            "request_role": "abfe_map_service_denominator",
+            "method": "GET",
+            "url": provider["map_service"].rstrip("/") + "?f=json",
+            "media_type": "application/json",
+            "bbox_wgs84": list(bbox),
+            "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
         }]
 
     return []
