@@ -101,16 +101,32 @@ def _arcgis_query(url: str, bbox: tuple[float, float, float, float], *, out_fiel
         "pagination_policy": "OBJECT_ID_DENOMINATOR_THEN_BATCH",
     }
 
-def _wfs_getfeature(base: str, typename: str, bbox: tuple[float, float, float, float]) -> dict[str, Any]:
+def _wfs_getfeature(
+    base: str,
+    typename: str,
+    bbox: tuple[float, float, float, float],
+    *,
+    max_features: int = 250000,
+) -> dict[str, Any]:
     west, south, east, north = bbox
+    if max_features <= 0:
+        raise ValueError("WFS max_features must be positive")
     params = {
         "SERVICE": "WFS",
         "VERSION": "1.1.0",
         "REQUEST": "GetFeature",
         "TYPENAME": typename,
         "BBOX": f"{west},{south},{east},{north},EPSG:4326",
+        "MAXFEATURES": str(max_features),
     }
-    return {"protocol": "WFS_FEATURES", "method": "GET", "url": base + "?" + urlencode(params), "media_type": "application/gml+xml"}
+    return {
+        "protocol": "WFS_FEATURES",
+        "method": "GET",
+        "url": base + "?" + urlencode(params),
+        "media_type": "application/gml+xml",
+        "wfs_max_features": max_features,
+        "truncation_policy": "FAIL_IF_RETURNED_COUNT_REACHES_REQUEST_LIMIT",
+    }
 
 
 def _ogc_items(url: str, bbox: tuple[float, float, float, float], extra: dict[str, str] | None = None) -> dict[str, Any]:
