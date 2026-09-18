@@ -25,10 +25,12 @@ def _require_pass(denominator: dict[str, Any], provider_id: str) -> None:
         raise DenominatorChainError("parent denominator lacks canonical records hash")
 
 
-def _arcgis_layer_query(
+def _arcgis_layer_request(
     layer_url: str,
     bbox: tuple[float, float, float, float],
-) -> str:
+    *,
+    out_fields: str = "*",
+) -> dict[str, Any]:
     west, south, east, north = bbox
     params = {
         "where": "1=1",
@@ -36,12 +38,20 @@ def _arcgis_layer_query(
         "geometryType": "esriGeometryEnvelope",
         "inSR": "4326",
         "spatialRel": "esriSpatialRelIntersects",
-        "outFields": "*",
-        "returnGeometry": "true",
-        "outSR": "4326",
-        "f": "geojson",
+        "returnIdsOnly": "true",
+        "f": "json",
     }
-    return layer_url.rstrip("/") + "/query?" + urlencode(params)
+    normalized = layer_url.rstrip("/")
+    return {
+        "protocol": "ARCGIS_FEATURE_LAYER",
+        "method": "GET",
+        "url": normalized + "/query?" + urlencode(params),
+        "layer_url": normalized,
+        "bbox_wgs84": list(bbox),
+        "out_fields": out_fields,
+        "media_type": "application/json",
+        "pagination_policy": "OBJECT_ID_DENOMINATOR_THEN_BATCH",
+    }
 
 
 def build_usace_service_metadata_plan(
@@ -69,6 +79,7 @@ def build_usace_service_metadata_plan(
             "provider_id": provider_id,
             "request_role": f"folder_services:{folder}",
             "identity_state": "DEPENDENT_DISCOVERY_FOR_SERVICE_DENOMINATOR",
+            "protocol": "ARCGIS_METADATA",
             "method": "GET",
             "url": f"{service_root.rstrip('/')}/{encoded_folder}?f=pjson",
             "media_type": "application/json",
@@ -95,6 +106,7 @@ def build_usace_service_metadata_plan(
             "provider_id": provider_id,
             "request_role": f"service_metadata:{scope}:{name}:{service_type}",
             "identity_state": "DEPENDENT_DISCOVERY_FOR_LAYER_DENOMINATOR",
+            "protocol": "ARCGIS_METADATA",
             "method": "GET",
             "url": url,
             "media_type": "application/json",
@@ -154,17 +166,19 @@ def build_arcgis_layer_aoi_plan(
         name = record.get("name_raw")
         if isinstance(layer_id, bool) or not isinstance(layer_id, int):
             raise DenominatorChainError("layer denominator has invalid layer_id")
-        requests.append({
+        request = _arcgis_layer_request(
+            f"{service_url.rstrip('/')}/{layer_id}",
+            bbox,
+        )
+        request.update({
             "provider_id": provider_id,
             "request_role": f"{role_prefix}:{layer_id}:{name}",
             "identity_state": "SOURCE_LAYER_MANIFESTATION",
-            "method": "GET",
-            "url": _arcgis_layer_query(f"{service_url.rstrip('/')}/{layer_id}", bbox),
-            "media_type": "application/geo+json",
             "parent_denominator_sha256": denominator["canonical_records_sha256"],
             "layer_id": layer_id,
             "layer_name_raw": name,
         })
+        requests.append(request)
 
     return {
         "schema_version": "spiderweb.arcgis_layer_aoi_plan.v1.0",
