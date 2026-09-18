@@ -39,6 +39,9 @@ class ProviderDecision:
     discovery: str | None
     acquisition: str | None
     missing_credentials: tuple[str, ...]
+    execution_kind: str
+    planned_request_count: int
+    generic_executor_ready: bool
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -51,6 +54,9 @@ class ProviderDecision:
             "discovery": self.discovery,
             "acquisition": self.acquisition,
             "missing_credentials": list(self.missing_credentials),
+            "execution_kind": self.execution_kind,
+            "planned_request_count": self.planned_request_count,
+            "generic_executor_ready": self.generic_executor_ready,
         }
 
 
@@ -157,6 +163,29 @@ def route_query(
             route_state = "BLOCKED"
         else:
             route_state = status
+        provider_requests: list[dict[str, Any]] = []
+        if route_state not in {"CREDENTIAL_REQUIRED", "BLOCKED", "NOT_IMPLEMENTED", "PROVIDER_BINDING_OPEN"}:
+            provider_requests = build_request_specs(provider_id, provider, normalized)
+            requests.extend(provider_requests)
+
+        if provider_requests:
+            execution_kind = "BOUNDED_REQUEST_SPECS"
+            generic_executor_ready = route_state == "ROUTABLE"
+        elif route_state == "ROUTABLE" and (
+            provider.get("adapter")
+            or provider.get("resolver")
+            or provider.get("discovery")
+            or provider.get("acquisition")
+        ):
+            execution_kind = "SPECIALIZED_ADAPTER"
+            generic_executor_ready = False
+        elif route_state in {"CREDENTIAL_REQUIRED", "PROVIDER_BINDING_OPEN", "BLOCKED", "NOT_IMPLEMENTED"}:
+            execution_kind = route_state
+            generic_executor_ready = False
+        else:
+            execution_kind = "RESOLUTION_ONLY"
+            generic_executor_ready = False
+
         decisions.append(
             ProviderDecision(
                 provider_id=provider_id,
@@ -168,14 +197,41 @@ def route_query(
                 discovery=provider.get("discovery"),
                 acquisition=provider.get("acquisition"),
                 missing_credentials=missing_credentials,
+                execution_kind=execution_kind,
+                planned_request_count=len(provider_requests),
+                generic_executor_ready=generic_executor_ready,
             )
         )
-        if route_state not in {"CREDENTIAL_REQUIRED", "BLOCKED", "NOT_IMPLEMENTED", "PROVIDER_BINDING_OPEN"}:
-            for request_spec in build_request_specs(provider_id, provider, normalized):
-                requests.append(request_spec)
     counts = dict()
     for decision in decisions:
         counts[decision.route_state] = counts.get(decision.route_state, 0) + 1
+
+    generic_executor_providers = [
+        decision.provider_id for decision in decisions
+        if decision.generic_executor_ready
+    ]
+    specialized_adapter_providers = [
+        decision.provider_id for decision in decisions
+        if decision.execution_kind == "SPECIALIZED_ADAPTER"
+    ]
+    incomplete_providers = [
+        decision.provider_id for decision in decisions
+        if decision.route_state != "ROUTABLE"
+    ]
+    execution_gap_providers = [
+        decision.provider_id for decision in decisions
+        if decision.route_state == "ROUTABLE" and not decision.generic_executor_ready
+    ]
+    blockers = sorted(set(incomplete_providers + execution_gap_providers))
+    if normalized["mode"] != "fetch":
+        fetch_gate = "NOT_REQUESTED"
+    elif not blockers:
+        fetch_gate = "READY"
+    elif normalized["allow_partial"]:
+        fetch_gate = "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"
+    else:
+        fetch_gate = "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION"
+
     return {
         "schema_version": "spiderweb.location_query_plan.v1.0",
         "query": normalized,
@@ -184,6 +240,12 @@ def route_query(
         "providers": [decision.as_dict() for decision in decisions],
         "request_count": len(requests),
         "requests": requests,
+        "generic_executor_provider_ids": generic_executor_providers,
+        "specialized_adapter_provider_ids": specialized_adapter_providers,
+        "incomplete_provider_ids": incomplete_providers,
+        "execution_gap_provider_ids": execution_gap_providers,
+        "fetch_blocker_provider_ids": blockers,
+        "fetch_gate": fetch_gate,
         "policy": {
             "plan_before_download": True,
             "raw_bytes_before_derivation": True,
