@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Probe LOCATION_QUERY provider metadata surfaces without fetching AOI data."""
+"""NONCANONICAL compatibility provider-health probe.
+
+Canonical health auditing is scripts/audit_location_query_provider_health.py,
+which separates transport/provider errors from coverage and source identity.
+This legacy probe is retained only for compatibility.
+"""
 from __future__ import annotations
 
 import argparse
@@ -64,7 +69,13 @@ def main() -> int:
     parser.add_argument("--registry", type=Path, default=Path("configs/location_query_providers.json"))
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--timeout", type=int, default=60)
+    parser.add_argument("--allow-noncanonical-compat", action="store_true")
     args = parser.parse_args()
+    if not args.allow_noncanonical_compat:
+        raise SystemExit(
+            "FAIL: location_query_provider_health.py is NONCANONICAL compatibility only; "
+            "use scripts/audit_location_query_provider_health.py"
+        )
 
     registry = json.loads(args.registry.read_text(encoding="utf-8"))
     providers = registry.get("providers")
@@ -116,7 +127,9 @@ def main() -> int:
         })
 
     result = {
-        "schema_version": "spiderweb.location_query_provider_health.v1.0",
+        "schema_version": "spiderweb.location_query_provider_health.v1.1",
+        "classification": "NONCANONICAL_COMPATIBILITY",
+        "canonical_certification": False,
         "provider_count": len(providers),
         "probe_count": probe_count,
         "failure_count": failures,
