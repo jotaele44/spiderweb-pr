@@ -202,3 +202,12 @@ def test_executor_allows_explicit_partial_gate_without_requests(tmp_path: Path) 
     assert result["state"] == "PARTIAL"
     assert result["fetch_gate"] == "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"
     assert result["fetch_blocker_provider_ids"] == ["NASA_GIBS_IMAGERY"]
+
+
+def test_executor_refuses_to_overwrite_existing_snapshot(tmp_path: Path) -> None:
+    (tmp_path / "fetch_receipt.json").write_text("{}\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match="output snapshot already exists"):
+        mod.execute(
+            {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": []},
+            tmp_path,
+        )
