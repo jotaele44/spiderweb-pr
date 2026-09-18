@@ -211,3 +211,137 @@ def test_executor_refuses_to_overwrite_existing_snapshot(tmp_path: Path) -> None
             {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": []},
             tmp_path,
         )
+
+
+def test_simple_ogc_empty_features_is_no_coverage(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        mod,
+        "urlopen",
+        lambda request, timeout=0: _FakeResponse(
+            {"type": "FeatureCollection", "features": [], "numberMatched": 0, "numberReturned": 0},
+            content_type="application/geo+json",
+        ),
+    )
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "OGC_FEATURES",
+            "method": "GET",
+            "provider_id": "X",
+            "request_role": "features",
+            "identity_state": "SOURCE_MANIFESTATION",
+            "url": "https://example.invalid/items?f=json",
+            "media_type": "application/geo+json",
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PASS"
+    assert result["no_coverage_count"] == 1
+    assert result["requests"][0]["state"] == "NO_COVERAGE"
+
+
+def test_simple_ogc_next_link_fails_closed_as_incomplete(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        mod,
+        "urlopen",
+        lambda request, timeout=0: _FakeResponse({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {}, "geometry": None}],
+            "numberMatched": 2,
+            "numberReturned": 1,
+            "links": [{"rel": "next", "href": "https://example.invalid/page2"}],
+        }, content_type="application/geo+json"),
+    )
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "OGC_FEATURES",
+            "method": "GET",
+            "provider_id": "X",
+            "request_role": "features",
+            "identity_state": "SOURCE_MANIFESTATION",
+            "url": "https://example.invalid/items?f=json",
+            "media_type": "application/geo+json",
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PARTIAL_OR_BLOCKED"
+    assert result["failure_count"] == 1
+    assert result["requests"][0]["state"] == "INCOMPLETE_PAGINATION_REQUIRED"
+
+
+def test_simple_arcgis_metadata_json_error_fails(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        mod,
+        "urlopen",
+        lambda request, timeout=0: _FakeResponse({"error": {"code": 400, "message": "bad"}}),
+    )
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "ARCGIS_METADATA",
+            "method": "GET",
+            "provider_id": "X",
+            "request_role": "metadata",
+            "identity_state": "DISCOVERY",
+            "url": "https://example.invalid/?f=json",
+            "media_type": "application/json",
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PARTIAL_OR_BLOCKED"
+    assert result["requests"][0]["state"] == "FAIL_PROVIDER_ERROR"
+
+
+def test_simple_wfs_exception_document_fails(monkeypatch, tmp_path: Path) -> None:
+    class _XmlResponse:
+        status = 200
+        headers = _FakeHeaders({"Content-Type": "text/xml"})
+        def read(self) -> bytes:
+            return b"<ServiceExceptionReport><ServiceException>bad</ServiceException></ServiceExceptionReport>"
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc, tb) -> bool:
+            return False
+
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: _XmlResponse())
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "WFS_FEATURES",
+            "method": "GET",
+            "provider_id": "SSURGO_SOILS",
+            "request_role": "MapunitPoly",
+            "identity_state": "SOURCE_MANIFESTATION",
+            "url": "https://example.invalid/wfs",
+            "media_type": "application/gml+xml",
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PARTIAL_OR_BLOCKED"
+    assert result["requests"][0]["state"] == "FAIL_PROVIDER_ERROR"
+
+
+def test_simple_sda_requires_table_list(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: _FakeResponse({"not_table": []}))
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "SDA_TABULAR",
+            "method": "POST",
+            "provider_id": "SSURGO_SOILS",
+            "request_role": "mapunit",
+            "identity_state": "DEPENDENT_PRODUCTION_ACQUISITION",
+            "url": "https://example.invalid/post",
+            "json_body": {"query": "SELECT 1", "format": "JSON+COLUMNNAME"},
+            "media_type": "application/json",
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PARTIAL_OR_BLOCKED"
+    assert result["requests"][0]["state"] == "FAIL_SEMANTIC"
