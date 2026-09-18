@@ -228,3 +228,53 @@ def test_usace_general_emits_service_denominator_request() -> None:
     assert request["request_role"] == "services_root_denominator"
     assert request["identity_state"] == "DISCOVERY_FOR_SERVICE_DENOMINATOR"
     assert request["url"].endswith("?f=pjson")
+
+
+def test_fetch_gate_ready_for_fully_generic_nwi_query() -> None:
+    query = {
+        "query_id": "fixture-nwi-fetch",
+        "geometry": {"type": "bbox", "west": -66.1, "south": 18.2, "east": -65.9, "north": 18.4},
+        "families": ["wetlands"],
+        "mode": "fetch",
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["fetch_gate"] == "READY"
+    assert plan["generic_executor_provider_ids"] == ["USFWS_NWI"]
+    assert plan["fetch_blocker_provider_ids"] == []
+
+
+def test_fetch_gate_blocks_specialized_adapter_gap() -> None:
+    query = {
+        "query_id": "fixture-gibs-fetch",
+        "geometry": {"type": "point", "lat": 18.3, "lon": -66.0},
+        "families": ["satellite_imagery"],
+        "mode": "fetch",
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["fetch_gate"] == "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION"
+    assert "NASA_GIBS_IMAGERY" in plan["execution_gap_provider_ids"]
+    assert "NASA_GIBS_IMAGERY" in plan["specialized_adapter_provider_ids"]
+
+
+def test_allow_partial_makes_execution_gaps_explicit_not_silent() -> None:
+    query = {
+        "query_id": "fixture-partial",
+        "geometry": {"type": "point", "lat": 18.3, "lon": -66.0},
+        "mode": "fetch",
+        "allow_partial": True,
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["fetch_gate"] == "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"
+    assert plan["fetch_blocker_provider_ids"]
+    assert plan["execution_gap_provider_ids"]
+
+
+def test_plan_mode_never_claims_fetch_ready() -> None:
+    query = {
+        "query_id": "fixture-plan-gate",
+        "geometry": {"type": "bbox", "west": -66.1, "south": 18.2, "east": -65.9, "north": 18.4},
+        "families": ["wetlands"],
+        "mode": "plan",
+    }
+    plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
+    assert plan["fetch_gate"] == "NOT_REQUESTED"
