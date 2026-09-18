@@ -56,6 +56,7 @@ def build_place_discovery_plan(request: dict[str, Any]) -> dict[str, Any]:
             "route_state": "DISCOVERY_ONLY",
         }],
         "request_count": 1,
+        "fetch_gate": "READY",
         "requests": [{
             "provider_id": "OSM_NOMINATIM_GEOCODER",
             "request_role": "place_search",
