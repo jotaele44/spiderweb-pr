@@ -157,7 +157,7 @@ def test_arcgis_missing_returned_id_fails_closed(monkeypatch, tmp_path: Path) ->
     monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: next(responses))
     with pytest.raises(SystemExit, match="ID mismatch"):
         mod.execute(
-            {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]},
+            {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": [_arcgis_spec()]},
             tmp_path,
         )
 
@@ -172,7 +172,7 @@ def test_arcgis_duplicate_denominator_ids_fail_closed(monkeypatch, tmp_path: Pat
     )
     with pytest.raises(SystemExit, match="duplicate IDs in denominator"):
         mod.execute(
-            {"query": {"mode": "fetch"}, "requests": [_arcgis_spec()]},
+            {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": [_arcgis_spec()]},
             tmp_path,
         )
 
@@ -203,7 +203,7 @@ def test_executor_refuses_to_overwrite_existing_snapshot(tmp_path: Path) -> None
     (tmp_path / "fetch_receipt.json").write_text("{}\n", encoding="utf-8")
     with pytest.raises(SystemExit, match="output snapshot already exists"):
         mod.execute(
-            {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": []},
+            {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": [_arcgis_spec()]},
             tmp_path,
         )
 
