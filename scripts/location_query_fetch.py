@@ -388,15 +388,19 @@ def execute(
             raise SystemExit(
                 f"FAIL: discovery-only executor requires query.mode=plan|fetch; got {mode or 'MISSING'}"
             )
-        selected = [
-            spec for spec in requests
-            if isinstance(spec, dict)
-            and "DISCOVERY" in str(spec.get("identity_state", "")).upper()
-        ]
+        selected = []
+        for spec in requests:
+            if not isinstance(spec, dict):
+                continue
+            identity = str(spec.get("identity_state", "")).upper()
+            if "DISCOVERY" in identity or "RESOLVER_STAGE" in identity:
+                selected.append(spec)
         if requests and not selected:
-            raise SystemExit("FAIL: discovery-only execution found no discovery request specs")
+            raise SystemExit(
+                "FAIL: discovery-only execution found no discovery/resolver-stage request specs"
+            )
         requests = selected
-        execution_scope = "DISCOVERY_ONLY"
+        execution_scope = "DISCOVERY_OR_RESOLVER_STAGE"
         effective_gate = "DISCOVERY_ONLY"
     else:
         if mode != "fetch":
@@ -488,7 +492,7 @@ def main() -> int:
     parser.add_argument(
         "--discovery-only",
         action="store_true",
-        help="execute only request specs whose identity_state is discovery metadata",
+        help="execute only discovery metadata or explicit RESOLVER_STAGE request specs",
     )
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
