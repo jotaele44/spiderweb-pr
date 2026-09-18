@@ -2,6 +2,7 @@
 """Offline invariant audit for the canonical LOCATION_QUERY provider registry."""
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -48,6 +49,16 @@ PATH_BINDINGS = {
 }
 
 
+def canonical_sha256(value: object) -> str:
+    body = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(body).hexdigest()
+
+
 def main() -> int:
     payload = json.loads(REGISTRY.read_text(encoding="utf-8"))
     providers = payload.get("providers")
@@ -89,6 +100,8 @@ def main() -> int:
         "readiness_counts": dict(sorted(counts.items())),
         "reference_aoi_count": len(aois),
         "implementation_binding_count": sum(len(v) for v in PATH_BINDINGS.values()),
+        "provider_registry_sha256": canonical_sha256(payload),
+        "provider_records_sha256": canonical_sha256(providers),
         "network_requests": 0,
     }, indent=2, sort_keys=True))
     return 0
