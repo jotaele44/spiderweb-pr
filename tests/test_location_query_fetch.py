@@ -432,3 +432,42 @@ def test_discovery_scope_can_execute_ssurgo_resolver_stage_only(monkeypatch, tmp
     assert result["state"] == "DISCOVERY_PASS"
     assert result["request_count"] == 1
     assert result["requests"][0]["state"] == "PASS"
+
+
+def test_fetch_receipt_binds_plan_request_and_parent_denominator(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        mod,
+        "urlopen",
+        lambda request, timeout=0: _FakeResponse({"Table": [["mukey"], ["326637"]]}),
+    )
+    spec = {
+        "protocol": "SDA_TABULAR",
+        "method": "POST",
+        "provider_id": "SSURGO_SOILS",
+        "request_role": "mapunit",
+        "identity_state": "DEPENDENT_PRODUCTION_ACQUISITION",
+        "url": "https://example.invalid/post",
+        "json_body": {"query": "SELECT * FROM mapunit", "format": "JSON+COLUMNNAME"},
+        "media_type": "application/json",
+        "parent_denominator_sha256": "d" * 64,
+    }
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [spec],
+    }
+    result = mod.execute(plan, tmp_path)
+    receipt = result["requests"][0]
+    assert result["plan_sha256"] == mod.canonical_json_sha256(plan)
+    assert receipt["request_spec_sha256"] == mod.canonical_json_sha256(spec)
+    assert receipt["parent_denominator_sha256"] == "d" * 64
+    assert receipt["request_body_sha256"] is not None
+
+
+def test_output_snapshot_is_immutable_once_final_receipt_exists(tmp_path: Path) -> None:
+    (tmp_path / "fetch_receipt.json").write_text("{}\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match="output snapshot already exists"):
+        mod.execute(
+            {"query": {"mode": "fetch"}, "fetch_gate": "READY", "requests": []},
+            tmp_path,
+        )
