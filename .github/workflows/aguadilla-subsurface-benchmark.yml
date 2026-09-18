@@ -1,0 +1,47 @@
+name: Aguadilla subsurface benchmark
+
+on:
+  push:
+    branches:
+      - feature/aguadilla-subsurface-benchmark
+    paths:
+      - 'scripts/run_aguadilla_subsurface_benchmark.py'
+      - 'spiderweb/subsurface/**'
+      - 'configs/subsurface_benchmarks/**'
+      - '.github/workflows/aguadilla-subsurface-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-and-analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install benchmark runtime
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy requests rasterio shapely pyproj
+      - name: Execute source-native acquisition and four-window analysis
+        run: python scripts/run_aguadilla_subsurface_benchmark.py
+      - name: Verify fail-closed benchmark tests
+        run: |
+          pip install pytest
+          pytest -q tests/test_subsurface_benchmark.py tests/test_subsurface_benchmark_acquisition.py
+      - name: Show execution receipt
+        if: always()
+        run: |
+          test -f artifacts/subsurface/aguadilla_maleza_alta_001/derived/execution.json && cat artifacts/subsurface/aguadilla_maleza_alta_001/derived/execution.json || true
+      - name: Upload frozen evidence bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aguadilla-subsurface-benchmark-${{ github.sha }}
+          path: artifacts/subsurface/aguadilla_maleza_alta_001/
+          if-no-files-found: error
+          retention-days: 30
