@@ -111,8 +111,9 @@ def freeze_arcgis_service_denominator(
     if not isinstance(services, list):
         raise DenominatorError("ArcGIS service root lacks services list")
 
+    scope_raw = request_role.split(":", 1)[1] if request_role.startswith("folder_services:") else ""
     records: list[dict[str, str]] = []
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[str, str, str]] = set()
     for item in services:
         if not isinstance(item, dict):
             raise DenominatorError("services contains non-object")
@@ -122,13 +123,13 @@ def freeze_arcgis_service_denominator(
             raise DenominatorError("service has empty name")
         if not isinstance(service_type, str) or not service_type.strip():
             raise DenominatorError(f"service {name!r} has empty type")
-        key = (name, service_type)
+        key = (scope_raw, name, service_type)
         if key in seen:
             raise DenominatorError(f"duplicate service manifestation: {key!r}")
         seen.add(key)
-        records.append({"name_raw": name, "type_raw": service_type})
+        records.append({"scope_raw": scope_raw, "name_raw": name, "type_raw": service_type})
 
-    records.sort(key=lambda row: (row["name_raw"].casefold(), row["type_raw"].casefold()))
+    records.sort(key=lambda row: (row["scope_raw"].casefold(), row["name_raw"].casefold(), row["type_raw"].casefold()))
     folders = payload.get("folders")
     if folders is None:
         folders = []
@@ -142,6 +143,7 @@ def freeze_arcgis_service_denominator(
         "request_role": request_role,
         "state": "PASS",
         "raw_sha256": raw_sha,
+        "scope_raw": scope_raw,
         "service_count": len(records),
         "folder_count": len(folder_records),
         "records": records,
@@ -197,4 +199,68 @@ def freeze_wms_layer_denominator(
         "records": records,
         "canonical_records_sha256": canonical_records_sha256(records),
         "identity_scope": "SOURCE_WMS_LAYER_MANIFESTATIONS",
+    }
+
+
+def merge_arcgis_service_denominators(
+    denominators: list[dict[str, Any]],
+    *,
+    provider_id: str,
+) -> dict[str, Any]:
+    if not denominators:
+        raise DenominatorError("no service denominators supplied")
+    records: list[dict[str, str]] = []
+    folders: set[str] = set()
+    parent_hashes: list[str] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    for denominator in denominators:
+        if denominator.get("state") != "PASS":
+            raise DenominatorError("child service denominator is not PASS")
+        if denominator.get("provider_id") != provider_id:
+            raise DenominatorError("child service denominator provider mismatch")
+        if denominator.get("schema_version") != "spiderweb.arcgis_service_denominator.v1.0":
+            raise DenominatorError("unexpected service denominator schema")
+        parent_hash = denominator.get("canonical_records_sha256")
+        if not isinstance(parent_hash, str) or not parent_hash:
+            raise DenominatorError("service denominator lacks canonical hash")
+        parent_hashes.append(parent_hash)
+
+        for folder in denominator.get("folders", []):
+            if not isinstance(folder, str):
+                raise DenominatorError("folder manifestation is not a string")
+            folders.add(folder)
+
+        child_records = denominator.get("records")
+        if not isinstance(child_records, list):
+            raise DenominatorError("service denominator lacks records")
+        for record in child_records:
+            if not isinstance(record, dict):
+                raise DenominatorError("service denominator record is not object")
+            scope = str(record.get("scope_raw", ""))
+            name = record.get("name_raw")
+            service_type = record.get("type_raw")
+            if not isinstance(name, str) or not isinstance(service_type, str):
+                raise DenominatorError("service denominator record malformed")
+            key = (scope, name, service_type)
+            if key in seen:
+                raise DenominatorError(f"duplicate service across denominators: {key!r}")
+            seen.add(key)
+            records.append({"scope_raw": scope, "name_raw": name, "type_raw": service_type})
+
+    records.sort(key=lambda row: (row["scope_raw"].casefold(), row["name_raw"].casefold(), row["type_raw"].casefold()))
+    folder_records = sorted(folders, key=str.casefold)
+    parent_hashes.sort()
+    return {
+        "schema_version": "spiderweb.arcgis_service_denominator_merged.v1.0",
+        "provider_id": provider_id,
+        "state": "PASS",
+        "denominator_count": len(denominators),
+        "service_count": len(records),
+        "folder_count": len(folder_records),
+        "folders": folder_records,
+        "records": records,
+        "parent_denominator_hashes": parent_hashes,
+        "canonical_records_sha256": canonical_records_sha256(records),
+        "identity_scope": "SOURCE_SERVICE_MANIFESTATIONS_WITH_FOLDER_SCOPE",
     }
