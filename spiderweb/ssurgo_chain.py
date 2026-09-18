@@ -166,12 +166,18 @@ def build_stage3_child_plan(
         raise SSURGOChainError("component raw SHA256 does not match receipt")
 
     cokeys, component_header = extract_cokeys_from_sda(component_raw)
-    records = child_contract.get("tables")
+    if child_contract.get("schema_version") != "spiderweb.ssurgo_component_children.v1.1":
+        raise SSURGOChainError(
+            "unsupported component child contract schema_version"
+        )
+    if child_contract.get("parent_table") != "component" or child_contract.get("parent_key") != "cokey":
+        raise SSURGOChainError("component child contract parent binding drift")
+    records = child_contract.get("records")
     if not isinstance(records, list) or not records:
-        raise SSURGOChainError("component child contract lacks tables")
-    expected_count = (child_contract.get("invariants") or {}).get("table_count")
-    if expected_count is not None and expected_count != len(records):
-        raise SSURGOChainError("component child contract table_count invariant drift")
+        raise SSURGOChainError("component child contract lacks records")
+    expected_count = child_contract.get("relationship_count")
+    if expected_count != len(records):
+        raise SSURGOChainError("component child contract relationship_count invariant drift")
 
     seen_tables: set[str] = set()
     seen_stable_keys: set[str] = set()
@@ -243,6 +249,8 @@ def build_stage3_child_plan(
         "child_table_denominator": {
             "table_count": len(records),
             "tables": [request["ssurgo_child_contract"] for request in requests],
+            "documentation_epoch": child_contract.get("current_documentation_epoch"),
+            "prior_frozen_count": (child_contract.get("lineage") or {}).get("prior_frozen_relationship_count"),
             "historical_21_table_equivalence": "SUPERSEDED_FOR_CURRENT_DENOMINATOR",
         },
         "policy": {
