@@ -66,6 +66,9 @@ jobs:
           done
           cat /tmp/martin.log
           exit 1
+      - name: Initialize backend database
+        working-directory: .
+        run: sqlite3 server/priis.db < server/database/schema_sqlite.sql
       - name: Start FastAPI backend
         working-directory: .
         run: |
