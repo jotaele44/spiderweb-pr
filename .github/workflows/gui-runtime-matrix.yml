@@ -107,7 +107,13 @@ jobs:
           cat /tmp/spiderweb-vite.log
           exit 1
       - name: Execute six-module matrix
-        run: node tests/gui-runtime-matrix.mjs
+        run: |
+          Xvfb :99 -screen 0 1920x1080x24 &
+          XVFB_PID=$!
+          sleep 1
+          DISPLAY=:99 node tests/gui-runtime-matrix.mjs; STATUS=$?
+          kill "$XVFB_PID" 2>/dev/null || true
+          exit $STATUS
       - name: Upload GUI evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
