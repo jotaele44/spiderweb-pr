@@ -68,3 +68,39 @@ def test_unified_runner_preserves_partial_top_level_gate(monkeypatch, tmp_path: 
     plan = _plan()
     plan["fetch_gate"] = "ALLOW_PARTIAL_WITH_EXPLICIT_GAPS"
     assert mod.execute_location_query(plan, tmp_path)["state"] == "PARTIAL"
+
+
+def test_specialized_only_plan_skips_generic_network_executor(monkeypatch, tmp_path: Path) -> None:
+    calls = {"generic": 0, "specialized": 0}
+
+    def fail_generic(plan, output_dir, timeout=0):
+        calls["generic"] += 1
+        raise AssertionError("generic executor must not run for zero-request plan")
+
+    def fake_specialized(plan, output_dir):
+        calls["specialized"] += 1
+        output_dir.mkdir(parents=True, exist_ok=True)
+        result = {"state": "PASS", "call_count": 1}
+        (output_dir / "specialized_receipt.json").write_text(json.dumps(result), encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(mod, "execute_generic", fail_generic)
+    monkeypatch.setattr(mod, "execute_specialized_calls", fake_specialized)
+
+    plan = _plan()
+    plan["request_count"] = 0
+    plan["requests"] = []
+    result = mod.execute_location_query(plan, tmp_path)
+
+    assert result["state"] == "PASS"
+    assert calls["generic"] == 0
+    assert calls["specialized"] == 1
+    assert result["arithmetic"]["planned_generic_requests"] == 0
+    assert result["arithmetic"]["executed_generic_requests"] == 0
+
+    generic = json.loads(
+        (tmp_path / "generic" / "fetch_receipt.json").read_text(encoding="utf-8")
+    )
+    assert generic["execution_scope"] == "NO_GENERIC_REQUESTS"
+    assert generic["request_count"] == 0
+    assert generic["state"] == "PASS"
