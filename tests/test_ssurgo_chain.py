@@ -546,3 +546,42 @@ def test_child_certification_rejects_no_coverage_with_nonempty_manifestation() -
             },
             certified_cokeys=parent,
         )
+
+
+def test_stage2_exact_spatial_subset_replaces_wfs_envelope_denominator() -> None:
+    plan = build_stage2_plan(
+        query={"query_id": "exact"},
+        mapunitpoly_raw=GML,
+        mapunitpoly_receipt=receipt(),
+        certified_mukeys=["326637"],
+        spatial_denominator_sha256="a" * 64,
+    )
+    assert plan["schema_version"] == "spiderweb.ssurgo_stage2_plan.v1.1"
+    assert plan["ssurgo_denominator"]["selection_scope"] == (
+        "EXACT_AOI_SPATIAL_CERTIFICATION"
+    )
+    assert plan["ssurgo_denominator"]["source_wfs_mukey_count"] == 2
+    assert plan["ssurgo_denominator"]["mukey_count"] == 1
+    assert plan["ssurgo_denominator"]["mukeys"] == ["326637"]
+    assert all(
+        "WHERE mukey IN ('326637')" in row["json_body"]["query"]
+        for row in plan["requests"]
+    )
+    assert all(
+        row["parent_denominator"]["spatial_denominator_sha256"] == "a" * 64
+        for row in plan["requests"]
+    )
+
+
+def test_stage2_rejects_certified_mukey_absent_from_raw_wfs() -> None:
+    with pytest.raises(
+        SSURGOChainError,
+        match="absent from raw MapunitPoly",
+    ):
+        build_stage2_plan(
+            query={"query_id": "foreign"},
+            mapunitpoly_raw=GML,
+            mapunitpoly_receipt=receipt(),
+            certified_mukeys=["999999"],
+            spatial_denominator_sha256="b" * 64,
+        )
