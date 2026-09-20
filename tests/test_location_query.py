@@ -200,7 +200,7 @@ def test_ssurgo_requires_post_fetch_certification_stage() -> None:
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
     provider = plan["providers"][0]
     assert provider["route_state"] == "RESOLVER_ONLY"
-    assert provider["execution_kind"] == "REQUEST_SPECS_PLUS_POSTPROCESSOR"
+    assert provider["execution_kind"] == "BOUNDED_REQUEST_SPECS"
     assert provider["generic_executor_ready"] is False
     assert plan["request_count"] == 2
     assert plan["fetch_gate"] == "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION"
