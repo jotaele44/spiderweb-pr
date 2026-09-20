@@ -20,11 +20,13 @@ FILES = [
     ROOT / "scripts/location_query_usace_inventory.py",
     ROOT / "scripts/location_query_ssurgo.py",
     ROOT / "spiderweb/ssurgo_chain.py",
+    ROOT / "spiderweb/ssurgo_spatial.py",
     ROOT / "spiderweb/provider_denominators.py",
     ROOT / "spiderweb/denominator_chain.py",
     ROOT / "spiderweb/place_resolver.py",
     ROOT / "spiderweb/provider_promotion.py",
     ROOT / "spiderweb/reference_corpus.py",
+    ROOT / "scripts/ssurgo_location_spatial.py",
     ROOT / "scripts/ssurgo_location_stage2.py",
     ROOT / "scripts/freeze_location_provider_denominator.py",
     ROOT / "scripts/build_location_denominator_stage.py",
@@ -138,8 +140,14 @@ def main() -> int:
         raise SystemExit("FAIL: USACE ports/navigation readiness drift")
     if bound["USGS_3DHP_NHD"]["status"] != "BOUND_FEATURE_SERVICE_DENOMINATOR_PASS":
         raise SystemExit("FAIL: 3DHP bound denominator certification drift")
-    if bound["USACE_GENERAL_GIS"]["status"] != "BOUND_SERVICE_ROOT_DENOMINATOR_OPEN":
-        raise SystemExit("FAIL: USACE general service-root binding state drift")
+    if bound["USACE_GENERAL_GIS"]["status"] != "BOUND_SERVICE_ROOT_DENOMINATOR_PASS_LAYER_OPEN":
+        raise SystemExit("FAIL: USACE general service-root certification state drift")
+    if bound["FEMA_NFHL"]["status"] != "BOUND_ARCGIS_LAYER_DENOMINATOR_PASS_AOI_OPEN":
+        raise SystemExit("FAIL: FEMA NFHL layer-denominator binding state drift")
+    if bound["FEMA_PR_ABFE_1PCT"]["status"] != "BOUND_MAP_SERVICE_LAYER_DENOMINATOR_PASS_AOI_OPEN":
+        raise SystemExit("FAIL: FEMA PR advisory layer-denominator binding state drift")
+    if bound["SSURGO_SOILS"]["status"] != "BOUND_BBOX_PRESELECTION_TABULAR_CHAIN_PASS_EXACT_AOI_OPEN":
+        raise SystemExit("FAIL: SSURGO bounded runtime certification state drift")
 
     child_rows = ssurgo_children.get("records")
     if ssurgo_children.get("schema_version") != "spiderweb.ssurgo_component_children.v1.1":
