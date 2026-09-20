@@ -411,3 +411,136 @@ def certify_child_table_response(
             "count_equality_used_as_identity": False,
         },
     }
+
+
+def certify_stage3_fetch(
+    *,
+    stage3_plan: dict[str, Any],
+    fetch_receipt: dict[str, Any],
+) -> dict[str, Any]:
+    if stage3_plan.get("schema_version") != "spiderweb.ssurgo_stage3_child_plan.v1.0":
+        raise SSURGOChainError("unsupported stage3 plan schema_version")
+    if fetch_receipt.get("execution_scope") != "PRODUCTION_OR_BOUNDED_DEPENDENT":
+        raise SSURGOChainError("stage3 fetch receipt execution scope mismatch")
+    if fetch_receipt.get("state") != "PASS":
+        raise SSURGOChainError("stage3 fetch receipt is not PASS")
+
+    plan_bytes = json.dumps(
+        stage3_plan,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    plan_sha = sha256_bytes(plan_bytes)
+    if fetch_receipt.get("plan_sha256") != plan_sha:
+        raise SSURGOChainError("stage3 fetch receipt plan SHA256 mismatch")
+
+    parent = stage3_plan.get("ssurgo_cokey_denominator") or {}
+    cokeys = parent.get("cokeys")
+    if not isinstance(cokeys, list) or not cokeys:
+        raise SSURGOChainError("stage3 plan lacks COKEY denominator")
+    certified_cokeys = [str(value).strip() for value in cokeys]
+    if any(not value.isdigit() for value in certified_cokeys):
+        raise SSURGOChainError("stage3 COKEY denominator contains non-numeric value")
+    expected_parent_sha = canonical_cokey_sha256(certified_cokeys)
+    if parent.get("canonical_cokey_set_sha256") != expected_parent_sha:
+        raise SSURGOChainError("stage3 canonical COKEY denominator hash drift")
+
+    child = stage3_plan.get("child_table_denominator") or {}
+    contracts = child.get("tables")
+    if not isinstance(contracts, list) or not contracts:
+        raise SSURGOChainError("stage3 plan lacks child table denominator")
+    if child.get("table_count") != len(contracts):
+        raise SSURGOChainError("stage3 child table count drift")
+
+    receipt_rows = fetch_receipt.get("requests")
+    if not isinstance(receipt_rows, list):
+        raise SSURGOChainError("stage3 fetch receipt lacks requests")
+    if fetch_receipt.get("request_count") != len(receipt_rows):
+        raise SSURGOChainError("stage3 fetch request-count arithmetic drift")
+    if len(receipt_rows) != len(contracts):
+        raise SSURGOChainError(
+            f"stage3 fetch child count mismatch expected={len(contracts)} got={len(receipt_rows)}"
+        )
+
+    by_role: dict[str, dict[str, Any]] = {}
+    for row in receipt_rows:
+        if not isinstance(row, dict):
+            raise SSURGOChainError("stage3 fetch receipt contains non-object request")
+        role = str(row.get("request_role", ""))
+        if not role.startswith("component_child:"):
+            raise SSURGOChainError(f"unexpected stage3 request role: {role!r}")
+        if role in by_role:
+            raise SSURGOChainError(f"duplicate stage3 request role: {role}")
+        by_role[role] = row
+
+    certifications: list[dict[str, Any]] = []
+    total_rows = 0
+    total_zero_parent_relations = 0
+    seen_tables: set[str] = set()
+
+    for contract in contracts:
+        if not isinstance(contract, dict):
+            raise SSURGOChainError("stage3 child contract contains non-object")
+        table = str(contract.get("table", "")).strip()
+        if not table or table in seen_tables:
+            raise SSURGOChainError(f"invalid/duplicate stage3 child table: {table!r}")
+        seen_tables.add(table)
+        role = f"component_child:{table}"
+        receipt = by_role.get(role)
+        if receipt is None:
+            raise SSURGOChainError(f"missing stage3 child receipt: {role}")
+        raw_path_value = receipt.get("raw_path")
+        if not isinstance(raw_path_value, str) or not raw_path_value:
+            raise SSURGOChainError(f"{table}: child receipt lacks raw_path")
+        raw_path = Path(raw_path_value)
+        if not raw_path.is_file():
+            raise SSURGOChainError(f"{table}: child raw file missing: {raw_path}")
+        cert = certify_child_table_response(
+            raw=raw_path.read_bytes(),
+            receipt=receipt,
+            contract=contract,
+            certified_cokeys=certified_cokeys,
+        )
+        certifications.append(cert)
+        total_rows += int(cert["row_count"])
+        total_zero_parent_relations += int(cert["zero_child_parent_count"])
+
+    if len(certifications) != len(contracts):
+        raise SSURGOChainError("stage3 certification denominator did not close")
+    if any(cert.get("state") != "PASS" for cert in certifications):
+        raise SSURGOChainError("stage3 child certification contains non-PASS row")
+
+    return {
+        "schema_version": "spiderweb.ssurgo_stage3_certification.v1.0",
+        "provider_id": "SSURGO_SOILS",
+        "state": "PASS",
+        "stage3_plan_sha256": plan_sha,
+        "stage3_fetch_receipt_sha256": sha256_bytes(
+            json.dumps(
+                fetch_receipt,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ),
+        "parent_cokey_count": len(certified_cokeys),
+        "parent_denominator_sha256": expected_parent_sha,
+        "child_table_count": len(certifications),
+        "total_child_rows": total_rows,
+        "total_zero_child_parent_relations": total_zero_parent_relations,
+        "documentation_epoch": child.get("documentation_epoch"),
+        "prior_frozen_child_count": child.get("prior_frozen_count"),
+        "child_contract_sha256": child.get("canonical_contract_sha256"),
+        "records": certifications,
+        "invariants": {
+            "child_table_count_closed": len(certifications) == len(contracts),
+            "all_child_states_pass": all(cert.get("state") == "PASS" for cert in certifications),
+            "foreign_parent_count_zero": all(cert.get("foreign_parent_count") == 0 for cert in certifications),
+            "stable_keys_unique": all(cert.get("stable_key_uniqueness") is True for cert in certifications),
+            "arithmetic_closure": all(cert.get("arithmetic_closure") is True for cert in certifications),
+            "zero_child_parents_preserved": True,
+            "one_to_n_preserved": True,
+            "raw_bytes_preserved": True,
+        },
+    }
