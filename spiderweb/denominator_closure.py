@@ -119,22 +119,22 @@ def close_discovery_denominators(
                 "adjudication_path": str(adjudication_path),
             })
 
-    # FEMA NFHL: WMS named-layer denominator is metadata only. It cannot by
-    # itself promote vector feature identity.
+    # FEMA NFHL: ArcGIS REST service metadata freezes the stable layer-ID
+    # denominator. Feature acquisition remains a dependent stage.
     if "FEMA_NFHL" in providers:
-        receipt = _receipt(fetch, "FEMA_NFHL", "nfhl_wms_capabilities")
+        receipt = _receipt(fetch, "FEMA_NFHL", "nfhl_map_service_denominator")
         if receipt is not None and receipt.get("state") == "PASS":
-            denominator = freeze_wms_layer_denominator(
+            denominator = freeze_arcgis_layer_denominator(
                 raw=_raw_bytes(receipt),
                 receipt=receipt,
                 provider_id="FEMA_NFHL",
-                request_role="nfhl_wms_capabilities",
+                request_role="nfhl_map_service_denominator",
             )
-            path = output_dir / "FEMA_NFHL_WMS_LAYER_DENOMINATOR.json"
+            path = output_dir / "FEMA_NFHL_LAYER_DENOMINATOR.json"
             _write(path, denominator)
             records.append({
                 "provider_id": "FEMA_NFHL",
-                "state": "METADATA_DENOMINATOR_PASS_VECTOR_IDENTITY_OPEN",
+                "state": "LAYER_DENOMINATOR_PASS_DEPENDENT_AOI_OPEN",
                 "promotion_eligible": False,
                 "denominator_path": str(path),
             })
