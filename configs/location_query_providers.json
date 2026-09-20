@@ -173,7 +173,7 @@
     },
     "USGS_3DHP_NHD": {
       "family": "hydrography",
-      "status": "RESOLVER_ONLY",
+      "status": "READY_SPECIALIZED",
       "query_modes": [
         "point",
         "radius",
@@ -184,8 +184,9 @@
       "adapter": "spiderweb.location_query_sources",
       "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
       "release_observed": "2026-08-05",
-      "reason": "FeatureServer endpoint and six observed layer candidates are preserved, but no frozen raw metadata receipt on this branch yet proves the release layer denominator; metadata-first routing remains mandatory.",
-      "provisional_layers": [
+      "reason": "Runtime closure on 2026-09-20 froze the authoritative FeatureServer metadata and exact six-layer ID denominator; provisional and frozen stable-ID sets are equal with symmetric difference zero.",
+      "denominator_state": "FROZEN_RUNTIME_PASS",
+      "layers": [
         {
           "id": 20,
           "role": "hydrolocation_sink_spring_waterbody_outlet"
@@ -211,7 +212,7 @@
           "role": "catchment"
         }
       ],
-      "denominator_state": "OPEN_RAW_METADATA_FREEZE"
+      "certification_receipt": "registry/certification/location_query/USGS_3DHP_NHD_2026-09-20.json"
     },
     "USFWS_NWI": {
       "family": "wetlands",
@@ -239,13 +240,13 @@
         "geojson"
       ],
       "adapter": "spiderweb.location_query_sources",
-      "wms_capabilities": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
-      "reason": "Authoritative NFHL WMS surface uses the /rest/services path; prior non-/rest URL returned HTTP 404 in runtime closure on 2026-09-20. Vector feature-layer denominator remains open.",
+      "reason": "Operational FEMA NFHL ArcGIS REST MapServer rebound from stale WMS paths after 2026-09-20 runtime 404s. Layer denominator must be frozen before AOI feature acquisition is promoted.",
       "runtime_lineage": {
         "prior_url": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
         "prior_state": "SUPERSEDED_RUNTIME_404_2026-09-20",
-        "current_state": "REBOUND_UNCERTIFIED_RUNTIME"
-      }
+        "current_state": "REBOUND_ARCGIS_MAP_SERVICE_UNCERTIFIED_RUNTIME"
+      },
+      "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer"
     },
     "USACE_GENERAL_GIS": {
       "family": "federal_infrastructure",
