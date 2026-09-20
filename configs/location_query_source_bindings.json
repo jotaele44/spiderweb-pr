@@ -6,8 +6,8 @@
       "authority": "USDA NRCS Soil Data Access",
       "spatial_wfs": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
       "tabular_rest": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
-      "status": "BOUND_SPATIAL_TABULAR_CHAIN_REFERENCE_AOI_PASS_ORCHESTRATION_OPEN",
-      "note": "Húcar 2 km runtime closure on 2026-09-20 passed SurveyAreaPoly/MapunitPoly, exact 15-MUKEY denominator, mapunit/component, exact 20-COKEY denominator, all 22 current child tables, and aggregate cardinality certification. General automatic dependent-stage orchestration remains open.",
+      "status": "BOUND_BBOX_PRESELECTION_TABULAR_CHAIN_PASS_EXACT_AOI_OPEN",
+      "note": "2026-09-20 runtime closure passed raw WFS envelope preselection, 15-MUKEY parent set, mapunit/component, 20-COKEY parent set and all 22 child tables. The canonical modular chain still needs exact circle/polygon AOI intersection and SurveyArea coverage adjudication before readiness promotion.",
       "certification_receipt": "registry/certification/location_query/SSURGO_HUCAR_2KM_2026-09-20.json"
     },
     "USGS_3DHP_NHD": {
