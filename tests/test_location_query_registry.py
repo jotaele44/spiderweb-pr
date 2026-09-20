@@ -76,7 +76,7 @@ def test_ready_routes_bind_to_existing_implementation_files() -> None:
 def test_incomplete_families_remain_explicit_without_false_promotion() -> None:
     providers = json.loads(REGISTRY.read_text(encoding="utf-8"))["providers"]
     assert providers["SSURGO_SOILS"]["status"] == "RESOLVER_ONLY"
-    assert providers["USGS_3DHP_NHD"]["status"] == "RESOLVER_ONLY"
+    assert providers["USGS_3DHP_NHD"]["status"] == "READY_SPECIALIZED"
     assert providers["FEMA_NFHL"]["status"] == "RESOLVER_ONLY"
     assert providers["FEMA_PR_ABFE_1PCT"]["status"] == "RESOLVER_ONLY"
     assert providers["USACE_GENERAL_GIS"]["status"] == "RESOLVER_ONLY"
@@ -88,6 +88,16 @@ def test_promoted_specialized_routes_have_bounded_machine_surfaces() -> None:
     assert providers["USFWS_NWI"]["status"] == "READY_SPECIALIZED"
     assert providers["USFWS_NWI"]["layer_url"].endswith("/Wetlands/FeatureServer/0")
     assert providers["USACE_PORTS_NAV"]["status"] == "READY_SPECIALIZED"
+
+    assert providers["USGS_3DHP_NHD"]["status"] == "READY_SPECIALIZED"
+    assert providers["USGS_3DHP_NHD"]["denominator_state"] == "FROZEN_RUNTIME_PASS"
+    assert providers["USGS_3DHP_NHD"]["certification_receipt"] == (
+        "registry/certification/location_query/USGS_3DHP_NHD_2026-09-20.json"
+    )
+    assert sorted(row["id"] for row in providers["USGS_3DHP_NHD"]["layers"]) == [
+        20, 30, 40, 50, 60, 80
+    ]
+
     layers = providers["USACE_PORTS_NAV"]["layers"]
     assert len(layers) == 4
     assert len({row["role"] for row in layers}) == 4
