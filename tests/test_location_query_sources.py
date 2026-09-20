@@ -52,17 +52,19 @@ def test_ssurgo_specs_are_bounded_to_two_source_manifestations() -> None:
     rows = build_request_specs("SSURGO_SOILS", provider, query)
     assert [row["request_role"] for row in rows] == ["SurveyAreaPoly", "MapunitPoly"]
     assert all(row["identity_state"] == "RESOLVER_STAGE_SOURCE_MANIFESTATION" for row in rows)
-    assert all("BBOX=" in row["url"] for row in rows)
+    assert all("FILTER=" in row["url"] for row in rows)
+    assert all("SRSNAME=EPSG%3A4326" in row["url"] for row in rows)
+    assert all("OUTPUTFORMAT=GML2" in row["url"] for row in rows)
     assert all("MAXFEATURES=250000" in row["url"] for row in rows)
     assert all(row["wfs_max_features"] == 250000 for row in rows)
     assert all(row["truncation_policy"] == "FAIL_IF_RETURNED_COUNT_REACHES_REQUEST_LIMIT" for row in rows)
 
 
-def test_3dhp_remains_metadata_first_until_frozen_denominator() -> None:
+def test_3dhp_certified_six_layer_denominator_routes_aoi_queries() -> None:
     provider = {
-        "status": "RESOLVER_ONLY",
+        "status": "READY_SPECIALIZED",
         "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
-        "provisional_layers": [
+        "layers": [
             {"id": 20, "role": "hydrolocation_sink_spring_waterbody_outlet"},
             {"id": 30, "role": "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet"},
             {"id": 40, "role": "hydrolocation_reach_code_external_connection"},
@@ -81,16 +83,22 @@ def test_3dhp_remains_metadata_first_until_frozen_denominator() -> None:
         }
     }
     rows = build_request_specs("USGS_3DHP_NHD", provider, query)
-    assert len(rows) == 1
-    assert rows[0]["request_role"] == "feature_service_metadata"
-    assert rows[0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
-    assert rows[0]["protocol"] == "ARCGIS_METADATA"
-    assert rows[0]["url"].endswith("?f=json")
+    assert len(rows) == 6
+    assert {row["request_role"] for row in rows} == {
+        "hydrolocation_sink_spring_waterbody_outlet",
+        "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet",
+        "hydrolocation_reach_code_external_connection",
+        "flowline",
+        "waterbody",
+        "catchment",
+    }
+    assert all(row["identity_state"] == "SOURCE_MANIFESTATION" for row in rows)
+    assert all(row["protocol"] == "ARCGIS_FEATURE_LAYER" for row in rows)
 
 
-def test_fema_wms_capabilities_remains_resolver_only() -> None:
+def test_fema_nfhl_rest_metadata_remains_resolver_only() -> None:
     provider = {
-        "wms_capabilities": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
+        "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
     }
     query = {
         "geometry": {
@@ -102,7 +110,9 @@ def test_fema_wms_capabilities_remains_resolver_only() -> None:
     rows = build_request_specs("FEMA_NFHL", provider, query)
     assert len(rows) == 1
     assert rows[0]["identity_state"] == "DISCOVERY_FOR_LAYER_DENOMINATOR"
-    assert rows[0]["protocol"] == "WMS_CAPABILITIES"
+    assert rows[0]["request_role"] == "nfhl_map_service_denominator"
+    assert rows[0]["protocol"] == "ARCGIS_METADATA"
+    assert rows[0]["url"].endswith("?f=json")
 
 
 def test_usace_ports_preserves_four_source_manifestations() -> None:
