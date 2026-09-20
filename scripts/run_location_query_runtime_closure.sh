@@ -163,11 +163,23 @@ JSON
 
 python scripts/location_query.py   "$OUT/queries/provider_denominators.json"   --out "$OUT/plans/provider_denominators.acquisition_plan.json"   > "$OUT/audit/provider_denominators_plan_stdout.json"
 
+set +e
 python scripts/location_query_fetch.py   "$OUT/plans/provider_denominators.acquisition_plan.json"   --output-dir "$OUT/fetch/provider_denominators"   --discovery-only   > "$OUT/audit/provider_denominators_fetch_stdout.json"
+DISCOVERY_FETCH_EXIT=$?
+set -e
 
+if [[ ! -f "$OUT/fetch/provider_denominators/fetch_receipt.json" ]]; then
+  echo "FAIL: discovery fetch produced no receipt"
+  exit 5
+fi
+
+set +e
 python scripts/location_query_package.py   "$OUT/plans/provider_denominators.acquisition_plan.json"   "$OUT/fetch/provider_denominators/fetch_receipt.json"   --output "$OUT/packages/provider_denominators.package.json"   > "$OUT/audit/provider_denominators_package_stdout.json"
+DISCOVERY_PACKAGE_EXIT=$?
 
 python scripts/close_location_query_denominators.py   --fetch-receipt "$OUT/fetch/provider_denominators/fetch_receipt.json"   --query "$OUT/queries/provider_denominators.json"   --output-dir "$OUT/closure/provider_denominators"   > "$OUT/audit/provider_denominator_closure_stdout.json"
+DISCOVERY_CLOSURE_EXIT=$?
+set -e
 
 # ---------------------------------------------------------------------------
 # Phase 3 — SSURGO Hucar reference AOI.
@@ -192,11 +204,23 @@ JSON
 
 python scripts/location_query.py   "$OUT/queries/hucar_ssurgo.json"   --out "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   > "$OUT/audit/hucar_ssurgo_plan_stdout.json"
 
+set +e
 python scripts/location_query_fetch.py   "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   --output-dir "$OUT/fetch/hucar_ssurgo"   --discovery-only   > "$OUT/audit/hucar_ssurgo_spatial_fetch_stdout.json"
+SSURGO_SPATIAL_FETCH_EXIT=$?
 
-python scripts/location_query_package.py   "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   "$OUT/fetch/hucar_ssurgo/fetch_receipt.json"   --output "$OUT/packages/hucar_ssurgo_spatial.package.json"   > "$OUT/audit/hucar_ssurgo_spatial_package_stdout.json"
+if [[ -f "$OUT/fetch/hucar_ssurgo/fetch_receipt.json" ]]; then
+  python scripts/location_query_package.py   "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   "$OUT/fetch/hucar_ssurgo/fetch_receipt.json"   --output "$OUT/packages/hucar_ssurgo_spatial.package.json"   > "$OUT/audit/hucar_ssurgo_spatial_package_stdout.json"
+  SSURGO_SPATIAL_PACKAGE_EXIT=$?
 
-python scripts/location_query_ssurgo.py   "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   "$OUT/fetch/hucar_ssurgo/fetch_receipt.json"   --children configs/ssurgo_component_children.json   --output-dir "$OUT/ssurgo/hucar_2km"   > "$OUT/audit/hucar_ssurgo_continuation_stdout.json"
+  python scripts/location_query_ssurgo.py   "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   "$OUT/fetch/hucar_ssurgo/fetch_receipt.json"   --children configs/ssurgo_component_children.json   --output-dir "$OUT/ssurgo/hucar_2km"   > "$OUT/audit/hucar_ssurgo_continuation_stdout.json"
+  SSURGO_CONTINUATION_EXIT=$?
+else
+  echo "FAIL: SSURGO spatial fetch produced no receipt" > "$OUT/audit/hucar_ssurgo_spatial_package_stdout.json"
+  echo "FAIL: SSURGO continuation skipped because fetch receipt is missing" > "$OUT/audit/hucar_ssurgo_continuation_stdout.json"
+  SSURGO_SPATIAL_PACKAGE_EXIT=5
+  SSURGO_CONTINUATION_EXIT=5
+fi
+set -e
 
 # ---------------------------------------------------------------------------
 # Phase 4 — final snapshot manifest.
@@ -204,7 +228,7 @@ python scripts/location_query_ssurgo.py   "$OUT/plans/hucar_ssurgo.acquisition_p
 # not an aggregate identity claim for heterogeneous semantic records.
 # ---------------------------------------------------------------------------
 
-export OUT HEAD_SHA HEAD_REF
+export OUT HEAD_SHA HEAD_REF DISCOVERY_FETCH_EXIT DISCOVERY_PACKAGE_EXIT DISCOVERY_CLOSURE_EXIT SSURGO_SPATIAL_FETCH_EXIT SSURGO_SPATIAL_PACKAGE_EXIT SSURGO_CONTINUATION_EXIT
 python - <<'PY'
 from __future__ import annotations
 
@@ -216,6 +240,19 @@ from pathlib import Path
 root = Path(os.environ["OUT"])
 head_sha = os.environ["HEAD_SHA"]
 head_ref = os.environ["HEAD_REF"]
+phase_exit_codes = {
+    "discovery_fetch": int(os.environ["DISCOVERY_FETCH_EXIT"]),
+    "discovery_package": int(os.environ["DISCOVERY_PACKAGE_EXIT"]),
+    "discovery_closure": int(os.environ["DISCOVERY_CLOSURE_EXIT"]),
+    "ssurgo_spatial_fetch": int(os.environ["SSURGO_SPATIAL_FETCH_EXIT"]),
+    "ssurgo_spatial_package": int(os.environ["SSURGO_SPATIAL_PACKAGE_EXIT"]),
+    "ssurgo_continuation": int(os.environ["SSURGO_CONTINUATION_EXIT"]),
+}
+overall_state = (
+    "PASS"
+    if all(value == 0 for value in phase_exit_codes.values())
+    else "PARTIAL_OR_BLOCKED"
+)
 
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -237,8 +274,9 @@ for path in sorted(root.rglob("*")):
 
 manifest = {
     "schema_version": "spiderweb.location_query_runtime_closure_manifest.v1.0",
-    "state": "PASS",
+    "state": overall_state,
     "run_id": root.name,
+    "phase_exit_codes": phase_exit_codes,
     "git_head_sha": head_sha,
     "git_head_ref": head_ref,
     "artifact_count": len(records),
@@ -266,6 +304,19 @@ print(json.dumps({
 PY
 
 echo
-echo "LOCATION_QUERY_RUNTIME_CLOSURE_RUN=PASS"
 echo "SNAPSHOT=$OUT"
-echo "NEXT_GATE=ADJUDICATE_RUNTIME_RECEIPTS_AND_PROVIDER_PROMOTIONS"
+if [[ "$DISCOVERY_FETCH_EXIT" -eq 0 && "$DISCOVERY_PACKAGE_EXIT" -eq 0 && "$DISCOVERY_CLOSURE_EXIT" -eq 0 && "$SSURGO_SPATIAL_FETCH_EXIT" -eq 0 && "$SSURGO_SPATIAL_PACKAGE_EXIT" -eq 0 && "$SSURGO_CONTINUATION_EXIT" -eq 0 ]]; then
+  echo "LOCATION_QUERY_RUNTIME_CLOSURE_RUN=PASS"
+  echo "NEXT_GATE=ADJUDICATE_RUNTIME_RECEIPTS_AND_PROVIDER_PROMOTIONS"
+  exit 0
+else
+  echo "LOCATION_QUERY_RUNTIME_CLOSURE_RUN=PARTIAL_OR_BLOCKED"
+  echo "DISCOVERY_FETCH_EXIT=$DISCOVERY_FETCH_EXIT"
+  echo "DISCOVERY_PACKAGE_EXIT=$DISCOVERY_PACKAGE_EXIT"
+  echo "DISCOVERY_CLOSURE_EXIT=$DISCOVERY_CLOSURE_EXIT"
+  echo "SSURGO_SPATIAL_FETCH_EXIT=$SSURGO_SPATIAL_FETCH_EXIT"
+  echo "SSURGO_SPATIAL_PACKAGE_EXIT=$SSURGO_SPATIAL_PACKAGE_EXIT"
+  echo "SSURGO_CONTINUATION_EXIT=$SSURGO_CONTINUATION_EXIT"
+  echo "NEXT_GATE=ADJUDICATE_PARTIAL_RUNTIME_EVIDENCE"
+  exit 1
+fi
