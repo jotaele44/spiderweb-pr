@@ -199,12 +199,14 @@ def test_ssurgo_requires_post_fetch_certification_stage() -> None:
     }
     plan = route_query(query, registry=load_registry(REGISTRY_PATH), env={})
     provider = plan["providers"][0]
-    assert provider["route_state"] == "ROUTABLE"
+    assert provider["route_state"] == "RESOLVER_ONLY"
     assert provider["execution_kind"] == "REQUEST_SPECS_PLUS_POSTPROCESSOR"
     assert provider["generic_executor_ready"] is False
     assert plan["request_count"] == 2
     assert plan["fetch_gate"] == "BLOCKED_INCOMPLETE_PROVIDER_EXECUTION"
-    assert plan["execution_gap_provider_ids"] == ["SSURGO_SOILS"]
+    assert plan["incomplete_provider_ids"] == ["SSURGO_SOILS"]
+    assert plan["execution_gap_provider_ids"] == []
+    assert plan["fetch_blocker_provider_ids"] == ["SSURGO_SOILS"]
 
 def test_fema_pr_abfe_is_bounded_resolver_not_nfhl_substitute() -> None:
     query = {
