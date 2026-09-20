@@ -84,6 +84,7 @@ for required in \
   scripts/location_query_fetch.py \
   scripts/location_query_package.py \
   scripts/close_location_query_denominators.py \
+  scripts/ssurgo_location_spatial.py \
   scripts/ssurgo_location_stage2.py \
   scripts/ssurgo_location_stage3.py \
   scripts/certify_ssurgo_stage3.py
@@ -115,6 +116,7 @@ python -m py_compile \
   spiderweb/location_query.py \
   spiderweb/location_query_sources.py \
   spiderweb/ssurgo_chain.py \
+  spiderweb/ssurgo_spatial.py \
   spiderweb/provider_denominators.py \
   spiderweb/denominator_chain.py \
   spiderweb/denominator_closure.py \
@@ -122,6 +124,7 @@ python -m py_compile \
   scripts/location_query_fetch.py \
   scripts/location_query_package.py \
   scripts/close_location_query_denominators.py \
+  scripts/ssurgo_location_spatial.py \
   scripts/ssurgo_location_stage2.py \
   scripts/ssurgo_location_stage3.py \
   scripts/certify_ssurgo_stage3.py
@@ -213,6 +216,7 @@ python scripts/location_query_fetch.py   "$OUT/plans/hucar_ssurgo.acquisition_pl
 SSURGO_SPATIAL_FETCH_EXIT=$?
 
 SSURGO_SPATIAL_PACKAGE_EXIT=5
+SSURGO_EXACT_SPATIAL_EXIT=5
 SSURGO_STAGE2_PLAN_EXIT=5
 SSURGO_STAGE2_FETCH_EXIT=5
 SSURGO_STAGE2_PACKAGE_EXIT=5
@@ -226,8 +230,13 @@ if [[ -f "$OUT/fetch/hucar_ssurgo/fetch_receipt.json" ]]; then
   SSURGO_SPATIAL_PACKAGE_EXIT=$?
 fi
 
-if [[ -f "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.raw" && -f "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.json" ]]; then
-  python scripts/ssurgo_location_stage2.py     --query "$OUT/queries/hucar_ssurgo.json"     --mapunitpoly-raw "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.raw"     --mapunitpoly-receipt "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.json"     --output "$OUT/plans/hucar_ssurgo.stage2.json"     > "$OUT/audit/hucar_ssurgo_stage2_plan_stdout.json"
+if [[ -f "$OUT/fetch/hucar_ssurgo/001_SSURGO_SOILS_SurveyAreaPoly.raw" && -f "$OUT/fetch/hucar_ssurgo/001_SSURGO_SOILS_SurveyAreaPoly.json" && -f "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.raw" && -f "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.json" ]]; then
+  python scripts/ssurgo_location_spatial.py     --query "$OUT/queries/hucar_ssurgo.json"     --surveyarea-raw "$OUT/fetch/hucar_ssurgo/001_SSURGO_SOILS_SurveyAreaPoly.raw"     --surveyarea-receipt "$OUT/fetch/hucar_ssurgo/001_SSURGO_SOILS_SurveyAreaPoly.json"     --mapunitpoly-raw "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.raw"     --mapunitpoly-receipt "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.json"     --output "$OUT/ssurgo/HUCAR_EXACT_SPATIAL_DENOMINATOR.json"     > "$OUT/audit/hucar_ssurgo_exact_spatial_stdout.json"
+  SSURGO_EXACT_SPATIAL_EXIT=$?
+fi
+
+if [[ "$SSURGO_EXACT_SPATIAL_EXIT" -eq 0 && -f "$OUT/ssurgo/HUCAR_EXACT_SPATIAL_DENOMINATOR.json" ]]; then
+  python scripts/ssurgo_location_stage2.py     --query "$OUT/queries/hucar_ssurgo.json"     --mapunitpoly-raw "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.raw"     --mapunitpoly-receipt "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.json"     --spatial-denominator "$OUT/ssurgo/HUCAR_EXACT_SPATIAL_DENOMINATOR.json"     --output "$OUT/plans/hucar_ssurgo.stage2.json"     > "$OUT/audit/hucar_ssurgo_stage2_plan_stdout.json"
   SSURGO_STAGE2_PLAN_EXIT=$?
 fi
 
@@ -269,7 +278,7 @@ set -e
 # not an aggregate identity claim for heterogeneous semantic records.
 # ---------------------------------------------------------------------------
 
-export OUT HEAD_SHA HEAD_REF DISCOVERY_FETCH_EXIT DISCOVERY_PACKAGE_EXIT DISCOVERY_CLOSURE_EXIT SSURGO_SPATIAL_FETCH_EXIT SSURGO_SPATIAL_PACKAGE_EXIT SSURGO_STAGE2_PLAN_EXIT SSURGO_STAGE2_FETCH_EXIT SSURGO_STAGE2_PACKAGE_EXIT SSURGO_STAGE3_PLAN_EXIT SSURGO_STAGE3_FETCH_EXIT SSURGO_STAGE3_PACKAGE_EXIT SSURGO_STAGE3_CERT_EXIT
+export OUT HEAD_SHA HEAD_REF DISCOVERY_FETCH_EXIT DISCOVERY_PACKAGE_EXIT DISCOVERY_CLOSURE_EXIT SSURGO_SPATIAL_FETCH_EXIT SSURGO_SPATIAL_PACKAGE_EXIT SSURGO_EXACT_SPATIAL_EXIT SSURGO_STAGE2_PLAN_EXIT SSURGO_STAGE2_FETCH_EXIT SSURGO_STAGE2_PACKAGE_EXIT SSURGO_STAGE3_PLAN_EXIT SSURGO_STAGE3_FETCH_EXIT SSURGO_STAGE3_PACKAGE_EXIT SSURGO_STAGE3_CERT_EXIT
 python - <<'PY'
 from __future__ import annotations
 
@@ -287,6 +296,7 @@ phase_exit_codes = {
     "discovery_closure": int(os.environ["DISCOVERY_CLOSURE_EXIT"]),
     "ssurgo_spatial_fetch": int(os.environ["SSURGO_SPATIAL_FETCH_EXIT"]),
     "ssurgo_spatial_package": int(os.environ["SSURGO_SPATIAL_PACKAGE_EXIT"]),
+    "ssurgo_exact_spatial": int(os.environ["SSURGO_EXACT_SPATIAL_EXIT"]),
     "ssurgo_stage2_plan": int(os.environ["SSURGO_STAGE2_PLAN_EXIT"]),
     "ssurgo_stage2_fetch": int(os.environ["SSURGO_STAGE2_FETCH_EXIT"]),
     "ssurgo_stage2_package": int(os.environ["SSURGO_STAGE2_PACKAGE_EXIT"]),
@@ -352,7 +362,7 @@ PY
 
 echo
 echo "SNAPSHOT=$OUT"
-if [[ "$DISCOVERY_FETCH_EXIT" -eq 0 && "$DISCOVERY_PACKAGE_EXIT" -eq 0 && "$DISCOVERY_CLOSURE_EXIT" -eq 0 && "$SSURGO_SPATIAL_FETCH_EXIT" -eq 0 && "$SSURGO_SPATIAL_PACKAGE_EXIT" -eq 0 && "$SSURGO_STAGE2_PLAN_EXIT" -eq 0 && "$SSURGO_STAGE2_FETCH_EXIT" -eq 0 && "$SSURGO_STAGE2_PACKAGE_EXIT" -eq 0 && "$SSURGO_STAGE3_PLAN_EXIT" -eq 0 && "$SSURGO_STAGE3_FETCH_EXIT" -eq 0 && "$SSURGO_STAGE3_PACKAGE_EXIT" -eq 0 && "$SSURGO_STAGE3_CERT_EXIT" -eq 0 ]]; then
+if [[ "$DISCOVERY_FETCH_EXIT" -eq 0 && "$DISCOVERY_PACKAGE_EXIT" -eq 0 && "$DISCOVERY_CLOSURE_EXIT" -eq 0 && "$SSURGO_SPATIAL_FETCH_EXIT" -eq 0 && "$SSURGO_SPATIAL_PACKAGE_EXIT" -eq 0 && "$SSURGO_EXACT_SPATIAL_EXIT" -eq 0 && "$SSURGO_STAGE2_PLAN_EXIT" -eq 0 && "$SSURGO_STAGE2_FETCH_EXIT" -eq 0 && "$SSURGO_STAGE2_PACKAGE_EXIT" -eq 0 && "$SSURGO_STAGE3_PLAN_EXIT" -eq 0 && "$SSURGO_STAGE3_FETCH_EXIT" -eq 0 && "$SSURGO_STAGE3_PACKAGE_EXIT" -eq 0 && "$SSURGO_STAGE3_CERT_EXIT" -eq 0 ]]; then
   echo "LOCATION_QUERY_RUNTIME_CLOSURE_RUN=PASS"
   echo "NEXT_GATE=ADJUDICATE_RUNTIME_RECEIPTS_AND_PROVIDER_PROMOTIONS"
   exit 0
@@ -363,6 +373,7 @@ else
   echo "DISCOVERY_CLOSURE_EXIT=$DISCOVERY_CLOSURE_EXIT"
   echo "SSURGO_SPATIAL_FETCH_EXIT=$SSURGO_SPATIAL_FETCH_EXIT"
   echo "SSURGO_SPATIAL_PACKAGE_EXIT=$SSURGO_SPATIAL_PACKAGE_EXIT"
+  echo "SSURGO_EXACT_SPATIAL_EXIT=$SSURGO_EXACT_SPATIAL_EXIT"
   echo "SSURGO_STAGE2_PLAN_EXIT=$SSURGO_STAGE2_PLAN_EXIT"
   echo "SSURGO_STAGE2_FETCH_EXIT=$SSURGO_STAGE2_FETCH_EXIT"
   echo "SSURGO_STAGE2_PACKAGE_EXIT=$SSURGO_STAGE2_PACKAGE_EXIT"
