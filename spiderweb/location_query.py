@@ -340,14 +340,17 @@ def route_query(
         decision.provider_id for decision in decisions
         if decision.generic_executor_ready
     ]
-    specialized_adapter_providers = [
-        decision.provider_id for decision in decisions
-        if decision.execution_kind in {
-            "SPECIALIZED_ADAPTER",
-            "SPECIALIZED_CALL",
-            "REQUEST_SPECS_PLUS_POSTPROCESSOR",
-        }
-    ]
+    specialized_adapter_providers = sorted(set(
+        [
+            decision.provider_id for decision in decisions
+            if decision.execution_kind in {
+                "SPECIALIZED_ADAPTER",
+                "SPECIALIZED_CALL",
+                "REQUEST_SPECS_PLUS_POSTPROCESSOR",
+            }
+        ]
+        + list(specialized_blockers)
+    ))
     incomplete_providers = [
         decision.provider_id for decision in decisions
         if decision.route_state != "ROUTABLE"
