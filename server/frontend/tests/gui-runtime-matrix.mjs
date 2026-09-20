@@ -122,11 +122,18 @@ for (const [engineName, engine] of Object.entries(engines)) {
     engineName === 'webkit'
       ? { env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', GALLIUM_DRIVER: 'llvmpipe' } }
       : {}
-  const firefoxWebGLPrefs =
+  // Firefox headless on Linux needs both Mesa software rendering (for ANGLE to get a GL
+  // context) and the webgl.force-enabled pref (to engage ANGLE's software renderer path).
+  // Without LIBGL_ALWAYS_SOFTWARE the GL context creation fails, painter stays undefined,
+  // and map.remove() throws during React StrictMode cleanup.
+  const firefoxSoftwareEnv =
     engineName === 'firefox'
-      ? { firefoxUserPrefs: { 'webgl.force-enabled': true, 'webgl.disabled': false } }
+      ? {
+          env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', GALLIUM_DRIVER: 'llvmpipe' },
+          firefoxUserPrefs: { 'webgl.force-enabled': true, 'webgl.disabled': false },
+        }
       : {}
-  const browser = await engine.launch({ headless: true, ...webkitSoftwareEnv, ...firefoxWebGLPrefs })
+  const browser = await engine.launch({ headless: true, ...webkitSoftwareEnv, ...firefoxSoftwareEnv })
   try {
     for (const viewport of viewports) {
       const context = await browser.newContext({ viewport, reducedMotion: 'no-preference' })
