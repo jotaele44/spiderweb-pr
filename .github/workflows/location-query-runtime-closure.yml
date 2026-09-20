@@ -51,7 +51,7 @@ jobs:
         env:
           RUN_ID: ${{ steps.snapshot.outputs.run_id }}
         run: |
-          scripts/run_location_query_runtime_closure.sh "$RUN_ID"
+          bash scripts/run_location_query_runtime_closure.sh "$RUN_ID"
 
       - name: Freeze snapshot hashes
         if: always()
