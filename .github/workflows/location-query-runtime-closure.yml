@@ -1,11 +1,14 @@
 name: LOCATION_QUERY Runtime Closure
 
 on:
+  push:
+    branches:
+      - location-query-unified-router-v1
   workflow_dispatch:
     inputs:
       run_id:
         description: "Immutable runtime snapshot ID"
-        required: true
+        required: false
         type: string
 
 permissions:
@@ -33,16 +36,27 @@ jobs:
       - name: Verify runtime closure shell syntax
         run: bash -n scripts/run_location_query_runtime_closure.sh
 
+      - name: Resolve immutable runtime snapshot ID
+        id: snapshot
+        shell: bash
+        run: |
+          if [[ -n "${{ inputs.run_id }}" ]]; then
+            RUN_ID="${{ inputs.run_id }}"
+          else
+            RUN_ID="gha-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}"
+          fi
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+
       - name: Run immutable runtime closure
         env:
-          RUN_ID: ${{ inputs.run_id }}
+          RUN_ID: ${{ steps.snapshot.outputs.run_id }}
         run: |
           scripts/run_location_query_runtime_closure.sh "$RUN_ID"
 
       - name: Freeze snapshot hashes
         if: always()
         env:
-          RUN_ID: ${{ inputs.run_id }}
+          RUN_ID: ${{ steps.snapshot.outputs.run_id }}
         run: |
           SNAPSHOT="outputs/location_query/runtime_closure/$RUN_ID"
           if [[ -d "$SNAPSHOT" ]]; then
@@ -53,7 +67,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: location-query-runtime-closure-${{ inputs.run_id }}
-          path: outputs/location_query/runtime_closure/${{ inputs.run_id }}
+          name: location-query-runtime-closure-${{ steps.snapshot.outputs.run_id }}
+          path: outputs/location_query/runtime_closure/${{ steps.snapshot.outputs.run_id }}
           if-no-files-found: error
           retention-days: 30
