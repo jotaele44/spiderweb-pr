@@ -91,14 +91,32 @@ def execute_location_query(
 
     generic_dir = output_dir / "generic"
     generic_plan = _generic_subplan(plan)
-    generic_receipt = execute_generic(
-        generic_plan,
-        generic_dir,
-        timeout=timeout,
-    )
     generic_receipt_path = generic_dir / "fetch_receipt.json"
-    if not generic_receipt_path.is_file():
-        raise LocationRunError("generic executor did not write fetch_receipt.json")
+    if requests:
+        generic_receipt = execute_generic(
+            generic_plan,
+            generic_dir,
+            timeout=timeout,
+        )
+        if not generic_receipt_path.is_file():
+            raise LocationRunError("generic executor did not write fetch_receipt.json")
+    else:
+        generic_dir.mkdir(parents=True, exist_ok=True)
+        generic_receipt = {
+            "schema_version": "spiderweb.location_query_fetch_receipt.empty_lane.v1.0",
+            "state": "PASS",
+            "query_mode": "fetch",
+            "plan_sha256": canonical_json_sha256(generic_plan),
+            "execution_scope": "NO_GENERIC_REQUESTS",
+            "fetch_gate": fetch_gate,
+            "request_count": 0,
+            "pass_count": 0,
+            "no_coverage_count": 0,
+            "failure_count": 0,
+            "requests": [],
+            "raw_bytes_preserved_before_derivation": True,
+        }
+        write_json(generic_receipt_path, generic_receipt)
 
     specialized_dir = output_dir / "specialized"
     specialized_receipt = execute_specialized_calls(
