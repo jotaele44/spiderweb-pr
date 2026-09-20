@@ -56,22 +56,78 @@ def _quoted_in(mukeys: list[str]) -> str:
     return ", ".join(f"'{value}'" for value in mukeys)
 
 
-def build_stage2_plan(*, query: dict[str, Any], mapunitpoly_raw: bytes, mapunitpoly_receipt: dict[str, Any]) -> dict[str, Any]:
+def build_stage2_plan(
+    *,
+    query: dict[str, Any],
+    mapunitpoly_raw: bytes,
+    mapunitpoly_receipt: dict[str, Any],
+    certified_mukeys: list[str] | None = None,
+    spatial_denominator_sha256: str | None = None,
+) -> dict[str, Any]:
     if mapunitpoly_receipt.get("provider_id") != "SSURGO_SOILS":
         raise SSURGOChainError("receipt provider_id is not SSURGO_SOILS")
     if mapunitpoly_receipt.get("request_role") != "MapunitPoly":
         raise SSURGOChainError("receipt request_role is not MapunitPoly")
     if mapunitpoly_receipt.get("state") != "PASS":
         raise SSURGOChainError("MapunitPoly acquisition receipt is not PASS")
+
     actual_raw_sha = sha256_bytes(mapunitpoly_raw)
     if mapunitpoly_receipt.get("sha256") != actual_raw_sha:
         raise SSURGOChainError("MapunitPoly raw SHA256 does not match receipt")
-    mukeys = extract_mukeys_from_gml(mapunitpoly_raw)
+
+    source_mukeys = extract_mukeys_from_gml(mapunitpoly_raw)
+    source_set = set(source_mukeys)
+
+    if certified_mukeys is None:
+        mukeys = source_mukeys
+        selection_scope = "WFS_ENVELOPE_PRESELECTION"
+    else:
+        normalized = [str(value).strip() for value in certified_mukeys]
+        if not normalized:
+            raise SSURGOChainError("certified spatial MUKEY denominator is empty")
+        if any(not value.isdigit() for value in normalized):
+            raise SSURGOChainError(
+                "certified spatial MUKEY denominator contains non-numeric value"
+            )
+        if len(normalized) != len(set(normalized)):
+            raise SSURGOChainError(
+                "certified spatial MUKEY denominator contains duplicates"
+            )
+        mukeys = sorted(normalized, key=int)
+        foreign = sorted(set(mukeys) - source_set, key=int)
+        if foreign:
+            raise SSURGOChainError(
+                f"certified spatial MUKEYs absent from raw MapunitPoly: {foreign[:20]}"
+            )
+        if (
+            not isinstance(spatial_denominator_sha256, str)
+            or len(spatial_denominator_sha256) != 64
+            or any(
+                ch not in "0123456789abcdefABCDEF"
+                for ch in spatial_denominator_sha256
+            )
+        ):
+            raise SSURGOChainError(
+                "exact spatial Stage 2 requires a valid spatial denominator SHA256"
+            )
+        spatial_denominator_sha256 = spatial_denominator_sha256.lower()
+        selection_scope = "EXACT_AOI_SPATIAL_CERTIFICATION"
+
+    parent_sha = canonical_mukey_sha256(mukeys)
     in_clause = _quoted_in(mukeys)
     sqls = (
-        ("mapunit", "SELECT * FROM mapunit " + f"WHERE mukey IN ({in_clause}) ORDER BY mukey"),
-        ("component", "SELECT * FROM component " + f"WHERE mukey IN ({in_clause}) ORDER BY mukey, cokey"),
+        (
+            "mapunit",
+            "SELECT * FROM mapunit "
+            + f"WHERE mukey IN ({in_clause}) ORDER BY mukey",
+        ),
+        (
+            "component",
+            "SELECT * FROM component "
+            + f"WHERE mukey IN ({in_clause}) ORDER BY mukey, cokey",
+        ),
     )
+
     requests = []
     for role, sql in sqls:
         requests.append({
@@ -83,29 +139,120 @@ def build_stage2_plan(*, query: dict[str, Any], mapunitpoly_raw: bytes, mapunitp
             "url": SDA_TABULAR_ENDPOINT,
             "media_type": "application/json",
             "json_body": {"query": sql, "format": "JSON+COLUMNNAME"},
-            "parent_denominator_sha256": canonical_mukey_sha256(mukeys),
-            "parent_denominator": {"key": "mukey", "count": len(mukeys), "canonical_set_sha256": canonical_mukey_sha256(mukeys)},
+            "parent_denominator_sha256": parent_sha,
+            "parent_denominator": {
+                "key": "mukey",
+                "count": len(mukeys),
+                "canonical_set_sha256": parent_sha,
+                "selection_scope": selection_scope,
+                "spatial_denominator_sha256": spatial_denominator_sha256,
+            },
         })
+
     return {
-        "schema_version": "spiderweb.ssurgo_stage2_plan.v1.0",
+        "schema_version": "spiderweb.ssurgo_stage2_plan.v1.1",
         "query": dict(query, mode="fetch"),
         "provider_denominator_count": 1,
         "route_state_counts": {"ROUTABLE": 1},
-        "providers": [{"provider_id": "SSURGO_SOILS", "family": "soils", "status": "RESOLVER_ONLY", "route_state": "DEPENDENT_STAGE_ROUTABLE", "reason": "MapunitPoly MUKEY denominator frozen; tabular production acquisition may proceed"}],
+        "providers": [{
+            "provider_id": "SSURGO_SOILS",
+            "family": "soils",
+            "status": "RESOLVER_ONLY",
+            "route_state": "DEPENDENT_STAGE_ROUTABLE",
+            "reason": (
+                "Certified spatial MUKEY denominator frozen; "
+                "tabular production acquisition may proceed"
+            ),
+        }],
         "request_count": len(requests),
         "requests": requests,
         "fetch_gate": "READY",
-        "ssurgo_denominator": {"mukey_count": len(mukeys), "mukeys": mukeys, "canonical_mukey_set_sha256": canonical_mukey_sha256(mukeys), "mapunitpoly_raw_sha256": actual_raw_sha, "historical_equivalence": "UNRESOLVED"},
-        "policy": {"plan_before_download": True, "raw_bytes_before_derivation": True, "whole_rows_preserved": True, "one_to_n_flattening": False, "count_equality_used_as_identity": False},
+        "ssurgo_denominator": {
+            "selection_scope": selection_scope,
+            "source_wfs_mukey_count": len(source_mukeys),
+            "mukey_count": len(mukeys),
+            "mukeys": mukeys,
+            "canonical_mukey_set_sha256": parent_sha,
+            "spatial_denominator_sha256": spatial_denominator_sha256,
+            "mapunitpoly_raw_sha256": actual_raw_sha,
+            "historical_equivalence": "UNRESOLVED",
+        },
+        "policy": {
+            "plan_before_download": True,
+            "raw_bytes_before_derivation": True,
+            "whole_rows_preserved": True,
+            "one_to_n_flattening": False,
+            "count_equality_used_as_identity": False,
+            "exact_aoi_spatial_denominator_required_for_canonical_runtime": (
+                certified_mukeys is not None
+            ),
+        },
     }
 
 
-def write_stage2_plan(*, query: dict[str, Any], mapunitpoly_raw_path: Path, mapunitpoly_receipt_path: Path, output: Path) -> dict[str, Any]:
+def write_stage2_plan(
+    *,
+    query: dict[str, Any],
+    mapunitpoly_raw_path: Path,
+    mapunitpoly_receipt_path: Path,
+    output: Path,
+    spatial_denominator_path: Path | None = None,
+) -> dict[str, Any]:
     raw = mapunitpoly_raw_path.read_bytes()
-    receipt = json.loads(mapunitpoly_receipt_path.read_text(encoding="utf-8"))
-    plan = build_stage2_plan(query=query, mapunitpoly_raw=raw, mapunitpoly_receipt=receipt)
+    receipt = json.loads(
+        mapunitpoly_receipt_path.read_text(encoding="utf-8")
+    )
+
+    certified_mukeys = None
+    spatial_sha = None
+    if spatial_denominator_path is not None:
+        spatial_bytes = spatial_denominator_path.read_bytes()
+        spatial = json.loads(spatial_bytes.decode("utf-8"))
+        state = spatial.get("state")
+        if state not in {"PASS", "PARTIAL"}:
+            raise SSURGOChainError(
+                f"spatial denominator state is not PASS/PARTIAL: {state!r}"
+            )
+        if state == "PARTIAL" and not bool(query.get("allow_partial", False)):
+            raise SSURGOChainError(
+                "PARTIAL spatial denominator requires query.allow_partial=true"
+            )
+        selection = spatial.get("selection") or {}
+        certified_mukeys = selection.get("mukeys")
+        if not isinstance(certified_mukeys, list):
+            raise SSURGOChainError(
+                "spatial denominator lacks selection.mukeys"
+            )
+        expected = canonical_mukey_sha256(
+            sorted([str(value) for value in certified_mukeys], key=int)
+        )
+        if selection.get("canonical_mukey_set_sha256") != expected:
+            raise SSURGOChainError(
+                "spatial denominator canonical MUKEY hash drift"
+            )
+        source = (
+            (spatial.get("source_manifestations") or {})
+            .get("MapunitPoly")
+            or {}
+        )
+        if source.get("sha256") != sha256_bytes(raw):
+            raise SSURGOChainError(
+                "spatial denominator MapunitPoly source hash mismatch"
+            )
+        spatial_sha = sha256_bytes(spatial_bytes)
+
+    plan = build_stage2_plan(
+        query=query,
+        mapunitpoly_raw=raw,
+        mapunitpoly_receipt=receipt,
+        certified_mukeys=certified_mukeys,
+        spatial_denominator_sha256=spatial_sha,
+    )
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps(plan, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     return plan
 
 
