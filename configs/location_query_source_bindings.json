@@ -1,6 +1,6 @@
 {
   "schema_version": "spiderweb.location_query_source_bindings.v1.0",
-  "verification_date_utc": "2026-09-18",
+  "verification_date_utc": "2026-09-20",
   "bindings": {
     "SSURGO_SOILS": {
       "authority": "USDA NRCS Soil Data Access",
@@ -51,8 +51,13 @@
     "FEMA_NFHL": {
       "authority": "Federal Emergency Management Agency",
       "landing_page": "https://www.fema.gov/flood-maps/tools-resources/flood-map-products/national-flood-hazard-layer",
-      "wms_capabilities": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
-      "status": "BOUND_WMS_VECTOR_DENOMINATOR_OPEN"
+      "wms_capabilities": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
+      "status": "REBOUND_WMS_RUNTIME_UNCERTIFIED",
+      "note": "2026-09-20 runtime closure observed HTTP 404 at the prior non-/rest path. Rebound to FEMA's /gis/nfhl/rest/services/public/NFHL/MapServer/WMSServer surface; requires fresh runtime freeze before promotion.",
+      "prior_manifestation": {
+        "url": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
+        "state": "SUPERSEDED_RUNTIME_404_2026-09-20"
+      }
     },
     "USACE_PORTS_NAV": {
       "authority": "U.S. Army Corps of Engineers",
@@ -80,9 +85,13 @@
     },
     "FEMA_PR_ABFE_1PCT": {
       "authority": "Federal Emergency Management Agency",
-      "map_service": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
-      "status": "BOUND_MAP_SERVICE_LAYER_DENOMINATOR_OPEN",
-      "note": "Puerto Rico-specific advisory flood surface is separate from effective NFHL identity"
+      "map_service": "https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer",
+      "status": "REBOUND_MAP_SERVICE_RUNTIME_UNCERTIFIED",
+      "note": "2026-09-20 runtime closure observed the prior gis.fema.gov service returning 'not started'. Rebound to the active Puerto Rico SIGE-hosted FEMA advisory service; requires fresh layer-denominator freeze.",
+      "prior_manifestation": {
+        "url": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
+        "state": "SUPERSEDED_RUNTIME_SERVICE_NOT_STARTED_2026-09-20"
+      }
     },
     "USACE_GENERAL_GIS": {
       "authority": "U.S. Army Corps of Engineers",
