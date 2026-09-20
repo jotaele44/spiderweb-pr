@@ -1,0 +1,65 @@
+{
+  "schema_version": "spiderweb.location_query_provider_certification.v1.0",
+  "provider_id": "SSURGO_SOILS",
+  "state": "PASS_REFERENCE_AOI_END_TO_END",
+  "source_workflow_run_id": 35526404517,
+  "source_workflow_artifact_id": 10610136986,
+  "source_workflow_artifact_digest": "sha256:c4166e7d9b7669fc82af86fea7599a30cdaf2ca53b94b3bcbafcfe65546f837c",
+  "source_git_head_sha": "8395d046ef4b61a0952c27daef29947f21914c74",
+  "runtime_manifest_sha256": "310669e2d49dfb6754998aaeb3975322dc39c5a8a714a9673ed0579e16acde2d",
+  "certification_date_utc": "2026-09-20",
+  "reference_query_id": "hucar_2km_ssurgo",
+  "spatial": {
+    "survey_area_raw_sha256": "7f476735e6aefd768bcbc7d66e7df079e445c6ce44f40fe8bb5e1636ed15b91f",
+    "mapunitpoly_raw_sha256": "3266461dd7cd054969eea08c2c0924bb113d8e9be9e417a594ea2047eb554c54",
+    "spatial_package_state": "DISCOVERY_PASS"
+  },
+  "mukey_denominator": {
+    "count": 15,
+    "canonical_set_sha256": "6adb296854dae395e7a4d919236b051467bc179674cfa70d3c1dc298ae70d0bd"
+  },
+  "mapunit": {
+    "row_count": 15,
+    "column_count": 28,
+    "raw_sha256": "9fc713a59ee69240e8ca71e6eaf0739123ebf21bcb84e221eb91d6abf7bb2fd4"
+  },
+  "component": {
+    "row_count": 20,
+    "column_count": 122,
+    "raw_sha256": "f9c5480b92d444163fb513f6d6d2940f4b61115e6a6ba2e71b10d7a039137ba0"
+  },
+  "cokey_denominator": {
+    "count": 20,
+    "canonical_set_sha256": "c6e635d058f0a68a6440ac2204921d2ab5c8a366f2957d68ab4c78e80dc4c692"
+  },
+  "child_denominator": {
+    "documentation_epoch": "November 2025",
+    "current_table_count": 22,
+    "prior_frozen_table_count": 21,
+    "canonical_contract_sha256": "dc8e0fbbced30cf7649711d549ca03d80bbff1651afeaece7166bf72d6513f79",
+    "total_child_rows": 12429,
+    "total_zero_child_parent_relations": 235,
+    "zero_row_tables": [
+      "cocanopycover",
+      "coeplants",
+      "coerosionacc",
+      "coinundationtype",
+      "copwindbreak"
+    ],
+    "stage3_certification_file_sha256": "86ad2e05e9955260d85f992e247dc165af0aad1e81d64680de8472e8d3241e19",
+    "stage3_package_file_sha256": "cef985e167624435a746e11687e35eeb23136f89d5fbf91880b33cd466fa16bc"
+  },
+  "invariants": {
+    "foreign_mukey_count_zero": true,
+    "missing_mukey_count_zero": true,
+    "child_table_count_closed": true,
+    "all_child_states_pass": true,
+    "foreign_parent_count_zero": true,
+    "stable_keys_unique": true,
+    "arithmetic_closure": true,
+    "zero_child_parents_preserved": true,
+    "one_to_n_preserved": true,
+    "raw_bytes_preserved": true
+  },
+  "readiness_boundary": "END_TO_END_REFERENCE_AOI_PASS; GENERAL_LOCATION_QUERY_ORCHESTRATOR_INTEGRATION_STILL_OPEN"
+}
