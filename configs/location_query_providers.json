@@ -157,10 +157,10 @@
       "adapter": "spiderweb.location_query_sources",
       "wfs_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
       "tabular_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
-      "reason": "Canonical modular AOI→MUKEY→COKEY→22-child chain passed end-to-end for the Húcar 2 km reference AOI on 2026-09-20 with all 22 child certifications PASS. Provider remains RESOLVER_ONLY until the general LOCATION_QUERY orchestrator automatically executes the dependent stages for arbitrary queries.",
+      "reason": "Canonical modular WFS bounding-envelope preselection→MUKEY→COKEY→22-child chain passed on 2026-09-20. Exact circle/polygon AOI intersection and survey-area coverage are not yet canonical in the modular chain, so provider remains RESOLVER_ONLY pending exact spatial adjudication plus general dependent-stage orchestration.",
       "execution_requires_post_fetch": false,
       "required_extra": "geo",
-      "implementation_state": "END_TO_END_RUNTIME_PASS_REFERENCE_AOI_ORCHESTRATOR_INTEGRATION_OPEN",
+      "implementation_state": "BBOX_PRESELECTION_RUNTIME_PASS_EXACT_AOI_AND_ORCHESTRATOR_OPEN",
       "canonical_chain": [
         "spiderweb.location_query_sources",
         "scripts/location_query_fetch.py --discovery-only",
@@ -170,7 +170,7 @@
         "scripts/location_query_fetch.py",
         "scripts/certify_ssurgo_child.py"
       ],
-      "runtime_certification_state": "END_TO_END_REFERENCE_AOI_PASS_ORCHESTRATION_OPEN",
+      "runtime_certification_state": "BBOX_PRESELECTION_CHAIN_PASS_EXACT_AOI_SPATIAL_OPEN",
       "runtime_certification_receipt": "registry/certification/location_query/SSURGO_HUCAR_2KM_2026-09-20.json"
     },
     "USGS_3DHP_NHD": {
