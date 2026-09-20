@@ -116,10 +116,15 @@ def main() -> int:
 
     if providers["SSURGO_SOILS"]["status"] != "RESOLVER_ONLY":
         raise SystemExit("FAIL: SSURGO must remain RESOLVER_ONLY until tabular chain closes")
-    if providers["USGS_3DHP_NHD"]["status"] != "RESOLVER_ONLY":
-        raise SystemExit("FAIL: 3DHP must remain RESOLVER_ONLY until frozen raw metadata denominator closes")
-    if providers["USGS_3DHP_NHD"].get("denominator_state") != "OPEN_RAW_METADATA_FREEZE":
-        raise SystemExit("FAIL: 3DHP denominator state drift")
+    if providers["USGS_3DHP_NHD"]["status"] != "READY_SPECIALIZED":
+        raise SystemExit("FAIL: 3DHP readiness promotion drift")
+    if providers["USGS_3DHP_NHD"].get("denominator_state") != "FROZEN_RUNTIME_PASS":
+        raise SystemExit("FAIL: 3DHP frozen denominator state drift")
+    if providers["USGS_3DHP_NHD"].get("certification_receipt") != "registry/certification/location_query/USGS_3DHP_NHD_2026-09-20.json":
+        raise SystemExit("FAIL: 3DHP certification receipt binding drift")
+    layer_ids = sorted(int(row["id"]) for row in providers["USGS_3DHP_NHD"].get("layers", []))
+    if layer_ids != [20, 30, 40, 50, 60, 80]:
+        raise SystemExit(f"FAIL: 3DHP certified layer-ID denominator drift: {layer_ids}")
     if providers["FEMA_NFHL"]["status"] != "RESOLVER_ONLY":
         raise SystemExit("FAIL: FEMA NFHL must remain RESOLVER_ONLY until vector denominator closes")
     if providers["FEMA_PR_ABFE_1PCT"]["status"] != "RESOLVER_ONLY":
@@ -130,8 +135,8 @@ def main() -> int:
         raise SystemExit("FAIL: USACE general must remain RESOLVER_ONLY until recursive service denominator closes")
     if providers["USACE_PORTS_NAV"]["status"] != "READY_SPECIALIZED":
         raise SystemExit("FAIL: USACE ports/navigation readiness drift")
-    if bound["USGS_3DHP_NHD"]["status"] != "BOUND_FEATURE_SERVICE_DENOMINATOR_OPEN":
-        raise SystemExit("FAIL: 3DHP binding must remain denominator-open")
+    if bound["USGS_3DHP_NHD"]["status"] != "BOUND_FEATURE_SERVICE_DENOMINATOR_PASS":
+        raise SystemExit("FAIL: 3DHP bound denominator certification drift")
     if bound["USACE_GENERAL_GIS"]["status"] != "BOUND_SERVICE_ROOT_DENOMINATOR_OPEN":
         raise SystemExit("FAIL: USACE general service-root binding state drift")
 
