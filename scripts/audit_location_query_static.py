@@ -53,6 +53,10 @@ FILES = [
     ROOT / "spiderweb/specialized_execution.py",
     ROOT / "scripts/location_query_specialized.py",
     ROOT / "tests/test_specialized_execution.py",
+    ROOT / "spiderweb/execution_orchestrator.py",
+    ROOT / "scripts/location_query_run.py",
+    ROOT / "scripts/location_query_run_package.py",
+    ROOT / "tests/test_execution_orchestrator.py",
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
