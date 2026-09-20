@@ -50,6 +50,7 @@ FILES = [
     ROOT / "tests/test_provider_denominators.py",
     ROOT / "tests/test_provider_promotion.py",
     ROOT / "tests/test_ssurgo_chain.py",
+    ROOT / "tests/test_ssurgo_spatial.py",
     ROOT / "spiderweb/denominator_closure.py",
     ROOT / "scripts/close_location_query_denominators.py",
     ROOT / "tests/test_denominator_closure.py",
