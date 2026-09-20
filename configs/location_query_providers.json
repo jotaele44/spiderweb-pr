@@ -157,10 +157,10 @@
       "adapter": "spiderweb.location_query_sources",
       "wfs_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
       "tabular_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
-      "reason": "Canonical modular AOI→MUKEY→COKEY→22-child acquisition/certification chain is implemented but has not executed end-to-end in-repo; monolithic location_query_ssurgo.py is NONCANONICAL compatibility and cannot justify readiness promotion.",
+      "reason": "Canonical modular AOI→MUKEY→COKEY→22-child chain passed end-to-end for the Húcar 2 km reference AOI on 2026-09-20 with all 22 child certifications PASS. Provider remains RESOLVER_ONLY until the general LOCATION_QUERY orchestrator automatically executes the dependent stages for arbitrary queries.",
       "execution_requires_post_fetch": false,
       "required_extra": "geo",
-      "implementation_state": "IMPLEMENTED_NOT_RUNTIME_CERTIFIED",
+      "implementation_state": "END_TO_END_RUNTIME_PASS_REFERENCE_AOI_ORCHESTRATOR_INTEGRATION_OPEN",
       "canonical_chain": [
         "spiderweb.location_query_sources",
         "scripts/location_query_fetch.py --discovery-only",
@@ -169,7 +169,9 @@
         "scripts/ssurgo_location_stage3.py",
         "scripts/location_query_fetch.py",
         "scripts/certify_ssurgo_child.py"
-      ]
+      ],
+      "runtime_certification_state": "END_TO_END_REFERENCE_AOI_PASS_ORCHESTRATION_OPEN",
+      "runtime_certification_receipt": "registry/certification/location_query/SSURGO_HUCAR_2KM_2026-09-20.json"
     },
     "USGS_3DHP_NHD": {
       "family": "hydrography",
@@ -240,13 +242,15 @@
         "geojson"
       ],
       "adapter": "spiderweb.location_query_sources",
-      "reason": "Operational FEMA NFHL ArcGIS REST MapServer rebound from stale WMS paths after 2026-09-20 runtime 404s. Layer denominator must be frozen before AOI feature acquisition is promoted.",
+      "reason": "Operational FEMA NFHL ArcGIS REST MapServer layer denominator froze PASS on 2026-09-20 (32 unique layer IDs). Dependent AOI feature acquisition remains open, so readiness remains RESOLVER_ONLY.",
       "runtime_lineage": {
         "prior_url": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
         "prior_state": "SUPERSEDED_RUNTIME_404_2026-09-20",
         "current_state": "REBOUND_ARCGIS_MAP_SERVICE_UNCERTIFIED_RUNTIME"
       },
-      "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer"
+      "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+      "denominator_state": "FROZEN_RUNTIME_PASS_DEPENDENT_AOI_OPEN",
+      "certification_receipt": "registry/certification/location_query/FEMA_NFHL_LAYER_DENOMINATOR_2026-09-20.json"
     },
     "USACE_GENERAL_GIS": {
       "family": "federal_infrastructure",
@@ -260,7 +264,9 @@
       ],
       "adapter": "spiderweb.location_query_sources",
       "service_root": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services",
-      "reason": "ports/navigation subset is separately bound; complete enterprise service denominator remains open"
+      "reason": "USACE enterprise root service denominator froze PASS on 2026-09-20 with 206 services and zero folders. Per-service metadata/layer denominators remain open, so readiness remains RESOLVER_ONLY.",
+      "denominator_state": "ROOT_SERVICE_DENOMINATOR_PASS_206_SERVICES_0_FOLDERS_LAYER_CLOSURE_OPEN",
+      "certification_receipt": "registry/certification/location_query/USACE_GENERAL_ROOT_SERVICES_2026-09-20.json"
     },
     "USACE_PORTS_NAV": {
       "family": "ports_navigation",
@@ -304,12 +310,14 @@
       ],
       "adapter": "spiderweb.location_query_sources",
       "map_service": "https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer",
-      "reason": "Current Puerto Rico-hosted FEMA advisory flood MapServer is bound. Prior gis.fema.gov DR/PuertoRico_ABFE_1PCT service returned provider error 'not started' in runtime closure on 2026-09-20. Layer denominator must be frozen before feature acquisition is promoted.",
+      "reason": "Puerto Rico SIGE-hosted FEMA advisory MapServer layer denominator froze PASS on 2026-09-20 (20 unique layer IDs). Dependent AOI feature acquisition remains open, so readiness remains RESOLVER_ONLY.",
       "runtime_lineage": {
         "prior_url": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
         "prior_state": "SUPERSEDED_RUNTIME_SERVICE_NOT_STARTED_2026-09-20",
         "current_state": "REBOUND_UNCERTIFIED_RUNTIME"
-      }
+      },
+      "denominator_state": "FROZEN_RUNTIME_PASS_DEPENDENT_AOI_OPEN",
+      "certification_receipt": "registry/certification/location_query/FEMA_PR_ABFE_LAYER_DENOMINATOR_2026-09-20.json"
     }
   }
 }
