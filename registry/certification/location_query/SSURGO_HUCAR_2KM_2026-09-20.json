@@ -1,7 +1,7 @@
 {
   "schema_version": "spiderweb.location_query_provider_certification.v1.0",
   "provider_id": "SSURGO_SOILS",
-  "state": "PASS_REFERENCE_AOI_END_TO_END",
+  "state": "PASS_BBOX_PRESELECTION_CHAIN",
   "source_workflow_run_id": 35526404517,
   "source_workflow_artifact_id": 10610136986,
   "source_workflow_artifact_digest": "sha256:c4166e7d9b7669fc82af86fea7599a30cdaf2ca53b94b3bcbafcfe65546f837c",
@@ -12,7 +12,10 @@
   "spatial": {
     "survey_area_raw_sha256": "7f476735e6aefd768bcbc7d66e7df079e445c6ce44f40fe8bb5e1636ed15b91f",
     "mapunitpoly_raw_sha256": "3266461dd7cd054969eea08c2c0924bb113d8e9be9e417a594ea2047eb554c54",
-    "spatial_package_state": "DISCOVERY_PASS"
+    "spatial_package_state": "DISCOVERY_PASS",
+    "scope": "WFS_BBOX_ENVELOPE_PRESELECTION",
+    "exact_aoi_geometry_intersection_certified": false,
+    "note": "The runtime chain passed from the WFS bounding-envelope preselection through MUKEY→COKEY→22 child tables. Exact circle/polygon AOI intersection and survey-area coverage were not yet part of the canonical modular Stage 2 in this manifestation."
   },
   "mukey_denominator": {
     "count": 15,
@@ -61,5 +64,5 @@
     "one_to_n_preserved": true,
     "raw_bytes_preserved": true
   },
-  "readiness_boundary": "END_TO_END_REFERENCE_AOI_PASS; GENERAL_LOCATION_QUERY_ORCHESTRATOR_INTEGRATION_STILL_OPEN"
+  "readiness_boundary": "BBOX_PRESELECTION_CHAIN_PASS; EXACT_AOI_SPATIAL_ADJUDICATION_AND_GENERAL_ORCHESTRATOR_INTEGRATION_OPEN"
 }
