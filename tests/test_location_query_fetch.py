@@ -545,3 +545,66 @@ def test_generic_executor_refuses_full_plan_with_specialized_calls(tmp_path: Pat
     }
     with pytest.raises(SystemExit, match="use scripts/location_query_run.py"):
         mod.execute(plan, tmp_path)
+
+
+def test_wfs_response_reaching_requested_ceiling_is_incomplete(monkeypatch, tmp_path: Path) -> None:
+    class _XmlResponse:
+        status = 200
+        headers = _FakeHeaders({"Content-Type": "application/gml+xml"})
+        def read(self) -> bytes:
+            return b"<wfs:FeatureCollection xmlns:wfs='http://www.opengis.net/wfs' xmlns:gml='http://www.opengis.net/gml'><gml:featureMember><x/></gml:featureMember></wfs:FeatureCollection>"
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc, tb) -> bool:
+            return False
+
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: _XmlResponse())
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "WFS_FEATURES",
+            "method": "GET",
+            "provider_id": "SSURGO_SOILS",
+            "request_role": "MapunitPoly",
+            "identity_state": "RESOLVER_STAGE_SOURCE_MANIFESTATION",
+            "url": "https://example.invalid/wfs?MAXFEATURES=1",
+            "media_type": "application/gml+xml",
+            "wfs_max_features": 1,
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PARTIAL_OR_BLOCKED"
+    assert result["failure_count"] == 1
+    assert result["requests"][0]["state"] == "INCOMPLETE_POTENTIAL_WFS_TRUNCATION"
+
+
+def test_wfs_declared_count_greater_than_members_is_incomplete(monkeypatch, tmp_path: Path) -> None:
+    class _XmlResponse:
+        status = 200
+        headers = _FakeHeaders({"Content-Type": "application/gml+xml"})
+        def read(self) -> bytes:
+            return b"<wfs:FeatureCollection xmlns:wfs='http://www.opengis.net/wfs' xmlns:gml='http://www.opengis.net/gml' numberOfFeatures='2'><gml:featureMember><x/></gml:featureMember></wfs:FeatureCollection>"
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc, tb) -> bool:
+            return False
+
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: _XmlResponse())
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "WFS_FEATURES",
+            "method": "GET",
+            "provider_id": "SSURGO_SOILS",
+            "request_role": "MapunitPoly",
+            "identity_state": "RESOLVER_STAGE_SOURCE_MANIFESTATION",
+            "url": "https://example.invalid/wfs",
+            "media_type": "application/gml+xml",
+            "wfs_max_features": 250000,
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PARTIAL_OR_BLOCKED"
+    assert result["requests"][0]["state"] == "INCOMPLETE_POTENTIAL_WFS_TRUNCATION"
