@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import json
 from pathlib import Path
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 FILES = [
@@ -55,6 +56,9 @@ FILES = [
 ]
 REGISTRY = ROOT / "configs/location_query_providers.json"
 BINDINGS = ROOT / "configs/location_query_source_bindings.json"
+SHELL_FILES = [
+    ROOT / "scripts/run_location_query_runtime_closure.sh",
+]
 SSURGO_CHILDREN = ROOT / "configs/ssurgo_component_children.json"
 SSURGO_COMPAT = ROOT / "scripts/location_query_ssurgo.py"
 
@@ -74,6 +78,22 @@ def main() -> int:
         source = path.read_text(encoding="utf-8")
         ast.parse(source, filename=str(path))
         syntax[str(path.relative_to(ROOT))] = "PASS"
+
+    shell_syntax = {}
+    for path in SHELL_FILES:
+        result = subprocess.run(
+            ["bash", "-n", str(path)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise SystemExit(
+                f"FAIL: shell syntax {path.relative_to(ROOT)}: "
+                f"{result.stderr.strip() or result.stdout.strip()}"
+            )
+        shell_syntax[str(path.relative_to(ROOT))] = "PASS"
 
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     bindings = json.loads(BINDINGS.read_text(encoding="utf-8"))
@@ -138,6 +158,8 @@ def main() -> int:
         "state": "PASS",
         "syntax": syntax,
         "syntax_file_count": len(FILES),
+        "shell_syntax": shell_syntax,
+        "shell_syntax_file_count": len(SHELL_FILES),
         "provider_count": len(providers),
         "source_binding_count": len(bound),
         "ssurgo_component_child_count": len(child_rows),
