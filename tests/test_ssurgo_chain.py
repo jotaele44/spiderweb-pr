@@ -489,3 +489,60 @@ def test_stage3_aggregate_certification_rejects_missing_child_receipt(tmp_path: 
     }
     with pytest.raises(SSURGOChainError, match="child count mismatch"):
         certify_stage3_fetch(stage3_plan=stage3, fetch_receipt=fetch)
+
+
+def test_child_certification_accepts_hash_bound_empty_sda_as_zero_rows() -> None:
+    raw = b"{}"
+    parent = ["27625770", "27625771"]
+    receipt = {
+        "provider_id": "SSURGO_SOILS",
+        "request_role": "component_child:cocanopycover",
+        "state": "NO_COVERAGE",
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "parent_denominator_sha256": hashlib.sha256(
+            ("\n".join(parent) + "\n").encode()
+        ).hexdigest(),
+    }
+    out = certify_child_table_response(
+        raw=raw,
+        receipt=receipt,
+        contract={
+            "table": "cocanopycover",
+            "parent_key": "cokey",
+            "stable_key": "cocanopycovkey",
+        },
+        certified_cokeys=parent,
+    )
+    assert out["state"] == "PASS"
+    assert out["source_result_state"] == "NO_COVERAGE"
+    assert out["row_count"] == 0
+    assert out["returned_parent_count"] == 0
+    assert out["zero_child_parent_count"] == 2
+    assert out["zero_child_parent_keys"] == parent
+    assert out["stable_key_uniqueness"] is True
+    assert out["arithmetic_closure"] is True
+
+
+def test_child_certification_rejects_no_coverage_with_nonempty_manifestation() -> None:
+    raw = json.dumps({"Table": [["cokey", "cocanopycovkey"]]}).encode("utf-8")
+    parent = ["27625770"]
+    receipt = {
+        "provider_id": "SSURGO_SOILS",
+        "request_role": "component_child:cocanopycover",
+        "state": "NO_COVERAGE",
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "parent_denominator_sha256": hashlib.sha256(
+            ("\n".join(parent) + "\n").encode()
+        ).hexdigest(),
+    }
+    with pytest.raises(SSURGOChainError, match="canonical empty SDA object"):
+        certify_child_table_response(
+            raw=raw,
+            receipt=receipt,
+            contract={
+                "table": "cocanopycover",
+                "parent_key": "cokey",
+                "stable_key": "cocanopycovkey",
+            },
+            certified_cokeys=parent,
+        )
