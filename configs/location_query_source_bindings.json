@@ -6,8 +6,9 @@
       "authority": "USDA NRCS Soil Data Access",
       "spatial_wfs": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
       "tabular_rest": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
-      "status": "BOUND_SPATIAL_TABULAR_CHAIN_OPEN",
-      "note": "WFS axis/CRS behavior must be adjudicated from returned source bytes; geometry normalization is derived, never source replacement"
+      "status": "BOUND_SPATIAL_TABULAR_CHAIN_REFERENCE_AOI_PASS_ORCHESTRATION_OPEN",
+      "note": "Húcar 2 km runtime closure on 2026-09-20 passed SurveyAreaPoly/MapunitPoly, exact 15-MUKEY denominator, mapunit/component, exact 20-COKEY denominator, all 22 current child tables, and aggregate cardinality certification. General automatic dependent-stage orchestration remains open.",
+      "certification_receipt": "registry/certification/location_query/SSURGO_HUCAR_2KM_2026-09-20.json"
     },
     "USGS_3DHP_NHD": {
       "authority": "U.S. Geological Survey 3D Hydrography Program",
@@ -34,13 +35,14 @@
     "FEMA_NFHL": {
       "authority": "Federal Emergency Management Agency",
       "landing_page": "https://www.fema.gov/flood-maps/tools-resources/flood-map-products/national-flood-hazard-layer",
-      "status": "REBOUND_ARCGIS_MAP_SERVICE_RUNTIME_UNCERTIFIED",
-      "note": "FEMA NFHL WMS attempts returned HTTP 404 on 2026-09-20. Rebound to the operational ArcGIS REST NFHL MapServer; fresh layer-denominator runtime freeze required.",
+      "status": "BOUND_ARCGIS_LAYER_DENOMINATOR_PASS_AOI_OPEN",
+      "note": "Operational NFHL ArcGIS MapServer metadata froze PASS on 2026-09-20 with 32 unique layer IDs. AOI feature acquisition by frozen layer identity remains the next gate.",
       "prior_manifestation": {
         "url": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
         "state": "SUPERSEDED_RUNTIME_404_2026-09-20"
       },
-      "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer"
+      "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+      "certification_receipt": "registry/certification/location_query/FEMA_NFHL_LAYER_DENOMINATOR_2026-09-20.json"
     },
     "USACE_PORTS_NAV": {
       "authority": "U.S. Army Corps of Engineers",
@@ -69,18 +71,20 @@
     "FEMA_PR_ABFE_1PCT": {
       "authority": "Federal Emergency Management Agency",
       "map_service": "https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer",
-      "status": "REBOUND_MAP_SERVICE_RUNTIME_UNCERTIFIED",
-      "note": "2026-09-20 runtime closure observed the prior gis.fema.gov service returning 'not started'. Rebound to the active Puerto Rico SIGE-hosted FEMA advisory service; requires fresh layer-denominator freeze.",
+      "status": "BOUND_MAP_SERVICE_LAYER_DENOMINATOR_PASS_AOI_OPEN",
+      "note": "Puerto Rico advisory MapServer metadata froze PASS on 2026-09-20 with 20 unique layer IDs. AOI feature acquisition remains the next gate.",
       "prior_manifestation": {
         "url": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
         "state": "SUPERSEDED_RUNTIME_SERVICE_NOT_STARTED_2026-09-20"
-      }
+      },
+      "certification_receipt": "registry/certification/location_query/FEMA_PR_ABFE_LAYER_DENOMINATOR_2026-09-20.json"
     },
     "USACE_GENERAL_GIS": {
       "authority": "U.S. Army Corps of Engineers",
       "service_root": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services",
-      "status": "BOUND_SERVICE_ROOT_DENOMINATOR_OPEN",
-      "note": "Root and folder service manifestations must be frozen recursively before enterprise coverage can be certified; ports/navigation remains a separately bound subset."
+      "status": "BOUND_SERVICE_ROOT_DENOMINATOR_PASS_LAYER_OPEN",
+      "note": "USACE service root froze PASS on 2026-09-20 with 206 services and zero folders; per-service metadata and layer denominators remain open.",
+      "certification_receipt": "registry/certification/location_query/USACE_GENERAL_ROOT_SERVICES_2026-09-20.json"
     }
   },
   "invariants": {
