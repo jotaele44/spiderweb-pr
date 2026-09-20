@@ -11,6 +11,7 @@ from spiderweb.ssurgo_chain import (
     build_stage2_plan,
     build_stage3_child_plan,
     certify_child_table_response,
+    certify_stage3_fetch,
 )
 
 
@@ -375,3 +376,116 @@ def test_coinundationtype_current_documentation_evidence_is_bounded() -> None:
     assert contract["source_documents"]["table_relationships"]["document_epoch"] == "November 2025"
     assert contract["source_documents"]["tables_and_columns"]["document_epoch"] == "November 2025"
     assert contract["lineage"]["contradiction_class"] == "TIME"
+
+
+def test_stage3_aggregate_certification_closes_child_denominator(tmp_path: Path) -> None:
+    parent = ["27625770", "27625771"]
+    parent_sha = hashlib.sha256(("\n".join(parent) + "\n").encode()).hexdigest()
+    contract = {
+        "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+        "parent_table": "component",
+        "parent_key": "cokey",
+        "relationship_count": 2,
+        "current_documentation_epoch": "fixture",
+        "records": [
+            {"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"},
+            {"table": "comonth", "stable_key": "comonthkey", "parent_key": "cokey"},
+        ],
+        "lineage": {"prior_frozen_relationship_count": 1},
+    }
+    stage3 = build_stage3_child_plan(
+        query={"query_id": "x"},
+        component_raw=COMPONENT,
+        component_receipt=component_receipt(),
+        child_contract=contract,
+        certified_mukeys=["326637", "326638"],
+    )
+
+    raws = {
+        "chorizon": {
+            "Table": [
+                ["cokey", "chkey"],
+                ["27625770", "1001"],
+                ["27625770", "1002"],
+            ]
+        },
+        "comonth": {
+            "Table": [
+                ["cokey", "comonthkey"],
+                ["27625771", "2001"],
+            ]
+        },
+    }
+    receipts = []
+    for ordinal, table in enumerate(("chorizon", "comonth"), 1):
+        raw = json.dumps(raws[table]).encode("utf-8")
+        raw_path = tmp_path / f"{table}.json"
+        raw_path.write_bytes(raw)
+        receipts.append({
+            "provider_id": "SSURGO_SOILS",
+            "request_role": f"component_child:{table}",
+            "state": "PASS",
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "raw_path": str(raw_path),
+            "parent_denominator_sha256": parent_sha,
+        })
+
+    fetch = {
+        "schema_version": "spiderweb.location_query_fetch_receipt.v1.5",
+        "execution_scope": "PRODUCTION_OR_BOUNDED_DEPENDENT",
+        "state": "PASS",
+        "request_count": 2,
+        "plan_sha256": hashlib.sha256(
+            json.dumps(
+                stage3,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest(),
+        "requests": receipts,
+    }
+    out = certify_stage3_fetch(stage3_plan=stage3, fetch_receipt=fetch)
+    assert out["state"] == "PASS"
+    assert out["child_table_count"] == 2
+    assert out["total_child_rows"] == 3
+    assert out["parent_cokey_count"] == 2
+    assert out["invariants"]["child_table_count_closed"] is True
+    assert out["invariants"]["foreign_parent_count_zero"] is True
+    assert out["invariants"]["stable_keys_unique"] is True
+    assert out["invariants"]["arithmetic_closure"] is True
+
+
+def test_stage3_aggregate_certification_rejects_missing_child_receipt(tmp_path: Path) -> None:
+    contract = {
+        "schema_version": "spiderweb.ssurgo_component_children.v1.1",
+        "parent_table": "component",
+        "parent_key": "cokey",
+        "relationship_count": 1,
+        "records": [
+            {"table": "chorizon", "stable_key": "chkey", "parent_key": "cokey"},
+        ],
+    }
+    stage3 = build_stage3_child_plan(
+        query={"query_id": "x"},
+        component_raw=COMPONENT,
+        component_receipt=component_receipt(),
+        child_contract=contract,
+        certified_mukeys=["326637", "326638"],
+    )
+    fetch = {
+        "execution_scope": "PRODUCTION_OR_BOUNDED_DEPENDENT",
+        "state": "PASS",
+        "request_count": 0,
+        "plan_sha256": hashlib.sha256(
+            json.dumps(
+                stage3,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest(),
+        "requests": [],
+    }
+    with pytest.raises(SSURGOChainError, match="child count mismatch"):
+        certify_stage3_fetch(stage3_plan=stage3, fetch_receipt=fetch)
