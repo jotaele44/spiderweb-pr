@@ -239,8 +239,13 @@
         "geojson"
       ],
       "adapter": "spiderweb.location_query_sources",
-      "wms_capabilities": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
-      "reason": "authoritative NFHL public web-map surface bound; vector feature-layer denominator remains open"
+      "wms_capabilities": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
+      "reason": "Authoritative NFHL WMS surface uses the /rest/services path; prior non-/rest URL returned HTTP 404 in runtime closure on 2026-09-20. Vector feature-layer denominator remains open.",
+      "runtime_lineage": {
+        "prior_url": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
+        "prior_state": "SUPERSEDED_RUNTIME_404_2026-09-20",
+        "current_state": "REBOUND_UNCERTIFIED_RUNTIME"
+      }
     },
     "USACE_GENERAL_GIS": {
       "family": "federal_infrastructure",
@@ -297,8 +302,13 @@
         "geojson"
       ],
       "adapter": "spiderweb.location_query_sources",
-      "map_service": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
-      "reason": "Official Puerto Rico ABFE map service is bound; layer denominator must be frozen before feature acquisition is promoted."
+      "map_service": "https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer",
+      "reason": "Current Puerto Rico-hosted FEMA advisory flood MapServer is bound. Prior gis.fema.gov DR/PuertoRico_ABFE_1PCT service returned provider error 'not started' in runtime closure on 2026-09-20. Layer denominator must be frozen before feature acquisition is promoted.",
+      "runtime_lineage": {
+        "prior_url": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
+        "prior_state": "SUPERSEDED_RUNTIME_SERVICE_NOT_STARTED_2026-09-20",
+        "current_state": "REBOUND_UNCERTIFIED_RUNTIME"
+      }
     }
   }
 }
