@@ -152,3 +152,40 @@ The router references rather than replaces:
 6. delegate existing USGS 3DEP, NCEI and imagery specialized adapters into the unified fetch executor without duplicating their acquisition logic;
 7. execute the frozen Puerto Rico reference-AOI regression corpus when runner infrastructure is available;
 8. keep place-name geocoding discovery-only until a selected candidate is explicitly bound to bounded geometry.
+
+
+## Runtime closure workflow
+
+The canonical implementation/runtime boundary is now explicit.
+
+Local immutable snapshot:
+
+```bash
+scripts/run_location_query_runtime_closure.sh 2026-09-20T1107-0400
+```
+
+The runner:
+1. refuses to reuse an existing RUN_ID;
+2. performs offline registry/static/reference-corpus preflight before network;
+3. executes only discovery/resolver-stage provider denominator requests for 3DHP, FEMA and USACE;
+4. freezes and adjudicates those denominators without automatic provider promotion;
+5. executes the Húcar SSURGO resolver-stage WFS manifestation;
+6. continues through exact AOI MUKEY -> mapunit/component -> COKEY -> current 22 component-child tables;
+7. freezes package manifests and every artifact SHA-256;
+8. never merges the PR or mutates provider readiness.
+
+GitHub Actions manual entry point:
+
+`.github/workflows/location-query-runtime-closure.yml`
+
+The workflow is intentionally `workflow_dispatch` only and has `contents: read` permission. It uploads the versioned runtime snapshot as an Actions artifact. Actions execution remains certification evidence only when job steps actually run; a zero-step/null-step infrastructure failure remains `BLOCKED_ACTIONS_INFRASTRUCTURE`.
+
+### Runtime promotion policy
+
+Provider promotion is not performed by the runner. Runtime evidence must first close the applicable stable-ID denominator and contradictions:
+
+- 3DHP: frozen FeatureServer layer IDs must close provisional-vs-frozen set algebra.
+- FEMA NFHL: WMS named-layer metadata does not establish vector-feature identity.
+- FEMA PR ABFE: frozen ArcGIS layer IDs precede dependent AOI feature acquisition.
+- USACE general GIS: root plus every advertised folder must be frozen before service-denominator exhaustion.
+- SSURGO: the current November-2025 component-child denominator is 22; the older 21-table manifestation remains historical/superseded by time, not deleted.
