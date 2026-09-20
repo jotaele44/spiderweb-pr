@@ -608,3 +608,49 @@ def test_wfs_declared_count_greater_than_members_is_incomplete(monkeypatch, tmp_
     result = mod.execute(plan, tmp_path)
     assert result["state"] == "PARTIAL_OR_BLOCKED"
     assert result["requests"][0]["state"] == "INCOMPLETE_POTENTIAL_WFS_TRUNCATION"
+
+
+def test_sda_empty_object_is_no_coverage_only_when_opted_in(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: _FakeResponse({}))
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "SDA_TABULAR",
+            "method": "POST",
+            "provider_id": "SSURGO_SOILS",
+            "request_role": "component_child:cocanopycover",
+            "identity_state": "DEPENDENT_PRODUCTION_ACQUISITION",
+            "url": "https://example.invalid/post",
+            "json_body": {"query": "SELECT 1", "format": "JSON+COLUMNNAME"},
+            "media_type": "application/json",
+            "sda_empty_result_policy": "ALLOW_ZERO_ROWS",
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PASS"
+    assert result["no_coverage_count"] == 1
+    assert result["failure_count"] == 0
+    assert result["requests"][0]["state"] == "NO_COVERAGE"
+
+
+def test_sda_empty_object_without_opt_in_remains_failure(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(mod, "urlopen", lambda request, timeout=0: _FakeResponse({}))
+    plan = {
+        "query": {"mode": "fetch"},
+        "fetch_gate": "READY",
+        "requests": [{
+            "protocol": "SDA_TABULAR",
+            "method": "POST",
+            "provider_id": "SSURGO_SOILS",
+            "request_role": "component",
+            "identity_state": "DEPENDENT_PRODUCTION_ACQUISITION",
+            "url": "https://example.invalid/post",
+            "json_body": {"query": "SELECT 1", "format": "JSON+COLUMNNAME"},
+            "media_type": "application/json",
+        }],
+    }
+    result = mod.execute(plan, tmp_path)
+    assert result["state"] == "PARTIAL_OR_BLOCKED"
+    assert result["failure_count"] == 1
+    assert result["requests"][0]["state"] == "FAIL_SEMANTIC"
