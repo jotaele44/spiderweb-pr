@@ -56,6 +56,59 @@ echo "AUTO_PROVIDER_PROMOTION=FALSE"
 echo "AUTO_MERGE=FALSE"
 
 # ---------------------------------------------------------------------------
+# Preflight — fail before network if the checkout/runtime is incomplete.
+# ---------------------------------------------------------------------------
+
+for required in \
+  configs/location_query_providers.json \
+  configs/location_query_reference_aois.json \
+  configs/location_query_source_bindings.json \
+  configs/ssurgo_component_children.json \
+  scripts/location_query.py \
+  scripts/location_query_fetch.py \
+  scripts/location_query_package.py \
+  scripts/close_location_query_denominators.py \
+  scripts/location_query_ssurgo.py
+do
+  if [[ ! -f "$ROOT/$required" ]]; then
+    echo "FAIL: required runtime artifact missing: $required"
+    exit 4
+  fi
+done
+
+python - <<'PY'
+import importlib.util
+import sys
+
+required = ["geopandas", "pyproj", "shapely"]
+missing = [name for name in required if importlib.util.find_spec(name) is None]
+if missing:
+    raise SystemExit(
+        "FAIL: missing geo runtime dependencies: "
+        + ", ".join(missing)
+        + "; install with pip install -e '.[geo,dev]'"
+    )
+if sys.version_info < (3, 11):
+    raise SystemExit("FAIL: Python >= 3.11 required")
+print("PREFLIGHT_PYTHON_GEO=PASS")
+PY
+
+python -m py_compile \
+  spiderweb/location_query.py \
+  spiderweb/location_query_sources.py \
+  spiderweb/ssurgo_chain.py \
+  spiderweb/provider_denominators.py \
+  spiderweb/denominator_chain.py \
+  spiderweb/denominator_closure.py \
+  scripts/location_query.py \
+  scripts/location_query_fetch.py \
+  scripts/location_query_package.py \
+  scripts/close_location_query_denominators.py \
+  scripts/location_query_ssurgo.py
+
+echo "PREFLIGHT_SYNTAX=PASS"
+
+# ---------------------------------------------------------------------------
 # Phase 1 — offline audits and frozen planning corpus
 # ---------------------------------------------------------------------------
 
