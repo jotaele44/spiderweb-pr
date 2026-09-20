@@ -84,17 +84,18 @@ def test_scoped_closure_does_not_treat_unqueried_provider_as_absent(tmp_path: Pa
     assert out["records"] == []
 
 
-def test_fema_wms_denominator_does_not_promote_vector_identity(tmp_path: Path) -> None:
+def test_fema_nfhl_arcgis_layer_denominator_remains_dependent_stage(tmp_path: Path) -> None:
     raw_path = tmp_path / "nfhl.raw"
-    raw_path.write_bytes(
-        b"<WMS_Capabilities><Capability><Layer><Title>root</Title>"
-        b"<Layer><Name>FLD_HAZ_AR</Name><Title>Flood Hazard Areas</Title></Layer>"
-        b"</Layer></Capability></WMS_Capabilities>"
-    )
+    raw_path.write_text(json.dumps({
+        "layers": [
+            {"id": 28, "name": "Flood Hazard Zones", "parentLayerId": -1, "subLayerIds": None},
+            {"id": 16, "name": "Base Flood Elevations", "parentLayerId": -1, "subLayerIds": None},
+        ]
+    }), encoding="utf-8")
     fetch = {
         "execution_scope": "DISCOVERY_OR_RESOLVER_STAGE",
         "state": "DISCOVERY_PASS",
-        "requests": [_receipt("FEMA_NFHL", "nfhl_wms_capabilities", raw_path)],
+        "requests": [_receipt("FEMA_NFHL", "nfhl_map_service_denominator", raw_path)],
     }
     registry = {"providers": {"FEMA_NFHL": {}}}
     out = close_discovery_denominators(
@@ -105,7 +106,10 @@ def test_fema_wms_denominator_does_not_promote_vector_identity(tmp_path: Path) -
     )
     record = out["records"][0]
     assert record["promotion_eligible"] is False
-    assert record["state"] == "METADATA_DENOMINATOR_PASS_VECTOR_IDENTITY_OPEN"
+    assert record["state"] == "LAYER_DENOMINATOR_PASS_DEPENDENT_AOI_OPEN"
+    denominator = json.loads(Path(record["denominator_path"]).read_text(encoding="utf-8"))
+    assert denominator["layer_count"] == 2
+    assert {row["layer_id"] for row in denominator["records"]} == {16, 28}
 
 
 def test_usace_root_with_folder_remains_open_and_emits_next_stage(tmp_path: Path) -> None:
