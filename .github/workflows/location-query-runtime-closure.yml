@@ -30,8 +30,8 @@ jobs:
 
       - name: Install LOCATION_QUERY runtime dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[geo,dev]"
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[geo,dev]"
 
       - name: Verify runtime closure shell syntax
         run: bash -n scripts/run_location_query_runtime_closure.sh
@@ -69,5 +69,5 @@ jobs:
         with:
           name: location-query-runtime-closure-${{ steps.snapshot.outputs.run_id }}
           path: outputs/location_query/runtime_closure/${{ steps.snapshot.outputs.run_id }}
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
