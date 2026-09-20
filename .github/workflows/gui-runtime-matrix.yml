@@ -107,9 +107,6 @@ jobs:
           cat /tmp/spiderweb-vite.log
           exit 1
       - name: Execute six-module matrix
-        env:
-          LIBGL_ALWAYS_SOFTWARE: "1"
-          GALLIUM_DRIVER: llvmpipe
         run: node tests/gui-runtime-matrix.mjs
       - name: Upload GUI evidence
         if: always()

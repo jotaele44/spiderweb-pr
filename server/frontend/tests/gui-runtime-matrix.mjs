@@ -113,7 +113,14 @@ async function installDeterministicExternalFixtures(context) {
 }
 
 for (const [engineName, engine] of Object.entries(engines)) {
-  const browser = await engine.launch({ headless: true })
+  // WebKit headless on Linux needs Mesa software rendering to obtain a WebGL
+  // context; Firefox and Chromium work with the default GL stack so scoping
+  // this to the WebKit process avoids regressing the other engines.
+  const webkitSoftwareEnv =
+    engineName === 'webkit'
+      ? { env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', GALLIUM_DRIVER: 'llvmpipe' } }
+      : {}
+  const browser = await engine.launch({ headless: true, ...webkitSoftwareEnv })
   try {
     for (const viewport of viewports) {
       const context = await browser.newContext({ viewport, reducedMotion: 'no-preference' })
