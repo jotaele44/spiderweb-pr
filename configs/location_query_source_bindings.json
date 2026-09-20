@@ -13,33 +13,16 @@
       "authority": "U.S. Geological Survey 3D Hydrography Program",
       "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
       "release_observed": "2026-08-05",
-      "status": "BOUND_FEATURE_SERVICE_DENOMINATOR_OPEN",
-      "note": "Authoritative FeatureServer is bound. Six observed layer candidates are preserved provisionally, but production layer identity remains OPEN until raw FeatureServer metadata + acquisition receipt are frozen and stable layer-ID set adjudication closes.",
-      "provisional_layers": [
-        {
-          "id": 20,
-          "role": "hydrolocation_sink_spring_waterbody_outlet"
-        },
-        {
-          "id": 30,
-          "role": "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet"
-        },
-        {
-          "id": 40,
-          "role": "hydrolocation_reach_code_external_connection"
-        },
-        {
-          "id": 50,
-          "role": "flowline"
-        },
-        {
-          "id": 60,
-          "role": "waterbody"
-        },
-        {
-          "id": 80,
-          "role": "catchment"
-        }
+      "status": "BOUND_FEATURE_SERVICE_DENOMINATOR_PASS",
+      "note": "2026-09-20 runtime closure froze authoritative FeatureServer metadata; stable layer IDs 20,30,40,50,60,80 exactly matched the provisional set (symmetric difference zero).",
+      "certification_receipt": "registry/certification/location_query/USGS_3DHP_NHD_2026-09-20.json",
+      "frozen_layer_ids": [
+        20,
+        30,
+        40,
+        50,
+        60,
+        80
       ]
     },
     "USFWS_NWI": {
@@ -51,13 +34,13 @@
     "FEMA_NFHL": {
       "authority": "Federal Emergency Management Agency",
       "landing_page": "https://www.fema.gov/flood-maps/tools-resources/flood-map-products/national-flood-hazard-layer",
-      "wms_capabilities": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
-      "status": "REBOUND_WMS_RUNTIME_UNCERTIFIED",
-      "note": "2026-09-20 runtime closure observed HTTP 404 at the prior non-/rest path. Rebound to FEMA's /gis/nfhl/rest/services/public/NFHL/MapServer/WMSServer surface; requires fresh runtime freeze before promotion.",
+      "status": "REBOUND_ARCGIS_MAP_SERVICE_RUNTIME_UNCERTIFIED",
+      "note": "FEMA NFHL WMS attempts returned HTTP 404 on 2026-09-20. Rebound to the operational ArcGIS REST NFHL MapServer; fresh layer-denominator runtime freeze required.",
       "prior_manifestation": {
         "url": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
         "state": "SUPERSEDED_RUNTIME_404_2026-09-20"
-      }
+      },
+      "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer"
     },
     "USACE_PORTS_NAV": {
       "authority": "U.S. Army Corps of Engineers",
