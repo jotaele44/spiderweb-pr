@@ -208,18 +208,55 @@ set +e
 python scripts/location_query_fetch.py   "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   --output-dir "$OUT/fetch/hucar_ssurgo"   --discovery-only   > "$OUT/audit/hucar_ssurgo_spatial_fetch_stdout.json"
 SSURGO_SPATIAL_FETCH_EXIT=$?
 
-if [[ -f "$OUT/fetch/hucar_ssurgo/fetch_receipt.json" ]]; then
-  python scripts/location_query_package.py   "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   "$OUT/fetch/hucar_ssurgo/fetch_receipt.json"   --output "$OUT/packages/hucar_ssurgo_spatial.package.json"   > "$OUT/audit/hucar_ssurgo_spatial_package_stdout.json"
-  SSURGO_SPATIAL_PACKAGE_EXIT=$?
+SSURGO_SPATIAL_PACKAGE_EXIT=5
+SSURGO_STAGE2_PLAN_EXIT=5
+SSURGO_STAGE2_FETCH_EXIT=5
+SSURGO_STAGE2_PACKAGE_EXIT=5
+SSURGO_STAGE3_PLAN_EXIT=5
+SSURGO_STAGE3_FETCH_EXIT=5
+SSURGO_STAGE3_PACKAGE_EXIT=5
+SSURGO_STAGE3_CERT_EXIT=5
 
-  python scripts/location_query_ssurgo.py   "$OUT/plans/hucar_ssurgo.acquisition_plan.json"   "$OUT/fetch/hucar_ssurgo/fetch_receipt.json"   --children configs/ssurgo_component_children.json   --output-dir "$OUT/ssurgo/hucar_2km"   > "$OUT/audit/hucar_ssurgo_continuation_stdout.json"
-  SSURGO_CONTINUATION_EXIT=$?
-else
-  echo "FAIL: SSURGO spatial fetch produced no receipt" > "$OUT/audit/hucar_ssurgo_spatial_package_stdout.json"
-  echo "FAIL: SSURGO continuation skipped because fetch receipt is missing" > "$OUT/audit/hucar_ssurgo_continuation_stdout.json"
-  SSURGO_SPATIAL_PACKAGE_EXIT=5
-  SSURGO_CONTINUATION_EXIT=5
+if [[ -f "$OUT/fetch/hucar_ssurgo/fetch_receipt.json" ]]; then
+  python scripts/location_query_package.py     "$OUT/plans/hucar_ssurgo.acquisition_plan.json"     "$OUT/fetch/hucar_ssurgo/fetch_receipt.json"     --output "$OUT/packages/hucar_ssurgo_spatial.package.json"     > "$OUT/audit/hucar_ssurgo_spatial_package_stdout.json"
+  SSURGO_SPATIAL_PACKAGE_EXIT=$?
 fi
+
+if [[ -f "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.raw" && -f "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.json" ]]; then
+  python scripts/ssurgo_location_stage2.py     --query "$OUT/queries/hucar_ssurgo.json"     --mapunitpoly-raw "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.raw"     --mapunitpoly-receipt "$OUT/fetch/hucar_ssurgo/002_SSURGO_SOILS_MapunitPoly.json"     --output "$OUT/plans/hucar_ssurgo.stage2.json"     > "$OUT/audit/hucar_ssurgo_stage2_plan_stdout.json"
+  SSURGO_STAGE2_PLAN_EXIT=$?
+fi
+
+if [[ "$SSURGO_STAGE2_PLAN_EXIT" -eq 0 && -f "$OUT/plans/hucar_ssurgo.stage2.json" ]]; then
+  python scripts/location_query_fetch.py     "$OUT/plans/hucar_ssurgo.stage2.json"     --output-dir "$OUT/fetch/hucar_ssurgo_stage2"     > "$OUT/audit/hucar_ssurgo_stage2_fetch_stdout.json"
+  SSURGO_STAGE2_FETCH_EXIT=$?
+
+  if [[ -f "$OUT/fetch/hucar_ssurgo_stage2/fetch_receipt.json" ]]; then
+    python scripts/location_query_package.py       "$OUT/plans/hucar_ssurgo.stage2.json"       "$OUT/fetch/hucar_ssurgo_stage2/fetch_receipt.json"       --output "$OUT/packages/hucar_ssurgo_stage2.package.json"       > "$OUT/audit/hucar_ssurgo_stage2_package_stdout.json"
+    SSURGO_STAGE2_PACKAGE_EXIT=$?
+  fi
+fi
+
+if [[ "$SSURGO_STAGE2_FETCH_EXIT" -eq 0 && -f "$OUT/fetch/hucar_ssurgo_stage2/002_SSURGO_SOILS_component.raw" && -f "$OUT/fetch/hucar_ssurgo_stage2/002_SSURGO_SOILS_component.json" ]]; then
+  python scripts/ssurgo_location_stage3.py     --query "$OUT/queries/hucar_ssurgo.json"     --component-raw "$OUT/fetch/hucar_ssurgo_stage2/002_SSURGO_SOILS_component.raw"     --component-receipt "$OUT/fetch/hucar_ssurgo_stage2/002_SSURGO_SOILS_component.json"     --stage2-plan "$OUT/plans/hucar_ssurgo.stage2.json"     --children configs/ssurgo_component_children.json     --output "$OUT/plans/hucar_ssurgo.stage3.json"     > "$OUT/audit/hucar_ssurgo_stage3_plan_stdout.json"
+  SSURGO_STAGE3_PLAN_EXIT=$?
+fi
+
+if [[ "$SSURGO_STAGE3_PLAN_EXIT" -eq 0 && -f "$OUT/plans/hucar_ssurgo.stage3.json" ]]; then
+  python scripts/location_query_fetch.py     "$OUT/plans/hucar_ssurgo.stage3.json"     --output-dir "$OUT/fetch/hucar_ssurgo_stage3"     > "$OUT/audit/hucar_ssurgo_stage3_fetch_stdout.json"
+  SSURGO_STAGE3_FETCH_EXIT=$?
+
+  if [[ -f "$OUT/fetch/hucar_ssurgo_stage3/fetch_receipt.json" ]]; then
+    python scripts/location_query_package.py       "$OUT/plans/hucar_ssurgo.stage3.json"       "$OUT/fetch/hucar_ssurgo_stage3/fetch_receipt.json"       --output "$OUT/packages/hucar_ssurgo_stage3.package.json"       > "$OUT/audit/hucar_ssurgo_stage3_package_stdout.json"
+    SSURGO_STAGE3_PACKAGE_EXIT=$?
+  fi
+fi
+
+if [[ "$SSURGO_STAGE3_FETCH_EXIT" -eq 0 && -f "$OUT/fetch/hucar_ssurgo_stage3/fetch_receipt.json" ]]; then
+  python scripts/certify_ssurgo_stage3.py     --stage3-plan "$OUT/plans/hucar_ssurgo.stage3.json"     --fetch-receipt "$OUT/fetch/hucar_ssurgo_stage3/fetch_receipt.json"     --output "$OUT/ssurgo/SSURGO_STAGE3_CERTIFICATION.json"     > "$OUT/audit/hucar_ssurgo_stage3_certification_stdout.json"
+  SSURGO_STAGE3_CERT_EXIT=$?
+fi
+
 set -e
 
 # ---------------------------------------------------------------------------
@@ -228,7 +265,7 @@ set -e
 # not an aggregate identity claim for heterogeneous semantic records.
 # ---------------------------------------------------------------------------
 
-export OUT HEAD_SHA HEAD_REF DISCOVERY_FETCH_EXIT DISCOVERY_PACKAGE_EXIT DISCOVERY_CLOSURE_EXIT SSURGO_SPATIAL_FETCH_EXIT SSURGO_SPATIAL_PACKAGE_EXIT SSURGO_CONTINUATION_EXIT
+export OUT HEAD_SHA HEAD_REF DISCOVERY_FETCH_EXIT DISCOVERY_PACKAGE_EXIT DISCOVERY_CLOSURE_EXIT SSURGO_SPATIAL_FETCH_EXIT SSURGO_SPATIAL_PACKAGE_EXIT SSURGO_STAGE2_PLAN_EXIT SSURGO_STAGE2_FETCH_EXIT SSURGO_STAGE2_PACKAGE_EXIT SSURGO_STAGE3_PLAN_EXIT SSURGO_STAGE3_FETCH_EXIT SSURGO_STAGE3_PACKAGE_EXIT SSURGO_STAGE3_CERT_EXIT
 python - <<'PY'
 from __future__ import annotations
 
@@ -246,7 +283,13 @@ phase_exit_codes = {
     "discovery_closure": int(os.environ["DISCOVERY_CLOSURE_EXIT"]),
     "ssurgo_spatial_fetch": int(os.environ["SSURGO_SPATIAL_FETCH_EXIT"]),
     "ssurgo_spatial_package": int(os.environ["SSURGO_SPATIAL_PACKAGE_EXIT"]),
-    "ssurgo_continuation": int(os.environ["SSURGO_CONTINUATION_EXIT"]),
+    "ssurgo_stage2_plan": int(os.environ["SSURGO_STAGE2_PLAN_EXIT"]),
+    "ssurgo_stage2_fetch": int(os.environ["SSURGO_STAGE2_FETCH_EXIT"]),
+    "ssurgo_stage2_package": int(os.environ["SSURGO_STAGE2_PACKAGE_EXIT"]),
+    "ssurgo_stage3_plan": int(os.environ["SSURGO_STAGE3_PLAN_EXIT"]),
+    "ssurgo_stage3_fetch": int(os.environ["SSURGO_STAGE3_FETCH_EXIT"]),
+    "ssurgo_stage3_package": int(os.environ["SSURGO_STAGE3_PACKAGE_EXIT"]),
+    "ssurgo_stage3_certification": int(os.environ["SSURGO_STAGE3_CERT_EXIT"]),
 }
 overall_state = (
     "PASS"
@@ -305,7 +348,7 @@ PY
 
 echo
 echo "SNAPSHOT=$OUT"
-if [[ "$DISCOVERY_FETCH_EXIT" -eq 0 && "$DISCOVERY_PACKAGE_EXIT" -eq 0 && "$DISCOVERY_CLOSURE_EXIT" -eq 0 && "$SSURGO_SPATIAL_FETCH_EXIT" -eq 0 && "$SSURGO_SPATIAL_PACKAGE_EXIT" -eq 0 && "$SSURGO_CONTINUATION_EXIT" -eq 0 ]]; then
+if [[ "$DISCOVERY_FETCH_EXIT" -eq 0 && "$DISCOVERY_PACKAGE_EXIT" -eq 0 && "$DISCOVERY_CLOSURE_EXIT" -eq 0 && "$SSURGO_SPATIAL_FETCH_EXIT" -eq 0 && "$SSURGO_SPATIAL_PACKAGE_EXIT" -eq 0 && "$SSURGO_STAGE2_PLAN_EXIT" -eq 0 && "$SSURGO_STAGE2_FETCH_EXIT" -eq 0 && "$SSURGO_STAGE2_PACKAGE_EXIT" -eq 0 && "$SSURGO_STAGE3_PLAN_EXIT" -eq 0 && "$SSURGO_STAGE3_FETCH_EXIT" -eq 0 && "$SSURGO_STAGE3_PACKAGE_EXIT" -eq 0 && "$SSURGO_STAGE3_CERT_EXIT" -eq 0 ]]; then
   echo "LOCATION_QUERY_RUNTIME_CLOSURE_RUN=PASS"
   echo "NEXT_GATE=ADJUDICATE_RUNTIME_RECEIPTS_AND_PROVIDER_PROMOTIONS"
   exit 0
@@ -316,7 +359,13 @@ else
   echo "DISCOVERY_CLOSURE_EXIT=$DISCOVERY_CLOSURE_EXIT"
   echo "SSURGO_SPATIAL_FETCH_EXIT=$SSURGO_SPATIAL_FETCH_EXIT"
   echo "SSURGO_SPATIAL_PACKAGE_EXIT=$SSURGO_SPATIAL_PACKAGE_EXIT"
-  echo "SSURGO_CONTINUATION_EXIT=$SSURGO_CONTINUATION_EXIT"
+  echo "SSURGO_STAGE2_PLAN_EXIT=$SSURGO_STAGE2_PLAN_EXIT"
+  echo "SSURGO_STAGE2_FETCH_EXIT=$SSURGO_STAGE2_FETCH_EXIT"
+  echo "SSURGO_STAGE2_PACKAGE_EXIT=$SSURGO_STAGE2_PACKAGE_EXIT"
+  echo "SSURGO_STAGE3_PLAN_EXIT=$SSURGO_STAGE3_PLAN_EXIT"
+  echo "SSURGO_STAGE3_FETCH_EXIT=$SSURGO_STAGE3_FETCH_EXIT"
+  echo "SSURGO_STAGE3_PACKAGE_EXIT=$SSURGO_STAGE3_PACKAGE_EXIT"
+  echo "SSURGO_STAGE3_CERT_EXIT=$SSURGO_STAGE3_CERT_EXIT"
   echo "NEXT_GATE=ADJUDICATE_PARTIAL_RUNTIME_EVIDENCE"
   exit 1
 fi
