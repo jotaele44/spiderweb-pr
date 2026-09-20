@@ -244,6 +244,7 @@ def build_stage3_child_plan(
             "url": SDA_TABULAR_ENDPOINT,
             "media_type": "application/json",
             "json_body": {"query": sql, "format": "JSON+COLUMNNAME"},
+            "sda_empty_result_policy": "ALLOW_ZERO_ROWS",
             "parent_denominator_sha256": canonical_cokey_sha256(cokeys),
             "ssurgo_child_contract_sha256": child_contract_sha,
             "ssurgo_child_contract": {
@@ -329,8 +330,9 @@ def certify_child_table_response(
         raise SSURGOChainError(f"{table}: receipt provider mismatch")
     if receipt.get("request_role") != f"component_child:{table}":
         raise SSURGOChainError(f"{table}: receipt role mismatch")
-    if receipt.get("state") != "PASS":
-        raise SSURGOChainError(f"{table}: acquisition receipt is not PASS")
+    receipt_state = receipt.get("state")
+    if receipt_state not in {"PASS", "NO_COVERAGE"}:
+        raise SSURGOChainError(f"{table}: acquisition receipt is not PASS/NO_COVERAGE")
     actual_sha = sha256_bytes(raw)
     if receipt.get("sha256") != actual_sha:
         raise SSURGOChainError(f"{table}: raw SHA256 does not match receipt")
@@ -341,6 +343,44 @@ def certify_child_table_response(
         obj = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise SSURGOChainError(f"{table}: response JSON parse failure: {exc}") from exc
+
+    if receipt_state == "NO_COVERAGE":
+        if obj != {}:
+            raise SSURGOChainError(
+                f"{table}: NO_COVERAGE receipt must bind the canonical empty SDA object"
+            )
+        zero = sorted(certified_cokeys, key=int)
+        return {
+            "schema_version": "spiderweb.ssurgo_child_table_certification.v1.0",
+            "provider_id": "SSURGO_SOILS",
+            "table": table,
+            "state": "PASS",
+            "source_result_state": "NO_COVERAGE",
+            "raw_sha256": actual_sha,
+            "parent_denominator_sha256": expected_parent_sha,
+            "parent_key": parent_key,
+            "stable_key": stable_key,
+            "runtime_schema_columns": None,
+            "row_count": 0,
+            "unique_stable_keys": 0,
+            "certified_parent_count": len(certified_cokeys),
+            "returned_parent_count": 0,
+            "foreign_parent_count": 0,
+            "zero_child_parent_count": len(zero),
+            "one_child_parent_count": 0,
+            "multi_child_parent_count": 0,
+            "zero_child_parent_keys": zero,
+            "arithmetic_closure": True,
+            "stable_key_uniqueness": True,
+            "policy": {
+                "zero_child_parent_is_not_failure_by_default": True,
+                "one_to_n_preserved": True,
+                "whole_rows_preserved_in_raw_bytes": True,
+                "count_equality_used_as_identity": False,
+                "empty_sda_object_interpreted_as_zero_rows_only_when_request_opted_in": True,
+            },
+        }
+
     payload = obj.get("Table") if isinstance(obj, dict) else None
     if not isinstance(payload, list) or not payload:
         raise SSURGOChainError(f"{table}: response lacks Table")
