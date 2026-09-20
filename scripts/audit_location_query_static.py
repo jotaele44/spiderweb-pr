@@ -33,6 +33,7 @@ FILES = [
     ROOT / "scripts/merge_location_service_denominators.py",
     ROOT / "scripts/ssurgo_location_stage3.py",
     ROOT / "scripts/certify_ssurgo_child.py",
+    ROOT / "scripts/certify_ssurgo_stage3.py",
     ROOT / "scripts/run_location_query_reference_corpus.py",
     ROOT / "scripts/audit_location_query_provider_health.py",
     ROOT / "scripts/audit_location_query_static.py",
