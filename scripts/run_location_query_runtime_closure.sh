@@ -45,12 +45,28 @@ if [[ -e "$OUT" ]]; then
   echo "Use a new RUN_ID. Existing snapshots are immutable."
   exit 3
 fi
+
+if [[ "$(git rev-parse --show-toplevel)" != "$ROOT" ]]; then
+  echo "FAIL: runtime closure must execute from the repository checkout"
+  exit 3
+fi
+
+HEAD_SHA="$(git rev-parse HEAD)"
+HEAD_REF="$(git symbolic-ref --quiet --short HEAD || echo DETACHED_HEAD)"
+if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+  echo "FAIL: runtime closure requires a clean Git worktree"
+  git status --short
+  exit 3
+fi
+
 mkdir -p "$OUT"/{audit,queries,plans,fetch,closure,ssurgo,packages,reference}
 
 echo "=== LOCATION_QUERY RUNTIME CLOSURE ==="
 echo "RUN_ID=$RUN_ID"
 echo "ROOT=$ROOT"
 echo "OUT=$OUT"
+echo "GIT_HEAD_SHA=$HEAD_SHA"
+echo "GIT_HEAD_REF=$HEAD_REF"
 echo "SOURCE_REDOWNLOAD_POLICY=MISSING_OR_NEW_SNAPSHOT_ONLY"
 echo "AUTO_PROVIDER_PROMOTION=FALSE"
 echo "AUTO_MERGE=FALSE"
@@ -188,7 +204,7 @@ python scripts/location_query_ssurgo.py   "$OUT/plans/hucar_ssurgo.acquisition_p
 # not an aggregate identity claim for heterogeneous semantic records.
 # ---------------------------------------------------------------------------
 
-export OUT
+export OUT HEAD_SHA HEAD_REF
 python - <<'PY'
 from __future__ import annotations
 
@@ -198,6 +214,8 @@ import os
 from pathlib import Path
 
 root = Path(os.environ["OUT"])
+head_sha = os.environ["HEAD_SHA"]
+head_ref = os.environ["HEAD_REF"]
 
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -221,6 +239,8 @@ manifest = {
     "schema_version": "spiderweb.location_query_runtime_closure_manifest.v1.0",
     "state": "PASS",
     "run_id": root.name,
+    "git_head_sha": head_sha,
+    "git_head_ref": head_ref,
     "artifact_count": len(records),
     "records": records,
     "invariants": {
@@ -229,6 +249,8 @@ manifest = {
         "aggregate_hash_not_used_as_cross_schema_identity": True,
         "automatic_provider_promotion": False,
         "automatic_merge": False,
+        "clean_git_worktree_required": True,
+        "source_code_manifestation_bound_to_git_sha": True,
     },
 }
 manifest_path.write_text(
