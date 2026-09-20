@@ -111,12 +111,20 @@ def _wfs_getfeature(
     west, south, east, north = bbox
     if max_features <= 0:
         raise ValueError("WFS max_features must be positive")
+    bbox_filter = (
+        "<Filter><BBOX><PropertyName>Geometry</PropertyName>"
+        "<Box srsName='EPSG:4326'><coordinates>"
+        f"{west},{south} {east},{north}"
+        "</coordinates></Box></BBOX></Filter>"
+    )
     params = {
         "SERVICE": "WFS",
         "VERSION": "1.1.0",
         "REQUEST": "GetFeature",
         "TYPENAME": typename,
-        "BBOX": f"{west},{south},{east},{north},EPSG:4326",
+        "FILTER": bbox_filter,
+        "SRSNAME": "EPSG:4326",
+        "OUTPUTFORMAT": "GML2",
         "MAXFEATURES": str(max_features),
     }
     return {
@@ -229,11 +237,11 @@ def build_request_specs(provider_id: str, provider: dict[str, Any], query: dict[
     if provider_id == "FEMA_NFHL":
         return [{
             "provider_id": provider_id,
-            "request_role": "nfhl_wms_capabilities",
+            "request_role": "nfhl_map_service_denominator",
             "method": "GET",
-            "url": provider["wms_capabilities"],
-            "protocol": "WMS_CAPABILITIES",
-            "media_type": "application/xml",
+            "url": provider["map_service"].rstrip("/") + "?f=json",
+            "protocol": "ARCGIS_METADATA",
+            "media_type": "application/json",
             "bbox_wgs84": list(bbox),
             "identity_state": "DISCOVERY_FOR_LAYER_DENOMINATOR",
         }]
