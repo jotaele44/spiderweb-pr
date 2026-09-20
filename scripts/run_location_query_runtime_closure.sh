@@ -84,7 +84,9 @@ for required in \
   scripts/location_query_fetch.py \
   scripts/location_query_package.py \
   scripts/close_location_query_denominators.py \
-  scripts/location_query_ssurgo.py
+  scripts/ssurgo_location_stage2.py \
+  scripts/ssurgo_location_stage3.py \
+  scripts/certify_ssurgo_stage3.py
 do
   if [[ ! -f "$ROOT/$required" ]]; then
     echo "FAIL: required runtime artifact missing: $required"
@@ -120,7 +122,9 @@ python -m py_compile \
   scripts/location_query_fetch.py \
   scripts/location_query_package.py \
   scripts/close_location_query_denominators.py \
-  scripts/location_query_ssurgo.py
+  scripts/ssurgo_location_stage2.py \
+  scripts/ssurgo_location_stage3.py \
+  scripts/certify_ssurgo_stage3.py
 
 echo "PREFLIGHT_SYNTAX=PASS"
 
@@ -339,7 +343,7 @@ manifest_path.write_text(
     encoding="utf-8",
 )
 print(json.dumps({
-    "state": "PASS",
+    "state": overall_state,
     "artifact_count": len(records),
     "manifest": str(manifest_path),
     "manifest_sha256": sha256(manifest_path),
