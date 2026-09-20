@@ -451,6 +451,13 @@ def execute(
     if not isinstance(requests, list):
         raise SystemExit("FAIL: plan.requests must be a list")
 
+    final_receipt = output_dir / "fetch_receipt.json"
+    if final_receipt.exists():
+        raise SystemExit(
+            f"FAIL: output snapshot already exists: {final_receipt}; "
+            "use a new versioned output directory"
+        )
+
     specialized_calls = plan.get("specialized_calls", [])
     if not isinstance(specialized_calls, list):
         raise SystemExit("FAIL: plan.specialized_calls must be a list")
@@ -493,12 +500,6 @@ def execute(
         effective_gate = fetch_gate
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    final_receipt = output_dir / "fetch_receipt.json"
-    if final_receipt.exists():
-        raise SystemExit(
-            f"FAIL: output snapshot already exists: {final_receipt}; "
-            "use a new versioned output directory"
-        )
     receipts: list[dict] = []
     failures = 0
 
