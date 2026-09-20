@@ -114,13 +114,19 @@ async function installDeterministicExternalFixtures(context) {
 
 for (const [engineName, engine] of Object.entries(engines)) {
   // WebKit headless on Linux needs Mesa software rendering to obtain a WebGL
-  // context; Firefox and Chromium work with the default GL stack so scoping
-  // this to the WebKit process avoids regressing the other engines.
+  // context. Firefox headless on Linux needs webgl.force-enabled to engage
+  // ANGLE's software renderer — without it the GL context creation fails,
+  // painter stays undefined, and map.remove() throws during React StrictMode
+  // cleanup. Chromium works with the default GL stack.
   const webkitSoftwareEnv =
     engineName === 'webkit'
       ? { env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', GALLIUM_DRIVER: 'llvmpipe' } }
       : {}
-  const browser = await engine.launch({ headless: true, ...webkitSoftwareEnv })
+  const firefoxWebGLPrefs =
+    engineName === 'firefox'
+      ? { firefoxUserPrefs: { 'webgl.force-enabled': true, 'webgl.disabled': false } }
+      : {}
+  const browser = await engine.launch({ headless: true, ...webkitSoftwareEnv, ...firefoxWebGLPrefs })
   try {
     for (const viewport of viewports) {
       const context = await browser.newContext({ viewport, reducedMotion: 'no-preference' })
