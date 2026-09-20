@@ -150,6 +150,8 @@ def _semantic_simple_state(spec: dict, payload: bytes) -> tuple[str, str | None]
             return "PASS", None
 
         if protocol == "SDA_TABULAR":
+            if obj == {} and spec.get("sda_empty_result_policy") == "ALLOW_ZERO_ROWS":
+                return "NO_COVERAGE", None
             if not isinstance(obj, dict) or not isinstance(obj.get("Table"), list):
                 return "FAIL_SEMANTIC", "SDA response lacks Table list"
             return "PASS", None
