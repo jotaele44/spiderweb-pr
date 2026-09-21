@@ -113,7 +113,33 @@ async function installDeterministicExternalFixtures(context) {
 }
 
 for (const [engineName, engine] of Object.entries(engines)) {
-  const browser = await engine.launch({ headless: true })
+  // WebKit headless on Linux needs Mesa software rendering to obtain a WebGL
+  // context. Firefox headless on Linux needs webgl.force-enabled to engage
+  // ANGLE's software renderer — without it the GL context creation fails,
+  // painter stays undefined, and map.remove() throws during React StrictMode
+  // cleanup. Chromium works with the default GL stack.
+  const webkitSoftwareEnv =
+    engineName === 'webkit'
+      ? { env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', GALLIUM_DRIVER: 'llvmpipe' } }
+      : {}
+  // Firefox headless on Linux cannot get a WebGL context for MapLibre without a real X11
+  // display. The CI workflow starts Xvfb (DISPLAY=:99) before this test so we launch
+  // Firefox non-headless: it uses X11/GLX with Mesa software rendering (LIBGL_ALWAYS_SOFTWARE)
+  // for a working GL context. Chromium works with its own headless GL stack; WebKit needs
+  // Mesa but works headless. webgl.force-enabled bypasses Firefox's driver blocklist which
+  // would otherwise reject llvmpipe.
+  const firefoxSoftwareEnv =
+    engineName === 'firefox'
+      ? {
+          env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', GALLIUM_DRIVER: 'llvmpipe' },
+          firefoxUserPrefs: { 'webgl.force-enabled': true, 'webgl.disabled': false },
+        }
+      : {}
+  const browser = await engine.launch({
+    headless: engineName !== 'firefox',
+    ...webkitSoftwareEnv,
+    ...firefoxSoftwareEnv,
+  })
   try {
     for (const viewport of viewports) {
       const context = await browser.newContext({ viewport, reducedMotion: 'no-preference' })
