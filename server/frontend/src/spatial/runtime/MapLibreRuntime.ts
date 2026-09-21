@@ -46,7 +46,11 @@ export class MapLibreRuntime implements SpatialRuntime {
   destroy(): void {
     this.finishInitialization?.();
     this.finishInitialization = null;
-    this.map?.remove();
+    try {
+      this.map?.remove();
+    } catch {
+      // painter may be undefined when WebGL context creation failed before initialization completed
+    }
     this.map = null;
     this.basemapErrorListeners.clear();
   }
