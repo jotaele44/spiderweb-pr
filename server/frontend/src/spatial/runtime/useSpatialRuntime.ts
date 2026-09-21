@@ -27,6 +27,7 @@ export function useSpatialRuntime(
   const [tilesFailed, setTilesFailed] = useState(false);
   const [activeMode, setActiveMode] = useState<SpatialRuntimeMode>(mode);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [graphicsUnavailableReason, setGraphicsUnavailableReason] = useState<string | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -42,7 +43,33 @@ export function useSpatialRuntime(
       return { runtime, mapLibre: runtime };
     };
 
+    const detectWebGL = () => {
+      const canvas = document.createElement("canvas");
+      try {
+        return Boolean(
+          canvas.getContext("webgl2") ||
+          canvas.getContext("webgl") ||
+          canvas.getContext("experimental-webgl"),
+        );
+      } catch {
+        return false;
+      }
+    };
+
     const boot = async () => {
+      if (!detectWebGL()) {
+        if (cancelled) return;
+        runtimeRef.current = null;
+        mapRef.current = null;
+        setReady(false);
+        setTilesFailed(false);
+        setActiveMode("maplibre");
+        setFallbackReason(null);
+        setGraphicsUnavailableReason("WebGL is unavailable in this browser or runtime");
+        return;
+      }
+
+      setGraphicsUnavailableReason(null);
       let resolvedMode: SpatialRuntimeMode = mode;
       let fallback: string | null = null;
       let runtime: SpatialRuntime;
@@ -77,6 +104,7 @@ export function useSpatialRuntime(
       mapRef.current = mapLibre?.getMapLibreInstance() ?? null;
       setActiveMode(resolvedMode);
       setFallbackReason(fallback);
+      setGraphicsUnavailableReason(null);
       setReady(true);
     };
 
@@ -89,6 +117,7 @@ export function useSpatialRuntime(
       runtimeRef.current = null;
       mapRef.current = null;
       setReady(false);
+      setGraphicsUnavailableReason(null);
     };
     // config is a stable module-level constant (DEFAULT_REGIONAL_SCENE_CONFIG);
     // mode changes intentionally tear down and reboot the runtime (2D/3D switch).
@@ -137,5 +166,6 @@ export function useSpatialRuntime(
     setTilesFailed,
     activeMode,
     fallbackReason,
+    graphicsUnavailableReason,
   };
 }
