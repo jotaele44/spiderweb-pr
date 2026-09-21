@@ -399,7 +399,7 @@ jobs:
 
           git config user.name "jp-flood-byte-certifier"
           git config user.email "noreply@github.com"
-          git add data/jp_flood_documents/certification/2026-09-21/
+          git add -f data/jp_flood_documents/certification/2026-09-21/
           git rm .github/workflows/jp-flood-byte-closure.yml
           git commit -m "Freeze JP flood 78-document byte certification"
           git push origin "HEAD:${HEAD_BRANCH}"
