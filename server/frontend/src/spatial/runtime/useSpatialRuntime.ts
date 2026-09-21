@@ -47,8 +47,8 @@ export function useSpatialRuntime(
       const canvas = document.createElement("canvas");
       try {
         return Boolean(
-          canvas.getContext("webgl2") ||
-          canvas.getContext("webgl") ||
+          canvas.getContext("webgl2") ??
+          canvas.getContext("webgl") ??
           canvas.getContext("experimental-webgl"),
         );
       } catch {
