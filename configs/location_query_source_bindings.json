@@ -1,0 +1,96 @@
+{
+  "schema_version": "spiderweb.location_query_source_bindings.v1.0",
+  "verification_date_utc": "2026-09-20",
+  "bindings": {
+    "SSURGO_SOILS": {
+      "authority": "USDA NRCS Soil Data Access",
+      "spatial_wfs": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
+      "tabular_rest": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
+      "status": "BOUND_BBOX_PRESELECTION_TABULAR_CHAIN_PASS_EXACT_AOI_OPEN",
+      "note": "2026-09-20 runtime closure passed raw WFS envelope preselection, 15-MUKEY parent set, mapunit/component, 20-COKEY parent set and all 22 child tables. The canonical modular chain still needs exact circle/polygon AOI intersection and SurveyArea coverage adjudication before readiness promotion.",
+      "certification_receipt": "registry/certification/location_query/SSURGO_HUCAR_2KM_2026-09-20.json"
+    },
+    "USGS_3DHP_NHD": {
+      "authority": "U.S. Geological Survey 3D Hydrography Program",
+      "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
+      "release_observed": "2026-08-05",
+      "status": "BOUND_FEATURE_SERVICE_DENOMINATOR_PASS",
+      "note": "2026-09-20 runtime closure froze authoritative FeatureServer metadata; stable layer IDs 20,30,40,50,60,80 exactly matched the provisional set (symmetric difference zero).",
+      "certification_receipt": "registry/certification/location_query/USGS_3DHP_NHD_2026-09-20.json",
+      "frozen_layer_ids": [
+        20,
+        30,
+        40,
+        50,
+        60,
+        80
+      ]
+    },
+    "USFWS_NWI": {
+      "authority": "U.S. Fish and Wildlife Service National Wetlands Inventory",
+      "rest_root": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest",
+      "wetlands_layer": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/FeatureServer/0",
+      "status": "BOUND"
+    },
+    "FEMA_NFHL": {
+      "authority": "Federal Emergency Management Agency",
+      "landing_page": "https://www.fema.gov/flood-maps/tools-resources/flood-map-products/national-flood-hazard-layer",
+      "status": "BOUND_ARCGIS_LAYER_DENOMINATOR_PASS_AOI_OPEN",
+      "note": "Operational NFHL ArcGIS MapServer metadata froze PASS on 2026-09-20 with 32 unique layer IDs. AOI feature acquisition by frozen layer identity remains the next gate.",
+      "prior_manifestation": {
+        "url": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
+        "state": "SUPERSEDED_RUNTIME_404_2026-09-20"
+      },
+      "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+      "certification_receipt": "registry/certification/location_query/FEMA_NFHL_LAYER_DENOMINATOR_2026-09-20.json"
+    },
+    "USACE_PORTS_NAV": {
+      "authority": "U.S. Army Corps of Engineers",
+      "service_root": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services",
+      "layers": [
+        {
+          "role": "ports",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/arcgis/rest/services/Port_Statistical_Area/FeatureServer/0"
+        },
+        {
+          "role": "principal_ports",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/arcgis/rest/services/Principal_Ports/FeatureServer/0"
+        },
+        {
+          "role": "navigation_facilities",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services/Docks/FeatureServer/0"
+        },
+        {
+          "role": "waterway_network_nodes",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services/Waterway_Networks/FeatureServer/0"
+        }
+      ],
+      "status": "BOUND_SUBSET",
+      "note": "subset is certified as ports/navigation routing; it does not certify the complete USACE enterprise denominator"
+    },
+    "FEMA_PR_ABFE_1PCT": {
+      "authority": "Federal Emergency Management Agency",
+      "map_service": "https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer",
+      "status": "BOUND_MAP_SERVICE_LAYER_DENOMINATOR_PASS_AOI_OPEN",
+      "note": "Puerto Rico advisory MapServer metadata froze PASS on 2026-09-20 with 20 unique layer IDs. AOI feature acquisition remains the next gate.",
+      "prior_manifestation": {
+        "url": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
+        "state": "SUPERSEDED_RUNTIME_SERVICE_NOT_STARTED_2026-09-20"
+      },
+      "certification_receipt": "registry/certification/location_query/FEMA_PR_ABFE_LAYER_DENOMINATOR_2026-09-20.json"
+    },
+    "USACE_GENERAL_GIS": {
+      "authority": "U.S. Army Corps of Engineers",
+      "service_root": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services",
+      "status": "BOUND_SERVICE_ROOT_DENOMINATOR_PASS_LAYER_OPEN",
+      "note": "USACE service root froze PASS on 2026-09-20 with 206 services and zero folders; per-service metadata and layer denominators remain open.",
+      "certification_receipt": "registry/certification/location_query/USACE_GENERAL_ROOT_SERVICES_2026-09-20.json"
+    }
+  },
+  "invariants": {
+    "source_taxonomy_is_not_canonical_identity": true,
+    "source_absence_not_inferred_from_unbound_provider": true,
+    "no_coverage_not_source_absence": true,
+    "raw_bytes_before_derivation": true
+  }
+}

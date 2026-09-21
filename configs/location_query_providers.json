@@ -1,0 +1,323 @@
+{
+  "schema_version": "spiderweb.location_query_providers.v1.0",
+  "contract": "schemas/location_query.schema.json",
+  "readiness_states": [
+    "READY",
+    "READY_WITH_CREDENTIALS",
+    "READY_SPECIALIZED",
+    "RESOLVER_ONLY",
+    "PROVIDER_BINDING_OPEN",
+    "SCHEMA_ONLY",
+    "NOT_IMPLEMENTED",
+    "BLOCKED"
+  ],
+  "providers": {
+    "USGS_3DEP_1M": {
+      "family": "elevation",
+      "status": "READY",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "discovery": "tools/source_manifestation_seed.py",
+      "acquisition": "tools/spatial_aoi_fetcher.py",
+      "manifestation_registry": "registry/spatial/source_manifestations.json"
+    },
+    "PRVI_1m_DEM_2018": {
+      "family": "elevation",
+      "status": "PROVIDER_BINDING_OPEN",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "acquisition": "tools/spatial_aoi_fetcher.py",
+      "reason": "catalog/source URL binding remains open; Cell_ID geography remains blocked pending certified grid georeference"
+    },
+    "NCEI_COASTAL_DEM": {
+      "family": "coastal_elevation",
+      "status": "READY",
+      "query_modes": [
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "source_adapters.ncei_coastal_dem.cli"
+    },
+    "NASA_GIBS_IMAGERY": {
+      "family": "satellite_imagery",
+      "status": "READY",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox"
+      ],
+      "adapter": "imagery.providers.gibs",
+      "specialized_executor": {
+        "kind": "imagery",
+        "provider": "gibs",
+        "requires": [
+          "temporal.date_range"
+        ]
+      }
+    },
+    "SENTINEL_HUB_IMAGERY": {
+      "family": "satellite_imagery",
+      "status": "READY_WITH_CREDENTIALS",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox"
+      ],
+      "adapter": "imagery.providers.sentinelhub",
+      "required_environment": [
+        "SENTINELHUB_CLIENT_ID",
+        "SENTINELHUB_CLIENT_SECRET"
+      ],
+      "specialized_executor": {
+        "kind": "imagery",
+        "provider": "sentinelhub",
+        "requires": [
+          "temporal.date_range"
+        ]
+      }
+    },
+    "COPERNICUS_CDSE_IMAGERY": {
+      "family": "satellite_imagery",
+      "status": "READY_WITH_CREDENTIALS",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox"
+      ],
+      "adapter": "imagery.providers.copernicus",
+      "required_environment": [
+        "COPERNICUS_CLIENT_ID",
+        "COPERNICUS_CLIENT_SECRET"
+      ],
+      "specialized_executor": {
+        "kind": "imagery",
+        "provider": "copernicus",
+        "requires": [
+          "temporal.date_range"
+        ]
+      }
+    },
+    "PRPB_GEOLOGY_KARST": {
+      "family": "geology_karst",
+      "status": "READY_SPECIALIZED",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "reason": "reuses verified queryable source manifestations from spiderweb.subsurface.sources; reference-only sources remain outside automatic fetch"
+    },
+    "PR_AQUIFERS_WELLS_SPRINGS": {
+      "family": "hydrogeology",
+      "status": "READY_SPECIALIZED",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "reason": "reuses verified queryable PRPB and USGS Water Data source manifestations with stable-ID fields"
+    },
+    "PR_MARINE_LIDAR_TOPOBATHY": {
+      "family": "marine_topobathy",
+      "status": "READY_SPECIALIZED",
+      "query_modes": [
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "resolver": "pipeline.pr_marine_datasets"
+    },
+    "SSURGO_SOILS": {
+      "family": "soils",
+      "status": "RESOLVER_ONLY",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "wfs_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs",
+      "tabular_endpoint": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
+      "reason": "Canonical modular WFS bounding-envelope preselection→MUKEY→COKEY→22-child chain passed on 2026-09-20. Exact circle/polygon AOI intersection and survey-area coverage are not yet canonical in the modular chain, so provider remains RESOLVER_ONLY pending exact spatial adjudication plus general dependent-stage orchestration.",
+      "execution_requires_post_fetch": false,
+      "required_extra": "geo",
+      "implementation_state": "BBOX_PRESELECTION_RUNTIME_PASS_EXACT_AOI_AND_ORCHESTRATOR_OPEN",
+      "canonical_chain": [
+        "spiderweb.location_query_sources",
+        "scripts/location_query_fetch.py --discovery-only",
+        "scripts/ssurgo_location_stage2.py",
+        "scripts/location_query_fetch.py",
+        "scripts/ssurgo_location_stage3.py",
+        "scripts/location_query_fetch.py",
+        "scripts/certify_ssurgo_child.py"
+      ],
+      "runtime_certification_state": "BBOX_PRESELECTION_CHAIN_PASS_EXACT_AOI_SPATIAL_OPEN",
+      "runtime_certification_receipt": "registry/certification/location_query/SSURGO_HUCAR_2KM_2026-09-20.json"
+    },
+    "USGS_3DHP_NHD": {
+      "family": "hydrography",
+      "status": "READY_SPECIALIZED",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "feature_service": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer",
+      "release_observed": "2026-08-05",
+      "reason": "Runtime closure on 2026-09-20 froze the authoritative FeatureServer metadata and exact six-layer ID denominator; provisional and frozen stable-ID sets are equal with symmetric difference zero.",
+      "denominator_state": "FROZEN_RUNTIME_PASS",
+      "layers": [
+        {
+          "id": 20,
+          "role": "hydrolocation_sink_spring_waterbody_outlet"
+        },
+        {
+          "id": 30,
+          "role": "hydrolocation_headwater_terminus_divergence_confluence_catchment_outlet"
+        },
+        {
+          "id": 40,
+          "role": "hydrolocation_reach_code_external_connection"
+        },
+        {
+          "id": 50,
+          "role": "flowline"
+        },
+        {
+          "id": 60,
+          "role": "waterbody"
+        },
+        {
+          "id": 80,
+          "role": "catchment"
+        }
+      ],
+      "certification_receipt": "registry/certification/location_query/USGS_3DHP_NHD_2026-09-20.json"
+    },
+    "USFWS_NWI": {
+      "family": "wetlands",
+      "status": "READY_SPECIALIZED",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "service_root": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest",
+      "layer_url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/FeatureServer/0",
+      "reason": "NWI REST surface and Wetlands feature layer are bound; feature identity remains source manifestation identity"
+    },
+    "FEMA_NFHL": {
+      "family": "flood_hazard",
+      "status": "RESOLVER_ONLY",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "reason": "Operational FEMA NFHL ArcGIS REST MapServer layer denominator froze PASS on 2026-09-20 (32 unique layer IDs). Dependent AOI feature acquisition remains open, so readiness remains RESOLVER_ONLY.",
+      "runtime_lineage": {
+        "prior_url": "https://hazards.fema.gov/gis/nfhl/services/public/NFHL/MapServer/WMSServer?request=GetCapabilities&service=WMS",
+        "prior_state": "SUPERSEDED_RUNTIME_404_2026-09-20",
+        "current_state": "REBOUND_ARCGIS_MAP_SERVICE_UNCERTIFIED_RUNTIME"
+      },
+      "map_service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+      "denominator_state": "FROZEN_RUNTIME_PASS_DEPENDENT_AOI_OPEN",
+      "certification_receipt": "registry/certification/location_query/FEMA_NFHL_LAYER_DENOMINATOR_2026-09-20.json"
+    },
+    "USACE_GENERAL_GIS": {
+      "family": "federal_infrastructure",
+      "status": "RESOLVER_ONLY",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "service_root": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services",
+      "reason": "USACE enterprise root service denominator froze PASS on 2026-09-20 with 206 services and zero folders. Per-service metadata/layer denominators remain open, so readiness remains RESOLVER_ONLY.",
+      "denominator_state": "ROOT_SERVICE_DENOMINATOR_PASS_206_SERVICES_0_FOLDERS_LAYER_CLOSURE_OPEN",
+      "certification_receipt": "registry/certification/location_query/USACE_GENERAL_ROOT_SERVICES_2026-09-20.json"
+    },
+    "USACE_PORTS_NAV": {
+      "family": "ports_navigation",
+      "status": "READY_SPECIALIZED",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "layers": [
+        {
+          "role": "ports",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/arcgis/rest/services/Port_Statistical_Area/FeatureServer/0"
+        },
+        {
+          "role": "principal_ports",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/arcgis/rest/services/Principal_Ports/FeatureServer/0"
+        },
+        {
+          "role": "navigation_facilities",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services/Docks/FeatureServer/0"
+        },
+        {
+          "role": "waterway_network_nodes",
+          "url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services/Waterway_Networks/FeatureServer/0"
+        }
+      ]
+    },
+    "FEMA_PR_ABFE_1PCT": {
+      "family": "flood_hazard",
+      "status": "RESOLVER_ONLY",
+      "query_modes": [
+        "point",
+        "radius",
+        "bbox",
+        "polygon",
+        "geojson"
+      ],
+      "adapter": "spiderweb.location_query_sources",
+      "map_service": "https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer",
+      "reason": "Puerto Rico SIGE-hosted FEMA advisory MapServer layer denominator froze PASS on 2026-09-20 (20 unique layer IDs). Dependent AOI feature acquisition remains open, so readiness remains RESOLVER_ONLY.",
+      "runtime_lineage": {
+        "prior_url": "https://gis.fema.gov/arcgis/rest/services/DR/PuertoRico_ABFE_1PCT/MapServer",
+        "prior_state": "SUPERSEDED_RUNTIME_SERVICE_NOT_STARTED_2026-09-20",
+        "current_state": "REBOUND_UNCERTIFIED_RUNTIME"
+      },
+      "denominator_state": "FROZEN_RUNTIME_PASS_DEPENDENT_AOI_OPEN",
+      "certification_receipt": "registry/certification/location_query/FEMA_PR_ABFE_LAYER_DENOMINATOR_2026-09-20.json"
+    }
+  }
+}

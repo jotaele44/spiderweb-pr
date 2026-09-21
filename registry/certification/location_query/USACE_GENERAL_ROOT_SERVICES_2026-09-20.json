@@ -1,0 +1,20 @@
+{
+  "schema_version": "spiderweb.location_query_provider_certification.v1.0",
+  "provider_id": "USACE_GENERAL_GIS",
+  "state": "ROOT_SERVICE_DENOMINATOR_PASS_SERVICE_LAYER_CLOSURE_OPEN",
+  "source_workflow_run_id": 35526404517,
+  "source_workflow_artifact_id": 10610136986,
+  "source_workflow_artifact_digest": "sha256:c4166e7d9b7669fc82af86fea7599a30cdaf2ca53b94b3bcbafcfe65546f837c",
+  "source_git_head_sha": "8395d046ef4b61a0952c27daef29947f21914c74",
+  "runtime_manifest_sha256": "310669e2d49dfb6754998aaeb3975322dc39c5a8a714a9673ed0579e16acde2d",
+  "certification_date_utc": "2026-09-20",
+  "source_url": "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/ArcGIS/rest/services",
+  "raw_metadata_sha256": "20209cec38399695c27760843c388e46e670f384538db6acd282351ddfed86c2",
+  "denominator_file_sha256": "5d26b48709b2c7f0fa5347654fdd70b4226ed7f7c828fe7d6242b318cf822b9d",
+  "canonical_records_sha256": "97e38bdfeee8725881508626fd97b9e788f1911a7685551f97b218ddbef3c139",
+  "service_count": 206,
+  "folder_count": 0,
+  "folders": [],
+  "promotion_eligible": false,
+  "next_gate": "PER_SERVICE_METADATA_AND_LAYER_DENOMINATORS"
+}

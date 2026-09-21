@@ -1,0 +1,20 @@
+{
+  "schema_version": "spiderweb.location_query_reference_aois.v1.0",
+  "reference_aois": [
+    {
+      "id": "hucar_2km",
+      "geometry": {"type": "radius", "lat": 18.0119, "lon": -66.2396, "radius_m": 2000},
+      "purpose": "rural south-central Puerto Rico cross-family routing regression"
+    },
+    {
+      "id": "san_juan_metro_bbox",
+      "geometry": {"type": "bbox", "west": -66.12, "south": 18.35, "east": -65.92, "north": 18.49, "crs": "EPSG:4326"},
+      "purpose": "dense metro / coastal routing regression"
+    },
+    {
+      "id": "boqueron_bbox",
+      "geometry": {"type": "bbox", "west": -67.22, "south": 17.91, "east": -67.08, "north": 18.06, "crs": "EPSG:4326"},
+      "purpose": "west-coast DEM/marine/provider-binding regression"
+    }
+  ]
+}

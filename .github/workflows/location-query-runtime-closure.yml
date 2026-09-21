@@ -1,0 +1,77 @@
+name: LOCATION_QUERY Runtime Closure
+
+on:
+  push:
+    branches:
+      - location-query-unified-router-v1
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Immutable runtime snapshot ID"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: location-query-runtime-closure-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime-closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact ref
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install LOCATION_QUERY runtime dependencies
+        run: |
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[geo,dev]"
+
+      - name: Verify runtime closure shell syntax
+        run: bash -n scripts/run_location_query_runtime_closure.sh
+
+      - name: Resolve immutable runtime snapshot ID
+        id: snapshot
+        shell: bash
+        run: |
+          if [[ -n "${{ inputs.run_id }}" ]]; then
+            RUN_ID="${{ inputs.run_id }}"
+          else
+            RUN_ID="gha-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}"
+          fi
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Run immutable runtime closure
+        env:
+          RUN_ID: ${{ steps.snapshot.outputs.run_id }}
+        run: |
+          bash scripts/run_location_query_runtime_closure.sh "$RUN_ID"
+
+      - name: Freeze snapshot hashes
+        if: always()
+        env:
+          RUN_ID: ${{ steps.snapshot.outputs.run_id }}
+        run: |
+          SNAPSHOT="outputs/location_query/runtime_closure/$RUN_ID"
+          if [[ -d "$SNAPSHOT" ]]; then
+            find "$SNAPSHOT" -type f -print0 | sort -z | xargs -0 sha256sum > "$SNAPSHOT/ARTIFACT_SHA256SUMS.txt"
+          fi
+
+      - name: Upload runtime closure snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: location-query-runtime-closure-${{ steps.snapshot.outputs.run_id }}
+          path: outputs/location_query/runtime_closure/${{ steps.snapshot.outputs.run_id }}
+          if-no-files-found: warn
+          retention-days: 30

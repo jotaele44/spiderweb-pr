@@ -1,0 +1,49 @@
+{
+  "schema_version": "spiderweb.location_query_provider_certification.v1.0",
+  "provider_id": "USGS_3DHP_NHD",
+  "certification_date_utc": "2026-09-20",
+  "source_workflow_run_id": 35525653630,
+  "source_workflow_artifact_id": 10609751453,
+  "source_workflow_artifact_digest": "sha256:290ae9dcadd77e654b536b6525d7173ec919701a1ccfcb7ed6c7c9890331ef88",
+  "source_git_head_sha": "def7954947d3ee1c4c452199d0a3f947e4e5ca2e",
+  "raw_metadata_sha256": "83ffdf3f8485113db2bd44008bfcf2ffef8e55cf6389ba04ef46db292eb6c6ad",
+  "frozen_layer_denominator_sha256": "86baa12fd8042ce057e6984bae5a21f43c6b203cbbf2694c2e93e114de7e18b0",
+  "layer_count": 6,
+  "stable_layer_ids": [
+    20,
+    30,
+    40,
+    50,
+    60,
+    80
+  ],
+  "set_algebra": {
+    "intersection": [
+      20,
+      30,
+      40,
+      50,
+      60,
+      80
+    ],
+    "provisional_only": [],
+    "frozen_only": [],
+    "union": [
+      20,
+      30,
+      40,
+      50,
+      60,
+      80
+    ],
+    "symmetric_difference": []
+  },
+  "promotion_eligible": true,
+  "state": "PASS",
+  "policy": {
+    "stable_id_set_equality_required": true,
+    "count_equality_not_identity": true,
+    "layer_name_not_identity": true,
+    "automatic_parent_capability_inheritance": false
+  }
+}
