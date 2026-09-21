@@ -426,6 +426,7 @@ export function SpatialIntelligence({
     setTilesFailed,
     activeMode,
     fallbackReason,
+    graphicsUnavailableReason,
   } = useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG, spatialMode);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const spatialToolActiveRef = useRef(false);
@@ -789,6 +790,11 @@ export function SpatialIntelligence({
       {fallbackReason && (
         <div className="map-note" role="status">
           <span>3D scene unavailable ({fallbackReason}) — showing 2D instead.</span>
+        </div>
+      )}
+      {graphicsUnavailableReason && (
+        <div className="map-error" role="alert">
+          <span>Spatial graphics unavailable — {graphicsUnavailableReason}. Data and non-map analysis remain available.</span>
         </div>
       )}
       <div

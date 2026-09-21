@@ -24,6 +24,28 @@ const deterministicRasterTile = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
   'base64',
 )
+// Minimal valid MVT: one empty layer named "municipios", version=2, extent=4096.
+const deterministicMunicipiosMvt = Buffer.from('GhF4AgoKbXVuaWNpcGlvcyiAIA==', 'base64')
+const deterministicMunicipiosGeoJson = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      id: '72127',
+      properties: { GEOID: '72127', NAME: 'San Juan' },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [-66.20, 18.35],
+          [-66.00, 18.35],
+          [-66.00, 18.50],
+          [-66.20, 18.50],
+          [-66.20, 18.35],
+        ]],
+      },
+    },
+  ],
+}
 
 function record(entry) {
   results.push(entry)
@@ -64,7 +86,7 @@ async function waitForBasemapRequestQuiescence(page, externalFixtures) {
   throw new Error('Basemap tile requests did not become quiescent')
 }
 
-async function waitForModuleReady(page, moduleName, externalFixtures) {
+async function waitForModuleReady(page, moduleName, externalFixtures, graphics) {
   const panel = page.locator('#module-panel')
   const readyHeading = moduleReadyHeadings[moduleName]
   const loadingPlaceholder = panel.getByText(/^Loading module(?:…|\.\.\.)$/)
@@ -75,21 +97,29 @@ async function waitForModuleReady(page, moduleName, externalFixtures) {
     timeout: 30000,
   })
   await loadingPlaceholder.waitFor({ state: 'hidden', timeout: 30000 })
+  let graphicsUnavailableVisible = false
   if (moduleName === 'Spatial') {
-    await panel.getByRole('button', { name: 'Municipios rendered', exact: true }).waitFor({
-      state: 'visible',
-      timeout: 30000,
-    })
-    await page.waitForLoadState('networkidle', { timeout: 30000 })
-    basemapQuiescenceSamples = await waitForBasemapRequestQuiescence(page, externalFixtures)
-    await page.waitForTimeout(RASTER_FADE_HORIZON_MS)
+    const hasGraphics = Boolean(graphics?.webgl || graphics?.webgl2)
+    if (hasGraphics) {
+      await panel.getByRole('button', { name: 'Municipios rendered', exact: true }).waitFor({
+        state: 'visible',
+        timeout: 30000,
+      })
+      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      basemapQuiescenceSamples = await waitForBasemapRequestQuiescence(page, externalFixtures)
+      await page.waitForTimeout(RASTER_FADE_HORIZON_MS)
+    } else {
+      const unavailable = panel.getByRole('alert').filter({ hasText: 'Spatial graphics unavailable' })
+      await unavailable.waitFor({ state: 'visible', timeout: 30000 })
+      graphicsUnavailableVisible = await unavailable.isVisible()
+    }
   }
   await page.evaluate(async () => {
     await document.fonts.ready
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   })
   const visualStabilitySamples =
-    moduleName === 'Spatial'
+    moduleName === 'Spatial' && Boolean(graphics?.webgl || graphics?.webgl2)
       ? await waitForStableVisual(page, panel.locator('.maplibregl-canvas'))
       : undefined
 
@@ -100,52 +130,78 @@ async function waitForModuleReady(page, moduleName, externalFixtures) {
     basemapTileRequests: externalFixtures.basemapTileRequests,
     basemapQuiescenceSamples,
     visualStabilitySamples,
+    graphicsUnavailableVisible,
   }
 }
 
-async function installDeterministicExternalFixtures(context) {
-  const state = { basemapTileRequests: 0 }
+async function installDeterministicExternalFixtures(context, { mockMunicipios = true } = {}) {
+  const state = {
+    basemapTileRequests: 0,
+    municipiosGeoJsonRequests: 0,
+    municipiosTileJsonRequests: 0,
+    municipiosMvtRequests: 0,
+  }
   await context.route('https://tile.openstreetmap.org/**', async (route) => {
     state.basemapTileRequests += 1
     await route.fulfill({ status: 200, contentType: 'image/png', body: deterministicRasterTile })
   })
+  await context.route('**/geo/municipios.geojson', async (route) => {
+    state.municipiosGeoJsonRequests += 1
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/geo+json',
+      body: JSON.stringify(deterministicMunicipiosGeoJson),
+    })
+  })
+  if (mockMunicipios) {
+    await context.route('**/tiles/municipios**', async (route) => {
+      const requestUrl = new URL(route.request().url())
+      if (requestUrl.pathname === '/tiles/municipios') {
+        state.municipiosTileJsonRequests += 1
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            minzoom: 0,
+            maxzoom: 14,
+            tiles: [`${BASE_URL}/tiles/municipios/{z}/{x}/{y}`],
+            vector_layers: [{ id: 'municipios' }],
+          }),
+        })
+        return
+      }
+      state.municipiosMvtRequests += 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/vnd.mapbox-vector-tile',
+        body: deterministicMunicipiosMvt,
+      })
+    })
+  }
   return state
 }
 
 for (const [engineName, engine] of Object.entries(engines)) {
-  // WebKit headless on Linux needs Mesa software rendering to obtain a WebGL
-  // context. Firefox headless on Linux needs webgl.force-enabled to engage
-  // ANGLE's software renderer — without it the GL context creation fails,
-  // painter stays undefined, and map.remove() throws during React StrictMode
-  // cleanup. Chromium works with the default GL stack.
-  const webkitSoftwareEnv =
-    engineName === 'webkit'
-      ? { env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', GALLIUM_DRIVER: 'llvmpipe' } }
-      : {}
-  // Firefox headless on Linux cannot get a WebGL context for MapLibre without a real X11
-  // display. The CI workflow starts Xvfb (DISPLAY=:99) before this test so we launch
-  // Firefox non-headless: it uses X11/GLX with Mesa software rendering (LIBGL_ALWAYS_SOFTWARE)
-  // for a working GL context. Chromium works with its own headless GL stack; WebKit needs
-  // Mesa but works headless. webgl.force-enabled bypasses Firefox's driver blocklist which
-  // would otherwise reject llvmpipe.
-  const firefoxSoftwareEnv =
+  const launchOptions =
     engineName === 'firefox'
       ? {
-          env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', GALLIUM_DRIVER: 'llvmpipe' },
-          firefoxUserPrefs: { 'webgl.force-enabled': true, 'webgl.disabled': false },
+          headless: true,
+          firefoxUserPrefs: {
+            'webgl.disabled': false,
+            'webgl.force-enabled': true,
+            'gfx.webrender.all': true,
+            'layers.acceleration.force-enabled': true,
+          },
         }
-      : {}
-  const browser = await engine.launch({
-    headless: engineName !== 'firefox',
-    ...webkitSoftwareEnv,
-    ...firefoxSoftwareEnv,
-  })
+      : { headless: true }
+  const browser = await engine.launch(launchOptions)
   try {
     for (const viewport of viewports) {
       const context = await browser.newContext({ viewport, reducedMotion: 'no-preference' })
       const externalFixtures = await installDeterministicExternalFixtures(context)
       const page = await context.newPage()
       const runtimeErrors = []
+      let graphics = null
       page.on('pageerror', (error) => runtimeErrors.push(`page error: ${String(error)}`))
       page.on('console', (message) => {
         if (/The above error occurred|Unhandled render error|There is no style added|feature id is required|maplibre-gl-worker/i.test(message.text())) {
@@ -155,13 +211,21 @@ for (const [engineName, engine] of Object.entries(engines)) {
 
       try {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 })
+        graphics = await page.evaluate(() => {
+          const webglCanvas = document.createElement('canvas')
+          const webgl2Canvas = document.createElement('canvas')
+          return {
+            webgl: Boolean(webglCanvas.getContext('webgl')),
+            webgl2: Boolean(webgl2Canvas.getContext('webgl2')),
+          }
+        })
         await page.getByRole('tab', { name: 'Command', exact: true }).waitFor({ timeout: 30000 })
 
         for (const moduleName of modules) {
           const errorOffset = runtimeErrors.length
           const tab = page.getByRole('tab', { name: moduleName, exact: true })
           await tab.click()
-          const readiness = await waitForModuleReady(page, moduleName, externalFixtures)
+          const readiness = await waitForModuleReady(page, moduleName, externalFixtures, graphics)
           const selected = await tab.getAttribute('aria-selected')
           const moduleErrors = runtimeErrors.slice(errorOffset)
           const layout = await page.evaluate(() => ({
@@ -183,7 +247,10 @@ for (const [engineName, engine] of Object.entries(engines)) {
               selected === 'true' &&
               readiness.readyHeadingVisible &&
               !readiness.loadingPlaceholderVisible &&
-              (moduleName !== 'Spatial' || readiness.basemapTileRequests > 0) &&
+              (moduleName !== 'Spatial' ||
+                (graphics?.webgl || graphics?.webgl2
+                  ? readiness.basemapTileRequests > 0
+                  : readiness.graphicsUnavailableVisible)) &&
               moduleErrors.length === 0 &&
               !horizontalOverflow
                 ? 'PASS'
@@ -198,6 +265,8 @@ for (const [engineName, engine] of Object.entries(engines)) {
                   basemap_quiescence_samples: readiness.basemapQuiescenceSamples,
                   raster_fade_horizon_ms: RASTER_FADE_HORIZON_MS,
                   visual_stability_samples: readiness.visualStabilitySamples,
+                  graphics_unavailable_visible: readiness.graphicsUnavailableVisible,
+                  graphics,
                 }
               : {}),
             page_errors: moduleErrors,
@@ -247,7 +316,14 @@ for (const [engineName, engine] of Object.entries(engines)) {
           layout: zoomLayout,
         })
       } catch (error) {
-        record({ engine: engineName, viewport: viewport.width, status: 'FAIL', error: String(error), runtime_errors: runtimeErrors })
+        record({
+          engine: engineName,
+          viewport: viewport.width,
+          status: 'FAIL',
+          error: String(error),
+          runtime_errors: runtimeErrors,
+          graphics,
+        })
       } finally {
         await context.close()
       }
@@ -273,35 +349,16 @@ for (const [engineName, engine] of Object.entries(engines)) {
 const densityBrowser = await chromium.launch({ headless: true })
 try {
   const context = await densityBrowser.newContext({ viewport: { width: 1280, height: 900 } })
-  const externalFixtures = await installDeterministicExternalFixtures(context)
+  const externalFixtures = await installDeterministicExternalFixtures(context, { mockMunicipios: false })
   const page = await context.newPage()
   const pageErrors = []
   const spatialRuntimeErrors = []
   let attempts = 0
-  let tileJsonAttempts = 0
   page.on('pageerror', (error) => pageErrors.push(String(error)))
   page.on('console', (message) => {
     if (/feature id is required|removeFeatureState|setFeatureState|maplibre-gl-worker|no style added/i.test(message.text())) {
       spatialRuntimeErrors.push(message.text())
     }
-  })
-  await page.route('**/tiles/municipios**', async (route) => {
-    const requestUrl = new URL(route.request().url())
-    if (requestUrl.pathname !== '/tiles/municipios') {
-      await route.fulfill({ status: 204, body: '' })
-      return
-    }
-    tileJsonAttempts += 1
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        minzoom: 0,
-        maxzoom: 14,
-        tiles: [`${BASE_URL}/tiles/municipios/{z}/{x}/{y}`],
-        vector_layers: [{ id: 'municipios' }],
-      }),
-    })
   })
   await page.route('**/geo/municipios/density**', async (route) => {
     attempts += 1
@@ -343,9 +400,9 @@ try {
       engine: 'chromium',
       viewport: 1280,
       mode: 'spatial-density-retry-and-cleanup',
-      status: externalFixtures.basemapTileRequests > 0 && tileJsonAttempts > 0 && attempts === 2 && pageErrors.length === 0 && spatialRuntimeErrors.length === 0 ? 'PASS' : 'FAIL',
+      status: externalFixtures.basemapTileRequests > 0 && externalFixtures.municipiosGeoJsonRequests > 0 && attempts === 2 && pageErrors.length === 0 && spatialRuntimeErrors.length === 0 ? 'PASS' : 'FAIL',
       basemap_tile_requests: externalFixtures.basemapTileRequests,
-      tilejson_attempts: tileJsonAttempts,
+      municipios_geojson_requests: externalFixtures.municipiosGeoJsonRequests,
       attempts,
       page_errors: pageErrors,
       spatial_runtime_errors: spatialRuntimeErrors,
@@ -358,7 +415,7 @@ try {
       status: 'FAIL',
       error: String(error),
       basemap_tile_requests: externalFixtures.basemapTileRequests,
-      tilejson_attempts: tileJsonAttempts,
+      municipios_geojson_requests: externalFixtures.municipiosGeoJsonRequests,
       attempts,
       page_errors: pageErrors,
       spatial_runtime_errors: spatialRuntimeErrors,
@@ -383,5 +440,11 @@ const summary = {
   results,
 }
 fs.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n')
-console.log(JSON.stringify({ expected_surface_cells: summary.expected_surface_cells, observed_surface_cells: summary.observed_surface_cells, failures: summary.failures }, null, 2))
+const failedResults = results.filter((r) => r.status === 'FAIL')
+console.log(JSON.stringify({
+  expected_surface_cells: summary.expected_surface_cells,
+  observed_surface_cells: summary.observed_surface_cells,
+  failures: summary.failures,
+  failed_results: failedResults,
+}, null, 2))
 process.exit(failed ? 1 : 0)
