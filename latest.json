@@ -1,0 +1,22 @@
+{
+  "schema_version": "spiderweb.jp-flood-live-receipt/v1",
+  "generated_at": "2026-09-22T04:46:08.766564+00:00",
+  "source_main_sha": "fcc340585c851b9bb568a38098c2c9585c83c7f3",
+  "workflow_run_id": 35688020606,
+  "workflow_run_number": 3,
+  "event_name": "push",
+  "transition": {
+    "status": "PASS",
+    "listed_count": 77,
+    "transition_count": 0,
+    "sha256": "ded27ce9aa6b1da682ec06d8509e1af7191fbbe8819f0174924b64c4437e878b"
+  },
+  "reproducibility": {
+    "status": "PASS",
+    "blocking_count": 0,
+    "identical_count": 78,
+    "metadata_only_count": 0,
+    "sha256": "f0244b70608b33bcc364ea5f72b0cfef82a406306e5ef26506b7b549af679d53"
+  },
+  "certification_invariant": "live observations never auto-promote frozen source_state"
+}
