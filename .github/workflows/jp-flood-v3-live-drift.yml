@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "17 10 * * 0"
+  pull_request:
+    paths:
+      - "scripts/check_jp_flood_live_v3.py"
+      - "scripts/acquire_jp_flood_documents.py"
+      - ".github/workflows/jp-flood-v3-live-drift.yml"
 
 permissions:
   contents: read
