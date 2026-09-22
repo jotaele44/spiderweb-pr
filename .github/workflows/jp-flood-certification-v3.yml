@@ -1,0 +1,42 @@
+name: JP flood certification V3
+
+on:
+  pull_request:
+    paths:
+      - "data/jp_flood_documents/**"
+      - "scripts/check_jp_flood_certification_v3.py"
+      - "scripts/check_jp_flood_live_v3.py"
+      - "scripts/acquire_jp_flood_documents.py"
+      - "tests/test_jp_flood_certification_v3.py"
+      - ".github/workflows/jp-flood-certification-v3.yml"
+  push:
+    branches: [main]
+    paths:
+      - "data/jp_flood_documents/**"
+      - "scripts/check_jp_flood_certification_v3.py"
+      - "scripts/acquire_jp_flood_documents.py"
+
+permissions:
+  contents: read
+
+jobs:
+  certification-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Replay frozen JP flood certification
+        run: python scripts/check_jp_flood_certification_v3.py --report artifacts/jp-flood-v3-static.json
+      - name: Run mutation and scope regressions
+        run: python -m pytest -q tests/test_jp_flood_certification_v3.py
+      - name: Upload V3 replay receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: jp-flood-certification-v3-static
+          path: artifacts/jp-flood-v3-static.json
+          retention-days: 90
