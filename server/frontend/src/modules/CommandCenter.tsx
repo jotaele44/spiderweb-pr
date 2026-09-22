@@ -3,6 +3,15 @@ import type { ModuleId, PriisData, Selection } from "../types/priis";
 import { Pill, TierBadge } from "../components/Badges";
 import { Card } from "../components/Card";
 import { AnomalyCard } from "../components/AnomalyCard";
+import { ProgramTimeline } from "../components/ProgramTimeline";
+
+const PROGRAM_TIMELINE = [
+  { id:"spider-acquire", phase:"NOW" as const, title:"Spatial source acquisition", detail:"Acquire bounded authoritative datasets with frozen source/query/retrieval manifests before parsing.", category:"Acquisition" },
+  { id:"spider-aoi", phase:"NEXT" as const, title:"AOI and geometry validation", detail:"Validate CRS, geometry, nulls, duplicates, topology, and row conservation for imported areas.", category:"GIS" },
+  { id:"spider-identity", phase:"NEXT" as const, title:"Spatial identity adjudication", detail:"Resolve parcels, infrastructure, POIs, and geometry relationships without proximity-only identity.", category:"Identity" },
+  { id:"spider-bathy", phase:"QUEUED" as const, title:"Land/ocean analysis", detail:"Extend authoritative spatial analysis through hydrology, bathymetry, infrastructure, and offshore context.", category:"Analysis" },
+  { id:"spider-cert", phase:"BLOCKED" as const, title:"Rendered acquisition QA", detail:"Desktop/iPhone source-acquisition and map interaction proof remains required before scoped certification.", category:"Certification" },
+];
 
 export function CommandCenter({ data, setSelection, setModule }: { data: PriisData; setSelection: (selection: Selection) => void; setModule: (id: ModuleId) => void }) {
   const total = data.contracts.reduce((sum, contract) => sum + contract.amount, 0);
@@ -11,6 +20,7 @@ export function CommandCenter({ data, setSelection, setModule }: { data: PriisDa
   return (
     <section className="panel">
       <div className="panel-head"><div><h1>Command Center</h1><span className="subtle">Spiderweb spatial / operational producer · PRII federation</span></div><button className="act primary" onClick={() => setModule("query")}>OPEN QUERY LAYER</button></div>
+      <ProgramTimeline items={PROGRAM_TIMELINE} />
       <div className="panel-grid">
         <div className="cards">
           <Card title="Total awarded" stat={fmtMoney(total)} delta={`${data.contracts.length} contracts`} />
