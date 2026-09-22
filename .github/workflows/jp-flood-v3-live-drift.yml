@@ -1,0 +1,77 @@
+name: JP flood V3 live drift
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 10 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  source-transition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Detect source-state transitions
+        run: python scripts/check_jp_flood_live_v3.py transition --report artifacts/source-transition.json
+      - name: Upload transition receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: jp-flood-source-transition
+          path: artifacts/source-transition.json
+          if-no-files-found: warn
+          retention-days: 90
+
+  replica:
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [a, b]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Acquire clean replica
+        run: |
+          python scripts/check_jp_flood_live_v3.py replica             --out "artifacts/replica-${{ matrix.replica }}.json"             --workdir "/tmp/jp-flood-v3-${{ matrix.replica }}"
+      - name: Upload replica ledger
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: jp-flood-replica-${{ matrix.replica }}
+          path: artifacts/replica-${{ matrix.replica }}.json
+          if-no-files-found: warn
+          retention-days: 90
+
+  reproducibility:
+    needs: [replica]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16
+        with:
+          pattern: jp-flood-replica-*
+          path: artifacts/replicas
+          merge-multiple: true
+      - name: Compare replicas and frozen baseline
+        run: |
+          python scripts/check_jp_flood_live_v3.py compare             --a artifacts/replicas/replica-a.json             --b artifacts/replicas/replica-b.json             --report artifacts/reproducibility.json
+      - name: Upload reproducibility receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: jp-flood-reproducibility-v3
+          path: artifacts/reproducibility.json
+          if-no-files-found: warn
+          retention-days: 90
