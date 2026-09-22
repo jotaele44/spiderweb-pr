@@ -5,7 +5,9 @@
     "certification_path": "data/jp_flood_documents/certification/2026-09-21/certification.json",
     "byte_ledger_path": "data/jp_flood_documents/certification/2026-09-21/byte-ledger.csv",
     "sha256sums_path": "data/jp_flood_documents/certification/2026-09-21/SHA256SUMS.txt",
-    "producer_contract_path": "data/jp_flood_documents/producer_contract_v1.json"
+    "producer_contract_path": "data/jp_flood_documents/producer_contract_v1.json",
+    "certification_sha256": "e6832834f875900dda4c3f5f3b25444e39e9f804d1279ffb45ddecee9082c60c",
+    "sha256sums_sha256": "118fa90880747177cf0349db19ad21bcc8432110b1032dc4d3e5d420cb7fb305"
   },
   "certified_claim": "78/78 operational flood-document manifestations have verified byte identity for the certified acquisition snapshot.",
   "explicit_nonclaims": [
