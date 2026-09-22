@@ -9,9 +9,15 @@ on:
       - "scripts/check_jp_flood_live_v3.py"
       - "scripts/acquire_jp_flood_documents.py"
       - ".github/workflows/jp-flood-v3-live-drift.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/check_jp_flood_live_v3.py"
+      - "scripts/acquire_jp_flood_documents.py"
+      - ".github/workflows/jp-flood-v3-live-drift.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   source-transition:
@@ -80,3 +86,104 @@ jobs:
           path: artifacts/reproducibility.json
           if-no-files-found: warn
           retention-days: 90
+
+  durable-receipt:
+    needs: [source-transition, reproducibility]
+    if: always() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16
+        with:
+          name: jp-flood-source-transition
+          path: artifacts/durable
+
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16
+        with:
+          name: jp-flood-reproducibility-v3
+          path: artifacts/durable
+
+      - name: Build durable compact receipt
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+          import hashlib
+          import json
+          import os
+          import pathlib
+          from datetime import datetime, timezone
+
+          root = pathlib.Path("artifacts/durable")
+          transition_path = root / "source-transition.json"
+          reproducibility_path = root / "reproducibility.json"
+          transition = json.loads(transition_path.read_text(encoding="utf-8"))
+          reproducibility = json.loads(reproducibility_path.read_text(encoding="utf-8"))
+
+          def sha256(path: pathlib.Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          receipt = {
+              "schema_version": "spiderweb.jp-flood-live-receipt/v1",
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "source_main_sha": os.environ["SOURCE_SHA"],
+              "workflow_run_id": int(os.environ["RUN_ID"]),
+              "workflow_run_number": int(os.environ["RUN_NUMBER"]),
+              "event_name": os.environ["EVENT_NAME"],
+              "transition": {
+                  "status": transition.get("status"),
+                  "listed_count": transition.get("listed_count"),
+                  "transition_count": len(transition.get("transitions") or []),
+                  "sha256": sha256(transition_path),
+              },
+              "reproducibility": {
+                  "status": reproducibility.get("status"),
+                  "blocking_count": reproducibility.get("blocking_count"),
+                  "identical_count": reproducibility.get("identical_count"),
+                  "metadata_only_count": reproducibility.get("metadata_only_count"),
+                  "sha256": sha256(reproducibility_path),
+              },
+              "certification_invariant": "live observations never auto-promote frozen source_state",
+          }
+          if receipt["transition"]["status"] not in {"PASS", "TRANSPORT_BLOCKED"}:
+              receipt["requires_readjudication"] = True
+          if receipt["reproducibility"]["status"] not in {"PASS", "TRANSPORT_BLOCKED"}:
+              receipt["requires_readjudication"] = True
+
+          out = pathlib.Path("/tmp/jp-flood-live-receipt.json")
+          out.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - name: Append receipt to durable branch
+        env:
+          RECEIPT_BRANCH: jp-flood-v3-receipts
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          git config user.name "jp-flood-v3-receipt-bot"
+          git config user.email "noreply@github.com"
+
+          if git ls-remote --exit-code --heads origin "${RECEIPT_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${RECEIPT_BRANCH}:${RECEIPT_BRANCH}"
+            git switch "${RECEIPT_BRANCH}"
+          else
+            git switch --orphan "${RECEIPT_BRANCH}"
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          mkdir -p receipts
+          cp /tmp/jp-flood-live-receipt.json "receipts/run-${RUN_ID}.json"
+          cp /tmp/jp-flood-live-receipt.json latest.json
+          git add receipts latest.json
+          git commit -m "Record JP flood V3 live receipt run ${RUN_ID}"
+          git push origin "HEAD:${RECEIPT_BRANCH}"
+
