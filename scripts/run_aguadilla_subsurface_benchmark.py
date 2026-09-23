@@ -325,10 +325,12 @@ def sentinel_temporal_metadata() -> dict:
             (RAW / f"EARTH_SEARCH_{epoch[:4]}_ERROR.{digest}.json").write_bytes(raw)
             rows.append({"epoch": epoch, "candidate_count": 0, "selected_id": None, "cloud_cover": None, "state": "UNRESOLVED", "http_status": r.status_code, "error_sha256": digest, "error_body": r.text[:1000]})
             continue
+        success_path = RAW / f"EARTH_SEARCH_{epoch[:4]}.{digest}.json"
+        success_path.write_bytes(raw)
         features = r.json().get("features") or []
         features.sort(key=lambda x: (x.get("properties", {}).get("eo:cloud_cover", 999), x.get("id", "")))
         best = features[0] if features else None
-        rows.append({"epoch": epoch, "candidate_count": len(features), "selected_id": None if best is None else best.get("id"), "cloud_cover": None if best is None else best.get("properties", {}).get("eo:cloud_cover"), "state": "OBSERVED_METADATA" if best else "UNRESOLVED"})
+        rows.append({"epoch": epoch, "candidate_count": len(features), "selected_id": None if best is None else best.get("id"), "cloud_cover": None if best is None else best.get("properties", {}).get("eo:cloud_cover"), "state": "OBSERVED_METADATA" if best else "UNRESOLVED", "search_response_sha256": digest, "selected_assets": [] if best is None else sorted((best.get("assets") or {}).keys())})
     return {"provider": "Element84 Earth Search Sentinel-2 Collection 1 L2A", "epochs": rows, "pixel_persistence_state": "UNRESOLVED", "note": "catalog persistence is frozen; pixel-level temporal classification requires separately frozen image assets"}
 
 
