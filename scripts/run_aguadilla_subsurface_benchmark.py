@@ -76,6 +76,7 @@ def freeze_response(source_id: str, url: str, response: requests.Response) -> di
     return {
         "source_id": source_id,
         "request_url": url,
+        "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
         "http_status": response.status_code,
         "content_type": response.headers.get("Content-Type", ""),
         "size_bytes": len(raw),
@@ -102,6 +103,13 @@ def arcgis_query(source_id: str, layer: str, bbox=None, point=None) -> tuple[dic
     payload = r.json()
     if "error" in payload:
         raise RuntimeError(f"{source_id}: {payload['error']}")
+        manifest["logical_schema"] = {
+            "object_id_field": payload.get("objectIdFieldName"),
+            "global_id_field": payload.get("globalIdFieldName"),
+            "geometry_type": payload.get("geometryType"),
+            "spatial_reference": payload.get("spatialReference"),
+            "fields": [{"name": x.get("name"), "type": x.get("type")} for x in (payload.get("fields") or [])],
+        }
     return payload, manifest
 
 
@@ -221,8 +229,9 @@ def terrain_metrics(cudem_paths: list[Path]) -> dict:
         full_bounds = rasterio.transform.array_bounds(band.shape[0], band.shape[1], transform)
         for zid, bbox in WINDOWS.items():
             left, bottom, right, top = bbox
-            if not (full_bounds[0] <= left and full_bounds[1] <= bottom and full_bounds[2] >= right and full_bounds[3] >= top):
-                out[zid] = {"state": "UNRESOLVED", "reason": "mosaic does not fully cover requested window", "mosaic_bounds": list(full_bounds)}
+            coverage_tolerance = max(abs(transform.a), abs(transform.e)) * 1.1
+            if not (full_bounds[0] <= left + coverage_tolerance and full_bounds[1] <= bottom + coverage_tolerance and full_bounds[2] >= right - coverage_tolerance and full_bounds[3] >= top - coverage_tolerance):
+                out[zid] = {"state": "UNRESOLVED", "reason": "mosaic does not fully cover requested window beyond one-cell alignment tolerance", "mosaic_bounds": list(full_bounds), "coverage_tolerance_degrees": coverage_tolerance}
                 continue
             w = from_bounds(left, bottom, right, top, transform=transform)
             r0 = max(0, int(math.floor(w.row_off)))
@@ -299,7 +308,13 @@ def coastline_corridor(coast_payload: dict) -> dict:
 
 def sentinel_temporal_metadata() -> dict:
     endpoint = "https://earth-search.aws.element84.com/v1/search"
-    epochs = ["2018-01-01/2018-12-31", "2020-01-01/2020-12-31", "2022-01-01/2022-12-31", "2024-01-01/2024-12-31", "2026-01-01/2026-09-23"]
+    epochs = [
+        "2018-01-01T00:00:00Z/2018-12-31T23:59:59Z",
+        "2020-01-01T00:00:00Z/2020-12-31T23:59:59Z",
+        "2022-01-01T00:00:00Z/2022-12-31T23:59:59Z",
+        "2024-01-01T00:00:00Z/2024-12-31T23:59:59Z",
+        "2026-01-01T00:00:00Z/2026-09-23T23:59:59Z",
+    ]
     rows = []
     for epoch in epochs:
         body = {"collections": ["sentinel-2-c1-l2a"], "bbox": list(WINDOWS["Z3"]), "datetime": epoch, "limit": 50}
