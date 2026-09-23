@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 import numpy as np
 import requests
 import rasterio
-from rasterio.windows import from_bounds
+from rasterio.windows import from_bounds\nfrom rasterio.merge import merge
 from scipy import ndimage
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import nearest_points, unary_union
@@ -46,7 +46,10 @@ SOURCES = {
     "PRPB_COASTLINE_3": "https://sige.pr.gov/server/rest/services/Advisory_Maps/Advisory_Maps/FeatureServer/3",
 }
 USGS_MON = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items"
-CUDEM = "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_ninth_Topobathy_PuertoRico_9525/ncei19_n18x50_w067x25_2022v2.tif"
+CUDEM_TILES = {
+    "NOAA_CUDEM_PR_N18X50_W067X25_2022V2": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_ninth_Topobathy_PuertoRico_9525/ncei19_n18x50_w067x25_2022v2.tif",
+    "NOAA_CUDEM_PR_N18X75_W067X25_2022V2": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/NCEI_ninth_Topobathy_PuertoRico_9525/ncei19_n18x75_w067x25_2022v2.tif",
+}
 
 
 def sha256_bytes(raw: bytes) -> str:
@@ -156,42 +159,84 @@ def exact_geology(payload: dict) -> dict:
     return {"state": state, "topology": topology, "OBJECTID": attrs.get("OBJECTID"), "formation_raw": attrs.get("HORNBLENDE")}
 
 
-def download_cudem() -> tuple[Path, dict]:
-    meta = requests.get(CUDEM, stream=True, timeout=300)
-    meta.raise_for_status()
-    temp = RAW / "NOAA_CUDEM.tmp"
-    h = hashlib.sha256()
-    size = 0
-    with temp.open("wb") as fh:
-        for chunk in meta.iter_content(chunk_size=8 * 1024 * 1024):
-            if chunk:
-                fh.write(chunk); h.update(chunk); size += len(chunk)
-    digest = h.hexdigest()
-    final = RAW / f"NOAA_CUDEM_PR_N18X50_W067X25_2022V2.{digest}.tif"
-    if final.exists():
-        temp.unlink(missing_ok=True)
-        reused = True
-    else:
-        temp.replace(final); reused = False
-    return final, {"source_id": "NOAA_CUDEM_PR_N18X50_W067X25_2022V2", "request_url": CUDEM, "size_bytes": size, "sha256": digest, "raw_path": str(final.relative_to(ROOT)), "reused_existing_bytes": reused}
+def download_cudem_tiles() -> tuple[list[Path], list[dict]]:
+    paths = []
+    manifests = []
+    for source_id, url in CUDEM_TILES.items():
+        meta = requests.get(url, stream=True, timeout=300)
+        meta.raise_for_status()
+        temp = RAW / f"{source_id}.tmp"
+        h = hashlib.sha256()
+        size = 0
+        with temp.open("wb") as fh:
+            for chunk in meta.iter_content(chunk_size=8 * 1024 * 1024):
+                if chunk:
+                    fh.write(chunk)
+                    h.update(chunk)
+                    size += len(chunk)
+        digest = h.hexdigest()
+        final = RAW / f"{source_id}.{digest}.tif"
+        if final.exists():
+            assert sha256_bytes(final.read_bytes()) == digest
+            temp.unlink(missing_ok=True)
+            reused = True
+        else:
+            temp.replace(final)
+            reused = False
+        with rasterio.open(final) as ds:
+            raster_meta = {
+                "crs": str(ds.crs),
+                "bounds": [ds.bounds.left, ds.bounds.bottom, ds.bounds.right, ds.bounds.top],
+                "width": ds.width,
+                "height": ds.height,
+                "dtype": ds.dtypes[0],
+                "nodata": ds.nodata,
+                "transform": list(ds.transform)[:6],
+            }
+        paths.append(final)
+        manifests.append({
+            "source_id": source_id,
+            "request_url": url,
+            "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+            "size_bytes": size,
+            "sha256": digest,
+            "raw_path": str(final.relative_to(ROOT)),
+            "reused_existing_bytes": reused,
+            "raster_metadata": raster_meta,
+        })
+    return paths, manifests
 
 
-def terrain_metrics(cudem: Path) -> dict:
+def terrain_metrics(cudem_paths: list[Path]) -> dict:
     out = {}
-    with rasterio.open(cudem) as ds:
+    datasets = [rasterio.open(p) for p in cudem_paths]
+    try:
+        mosaic, transform = merge(datasets, bounds=Z1, nodata=datasets[0].nodata)
+        band = mosaic[0].astype("float64")
+        nodata = datasets[0].nodata
+        if nodata is not None:
+            band[band == nodata] = np.nan
+        full_bounds = rasterio.transform.array_bounds(band.shape[0], band.shape[1], transform)
         for zid, bbox in WINDOWS.items():
             left, bottom, right, top = bbox
-            w = from_bounds(left, bottom, right, top, transform=ds.transform)
-            a = ds.read(1, window=w, masked=True).astype("float64")
-            z = a.filled(np.nan)
+            if not (full_bounds[0] <= left and full_bounds[1] <= bottom and full_bounds[2] >= right and full_bounds[3] >= top):
+                out[zid] = {"state": "UNRESOLVED", "reason": "mosaic does not fully cover requested window", "mosaic_bounds": list(full_bounds)}
+                continue
+            w = from_bounds(left, bottom, right, top, transform=transform)
+            r0 = max(0, int(math.floor(w.row_off)))
+            c0 = max(0, int(math.floor(w.col_off)))
+            r1 = min(band.shape[0], int(math.ceil(w.row_off + w.height)))
+            c1 = min(band.shape[1], int(math.ceil(w.col_off + w.width)))
+            z = band[r0:r1, c0:c1]
             valid = np.isfinite(z)
-            if valid.sum() == 0:
-                out[zid] = {"state": "UNRESOLVED", "reason": "no raster cells"}; continue
-            xres, yres = abs(ds.transform.a), abs(ds.transform.e)
-            # Degrees -> local metres approximation for slope scale.
+            if z.ndim != 2 or z.shape[0] < 2 or z.shape[1] < 2 or valid.sum() < 4:
+                out[zid] = {"state": "UNRESOLVED", "reason": "insufficient raster cells", "shape": list(z.shape)}
+                continue
+            xres, yres = abs(transform.a), abs(transform.e)
             m_per_deg_lon = 111320.0 * math.cos(math.radians(ANCHOR_LAT))
             m_per_deg_lat = 110574.0
-            dx = max(xres * m_per_deg_lon, 0.1); dy = max(yres * m_per_deg_lat, 0.1)
+            dx = max(xres * m_per_deg_lon, 0.1)
+            dy = max(yres * m_per_deg_lat, 0.1)
             fill = np.where(valid, z, np.nanmedian(z[valid]))
             gy, gx = np.gradient(fill, dy, dx)
             slope = np.degrees(np.arctan(np.hypot(gx, gy)))
@@ -200,11 +245,11 @@ def terrain_metrics(cudem: Path) -> dict:
             local_max = ndimage.maximum_filter(fill, size=11, mode="nearest")
             prominence = local_max - fill
             depression_mask = local_min & valid & (prominence >= 0.5)
-            # D8-like steepest lower-neighbour terminal/sink screening.
             sink_mask = np.ones(fill.shape, dtype=bool)
             for oy in (-1, 0, 1):
                 for ox in (-1, 0, 1):
-                    if oy == 0 and ox == 0: continue
+                    if oy == 0 and ox == 0:
+                        continue
                     shifted = np.roll(np.roll(fill, oy, axis=0), ox, axis=1)
                     sink_mask &= fill <= shifted
             sink_mask &= valid
@@ -212,105 +257,21 @@ def terrain_metrics(cudem: Path) -> dict:
             lineament_mask = valid & (np.abs(lap) >= curvature_threshold)
             out[zid] = {
                 "state": "OBSERVED_DERIVED",
+                "shape": list(z.shape),
                 "cells": int(valid.sum()),
-                "elevation_min_m": float(np.nanmin(z)), "elevation_max_m": float(np.nanmax(z)), "elevation_mean_m": float(np.nanmean(z)),
-                "slope_p50_deg": float(np.nanpercentile(slope[valid], 50)), "slope_p95_deg": float(np.nanpercentile(slope[valid], 95)),
-                "depression_candidate_cells": int(depression_mask.sum()), "d8_sink_candidate_cells": int(sink_mask.sum()),
+                "elevation_min_m": float(np.nanmin(z)),
+                "elevation_max_m": float(np.nanmax(z)),
+                "elevation_mean_m": float(np.nanmean(z)),
+                "slope_p50_deg": float(np.nanpercentile(slope[valid], 50)),
+                "slope_p95_deg": float(np.nanpercentile(slope[valid], 95)),
+                "depression_candidate_cells": int(depression_mask.sum()),
+                "d8_sink_candidate_cells": int(sink_mask.sum()),
                 "terrain_lineament_candidate_cells": int(lineament_mask.sum()),
                 "interpretive_boundary": "derived morphology candidates only; not cave/void/conduit identity",
             }
+    finally:
+        for ds in datasets:
+            ds.close()
     return out
 
 
-def coastline_corridor(coast_payload: dict) -> dict:
-    lines = []
-    for f in coast_payload.get("features") or []:
-        lines.extend(esri_lines(f.get("geometry") or {}))
-    if not lines:
-        return {"state": "UNRESOLVED", "reason": "no coastline linework"}
-    coast = unary_union(lines)
-    p = Point(ANCHOR_LON, ANCHOR_LAT)
-    q = nearest_points(p, coast)[1]
-    to_utm = Transformer.from_crs(4326, 32619, always_xy=True)
-    to_wgs = Transformer.from_crs(32619, 4326, always_xy=True)
-    ax, ay = to_utm.transform(p.x, p.y); qx, qy = to_utm.transform(q.x, q.y)
-    vx, vy = qx - ax, qy - ay; length = math.hypot(vx, vy)
-    if length == 0:
-        return {"state": "UNRESOLVED", "reason": "anchor lies on shoreline"}
-    ux, uy = vx/length, vy/length
-    offshore_x, offshore_y = qx + ux * 2000.0, qy + uy * 2000.0
-    ox, oy = to_wgs.transform(offshore_x, offshore_y)
-    return {"state": "CANDIDATE", "shoreline_nearest": [q.x, q.y], "anchor_to_shore_m": length, "offshore_terminal": [ox, oy], "offshore_extension_m": 2000.0, "identity_boundary": "straight screening corridor; not a subsurface conduit"}
-
-
-def sentinel_temporal_metadata() -> dict:
-    endpoint = "https://earth-search.aws.element84.com/v1/search"
-    epochs = ["2018-01-01/2018-12-31", "2020-01-01/2020-12-31", "2022-01-01/2022-12-31", "2024-01-01/2024-12-31", "2026-01-01/2026-12-31"]
-    rows = []
-    for epoch in epochs:
-        body = {"collections": ["sentinel-2-l2a"], "bbox": list(WINDOWS["Z3"]), "datetime": epoch, "limit": 50, "query": {"eo:cloud_cover": {"lt": 25}}}
-        r = requests.post(endpoint, json=body, timeout=120); r.raise_for_status()
-        raw = r.content; digest = sha256_bytes(raw)
-        (RAW / f"EARTH_SEARCH_{epoch[:4]}.{digest}.json").write_bytes(raw)
-        features = r.json().get("features") or []
-        features.sort(key=lambda x: (x.get("properties", {}).get("eo:cloud_cover", 999), x.get("id", "")))
-        best = features[0] if features else None
-        rows.append({"epoch": epoch, "candidate_count": len(features), "selected_id": None if best is None else best.get("id"), "cloud_cover": None if best is None else best.get("properties", {}).get("eo:cloud_cover"), "state": "OBSERVED_METADATA" if best else "UNRESOLVED"})
-    return {"provider": "Element84 Earth Search Sentinel-2 L2A", "epochs": rows, "pixel_persistence_state": "UNRESOLVED", "note": "catalog persistence is frozen; pixel-level temporal classification requires separately frozen image assets"}
-
-
-def main() -> int:
-    manifests = []
-    validations = []
-    payloads = {}
-    for sid, endpoint in SOURCES.items():
-        if sid == "PRPB_GEOLOGY_3":
-            p, m = arcgis_query(sid, endpoint, point=(ANCHOR_LON, ANCHOR_LAT))
-        else:
-            p, m = arcgis_query(sid, endpoint, bbox=Z1)
-        payloads[sid] = p; manifests.append(m)
-        validations.append(validate_feature_set(sid, p, ("OBJECTID",)))
-
-    params = {"bbox": ",".join(f"{v:.7f}" for v in Z1), "limit": 10000, "f": "json", "state_code": "72"}
-    u = canonical_url(USGS_MON, params)
-    r = requests.get(u, timeout=120)
-    manifests.append(freeze_response("USGS_MONITORING_LOCATIONS_PR", u, r))
-    usgs = r.json(); validations.append({"source_id": "USGS_MONITORING_LOCATIONS_PR", "rows": len(usgs.get("features") or []), "duplicate_stable_ids": 0, "null_stable_ids": sum(1 for f in usgs.get("features") or [] if not f.get("id"))})
-
-    cudem, cudem_manifest = download_cudem(); manifests.append(cudem_manifest)
-    terrain = terrain_metrics(cudem)
-    geology = exact_geology(payloads["PRPB_GEOLOGY_3"])
-    corridor = coastline_corridor(payloads["PRPB_COASTLINE_3"])
-    temporal = sentinel_temporal_metadata()
-
-    all_unique = all(v.get("duplicate_stable_ids", 0) == 0 and v.get("null_stable_ids", 0) == 0 for v in validations)
-    required_rows = {sid: len(payloads[sid].get("features") or []) for sid in payloads}
-    unresolved = []
-    if geology.get("state") != "VERIFIED": unresolved.append("exact_geology")
-    if corridor.get("state") == "UNRESOLVED": unresolved.append("coastline_corridor")
-    if temporal.get("pixel_persistence_state") != "VERIFIED": unresolved.append("pixel_temporal_persistence")
-    if not all_unique: unresolved.append("stable_id_integrity")
-
-    result = {
-        "schema": "spiderweb.subsurface.aguadilla_execution.v1",
-        "benchmark_id": "AGUADILLA_MALEZA_ALTA_SUBSURFACE_001",
-        "geology_binding": geology,
-        "source_validations": validations,
-        "source_rows": required_rows,
-        "terrain_windows": terrain,
-        "coastal_corridor": corridor,
-        "temporal_persistence": temporal,
-        "unresolved": sorted(unresolved),
-        "certification": "PASS" if not unresolved else "PROVISIONAL",
-        "identity_boundary": "No derived depression, lineament, corridor or offshore alignment verifies a cave, void, conduit, spring or ocean outlet without independent identity evidence.",
-    }
-    (DERIVED / "execution.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
-    manifest_obj = {"schema": "spiderweb.subsurface.evidence_manifest.v1", "sources": sorted(manifests, key=lambda x: x["source_id"])}
-    canonical = json.dumps(manifest_obj, sort_keys=True, separators=(",", ":")).encode()
-    manifest_obj["logical_sha256"] = sha256_bytes(canonical)
-    (OUT / "manifest.json").write_text(json.dumps(manifest_obj, indent=2, sort_keys=True) + "\n")
-    print(json.dumps({"certification": result["certification"], "unresolved": result["unresolved"], "manifest_sha256": manifest_obj["logical_sha256"], "geology": geology, "corridor": corridor}, indent=2))
-    return 0
-
-if __name__ == "__main__":
-    raise SystemExit(main())
