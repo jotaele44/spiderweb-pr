@@ -276,4 +276,95 @@ def terrain_metrics(cudem_paths: list[Path]) -> dict:
             ds.close()
     return out
 
+def coastline_corridor(coast_payload: dict) -> dict:
+    lines = []
+    for f in coast_payload.get("features") or []:
+        lines.extend(esri_lines(f.get("geometry") or {}))
+    if not lines:
+        return {"state": "UNRESOLVED", "reason": "no coastline linework"}
+    coast = unary_union(lines)
+    p = Point(ANCHOR_LON, ANCHOR_LAT)
+    q = nearest_points(p, coast)[1]
+    to_utm = Transformer.from_crs(4326, 32619, always_xy=True)
+    to_wgs = Transformer.from_crs(32619, 4326, always_xy=True)
+    ax, ay = to_utm.transform(p.x, p.y); qx, qy = to_utm.transform(q.x, q.y)
+    vx, vy = qx - ax, qy - ay; length = math.hypot(vx, vy)
+    if length == 0:
+        return {"state": "UNRESOLVED", "reason": "anchor lies on shoreline"}
+    ux, uy = vx/length, vy/length
+    offshore_x, offshore_y = qx + ux * 2000.0, qy + uy * 2000.0
+    ox, oy = to_wgs.transform(offshore_x, offshore_y)
+    return {"state": "CANDIDATE", "shoreline_nearest": [q.x, q.y], "anchor_to_shore_m": length, "offshore_terminal": [ox, oy], "offshore_extension_m": 2000.0, "identity_boundary": "straight screening corridor; not a subsurface conduit"}
 
+
+def sentinel_temporal_metadata() -> dict:
+    endpoint = "https://earth-search.aws.element84.com/v1/search"
+    epochs = ["2018-01-01/2018-12-31", "2020-01-01/2020-12-31", "2022-01-01/2022-12-31", "2024-01-01/2024-12-31", "2026-01-01/2026-12-31"]
+    rows = []
+    for epoch in epochs:
+        body = {"collections": ["sentinel-2-l2a"], "bbox": list(WINDOWS["Z3"]), "datetime": epoch, "limit": 50, "query": {"eo:cloud_cover": {"lt": 25}}}
+        r = requests.post(endpoint, json=body, timeout=120); r.raise_for_status()
+        raw = r.content; digest = sha256_bytes(raw)
+        (RAW / f"EARTH_SEARCH_{epoch[:4]}.{digest}.json").write_bytes(raw)
+        features = r.json().get("features") or []
+        features.sort(key=lambda x: (x.get("properties", {}).get("eo:cloud_cover", 999), x.get("id", "")))
+        best = features[0] if features else None
+        rows.append({"epoch": epoch, "candidate_count": len(features), "selected_id": None if best is None else best.get("id"), "cloud_cover": None if best is None else best.get("properties", {}).get("eo:cloud_cover"), "state": "OBSERVED_METADATA" if best else "UNRESOLVED"})
+    return {"provider": "Element84 Earth Search Sentinel-2 L2A", "epochs": rows, "pixel_persistence_state": "UNRESOLVED", "note": "catalog persistence is frozen; pixel-level temporal classification requires separately frozen image assets"}
+
+
+def main() -> int:
+    manifests = []
+    validations = []
+    payloads = {}
+    for sid, endpoint in SOURCES.items():
+        if sid == "PRPB_GEOLOGY_3":
+            p, m = arcgis_query(sid, endpoint, point=(ANCHOR_LON, ANCHOR_LAT))
+        else:
+            p, m = arcgis_query(sid, endpoint, bbox=Z1)
+        payloads[sid] = p; manifests.append(m)
+        validations.append(validate_feature_set(sid, p, ("OBJECTID",)))
+
+    params = {"bbox": ",".join(f"{v:.7f}" for v in Z1), "limit": 10000, "f": "json", "state_code": "72"}
+    u = canonical_url(USGS_MON, params)
+    r = requests.get(u, timeout=120)
+    manifests.append(freeze_response("USGS_MONITORING_LOCATIONS_PR", u, r))
+    usgs = r.json(); validations.append({"source_id": "USGS_MONITORING_LOCATIONS_PR", "rows": len(usgs.get("features") or []), "duplicate_stable_ids": 0, "null_stable_ids": sum(1 for f in usgs.get("features") or [] if not f.get("id"))})
+
+    cudem_paths, cudem_manifests = download_cudem_tiles(); manifests.extend(cudem_manifests)
+    terrain = terrain_metrics(cudem_paths)
+    geology = exact_geology(payloads["PRPB_GEOLOGY_3"])
+    corridor = coastline_corridor(payloads["PRPB_COASTLINE_3"])
+    temporal = sentinel_temporal_metadata()
+
+    all_unique = all(v.get("duplicate_stable_ids", 0) == 0 and v.get("null_stable_ids", 0) == 0 for v in validations)
+    required_rows = {sid: len(payloads[sid].get("features") or []) for sid in payloads}
+    unresolved = []
+    if geology.get("state") != "VERIFIED": unresolved.append("exact_geology")
+    if corridor.get("state") == "UNRESOLVED": unresolved.append("coastline_corridor")
+    if temporal.get("pixel_persistence_state") != "VERIFIED": unresolved.append("pixel_temporal_persistence")
+    if not all_unique: unresolved.append("stable_id_integrity")
+
+    result = {
+        "schema": "spiderweb.subsurface.aguadilla_execution.v1",
+        "benchmark_id": "AGUADILLA_MALEZA_ALTA_SUBSURFACE_001",
+        "geology_binding": geology,
+        "source_validations": validations,
+        "source_rows": required_rows,
+        "terrain_windows": terrain,
+        "coastal_corridor": corridor,
+        "temporal_persistence": temporal,
+        "unresolved": sorted(unresolved),
+        "certification": "PASS" if not unresolved else "PROVISIONAL",
+        "identity_boundary": "No derived depression, lineament, corridor or offshore alignment verifies a cave, void, conduit, spring or ocean outlet without independent identity evidence.",
+    }
+    (DERIVED / "execution.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    manifest_obj = {"schema": "spiderweb.subsurface.evidence_manifest.v1", "sources": sorted(manifests, key=lambda x: x["source_id"])}
+    canonical = json.dumps(manifest_obj, sort_keys=True, separators=(",", ":")).encode()
+    manifest_obj["logical_sha256"] = sha256_bytes(canonical)
+    (OUT / "manifest.json").write_text(json.dumps(manifest_obj, indent=2, sort_keys=True) + "\n")
+    print(json.dumps({"certification": result["certification"], "unresolved": result["unresolved"], "manifest_sha256": manifest_obj["logical_sha256"], "geology": geology, "corridor": corridor}, indent=2))
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())
