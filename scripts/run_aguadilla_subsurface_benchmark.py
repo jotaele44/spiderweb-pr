@@ -299,10 +299,10 @@ def coastline_corridor(coast_payload: dict) -> dict:
 
 def sentinel_temporal_metadata() -> dict:
     endpoint = "https://earth-search.aws.element84.com/v1/search"
-    epochs = ["2018-01-01/2018-12-31", "2020-01-01/2020-12-31", "2022-01-01/2022-12-31", "2024-01-01/2024-12-31", "2026-01-01/2026-12-31"]
+    epochs = ["2018-01-01/2018-12-31", "2020-01-01/2020-12-31", "2022-01-01/2022-12-31", "2024-01-01/2024-12-31", "2026-01-01/2026-09-23"]
     rows = []
     for epoch in epochs:
-        body = {"collections": ["sentinel-2-l2a"], "bbox": list(WINDOWS["Z3"]), "datetime": epoch, "limit": 50, "query": {"eo:cloud_cover": {"lt": 25}}}
+        body = {"collections": ["sentinel-2-l2a"], "bbox": list(WINDOWS["Z3"]), "datetime": epoch, "limit": 50}
         r = requests.post(endpoint, json=body, timeout=120); r.raise_for_status()
         raw = r.content; digest = sha256_bytes(raw)
         (RAW / f"EARTH_SEARCH_{epoch[:4]}.{digest}.json").write_bytes(raw)
