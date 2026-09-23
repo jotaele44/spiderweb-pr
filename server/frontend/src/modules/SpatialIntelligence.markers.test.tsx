@@ -1,7 +1,22 @@
 import { render, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 
 import { priisData } from "../data/mockData";
+
+// jsdom has no WebGL, so canvas.getContext("webgl2"/"webgl") always returns
+// null. useSpatialRuntime probes it directly before reaching the mocked
+// RuntimeFactory below, so without this stub the module would always take
+// the "graphics unavailable" branch and never boot the fake runtime this
+// suite exercises.
+let getContextSpy: MockInstance<typeof HTMLCanvasElement.prototype.getContext>;
+beforeAll(() => {
+  getContextSpy = vi
+    .spyOn(HTMLCanvasElement.prototype, "getContext")
+    .mockReturnValue({} as unknown as RenderingContext);
+});
+afterAll(() => {
+  getContextSpy.mockRestore();
+});
 
 // Every Marker the module builds, so a test can assert both that markers appear
 // on a freshly-booted map and that the previous map's markers were removed.
@@ -32,7 +47,18 @@ vi.mock("maplibre-gl", () => {
 // A distinct fake map per boot, mirroring how a 2D/3D switch swaps
 // mapRef.current behind the same ref object.
 function makeFakeRuntime() {
-  const map = { isStyleLoaded: () => false, on: vi.fn(), off: vi.fn(), getSource: () => undefined };
+  // getStyle guards teardown in the module's tile-layer effects (they skip
+  // cleanup once the underlying map has no style, e.g. after runtime.destroy());
+  // returning undefined here keeps that guard false without having to fake the
+  // rest of the layer-removal API this test doesn't otherwise exercise.
+  const map = {
+    isStyleLoaded: () => false,
+    on: vi.fn(),
+    off: vi.fn(),
+    once: vi.fn(),
+    getSource: () => undefined,
+    getStyle: () => undefined,
+  };
   return {
     initialize: vi.fn(() => Promise.resolve()),
     destroy: vi.fn(),

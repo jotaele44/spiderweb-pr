@@ -1,8 +1,23 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 
 import type { SpatialSceneConfig, Unsubscribe } from "./SpatialRuntime";
+
+// jsdom has no WebGL, so canvas.getContext("webgl2"/"webgl") always returns
+// null (see HTMLCanvasElement's getContext() in jsdom). useSpatialRuntime
+// probes it directly, ahead of the mocked RuntimeFactory below, so without
+// this stub every render would take the "graphics unavailable" branch and
+// never reach the fake runtime this suite is testing against.
+let getContextSpy: MockInstance<typeof HTMLCanvasElement.prototype.getContext>;
+beforeAll(() => {
+  getContextSpy = vi
+    .spyOn(HTMLCanvasElement.prototype, "getContext")
+    .mockReturnValue({} as unknown as RenderingContext);
+});
+afterAll(() => {
+  getContextSpy.mockRestore();
+});
 
 // Captures the basemap-error listener the hook registers, so a test can fire a
 // tile failure the way MapLibre would.
