@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 
-export type ProgramTimelineItem = {
+export interface ProgramTimelineItem {
   id: string;
   phase: "NOW" | "NEXT" | "QUEUED" | "BLOCKED";
   title: string;
   detail: string;
   category: string;
-};
+}
 
 const rank: Record<ProgramTimelineItem["phase"], number> = { NOW: 0, NEXT: 1, QUEUED: 2, BLOCKED: 3 };
 
