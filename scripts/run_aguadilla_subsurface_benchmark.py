@@ -302,7 +302,7 @@ def sentinel_temporal_metadata() -> dict:
     epochs = ["2018-01-01/2018-12-31", "2020-01-01/2020-12-31", "2022-01-01/2022-12-31", "2024-01-01/2024-12-31", "2026-01-01/2026-09-23"]
     rows = []
     for epoch in epochs:
-        body = {"collections": ["sentinel-2-l2a"], "bbox": list(WINDOWS["Z3"]), "datetime": epoch, "limit": 50}
+        body = {"collections": ["sentinel-2-c1-l2a"], "bbox": list(WINDOWS["Z3"]), "datetime": epoch, "limit": 50}
         r = requests.post(endpoint, json=body, timeout=120); r.raise_for_status()
         raw = r.content; digest = sha256_bytes(raw)
         (RAW / f"EARTH_SEARCH_{epoch[:4]}.{digest}.json").write_bytes(raw)
@@ -310,7 +310,7 @@ def sentinel_temporal_metadata() -> dict:
         features.sort(key=lambda x: (x.get("properties", {}).get("eo:cloud_cover", 999), x.get("id", "")))
         best = features[0] if features else None
         rows.append({"epoch": epoch, "candidate_count": len(features), "selected_id": None if best is None else best.get("id"), "cloud_cover": None if best is None else best.get("properties", {}).get("eo:cloud_cover"), "state": "OBSERVED_METADATA" if best else "UNRESOLVED"})
-    return {"provider": "Element84 Earth Search Sentinel-2 L2A", "epochs": rows, "pixel_persistence_state": "UNRESOLVED", "note": "catalog persistence is frozen; pixel-level temporal classification requires separately frozen image assets"}
+    return {"provider": "Element84 Earth Search Sentinel-2 Collection 1 L2A", "epochs": rows, "pixel_persistence_state": "UNRESOLVED", "note": "catalog persistence is frozen; pixel-level temporal classification requires separately frozen image assets"}
 
 
 def main() -> int:
