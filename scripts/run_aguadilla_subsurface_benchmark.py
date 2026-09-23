@@ -11,7 +11,8 @@ from urllib.parse import urlencode
 import numpy as np
 import requests
 import rasterio
-from rasterio.windows import from_bounds\nfrom rasterio.merge import merge
+from rasterio.windows import from_bounds
+from rasterio.merge import merge
 from scipy import ndimage
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import nearest_points, unary_union
