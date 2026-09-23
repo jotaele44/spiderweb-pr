@@ -103,13 +103,13 @@ def arcgis_query(source_id: str, layer: str, bbox=None, point=None) -> tuple[dic
     payload = r.json()
     if "error" in payload:
         raise RuntimeError(f"{source_id}: {payload['error']}")
-        manifest["logical_schema"] = {
-            "object_id_field": payload.get("objectIdFieldName"),
-            "global_id_field": payload.get("globalIdFieldName"),
-            "geometry_type": payload.get("geometryType"),
-            "spatial_reference": payload.get("spatialReference"),
-            "fields": [{"name": x.get("name"), "type": x.get("type")} for x in (payload.get("fields") or [])],
-        }
+    manifest["logical_schema"] = {
+        "object_id_field": payload.get("objectIdFieldName"),
+        "global_id_field": payload.get("globalIdFieldName"),
+        "geometry_type": payload.get("geometryType"),
+        "spatial_reference": payload.get("spatialReference"),
+        "fields": [{"name": x.get("name"), "type": x.get("type")} for x in (payload.get("fields") or [])],
+    }
     return payload, manifest
 
 
