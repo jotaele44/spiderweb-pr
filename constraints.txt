@@ -22,15 +22,15 @@ numpy==2.4.6
 scipy==1.17.1
 # The rest match uv.lock exactly. Verified against the gating allowlist
 # (ruff + black + mypy) before landing.
-pandas==3.0.5
+pandas==3.0.6
 xarray==2026.7.0
 netCDF4==1.7.4
-matplotlib==3.11.1
+matplotlib==3.11.2
 shapely==2.1.2
 scikit-image==0.26.0
 pytest==9.1.1
 pytest-cov==7.1.0
 black==26.5.1
-ruff==0.16.5
+ruff==0.16.8
 mypy==2.3.1
 jsonschema==4.26.0
