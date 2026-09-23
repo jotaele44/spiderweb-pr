@@ -303,9 +303,13 @@ def sentinel_temporal_metadata() -> dict:
     rows = []
     for epoch in epochs:
         body = {"collections": ["sentinel-2-c1-l2a"], "bbox": list(WINDOWS["Z3"]), "datetime": epoch, "limit": 50}
-        r = requests.post(endpoint, json=body, timeout=120); r.raise_for_status()
-        raw = r.content; digest = sha256_bytes(raw)
-        (RAW / f"EARTH_SEARCH_{epoch[:4]}.{digest}.json").write_bytes(raw)
+        r = requests.post(endpoint, json=body, timeout=120)
+        raw = r.content
+        digest = sha256_bytes(raw)
+        if r.status_code >= 400:
+            (RAW / f"EARTH_SEARCH_{epoch[:4]}_ERROR.{digest}.json").write_bytes(raw)
+            rows.append({"epoch": epoch, "candidate_count": 0, "selected_id": None, "cloud_cover": None, "state": "UNRESOLVED", "http_status": r.status_code, "error_sha256": digest, "error_body": r.text[:1000]})
+            continue
         features = r.json().get("features") or []
         features.sort(key=lambda x: (x.get("properties", {}).get("eo:cloud_cover", 999), x.get("id", "")))
         best = features[0] if features else None
