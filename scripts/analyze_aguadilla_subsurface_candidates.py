@@ -241,20 +241,6 @@ def build_context(candidates: list[dict]) -> dict:
     source_counts["USGS_MONITORING_LOCATIONS_PR"] = len(ids)
 
     for rec in candidates:
-        p = Point(*rec["centroid_native"])
-        pm = shp_transform(TO_UTM.transform, p)
-        if sink_union is None:
-            rec["mapped_sinkhole_relation"] = "SOURCE_EMPTY"
-            rec["mapped_sinkhole_distance_m"] = None
-        else:
-            rec["mapped_sinkhole_relation"] = "INTERSECTS" if p.intersects(sink_union) else "OUTSIDE"
-            rec["mapped_sinkhole_distance_m"] = float(pm.distance(shp_transform(TO_UTM.transform, sink_union)))
-        if river_union is None:
-            rec["mapped_river_relation"] = "SOURCE_EMPTY"
-            rec["mapped_river_distance_m"] = None
-        else:
-            rec["mapped_river_relation"] = "INTERSECTS" if p.intersects(river_union) else "OUTSIDE"
-            rec["mapped_river_distance_m"] = float(pm.distance(shp_transform(TO_UTM.transform, river_union)))
         rec["falsification_state"] = "OPEN"
         rec["falsifiers_required"] = [
             "ordinary_surface_drainage_or_topographic_concavity",
@@ -264,6 +250,7 @@ def build_context(candidates: list[dict]) -> dict:
             "coastal_surf_reef_or_wave_pattern_if_shoreward",
             "independent_subsurface_identity_evidence_absent",
         ]
+        rec["association_rule"] = "authoritative source proximity/intersection is evaluated as a separate discovery relation and never used alone for identity promotion"
 
     return {
         "source_counts": source_counts,
