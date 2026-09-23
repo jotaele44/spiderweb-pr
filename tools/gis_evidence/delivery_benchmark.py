@@ -27,7 +27,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlparse
 
-from .core import checked_bytes, canonical_json, digest, load_geojson, set_receipt, write_new
+from .core import DEFAULT_VIEWPORT_PIXELS, checked_bytes, canonical_json, digest, load_geojson, set_receipt, write_new
 from .viewport_parity import compare_rendered_trials
 from .lineage_admission import admit_source_lineage
 
@@ -138,7 +138,7 @@ def preflight(spec: dict) -> dict:
             if not isinstance(pt,list) or len(pt)!=2 or not all(isinstance(x,(float,int)) and not isinstance(x,bool) and math.isfinite(x) for x in pt):
                 issues.append("INVALID_VIEWPORT_COORDINATE")
             elif not (-180<=pt[0]<=180 and -85<=pt[1]<=85):issues.append("OUT_OF_BOUNDS_VIEWPORT")
-    pixels=spec.get("viewport_pixels",{"width":1280,"height":800})
+    pixels=spec.get("viewport_pixels",DEFAULT_VIEWPORT_PIXELS)
     if not isinstance(pixels,dict) or set(pixels)!={"width","height"} or any(type(v) is not int or not 1<=v<=8192 for v in pixels.values()):
         issues.append("INVALID_VIEWPORT_PIXELS")
     if type(spec.get("identity_zoom")) is not int or not 0<=spec["identity_zoom"]<=14:issues.append("INVALID_IDENTITY_ZOOM")
@@ -303,7 +303,7 @@ def run(spec: dict,out: Path) -> dict:
                     for repetition in range(spec["repetitions"]):
                         modes=["geojson","mvt"] if repetition%2==0 else ["mvt","geojson"]
                         for mode in modes:
-                            context=browser.new_context(viewport=spec.get("viewport_pixels",{"width":1280,"height":800}),device_scale_factor=1,service_workers="block")
+                            context=browser.new_context(viewport=spec.get("viewport_pixels",DEFAULT_VIEWPORT_PIXELS),device_scale_factor=1,service_workers="block")
                             try:
                                 context.route("**/*",lambda route: route.continue_() if urlparse(route.request.url).hostname in {"127.0.0.1","localhost","::1"} else route.abort())
                                 page=context.new_page();page.goto(url);page.wait_for_function("typeof window.measure==='function'")

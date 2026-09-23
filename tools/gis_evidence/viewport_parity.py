@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from .core import set_receipt
+from .core import DEFAULT_VIEWPORT_PIXELS, set_receipt
 
 
 def _finite(value: Any, field: str) -> float:
@@ -101,7 +101,7 @@ def compare_rendered_trials(trials: list[dict], spec: dict, source_ids: set[str]
         indexed[key] = row
     if set(indexed) != expected:
         raise ValueError(f"MISSING_RENDERED_TRIALS:{sorted(expected-set(indexed))}")
-    viewport_pixels = spec.get("viewport_pixels", {"width": 1280, "height": 800})
+    viewport_pixels = spec.get("viewport_pixels", DEFAULT_VIEWPORT_PIXELS)
     pixels = [viewport_pixels["width"], viewport_pixels["height"]]
     records = []
     for vid, view in view_by_id.items():
