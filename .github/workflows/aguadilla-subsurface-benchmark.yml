@@ -6,6 +6,7 @@ on:
       - feature/aguadilla-subsurface-benchmark
     paths:
       - 'scripts/run_aguadilla_subsurface_benchmark.py'
+      - 'scripts/analyze_aguadilla_subsurface_candidates.py'
       - 'spiderweb/subsurface/**'
       - 'configs/subsurface_benchmarks/**'
       - '.github/workflows/aguadilla-subsurface-benchmark.yml'
@@ -29,6 +30,8 @@ jobs:
           pip install numpy scipy requests rasterio shapely pyproj
       - name: Execute source-native acquisition and four-window analysis
         run: python scripts/run_aguadilla_subsurface_benchmark.py
+      - name: Materialize morphology candidate universe and authoritative context
+        run: python scripts/analyze_aguadilla_subsurface_candidates.py
       - name: Verify fail-closed benchmark tests
         run: |
           pip install pytest
