@@ -64,6 +64,9 @@ the relevant subsystem below.
 ## Remote-sensing monitoring
 - [remote_monitoring/ARCHITECTURE.md](remote_monitoring/ARCHITECTURE.md) — `spiderweb.remote_monitoring` Phase-0 provenance backbone
 
+## Real-time data acquisition
+- [REALTIME_DATA_ACQUISITION_AUDIT.md](REALTIME_DATA_ACQUISITION_AUDIT.md) — inventory of every live-source acquisition subsystem, retry/backoff/scheduling gaps, and prioritized optimization recommendations
+
 ## Dashboard & UI
 - [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md) — state of the `server/frontend` SPA:
   defects, inert controls, intentional stubs, and the product-grade delta
