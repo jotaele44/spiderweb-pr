@@ -35,7 +35,7 @@
     "test_suite": "python -m pytest tests/ -q --tb=short",
     "validate_schemas": "python3 scripts/validate_schemas.py --json",
     "validate_export": "python scripts/validate_export.py --package exports/samples --mode test",
-    "export_canonical": "python3 scripts/federation_export.py --mode test",
+    "export_canonical": "python3 scripts/federation_export.py --package exports/real --mode production",
     "maintenance": "python3 scripts/run_maintenance.py --repo spiderweb-pr --mode audit"
   },
   "canonical_outputs": {
