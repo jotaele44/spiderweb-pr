@@ -493,7 +493,7 @@ export function SpatialIntelligence({
   // and the ones bound to the destroyed map would leak.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapReady) return;
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
     data.sites.forEach((site) => {
@@ -649,20 +649,25 @@ export function SpatialIntelligence({
         densityGeoidsRef.current.add(geoid);
       }
       if (!map.getLayer(densityLayerId)) {
-        map.addLayer({
-          id: densityLayerId,
-          type: "fill",
-          source: municipiosSourceId,
-          ...(municipiosViaMartin ? { "source-layer": "municipios" } : {}),
-          paint: {
-            "fill-color": [
-              "interpolate", ["linear"], ["coalesce", ["feature-state", "density"], 0],
-              0, "rgba(94, 234, 212, 0.05)",
-              1, "rgba(94, 234, 212, 0.75)",
-            ],
-            "fill-opacity": 1,
+        const gazetteerCircleLayerId = "geo-gazetteer_pr_domestic_names-circle";
+        const beforeLayerId = map.getLayer(gazetteerCircleLayerId) ? gazetteerCircleLayerId : undefined;
+        map.addLayer(
+          {
+            id: densityLayerId,
+            type: "fill",
+            source: municipiosSourceId,
+            ...(municipiosViaMartin ? { "source-layer": "municipios" } : {}),
+            paint: {
+              "fill-color": [
+                "interpolate", ["linear"], ["coalesce", ["feature-state", "density"], 0],
+                0, "rgba(94, 234, 212, 0.05)",
+                1, "rgba(94, 234, 212, 0.75)",
+              ],
+              "fill-opacity": 1,
+            },
           },
-        });
+          beforeLayerId,
+        );
       }
     }
     const onSourceData = (event: maplibregl.MapSourceDataEvent) => {
