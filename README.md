@@ -114,3 +114,13 @@ Normalized lightweight derivative:
 - `data/usgs_ofr_98_038/derived/usgs_ofr_98_038_metallic_occurrences_wgs84.geojson`
 
 Raw ARC/INFO `.e00`, GeoPackage, ZIP, and shapefile binaries remain local/ignored unless explicitly force-added for release packaging.
+
+<!-- PROJECT-OPERATING-CONTRACT:START -->
+## Current development and certification contract
+
+Spiderweb is the federation's Puerto Rico spatial-analysis producer and geometry substrate for land/ocean work. Airspace remains ceded to Skywatcher. Current priority is authoritative spatial/source closure rather than rebuilding removed aviation functionality.
+
+**Spatial rules:** preserve CRS, geometry type, Z/M dimensions, and any transformation loss. Discovery by search/bbox/buffer/fuzzy/nearest is not exhaustive identity evidence. For material comparisons use stable IDs, exact/topological equality where appropriate, Hausdorff/symmetric-difference measures, attribute deltas, and explicit FULLY_WITHIN/PARTIAL/TOUCH_ONLY/OUTSIDE/NULL_EMPTY/UNRESOLVED classification. Archive↔WFS equivalence requires frozen manifestations, complete candidate sets, stable-ID cardinality, source/retained/excluded arithmetic, and geometry/schema comparison; equal counts alone prove nothing.
+
+Certification requires current regression, source, geometry, rendered desktop+iPhone, and federation-consumer evidence with frozen hashes and zero material in-scope residue. Keep acquisition controls closed when their source/coverage gates are not actually satisfied.
+<!-- PROJECT-OPERATING-CONTRACT:END -->
