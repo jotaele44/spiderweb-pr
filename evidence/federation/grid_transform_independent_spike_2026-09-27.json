@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "run_type": "BOUNDED_INDEPENDENT_RECONSTRUCTION_SPIKE",
+  "retrieval_utc": "2026-09-27T05:11:47.510Z",
+  "source_head": "33f7b106b3d160059aed72ac5f7008726471ec01",
+  "grid": {
+    "url": "https://raw.githubusercontent.com/jotaele44/spiderweb-pr/33f7b106b3d160059aed72ac5f7008726471ec01/registry/spatial/pr_grid_full_cell_index_saturated.csv",
+    "size_bytes": 6807952,
+    "sha256": "17733f3f18c8a644e31c1eb25fb27b73b4bf353c6de57d5203c4311e05d64483",
+    "coastline_cells": 794
+  },
+  "control": {
+    "provider": "Puerto Rico SIGE",
+    "layer": "Coastal Shoreline / MapServer/15",
+    "retrieval_url": "https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer/15/query?where=1%3D1&outFields=OBJECTID%2CShoreLN_ID%2CWTR_NM&returnGeometry=true&outSR=4326&f=geojson&resultOffset=0&resultRecordCount=1000&orderByFields=OBJECTID%20ASC",
+    "size_bytes": 2622493,
+    "sha256": "92b167ed014bd938d6b5d95bdb7187f45e4c3483a544e1649170155a9c5bd082",
+    "feature_count": 209,
+    "train_points": 10981,
+    "holdout_points": 2284,
+    "split": "OBJECTID mod 5 == 0 holdout",
+    "scope_state": "GEOMETRY_SUPPORT_KNOWN_LIMITED",
+    "scope_warning": "This independent source may falsify a transform but cannot alone certify complete Puerto Rico grid alignment."
+  },
+  "current_transform": {
+    "lon0": -67.338850438199,
+    "lat0": 18.91298820580336,
+    "deg_per_px": 0.001518611173319026,
+    "train": {"trimmed_km": 5.064766872391533, "median_km": 3.918150152277539, "p90_km": 23.625825669404545},
+    "holdout": {"trimmed_km": 2.519644826369941, "median_km": 2.194147537274654, "p90_km": 21.64585727580594}
+  },
+  "independent_fit": {
+    "lon0": -67.6248340897257,
+    "lat0": 19.00164225705927,
+    "deg_per_px": 0.0017199684766913592,
+    "train": {"trimmed_km": 3.8617316579539396, "median_km": 3.409303647219134, "p90_km": 23.73117299575016},
+    "holdout": {"trimmed_km": 1.8954534753767154, "median_km": 1.824093301732564, "p90_km": 10.759157660027373}
+  },
+  "predeclared_kill_criteria": {
+    "holdout_trimmed_km_max": 2.5,
+    "holdout_median_km_max": 0.75,
+    "holdout_p90_km_max": 2.5,
+    "independent_source_required": true
+  },
+  "result": {
+    "state": "FAIL_KILL_CRITERIA",
+    "failed": ["HOLDOUT_MEDIAN_NOT_SUBCELL", "HOLDOUT_P90"],
+    "promotion_permitted": false
+  },
+  "interpretation": "The independent fit improves the trimmed holdout statistic but remains about 1.82 km median and 10.76 km p90 on held-out SIGE features. It therefore does not support exact cell alignment. The transform remains PROVISIONAL; the fitted parameters are retained as a failed candidate and are not adopted.",
+  "identity_rule": "No source-feature or cell identity is inferred from proximity. SIGE geometry is used only as independent spatial control evidence."
+}
