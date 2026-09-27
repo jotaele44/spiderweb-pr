@@ -81,6 +81,44 @@ def test_resolver_results_carry_certification_state_and_identity_default() -> No
     assert cell_set.identity_default == "CANDIDATE_NOT_IDENTITY"
 
 
+def test_provisional_point_resolution_expands_to_uncertainty_cell_set() -> None:
+    cell_set = resolver.resolve_point(-66.105, 18.466)
+    assert cell_set.certification_state == "PROVISIONAL"
+    assert cell_set.resolution_state == "PROVISIONAL_UNCERTAINTY_CELL_SET"
+    assert cell_set.uncertainty_radius_km == pytest.approx(TRANSFORM["uncertainty_policy"]["discovery_radius_km"])
+    assert cell_set.uncertainty_basis == TRANSFORM["uncertainty_policy"]["radius_basis"]
+    assert cell_set.member_count > 1
+    assert cell_set.anchor_cell_id in cell_set.cell_ids
+
+
+def test_verified_transform_preserves_exact_single_cell_point_resolution() -> None:
+    shipped = resolver.GridTransform.load()
+    verified = resolver.GridTransform(
+        lon0=shipped.lon0,
+        lat0=shipped.lat0,
+        deg_per_px_x=shipped.deg_per_px_x,
+        deg_per_px_y=shipped.deg_per_px_y,
+        certification_state="VERIFIED",
+        geometry_version=shipped.geometry_version,
+        grid_version=shipped.grid_version,
+        discovery_radius_km=0.0,
+        uncertainty_basis="",
+        exact_cell_claims_permitted=True,
+    )
+    cell_set = resolver.resolve_point(-66.105, 18.466, verified)
+    assert cell_set.member_count == 1
+    assert cell_set.resolution_state == "VERIFIED_CELL_SET"
+    assert cell_set.uncertainty_radius_km == 0.0
+
+
+def test_provisional_transform_policy_forbids_exact_cell_claims() -> None:
+    policy = TRANSFORM["uncertainty_policy"]
+    assert TRANSFORM["certification_state"] == "PROVISIONAL"
+    assert policy["exact_cell_claims_permitted"] is False
+    assert policy["cell_set_required"] is True
+    assert policy["independent_validation_state"] == "FAIL_KILL_CRITERIA"
+
+
 def test_point_outside_the_canvas_resolves_to_nothing_rather_than_clamping() -> None:
     assert resolver.resolve_point(-80.0, 40.0).member_count == 0
 
