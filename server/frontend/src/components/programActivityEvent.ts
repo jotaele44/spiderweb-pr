@@ -239,8 +239,7 @@ export function readLiveProgramActivity(
     for (const candidate of parsed) {
       const event = parseProgramActivityEvent(candidate);
       if (
-        event &&
-        event.producerId === producerId &&
+        event?.producerId === producerId &&
         event.source === "LIVE" &&
         validateProgramActivityEvent(event).length === 0
       ) {
