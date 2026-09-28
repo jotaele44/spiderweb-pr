@@ -129,7 +129,16 @@ def _lineage(
     }
 
 
+# Record types whose subject_id names a non-aircraft subject (an airport, a
+# site, a mineral occurrence). Their subjects must never become aircraft.
+_NON_AIRCRAFT_SUBJECT_TYPES = frozenset(
+    {"usgs_metallic_occurrence", "airport_reference_location", "structure_sighting"}
+)
+
+
 def _aircraft(record: dict[str, Any]) -> str | None:
+    if record.get("observation_type") in _NON_AIRCRAFT_SUBJECT_TYPES:
+        return None
     return record.get("subject_id") or (record.get("attributes") or {}).get("callsign")
 
 
