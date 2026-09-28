@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { mergeProgramActivity, readLiveProgramActivity } from "./programActivityEvent";
 
 export interface ProgramTimelineItem {
   id: string;
@@ -10,16 +11,17 @@ export interface ProgramTimelineItem {
 
 const rank: Record<ProgramTimelineItem["phase"], number> = { NOW: 0, NEXT: 1, QUEUED: 2, BLOCKED: 3 };
 
-export function ProgramTimeline({ items }: { items: readonly ProgramTimelineItem[] }) {
+export function ProgramTimeline({ items, producerId }: { items: readonly ProgramTimelineItem[]; producerId:string }) {
+  const mergedItems = useMemo(() => mergeProgramActivity(producerId, items, readLiveProgramActivity(producerId)), [producerId, items]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"ALL" | ProgramTimelineItem["phase"]>("ALL");
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return [...items]
+    return [...mergedItems]
       .filter((item) => (filter === "ALL" || item.phase === filter) && (!q || [item.title, item.detail, item.category, item.phase].some((value) => value.toLowerCase().includes(q))))
       .sort((a, b) => rank[a.phase] - rank[b.phase] || a.title.localeCompare(b.title));
-  }, [items, query, filter]);
-  const upcoming = items.filter((item) => item.phase !== "NOW").slice(0, 5);
+  }, [mergedItems, query, filter]);
+  const upcoming = mergedItems.filter((item) => item.phase !== "NOW").slice(0, 5);
 
   const badge = (phase: ProgramTimelineItem["phase"]) => (
     <span className="mono" style={{ minWidth: 58, textAlign: "center", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 7px", fontSize: 9, fontWeight: 700 }}>
@@ -27,8 +29,8 @@ export function ProgramTimeline({ items }: { items: readonly ProgramTimelineItem
     </span>
   );
 
-  const itemRow = (item: ProgramTimelineItem) => (
-    <div key={item.id} style={{ display: "grid", gridTemplateColumns: "64px minmax(0,1fr)", gap: 10, padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
+  const itemRow = (item: ProgramTimelineItem & { eventId?:string }) => (
+    <div key={item.eventId || item.id} style={{ display: "grid", gridTemplateColumns: "64px minmax(0,1fr)", gap: 10, padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
       {badge(item.phase)}
       <div><b style={{ fontSize: 12 }}>{item.title}</b><div className="subtle" style={{ marginTop: 4, fontSize: 11, lineHeight: 1.45 }}>{item.detail}</div><div className="mono subtle" style={{ marginTop: 5, fontSize: 9 }}>{item.category.toUpperCase()}</div></div>
     </div>
