@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { mergeProgramActivity, readLiveProgramActivity } from "./programActivityEvent";
+import { mergeProgramActivity, readLiveProgramActivity, type ActivityState } from "./programActivityEvent";
 
 export interface ProgramTimelineItem {
   id: string;
@@ -9,7 +9,7 @@ export interface ProgramTimelineItem {
   category: string;
 }
 
-const rank: Record<ProgramTimelineItem["phase"], number> = { NOW: 0, NEXT: 1, QUEUED: 2, BLOCKED: 3 };
+const rank: Record<ActivityState, number> = { NOW:0, NEXT:1, QUEUED:2, BLOCKED:3, UNRESOLVED:4, CONTRADICTED:4, COMPLETED:5, SUPERSEDED:6 };
 
 export function ProgramTimeline({ items, producerId }: { items: readonly ProgramTimelineItem[]; producerId:string }) {
   const mergedItems = useMemo(() => mergeProgramActivity(producerId, items, readLiveProgramActivity(producerId)), [producerId, items]);
@@ -23,13 +23,13 @@ export function ProgramTimeline({ items, producerId }: { items: readonly Program
   }, [mergedItems, query, filter]);
   const upcoming = mergedItems.filter((item) => item.phase !== "NOW").slice(0, 5);
 
-  const badge = (phase: ProgramTimelineItem["phase"]) => (
+  const badge = (phase: ActivityState) => (
     <span className="mono" style={{ minWidth: 58, textAlign: "center", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 7px", fontSize: 9, fontWeight: 700 }}>
       {phase}
     </span>
   );
 
-  const itemRow = (item: ProgramTimelineItem & { eventId?:string }) => (
+  const itemRow = (item: ReturnType<typeof mergeProgramActivity>[number]) => (
     <div key={item.eventId || item.id} style={{ display: "grid", gridTemplateColumns: "64px minmax(0,1fr)", gap: 10, padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
       {badge(item.phase)}
       <div><b style={{ fontSize: 12 }}>{item.title}</b><div className="subtle" style={{ marginTop: 4, fontSize: 11, lineHeight: 1.45 }}>{item.detail}</div><div className="mono subtle" style={{ marginTop: 5, fontSize: 9 }}>{item.category.toUpperCase()}</div></div>
