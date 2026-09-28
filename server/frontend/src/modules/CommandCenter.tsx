@@ -20,7 +20,7 @@ export function CommandCenter({ data, setSelection, setModule }: { data: PriisDa
   return (
     <section className="panel">
       <div className="panel-head"><div><h1>Command Center</h1><span className="subtle">Spiderweb spatial / operational producer · PRII federation</span></div><button className="act primary" onClick={() => setModule("query")}>OPEN QUERY LAYER</button></div>
-      <ProgramTimeline items={PROGRAM_TIMELINE} />
+      <ProgramTimeline producerId="spiderweb-pr" items={PROGRAM_TIMELINE} />
       <div className="panel-grid">
         <div className="cards">
           <Card title="Total awarded" stat={fmtMoney(total)} delta={`${data.contracts.length} contracts`} />
