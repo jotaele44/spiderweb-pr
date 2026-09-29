@@ -62,7 +62,10 @@ jobs:
             echo "runner_arch=$RUNNER_ARCH"
             echo "zip_sha256=$EXPECTED_ZIP_SHA256"
             echo "git_tree=$EXPECTED_GIT_TREE"
+            echo "spec_files_discovered=$(find /tmp/spiderweb-work/helpers -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) | wc -l | tr -d ' ')"
+            echo "empty_spec_files=$(find /tmp/spiderweb-work/helpers -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -size -20c | wc -l | tr -d ' ')"
           } | tee "$GITHUB_WORKSPACE/.recovery/artifacts/environment.txt"
+          find /tmp/spiderweb-work/helpers -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -print | sort             > "$GITHUB_WORKSPACE/.recovery/artifacts/spec-files.txt"
 
       - name: Restore application dependency graph
         id: deps
@@ -72,7 +75,7 @@ jobs:
           cd /tmp/spiderweb-work
           npm install --ignore-scripts --legacy-peer-deps 2>&1 | tee "$GITHUB_WORKSPACE/.recovery/artifacts/npm-install-app.log"
           npm install --save-dev --ignore-scripts --legacy-peer-deps \
-            vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0 \
+            vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0 @testing-library/dom@10.4.1 \
             2>&1 | tee "$GITHUB_WORKSPACE/.recovery/artifacts/npm-install-test-harness.log"
           cp package.json "$GITHUB_WORKSPACE/.recovery/artifacts/package.reconstructed.json"
           cp package-lock.json "$GITHUB_WORKSPACE/.recovery/artifacts/package-lock.json"
@@ -82,23 +85,99 @@ jobs:
             "$GITHUB_WORKSPACE/.recovery/artifacts/package-lock.json" \
             | tee "$GITHUB_WORKSPACE/.recovery/artifacts/dependency-sha256.txt"
 
-      - name: Create explicit recovery-only Vitest configuration
+      - name: Create Jasmine-compatible recovery harness
         shell: bash
         run: |
           set -euo pipefail
+          cat > /tmp/spiderweb-work/vitest.recovery.setup.mjs <<'EOF'
+          import { afterEach, expect, vi } from "vitest";
+
+          expect.extend({
+            toBeTrue(received) {
+              const pass = received === true;
+              return { pass, message: () => `expected ${received} to be true` };
+            },
+            toBeFalse(received) {
+              const pass = received === false;
+              return { pass, message: () => `expected ${received} to be false` };
+            },
+          });
+
+          function augmentSpy(spy) {
+            Object.defineProperty(spy, "and", {
+              configurable: true,
+              value: {
+                returnValue(value) {
+                  spy.mockReturnValue(value);
+                  return spy;
+                },
+                resolveTo(value) {
+                  spy.mockResolvedValue(value);
+                  return spy;
+                },
+                rejectWith(value) {
+                  spy.mockRejectedValue(value);
+                  return spy;
+                },
+                callFake(fn) {
+                  spy.mockImplementation(fn);
+                  return spy;
+                },
+              },
+            });
+            Object.defineProperty(spy, "calls", {
+              configurable: true,
+              value: {
+                mostRecent() {
+                  const args = spy.mock.calls.at(-1) ?? [];
+                  return { args };
+                },
+                count() {
+                  return spy.mock.calls.length;
+                },
+                allArgs() {
+                  return [...spy.mock.calls];
+                },
+              },
+            });
+            return spy;
+          }
+
+          globalThis.spyOn = (object, method) => augmentSpy(vi.spyOn(object, method));
+          globalThis.jasmine = {
+            createSpy(name) {
+              const spy = vi.fn();
+              try {
+                Object.defineProperty(spy, "name", { value: name, configurable: true });
+              } catch {}
+              return augmentSpy(spy);
+            },
+            any(constructor) {
+              return expect.any(constructor);
+            },
+          };
+
+          afterEach(() => {
+            vi.restoreAllMocks();
+          });
+          EOF
+
           cat > /tmp/spiderweb-work/vitest.recovery.config.mjs <<'EOF'
           import { defineConfig } from "vitest/config";
           export default defineConfig({
             test: {
               globals: true,
               environment: "jsdom",
+              setupFiles: ["./vitest.recovery.setup.mjs"],
               include: ["helpers/**/*.spec.ts", "helpers/**/*.spec.tsx"],
+              exclude: ["helpers/useDebounce.spec.tsx"],
             },
           });
           EOF
           cp /tmp/spiderweb-work/vitest.recovery.config.mjs "$GITHUB_WORKSPACE/.recovery/artifacts/vitest.recovery.config.mjs"
+          cp /tmp/spiderweb-work/vitest.recovery.setup.mjs "$GITHUB_WORKSPACE/.recovery/artifacts/vitest.recovery.setup.mjs"
 
-      - name: Execute all recovered Spiderweb specs
+      - name: Execute recovered Spiderweb specs
         id: tests
         shell: bash
         run: |
@@ -122,10 +201,11 @@ jobs:
             echo "source_git_tree=$EXPECTED_GIT_TREE"
             echo "dependency_step=${{ steps.deps.outcome }}"
             echo "test_step=${{ steps.tests.outcome }}"
-            echo "reconstruction_harness=vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0"
+            echo "reconstruction_harness=vitest@3.2.4 jsdom@26.1.0 testing-library-react@16.2.0 testing-library-dom@10.4.1 jasmine-compat-v1"
+            echo "empty_placeholder_spec=helpers/useDebounce.spec.tsx"
             echo "classification=RECONSTRUCTION_EXECUTION_NOT_HISTORICAL_DEPENDENCY_IDENTITY"
           } > .recovery/artifacts/recovery-receipt.txt
-          find .recovery/artifacts -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum \
+          find .recovery/artifacts -maxdepth 1 -type f ! -name artifact-sha256.txt -print0 | sort -z | xargs -0 sha256sum \
             > .recovery/artifacts/artifact-sha256.txt
           cat .recovery/artifacts/recovery-receipt.txt
           cat .recovery/artifacts/artifact-sha256.txt
