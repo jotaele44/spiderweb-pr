@@ -4,7 +4,7 @@
   "title": "PR Grid Geographic V2 Release Manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["Grid_ID", "Grid_Version", "CRS", "Origin_X", "Origin_Y", "Extent_XMin", "Extent_YMin", "Extent_XMax", "Extent_YMax", "Row_Direction", "Column_Direction", "Full_Cell_Policy", "Levels", "Cell_ID_Format", "Boundary_Semantics_Version", "Binding_Schema_Version", "Mask_Schema_Version", "Geometry_Generator_Version", "Release_State", "Source_Manifest_SHA256", "Cell_Schema_SHA256", "Binding_Schema_SHA256", "Mask_Schema_SHA256", "Grid_Manifest_SHA256"],
+  "required": ["Grid_ID", "Grid_Version", "CRS", "Origin_X", "Origin_Y", "Extent_XMin", "Extent_YMin", "Extent_XMax", "Extent_YMax", "Row_Direction", "Column_Direction", "Full_Cell_Policy", "Levels", "Cell_ID_Format", "Boundary_Semantics_Version", "Binding_Schema_Version", "Mask_Schema_Version", "Geometry_Generator_Version", "Release_State", "Source_Manifest_SHA256", "Cell_Schema_SHA256", "Binding_Schema_SHA256", "Mask_Schema_SHA256", "Manifest_Schema_SHA256", "Grid_Manifest_SHA256"],
   "properties": {
     "Grid_ID": {"const": "PR_GRID_GEOGRAPHIC_V2"},
     "Grid_Version": {"const": "2.0.0-rc1"},
@@ -29,6 +29,7 @@
     "Cell_Schema_SHA256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "Binding_Schema_SHA256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "Mask_Schema_SHA256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "Manifest_Schema_SHA256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "Grid_Manifest_SHA256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
   }
 }
