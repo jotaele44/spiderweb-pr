@@ -120,7 +120,7 @@ def main() -> int:
             if count != expected:
                 raise SystemExit(f"{level}: {count} rows != expected {expected}")
             artifacts[level] = {
-                "artifact_path": str(path.relative_to(REPO_ROOT)),
+                "artifact_path": str(path.resolve().relative_to(REPO_ROOT)),
                 "artifact_sha256": digest,
             }
 
