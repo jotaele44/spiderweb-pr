@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/pr_grid_geographic_v2_binding.schema.json",
+  "title": "PR Grid Geographic V2 Record Binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Grid_ID", "Grid_Version", "Grid_Level", "Repository", "Record_ID", "Cell_ID", "Spatial_Role", "Binding_Method", "Uncertainty_Class", "Binding_State"],
+  "properties": {
+    "Grid_ID": {"const": "PR_GRID_GEOGRAPHIC_V2"},
+    "Grid_Version": {"const": "2.0.0-rc1"},
+    "Grid_Level": {"enum": ["L0", "L1", "L2", "L3"]},
+    "Repository": {"type": "string", "minLength": 1},
+    "Record_ID": {"type": "string", "minLength": 1},
+    "Cell_ID": {"type": "string", "pattern": "^PRG2:L[0-3]:R[0-9]{3}:C[0-9]{4}$"},
+    "Spatial_Role": {"type": "string", "minLength": 1},
+    "Binding_Method": {"enum": ["COVERS", "INTERSECTS_POSITIVE_AREA", "LINE_POSITIVE_LENGTH", "ADMINISTRATIVE_SET", "DERIVED_SET"]},
+    "Uncertainty_Class": {"enum": ["EXACT", "APPROXIMATE", "ADMINISTRATIVE_ONLY", "DERIVED", "INFERRED", "UNKNOWN"]},
+    "Binding_State": {"enum": ["INTERIOR", "EDGE_SHARED", "CORNER_SHARED", "OUTSIDE", "UNRESOLVED"]},
+    "Overlap_Area_m2": {"type": ["number", "null"], "minimum": 0},
+    "Cell_Coverage_Fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "Length_In_Cell_m": {"type": ["number", "null"], "minimum": 0},
+    "Binding_Version": {"type": ["string", "null"]},
+    "Geometry_State": {"type": ["string", "null"]},
+    "Confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+  }
+}
