@@ -157,6 +157,23 @@ jobs:
             },
           };
 
+          if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
+            Object.defineProperty(window, "matchMedia", {
+              configurable: true,
+              writable: true,
+              value: (query) => ({
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn(() => false),
+              }),
+            });
+          }
+
           afterEach(() => {
             vi.restoreAllMocks();
           });
@@ -164,7 +181,9 @@ jobs:
 
           cat > /tmp/spiderweb-work/vitest.recovery.config.mjs <<'EOF'
           import { defineConfig } from "vitest/config";
+          import react from "@vitejs/plugin-react-swc";
           export default defineConfig({
+            plugins: [react()],
             test: {
               globals: true,
               environment: "jsdom",
@@ -201,7 +220,7 @@ jobs:
             echo "source_git_tree=$EXPECTED_GIT_TREE"
             echo "dependency_step=${{ steps.deps.outcome }}"
             echo "test_step=${{ steps.tests.outcome }}"
-            echo "reconstruction_harness=vitest@3.2.4 jsdom@26.1.0 testing-library-react@16.2.0 testing-library-dom@10.4.1 jasmine-compat-v1"
+            echo "reconstruction_harness=vitest@3.2.4 jsdom@26.1.0 testing-library-react@16.2.0 testing-library-dom@10.4.1 jasmine-compat-v2 archive-react-swc matchMedia-default"
             echo "empty_placeholder_spec=helpers/useDebounce.spec.tsx"
             echo "classification=RECONSTRUCTION_EXECUTION_NOT_HISTORICAL_DEPENDENCY_IDENTITY"
           } > .recovery/artifacts/recovery-receipt.txt
