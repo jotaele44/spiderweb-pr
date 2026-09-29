@@ -1,0 +1,140 @@
+name: Floot Spiderweb Exact Recovery
+
+on:
+  push:
+    branches:
+      - recovery/floot-spiderweb-20260929
+    paths:
+      - .recovery/**
+      - .github/workflows/floot-spiderweb-recovery.yml
+
+permissions:
+  contents: read
+
+jobs:
+  exact-frozen-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EXPECTED_B64_SHA256: b02533910bf0e9118a189988b008431132b88111f240552265f8ee13c3cbda98
+      EXPECTED_ZIP_SHA256: 7746bf2da3fc9a7d59e0e0a495120068e2ec7d15499c7778ff9a8a00fb1c9ad9
+      EXPECTED_GIT_TREE: 9b493e2ce8f881dee8b49497f0105da8b805a1a4
+      RECOVERY_B64: .recovery/floot-spiderweb-20260929.zip.b64
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Verify exact transported archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_b64="$(sha256sum "$RECOVERY_B64" | awk '{print $1}')"
+          test "$actual_b64" = "$EXPECTED_B64_SHA256"
+          base64 --decode "$RECOVERY_B64" > /tmp/spiderweb-floot.zip
+          actual_zip="$(sha256sum /tmp/spiderweb-floot.zip | awk '{print $1}')"
+          test "$actual_zip" = "$EXPECTED_ZIP_SHA256"
+          rm -rf /tmp/spiderweb-frozen
+          mkdir -p /tmp/spiderweb-frozen
+          unzip -q /tmp/spiderweb-floot.zip -d /tmp/spiderweb-frozen
+          cd /tmp/spiderweb-frozen
+          git init -q
+          git config user.name recovery
+          git config user.email recovery@example.invalid
+          git config core.autocrlf false
+          git add -A
+          actual_tree="$(git write-tree)"
+          echo "actual_tree=$actual_tree"
+          test "$actual_tree" = "$EXPECTED_GIT_TREE"
+          rm -rf .git
+
+      - name: Prepare isolated mutable reconstruction copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/spiderweb-work
+          cp -a /tmp/spiderweb-frozen /tmp/spiderweb-work
+          mkdir -p "$GITHUB_WORKSPACE/.recovery/artifacts"
+          cp /tmp/spiderweb-work/package.json "$GITHUB_WORKSPACE/.recovery/artifacts/package.original.json"
+          {
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "runner_os=$RUNNER_OS"
+            echo "runner_arch=$RUNNER_ARCH"
+            echo "zip_sha256=$EXPECTED_ZIP_SHA256"
+            echo "git_tree=$EXPECTED_GIT_TREE"
+          } | tee "$GITHUB_WORKSPACE/.recovery/artifacts/environment.txt"
+
+      - name: Restore application dependency graph
+        id: deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/spiderweb-work
+          npm install --ignore-scripts --legacy-peer-deps 2>&1 | tee "$GITHUB_WORKSPACE/.recovery/artifacts/npm-install-app.log"
+          npm install --save-dev --ignore-scripts --legacy-peer-deps \
+            vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0 \
+            2>&1 | tee "$GITHUB_WORKSPACE/.recovery/artifacts/npm-install-test-harness.log"
+          cp package.json "$GITHUB_WORKSPACE/.recovery/artifacts/package.reconstructed.json"
+          cp package-lock.json "$GITHUB_WORKSPACE/.recovery/artifacts/package-lock.json"
+          sha256sum \
+            "$GITHUB_WORKSPACE/.recovery/artifacts/package.original.json" \
+            "$GITHUB_WORKSPACE/.recovery/artifacts/package.reconstructed.json" \
+            "$GITHUB_WORKSPACE/.recovery/artifacts/package-lock.json" \
+            | tee "$GITHUB_WORKSPACE/.recovery/artifacts/dependency-sha256.txt"
+
+      - name: Create explicit recovery-only Vitest configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/spiderweb-work/vitest.recovery.config.mjs <<'EOF'
+          import { defineConfig } from "vitest/config";
+          export default defineConfig({
+            test: {
+              globals: true,
+              environment: "jsdom",
+              include: ["helpers/**/*.spec.ts", "helpers/**/*.spec.tsx"],
+            },
+          });
+          EOF
+          cp /tmp/spiderweb-work/vitest.recovery.config.mjs "$GITHUB_WORKSPACE/.recovery/artifacts/vitest.recovery.config.mjs"
+
+      - name: Execute all recovered Spiderweb specs
+        id: tests
+        shell: bash
+        run: |
+          set -uo pipefail
+          cd /tmp/spiderweb-work
+          ./node_modules/.bin/vitest run --config vitest.recovery.config.mjs --reporter=verbose \
+            2>&1 | tee "$GITHUB_WORKSPACE/.recovery/artifacts/vitest.log"
+          status=${PIPESTATUS[0]}
+          printf '%s\n' "$status" | tee "$GITHUB_WORKSPACE/.recovery/artifacts/vitest.exit-code.txt"
+          exit "$status"
+
+      - name: Freeze recovery receipt
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          cd "$GITHUB_WORKSPACE"
+          {
+            echo "archive_sha256=$EXPECTED_ZIP_SHA256"
+            echo "archive_base64_sha256=$EXPECTED_B64_SHA256"
+            echo "source_git_tree=$EXPECTED_GIT_TREE"
+            echo "dependency_step=${{ steps.deps.outcome }}"
+            echo "test_step=${{ steps.tests.outcome }}"
+            echo "reconstruction_harness=vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0"
+            echo "classification=RECONSTRUCTION_EXECUTION_NOT_HISTORICAL_DEPENDENCY_IDENTITY"
+          } > .recovery/artifacts/recovery-receipt.txt
+          find .recovery/artifacts -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum \
+            > .recovery/artifacts/artifact-sha256.txt
+          cat .recovery/artifacts/recovery-receipt.txt
+          cat .recovery/artifacts/artifact-sha256.txt
+
+      - name: Upload recovery evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: floot-spiderweb-exact-recovery
+          path: .recovery/artifacts/
+          if-no-files-found: error
+          retention-days: 30
