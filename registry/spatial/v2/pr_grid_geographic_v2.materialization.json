@@ -1,0 +1,43 @@
+{
+  "receipt_version": "pr-grid-geographic-v2-materialization/1.0",
+  "Grid_ID": "PR_GRID_GEOGRAPHIC_V2",
+  "Grid_Version": "2.0.0-rc1",
+  "Grid_Manifest_SHA256": "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4",
+  "Materialized_Manifest_SHA256": "6ba64283b2f98807dc6cd5e1035f614690f74d3d9664d417d144b034b9f23f4b",
+  "Cell_Total": 973845,
+  "Levels": {
+    "L0": {
+      "rows": 11457,
+      "bytes": 1211089,
+      "sha256": "e702b589e098eca188d20d181cb5bcc1e7c21de5643c4a328c5b52714443d4c4"
+    },
+    "L1": {
+      "rows": 45828,
+      "bytes": 4873713,
+      "sha256": "7a197ea7475cebcb3eca122ed99ec4b2ecd62f1879478277ff34786f13ce8059"
+    },
+    "L2": {
+      "rows": 183312,
+      "bytes": 19415695,
+      "sha256": "8d8f41e1b1bd5a2e4ce9d7fc642c32a79c95f3b2d486044caa0b0780ccaea0df"
+    },
+    "L3": {
+      "rows": 733248,
+      "bytes": 77335387,
+      "sha256": "083d1f83ac9739550ec71e5e18f28834c5682504ec154a6d73697a6ba450ff7a"
+    }
+  },
+  "Certification": {
+    "workflow": "PR grid V2 certification",
+    "workflow_run_id": 36518896535,
+    "source_head_sha": "c61d8b1853d3b1a7a3c3124dc30429c15a32f4ad",
+    "native_tests": "21 passed",
+    "artifact_id": 11011499186,
+    "artifact_digest": "sha256:9831d43ddc523f7f70f505dc7a464cd78f6ed6984f5b5557acdf761ad00c01b9",
+    "state": "PASS"
+  },
+  "External_Blockers_Not_Grid_Identity": [
+    "QA-D24-001",
+    "QA-D24-003"
+  ]
+}
