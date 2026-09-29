@@ -15,11 +15,28 @@ jobs:
   exact-frozen-recovery:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: spiderweb_recovery
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d spiderweb_recovery"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     env:
       EXPECTED_B64_SHA256: b02533910bf0e9118a189988b008431132b88111f240552265f8ee13c3cbda98
       EXPECTED_ZIP_SHA256: 7746bf2da3fc9a7d59e0e0a495120068e2ec7d15499c7778ff9a8a00fb1c9ad9
       EXPECTED_GIT_TREE: 9b493e2ce8f881dee8b49497f0105da8b805a1a4
       RECOVERY_B64: .recovery/floot-spiderweb-20260929.zip.b64
+      FLOOT_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/spiderweb_recovery
+      JWT_SECRET: recovery-only-jwt-secret-not-production-20260929
+      SPIDERWEB_API_BASE_URL: https://authority.example.test
     steps:
       - name: Checkout recovery branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -208,6 +225,41 @@ jobs:
           printf '%s\n' "$status" | tee "$GITHUB_WORKSPACE/.recovery/artifacts/vitest.exit-code.txt"
           exit "$status"
 
+      - name: Execute 21-endpoint auth/database recovery regression
+        id: endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$GITHUB_WORKSPACE/.recovery/spiderweb-reconstruction-schema.sql" /tmp/spiderweb-work/recovery.schema.sql
+          cp "$GITHUB_WORKSPACE/.recovery/spiderweb-endpoint-regression.ts" /tmp/spiderweb-work/recovery.endpoint.spec.ts
+          cp /tmp/spiderweb-work/recovery.schema.sql "$GITHUB_WORKSPACE/.recovery/artifacts/recovery.schema.sql"
+          cp /tmp/spiderweb-work/recovery.endpoint.spec.ts "$GITHUB_WORKSPACE/.recovery/artifacts/recovery.endpoint.spec.ts"
+          cd /tmp/spiderweb-work
+          find endpoints -type f -name '*.ts' ! -name '*.schema.ts' -print | sort | tee "$GITHUB_WORKSPACE/.recovery/artifacts/endpoint-files.txt"
+          endpoint_count="$(wc -l < "$GITHUB_WORKSPACE/.recovery/artifacts/endpoint-files.txt" | tr -d ' ')"
+          test "$endpoint_count" = "21"
+          cat > vitest.endpoint.config.mjs <<'EOF'
+          import { defineConfig } from "vitest/config";
+          import react from "@vitejs/plugin-react-swc";
+          export default defineConfig({
+            plugins: [react()],
+            test: {
+              globals: true,
+              environment: "node",
+              include: ["recovery.endpoint.spec.ts"],
+              testTimeout: 20000,
+              hookTimeout: 20000,
+              sequence: { concurrent: false },
+            },
+          });
+          EOF
+          cp vitest.endpoint.config.mjs "$GITHUB_WORKSPACE/.recovery/artifacts/vitest.endpoint.config.mjs"
+          ./node_modules/.bin/vitest run --config vitest.endpoint.config.mjs --reporter=verbose \
+            2>&1 | tee "$GITHUB_WORKSPACE/.recovery/artifacts/endpoint-regression.log"
+          status=${PIPESTATUS[0]}
+          printf '%s\n' "$status" | tee "$GITHUB_WORKSPACE/.recovery/artifacts/endpoint-regression.exit-code.txt"
+          exit "$status"
+
       - name: Freeze recovery receipt
         if: always()
         shell: bash
@@ -220,6 +272,8 @@ jobs:
             echo "source_git_tree=$EXPECTED_GIT_TREE"
             echo "dependency_step=${{ steps.deps.outcome }}"
             echo "test_step=${{ steps.tests.outcome }}"
+            echo "endpoint_step=${{ steps.endpoints.outcome }}"
+            echo "reconstruction_schema_class=NEW_NONCANONICAL_TYPE_AND_QUERY_DERIVED_NO_HISTORICAL_ROWS"
             echo "reconstruction_harness=vitest@3.2.4 jsdom@26.1.0 testing-library-react@16.2.0 testing-library-dom@10.4.1 jasmine-compat-v2 archive-react-swc matchMedia-default"
             echo "empty_placeholder_spec=helpers/useDebounce.spec.tsx"
             echo "classification=RECONSTRUCTION_EXECUTION_NOT_HISTORICAL_DEPENDENCY_IDENTITY"
