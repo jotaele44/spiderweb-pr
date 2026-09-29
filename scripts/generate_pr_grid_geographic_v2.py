@@ -11,7 +11,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
 
 from spiderweb.geographic_grid_v2 import (
     CRS,
@@ -31,7 +35,6 @@ from spiderweb.geographic_grid_v2 import (
     write_level_csv,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 SOURCE = REPO_ROOT / "registry/spatial/v2/pr_grid_geographic_v2.source.json"
 CELL_SCHEMA = REPO_ROOT / "schemas/pr_grid_geographic_v2_cell.schema.json"
 BINDING_SCHEMA = REPO_ROOT / "schemas/pr_grid_geographic_v2_binding.schema.json"
