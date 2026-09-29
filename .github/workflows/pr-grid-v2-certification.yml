@@ -52,6 +52,54 @@ jobs:
           sha256sum artifacts/pr-grid-v2/indexes/*.csv | sort > artifacts/pr-grid-v2/INDEX_SHA256SUMS.txt
           wc -l artifacts/pr-grid-v2/indexes/*.csv > artifacts/pr-grid-v2/INDEX_LINE_COUNTS.txt
 
+      - name: Verify frozen materialization receipt
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          receipt = json.loads(
+              Path("registry/spatial/v2/pr_grid_geographic_v2.materialization.json").read_text()
+          )
+          contract_manifest = json.loads(
+              Path("registry/spatial/v2/pr_grid_geographic_v2.manifest.json").read_text()
+          )
+          generated_manifest = json.loads(
+              Path("artifacts/pr-grid-v2/pr_grid_geographic_v2.manifest.json").read_text()
+          )
+
+          assert contract_manifest["Grid_Manifest_SHA256"] == receipt["Grid_Manifest_SHA256"]
+          assert (
+              generated_manifest["Grid_Manifest_SHA256"]
+              == receipt["Materialized_Manifest_SHA256"]
+          )
+
+          total = 0
+          for level, expected in receipt["Levels"].items():
+              path = Path(
+                  f"artifacts/pr-grid-v2/indexes/pr_grid_geographic_v2_{level.lower()}.csv"
+              )
+              payload = path.read_bytes()
+              rows = payload.count(b"\n") - 1
+              digest = hashlib.sha256(payload).hexdigest()
+              assert rows == expected["rows"], (level, rows, expected["rows"])
+              assert len(payload) == expected["bytes"], (
+                  level,
+                  len(payload),
+                  expected["bytes"],
+              )
+              assert digest == expected["sha256"], (
+                  level,
+                  digest,
+                  expected["sha256"],
+              )
+              total += rows
+
+          assert total == receipt["Cell_Total"]
+          print("FROZEN_MATERIALIZATION_RECEIPT=PASS")
+          PY
+
       - name: Upload complete V2 certification artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
