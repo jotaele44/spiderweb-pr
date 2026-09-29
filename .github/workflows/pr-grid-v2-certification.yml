@@ -1,0 +1,60 @@
+name: PR grid V2 certification
+
+on:
+  pull_request:
+    paths:
+      - "spiderweb/geographic_grid_v2.py"
+      - "scripts/generate_pr_grid_geographic_v2.py"
+      - "tests/test_geographic_grid_v2.py"
+      - "schemas/pr_grid_geographic_v2_*.schema.json"
+      - "registry/spatial/v2/**"
+      - ".github/workflows/pr-grid-v2-certification.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spiderweb/geographic_grid_v2.py"
+      - "scripts/generate_pr_grid_geographic_v2.py"
+      - "tests/test_geographic_grid_v2.py"
+      - "schemas/pr_grid_geographic_v2_*.schema.json"
+      - "registry/spatial/v2/**"
+
+permissions:
+  contents: read
+
+jobs:
+  certify-pr-grid-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check pytest jsonschema
+
+      - name: Run native V2 certification tests
+        run: python -m pytest -q tests/test_geographic_grid_v2.py
+
+      - name: Materialize complete L0-L3 indexes
+        run: |
+          python scripts/generate_pr_grid_geographic_v2.py \
+            --output-dir artifacts/pr-grid-v2/indexes \
+            --manifest artifacts/pr-grid-v2/pr_grid_geographic_v2.manifest.json
+
+      - name: Assert materialized row denominators
+        run: |
+          test "$(($(wc -l < artifacts/pr-grid-v2/indexes/pr_grid_geographic_v2_l0.csv) - 1))" -eq 11457
+          test "$(($(wc -l < artifacts/pr-grid-v2/indexes/pr_grid_geographic_v2_l1.csv) - 1))" -eq 45828
+          test "$(($(wc -l < artifacts/pr-grid-v2/indexes/pr_grid_geographic_v2_l2.csv) - 1))" -eq 183312
+          test "$(($(wc -l < artifacts/pr-grid-v2/indexes/pr_grid_geographic_v2_l3.csv) - 1))" -eq 733248
+          sha256sum artifacts/pr-grid-v2/indexes/*.csv | sort > artifacts/pr-grid-v2/INDEX_SHA256SUMS.txt
+          wc -l artifacts/pr-grid-v2/indexes/*.csv > artifacts/pr-grid-v2/INDEX_LINE_COUNTS.txt
+
+      - name: Upload complete V2 certification artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr-grid-geographic-v2-rc1
+          path: artifacts/pr-grid-v2/
+          retention-days: 90
