@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           cp package.json package.original.json
           sha256sum package.original.json > recovery-package-hashes.txt
-          npm install --no-audit --no-fund --ignore-scripts
+          npm install --legacy-peer-deps --no-audit --no-fund --ignore-scripts
           npm install --save-dev --no-audit --no-fund --ignore-scripts \
             vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0
           sha256sum package.json package-lock.json >> recovery-package-hashes.txt
