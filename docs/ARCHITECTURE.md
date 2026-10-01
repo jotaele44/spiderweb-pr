@@ -57,6 +57,24 @@ canonical projection: entities + sources + relationships
 thehub-pr validates, aggregates, and correlates across producers
 ```
 
+Each canonical row carries an optional `evidence_state` declaration. It follows thehub-pr's candidate epistemic-state contract, vendored byte-identically at `schemas/federation_epistemic_state.v1.schema.json`. The local `federation_entity`, `federation_source` and `federation_relationship` schemas each accept it as one optional property.
+
+Classification follows the record type, and only types with documented provenance are classified:
+
+| Record type | Class | Location precision | Note |
+|---|---|---|---|
+| USGS metallic occurrence | CURATED | `OBSERVED_POINT` | Published occurrence points |
+| Airport reference | CURATED | `REPRESENTATIVE_POINT` | |
+| Structure sighting | CURATED | `INTERPRETED_POINT` | |
+| PPP resolution | COMPUTED | `REPRESENTATIVE_POINT` | |
+
+Location precision does not always come from the record type:
+
+- A location taken from a LineString's first vertex is always declared `REPRESENTATIVE_POINT` / `FIRST_VERTEX`, whatever the record type.
+- Undocumented types, such as screenshot-derived airspace records, are left undeclared, so thehub-pr fails closed for them.
+
+Tests: `tests/test_federation_evidence_state.py`.
+
 ## Federation boundary
 
 | Responsibility | Owner |

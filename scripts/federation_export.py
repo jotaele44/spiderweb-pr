@@ -67,6 +67,43 @@ _ENTITY_TYPE_BY_OBSERVATION_TYPE = {"usgs_metallic_occurrence": "mineral_occurre
 _ENTITY_TYPE_BY_SOURCE_KIND = {"gis_layer_reference": "gis_layer_reference"}
 
 
+# Additive FEDERATION_EPISTEMIC_STATE_CONTRACT_V1 declarations (thehub-pr,
+# candidate; vendored at schemas/federation_epistemic_state.v1.schema.json).
+# Only record types whose provenance is documented get a class/geometry claim;
+# anything else is left undeclared so the Hub fails closed (UNCLASSIFIED/UNKNOWN).
+EVIDENCE_STATE_CONTRACT = "federation-evidence-state-v1"
+# observation_type -> (epistemic_class, geometry_precision, coordinate_method, observation_state)
+_RECORD_EVIDENCE: dict[str, tuple[str, str, str, str | None]] = {
+    # USGS OFR 98-038 metallic *point* coverage: LAB coordinates are the
+    # published occurrence points (data/usgs_ofr_98_038/docs).
+    "usgs_metallic_occurrence": ("CURATED", "OBSERVED_POINT", "AUTHORITATIVE", "OBSERVED_PRESENT"),
+    # Airport reference points: an official point standing in for the airfield.
+    "airport_reference_location": ("CURATED", "REPRESENTATIVE_POINT", "AUTHORITATIVE", None),
+    # Operator-placed point on imagery after human review (visual only).
+    "structure_sighting": ("CURATED", "INTERPRETED_POINT", "INFERRED", "OBSERVED_PRESENT"),
+}
+
+
+def _evidence_state(**fields: Any) -> dict[str, Any]:
+    declared = {k: v for k, v in fields.items() if v is not None}
+    return {"contract": EVIDENCE_STATE_CONTRACT, "data_stage": "CANONICAL", **declared}
+
+
+def _record_evidence_state(record: dict[str, Any], has_point: bool) -> dict[str, Any]:
+    """Declaration for a record-derived row. A LineString's first vertex is
+    only ever a representative point, whatever the record type."""
+    spec = _RECORD_EVIDENCE.get(record.get("observation_type"))
+    klass, precision, method, observation = spec if spec else (None, None, None, None)
+    geom = record.get("geometry")
+    from_point = isinstance(geom, dict) and geom.get("type") == "Point"
+    if has_point and not from_point:
+        precision, method = "REPRESENTATIVE_POINT", "FIRST_VERTEX"
+    if not has_point:
+        precision = method = None
+    return _evidence_state(epistemic_class=klass, geometry_precision=precision,
+                           coordinate_method=method, observation_state=observation)
+
+
 def _score(conf: Any) -> float:
     if isinstance(conf, dict):
         return float(conf.get("score", 0.5))
@@ -92,7 +129,16 @@ def _lineage(
     }
 
 
+# Record types whose subject_id names a non-aircraft subject (an airport, a
+# site, a mineral occurrence). Their subjects must never become aircraft.
+_NON_AIRCRAFT_SUBJECT_TYPES = frozenset(
+    {"usgs_metallic_occurrence", "airport_reference_location", "structure_sighting"}
+)
+
+
 def _aircraft(record: dict[str, Any]) -> str | None:
+    if record.get("observation_type") in _NON_AIRCRAFT_SUBJECT_TYPES:
+        return None
     return record.get("subject_id") or (record.get("attributes") or {}).get("callsign")
 
 
@@ -138,6 +184,7 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
             "source_name": raw, "source_ref": raw, "confidence": score,
             "lineage": _lineage("SOURCE_REGISTRY"), "synthetic": synthetic,
             "created_at": s.get("first_seen_at") or now, "extracted_at": now,
+            "evidence_state": _evidence_state(epistemic_class="CURATED"),
         }
         ent_id = _fid("ent", "source", raw)
         src_entity[raw] = ent_id
@@ -147,6 +194,7 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
             "normalized_name": _norm(raw), "entity_type": source_entity_type,
             "jurisdiction": "PR", "confidence": score, "lineage": _lineage("SOURCE_ENTITY"),
             "synthetic": synthetic, "created_at": s.get("first_seen_at") or now, "extracted_at": now,
+            "evidence_state": _evidence_state(epistemic_class="CURATED"),
         }
 
     for stream, etype in RECORD_STREAMS.items():
@@ -170,6 +218,7 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
             loc = _point(r)
             if loc:
                 entities[ent_id]["location"] = loc
+            entities[ent_id]["evidence_state"] = _record_evidence_state(r, has_point=bool(loc))
             tgt = src_entity.get(raw_src) or _fid("ent", "source", raw_src)
             relationships.update(_rel(ent_id, "reported_by", tgt, sid, score, synthetic, when, now))
             ac = _aircraft(r)
@@ -180,6 +229,8 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
                     "normalized_name": _norm(ac), "entity_type": "aircraft",
                     "jurisdiction": "PR", "confidence": score, "lineage": _lineage("AIRCRAFT_ENTITY"),
                     "synthetic": synthetic, "created_at": when, "extracted_at": now,
+                    # Keyed on a callsign/subject id: a callsign is not an airframe identity.
+                    "evidence_state": _evidence_state(identity_state="CANDIDATE"),
                 })
                 relationships.update(_rel(ent_id, "observed", ac_id, sid, score, synthetic, when, now))
 
@@ -238,7 +289,12 @@ def build_ppp_geometry_streams(resolution: dict[str, Any], now: str) -> dict[str
         "synthetic": False,
         "created_at": now,
         "extracted_at": now,
+        "evidence_state": _evidence_state(epistemic_class="CURATED"),
     }
+    # A municipality resolved to a committed reference asset point: computed,
+    # and only ever a representative point for the project's location.
+    ppp_state = _evidence_state(epistemic_class="COMPUTED", geometry_precision="REPRESENTATIVE_POINT",
+                                coordinate_method="LINKED_ASSET")
 
     entities: list[dict] = []
     observations: list[dict] = []
@@ -264,6 +320,7 @@ def build_ppp_geometry_streams(resolution: dict[str, Any], now: str) -> dict[str
                 "location": location,
                 "confidence": row["geometry_confidence"],
                 "lineage": lineage,
+                "evidence_state": dict(ppp_state),
                 "synthetic": False,
                 "created_at": now,
                 "extracted_at": now,
@@ -291,6 +348,7 @@ def build_ppp_geometry_streams(resolution: dict[str, Any], now: str) -> dict[str
                 },
                 "confidence": row["geometry_confidence"],
                 "lineage": _ppp_lineage("PPP_GEOMETRY", resolution, row["reference_path"]),
+                "evidence_state": dict(ppp_state),
                 "synthetic": False,
                 "created_at": now,
                 "extracted_at": now,
@@ -319,6 +377,9 @@ def _rel(src_ent, rtype, tgt_ent, sid, score, synthetic, created, now):
         "target_entity_id": tgt_ent, "relationship_type": rtype, "evidence_source_id": sid,
         "confidence": score, "lineage": _lineage("RELATIONSHIP"),
         "synthetic": synthetic, "created_at": created, "extracted_at": now,
+        # reported_by is documented by the record itself; "observed" links a
+        # record to a callsign-keyed aircraft and is not given a class.
+        "evidence_state": _evidence_state(epistemic_class="CURATED" if rtype == "reported_by" else None),
     }}
 
 

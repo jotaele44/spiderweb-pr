@@ -119,3 +119,20 @@ def test_unmapped_source_kind_keeps_sensor_source_default():
     # -> unchanged "sensor_source" default.
     s = build_streams(SOURCES, RECORDS, "t")
     assert any(e["entity_type"] == "sensor_source" for e in s["entities"])
+
+
+def test_non_airspace_subjects_never_become_aircraft():
+    # airport / site / mineral-occurrence subject_ids are not callsigns
+    for observation_type, subject_id in [
+        ("airport_reference_location", "airport_sju_tjsj"),
+        ("structure_sighting", "SITE_RI_20260522_001"),
+        ("usgs_metallic_occurrence", "metallic_e00_lab_001"),
+    ]:
+        records = {"observations": [{
+            "id": "subj0001", "source_id": "src_a", "subject_id": subject_id,
+            "observation_type": observation_type, "observed_at": "2024-03-15T08:15:00+00:00",
+            "confidence": {"score": 0.9}, "is_synthetic": False,
+        }], "airspace_events": [], "tracks": []}
+        s = build_streams(SOURCES, records, "t")
+        assert not [e for e in s["entities"] if e["entity_type"] == "aircraft"], observation_type
+        assert not [r for r in s["relationships"] if r["relationship_type"] == "observed"], observation_type
