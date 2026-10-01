@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
-from .envelope import EvidenceEnvelope, entity_ref
+from .envelope import CONTRACT_VERSION, EvidenceEnvelope, entity_ref
 from .namespace import PREFIX, PRODUCER, namespaced_id
 
 SCHEMA_VERSION = "0.1"
@@ -124,6 +124,7 @@ def write_package(
         "producer": producer,
         "prefix": prefix,
         "schema_version": SCHEMA_VERSION,
+        "contract_version": CONTRACT_VERSION,
         "generated_at": _utc_now(),
         "synthetic": bool(synthetic),
         "files": files,

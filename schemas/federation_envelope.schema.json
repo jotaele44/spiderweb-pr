@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "federation_envelope",
+  "title": "PRII Federation Evidence Envelope (contract_version 1.0)",
+  "description": "One normalized record as produced by federation/envelope.py's EvidenceEnvelope.to_dict(). This is the producer-internal envelope contract consumed by federation/export_writer.py and federation/validator.py — distinct from the hub-facing canonical package written by scripts/federation_export.py (see federation_source.schema.json et al. for that one). The sibling contract_version field this envelope ships under lives in the package manifest (manifest.json), not on the record itself; see validator.validate_manifest_contract_version.",
+  "type": "object",
+  "required": ["producer", "record_type", "record_id", "source_id", "entities", "confidence", "lineage", "payload", "synthetic"],
+  "properties": {
+    "producer": {"type": "string", "minLength": 1},
+    "record_type": {"type": "string", "minLength": 1},
+    "record_id": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "timestamp": {"type": ["string", "null"]},
+    "geo": {
+      "type": ["object", "null"],
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": {"type": "string"},
+        "coordinates": {}
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entity_id", "name", "normalized_name"],
+        "properties": {
+          "entity_id": {"type": "string"},
+          "name": {"type": "string"},
+          "normalized_name": {"type": "string"}
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "required": ["score", "method"],
+      "properties": {
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "method": {"type": "string", "minLength": 1}
+      }
+    },
+    "lineage": {"type": "array"},
+    "payload": {"type": "object"},
+    "synthetic": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}
