@@ -14,14 +14,37 @@ import {
   type GeoJsonCircleLayerSpec,
 } from "./SpatialAdapters";
 
-function waitForStyle(map: maplibregl.Map): Promise<void> {
-  if (map.isStyleLoaded()) return Promise.resolve();
-  return new Promise((resolve) => {
+type MapLibreRuntimeLifecycle = SpatialRuntime & { isDisposed(): boolean };
+
+function isStyleGraphReady(map: maplibregl.Map, runtime: MapLibreRuntimeLifecycle): boolean {
+  if (runtime.isDisposed()) return false;
+  if (map.isStyleLoaded()) return true;
+  return Boolean(map.getStyle()?.version);
+}
+
+function waitForStyleGraph(map: maplibregl.Map, runtime: MapLibreRuntimeLifecycle): Promise<void> {
+  if (runtime.isDisposed()) return Promise.reject(new Error("MapLibre runtime is disposed"));
+  if (isStyleGraphReady(map, runtime)) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error(runtime.isDisposed()
+        ? "MapLibre runtime was disposed before semantic layer insertion"
+        : "MapLibre style graph was not ready for semantic layer insertion"));
+    }, 8000);
     const onStyle = () => {
-      if (!map.isStyleLoaded()) return;
-      map.off("styledata", onStyle);
+      if (!isStyleGraphReady(map, runtime)) return;
+      cleanup();
       resolve();
     };
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      map.off("load", onStyle);
+      map.off("style.load", onStyle);
+      map.off("styledata", onStyle);
+    };
+    map.on("load", onStyle);
+    map.on("style.load", onStyle);
     map.on("styledata", onStyle);
   });
 }
@@ -91,6 +114,7 @@ function removeCirclePaint(map: maplibregl.Map, id: string): void {
 
 function removable(
   map: maplibregl.Map,
+  runtime: MapLibreRuntimeLifecycle,
   sourceId: string,
   removePaint: () => void,
   removeError?: () => void,
@@ -100,6 +124,7 @@ function removable(
     remove() {
       if (removed) return;
       removed = true;
+      if (runtime.isDisposed()) return;
       removeError?.();
       if (!map.isStyleLoaded()) return;
       removePaint();
@@ -110,7 +135,7 @@ function removable(
 
 export function createMapLibreSpatialAdapters(
   map: maplibregl.Map,
-  runtime: SpatialRuntime,
+  runtime: MapLibreRuntimeLifecycle,
 ): SpatialAdapters {
   const layer = {
     capabilities: {
@@ -119,23 +144,23 @@ export function createMapLibreSpatialAdapters(
       vectorTilePolygon: true,
     },
     async addGeoJsonPolygonLayer(spec: GeoJsonPolygonLayerSpec): Promise<SpatialLayerHandle> {
-      await waitForStyle(map);
+      await waitForStyleGraph(map, runtime);
       const sourceId = spec.id;
       if (map.getSource(sourceId)) throw new Error(`spatial source already exists: ${sourceId}`);
       map.addSource(sourceId, { type: "geojson", data: spec.data, ...(spec.promoteId ? { promoteId: spec.promoteId } : {}) });
       addPolygonPaint(map, spec.id, sourceId, spec.style);
-      return removable(map, sourceId, () => removePolygonPaint(map, spec.id));
+      return removable(map, runtime, sourceId, () => removePolygonPaint(map, spec.id));
     },
     async addGeoJsonCircleLayer(spec: GeoJsonCircleLayerSpec): Promise<SpatialLayerHandle> {
-      await waitForStyle(map);
+      await waitForStyleGraph(map, runtime);
       const sourceId = spec.id;
       if (map.getSource(sourceId)) throw new Error(`spatial source already exists: ${sourceId}`);
       map.addSource(sourceId, { type: "geojson", data: spec.data });
       addCirclePaint(map, spec.id, sourceId, spec.style);
-      return removable(map, sourceId, () => removeCirclePaint(map, spec.id));
+      return removable(map, runtime, sourceId, () => removeCirclePaint(map, spec.id));
     },
     async addVectorTilePolygonLayer(spec: VectorTilePolygonLayerSpec): Promise<SpatialLayerHandle> {
-      await waitForStyle(map);
+      await waitForStyleGraph(map, runtime);
       const sourceId = spec.id;
       if (map.getSource(sourceId)) throw new Error(`spatial source already exists: ${sourceId}`);
       const onError = (event: maplibregl.ErrorEvent) => {
@@ -152,6 +177,7 @@ export function createMapLibreSpatialAdapters(
       addPolygonPaint(map, spec.id, sourceId, spec.style, spec.sourceLayer);
       return removable(
         map,
+        runtime,
         sourceId,
         () => removePolygonPaint(map, spec.id),
         () => map.off("error", onError),

@@ -4,7 +4,7 @@ import type { GeoJSON } from "geojson";
 import { createMapLibreSpatialAdapters } from "./MapLibreSpatialAdapters";
 import type { SpatialRuntime } from "./SpatialRuntime";
 
-function runtimeStub(): SpatialRuntime {
+function runtimeStub(disposed = false): SpatialRuntime & { isDisposed(): boolean } {
   return {
     initialize: vi.fn(() => Promise.resolve()),
     destroy: vi.fn(),
@@ -12,15 +12,17 @@ function runtimeStub(): SpatialRuntime {
     getView: vi.fn(() => ({ center: [-66.4, 18.2] as [number, number], zoom: 9 })),
     resize: vi.fn(),
     onBasemapError: vi.fn(() => () => undefined),
+    isDisposed: vi.fn(() => disposed),
   };
 }
 
-function mapStub() {
+function mapStub({ styleLoaded = true, styleVersion = 8 }: { styleLoaded?: boolean; styleVersion?: number | null } = {}) {
   const sources = new Map<string, unknown>();
   const layers = new Map<string, unknown>();
   const listeners = new Map<string, Set<(event: unknown) => void>>();
   const map = {
-    isStyleLoaded: vi.fn(() => true),
+    isStyleLoaded: vi.fn(() => styleLoaded),
+    getStyle: vi.fn(() => styleVersion === null ? undefined : { version: styleVersion }),
     getSource: vi.fn((id: string) => sources.get(id)),
     addSource: vi.fn((id: string, source: unknown) => { sources.set(id, source); }),
     removeSource: vi.fn((id: string) => { sources.delete(id); }),
@@ -36,6 +38,7 @@ function mapStub() {
   };
   return {
     map: map as unknown as maplibregl.Map,
+    rawMap: map,
     sources,
     layers,
     emit(event: string, payload: unknown) {
@@ -47,6 +50,62 @@ function mapStub() {
 const EMPTY_GEOJSON: GeoJSON = { type: "FeatureCollection", features: [] };
 
 describe("MapLibre semantic adapters", () => {
+  it("accepts an initialized style graph while external resources are still settling", async () => {
+    const stub = mapStub({ styleLoaded: false, styleVersion: 8 });
+    const adapters = createMapLibreSpatialAdapters(stub.map, runtimeStub());
+
+    await adapters.layer.addVectorTilePolygonLayer({
+      id: "mvt-municipios",
+      tiles: ["/tiles/municipios/{z}/{x}/{y}.pbf"],
+      sourceLayer: "municipios",
+      minZoom: 0,
+      maxZoom: 14,
+      style: { fillColor: "#4dc4d6", fillOpacity: 0.08, lineColor: "#4dc4d6", lineWidth: 0.8, lineOpacity: 0.6 },
+    });
+
+    expect(stub.sources.has("mvt-municipios")).toBe(true);
+    expect(stub.layers.has("mvt-municipios-fill")).toBe(true);
+    expect(stub.layers.has("mvt-municipios-line")).toBe(true);
+  });
+
+  it("does not touch a disposed map while removing a semantic layer", async () => {
+    let disposed = false;
+    const isDisposed = vi.fn(() => disposed);
+    const runtime = { ...runtimeStub(), isDisposed };
+    const stub = mapStub();
+    const adapters = createMapLibreSpatialAdapters(stub.map, runtime);
+    const handle = await adapters.layer.addGeoJsonPolygonLayer({
+      id: "geo-municipios",
+      data: EMPTY_GEOJSON,
+      style: { fillColor: "#4dc4d6", fillOpacity: 0.08, lineColor: "#4dc4d6" },
+    });
+
+    disposed = true;
+    handle.remove();
+
+    expect(stub.rawMap.isStyleLoaded).toHaveBeenCalledOnce();
+    expect(stub.rawMap.getLayer).not.toHaveBeenCalled();
+    expect(stub.rawMap.removeLayer).not.toHaveBeenCalled();
+    expect(stub.rawMap.getSource).toHaveBeenCalledOnce();
+    expect(stub.rawMap.removeSource).not.toHaveBeenCalled();
+  });
+
+  it("rejects late layer insertion after runtime disposal without touching the map", async () => {
+    const stub = mapStub();
+    const adapters = createMapLibreSpatialAdapters(stub.map, runtimeStub(true));
+
+    await expect(adapters.layer.addGeoJsonCircleLayer({
+      id: "geo-late-points",
+      data: EMPTY_GEOJSON,
+      style: { color: "#5eead4", radius: 2.5 },
+    })).rejects.toThrow("MapLibre runtime is disposed");
+
+    expect(stub.rawMap.isStyleLoaded).not.toHaveBeenCalled();
+    expect(stub.rawMap.getStyle).not.toHaveBeenCalled();
+    expect(stub.rawMap.getSource).not.toHaveBeenCalled();
+    expect(stub.rawMap.addSource).not.toHaveBeenCalled();
+  });
+
   it("preserves source/layer identities and polygon paint semantics", async () => {
     const stub = mapStub();
     const adapters = createMapLibreSpatialAdapters(stub.map, runtimeStub());

@@ -104,10 +104,29 @@ async function waitForModuleReady(page, moduleName, externalFixtures) {
 }
 
 async function installDeterministicExternalFixtures(context) {
-  const state = { basemapTileRequests: 0 }
+  const state = { basemapTileRequests: 0, municipiosTileJsonRequests: 0, municipiosTileRequests: 0 }
   await context.route('https://tile.openstreetmap.org/**', async (route) => {
     state.basemapTileRequests += 1
     await route.fulfill({ status: 200, contentType: 'image/png', body: deterministicRasterTile })
+  })
+  await context.route('**/tiles/municipios**', async (route) => {
+    const requestUrl = new URL(route.request().url())
+    if (requestUrl.pathname === '/tiles/municipios') {
+      state.municipiosTileJsonRequests += 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          minzoom: 0,
+          maxzoom: 14,
+          tiles: [`${BASE_URL}/tiles/municipios/{z}/{x}/{y}`],
+          vector_layers: [{ id: 'municipios' }],
+        }),
+      })
+      return
+    }
+    state.municipiosTileRequests += 1
+    await route.fulfill({ status: 204, body: '' })
   })
   return state
 }

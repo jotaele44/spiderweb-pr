@@ -9,6 +9,7 @@ export class MapLibreRuntime implements SpatialRuntime {
   private map: maplibregl.Map | null = null;
   private finishInitialization: (() => void) | null = null;
   private basemapSourceId = "";
+  private disposed = true;
   private readonly basemapErrorListeners = new Set<() => void>();
 
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void> {
@@ -22,6 +23,7 @@ export class MapLibreRuntime implements SpatialRuntime {
       maxZoom: REGIONAL_CAMERA_CONSTRAINTS.mapLibre.maximumZoom,
       maxBounds: REGIONAL_CAMERA_CONSTRAINTS.bounds,
     });
+    this.disposed = false;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
     // Scoping to basemapSourceId keeps benign per-tile/abort noise for other
     // sources (backend GeoJSON layers report their own status separately) out
@@ -44,11 +46,16 @@ export class MapLibreRuntime implements SpatialRuntime {
   }
 
   destroy(): void {
+    this.disposed = true;
     this.finishInitialization?.();
     this.finishInitialization = null;
     this.map?.remove();
     this.map = null;
     this.basemapErrorListeners.clear();
+  }
+
+  isDisposed(): boolean {
+    return this.disposed;
   }
 
   setView(view: CameraView, options?: { animate?: boolean; speed?: number }): void {
