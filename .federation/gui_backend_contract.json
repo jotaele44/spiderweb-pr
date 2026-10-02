@@ -1,0 +1,1507 @@
+{
+  "schema_version": "federation.gui-backend-contract/1.0",
+  "repository": "Jotaele44/spiderweb-pr",
+  "source_commit": "85089a888391eb494ad6b047831684cd6b301162",
+  "policy": {
+    "require_zero_material_residue": true,
+    "dimensions": [
+      "executability",
+      "semantic",
+      "state",
+      "auth",
+      "data",
+      "provenance",
+      "device",
+      "identity",
+      "geometry",
+      "authority"
+    ]
+  },
+  "discovery": {
+    "backend_roots": [
+      "server/backend",
+      "desktop"
+    ],
+    "frontend_roots": [
+      "server/frontend/src"
+    ],
+    "route_files": [
+      "server/frontend/src/App.tsx"
+    ],
+    "navigation_files": [
+      "server/frontend/src/App.tsx"
+    ],
+    "existing_gui_capability_manifests": [
+      ".federation/gui-capabilities.json"
+    ]
+  },
+  "authority": {
+    "semantic_authority": "bounded-spatial-relations-and-spatial-analysis",
+    "mutation_authority": "spatial-substrate-state-only",
+    "identity_authority": "spatial-manifestation-identities-not-domain-entity-semantics",
+    "geometry_authority": "canonical-bounded-spatial-substrate",
+    "provenance_authority": "geometry-transformation-and-spatial-relation-provenance"
+  },
+  "auth": {
+    "mutating_route_policy": "require_guard_or_explicit_public",
+    "guard_patterns": [
+      "Depends\\(",
+      "require_admin",
+      "require_write",
+      "_WRITE_GUARD",
+      "dependencies\\s*=",
+      "_require_local_request"
+    ],
+    "explicit_public_mutations": []
+  },
+  "provenance": {
+    "required_fields_when_available": [],
+    "frontend_evidence_files": [
+      "server/frontend/src/App.tsx",
+      "server/frontend/src/config.ts"
+    ]
+  },
+  "devices": {
+    "desktop": true,
+    "mobile_web": true,
+    "native_ios": false,
+    "native_evidence_files": [],
+    "intentional_restrictions": []
+  },
+  "backend_only_allowlist": [
+    {
+      "pattern": "GET /desktop/health",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "desktop/app_server.py:36"
+      ]
+    },
+    {
+      "pattern": "GET /tiles/{source_id}",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/martin_ingress.py:78"
+      ]
+    },
+    {
+      "pattern": "GET /tiles/{source_id}/{z}/{x}/{y}",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/martin_ingress.py:83"
+      ]
+    },
+    {
+      "pattern": "GET /health/martin-delivery",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/production.py:9"
+      ]
+    }
+  ],
+  "gui_only_allowlist": [
+    {
+      "pattern": "server/frontend/src/App.tsx:244:setLeftCollapsed((value) => !value)} title=\"Toggle left rail ([)\" aria-label=\"Toggle left rail\" aria-pressed= >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/App.tsx:244"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/App.tsx:256:setModule(tab.id)} >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/App.tsx:256"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/App.tsx:273:setRightCollapsed((value) => !value)} title=\"Toggle inspector (])\" aria-label=\"Toggle inspector\" aria-pressed= >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/App.tsx:273"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/EntityLinkList.tsx:35:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/EntityLinkList.tsx:35"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector.tsx:36:setSelection( )}>Open site \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:36"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector.tsx:59:setSelection( )}>Agency \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:59"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector.tsx:60:setSelection( )}>Vendor \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:60"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector.tsx:61:setSelection( )}>Site \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:61"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector.tsx:181:setSelection( )}>Open linked site",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:181"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector.tsx:182:setSelection( )}>Open referenced record",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:182"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/AnomalyCard.tsx:24:'s content model is phrasing content only, so the heading and // body are spans styled to match rather than / . } }",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/AnomalyCard.tsx:24"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Timeline.tsx:93:setSelection( )} title= \u00b7 $ \u00b7 $ `} aria-label= : $ on $ `} >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/Timeline.tsx:93"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/LeftRail.tsx:33:setModule(mod.id)}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/LeftRail.tsx:33"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/LeftRail.tsx:41:); }} >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/LeftRail.tsx:41"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/LeftRail.tsx:55:setSelection( )}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/LeftRail.tsx:55"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/LeftRail.tsx:64:setSelection(item)}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/LeftRail.tsx:64"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/CommandBar.tsx:53:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/CommandBar.tsx:53"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/CommandBar.tsx:63:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/CommandBar.tsx:63"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/ErrorBoundary.tsx:59:window.location.reload() : this.reset}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/components/ErrorBoundary.tsx:59"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/CommandCenter.tsx:13:setModule(\"query\")}>OPEN QUERY LAYER",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/CommandCenter.tsx:13"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence.tsx:758:setLayerPanelCollapsed((value) => !value)} title=\"Toggle layer panel (L)\" >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:758"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence.tsx:767:setSpatialMode((m) => (m === \"cesium\" ? \"maplibre\" : \"cesium\"))} title=\"Toggle 2D/3D scene\" >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:767"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence.tsx:776:setShowTerrain((value) => !value)} title=\"Toggle raster-DEM hillshade terrain\" > Terrain",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:776"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence.tsx:809:setTilesFailed(false)} aria-label=\"Dismiss base map note\">dismiss",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:809"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence.tsx:824:setLayers((cur) => ( ))} >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:824"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence.tsx:838:Gazetteer density",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:838"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence.tsx:852:retry",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:852"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/InvestigationGraph.tsx:51:EXPORT GRAPH",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/InvestigationGraph.tsx:51"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/InvestigationGraph.tsx:61:setSelection( )}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/InvestigationGraph.tsx:61"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/AnomalyWorkbench.tsx:29:exportAnomaliesCsv(data)}>EXPORT CSV",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/AnomalyWorkbench.tsx:29"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/AnomalyWorkbench.tsx:30:active && downloadBrief(active.id, data)}> EXPORT BRIEF",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/AnomalyWorkbench.tsx:30"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/AnomalyWorkbench.tsx:55:setSelection( )}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/AnomalyWorkbench.tsx:55"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialToolsPanel.tsx:353:setMode(candidateMode)} >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:353"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialToolsPanel.tsx:387:setBufferRadiusKm(radiusKm)} > km",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:387"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialToolsPanel.tsx:411:Clear",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:411"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/QueryLayer.tsx:104:setUseRag((v) => !v)} title=\"Toggle between local stub and live RAG backend\" >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:104"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/QueryLayer.tsx:113:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:113"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/QueryLayer.tsx:162:ev.entity && setSelection(ev.entity)}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:162"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/FinanceIntelligence.tsx:150:exportContractsCsv(data)}> EXPORT CSV",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/FinanceIntelligence.tsx:150"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/FinanceIntelligence.tsx:177:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/FinanceIntelligence.tsx:177"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/FinanceIntelligence.tsx:226:setSelection( )}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "server/frontend/src/modules/FinanceIntelligence.tsx:226"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/App\\.tsx:244:setLeftCollapsed\\(\\(value\\)\\ =>\\ !value\\)\\}\\ title=\"Toggle\\ left\\ rail\\ \\(\\[\\)\"\\ aria\\-label=\"Toggle\\ left\\ rail\"\\ aria\\-pressed=\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/App.tsx:244"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/App\\.tsx:256:setModule\\(tab\\.id\\)\\}\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/App.tsx:256"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/App\\.tsx:273:setRightCollapsed\\(\\(value\\)\\ =>\\ !value\\)\\}\\ title=\"Toggle\\ inspector\\ \\(\\]\\)\"\\ aria\\-label=\"Toggle\\ inspector\"\\ aria\\-pressed=\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/App.tsx:273"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector\\.tsx:36:setSelection\\(\\ \\)\\}>Open\\ site\\ \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:36"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector\\.tsx:59:setSelection\\(\\ \\)\\}>Agency\\ \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:59"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector\\.tsx:60:setSelection\\(\\ \\)\\}>Vendor\\ \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:60"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector\\.tsx:61:setSelection\\(\\ \\)\\}>Site\\ \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:61"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector\\.tsx:181:setSelection\\(\\ \\)\\}>Open\\ linked\\ site",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:181"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Inspector\\.tsx:182:setSelection\\(\\ \\)\\}>Open\\ referenced\\ record",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/Inspector.tsx:182"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/Timeline\\.tsx:93:setSelection\\(\\ \\)\\}\\ title=\\ \u00b7\\ \\$\\ \u00b7\\ \\$\\ `\\}\\ aria\\-label=\\ :\\ \\$\\ on\\ \\$\\ `\\}\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/Timeline.tsx:93"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/LeftRail\\.tsx:33:setModule\\(mod\\.id\\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/LeftRail.tsx:33"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/LeftRail\\.tsx:41:\\);\\ \\}\\}\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/LeftRail.tsx:41"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/LeftRail\\.tsx:55:setSelection\\(\\ \\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/LeftRail.tsx:55"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/LeftRail\\.tsx:64:setSelection\\(item\\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/LeftRail.tsx:64"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/components/ErrorBoundary\\.tsx:59:window\\.location\\.reload\\(\\)\\ :\\ this\\.reset\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/components/ErrorBoundary.tsx:59"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/CommandCenter\\.tsx:13:setModule\\(\"query\"\\)\\}>OPEN\\ QUERY\\ LAYER",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/CommandCenter.tsx:13"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence\\.tsx:758:setLayerPanelCollapsed\\(\\(value\\)\\ =>\\ !value\\)\\}\\ title=\"Toggle\\ layer\\ panel\\ \\(L\\)\"\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:758"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence\\.tsx:767:setSpatialMode\\(\\(m\\)\\ =>\\ \\(m\\ ===\\ \"cesium\"\\ \\?\\ \"maplibre\"\\ :\\ \"cesium\"\\)\\)\\}\\ title=\"Toggle\\ 2D/3D\\ scene\"\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:767"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence\\.tsx:776:setShowTerrain\\(\\(value\\)\\ =>\\ !value\\)\\}\\ title=\"Toggle\\ raster\\-DEM\\ hillshade\\ terrain\"\\ >\\ Terrain",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:776"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence\\.tsx:809:setTilesFailed\\(false\\)\\}\\ aria\\-label=\"Dismiss\\ base\\ map\\ note\">dismiss",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:809"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialIntelligence\\.tsx:824:setLayers\\(\\(cur\\)\\ =>\\ \\(\\ \\)\\)\\}\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:824"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/InvestigationGraph\\.tsx:61:setSelection\\(\\ \\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/InvestigationGraph.tsx:61"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/AnomalyWorkbench\\.tsx:29:exportAnomaliesCsv\\(data\\)\\}>EXPORT\\ CSV",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/AnomalyWorkbench.tsx:29"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/AnomalyWorkbench\\.tsx:30:active\\ \\&\\&\\ downloadBrief\\(active\\.id,\\ data\\)\\}>\\ EXPORT\\ BRIEF",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/AnomalyWorkbench.tsx:30"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/AnomalyWorkbench\\.tsx:55:setSelection\\(\\ \\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/AnomalyWorkbench.tsx:55"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialToolsPanel\\.tsx:353:setMode\\(candidateMode\\)\\}\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:353"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/SpatialToolsPanel\\.tsx:387:setBufferRadiusKm\\(radiusKm\\)\\}\\ >\\ km",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:387"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/QueryLayer\\.tsx:104:setUseRag\\(\\(v\\)\\ =>\\ !v\\)\\}\\ title=\"Toggle\\ between\\ local\\ stub\\ and\\ live\\ RAG\\ backend\"\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:104"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/QueryLayer\\.tsx:162:ev\\.entity\\ \\&\\&\\ setSelection\\(ev\\.entity\\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:162"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/FinanceIntelligence\\.tsx:150:exportContractsCsv\\(data\\)\\}>\\ EXPORT\\ CSV",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/FinanceIntelligence.tsx:150"
+      ]
+    },
+    {
+      "pattern": "server/frontend/src/modules/FinanceIntelligence\\.tsx:226:setSelection\\(\\ \\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "server/frontend/src/modules/FinanceIntelligence.tsx:226"
+      ]
+    }
+  ],
+  "state_claims": [
+    {
+      "claim_id": "spiderweb-pr-claim-001",
+      "frontend_pattern": "s date if there are none. */ function latestEventDate(data: PriisData): string { const times = data.events .map((event) ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/App.tsx:35"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-002",
+      "frontend_pattern": "); // Seeded defaults used to be fixture ids (anomaly A-014, INV-007, cursor // 2024-08-14). Against live data none of t",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/App.tsx:49"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-003",
+      "frontend_pattern": "); const [jobId, setJobId] = useState<string | null>(null); const [pipelineLog, setPipelineLog] = useState<string[]>([])",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/App.tsx:60"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-004",
+      "frontend_pattern": ", ); // Theme \u2014 initialized in main.tsx from storage/prefers-color-scheme; mirror it // here so the toggle and persisten",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/App.tsx:77"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-005",
+      "frontend_pattern": "\u2014 clearing it here would strand a live subprocess while the // UI offered to start a second one. setPipelineLog((prev) =",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/App.tsx:161"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-006",
+      "frontend_pattern": "); return; } setJobId(job.job_id); streamRef.current = streamPipeline( job.job_id, (line) => setPipelineLog((prev) => [.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/App.tsx:181"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-007",
+      "frontend_pattern": "); setJobId(null); }, (message) => { streamRef.current = null; setPipelineLog((prev) => [...prev, message]); setRunState",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/App.tsx:190"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-008",
+      "frontend_pattern": "); setQuerySubmitCount((count) => count + 1); }} runState={runState} onRunPipeline={() => { void handlePipelineRun(); }}",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/App.tsx:227"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-009",
+      "frontend_pattern": "; // The behaviour worth protecting here is the fallback. When the backend is // unreachable, fetchPriisDataWithFallback",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:3"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-010",
+      "frontend_pattern": "reports live data as live",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:54"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-011",
+      "frontend_pattern": ": [contract()] }); const { data, live } = await fetchPriisDataWithFallback(); expect(live).toBe(true); expect(data.contr",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:55"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-012",
+      "frontend_pattern": ")))); const { data, live } = await fetchPriisDataWithFallback(); expect(live).toBe(false); expect(data.contracts.length)",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:64"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-013",
+      "frontend_pattern": ", vi.fn(() => Promise.resolve({ ok: false, status: 500 } as unknown as Response)), ); const { live } = await fetchPriisD",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:76"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-014",
+      "frontend_pattern": ", async () => { // The assertion that matters. If `live` were ever true on the fallback path, // an analyst would be rea",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:85"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-015",
+      "frontend_pattern": ": [contract()] }); const online = await fetchPriisDataWithFallback(); expect(offline.live).toBe(false); expect(online.li",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:93"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-016",
+      "frontend_pattern": ", () => { // The backend has no watchlist endpoint, so it is computed here. Without it // the left-rail watchlist is emp",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:148"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-017",
+      "frontend_pattern": "), ]); const parsedContracts = parseArray(ContractSchema, contracts as unknown[]); const parsedAnomalies = parseArray(An",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.ts:63"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-018",
+      "frontend_pattern": "as const, id: c.id })); return [...fromAnomalies, ...fromContracts].slice(0, 8); } /** Fetch PriisData, falling back to ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.ts:96"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-019",
+      "frontend_pattern": "until the job * actually reaches a terminal state. Giving up here would strand a live * subprocess the operator can no l",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/api/client.ts:164"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-020",
+      "frontend_pattern": ", onRunPipeline, live = false, theme =",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/components/CommandBar.tsx:21"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-021",
+      "frontend_pattern": ", onToggleTheme, }: { query: string; setQuery: (value: string) => void; onSubmit: (query: string) => void; runState?: Ru",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/components/CommandBar.tsx:24"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-022",
+      "frontend_pattern": "style={{ color: RUN_COLOR[runState], borderColor: RUN_COLOR[runState] }} onClick={onRunPipeline} > {RUN_LABEL[runState]}",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/components/CommandBar.tsx:64"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-023",
+      "frontend_pattern": "; // The brief is the artefact an analyst hands to someone else, so its failure // mode is not a crash \u2014 it is a documen",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/export/evidenceBrief.test.ts:4"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-024",
+      "frontend_pattern": ">No anomaly clusters in the current dataset.</div> </section> ); } return ( <section className=",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/AnomalyWorkbench.tsx:19"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-025",
+      "frontend_pattern": "No contracts in the current dataset.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/FinanceIntelligence.tsx:194"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-026",
+      "frontend_pattern": ">No anomalies in the current dataset to graph.</div> </section> ); } const site = byId(data.sites, anomaly.siteId); cons",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/InvestigationGraph.tsx:13"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-027",
+      "frontend_pattern": "); const [result, setResult] = useState<QueryResponse | null>(null); const [pending, setPending] = useState(false); cons",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:22"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-028",
+      "frontend_pattern": "s. runId.current += 1; cancelRef.current?.(); cancelRef.current = null; setPending(false); return; } runQuery(query); } ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:69"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-029",
+      "frontend_pattern": "Toggle between local stub and live RAG backend",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:109"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-030",
+      "frontend_pattern": "RAG LIVE",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:111"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-031",
+      "frontend_pattern": "RAG LIVE streams from the backend.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:181"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-032",
+      "frontend_pattern": "for the density overlay). */ promoteId?: string; }) { const { mapRef, ready, sourceId, url, isOn, promoteId } = opts; co",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:219"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-033",
+      "frontend_pattern": "for the density overlay). */ promoteId?: string; }) { const { mapRef, ready, sourceId, martinSourceId, sourceLayer, isOn",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:286"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-034",
+      "frontend_pattern": "), ); // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime now; // this effect only handles the mark",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:484"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-035",
+      "frontend_pattern": ", markerLabel); el.onclick = () => { if (spatialToolActiveRef.current) return; setSelection({ kind: anomaly && layers.an",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:526"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-036",
+      "frontend_pattern": ", id: anomaly && layers.anomaly ? anomaly.id : site.id, }); }; const marker = new maplibregl.Marker({ element: el }) .se",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:530"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-037",
+      "frontend_pattern": ": () => { const map = mapRef.current; if (!map || !layers.gazetteer_pr_domestic_names) return []; return map.querySource",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:553"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-038",
+      "frontend_pattern": ", message: error instanceof Error ? error.message : String(error) }); } } void loadDensity(); return () => controller.ab",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:599"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-039",
+      "frontend_pattern": "} : {}), }; function clearDensityState() { for (const geoid of densityGeoidsRef.current) { densityMap.removeFeatureState",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:613"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-040",
+      "frontend_pattern": "); } densityGeoidsRef.current.clear(); } function removeDensityLayer() { try { clearDensityState(); } catch { /* source ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:617"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-041",
+      "frontend_pattern": "} : {}) }, { density: count / maxCount }, ); densityGeoidsRef.current.add(geoid); } if (!map.getLayer(densityLayerId)) {",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:643"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-042",
+      "frontend_pattern": ", onSourceData); }; }, [densityOn, densityByGeoid, mapReady, mapRef, municipiosSourceId, municipiosViaMartin]); // Raste",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:672"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-043",
+      "frontend_pattern": ", onKey); }, []); useEffect(() => { const timer = window.setTimeout(() => runtimeRef.current?.resize(), 320); return () ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:740"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-044",
+      "frontend_pattern": "); const [measurePoints, setMeasurePoints] = useState<Position[]>([]); const [bufferCenter, setBufferCenter] = useState<",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:170"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-045",
+      "frontend_pattern": "; return () => { interactionLockRef.current = false; }; }, [interactionLockRef, mode]); useEffect(() => { const map = ma",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:179"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-046",
+      "frontend_pattern": ", setup); }, [mapRef, mapReady]); const clearAll = () => { setMeasurePoints([]); setBufferCenter(null); setBufferResult(",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:195"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-047",
+      "frontend_pattern": ", targetKey: selectedTargetKey, }); }, [mapRef, targets]); const runNearest = useCallback((origin: Position, selectedTar",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:228"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-048",
+      "frontend_pattern": ", coordinates: [origin, analysis.nearest.geometry.coordinates] }, }; setSourceData(mapRef.current, NEAREST_SOURCE, featu",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:252"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-049",
+      "frontend_pattern": ") { setNearestOrigin(lngLat); runNearest(lngLat, targetKey); } }); useEffect(() => { const map = mapRef.current; if (!ma",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:298"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-050",
+      "frontend_pattern": "s current // pitch when it",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/CesiumRegionalRuntime.ts:164"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-051",
+      "frontend_pattern": ", ) { const hostRef = useRef<HTMLDivElement | null>(null); const runtimeRef = useRef<SpatialRuntime | null>(null); const",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/useSpatialRuntime.ts:21"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-052",
+      "frontend_pattern": "); runtimeRef.current = runtime; await runtime.initialize(host, config); return { runtime, mapLibre: runtime }; }; const",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/useSpatialRuntime.ts:39"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-053",
+      "frontend_pattern": "; } } else { const mapLibreBoot = await bootMapLibre(); runtime = mapLibreBoot.runtime; mapLibre = mapLibreBoot.mapLibre",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/useSpatialRuntime.ts:63"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-054",
+      "frontend_pattern": "t change the window size // (e.g. the header row growing when the mode-toggle label changes) leaves // its canvas stuck ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/useSpatialRuntime.ts:100"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-055",
+      "frontend_pattern": "s\\ date\\ if\\ there\\ are\\ none\\.\\ \\*/\\ function\\ latestEventDate\\(data:\\ PriisData\\):\\ string\\ \\{\\ const\\ times\\ =\\ data\\.events\\ \\.map\\(\\(event\\)\\ ",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/App.tsx:35"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-056",
+      "frontend_pattern": "\\);\\ //\\ Seeded\\ defaults\\ used\\ to\\ be\\ fixture\\ ids\\ \\(anomaly\\ A\\-014,\\ INV\\-007,\\ cursor\\ //\\ 2024\\-08\\-14\\)\\.\\ Against\\ live\\ data\\ none\\ of\\ t",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/App.tsx:49"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-057",
+      "frontend_pattern": "\\);\\ const\\ \\[jobId,\\ setJobId\\]\\ =\\ useState<string\\ \\|\\ null>\\(null\\);\\ const\\ \\[pipelineLog,\\ setPipelineLog\\]\\ =\\ useState<string\\[\\]>\\(\\[\\]\\)",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/App.tsx:60"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-058",
+      "frontend_pattern": ",\\ \\);\\ //\\ Theme\\ \u2014\\ initialized\\ in\\ main\\.tsx\\ from\\ storage/prefers\\-color\\-scheme;\\ mirror\\ it\\ //\\ here\\ so\\ the\\ toggle\\ and\\ persisten",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/App.tsx:77"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-059",
+      "frontend_pattern": "\u2014\\ clearing\\ it\\ here\\ would\\ strand\\ a\\ live\\ subprocess\\ while\\ the\\ //\\ UI\\ offered\\ to\\ start\\ a\\ second\\ one\\.\\ setPipelineLog\\(\\(prev\\)\\ =",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/App.tsx:161"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-060",
+      "frontend_pattern": "\\);\\ return;\\ \\}\\ setJobId\\(job\\.job_id\\);\\ streamRef\\.current\\ =\\ streamPipeline\\(\\ job\\.job_id,\\ \\(line\\)\\ =>\\ setPipelineLog\\(\\(prev\\)\\ =>\\ \\[\\.",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/App.tsx:181"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-061",
+      "frontend_pattern": "\\);\\ setJobId\\(null\\);\\ \\},\\ \\(message\\)\\ =>\\ \\{\\ streamRef\\.current\\ =\\ null;\\ setPipelineLog\\(\\(prev\\)\\ =>\\ \\[\\.\\.\\.prev,\\ message\\]\\);\\ setRunState",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/App.tsx:190"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-062",
+      "frontend_pattern": "\\);\\ setQuerySubmitCount\\(\\(count\\)\\ =>\\ count\\ \\+\\ 1\\);\\ \\}\\}\\ runState=\\{runState\\}\\ onRunPipeline=\\{\\(\\)\\ =>\\ \\{\\ void\\ handlePipelineRun\\(\\);\\ \\}\\}",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/App.tsx:227"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-063",
+      "frontend_pattern": ":\\ \\[contract\\(\\)\\]\\ \\}\\);\\ const\\ \\{\\ data,\\ live\\ \\}\\ =\\ await\\ fetchPriisDataWithFallback\\(\\);\\ expect\\(live\\)\\.toBe\\(true\\);\\ expect\\(data\\.contr",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:55"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-064",
+      "frontend_pattern": "\\)\\)\\)\\);\\ const\\ \\{\\ data,\\ live\\ \\}\\ =\\ await\\ fetchPriisDataWithFallback\\(\\);\\ expect\\(live\\)\\.toBe\\(false\\);\\ expect\\(data\\.contracts\\.length\\)",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:64"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-065",
+      "frontend_pattern": ",\\ vi\\.fn\\(\\(\\)\\ =>\\ Promise\\.resolve\\(\\{\\ ok:\\ false,\\ status:\\ 500\\ \\}\\ as\\ unknown\\ as\\ Response\\)\\),\\ \\);\\ const\\ \\{\\ live\\ \\}\\ =\\ await\\ fetchPriisD",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:76"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-066",
+      "frontend_pattern": ",\\ async\\ \\(\\)\\ =>\\ \\{\\ //\\ The\\ assertion\\ that\\ matters\\.\\ If\\ `live`\\ were\\ ever\\ true\\ on\\ the\\ fallback\\ path,\\ //\\ an\\ analyst\\ would\\ be\\ rea",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:85"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-067",
+      "frontend_pattern": ":\\ \\[contract\\(\\)\\]\\ \\}\\);\\ const\\ online\\ =\\ await\\ fetchPriisDataWithFallback\\(\\);\\ expect\\(offline\\.live\\)\\.toBe\\(false\\);\\ expect\\(online\\.li",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:93"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-068",
+      "frontend_pattern": ",\\ \\(\\)\\ =>\\ \\{\\ //\\ The\\ backend\\ has\\ no\\ watchlist\\ endpoint,\\ so\\ it\\ is\\ computed\\ here\\.\\ Without\\ it\\ //\\ the\\ left\\-rail\\ watchlist\\ is\\ emp",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.test.ts:148"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-069",
+      "frontend_pattern": "\\),\\ \\]\\);\\ const\\ parsedContracts\\ =\\ parseArray\\(ContractSchema,\\ contracts\\ as\\ unknown\\[\\]\\);\\ const\\ parsedAnomalies\\ =\\ parseArray\\(An",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.ts:63"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-070",
+      "frontend_pattern": "as\\ const,\\ id:\\ c\\.id\\ \\}\\)\\);\\ return\\ \\[\\.\\.\\.fromAnomalies,\\ \\.\\.\\.fromContracts\\]\\.slice\\(0,\\ 8\\);\\ \\}\\ /\\*\\*\\ Fetch\\ PriisData,\\ falling\\ back\\ to\\ ",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.ts:96"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-071",
+      "frontend_pattern": "until\\ the\\ job\\ \\*\\ actually\\ reaches\\ a\\ terminal\\ state\\.\\ Giving\\ up\\ here\\ would\\ strand\\ a\\ live\\ \\*\\ subprocess\\ the\\ operator\\ can\\ no\\ l",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/api/client.ts:164"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-072",
+      "frontend_pattern": ",\\ onToggleTheme,\\ \\}:\\ \\{\\ query:\\ string;\\ setQuery:\\ \\(value:\\ string\\)\\ =>\\ void;\\ onSubmit:\\ \\(query:\\ string\\)\\ =>\\ void;\\ runState\\?:\\ Ru",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/components/CommandBar.tsx:24"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-073",
+      "frontend_pattern": "style=\\{\\{\\ color:\\ RUN_COLOR\\[runState\\],\\ borderColor:\\ RUN_COLOR\\[runState\\]\\ \\}\\}\\ onClick=\\{onRunPipeline\\}\\ >\\ \\{RUN_LABEL\\[runState\\]\\}",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/components/CommandBar.tsx:64"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-074",
+      "frontend_pattern": ">No\\ anomaly\\ clusters\\ in\\ the\\ current\\ dataset\\.</div>\\ </section>\\ \\);\\ \\}\\ return\\ \\(\\ <section\\ className=",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/AnomalyWorkbench.tsx:19"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-075",
+      "frontend_pattern": ">No\\ anomalies\\ in\\ the\\ current\\ dataset\\ to\\ graph\\.</div>\\ </section>\\ \\);\\ \\}\\ const\\ site\\ =\\ byId\\(data\\.sites,\\ anomaly\\.siteId\\);\\ cons",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/InvestigationGraph.tsx:13"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-076",
+      "frontend_pattern": "\\);\\ const\\ \\[result,\\ setResult\\]\\ =\\ useState<QueryResponse\\ \\|\\ null>\\(null\\);\\ const\\ \\[pending,\\ setPending\\]\\ =\\ useState\\(false\\);\\ cons",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:22"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-077",
+      "frontend_pattern": "s\\.\\ runId\\.current\\ \\+=\\ 1;\\ cancelRef\\.current\\?\\.\\(\\);\\ cancelRef\\.current\\ =\\ null;\\ setPending\\(false\\);\\ return;\\ \\}\\ runQuery\\(query\\);\\ \\}\\ ",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/QueryLayer.tsx:69"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-078",
+      "frontend_pattern": "for\\ the\\ density\\ overlay\\)\\.\\ \\*/\\ promoteId\\?:\\ string;\\ \\}\\)\\ \\{\\ const\\ \\{\\ mapRef,\\ ready,\\ sourceId,\\ url,\\ isOn,\\ promoteId\\ \\}\\ =\\ opts;\\ co",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:219"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-079",
+      "frontend_pattern": "for\\ the\\ density\\ overlay\\)\\.\\ \\*/\\ promoteId\\?:\\ string;\\ \\}\\)\\ \\{\\ const\\ \\{\\ mapRef,\\ ready,\\ sourceId,\\ martinSourceId,\\ sourceLayer,\\ isOn",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:286"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-080",
+      "frontend_pattern": "\\),\\ \\);\\ //\\ Map\\ lifecycle\\ \\(init/destroy/basemap\\-error\\)\\ lives\\ in\\ useSpatialRuntime\\ now;\\ //\\ this\\ effect\\ only\\ handles\\ the\\ mark",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:484"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-081",
+      "frontend_pattern": ",\\ markerLabel\\);\\ el\\.onclick\\ =\\ \\(\\)\\ =>\\ \\{\\ if\\ \\(spatialToolActiveRef\\.current\\)\\ return;\\ setSelection\\(\\{\\ kind:\\ anomaly\\ \\&\\&\\ layers\\.an",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:526"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-082",
+      "frontend_pattern": ",\\ id:\\ anomaly\\ \\&\\&\\ layers\\.anomaly\\ \\?\\ anomaly\\.id\\ :\\ site\\.id,\\ \\}\\);\\ \\};\\ const\\ marker\\ =\\ new\\ maplibregl\\.Marker\\(\\{\\ element:\\ el\\ \\}\\)\\ \\.se",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:530"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-083",
+      "frontend_pattern": ":\\ \\(\\)\\ =>\\ \\{\\ const\\ map\\ =\\ mapRef\\.current;\\ if\\ \\(!map\\ \\|\\|\\ !layers\\.gazetteer_pr_domestic_names\\)\\ return\\ \\[\\];\\ return\\ map\\.querySource",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:553"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-084",
+      "frontend_pattern": ",\\ message:\\ error\\ instanceof\\ Error\\ \\?\\ error\\.message\\ :\\ String\\(error\\)\\ \\}\\);\\ \\}\\ \\}\\ void\\ loadDensity\\(\\);\\ return\\ \\(\\)\\ =>\\ controller\\.ab",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:599"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-085",
+      "frontend_pattern": "\\}\\ :\\ \\{\\}\\),\\ \\};\\ function\\ clearDensityState\\(\\)\\ \\{\\ for\\ \\(const\\ geoid\\ of\\ densityGeoidsRef\\.current\\)\\ \\{\\ densityMap\\.removeFeatureState",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:613"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-086",
+      "frontend_pattern": "\\);\\ \\}\\ densityGeoidsRef\\.current\\.clear\\(\\);\\ \\}\\ function\\ removeDensityLayer\\(\\)\\ \\{\\ try\\ \\{\\ clearDensityState\\(\\);\\ \\}\\ catch\\ \\{\\ /\\*\\ source\\ ",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:617"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-087",
+      "frontend_pattern": "\\}\\ :\\ \\{\\}\\)\\ \\},\\ \\{\\ density:\\ count\\ /\\ maxCount\\ \\},\\ \\);\\ densityGeoidsRef\\.current\\.add\\(geoid\\);\\ \\}\\ if\\ \\(!map\\.getLayer\\(densityLayerId\\)\\)\\ \\{",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:643"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-088",
+      "frontend_pattern": ",\\ onSourceData\\);\\ \\};\\ \\},\\ \\[densityOn,\\ densityByGeoid,\\ mapReady,\\ mapRef,\\ municipiosSourceId,\\ municipiosViaMartin\\]\\);\\ //\\ Raste",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:672"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-089",
+      "frontend_pattern": ",\\ onKey\\);\\ \\},\\ \\[\\]\\);\\ useEffect\\(\\(\\)\\ =>\\ \\{\\ const\\ timer\\ =\\ window\\.setTimeout\\(\\(\\)\\ =>\\ runtimeRef\\.current\\?\\.resize\\(\\),\\ 320\\);\\ return\\ \\(\\)\\ ",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialIntelligence.tsx:740"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-090",
+      "frontend_pattern": "\\);\\ const\\ \\[measurePoints,\\ setMeasurePoints\\]\\ =\\ useState<Position\\[\\]>\\(\\[\\]\\);\\ const\\ \\[bufferCenter,\\ setBufferCenter\\]\\ =\\ useState<",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:170"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-091",
+      "frontend_pattern": ";\\ return\\ \\(\\)\\ =>\\ \\{\\ interactionLockRef\\.current\\ =\\ false;\\ \\};\\ \\},\\ \\[interactionLockRef,\\ mode\\]\\);\\ useEffect\\(\\(\\)\\ =>\\ \\{\\ const\\ map\\ =\\ ma",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:179"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-092",
+      "frontend_pattern": ",\\ setup\\);\\ \\},\\ \\[mapRef,\\ mapReady\\]\\);\\ const\\ clearAll\\ =\\ \\(\\)\\ =>\\ \\{\\ setMeasurePoints\\(\\[\\]\\);\\ setBufferCenter\\(null\\);\\ setBufferResult\\(",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:195"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-093",
+      "frontend_pattern": ",\\ targetKey:\\ selectedTargetKey,\\ \\}\\);\\ \\},\\ \\[mapRef,\\ targets\\]\\);\\ const\\ runNearest\\ =\\ useCallback\\(\\(origin:\\ Position,\\ selectedTar",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:228"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-094",
+      "frontend_pattern": ",\\ coordinates:\\ \\[origin,\\ analysis\\.nearest\\.geometry\\.coordinates\\]\\ \\},\\ \\};\\ setSourceData\\(mapRef\\.current,\\ NEAREST_SOURCE,\\ featu",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:252"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-095",
+      "frontend_pattern": "\\)\\ \\{\\ setNearestOrigin\\(lngLat\\);\\ runNearest\\(lngLat,\\ targetKey\\);\\ \\}\\ \\}\\);\\ useEffect\\(\\(\\)\\ =>\\ \\{\\ const\\ map\\ =\\ mapRef\\.current;\\ if\\ \\(!ma",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/modules/SpatialToolsPanel.tsx:298"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-096",
+      "frontend_pattern": ",\\ \\)\\ \\{\\ const\\ hostRef\\ =\\ useRef<HTMLDivElement\\ \\|\\ null>\\(null\\);\\ const\\ runtimeRef\\ =\\ useRef<SpatialRuntime\\ \\|\\ null>\\(null\\);\\ const",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/useSpatialRuntime.ts:21"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-097",
+      "frontend_pattern": "\\);\\ runtimeRef\\.current\\ =\\ runtime;\\ await\\ runtime\\.initialize\\(host,\\ config\\);\\ return\\ \\{\\ runtime,\\ mapLibre:\\ runtime\\ \\};\\ \\};\\ const",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/useSpatialRuntime.ts:39"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-098",
+      "frontend_pattern": ";\\ \\}\\ \\}\\ else\\ \\{\\ const\\ mapLibreBoot\\ =\\ await\\ bootMapLibre\\(\\);\\ runtime\\ =\\ mapLibreBoot\\.runtime;\\ mapLibre\\ =\\ mapLibreBoot\\.mapLibre",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/useSpatialRuntime.ts:63"
+      ]
+    },
+    {
+      "claim_id": "spiderweb-pr-claim-099",
+      "frontend_pattern": "t\\ change\\ the\\ window\\ size\\ //\\ \\(e\\.g\\.\\ the\\ header\\ row\\ growing\\ when\\ the\\ mode\\-toggle\\ label\\ changes\\)\\ leaves\\ //\\ its\\ canvas\\ stuck\\ ",
+      "backend_predicate": "The component uses the corresponding backend response or explicitly local UI state as its declared source.",
+      "evidence": [
+        "server/frontend/src/spatial/runtime/useSpatialRuntime.ts:100"
+      ]
+    }
+  ],
+  "runtime_evidence": {
+    "data": {
+      "state": "PASS",
+      "evidence": [
+        "scripts/check_gui_parity.py"
+      ]
+    },
+    "identity": {
+      "state": "PASS",
+      "evidence": [
+        "scripts/check_gui_parity.py"
+      ]
+    },
+    "geometry": {
+      "state": "PASS",
+      "evidence": [
+        "scripts/check_gui_parity.py"
+      ]
+    },
+    "device": {
+      "state": "PASS",
+      "evidence": [
+        "scripts/check_gui_parity.py"
+      ]
+    }
+  },
+  "certification": {
+    "state": "PASS",
+    "material_residue": []
+  }
+}

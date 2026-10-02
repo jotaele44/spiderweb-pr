@@ -104,6 +104,21 @@ describe("exportContractsCsv — escaping", () => {
     expect(dataRows()[0]).toContain(",Vendor,");
   });
 
+  it.each(["=1+1", "+1+1", "-1+1", "@SUM(1+1)", " \t=1+1"])(
+    "neutralizes spreadsheet formulas in string cells beginning with %s",
+    (vendor) => {
+      exportContractsCsv(withContracts([contract({ vendor })]));
+
+      expect(dataRows()[0].split(",")[3]).toBe(`'${vendor}`);
+    },
+  );
+
+  it("preserves negative numeric values as numbers", () => {
+    exportContractsCsv(withContracts([contract({ amount: -5 })]));
+
+    expect(dataRows()[0].split(",")[5]).toBe("-5");
+  });
+
   it("renders a null site as a genuinely empty cell", () => {
     // Column count alone is not enough: String(null) is "null", which keeps the
     // row ten cells wide while writing the word "null" into a column an analyst

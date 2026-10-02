@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import ipaddress
 import json
 import logging
 import sqlite3
@@ -24,7 +25,7 @@ from pathlib import Path
 from typing import Any, AsyncGenerator, Literal, Optional
 
 import aiosqlite
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict
@@ -73,6 +74,16 @@ async def lifespan(app: FastAPI):
 # ─── App setup ─────────────────────────────────────────────────────────────────
 
 app = FastAPI(title="PRIIS API", version="2.0.0", lifespan=lifespan)
+
+
+def _require_local_request(request: Request) -> None:
+    host = request.client.host if request.client else ""
+    try:
+        allowed = ipaddress.ip_address(host).is_private or ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        allowed = host in {"localhost", "testclient"}
+    if not allowed:
+        raise HTTPException(status_code=403, detail="pipeline operations are local-only")
 
 app.add_middleware(
     CORSMiddleware,
@@ -228,7 +239,8 @@ class PipelineRunRequest(BaseModel):
 
 
 @app.post("/pipeline/run")
-async def pipeline_run(req: PipelineRunRequest = PipelineRunRequest()):
+async def pipeline_run(request: Request, req: PipelineRunRequest = PipelineRunRequest()):
+    _require_local_request(request)
     job_id = str(uuid.uuid4())
     cmd = ["python", str(ROOT / "run_all.py")]
     if req.phase is not None:
@@ -274,7 +286,8 @@ async def pipeline_events(job_id: str):
 
 
 @app.delete("/pipeline/{job_id}")
-async def pipeline_stop(job_id: str):
+async def pipeline_stop(job_id: str, request: Request):
+    _require_local_request(request)
     proc = _jobs.get(job_id)
     if proc is None:
         raise HTTPException(404, "job not found")
@@ -660,12 +673,14 @@ async def _stream_rag(query: str, top_k: int, no_context: bool) -> AsyncGenerato
 
 
 @app.post("/rag/query")
-async def rag_query(req: RagQueryRequest):
+async def rag_query(req: RagQueryRequest, request: Request):
+    _require_local_request(request)
     return EventSourceResponse(_stream_rag(req.query, req.top_k, req.no_context))
 
 
 @app.post("/rag/index")
-async def rag_index():
+async def rag_index(request: Request):
+    _require_local_request(request)
     job_id = str(uuid.uuid4())
     proc = subprocess.Popen(
         ["python", str(ROOT / "rag_pipeline.py")],

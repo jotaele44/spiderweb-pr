@@ -1,0 +1,94 @@
+{
+  "schema_version": "prii.gui-capability/v1",
+  "repository": "jotaele44/spiderweb-pr",
+  "policy": {
+    "mode": "strict",
+    "require_discoverable_gui": true,
+    "require_e2e": true,
+    "terminal_free_user_path": true
+  },
+  "discovery": {
+    "backend_roots": [
+      "server/backend"
+    ],
+    "frontend_roots": [
+      "server/frontend/src"
+    ],
+    "route_files": [
+      "server/frontend/src/App.tsx"
+    ],
+    "navigation_files": [
+      "server/frontend/src/App.tsx"
+    ],
+    "exclude": [
+      "**/tests/**"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "priis-web-workbench",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/main.py",
+          "server/backend/production.py"
+        ],
+        "endpoints": [
+          "GET /health",
+          "GET /agencies",
+          "GET /vendors",
+          "GET /sites",
+          "GET /contracts",
+          "GET /events",
+          "GET /anomalies",
+          "GET /sources",
+          "GET /investigations",
+          "GET /alerts",
+          "POST /pipeline/run",
+          "GET /pipeline/status/{job_id}",
+          "GET /pipeline/events/{job_id}",
+          "DELETE /pipeline/{job_id}",
+          "GET /geo/{layer}.geojson",
+          "GET /geo/municipios/density",
+          "GET /catalog",
+          "GET /spatial/capabilities",
+          "GET /spatial/scene",
+          "GET /spatial/layers",
+          "GET /spatial/boundaries/{boundary_id}.geojson",
+          "POST /rag/query",
+          "POST /rag/index"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/"
+        ],
+        "e2e_routes": [
+          "/"
+        ],
+        "components": [
+          "server/frontend/src/App.tsx",
+          "server/frontend/src/api/client.ts",
+          "server/frontend/src/modules/SpatialIntelligence.tsx"
+        ],
+        "discoverability": [
+          "server/frontend/src/components/LeftRail.tsx"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_gui_parity_checker.py"
+        ],
+        "unit": [
+          "server/frontend/src/api/client.test.ts"
+        ],
+        "e2e": [
+          "server/frontend/src/a11y.test.tsx"
+        ]
+      }
+    }
+  ],
+  "exceptions": []
+}

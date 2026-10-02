@@ -2,7 +2,8 @@ import type { Contract, PriisData } from "../types/priis";
 import { download } from "./download";
 
 function escapeCell(value: string | number | boolean | null | undefined): string {
-  const s = value == null ? "" : String(value);
+  const formulaLike = typeof value === "string" && /^[\s\u0000-\u001f\u007f]*[=+\-@]/.test(value);
+  const s = value == null ? "" : `${formulaLike ? "'" : ""}${String(value)}`;
   if (s.includes(",") || s.includes('"') || s.includes("\n")) {
     return `"${s.replace(/"/g, '""')}"`;
   }
