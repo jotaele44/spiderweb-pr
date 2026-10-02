@@ -104,7 +104,7 @@ librt==0.15.0
 markdown-it-py==4.2.0
 markupsafe==3.0.3
 matplotlib==3.11.1
-mcp==1.28.1
+mcp==2.2.0
 mdurl==0.1.2
 mmh3==5.3.0
 more-itertools==11.1.0
