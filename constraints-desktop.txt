@@ -219,7 +219,7 @@ typing-inspection==0.4.4
 tzdata==2026.3
 uncalled-for==0.4.0
 update-checker==1.0.0
-urllib3==2.7.0
+urllib3==2.8.0
 uvicorn==0.52.4
 uvloop==0.22.1
 watchfiles==1.2.0
