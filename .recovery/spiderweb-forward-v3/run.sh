@@ -21,15 +21,17 @@ for rel in actual:
 if len(actual)!=272: raise SystemExit(f"expected 272 baseline files, got {len(actual)}")
 print("BASELINE_EXACT_MEMBER_VERIFICATION=PASS"); print("BASELINE_FILE_COUNT=272")
 PY
+
 mkdir -p "$ROOT/components" "$ROOT/helpers"
 cp .recovery/spiderweb-forward-v1/overlay/helpers/spatialDatasetWorkflow.tsx "$ROOT/helpers/"
 cp .recovery/spiderweb-forward-v1/overlay/helpers/spatialDatasetWorkflow.spec.tsx "$ROOT/helpers/"
 cp .recovery/spiderweb-forward-v1/overlay/components/SpatialDatasetIntake.tsx "$ROOT/components/"
 cp .recovery/spiderweb-forward-v1/overlay/components/SpatialDatasetIntake.spec.tsx "$ROOT/components/"
 cp .recovery/spiderweb-forward-v1/overlay/components/SpatialAnalysisWorkbench.tsx "$ROOT/components/"
-cp .recovery/spiderweb-forward-v3/overlay/helpers/spatialAuthorityReceipts.tsx "$ROOT/helpers/"
-cp .recovery/spiderweb-forward-v3/overlay/helpers/spatialAuthorityReceipts.spec.tsx "$ROOT/helpers/"
-sha256sum .recovery/spiderweb-forward-v1/overlay/helpers/* .recovery/spiderweb-forward-v1/overlay/components/* .recovery/spiderweb-forward-v3/overlay/helpers/* .recovery/spiderweb-forward-v3/evidence.json > "$ROOT/forward-v3-overlay-hashes.txt"
+cp .recovery/spiderweb-forward-v2/overlay/helpers/spatialAuthorityReceipts.tsx "$ROOT/helpers/"
+cp .recovery/spiderweb-forward-v2/overlay/helpers/spatialAuthorityReceipts.spec.tsx "$ROOT/helpers/"
+sha256sum .recovery/spiderweb-forward-v1/overlay/helpers/* .recovery/spiderweb-forward-v1/overlay/components/* .recovery/spiderweb-forward-v2/overlay/helpers/* .recovery/spiderweb-forward-v2/evidence.json .recovery/spiderweb-forward-v3/render-qa.mjs > "$ROOT/forward-v3-overlay-hashes.txt"
+
 cd "$ROOT"
 cp package.json package.original.json
 export NPM_CONFIG_LEGACY_PEER_DEPS=true
@@ -39,16 +41,35 @@ cp "$GITHUB_WORKSPACE/.recovery/spiderweb-exact/recovery.v5.vitest.config.mts" r
 cp "$GITHUB_WORKSPACE/.recovery/spiderweb-exact/recovery.v5.vitest.setup.mjs" recovery.vitest.setup.mjs
 python - <<'PY'
 from pathlib import Path
-p=Path("recovery.vitest.config.mts"); s=p.read_text().replace('include: ["helpers/**/*.spec.ts", "helpers/**/*.spec.tsx"],','include: ["helpers/**/*.spec.ts", "helpers/**/*.spec.tsx", "components/**/*.spec.ts", "components/**/*.spec.tsx"],'); p.write_text(s)
+p=Path("recovery.vitest.config.mts")
+p.write_text(p.read_text().replace('include: ["helpers/**/*.spec.ts", "helpers/**/*.spec.tsx"],','include: ["helpers/**/*.spec.ts", "helpers/**/*.spec.tsx", "components/**/*.spec.ts", "components/**/*.spec.tsx"],'))
 PY
 sha256sum package.original.json package.json package-lock.json recovery.vitest.config.mts recovery.vitest.setup.mjs > forward-v3-runtime-hashes.txt
 node -v > forward-v3-environment.txt; npm -v >> forward-v3-environment.txt
 find helpers components -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -print | sort > forward-v3-spec-files.txt
 count=$(wc -l < forward-v3-spec-files.txt | tr -d ' '); echo "FORWARD_V3_SPEC_FILE_COUNT=$count"; test "$count" = "21"
 printf 'helpers/useDebounce.spec.tsx\tEMPTY_SPEC_NONEXECUTABLE\n' > forward-v3-spec-classification.tsv
+
 set +e
 npx vitest run --config recovery.vitest.config.mts --reporter=verbose 2>&1 | tee forward-v3-vitest.log
-status=${PIPESTATUS[0]}
+test_status=${PIPESTATUS[0]}
 set -e
-echo "$status" > forward-v3-test-exit.txt
-exit 0
+echo "$test_status" > forward-v3-test-exit.txt
+if [ "$test_status" -ne 0 ]; then exit 0; fi
+
+npm install --save-dev --no-audit --no-fund --ignore-scripts playwright@1.55.0
+npx playwright install --with-deps chromium
+npx vite build 2>&1 | tee forward-v3-build.log
+mkdir -p rendered
+npx vite preview --host 127.0.0.1 --port 4173 > forward-v3-preview.log 2>&1 &
+preview_pid=$!
+trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+ready=0
+for i in $(seq 1 60); do
+  if curl -fsS http://127.0.0.1:4173/spatial-analysis >/dev/null; then ready=1; break; fi
+  sleep 1
+done
+if [ "$ready" -ne 1 ]; then echo "preview did not become ready"; exit 1; fi
+node "$GITHUB_WORKSPACE/.recovery/spiderweb-forward-v3/render-qa.mjs" 2>&1 | tee forward-v3-render.log
+sha256sum rendered/*.png rendered/rendered-qa.json > forward-v3-render-hashes.txt
+echo 0 > forward-v3-render-exit.txt
