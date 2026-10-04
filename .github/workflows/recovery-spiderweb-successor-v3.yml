@@ -1,0 +1,90 @@
+name: Spiderweb recovery successor v3 — AOI coverage and grid identity
+on:
+  push:
+    branches: [recovery/floot-baseline-2026-09-30]
+    paths:
+      - ".recovery/spiderweb-successor-v3/**"
+      - ".github/workflows/recovery-spiderweb-successor-v3.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  successor-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+      - name: Install recovered-tree npx compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "REAL_NPX=$(command -v npx)" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/recovery-bin"
+          cp .recovery/spiderweb-exact/npx-v5-wrapper.sh "$RUNNER_TEMP/recovery-bin/npx"
+          chmod +x "$RUNNER_TEMP/recovery-bin/npx"
+          echo "$RUNNER_TEMP/recovery-bin" >> "$GITHUB_PATH"
+      - name: Reproduce exact baseline
+        shell: bash
+        run: bash .recovery/spiderweb-exact/run_v3.sh
+      - name: Apply successor overlays v1-v3
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/recovered"
+          echo "ad60cb8662067a28a21c33709024314ebd03970285b5ed24fd22082114204630  .recovery/spiderweb-successor-v1/overlay.tar.gz" | sha256sum -c -
+          echo "a933bdc3ed5ab9ffbede02f62e93816a4821a81c6eb677af37edb1619571caaa  .recovery/spiderweb-successor-v2/overlay.tar.gz" | sha256sum -c -
+          echo "8a893730c4b517b869c24499d8b02f684d0e843d486bc3a7bbc34938b4f20183  .recovery/spiderweb-successor-v3/overlay.tar.gz" | sha256sum -c -
+          tar -xzf .recovery/spiderweb-successor-v1/overlay.tar.gz -C "$ROOT"
+          tar -xzf .recovery/spiderweb-successor-v2/overlay.tar.gz -C "$ROOT"
+          tar -xzf .recovery/spiderweb-successor-v3/overlay.tar.gz -C "$ROOT"
+          cd "$ROOT"
+          echo "96b79935ec3371127c1aafe9838eeff8743d0be1c730723970c9a8926a09b9fc  helpers/spatialAoiCoverage.tsx" | sha256sum -c -
+          echo "9b8c1a9634ab2ab9bf39347f5f10aa12d207e4843fec09f7c19068c147b66097  helpers/spatialAoiCoverage.spec.tsx" | sha256sum -c -
+          sha256sum helpers/spatialAoiCoverage.tsx helpers/spatialAoiCoverage.spec.tsx > successor-v3-overlay-hashes.txt
+      - name: Execute successor v3 regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/recovered"
+          set +e
+          npx vitest run --config recovery.vitest.config.mts --reporter=verbose 2>&1 | tee successor-v3-vitest.log
+          status=${PIPESTATUS[0]}
+          set -e
+          echo "$status" > successor-v3-test-exit.txt
+          test "$status" = "0"
+          grep -q "spatialAoiCoverage.spec.tsx" successor-v3-vitest.log
+          grep -q "21 passed" successor-v3-vitest.log
+          grep -q "125 passed" successor-v3-vitest.log
+      - name: Freeze successor v3 receipt
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/recovered"
+          {
+            echo "schema=spiderweb-recovery-successor/v3"
+            echo "baseline_tests=75"
+            echo "successor_v1_tests=90"
+            echo "successor_v2_tests=108"
+            echo "successor_v3_tests=125"
+            echo "applicability_states=FULLY_WITHIN,PARTIAL,TOUCH_ONLY,OUTSIDE,NULL_EMPTY,UNRESOLVED"
+            echo "grid_membership=CANDIDATE_NOT_IDENTITY_UNTIL_VERIFIED_TRANSFORM"
+            echo "state=PASS"
+          } > successor-v3-receipt.txt
+          sha256sum package-lock.json successor-v3-overlay-hashes.txt successor-v3-vitest.log successor-v3-receipt.txt > successor-v3-evidence-hashes.txt
+      - name: Upload successor v3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-recovery-successor-v3
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/recovered/package-lock.json
+            ${{ runner.temp }}/recovered/successor-v3-overlay-hashes.txt
+            ${{ runner.temp }}/recovered/successor-v3-vitest.log
+            ${{ runner.temp }}/recovered/successor-v3-test-exit.txt
+            ${{ runner.temp }}/recovered/successor-v3-receipt.txt
+            ${{ runner.temp }}/recovered/successor-v3-evidence-hashes.txt
