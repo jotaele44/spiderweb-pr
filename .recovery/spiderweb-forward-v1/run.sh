@@ -18,23 +18,32 @@ root=Path(os.environ["RUNNER_TEMP"])/"recovered-forward-v1"
 manifest=Path(".recovery/spiderweb-exact/member_manifest.txt")
 expected={}
 for line in manifest.read_text().splitlines():
-    if not line.strip(): continue
+    if not line.strip():
+        continue
     sha,size,path=line.split("  ",2)
     expected[path]=(int(size),sha)
 actual=sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
-if set(actual)!=set(expected): raise SystemExit("baseline member-set mismatch")
+if set(actual)!=set(expected):
+    raise SystemExit("baseline member-set mismatch")
 for rel in actual:
-    data=(root/rel).read_bytes(); size,sha=expected[rel]
+    data=(root/rel).read_bytes()
+    size,sha=expected[rel]
     if len(data)!=size or hashlib.sha256(data).hexdigest()!=sha:
         raise SystemExit(f"baseline member mismatch: {rel}")
-if len(actual)!=272: raise SystemExit(f"expected 272 baseline files, got {len(actual)}")
+if len(actual)!=272:
+    raise SystemExit(f"expected 272 baseline files, got {len(actual)}")
 print("BASELINE_EXACT_MEMBER_VERIFICATION=PASS")
 print("BASELINE_FILE_COUNT=272")
 PY
 
 cp .recovery/spiderweb-forward-v1/overlay/helpers/spatialDatasetWorkflow.tsx "$ROOT/helpers/"
 cp .recovery/spiderweb-forward-v1/overlay/helpers/spatialDatasetWorkflow.spec.tsx "$ROOT/helpers/"
-sha256sum   .recovery/spiderweb-forward-v1/overlay/helpers/spatialDatasetWorkflow.tsx   .recovery/spiderweb-forward-v1/overlay/helpers/spatialDatasetWorkflow.spec.tsx   > "$ROOT/forward-v1-overlay-hashes.txt"
+mkdir -p "$ROOT/components"
+cp .recovery/spiderweb-forward-v1/overlay/components/SpatialDatasetIntake.tsx "$ROOT/components/"
+cp .recovery/spiderweb-forward-v1/overlay/components/SpatialDatasetIntake.spec.tsx "$ROOT/components/"
+cp .recovery/spiderweb-forward-v1/overlay/components/SpatialAnalysisWorkbench.tsx "$ROOT/components/"
+
+sha256sum   .recovery/spiderweb-forward-v1/overlay/helpers/spatialDatasetWorkflow.tsx   .recovery/spiderweb-forward-v1/overlay/helpers/spatialDatasetWorkflow.spec.tsx   .recovery/spiderweb-forward-v1/overlay/components/SpatialDatasetIntake.tsx   .recovery/spiderweb-forward-v1/overlay/components/SpatialDatasetIntake.spec.tsx   .recovery/spiderweb-forward-v1/overlay/components/SpatialAnalysisWorkbench.tsx   > "$ROOT/forward-v1-overlay-hashes.txt"
 
 cd "$ROOT"
 cp package.json package.original.json
@@ -43,12 +52,21 @@ npm install --no-audit --no-fund --ignore-scripts
 npm install --save-dev --no-audit --no-fund --ignore-scripts   vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0 @testing-library/dom@10.4.1
 cp "$GITHUB_WORKSPACE/.recovery/spiderweb-exact/recovery.v5.vitest.config.mts" recovery.vitest.config.mts
 cp "$GITHUB_WORKSPACE/.recovery/spiderweb-exact/recovery.v5.vitest.setup.mjs" recovery.vitest.setup.mjs
+python - <<'PY'
+from pathlib import Path
+p=Path("recovery.vitest.config.mts")
+s=p.read_text().replace(
+    'include: ["helpers/**/*.spec.ts", "helpers/**/*.spec.tsx"],',
+    'include: ["helpers/**/*.spec.ts", "helpers/**/*.spec.tsx", "components/**/*.spec.ts", "components/**/*.spec.tsx"],',
+)
+p.write_text(s)
+PY
 
 sha256sum package.original.json package.json package-lock.json recovery.vitest.config.mts recovery.vitest.setup.mjs > forward-v1-runtime-hashes.txt
 node -v > forward-v1-environment.txt
 npm -v >> forward-v1-environment.txt
 
-find helpers -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -print | sort > forward-v1-spec-files.txt
+find helpers components -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -print | sort > forward-v1-spec-files.txt
 count=$(wc -l < forward-v1-spec-files.txt | tr -d ' ')
 echo "FORWARD_V1_SPEC_FILE_COUNT=$count"
 test "$count" = "20"
