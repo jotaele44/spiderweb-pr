@@ -1,0 +1,52 @@
+name: Spiderweb forward reconstruction v2
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".recovery/spiderweb-forward-v2/**"
+      - ".github/workflows/recovery-spiderweb-forward-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forward-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+      - name: Execute forward-v2 reconstruction
+        shell: bash
+        run: bash .recovery/spiderweb-forward-v2/run.sh
+      - name: Upload forward-v2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-forward-v2
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/recovered-forward-v2/package.original.json
+            ${{ runner.temp }}/recovered-forward-v2/package.json
+            ${{ runner.temp }}/recovered-forward-v2/package-lock.json
+            ${{ runner.temp }}/recovered-forward-v2/forward-v2-overlay-hashes.txt
+            ${{ runner.temp }}/recovered-forward-v2/forward-v2-runtime-hashes.txt
+            ${{ runner.temp }}/recovered-forward-v2/forward-v2-environment.txt
+            ${{ runner.temp }}/recovered-forward-v2/forward-v2-vitest.log
+            ${{ runner.temp }}/recovered-forward-v2/forward-v2-test-exit.txt
+            ${{ runner.temp }}/recovered-forward-v2/forward-v2-spec-files.txt
+            ${{ runner.temp }}/recovered-forward-v2/forward-v2-spec-classification.tsv
+      - name: Enforce forward-v2 result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "${{ runner.temp }}/recovered-forward-v2/forward-v2-test-exit.txt"
+          exit "$(cat "${{ runner.temp }}/recovered-forward-v2/forward-v2-test-exit.txt")"
