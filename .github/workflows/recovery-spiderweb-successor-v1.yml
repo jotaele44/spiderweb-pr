@@ -1,0 +1,99 @@
+name: Spiderweb recovery successor v1 — upload manifest and preflight
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".recovery/spiderweb-successor-v1/**"
+      - ".github/workflows/recovery-spiderweb-successor-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  successor-v1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+
+      - name: Install recovered-tree npx compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "REAL_NPX=$(command -v npx)" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/recovery-bin"
+          cp .recovery/spiderweb-exact/npx-v5-wrapper.sh "$RUNNER_TEMP/recovery-bin/npx"
+          chmod +x "$RUNNER_TEMP/recovery-bin/npx"
+          echo "$RUNNER_TEMP/recovery-bin" >> "$GITHUB_PATH"
+
+      - name: Reproduce exact 75-test baseline
+        shell: bash
+        run: bash .recovery/spiderweb-exact/run_v3.sh
+
+      - name: Apply successor v1 overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/recovered"
+          OVERLAY=".recovery/spiderweb-successor-v1/overlay.tar.gz"
+          echo "ad60cb8662067a28a21c33709024314ebd03970285b5ed24fd22082114204630  $OVERLAY" | sha256sum -c -
+          tar -xzf "$OVERLAY" -C "$ROOT"
+          cd "$ROOT"
+          echo "b70b62a6228021cef632a15a6388a26de323a970fffb03a5c0eeca52363aedd0  helpers/spatialUploadPipeline.tsx" | sha256sum -c -
+          echo "6e257a8588de54de810ee0f54422931a70e3a4d1217437769fe35beec889421a  helpers/spatialUploadPipeline.spec.tsx" | sha256sum -c -
+          sha256sum helpers/spatialUploadPipeline.tsx helpers/spatialUploadPipeline.spec.tsx > successor-v1-overlay-hashes.txt
+
+      - name: Execute successor v1 regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/recovered"
+          set +e
+          npx vitest run --config recovery.vitest.config.mts --reporter=verbose 2>&1 | tee successor-v1-vitest.log
+          status=${PIPESTATUS[0]}
+          set -e
+          echo "$status" > successor-v1-test-exit.txt
+          test "$status" = "0"
+          grep -q "spatialUploadPipeline.spec.tsx" successor-v1-vitest.log
+          grep -q "18 passed" successor-v1-vitest.log
+          grep -q "90 passed" successor-v1-vitest.log
+
+      - name: Freeze successor v1 receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/recovered"
+          {
+            echo "schema=spiderweb-recovery-successor/v1"
+            echo "baseline_head=c7b832559f1170bebf2a816db97b967be8c38d90"
+            echo "overlay_sha256=ad60cb8662067a28a21c33709024314ebd03970285b5ed24fd22082114204630"
+            echo "baseline_tests=75"
+            echo "successor_tests=90"
+            echo "added_contract_tests=15"
+            echo "state=PASS"
+          } > successor-v1-receipt.txt
+          sha256sum package-lock.json successor-v1-overlay-hashes.txt successor-v1-vitest.log successor-v1-receipt.txt > successor-v1-evidence-hashes.txt
+
+      - name: Upload successor v1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-recovery-successor-v1
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/recovered/package-lock.json
+            ${{ runner.temp }}/recovered/recovery-package-hashes.txt
+            ${{ runner.temp }}/recovered/successor-v1-overlay-hashes.txt
+            ${{ runner.temp }}/recovered/successor-v1-vitest.log
+            ${{ runner.temp }}/recovered/successor-v1-test-exit.txt
+            ${{ runner.temp }}/recovered/successor-v1-receipt.txt
+            ${{ runner.temp }}/recovered/successor-v1-evidence-hashes.txt
