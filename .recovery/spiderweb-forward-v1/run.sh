@@ -51,7 +51,7 @@ npm -v >> forward-v1-environment.txt
 find helpers -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -print | sort > forward-v1-spec-files.txt
 count=$(wc -l < forward-v1-spec-files.txt | tr -d ' ')
 echo "FORWARD_V1_SPEC_FILE_COUNT=$count"
-test "$count" = "19"
+test "$count" = "20"
 printf 'helpers/useDebounce.spec.tsx\tEMPTY_SPEC_NONEXECUTABLE\n' > forward-v1-spec-classification.tsv
 
 set +e
