@@ -1,0 +1,55 @@
+name: Spiderweb forward reconstruction v3 rendered QA
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".recovery/spiderweb-forward-v3/**"
+      - ".github/workflows/recovery-spiderweb-forward-v3.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forward-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+      - name: Execute rendered reconstruction QA
+        shell: bash
+        run: bash .recovery/spiderweb-forward-v3/run.sh
+      - name: Upload forward-v3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-forward-v3-rendered
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/recovered-forward-v3/package-lock.json
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-overlay-hashes.txt
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-runtime-hashes.txt
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-environment.txt
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-vitest.log
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-test-exit.txt
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-build.log
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-preview.log
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-render-hashes.txt
+            ${{ runner.temp }}/recovered-forward-v3/forward-v3-render-exit.txt
+            ${{ runner.temp }}/recovered-forward-v3/rendered/**
+      - name: Enforce rendered result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "${{ runner.temp }}/recovered-forward-v3/forward-v3-test-exit.txt"
+          test "$(cat "${{ runner.temp }}/recovered-forward-v3/forward-v3-test-exit.txt")" = "0"
+          test -f "${{ runner.temp }}/recovered-forward-v3/forward-v3-render-exit.txt"
+          test "$(cat "${{ runner.temp }}/recovered-forward-v3/forward-v3-render-exit.txt")" = "0"
