@@ -9,6 +9,11 @@ const accepted=".geojson,.json,.kml,.csv,.shp,.shx,.dbf,.prj,.cpg,.zip,.kmz,.tif
 
 async function sha256(file:File):Promise<string|null>{try{if(!globalThis.crypto?.subtle)return null;const digest=await globalThis.crypto.subtle.digest("SHA-256",await file.arrayBuffer());return Array.from(new Uint8Array(digest)).map(byte=>byte.toString(16).padStart(2,"0")).join("")}catch{return null}}
 function duplicates(values:string[]){const seen=new Set<string>(),duplicate=new Set<string>();values.forEach(value=>{if(seen.has(value))duplicate.add(value);else seen.add(value)});return[...duplicate].sort()}
+async function readFileText(file:File):Promise<string>{
+ const candidate=file as File&{text?:()=>Promise<string>};
+ if(typeof candidate.text==="function")return candidate.text();
+ return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(reader.error??new Error("Unable to read file."));reader.onload=()=>resolve(String(reader.result??""));reader.readAsText(file)});
+}
 async function parserEvidence(file:File,sourceManifestationId:string):Promise<ParserEvidence|null>{
  const lower=file.name.toLowerCase();if(![".geojson",".json",".kml",".csv"].some(suffix=>lower.endsWith(suffix)))return null;
  const parsed=SpatialGisCore.parseFileText(file.name,await readFileText(file));if(!parsed.ok)return{sourceManifestationId,parser:"SpatialGisCore/v1",state:"FAIL",error:parsed.error};
