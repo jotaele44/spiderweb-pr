@@ -1,0 +1,11 @@
+overlay_sha256  ad60cb8662067a28a21c33709024314ebd03970285b5ed24fd22082114204630
+helpers/spatialUploadPipeline.tsx  b70b62a6228021cef632a15a6388a26de323a970fffb03a5c0eeca52363aedd0
+helpers/spatialUploadPipeline.spec.tsx  6e257a8588de54de810ee0f54422931a70e3a4d1217437769fe35beec889421a
+baseline_archive_members  272
+baseline_specs  18
+baseline_executable_specs  17
+baseline_tests  75
+successor_added_specs  1
+successor_added_tests  15
+expected_successor_executable_specs  18
+expected_successor_tests  90
