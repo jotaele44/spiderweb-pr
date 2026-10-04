@@ -11,7 +11,7 @@ async function sha256(file:File):Promise<string|null>{try{if(!globalThis.crypto?
 function duplicates(values:string[]){const seen=new Set<string>(),duplicate=new Set<string>();values.forEach(value=>{if(seen.has(value))duplicate.add(value);else seen.add(value)});return[...duplicate].sort()}
 async function parserEvidence(file:File,sourceManifestationId:string):Promise<ParserEvidence|null>{
  const lower=file.name.toLowerCase();if(![".geojson",".json",".kml",".csv"].some(suffix=>lower.endsWith(suffix)))return null;
- const parsed=SpatialGisCore.parseFileText(file.name,await file.text());if(!parsed.ok)return{sourceManifestationId,parser:"SpatialGisCore/v1",state:"FAIL",error:parsed.error};
+ const parsed=SpatialGisCore.parseFileText(file.name,await readFileText(file));if(!parsed.ok)return{sourceManifestationId,parser:"SpatialGisCore/v1",state:"FAIL",error:parsed.error};
  const ids=parsed.collection.features.map(feature=>String(feature.id??"")).filter(Boolean),geometryTypes=[...new Set(parsed.collection.features.map(feature=>feature.geometry.type))].sort();
  const hasTerrain=parsed.collection.features.some(feature=>["depth_m","depth","elevation_m","elevation"].some(key=>Number.isFinite(Number(feature.properties[key]))));
  const hasTemporal=parsed.collection.features.some(feature=>["observed_at","timestamp","date","datetime"].some(key=>typeof feature.properties[key]==="string"&&String(feature.properties[key]).length>0));
