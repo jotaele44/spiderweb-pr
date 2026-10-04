@@ -1,0 +1,36 @@
+name: Export exact Floot recovery source — Spiderweb
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".github/workflows/recovery-export-floot-source.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Reassemble and verify exact recovered payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .recovery/spiderweb-exact/part-000               .recovery/spiderweb-exact/part-001               .recovery/spiderweb-exact/part-002               .recovery/spiderweb-exact/part-003 > spiderweb_exact.tar.gz
+          echo "b5e8c8ce51d221819d4f0040bcde5eeb984769cab2fd3165cad7082802723815  spiderweb_exact.tar.gz" | sha256sum -c -
+          sha256sum spiderweb_exact.tar.gz > spiderweb_exact.tar.gz.sha256
+
+      - name: Upload immutable recovered payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-exact-recovered-source
+          if-no-files-found: error
+          path: |
+            spiderweb_exact.tar.gz
+            spiderweb_exact.tar.gz.sha256
