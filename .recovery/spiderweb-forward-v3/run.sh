@@ -57,7 +57,7 @@ set -e
 echo "$test_status" > forward-v3-test-exit.txt
 if [ "$test_status" -ne 0 ]; then exit 0; fi
 
-npm install --save-dev --no-audit --no-fund --ignore-scripts playwright@1.55.0
+npm install --save-dev --no-audit --no-fund --ignore-scripts playwright@1.55.0\ncp "$GITHUB_WORKSPACE/.recovery/spiderweb-forward-v3/render-qa.mjs" ./render-qa.mjs
 npx playwright install --with-deps chromium
 npx vite build 2>&1 | tee forward-v3-build.log
 mkdir -p rendered
