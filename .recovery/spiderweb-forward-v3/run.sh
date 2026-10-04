@@ -70,6 +70,6 @@ for i in $(seq 1 60); do
   sleep 1
 done
 if [ "$ready" -ne 1 ]; then echo "preview did not become ready"; exit 1; fi
-node "$GITHUB_WORKSPACE/.recovery/spiderweb-forward-v3/render-qa.mjs" 2>&1 | tee forward-v3-render.log
+node ./render-qa.mjs 2>&1 | tee forward-v3-render.log
 sha256sum rendered/*.png rendered/rendered-qa.json > forward-v3-render-hashes.txt
 echo 0 > forward-v3-render-exit.txt
