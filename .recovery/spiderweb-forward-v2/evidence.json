@@ -1,0 +1,32 @@
+{
+  "schema": "spiderweb-forward-v2-evidence/v1",
+  "purpose": "Independently evidenced later authority/acquisition contracts used to bound recovery reconstruction; not copied as Floot byte identity.",
+  "evidence": [
+    {
+      "commit": "bb917932cb8707071483b06e1a9ebd5f0f0a9015",
+      "capability": "PR archipelago geography acquisition, geometry/equivalence denominators, durable evidence and fail-closed provider admission",
+      "classification": "INDEPENDENT_GIT_EVIDENCE"
+    },
+    {
+      "commit": "87f9122dc0cf5c562b0d7c653e3c1c17b36b7218",
+      "capability": "Authoritative PR hydrography acquisition, source registry, certification, transactional acquisition and failure injection",
+      "classification": "INDEPENDENT_GIT_EVIDENCE"
+    },
+    {
+      "commit": "0ec2e0eceeeb806bfa1fb1ad78100298405b7ddd",
+      "capability": "Fail-closed fetch queries when no provider matches",
+      "classification": "INDEPENDENT_GIT_EVIDENCE"
+    },
+    {
+      "commit": "0c66e13d14232c0d7cbcbc179b3655904777dc71",
+      "capability": "PR Grid Geographic V2 authority with native topology, frozen materialization and certification",
+      "classification": "INDEPENDENT_GIT_EVIDENCE"
+    }
+  ],
+  "constraints": [
+    "Recovered Floot tree remains immutable.",
+    "Authority source acquisition stays outside browser/Floot local authority.",
+    "Consumer admission requires immutable source identities, closed arithmetic, zero geometry/equivalence residue, and explicit provider state.",
+    "Credential-dependent execution remains deferred."
+  ]
+}
