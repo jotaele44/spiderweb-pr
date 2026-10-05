@@ -20,6 +20,7 @@ describe("Spiderweb upload manifest and dataset pipeline", () => {
     expect(new Set(manifest.map(row => row.sourceId)).size).toBe(3);
     expect(new Set(manifest.map(row => row.runtimeId)).size).toBe(3);
     expect(manifest[0].sourceId).not.toBe(manifest[0].runtimeId);
+    expect(manifest[0].contentSha256).toBe("aa");
   });
 
   it("groups only exact-stem Shapefile sidecars", () => {
@@ -28,10 +29,34 @@ describe("Spiderweb upload manifest and dataset pipeline", () => {
       { name: "other.prj", size: 1 },
     ]);
     const datasets = buildSpatialDatasets(manifest);
-    const roads = datasets.find(row => row.format === "SHAPEFILE" && row.sourceIds.length === 3);
-    expect(roads?.format).toBe("SHAPEFILE");
-    expect(roads?.state).not.toBe("BLOCKED");
+    expect(datasets[0].format).toBe("SHAPEFILE");
+    expect(datasets[0].sourceIds.length).toBe(3);
     expect(datasets.some(row => row.sourceIds.length === 1 && row.state === "BLOCKED")).toBeTrue();
+  });
+
+
+  it("groups sidecars within the same uploaded directory rather than by full filename path", () => {
+    const datasets = buildSpatialDatasets(buildUploadManifest([
+      { name: "roads.shp", relativePath: "batch/roads.shp", size: 1 },
+      { name: "roads.shx", relativePath: "batch/roads.shx", size: 1 },
+      { name: "roads.dbf", relativePath: "batch/roads.dbf", size: 1 },
+      { name: "roads.prj", relativePath: "other/roads.prj", size: 1 },
+    ]));
+    expect(datasets.some(row => row.sourceIds.length === 3)).toBeTrue();
+    expect(datasets.some(row => row.sourceIds.length === 1 && row.issues.some(issue => issue.code === "PARTIAL_SHAPEFILE"))).toBeTrue();
+  });
+
+  it("preserves independent source manifestations even when bytes hash identically", () => {
+    const manifest = buildUploadManifest([{ name: "a.geojson", size: 1, sha256: "same" }, { name: "copy.geojson", size: 1, sha256: "same" }]);
+    expect(manifest[0].contentSha256).toBe(manifest[1].contentSha256);
+    expect(manifest[0].sourceId).not.toBe(manifest[1].sourceId);
+  });
+
+  it("does not promote generic JSON into GeoJSON without content classification", () => {
+    const dataset = buildSpatialDatasets(buildUploadManifest([{ name: "unknown.json", size: 1, sha256: "x" }]))[0];
+    expect(dataset.state).toBe("REVIEW");
+    expect(dataset.capabilities).toEqual([]);
+    expect(dataset.issues.some(row => row.code === "JSON_CONTENT_CLASSIFICATION_REQUIRED")).toBeTrue();
   });
 
   it("fails closed on partial Shapefiles", () => {
