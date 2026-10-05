@@ -20,6 +20,7 @@ export interface UploadManifestEntry extends UploadFileInput {
   ordinal: number;
   kind: UploadKind;
   sourceId: string;
+  contentSha256: string | null;
   runtimeId: string;
   stem: string;
   extension: string;
@@ -111,11 +112,13 @@ export function classifyUploadKind(name: string): UploadKind {
 export function buildUploadManifest(files: UploadFileInput[]): UploadManifestEntry[] {
   return files.map((file, index) => {
     const kind = classifyUploadKind(file.name);
-    const sourceId = file.sha256 ? `sha256:${file.sha256.toLowerCase()}` : `source-unhashed:${index + 1}`;
+    const contentSha256 = file.sha256 ? file.sha256.toLowerCase() : null;
+    const sourceId = `source-manifestation:${index + 1}`;
     return {
       ...file,
       ordinal: index + 1,
       kind,
+      contentSha256,
       extension: extensionOf(file.name),
       stem: stemOf(file.name),
       sourceId,
@@ -130,7 +133,8 @@ function datasetFromSingle(entry: UploadManifestEntry, role: DatasetRole): Spati
   let format: SpatialDataset["format"] = "UNKNOWN";
   let state: DatasetState = "READY";
   let capabilities: DatasetCapability[] = [];
-  if (entry.kind === "geojson" || entry.kind === "json") { format = "GEOJSON"; capabilities = ["VECTOR", "EXACT_ID", "TOPOLOGY"]; }
+  if (entry.kind === "geojson") { format = "GEOJSON"; capabilities = ["VECTOR", "EXACT_ID", "TOPOLOGY"]; }
+  else if (entry.kind === "json") { format = "UNKNOWN"; state = "REVIEW"; issues.push(review("JSON_CONTENT_CLASSIFICATION_REQUIRED", "Generic .json must be content-classified before it can claim GeoJSON/vector capability.")); }
   else if (entry.kind === "kml") { format = "KML"; capabilities = ["VECTOR", "TOPOLOGY"]; }
   else if (entry.kind === "csv") { format = "CSV"; capabilities = ["VECTOR"]; }
   else if (entry.kind === "kmz") { format = "KMZ"; state = "BLOCKED"; issues.push(block("KMZ_ADAPTER_UNVERIFIED", "KMZ requires a verified container/member adapter before analysis.")); }
@@ -175,7 +179,7 @@ export function buildSpatialDatasets(manifest: UploadManifestEntry[], roles: Par
   const consumed = new Set<number>();
   const shapeGroups = new Map<string, UploadManifestEntry[]>();
   for (const entry of manifest) if (SHAPEFILE_SIDECARS.has(entry.kind)) {
-    const key = `${entry.relativePath ?? ""}|${entry.stem}`;
+    const key = `${directoryOf(entry.relativePath ?? "")}|${entry.stem}`;
     shapeGroups.set(key, [...(shapeGroups.get(key) ?? []), entry]);
   }
 
@@ -188,8 +192,9 @@ export function buildSpatialDatasets(manifest: UploadManifestEntry[], roles: Par
       if ((byKind.get(required)?.length ?? 0) === 0) issues.push(block("PARTIAL_SHAPEFILE", `Missing required .${required} sidecar for ${key}.`));
     }
     for (const [kind, rows] of byKind) if (rows.length > 1) issues.push(block("SIDECAR_TIE", `Multiple .${kind} files compete for one Shapefile dataset; relation is unresolved.`));
-    const state: DatasetState = issues.some(row => row.severity === "BLOCK") ? "BLOCKED" : "READY";
-    output.push(makeDataset(`dataset:shapefile:${key}`, entries, roles[key] ?? "PRIMARY", "SHAPEFILE", state, ["VECTOR", "EXACT_ID", "TOPOLOGY"], issues));
+    issues.push(block("SHAPEFILE_ADAPTER_UNVERIFIED", "Shapefile sidecar relation is structurally grouped, but analysis remains blocked until a verified parser adapter passes its contract."));
+    const state: DatasetState = "BLOCKED";
+    output.push(makeDataset(`dataset:shapefile:${key}`, entries, roles[key] ?? "PRIMARY", "SHAPEFILE", state, [], issues));
   }
 
   for (const entry of manifest) {
@@ -301,6 +306,13 @@ export function closeDatasetArithmetic(manifest: UploadManifestEntry[], datasets
     duplicateBindings: [...new Set(duplicateBindings)].sort(),
     closed: manifest.length === bound.size && unbound.length === 0 && duplicateBindings.length === 0,
   };
+}
+
+function directoryOf(relativePath: string): string {
+  if (!relativePath) return "";
+  const normalized = relativePath.replace(/\\/g, "/");
+  const slash = normalized.lastIndexOf("/");
+  return slash < 0 ? "" : normalized.slice(0, slash).toLowerCase();
 }
 
 function canonicalStringify(value: unknown): string {
