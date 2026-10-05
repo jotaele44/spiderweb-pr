@@ -1,0 +1,45 @@
+name: Spiderweb forward reconstruction v1
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forward-reconstruction-v1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+
+      - name: Execute forward reconstruction v1
+        shell: bash
+        run: bash .reconstruction/spiderweb-forward-v1/run.sh
+
+      - name: Upload forward reconstruction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-forward-reconstruction-v1
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/recovered/package.original.json
+            ${{ runner.temp }}/recovered/package.json
+            ${{ runner.temp }}/recovered/package-lock.json
+            ${{ runner.temp }}/recovered/forward-v1-hashes.txt
+            ${{ runner.temp }}/recovered/recovery-vitest.log
+            ${{ runner.temp }}/recovered/recovery-test-exit.txt
+            ${{ runner.temp }}/recovered/recovery-build.log
+            ${{ runner.temp }}/recovered/recovery-build-exit.txt
+            ${{ runner.temp }}/recovered/recovery-spec-files.txt
+            ${{ runner.temp }}/recovered/recovery-spec-classification.tsv
