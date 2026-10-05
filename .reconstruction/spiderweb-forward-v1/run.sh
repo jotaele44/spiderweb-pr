@@ -72,7 +72,16 @@ test "$count" = "20"
 printf 'helpers/useDebounce.spec.tsx\tEMPTY_SPEC_NONEXECUTABLE\n' > recovery-spec-classification.tsv
 printf 'helpers/spatialDatasetPipeline.spec.tsx\tFORWARD_RECONSTRUCTION_V1\n' >> recovery-spec-classification.tsv
 
-sha256sum   helpers/spatialDatasetPipeline.tsx   helpers/spatialDatasetPipeline.spec.tsx   components/SpatialDatasetIntakePanel.tsx   components/SpatialDatasetIntakePanel.module.css   components/SpatialAnalysisWorkbench.tsx   package.json package-lock.json   > forward-v1-hashes.txt
+sha256sum \
+  helpers/spatialDatasetPipeline.tsx \
+  helpers/spatialDatasetPipeline.spec.tsx \
+  helpers/spatialSourceEquivalence.tsx \
+  helpers/spatialSourceEquivalence.spec.tsx \
+  components/SpatialDatasetIntakePanel.tsx \
+  components/SpatialDatasetIntakePanel.module.css \
+  components/SpatialAnalysisWorkbench.tsx \
+  package.json package-lock.json \
+  > forward-v1-hashes.txt
 
 set +e
 npx vitest run --config recovery.vitest.config.mts --reporter=verbose 2>&1 | tee recovery-vitest.log
