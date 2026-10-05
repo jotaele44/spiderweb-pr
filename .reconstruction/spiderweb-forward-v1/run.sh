@@ -36,7 +36,9 @@ PY
 
 mkdir -p "$ROOT/helpers" "$ROOT/components"
 cp .reconstruction/spiderweb-forward-v1/helpers/spatialDatasetPipeline.tsx "$ROOT/helpers/spatialDatasetPipeline.tsx"
-cp .reconstruction/spiderweb-forward-v1/helpers/spatialDatasetPipeline.spec.tsx "$ROOT/helpers/spatialDatasetPipeline.spec.tsx"\ncp .reconstruction/spiderweb-forward-v1/helpers/spatialSourceEquivalence.tsx "$ROOT/helpers/spatialSourceEquivalence.tsx"\ncp .reconstruction/spiderweb-forward-v1/helpers/spatialSourceEquivalence.spec.tsx "$ROOT/helpers/spatialSourceEquivalence.spec.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spatialDatasetPipeline.spec.tsx "$ROOT/helpers/spatialDatasetPipeline.spec.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spatialSourceEquivalence.tsx "$ROOT/helpers/spatialSourceEquivalence.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spatialSourceEquivalence.spec.tsx "$ROOT/helpers/spatialSourceEquivalence.spec.tsx"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialDatasetIntakePanel.tsx "$ROOT/components/SpatialDatasetIntakePanel.tsx"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialDatasetIntakePanel.module.css "$ROOT/components/SpatialDatasetIntakePanel.module.css"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialAnalysisWorkbench.tsx "$ROOT/components/SpatialAnalysisWorkbench.tsx"
