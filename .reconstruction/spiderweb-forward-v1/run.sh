@@ -36,7 +36,7 @@ PY
 
 mkdir -p "$ROOT/helpers" "$ROOT/components"
 cp .reconstruction/spiderweb-forward-v1/helpers/spatialDatasetPipeline.tsx "$ROOT/helpers/spatialDatasetPipeline.tsx"
-cp .reconstruction/spiderweb-forward-v1/helpers/spatialDatasetPipeline.spec.tsx "$ROOT/helpers/spatialDatasetPipeline.spec.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spatialDatasetPipeline.spec.tsx "$ROOT/helpers/spatialDatasetPipeline.spec.tsx"\ncp .reconstruction/spiderweb-forward-v1/helpers/spatialSourceEquivalence.tsx "$ROOT/helpers/spatialSourceEquivalence.tsx"\ncp .reconstruction/spiderweb-forward-v1/helpers/spatialSourceEquivalence.spec.tsx "$ROOT/helpers/spatialSourceEquivalence.spec.tsx"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialDatasetIntakePanel.tsx "$ROOT/components/SpatialDatasetIntakePanel.tsx"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialDatasetIntakePanel.module.css "$ROOT/components/SpatialDatasetIntakePanel.module.css"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialAnalysisWorkbench.tsx "$ROOT/components/SpatialAnalysisWorkbench.tsx"
@@ -68,7 +68,7 @@ cp "$GITHUB_WORKSPACE/.recovery/spiderweb-exact/recovery.v5.vitest.setup.mjs" re
 find helpers -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -print | sort > recovery-spec-files.txt
 count=$(wc -l < recovery-spec-files.txt | tr -d ' ')
 echo "SUCCESSOR_SPEC_FILE_COUNT=$count"
-test "$count" = "19"
+test "$count" = "20"
 printf 'helpers/useDebounce.spec.tsx\tEMPTY_SPEC_NONEXECUTABLE\n' > recovery-spec-classification.tsv
 printf 'helpers/spatialDatasetPipeline.spec.tsx\tFORWARD_RECONSTRUCTION_V1\n' >> recovery-spec-classification.tsv
 
