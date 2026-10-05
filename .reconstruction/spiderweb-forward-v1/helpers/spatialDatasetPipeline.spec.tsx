@@ -28,8 +28,9 @@ describe("Spiderweb upload manifest and dataset pipeline", () => {
       { name: "other.prj", size: 1 },
     ]);
     const datasets = buildSpatialDatasets(manifest);
-    expect(datasets[0].format).toBe("SHAPEFILE");
-    expect(datasets[0].sourceIds.length).toBe(3);
+    const roads = datasets.find(row => row.format === "SHAPEFILE" && row.sourceIds.length === 3);
+    expect(roads?.format).toBe("SHAPEFILE");
+    expect(roads?.state).not.toBe("BLOCKED");
     expect(datasets.some(row => row.sourceIds.length === 1 && row.state === "BLOCKED")).toBeTrue();
   });
 
