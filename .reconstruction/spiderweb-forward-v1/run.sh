@@ -39,6 +39,10 @@ cp .reconstruction/spiderweb-forward-v1/helpers/spatialDatasetPipeline.tsx "$ROO
 cp .reconstruction/spiderweb-forward-v1/helpers/spatialDatasetPipeline.spec.tsx "$ROOT/helpers/spatialDatasetPipeline.spec.tsx"
 cp .reconstruction/spiderweb-forward-v1/helpers/spatialSourceEquivalence.tsx "$ROOT/helpers/spatialSourceEquivalence.tsx"
 cp .reconstruction/spiderweb-forward-v1/helpers/spatialSourceEquivalence.spec.tsx "$ROOT/helpers/spatialSourceEquivalence.spec.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spatialAcquisitionManifest.tsx "$ROOT/helpers/spatialAcquisitionManifest.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spatialAcquisitionManifest.spec.tsx "$ROOT/helpers/spatialAcquisitionManifest.spec.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spiderwebProducerPackage.tsx "$ROOT/helpers/spiderwebProducerPackage.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spiderwebProducerPackage.spec.tsx "$ROOT/helpers/spiderwebProducerPackage.spec.tsx"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialDatasetIntakePanel.tsx "$ROOT/components/SpatialDatasetIntakePanel.tsx"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialDatasetIntakePanel.module.css "$ROOT/components/SpatialDatasetIntakePanel.module.css"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialAnalysisWorkbench.tsx "$ROOT/components/SpatialAnalysisWorkbench.tsx"
@@ -70,7 +74,7 @@ cp "$GITHUB_WORKSPACE/.recovery/spiderweb-exact/recovery.v5.vitest.setup.mjs" re
 find helpers -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -print | sort > recovery-spec-files.txt
 count=$(wc -l < recovery-spec-files.txt | tr -d ' ')
 echo "SUCCESSOR_SPEC_FILE_COUNT=$count"
-test "$count" = "20"
+test "$count" = "22"
 printf 'helpers/useDebounce.spec.tsx\tEMPTY_SPEC_NONEXECUTABLE\n' > recovery-spec-classification.tsv
 printf 'helpers/spatialDatasetPipeline.spec.tsx\tFORWARD_RECONSTRUCTION_V1\n' >> recovery-spec-classification.tsv
 
@@ -79,6 +83,10 @@ sha256sum \
   helpers/spatialDatasetPipeline.spec.tsx \
   helpers/spatialSourceEquivalence.tsx \
   helpers/spatialSourceEquivalence.spec.tsx \
+  helpers/spatialAcquisitionManifest.tsx \
+  helpers/spatialAcquisitionManifest.spec.tsx \
+  helpers/spiderwebProducerPackage.tsx \
+  helpers/spiderwebProducerPackage.spec.tsx \
   components/SpatialDatasetIntakePanel.tsx \
   components/SpatialDatasetIntakePanel.module.css \
   components/SpatialAnalysisWorkbench.tsx \
