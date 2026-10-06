@@ -43,3 +43,9 @@ jobs:
             ${{ runner.temp }}/recovered/recovery-build-exit.txt
             ${{ runner.temp }}/recovered/recovery-spec-files.txt
             ${{ runner.temp }}/recovered/recovery-spec-classification.tsv
+            ${{ runner.temp }}/recovered/rendered-qa.json
+            ${{ runner.temp }}/recovered/rendered-qa.log
+            ${{ runner.temp }}/recovered/rendered-qa-hashes.txt
+            ${{ runner.temp }}/recovered/rendered-desktop-1440.png
+            ${{ runner.temp }}/recovered/rendered-iphone-393.png
+            ${{ runner.temp }}/recovered/rendered-iphone-430.png
