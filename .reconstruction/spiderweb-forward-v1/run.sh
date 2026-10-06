@@ -57,7 +57,7 @@ cd "$ROOT"
 cp package.json package.original.json
 export NPM_CONFIG_LEGACY_PEER_DEPS=true
 npm install --no-audit --no-fund --ignore-scripts
-npm install --save-dev --no-audit --no-fund --ignore-scripts   vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0 @testing-library/dom@10.4.1
+npm install --save-dev --no-audit --no-fund --ignore-scripts vitest@3.2.4 jsdom@26.1.0 @testing-library/react@16.2.0 @testing-library/dom@10.4.1 playwright@1.55.0
 
 cat > recovery.vitest.config.mts <<'EOF'
 import { defineConfig } from "vitest/config";
@@ -114,3 +114,18 @@ build_status=${PIPESTATUS[0]}
 set -e
 echo "$build_status" > recovery-build-exit.txt
 test "$build_status" = "0"
+
+
+# Rendered desktop + narrow-iPhone verification.
+npx playwright install --with-deps chromium
+npx vite preview --host 127.0.0.1 --port 4173 > recovery-preview.log 2>&1 &
+preview_pid=$!
+trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+for i in $(seq 1 60); do
+  if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+  sleep 1
+done
+node "$GITHUB_WORKSPACE/.reconstruction/spiderweb-forward-v1/rendered-qa.mjs" | tee rendered-qa.log
+kill "$preview_pid" 2>/dev/null || true
+trap - EXIT
+sha256sum rendered-qa.json rendered-desktop-1440.png rendered-iphone-393.png rendered-iphone-430.png > rendered-qa-hashes.txt
