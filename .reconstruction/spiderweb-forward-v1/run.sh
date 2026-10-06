@@ -48,7 +48,7 @@ cp .reconstruction/spiderweb-forward-v1/helpers/spatialSurfaceArtifact.spec.tsx 
 cp .reconstruction/spiderweb-forward-v1/helpers/spiderwebLegacyGridAuthority.tsx "$ROOT/helpers/spiderwebLegacyGridAuthority.tsx"
 cp .reconstruction/spiderweb-forward-v1/helpers/spiderwebLegacyGridAuthority.spec.tsx "$ROOT/helpers/spiderwebLegacyGridAuthority.spec.tsx"
 cp .reconstruction/spiderweb-forward-v1/helpers/spiderwebVerticalDatumGate.tsx "$ROOT/helpers/spiderwebVerticalDatumGate.tsx"
-cp .reconstruction/spiderweb-forward-v1/helpers/spiderwebVerticalDatumGate.spec.tsx "$ROOT/helpers/spiderwebVerticalDatumGate.spec.tsx"
+cp .reconstruction/spiderweb-forward-v1/helpers/spiderwebVerticalDatumGate.spec.tsx "$ROOT/helpers/spiderwebVerticalDatumGate.spec.tsx"\ncp .reconstruction/spiderweb-forward-v1/helpers/spiderwebAccessDbParity.spec.tsx "$ROOT/helpers/spiderwebAccessDbParity.spec.tsx"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialDatasetIntakePanel.tsx "$ROOT/components/SpatialDatasetIntakePanel.tsx"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialDatasetIntakePanel.module.css "$ROOT/components/SpatialDatasetIntakePanel.module.css"
 cp .reconstruction/spiderweb-forward-v1/components/SpatialAnalysisWorkbench.tsx "$ROOT/components/SpatialAnalysisWorkbench.tsx"
@@ -80,7 +80,7 @@ cp "$GITHUB_WORKSPACE/.recovery/spiderweb-exact/recovery.v5.vitest.setup.mjs" re
 find helpers -type f \( -name '*.spec.ts' -o -name '*.spec.tsx' \) -print | sort > recovery-spec-files.txt
 count=$(wc -l < recovery-spec-files.txt | tr -d ' ')
 echo "SUCCESSOR_SPEC_FILE_COUNT=$count"
-test "$count" = "25"
+test "$count" = "26"
 printf 'helpers/useDebounce.spec.tsx\tEMPTY_SPEC_NONEXECUTABLE\n' > recovery-spec-classification.tsv
 printf 'helpers/spatialDatasetPipeline.spec.tsx\tFORWARD_RECONSTRUCTION_V1\n' >> recovery-spec-classification.tsv
 
