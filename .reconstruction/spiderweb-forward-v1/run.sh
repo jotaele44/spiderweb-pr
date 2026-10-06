@@ -125,7 +125,7 @@ for i in $(seq 1 60); do
   if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
   sleep 1
 done
-node "$GITHUB_WORKSPACE/.reconstruction/spiderweb-forward-v1/rendered-qa.mjs" | tee rendered-qa.log
+cp "$GITHUB_WORKSPACE/.reconstruction/spiderweb-forward-v1/rendered-qa.mjs" "$ROOT/rendered-qa.mjs"\nnode rendered-qa.mjs | tee rendered-qa.log
 kill "$preview_pid" 2>/dev/null || true
 trap - EXIT
 sha256sum rendered-qa.json rendered-desktop-1440.png rendered-iphone-393.png rendered-iphone-430.png > rendered-qa-hashes.txt
