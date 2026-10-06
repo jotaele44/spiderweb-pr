@@ -35,7 +35,9 @@ describe("Spiderweb recovered auth/ACL/database parity", () => {
   it("enforces read permission before spatial feature queries", () => {
     const source = read("endpoints/spatial/features/query_POST.ts");
     expect(source).toContain("getServerUserSession(request)");
-    expect(source).toContain("SpatialAccessControl.canRead");
+    expect(source).toContain("SpatialAccessControl.accessibleLayerIds");
+    expect(source).toContain('"read"');
+    expect(source).toContain("!allowedIds.includes(id)");
     expect(source).toContain('status: 403');
   });
 
