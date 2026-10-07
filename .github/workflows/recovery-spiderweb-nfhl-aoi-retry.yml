@@ -1,0 +1,203 @@
+name: Spiderweb FEMA NFHL AOI closure — transport retry
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".github/workflows/recovery-spiderweb-nfhl-aoi-retry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  nfhl-aoi-retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact current Spiderweb source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 71a345fb9bebaa411761f6d61e6e736cca499b80
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[geo,dev]"
+
+      - name: Download exact frozen current-head NFHL denominator
+        uses: actions/download-artifact@v4
+        with:
+          name: spiderweb-current-acquisition-37663371682
+          path: /tmp/current-acquisition
+          github-token: ${{ github.token }}
+          run-id: 37663371682
+
+      - name: Build exact 32-layer recovery plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEN="/tmp/current-acquisition/closure/provider_denominators/FEMA_NFHL_LAYER_DENOMINATOR.json"
+          echo "f56474a8c8379cce0bccd7997cb93721a1fff526cf5541b94f3e38d7d038eefd  $DEN" | sha256sum -c -
+          cp "$DEN" /tmp/nfhl-denominator.json
+          cat > /tmp/nfhl-query.json <<'EOF'
+          {
+            "schema_version":"spiderweb.location_query.v1.0",
+            "query_id":"recovery_nfhl_pr_bbox_retry_2026_10_07",
+            "mode":"plan",
+            "geometry":{"type":"bbox","west":-67.35,"south":17.8,"east":-65.2,"north":18.6,"crs":"EPSG:4326"},
+            "families":["flood_hazard"],
+            "allow_partial":false
+          }
+          EOF
+          python scripts/build_location_denominator_stage.py arcgis-layers             --query /tmp/nfhl-query.json             --denominator /tmp/nfhl-denominator.json             --provider-id FEMA_NFHL             --service-url "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer"             --role-prefix nfhl_layer             --output /tmp/nfhl-plan-canonical.json >/tmp/nfhl-plan-stdout.json
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          p=Path("/tmp/nfhl-plan-canonical.json")
+          d=json.loads(p.read_text())
+          if d.get("request_count") != 32: raise SystemExit("NFHL request denominator != 32")
+          if "fetch_gate" in d: raise SystemExit("canonical builder changed; reassess recovery compatibility")
+          canonical=hashlib.sha256(json.dumps(d,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
+          d["fetch_gate"]="READY"
+          d["recovery_compatibility"]={
+            "classification":"EXECUTOR_COMPATIBILITY_RECONSTRUCTION",
+            "canonical_plan_sha256_before_compatibility_field":canonical,
+            "transport_retry_wrapper":True,
+            "request_vector_changed":False
+          }
+          Path("/tmp/nfhl-plan.json").write_text(json.dumps(d,indent=2,sort_keys=True)+"\n")
+          PY
+
+      - name: Execute canonical acquisition semantics with bounded transport retry
+        shell: bash
+        run: |
+          set +e
+          python - <<'PY' | tee /tmp/nfhl-fetch-stdout.json
+          import json, time
+          from pathlib import Path
+          import scripts.location_query_fetch as executor
+
+          original=executor._perform
+          transport_log=[]
+
+          def retry_perform(req, timeout):
+              last=None
+              for attempt in range(1,6):
+                  result=original(req, timeout)
+                  status, content_type, payload, error=result
+                  last=result
+                  retryable=(status is None or (isinstance(status,int) and status >= 500))
+                  transport_log.append({
+                      "url":req.full_url,
+                      "attempt":attempt,
+                      "http_status":status,
+                      "error":error,
+                      "retryable":retryable,
+                  })
+                  if not retryable:
+                      return result
+                  if attempt < 5:
+                      time.sleep(min(2 ** attempt, 10))
+              return last
+
+          executor._perform=retry_perform
+          plan=json.loads(Path("/tmp/nfhl-plan.json").read_text())
+          try:
+              result=executor.execute(plan,Path("/tmp/nfhl-fetch"),timeout=120)
+              exit_code=0 if result["state"] in {"PASS","PARTIAL","DISCOVERY_PASS"} else 1
+              print(json.dumps(result,indent=2,sort_keys=True))
+          except BaseException as exc:
+              exit_code=1
+              print(json.dumps({"state":"EXECUTOR_ABORT","error":f"{type(exc).__name__}: {exc}"},indent=2))
+          Path("/tmp/nfhl-transport-retry-log.json").write_text(json.dumps(transport_log,indent=2,sort_keys=True)+"\n")
+          Path("/tmp/nfhl-fetch-exit.txt").write_text(str(exit_code)+"\n")
+          raise SystemExit(exit_code)
+          PY
+          status=${PIPESTATUS[0]}
+          set -e
+          echo "$status" > /tmp/nfhl-step-exit.txt
+
+      - name: Freeze retry evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/nfhl-retry-evidence
+          cp /tmp/nfhl-denominator.json /tmp/nfhl-retry-evidence/FEMA_NFHL_LAYER_DENOMINATOR.json
+          cp /tmp/nfhl-plan-canonical.json /tmp/nfhl-retry-evidence/FEMA_NFHL_AOI_PLAN_CANONICAL.json
+          cp /tmp/nfhl-plan.json /tmp/nfhl-retry-evidence/FEMA_NFHL_AOI_PLAN_EXECUTED.json
+          cp /tmp/nfhl-transport-retry-log.json /tmp/nfhl-retry-evidence/TRANSPORT_RETRY_LOG.json
+          cp /tmp/nfhl-fetch-exit.txt /tmp/nfhl-retry-evidence/fetch-exit.txt
+          if [[ -f /tmp/nfhl-fetch/fetch_receipt.json ]]; then
+            cp -R /tmp/nfhl-fetch /tmp/nfhl-retry-evidence/fetch
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          ev=Path("/tmp/nfhl-retry-evidence")
+          rpath=ev/"fetch/fetch_receipt.json"
+          retry=json.loads((ev/"TRANSPORT_RETRY_LOG.json").read_text())
+          out={
+            "schema_version":"spiderweb.nfhl_aoi_transport_retry_recovery.v1",
+            "source_head":"71a345fb9bebaa411761f6d61e6e736cca499b80",
+            "expected_layer_count":32,
+            "recovery_transport_wrapper":True,
+            "transport_attempt_count":len(retry),
+            "transport_retried_request_count":len({x["url"] for x in retry if x["attempt"]>1}),
+            "credential_policy":"NO_PROVIDER_CREDENTIALS_SUPPLIED",
+          }
+          if rpath.exists():
+              r=json.loads(rpath.read_text())
+              reqs=r.get("requests",[])
+              out.update({
+                "state":r.get("state"),
+                "request_count":r.get("request_count"),
+                "pass_count":r.get("pass_count"),
+                "no_coverage_count":r.get("no_coverage_count"),
+                "failure_count":r.get("failure_count"),
+                "total_denominator_ids":sum(int(x.get("denominator_id_count") or 0) for x in reqs),
+                "total_returned_ids":sum(int(x.get("returned_id_count") or 0) for x in reqs),
+                "all_arcgis_arithmetic_closed":all(
+                  x.get("state")=="NO_COVERAGE" or
+                  (x.get("arithmetic_closure") is True and x.get("id_set_equal") is True)
+                  for x in reqs
+                ),
+              })
+          else:
+              out["state"]="NO_FETCH_RECEIPT"
+          (ev/"FEMA_NFHL_AOI_RETRY_ADJUDICATION.json").write_text(json.dumps(out,indent=2,sort_keys=True)+"\n")
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+          find /tmp/nfhl-retry-evidence -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/nfhl-retry-evidence/ARTIFACT_SHA256SUMS.txt
+
+      - name: Upload retry evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-nfhl-pr-aoi-transport-retry
+          path: /tmp/nfhl-retry-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce NFHL closure
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("/tmp/nfhl-retry-evidence/FEMA_NFHL_AOI_RETRY_ADJUDICATION.json").read_text())
+          ok=(d.get("request_count")==32 and d.get("failure_count")==0 and
+              d.get("all_arcgis_arithmetic_closed") is True and
+              d.get("total_denominator_ids")==d.get("total_returned_ids"))
+          raise SystemExit(0 if ok else 1)
+          PY
