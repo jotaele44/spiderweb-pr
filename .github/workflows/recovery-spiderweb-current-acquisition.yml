@@ -1,0 +1,68 @@
+name: Spiderweb current acquisition closure — credential free
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".github/workflows/recovery-spiderweb-current-acquisition.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  current-acquisition-closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact current Spiderweb source head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 71a345fb9bebaa411761f6d61e6e736cca499b80
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install credential-free runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[geo,dev]"
+
+      - name: Execute current LOCATION_QUERY closure without credentials
+        shell: bash
+        env:
+          RUN_ID: current-head-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          bash -n scripts/run_location_query_runtime_closure.sh
+          bash scripts/run_location_query_runtime_closure.sh "$RUN_ID"
+
+      - name: Freeze current closure hashes
+        if: always()
+        shell: bash
+        env:
+          RUN_ID: current-head-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+        run: |
+          SNAPSHOT="outputs/location_query/runtime_closure/$RUN_ID"
+          if [[ -d "$SNAPSHOT" ]]; then
+            find "$SNAPSHOT" -type f -print0 | sort -z | xargs -0 sha256sum > "$SNAPSHOT/ARTIFACT_SHA256SUMS.txt"
+            {
+              echo "source_head=71a345fb9bebaa411761f6d61e6e736cca499b80"
+              echo "credential_policy=NO_PROVIDER_CREDENTIALS_SUPPLIED"
+              echo "run_id=$RUN_ID"
+            } > "$SNAPSHOT/RECOVERY_CURRENT_ACQUISITION_RECEIPT.txt"
+          fi
+
+      - name: Upload current acquisition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-current-acquisition-${{ github.run_id }}
+          path: outputs/location_query/runtime_closure/current-head-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 30
