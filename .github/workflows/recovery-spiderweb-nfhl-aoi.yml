@@ -1,0 +1,162 @@
+name: Spiderweb FEMA NFHL Puerto Rico AOI closure
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".github/workflows/recovery-spiderweb-nfhl-aoi.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nfhl-aoi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact current Spiderweb source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 71a345fb9bebaa411761f6d61e6e736cca499b80
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[geo,dev]"
+
+      - name: Rebuild current NFHL layer denominator
+        shell: bash
+        env:
+          RUN_ID: nfhl-root-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set +e
+          bash scripts/run_location_query_runtime_closure.sh "$RUN_ID"
+          echo "$?" > /tmp/runtime-closure-exit.txt
+          set -e
+          SNAPSHOT="outputs/location_query/runtime_closure/$RUN_ID"
+          DEN="$SNAPSHOT/closure/provider_denominators/FEMA_NFHL_LAYER_DENOMINATOR.json"
+          QUERY="$SNAPSHOT/queries/provider_denominator_discovery.json"
+          test -f "$DEN"
+          test -f "$QUERY"
+          cp "$DEN" /tmp/nfhl-denominator.json
+          cp "$QUERY" /tmp/nfhl-query.json
+
+      - name: Build bounded 32-layer AOI plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_location_denominator_stage.py arcgis-layers             --query /tmp/nfhl-query.json             --denominator /tmp/nfhl-denominator.json             --provider-id FEMA_NFHL             --service-url "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer"             --role-prefix nfhl_layer             --output /tmp/nfhl-plan-canonical.json > /tmp/nfhl-plan-stdout.json
+
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          src=Path("/tmp/nfhl-plan-canonical.json")
+          d=json.loads(src.read_text())
+          canonical_sha=hashlib.sha256(json.dumps(d,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
+          if d.get("request_count") != 32:
+              raise SystemExit(f"expected 32 NFHL requests, got {d.get('request_count')}")
+          if "fetch_gate" in d:
+              raise SystemExit("unexpected canonical fetch_gate; recovery compatibility assumption changed")
+          d["fetch_gate"]="READY"
+          d["recovery_compatibility"]={
+              "classification":"EXECUTOR_COMPATIBILITY_RECONSTRUCTION",
+              "canonical_plan_sha256_before_compatibility_field":canonical_sha,
+              "reason":"build_arcgis_layer_aoi_plan omits executor-required top-level fetch_gate; request vector unchanged",
+          }
+          Path("/tmp/nfhl-plan.json").write_text(json.dumps(d,indent=2,sort_keys=True)+"\n")
+          print(json.dumps({"request_count":d["request_count"],"fetch_gate":d["fetch_gate"],"canonical_plan_sha256":canonical_sha},indent=2))
+          PY
+
+      - name: Execute NFHL AOI layers
+        shell: bash
+        run: |
+          set +e
+          python scripts/location_query_fetch.py /tmp/nfhl-plan.json             --output-dir /tmp/nfhl-fetch --timeout 120             | tee /tmp/nfhl-fetch-stdout.json
+          echo "${PIPESTATUS[0]}" > /tmp/nfhl-fetch-exit.txt
+          set -e
+
+      - name: Freeze NFHL evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/nfhl-evidence
+          cp /tmp/nfhl-denominator.json /tmp/nfhl-evidence/FEMA_NFHL_LAYER_DENOMINATOR.json
+          cp /tmp/nfhl-plan-canonical.json /tmp/nfhl-evidence/FEMA_NFHL_AOI_PLAN_CANONICAL.json
+          cp /tmp/nfhl-plan.json /tmp/nfhl-evidence/FEMA_NFHL_AOI_PLAN_EXECUTED.json
+          cp /tmp/nfhl-fetch-exit.txt /tmp/nfhl-evidence/fetch-exit.txt
+          if [[ -f /tmp/nfhl-fetch/fetch_receipt.json ]]; then
+            cp -R /tmp/nfhl-fetch /tmp/nfhl-evidence/fetch
+          fi
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          ev=Path("/tmp/nfhl-evidence")
+          receipt_path=ev/"fetch/fetch_receipt.json"
+          out={
+            "schema_version":"spiderweb.nfhl_aoi_recovery.v1",
+            "source_head":"71a345fb9bebaa411761f6d61e6e736cca499b80",
+            "credential_policy":"NO_PROVIDER_CREDENTIALS_SUPPLIED",
+            "expected_layer_count":32,
+            "executor_compatibility_reconstruction":True,
+          }
+          if receipt_path.exists():
+              r=json.loads(receipt_path.read_text())
+              out.update({
+                "state":r.get("state"),
+                "request_count":r.get("request_count"),
+                "pass_count":r.get("pass_count"),
+                "no_coverage_count":r.get("no_coverage_count"),
+                "failure_count":r.get("failure_count"),
+                "total_denominator_ids":sum(int(x.get("denominator_id_count") or 0) for x in r.get("requests",[])),
+                "total_returned_ids":sum(int(x.get("returned_id_count") or 0) for x in r.get("requests",[])),
+                "all_arcgis_arithmetic_closed":all(
+                    x.get("state")=="NO_COVERAGE" or
+                    (x.get("arithmetic_closure") is True and x.get("id_set_equal") is True)
+                    for x in r.get("requests",[])
+                ),
+                "failed_requests":[{
+                    "request_role":x.get("request_role"),
+                    "http_status":x.get("http_status"),
+                    "state":x.get("state"),
+                    "error":x.get("error"),
+                } for x in r.get("requests",[]) if x.get("state") not in ("PASS","NO_COVERAGE")],
+              })
+          else:
+              out["state"]="NO_FETCH_RECEIPT"
+          (ev/"FEMA_NFHL_AOI_ADJUDICATION.json").write_text(json.dumps(out,indent=2,sort_keys=True)+"\n")
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+          find /tmp/nfhl-evidence -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/nfhl-evidence/ARTIFACT_SHA256SUMS.txt
+
+      - name: Upload NFHL evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-nfhl-pr-aoi-closure
+          path: /tmp/nfhl-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce complete NFHL AOI closure
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("/tmp/nfhl-evidence/FEMA_NFHL_AOI_ADJUDICATION.json").read_text())
+          ok=(d.get("request_count")==32 and d.get("failure_count")==0 and
+              d.get("all_arcgis_arithmetic_closed") is True and
+              d.get("total_denominator_ids")==d.get("total_returned_ids"))
+          raise SystemExit(0 if ok else 1)
+          PY
