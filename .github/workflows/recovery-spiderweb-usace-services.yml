@@ -1,0 +1,141 @@
+name: Spiderweb USACE service denominator closure
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".github/workflows/recovery-spiderweb-usace-services.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  usace-services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact current Spiderweb source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 71a345fb9bebaa411761f6d61e6e736cca499b80
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[geo,dev]"
+
+      - name: Produce fresh current-head denominator snapshot
+        shell: bash
+        env:
+          RUN_ID: usace-root-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set +e
+          bash scripts/run_location_query_runtime_closure.sh "$RUN_ID"
+          echo "$?" > /tmp/runtime_closure_exit.txt
+          set -e
+          SNAPSHOT="outputs/location_query/runtime_closure/$RUN_ID"
+          test -f "$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_NEXT_STAGE_PLAN.json"
+          cp "$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_NEXT_STAGE_PLAN.json" /tmp/usace-plan.json
+          cp "$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_DENOMINATOR.json" /tmp/usace-root-denominator.json
+
+      - name: Execute all 206 dependent USACE service metadata requests
+        shell: bash
+        run: |
+          set +e
+          python scripts/location_query_fetch.py /tmp/usace-plan.json             --output-dir /tmp/usace-service-fetch --timeout 60             | tee /tmp/usace-fetch-stdout.json
+          echo "${PIPESTATUS[0]}" > /tmp/usace-fetch-exit.txt
+          set -e
+
+      - name: Freeze package and terminal classifications
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/usace-evidence
+          cp /tmp/usace-plan.json /tmp/usace-evidence/USACE_GENERAL_GIS_SERVICE_PLAN.json
+          cp /tmp/usace-root-denominator.json /tmp/usace-evidence/USACE_GENERAL_GIS_ROOT_DENOMINATOR.json
+          cp /tmp/runtime_closure_exit.txt /tmp/usace-evidence/runtime-closure-exit.txt
+          cp /tmp/usace-fetch-exit.txt /tmp/usace-evidence/usace-fetch-exit.txt
+          if [[ -f /tmp/usace-service-fetch/fetch_receipt.json ]]; then
+            cp -R /tmp/usace-service-fetch /tmp/usace-evidence/fetch
+            set +e
+            python scripts/location_query_package.py               /tmp/usace-plan.json /tmp/usace-service-fetch/fetch_receipt.json               --output /tmp/usace-evidence/USACE_GENERAL_GIS_SERVICE_PACKAGE.json               | tee /tmp/usace-evidence/package-stdout.json
+            echo "${PIPESTATUS[0]}" > /tmp/usace-evidence/package-exit.txt
+            set -e
+          else
+            echo "NO_FETCH_RECEIPT" > /tmp/usace-evidence/package-exit.txt
+          fi
+
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          ev=Path("/tmp/usace-evidence")
+          plan=json.loads((ev/"USACE_GENERAL_GIS_SERVICE_PLAN.json").read_text())
+          receipt_path=ev/"fetch/fetch_receipt.json"
+          out={
+            "schema_version":"spiderweb.usace_service_closure_recovery.v1",
+            "source_head":"71a345fb9bebaa411761f6d61e6e736cca499b80",
+            "planned_request_count":len(plan.get("requests",[])),
+            "parent_denominator_sha256":sorted(set(r.get("parent_denominator_sha256") for r in plan.get("requests",[]) if r.get("parent_denominator_sha256"))),
+            "credential_policy":"NO_PROVIDER_CREDENTIALS_SUPPLIED",
+          }
+          if receipt_path.exists():
+            receipt=json.loads(receipt_path.read_text())
+            requests=receipt.get("requests",[])
+            by_state={}
+            for r in requests:
+              by_state[r.get("state","UNKNOWN")]=by_state.get(r.get("state","UNKNOWN"),0)+1
+            out.update({
+              "executed_request_count":receipt.get("request_count"),
+              "pass_count":receipt.get("pass_count"),
+              "no_coverage_count":receipt.get("no_coverage_count"),
+              "failure_count":receipt.get("failure_count"),
+              "receipt_state":receipt.get("state"),
+              "request_state_counts":dict(sorted(by_state.items())),
+              "failed_requests":[{
+                "request_role":r.get("request_role"),
+                "http_status":r.get("http_status"),
+                "error":r.get("error"),
+                "semantic_error":r.get("semantic_error"),
+                "sha256":r.get("sha256"),
+              } for r in requests if r.get("state") not in ("PASS","NO_COVERAGE")],
+            })
+          else:
+            out["receipt_state"]="NO_FETCH_RECEIPT"
+          (ev/"USACE_GENERAL_GIS_SERVICE_ADJUDICATION.json").write_text(json.dumps(out,indent=2,sort_keys=True)+"\n")
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+
+          find /tmp/usace-evidence -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/usace-evidence/ARTIFACT_SHA256SUMS.txt
+
+      - name: Upload USACE service closure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-usace-service-closure
+          path: /tmp/usace-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce complete service-metadata execution
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("/tmp/usace-evidence/USACE_GENERAL_GIS_SERVICE_ADJUDICATION.json").read_text())
+          ok=(d.get("planned_request_count")==206 and
+              d.get("executed_request_count")==206 and
+              d.get("failure_count")==0 and
+              d.get("receipt_state")=="PASS")
+          raise SystemExit(0 if ok else 1)
+          PY
