@@ -1,0 +1,71 @@
+name: Spiderweb ABFE authoritative binding retry
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".github/workflows/recovery-spiderweb-abfe-retry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  abfe-retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Probe authoritative PR ABFE MapServer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          URL="https://sige.pr.gov/server/rest/services/PuertoRico_Advisory/MapServer?f=json"
+          printf '%s\n' "$URL" > evidence/source-url.txt
+          set +e
+          code=$(curl -L --connect-timeout 20 --max-time 60 --retry 4 --retry-all-errors --retry-delay 3 \
+            -sS -o evidence/abfe.raw -w '%{http_code}' "$URL")
+          status=$?
+          set -e
+          printf 'curl_exit=%s\nhttp_status=%s\n' "$status" "$code" > evidence/fetch-status.txt
+          sha256sum evidence/abfe.raw > evidence/raw-sha256.txt || true
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          raw=Path("evidence/abfe.raw").read_bytes() if Path("evidence/abfe.raw").exists() else b""
+          out={"bytes":len(raw),"sha256":hashlib.sha256(raw).hexdigest() if raw else None}
+          try:
+              data=json.loads(raw)
+              layers=data.get("layers") or []
+              ids=sorted(int(x["id"]) for x in layers if isinstance(x,dict) and "id" in x)
+              out["json_parse"]="PASS"
+              out["layer_count"]=len(ids)
+              out["layer_ids"]=ids
+              out["layer_ids_unique"]=len(ids)==len(set(ids))
+              prior=list(range(20))
+              out["stable_id_set_equal_prior_2026_09_20"]=ids==prior
+              out["state"]="PASS" if ids and out["layer_ids_unique"] else "INVALID_DENOMINATOR"
+          except Exception as exc:
+              out["json_parse"]="FAIL"
+              out["error"]=f"{type(exc).__name__}: {exc}"
+              out["state"]="SOURCE_FAILURE"
+          Path("evidence/abfe-adjudication.json").write_text(json.dumps(out,indent=2,sort_keys=True)+"\n")
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+      - name: Upload ABFE evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-abfe-authoritative-retry
+          path: evidence
+          if-no-files-found: error
+      - name: Enforce source result
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("evidence/abfe-adjudication.json").read_text())
+          raise SystemExit(0 if d.get("state")=="PASS" else 1)
+          PY
