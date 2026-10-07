@@ -302,7 +302,26 @@ _FALLBACK_LAYERS = {
 def _load_layer_catalog() -> dict:
     try:
         import yaml
-        return yaml.safe_load(CATALOG_PATH.read_text(encoding="utf-8")) or {}
+        catalog = yaml.safe_load(CATALOG_PATH.read_text(encoding="utf-8"))
+        if catalog is None:
+            return {}
+        if not isinstance(catalog, dict) or not isinstance(
+            catalog.get("families", []), list
+        ):
+            raise ValueError("layer catalog must contain a families list")
+        for family in catalog.get("families", []):
+            if not isinstance(family, dict) or not isinstance(
+                family.get("layers", []), list
+            ):
+                raise ValueError("catalog family must contain a layers list")
+            for layer in family.get("layers", []):
+                if (
+                    not isinstance(layer, dict)
+                    or not isinstance(layer.get("layer_id"), str)
+                    or not layer["layer_id"]
+                ):
+                    raise ValueError("catalog layer requires a non-empty layer_id")
+        return catalog
     except FileNotFoundError:
         log.warning("layer_catalog.yaml not found at %s — using fallback allowlist", CATALOG_PATH)
         return {}
