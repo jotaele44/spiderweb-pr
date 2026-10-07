@@ -45,7 +45,7 @@ jobs:
           SNAPSHOT="outputs/location_query/runtime_closure/$RUN_ID"
           test -f "$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_NEXT_STAGE_PLAN.json"
           cp "$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_NEXT_STAGE_PLAN.json" /tmp/usace-plan.json
-          cp "$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_DENOMINATOR.json" /tmp/usace-root-denominator.json
+          cp "$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_ROOT_SERVICE_DENOMINATOR.json" /tmp/usace-root-denominator.json
 
       - name: Execute all 206 dependent USACE service metadata requests
         shell: bash
