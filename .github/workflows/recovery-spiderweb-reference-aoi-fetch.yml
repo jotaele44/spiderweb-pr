@@ -1,0 +1,185 @@
+name: Spiderweb reference AOI credential-free acquisition
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".github/workflows/recovery-spiderweb-reference-aoi-fetch.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reference-aoi-fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact current Spiderweb source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 71a345fb9bebaa411761f6d61e6e736cca499b80
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[geo,dev]"
+
+      - name: Build frozen reference plans
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/reference-plans
+          python scripts/run_location_query_reference_corpus.py             --output-dir /tmp/reference-plans             | tee /tmp/reference-corpus-stdout.json
+
+      - name: Execute 18 provider-AOI units with bounded transport retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/reference-evidence
+          python - <<'PY'
+          import json, time, traceback
+          from pathlib import Path
+          import scripts.location_query_fetch as executor
+
+          PROVIDERS = [
+            "PRPB_GEOLOGY_KARST",
+            "PR_AQUIFERS_WELLS_SPRINGS",
+            "SSURGO_SOILS",
+            "USACE_PORTS_NAV",
+            "USFWS_NWI",
+            "USGS_3DHP_NHD",
+          ]
+          AOIS = ["hucar_2km","san_juan_metro_bbox","boqueron_bbox"]
+          root=Path("/tmp/reference-plans")
+          ev=Path("/tmp/reference-evidence")
+          plans_dir=ev/"plans"; fetch_dir=ev/"fetch"
+          plans_dir.mkdir(parents=True,exist_ok=True); fetch_dir.mkdir(parents=True,exist_ok=True)
+
+          original=executor._perform
+          transport=[]
+
+          def retry_perform(req, timeout):
+              last=None
+              for attempt in range(1,6):
+                  result=original(req,timeout)
+                  status, ctype, payload, error=result
+                  last=result
+                  retryable=(status is None or (isinstance(status,int) and status>=500))
+                  transport.append({
+                    "url":req.full_url, "attempt":attempt, "http_status":status,
+                    "error":error, "retryable":retryable,
+                  })
+                  if not retryable: return result
+                  if attempt<5: time.sleep(min(2**attempt,10))
+              return last
+          executor._perform=retry_perform
+
+          units=[]
+          for aoi in AOIS:
+              source_plan=json.loads((root/f"{aoi}.acquisition_plan.json").read_text())
+              for provider in PROVIDERS:
+                  reqs=[r for r in source_plan.get("requests",[]) if r.get("provider_id")==provider]
+                  if not reqs:
+                      units.append({"aoi":aoi,"provider_id":provider,"state":"NO_REQUESTS","request_count":0})
+                      continue
+                  plan={
+                    "schema_version":"spiderweb.reference_aoi_provider_subset.recovery.v1",
+                    "query":dict(source_plan["query"],mode="fetch"),
+                    "provider_denominator_count":1,
+                    "route_state_counts":{"RECOVERY_SUBSET_ROUTABLE":1},
+                    "providers":[p for p in source_plan.get("providers",[]) if p.get("provider_id")==provider],
+                    "request_count":len(reqs),
+                    "requests":reqs,
+                    "fetch_gate":"READY",
+                    "policy":{
+                      **(source_plan.get("policy") or {}),
+                      "plan_before_download":True,
+                      "raw_bytes_before_derivation":True,
+                      "recovery_subset_execution":True,
+                      "canonical_reference_request_vector_preserved":True,
+                    },
+                    "recovery_context":{
+                      "canonical_reference_plan":f"{aoi}.acquisition_plan.json",
+                      "excluded_provider_ids":[
+                        "FEMA_NFHL","FEMA_PR_ABFE_1PCT","USACE_GENERAL_GIS",
+                        "PRVI_1m_DEM_2018","SENTINEL_HUB_IMAGERY","COPERNICUS_CDSE_IMAGERY"
+                      ],
+                    },
+                  }
+                  ppath=plans_dir/f"{aoi}__{provider}.json"
+                  ppath.write_text(json.dumps(plan,indent=2,sort_keys=True)+"\n")
+                  outdir=fetch_dir/f"{aoi}__{provider}"
+                  unit={"aoi":aoi,"provider_id":provider,"request_count":len(reqs),"plan_path":str(ppath)}
+                  try:
+                      result=executor.execute(plan,outdir,timeout=120)
+                      unit.update({
+                        "state":result.get("state"),
+                        "pass_count":result.get("pass_count"),
+                        "no_coverage_count":result.get("no_coverage_count"),
+                        "failure_count":result.get("failure_count"),
+                        "receipt_path":str(outdir/"fetch_receipt.json"),
+                        "request_states":{
+                          s:sum(1 for x in result.get("requests",[]) if x.get("state")==s)
+                          for s in sorted({x.get("state") for x in result.get("requests",[])})
+                        },
+                        "denominator_id_total":sum(int(x.get("denominator_id_count") or 0) for x in result.get("requests",[])),
+                        "returned_id_total":sum(int(x.get("returned_id_count") or 0) for x in result.get("requests",[])),
+                      })
+                  except BaseException as exc:
+                      unit.update({"state":"EXECUTOR_ABORT","error":f"{type(exc).__name__}: {exc}"})
+                  units.append(unit)
+
+          Path("/tmp/reference-evidence/TRANSPORT_RETRY_LOG.json").write_text(json.dumps(transport,indent=2,sort_keys=True)+"\n")
+          summary={
+            "schema_version":"spiderweb.reference_aoi_acquisition_recovery.v1",
+            "source_head":"71a345fb9bebaa411761f6d61e6e736cca499b80",
+            "reference_aoi_count":3,
+            "provider_count":6,
+            "provider_aoi_unit_count":18,
+            "canonical_request_spec_count":sum(u.get("request_count",0) for u in units),
+            "credential_policy":"NO_PROVIDER_CREDENTIALS_SUPPLIED",
+            "units":units,
+            "unit_state_counts":{s:sum(1 for u in units if u["state"]==s) for s in sorted({u["state"] for u in units})},
+            "transport_attempt_count":len(transport),
+            "transport_retried_url_count":len({x["url"] for x in transport if x["attempt"]>1}),
+          }
+          summary["terminal_unit_count"]=sum(u["state"] in {"PASS","NO_COVERAGE"} for u in units)
+          summary["all_units_terminal"]=summary["terminal_unit_count"]==18
+          (ev/"REFERENCE_AOI_ACQUISITION_ADJUDICATION.json").write_text(json.dumps(summary,indent=2,sort_keys=True)+"\n")
+          print(json.dumps({
+            k:summary[k] for k in [
+              "reference_aoi_count","provider_count","provider_aoi_unit_count",
+              "canonical_request_spec_count","unit_state_counts",
+              "transport_retried_url_count","all_units_terminal"
+            ]},indent=2,sort_keys=True))
+          PY
+          cp /tmp/reference-corpus-stdout.json /tmp/reference-evidence/REFERENCE_CORPUS_STDOUT.json
+          find /tmp/reference-evidence -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/reference-evidence/ARTIFACT_SHA256SUMS.txt
+
+      - name: Upload reference AOI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-reference-aoi-acquisition
+          path: /tmp/reference-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce terminal classification
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("/tmp/reference-evidence/REFERENCE_AOI_ACQUISITION_ADJUDICATION.json").read_text())
+          raise SystemExit(0 if d.get("all_units_terminal") is True else 1)
+          PY
