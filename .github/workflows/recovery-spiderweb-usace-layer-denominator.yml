@@ -1,0 +1,182 @@
+name: Spiderweb USACE service-layer denominator freeze
+
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+    paths:
+      - ".github/workflows/recovery-spiderweb-usace-layer-denominator.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  usace-layer-denominator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact current Spiderweb source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 71a345fb9bebaa411761f6d61e6e736cca499b80
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v uv >/dev/null 2>&1 || python -m pip install -q uv
+          uv pip install --system -c constraints.txt -e ".[geo,dev]"
+
+      - name: Rebuild fresh root and service metadata snapshot
+        shell: bash
+        env:
+          RUN_ID: usace-layers-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set +e
+          bash scripts/run_location_query_runtime_closure.sh "$RUN_ID"
+          echo "$?" > /tmp/runtime-closure-exit.txt
+          set -e
+          SNAPSHOT="outputs/location_query/runtime_closure/$RUN_ID"
+          PLAN="$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_NEXT_STAGE_PLAN.json"
+          ROOTDEN="$SNAPSHOT/closure/provider_denominators/USACE_GENERAL_GIS_ROOT_SERVICE_DENOMINATOR.json"
+          test -f "$PLAN"
+          test -f "$ROOTDEN"
+          cp "$PLAN" /tmp/usace-plan.json
+          cp "$ROOTDEN" /tmp/usace-root.json
+          python scripts/location_query_fetch.py /tmp/usace-plan.json             --output-dir /tmp/usace-fetch --timeout 60             > /tmp/usace-fetch-stdout.json
+          test -f /tmp/usace-fetch/fetch_receipt.json
+
+      - name: Freeze aggregate service-layer-table denominator
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/usace-layer-evidence/raw
+          python - <<'PY'
+          import json, hashlib, shutil
+          from pathlib import Path
+
+          receipt=json.loads(Path("/tmp/usace-fetch/fetch_receipt.json").read_text())
+          root=json.loads(Path("/tmp/usace-root.json").read_text())
+          records=[]
+          layer_count=0
+          table_count=0
+          zero_layer_services=0
+          service_hashes=[]
+          seen_service_keys=set()
+
+          for req in receipt["requests"]:
+              binding=req.get("source_binding") or {}
+              service_name=binding.get("service_name_raw")
+              service_type=binding.get("service_type_raw")
+              scope=binding.get("service_scope_raw","")
+              service_key=f"{scope}|{service_name}|{service_type}"
+              if service_key in seen_service_keys:
+                  raise SystemExit(f"duplicate service key: {service_key}")
+              seen_service_keys.add(service_key)
+
+              raw=Path(req["raw_path"])
+              if not raw.is_file():
+                  raise SystemExit(f"missing raw service metadata: {raw}")
+              data=json.loads(raw.read_text())
+              raw_sha=hashlib.sha256(raw.read_bytes()).hexdigest()
+              if raw_sha != req.get("sha256"):
+                  raise SystemExit(f"raw hash mismatch: {service_key}")
+
+              layers=[]
+              for row in data.get("layers") or []:
+                  if not isinstance(row,dict) or "id" not in row:
+                      raise SystemExit(f"malformed layer: {service_key}")
+                  layers.append({"id":int(row["id"]),"name_raw":row.get("name")})
+              tables=[]
+              for row in data.get("tables") or []:
+                  if not isinstance(row,dict) or "id" not in row:
+                      raise SystemExit(f"malformed table: {service_key}")
+                  tables.append({"id":int(row["id"]),"name_raw":row.get("name")})
+
+              if len({x["id"] for x in layers}) != len(layers):
+                  raise SystemExit(f"duplicate layer ids: {service_key}")
+              if len({x["id"] for x in tables}) != len(tables):
+                  raise SystemExit(f"duplicate table ids: {service_key}")
+
+              if not layers:
+                  zero_layer_services += 1
+              layer_count += len(layers)
+              table_count += len(tables)
+              service_hashes.append(raw_sha)
+              records.append({
+                  "service_scope_raw":scope,
+                  "service_name_raw":service_name,
+                  "service_type_raw":service_type,
+                  "service_key":service_key,
+                  "metadata_sha256":raw_sha,
+                  "layer_count":len(layers),
+                  "table_count":len(tables),
+                  "layers":layers,
+                  "tables":tables,
+              })
+
+              shutil.copy2(raw, Path("/tmp/usace-layer-evidence/raw")/raw.name)
+
+          def canon_hash(value):
+              return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
+
+          records=sorted(records,key=lambda x:x["service_key"])
+          out={
+              "schema_version":"spiderweb.usace_service_layer_denominator.recovery.v1",
+              "source_head":"71a345fb9bebaa411761f6d61e6e736cca499b80",
+              "state":"PASS",
+              "authority":"U.S. Army Corps of Engineers",
+              "root_denominator_canonical_records_sha256":root.get("canonical_records_sha256"),
+              "service_count":len(records),
+              "service_keys_unique":len(records)==len(set(x["service_key"] for x in records)),
+              "service_metadata_hashes_unique":len(service_hashes)==len(set(service_hashes)),
+              "services_with_layers":sum(bool(x["layers"]) for x in records),
+              "services_without_layers":zero_layer_services,
+              "layer_count":layer_count,
+              "table_count":table_count,
+              "records":records,
+              "canonical_records_sha256":canon_hash(records),
+              "policy":{
+                  "service_name_is_not_cross_provider_identity":True,
+                  "stable_identity_scope":"service_scope_raw + service_name_raw + service_type_raw + exact layer/table id",
+                  "aoi_feature_acquisition_certified":False,
+              },
+          }
+          Path("/tmp/usace-layer-evidence/USACE_GENERAL_GIS_SERVICE_LAYER_DENOMINATOR.json").write_text(
+              json.dumps(out,indent=2,sort_keys=True)+"\n"
+          )
+          shutil.copy2("/tmp/usace-fetch/fetch_receipt.json","/tmp/usace-layer-evidence/USACE_GENERAL_GIS_SERVICE_FETCH_RECEIPT.json")
+          shutil.copy2("/tmp/usace-plan.json","/tmp/usace-layer-evidence/USACE_GENERAL_GIS_SERVICE_PLAN.json")
+          shutil.copy2("/tmp/usace-root.json","/tmp/usace-layer-evidence/USACE_GENERAL_GIS_ROOT_DENOMINATOR.json")
+          print(json.dumps({k:out[k] for k in [
+              "state","service_count","services_with_layers","services_without_layers","layer_count","table_count","canonical_records_sha256"
+          ]},indent=2,sort_keys=True))
+          PY
+          find /tmp/usace-layer-evidence -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/usace-layer-evidence/ARTIFACT_SHA256SUMS.txt
+
+      - name: Upload denominator evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-usace-service-layer-denominator
+          path: /tmp/usace-layer-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce denominator arithmetic
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("/tmp/usace-layer-evidence/USACE_GENERAL_GIS_SERVICE_LAYER_DENOMINATOR.json").read_text())
+          ok=(d["state"]=="PASS" and d["service_count"]==206 and
+              d["services_with_layers"]+d["services_without_layers"]==206 and
+              d["layer_count"]>=0 and d["table_count"]>=0 and d["service_keys_unique"])
+          raise SystemExit(0 if ok else 1)
+          PY
