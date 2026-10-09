@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
+from pathlib import Path
 
 import pytest
 
@@ -24,6 +27,10 @@ from federation.spatial.pr_grid_geographic_v2_runtime import (
     validate_level,
     validate_pin,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
+RUNTIME = ROOT / "federation/spatial/pr_grid_geographic_v2_runtime.py"
+RECEIPT = ROOT / "registry/spatial/v2/pr_grid_geographic_v2.runtime.json"
 
 PIN = {
     "schema_version": "pr_grid_geographic_v2_consumer_pin/1.0",
@@ -157,3 +164,12 @@ def test_load_pin_fails_closed(tmp_path):
     bad.write_text("[]", encoding="utf-8")
     with pytest.raises(GridV2RuntimeError):
         load_pin(bad)
+
+
+def test_runtime_receipt_hash_matches_authoritative_module_bytes():
+    receipt = json.loads(RECEIPT.read_text(encoding="utf-8"))
+    digest = hashlib.sha256(RUNTIME.read_bytes()).hexdigest()
+    assert receipt["runtime_contract_version"] == "pr-grid-v2-runtime/1.0"
+    assert receipt["module_path"] == "federation/spatial/pr_grid_geographic_v2_runtime.py"
+    assert receipt["module_sha256"] == digest
+    assert digest == "1e616e15ce5b22ac0623dcc2cc557a86c26a5eac9d4415b87d4cac71ec199956"
