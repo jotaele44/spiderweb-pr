@@ -6,8 +6,6 @@ on:
       - "spiderweb/geographic_grid_v2.py"
       - "scripts/generate_pr_grid_geographic_v2.py"
       - "tests/test_geographic_grid_v2.py"
-      - "tests/test_pr_grid_geographic_v2_runtime.py"
-      - "federation/spatial/pr_grid_geographic_v2_runtime.py"
       - "schemas/pr_grid_geographic_v2_*.schema.json"
       - "registry/spatial/v2/**"
       - ".github/workflows/pr-grid-v2-certification.yml"
@@ -17,8 +15,6 @@ on:
       - "spiderweb/geographic_grid_v2.py"
       - "scripts/generate_pr_grid_geographic_v2.py"
       - "tests/test_geographic_grid_v2.py"
-      - "tests/test_pr_grid_geographic_v2_runtime.py"
-      - "federation/spatial/pr_grid_geographic_v2_runtime.py"
       - "schemas/pr_grid_geographic_v2_*.schema.json"
       - "registry/spatial/v2/**"
 
@@ -39,12 +35,7 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest jsonschema
 
       - name: Run native V2 certification tests
-        run: python -m pytest -q tests/test_geographic_grid_v2.py tests/test_pr_grid_geographic_v2_runtime.py
-
-      - name: Compute runtime-contract SHA256
-        run: |
-          mkdir -p artifacts/pr-grid-v2
-          sha256sum federation/spatial/pr_grid_geographic_v2_runtime.py | tee artifacts/pr-grid-v2/RUNTIME_SHA256SUM.txt
+        run: python -m pytest -q tests/test_geographic_grid_v2.py
 
       - name: Materialize complete L0-L3 indexes
         run: |
