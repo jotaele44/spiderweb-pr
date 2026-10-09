@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import copy
-import json
-from pathlib import Path
 
 import pytest
 
@@ -27,10 +25,33 @@ from federation.spatial.pr_grid_geographic_v2_runtime import (
     validate_pin,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
-PIN = json.loads(
-    (ROOT / "federation/spatial/pr_grid_geographic_v2.pin.json").read_text()
-)
+PIN = {
+    "schema_version": "pr_grid_geographic_v2_consumer_pin/1.0",
+    "consumer": "runtime-contract-fixture",
+    "geometry_authority": "spiderweb-pr",
+    "authority_repository": "jotaele44/spiderweb-pr",
+    "authority_commit": AUTHORITY_COMMIT,
+    "authority_manifest_path": "registry/spatial/v2/pr_grid_geographic_v2.manifest.json",
+    "grid_id": GRID_ID,
+    "grid_version": GRID_VERSION,
+    "crs": CRS,
+    "grid_manifest_sha256": GRID_MANIFEST_SHA256,
+    "cell_schema_sha256": CELL_SCHEMA_SHA256,
+    "binding_schema_sha256": BINDING_SCHEMA_SHA256,
+    "binding_schema_version": "pr-grid-v2-binding/1.0",
+    "mask_schema_sha256": MASK_SCHEMA_SHA256,
+    "mask_schema_version": "pr-grid-v2-mask/1.0",
+    "default_level": "L1",
+    "allowed_levels": ["L0", "L1", "L2", "L3"],
+    "geometry_mode": "REFERENCE_ONLY",
+    "local_geometry_copy": False,
+    "v1_coexistence": "PRESERVE_UNCHANGED",
+    "compatibility_policy": "FAIL_CLOSED",
+    "external_provider_blockers": [
+        {"id": "QA-D24-001", "affects_grid_identity": False},
+        {"id": "QA-D24-003", "affects_grid_identity": False},
+    ],
+}
 
 
 def test_authority_pin_is_runtime_valid():
