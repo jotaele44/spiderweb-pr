@@ -16,3 +16,5 @@
 - [ ] No secrets or credentials committed
 - [ ] No `*.db` or large binary files added
 - [ ] Contract docs updated if schema fields added/removed
+- [ ] `python3 tools/check_docs_sync.py --base origin/main` clean — docs that describe
+      this change are updated, or a `Docs-Impact: none - <reason>` line says why not
