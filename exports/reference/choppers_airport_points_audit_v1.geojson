@@ -1,0 +1,215 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "product": "Choppers audit: Spiderweb point-reference subset",
+    "status": "AUDIT_ONLY_NONCANONICAL",
+    "crs": "EPSG:4326",
+    "source_repo": "jotaele44/spiderweb-pr",
+    "source_path": "exports/real/observations.jsonl",
+    "source_git_blob_sha": "5dfb03703331bd76eca68eb175eb97bc88aefc08",
+    "source_observation_count_in_subset": 9,
+    "not_a_full_airport_inventory": true,
+    "identity_semantics": "CANDIDATE_NOT_IDENTITY",
+    "purpose": "Reproducible point-neighborhood regression only"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "airport_sju_tjsj",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -66.0018,
+          18.4394
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_sju_tjsj",
+        "source_observation_id": "1e522c599d5995e421cbce0239c24092",
+        "canonical_name": "Luis Muñoz Marín International Airport",
+        "icao": "TJSJ",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "airport_sig_tjig",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -66.0981,
+          18.4568
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_sig_tjig",
+        "source_observation_id": "623837a373ee1792229913de443372ed",
+        "canonical_name": "Fernando Luis Ribas Dominicci Airport",
+        "icao": "TJIG",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "airport_bqn_tjbq",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -67.1294,
+          18.4949
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_bqn_tjbq",
+        "source_observation_id": "bc20fa577d85563983ea961f3e7ac11a",
+        "canonical_name": "Rafael Hernández Airport / Ramey",
+        "icao": "TJBQ",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "airport_pse_tjps",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -66.563,
+          18.0083
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_pse_tjps",
+        "source_observation_id": "a5ec1b28bf95c2d4ba80ae5cce037f3a",
+        "canonical_name": "Mercedita Airport",
+        "icao": "TJPS",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "airport_rvrd_tjrv",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -65.6434,
+          18.2453
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_rvrd_tjrv",
+        "source_observation_id": "0ec573bf0e7cdabf58189b7b158e6f00",
+        "canonical_name": "José Aponte de la Torre Airport / Roosevelt Roads",
+        "icao": "TJRV",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "airport_vqs_tjvq",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -65.4936,
+          18.1348
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_vqs_tjvq",
+        "source_observation_id": "357e186c41ee77b432715ace0d9d7008",
+        "canonical_name": "Antonio Rivera Rodríguez Airport",
+        "icao": "TJVQ",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "airport_cpx_tjcp",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -65.3043,
+          18.3133
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_cpx_tjcp",
+        "source_observation_id": "cc7d203b6f0a824b96a85006cc7cd0e8",
+        "canonical_name": "Benjamín Rivera Noriega Airport",
+        "icao": "TJCP",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "airport_maz_tjmz",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -67.1485,
+          18.2557
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_maz_tjmz",
+        "source_observation_id": "dc05b1924267dd64b210da09b43a9b0d",
+        "canonical_name": "Eugenio María de Hostos Airport",
+        "icao": "TJMZ",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "airport_are_tjab",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -66.6757,
+          18.45
+        ]
+      },
+      "properties": {
+        "feature_id": "airport_are_tjab",
+        "source_observation_id": "9267a505582c740a5ce66d0c1dce0eeb",
+        "canonical_name": "Antonio (Nery) Juarbe Pol Airport",
+        "icao": "TJAB",
+        "observed_at": "2026-06-13T14:47:30-04:00",
+        "source_id": "src_rlsm_airport_registry_v0_1",
+        "evidence_state": "FACT",
+        "review_state": "UNREVIEWED",
+        "identity_semantics": "CANDIDATE_NOT_IDENTITY"
+      }
+    }
+  ]
+}
