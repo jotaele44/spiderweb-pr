@@ -231,3 +231,50 @@ def test_denominator_and_touch_outside_conservation():
     assert receipt["State_Counts"] == {"BOUND": 1, "OUTSIDE": 1, "TOUCH_ONLY": 1}
     assert receipt["Certification_State"] == "PROVISIONAL"
     assert receipt["Consumer_Activation"] == "BLOCKED_UNTIL_CERTIFIED"
+
+
+def test_cli_smoke_and_hash_bound_receipt(tmp_path):
+    import subprocess
+    import sys
+
+    payload = [
+        record(polygon(247000, 255100, 247500, 255900), "polygon"),
+        record(line((247000, 255100), (247000, 255900)), "line"),
+        record({"type": "Point", "coordinates": [0, 0]}, "outside"),
+    ]
+    source = tmp_path / "source.jsonl"
+    out = tmp_path / "bindings.jsonl"
+    receipt_path = tmp_path / "receipt.json"
+    source.write_text("".join(json.dumps(row) + "\n" for row in payload), encoding="utf-8")
+    cmd = [
+        sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
+        "--input", str(source), "--level", "L1",
+        "--bindings-out", str(out), "--receipt-out", str(receipt_path),
+    ]
+    done = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    saved = json.loads(receipt_path.read_text())
+    assert saved["Input_Record_Count"] == 3
+    assert saved["Binding_Row_Count"] == 3
+    assert saved["State_Counts"] == {"BOUND": 2, "OUTSIDE": 1, "TOUCH_ONLY": 0}
+    assert saved["Receipt_State"] == "PROVISIONAL"
+    assert saved["Binding_Output_SHA256"] == hashlib.sha256(out.read_bytes()).hexdigest()
+    assert saved["Binding_Output_Bytes"] == out.stat().st_size
+    assert saved["Input_SHA256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+
+    # Fail-closed negative: no new files if input is invalid.
+    source.write_text(json.dumps(record(
+        polygon(247000, 255100, 247500, 255900), "invalid",
+        CRS="EPSG:4326"
+    )) + "\n", encoding="utf-8")
+    other = tmp_path / "forbidden.jsonl"
+    negative = subprocess.run([
+        sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
+        "--input", str(source), "--level", "L1",
+        "--bindings-out", str(other),
+        "--receipt-out", str(tmp_path / "forbidden-receipt.json"),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert negative.returncode != 0
+    assert "FAIL_CLOSED" in negative.stderr
+    assert not other.exists()
+    assert not (tmp_path / "forbidden-receipt.json").exists()
