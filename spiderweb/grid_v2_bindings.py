@@ -27,6 +27,7 @@ from spiderweb.geographic_grid_v2 import (
 )
 
 BINDING_SCHEMA_VERSION = "pr-grid-v2-binding/1.0"
+GRID_MANIFEST_SHA256 = "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4"
 BINDING_METHOD = "COVERS"
 UNCERTAINTY_CLASS = "EXACT"
 GEOMETRY_STATE = "VERIFIED_PROJECTED_POINT"
@@ -179,6 +180,7 @@ def binding_receipt(results: Iterable[BindingResult]) -> dict[str, Any]:
         "contract": "pr-grid-v2-exact-point-binding-receipt/1.0",
         "Grid_ID": GRID_ID,
         "Grid_Version": GRID_VERSION,
+        "Grid_Manifest_SHA256": GRID_MANIFEST_SHA256,
         "CRS": CRS,
         "Binding_Schema_Version": BINDING_SCHEMA_VERSION,
         "Input_Record_Count": len(materialized),
