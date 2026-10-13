@@ -87,3 +87,24 @@ python -m pip install -r requirements.txt
 python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py
 
 Materialization on Windows uses the same Python CLI with Windows file paths.
+
+
+V2 RECEIPT HARDENING (THIS BUILD)
+The receipt now includes:
+Grid_Manifest_SHA256, Binding_Output_SHA256, Binding_Output_Bytes, Input_SHA256.
+Verify each digest against the exact bytes:
+python - <<'PY'
+import hashlib, json
+from pathlib import Path
+bindings = Path("/tmp/pr_grid_v2_exact_point_bindings.jsonl")
+receipt = json.loads(Path("/tmp/pr_grid_v2_exact_point_binding_receipt.json").read_text())
+assert receipt["Grid_Manifest_SHA256"] == "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4"
+assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
+assert receipt["Binding_Output_Bytes"] == bindings.stat().st_size
+assert receipt["Input_SHA256"] == hashlib.sha256(Path("/tmp/pr_grid_v2_exact_points.jsonl").read_bytes()).hexdigest()
+print("BOUND_BINDING_RECEIPT=PASS")
+PY
+
+Do not interpret a successful projected-point binding as source-position
+certification. Only exact, evidence-supported EPSG:6566 input may enter this
+migration. Non-exact and V1-only records remain outside this slice.
