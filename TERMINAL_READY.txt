@@ -108,3 +108,92 @@ PY
 Do not interpret a successful projected-point binding as source-position
 certification. Only exact, evidence-supported EPSG:6566 input may enter this
 migration. Non-exact and V1-only records remain outside this slice.
+
+
+============================================================
+VNEXT POLYGON / LINE BINDING CANDIDATE -- NOT CERTIFIED
+============================================================
+
+THIS IS A PROVISIONAL POST-RC1 BINDING SCHEMA.
+The V2 grid and exact-point RC1 schema/manifest remain frozen.
+Do not propagate new pins or assert consumer activation until Spiderweb
+certification and live federation CI prove acceptance.
+
+Version: pr-grid-v2-binding/2.0.0-rc1
+New schema SHA256:
+e3dbd844bd8c35451e112af6a8d39461b1490454e2f41e191133d8115980f2c8
+Frozen RC1 binding schema SHA256:
+dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022
+Frozen grid manifest SHA256:
+8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4
+
+MACOS / LINUX (from repository root; after venv setup above)
+python -m pytest -q tests/test_grid_v2_bindings.py tests/test_grid_v2_bindings_vnext.py
+python -m pytest -q
+
+python - <<'PY'
+from pathlib import Path
+from spiderweb.grid_v2_bindings_vnext import validate_schema_pins
+validate_schema_pins()
+print("VNEXT_PIN_READER=PASS")
+PY
+
+cat > /tmp/pr_grid_v2_vnext_geometry.jsonl <<'JSONL'
+{"Repository":"aguayluz-pr","Record_ID":"polygon","CRS":"EPSG:6566","Uncertainty_Class":"EXACT","Geometry":{"type":"Polygon","coordinates":[[[247000,255100],[247500,255100],[247500,255900],[247000,255900],[247000,255100]]]}}
+{"Repository":"aguayluz-pr","Record_ID":"line","CRS":"EPSG:6566","Uncertainty_Class":"EXACT","Geometry":{"type":"LineString","coordinates":[[247000,255100],[247000,255900]]}}
+{"Repository":"aguayluz-pr","Record_ID":"outside","CRS":"EPSG:6566","Uncertainty_Class":"EXACT","Geometry":{"type":"Point","coordinates":[0,0]}}
+JSONL
+
+python scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py \
+  --input /tmp/pr_grid_v2_vnext_geometry.jsonl --level L1 \
+  --bindings-out /tmp/pr_grid_v2_vnext_bindings.jsonl \
+  --receipt-out /tmp/pr_grid_v2_vnext_receipt.json
+
+python - <<'PY'
+import hashlib, json
+from pathlib import Path
+from spiderweb.grid_v2_bindings_vnext import validate_schema_pins
+validate_schema_pins()
+bindings = Path("/tmp/pr_grid_v2_vnext_bindings.jsonl")
+receipt = json.loads(Path("/tmp/pr_grid_v2_vnext_receipt.json").read_text())
+rows = [json.loads(s) for s in bindings.read_text().splitlines()]
+assert receipt["Input_Record_Count"] == 3
+assert receipt["Binding_Row_Count"] == len(rows) == 3
+assert receipt["State_Counts"] == {"BOUND": 2, "OUTSIDE": 1, "TOUCH_ONLY": 0}
+assert receipt["Unique_Clipped_Traversal_Length_m"] == 800.0
+assert receipt["Cell_Bound_Length_Sum_m"] == 1600.0
+assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
+assert receipt["Binding_Output_Bytes"] == bindings.stat().st_size
+assert receipt["Input_SHA256"] == hashlib.sha256(
+    Path("/tmp/pr_grid_v2_vnext_geometry.jsonl").read_bytes()).hexdigest()
+assert receipt["Certification_State"] == "PROVISIONAL"
+assert receipt["Consumer_Activation"] == "BLOCKED_UNTIL_CERTIFIED"
+print("VNEXT_PROVISIONAL_SMOKE=PASS")
+PY
+
+WINDOWS POWERSHELL
+py -m pytest -q tests/test_grid_v2_bindings.py tests/test_grid_v2_bindings_vnext.py
+py -m pytest -q
+py -c "from spiderweb.grid_v2_bindings_vnext import validate_schema_pins; validate_schema_pins(); print('VNEXT_PIN_READER=PASS')"
+
+For Windows geometry smoke, provide UTF-8 JSONL records of the same three
+inputs using a here-string redirected with Set-Content -Encoding utf8, then
+run the CLI with Windows paths. Check SHA-256 with Get-FileHash -Algorithm SHA256.
+
+FAILURE / ROLLBACK
+- Missing or changed new/RC1 schema SHA blocks materialization.
+- Missing, wrong, or non-EXACT EPSG:6566 geometry blocks materialization.
+- Empty or invalid input geometry blocks; do not repair silently.
+- Touch-only polygon intersections produce no binding row.
+- Grid-edge overlapping lines deliberately bind both cells; cell lengths
+  are NOT additive to unique source traversal length.
+- A successful provisional test does not promote consumer schema pins.
+- To roll back the candidate, do not merge its pull request.
+- Resume RC1 using the unchanged existing exact-point commands above.
+
+RELEASE GATES
+VNEXT_LOCAL_REGRESSION = OPEN until independently executed
+VNEXT_GITHUB_ACTIONS_CI = OPEN until a completed green run is inspected
+LIVE_CROSS_REPO_CI_GATE = OPEN
+VNEXT_SCHEMA_CERTIFICATION = PROVISIONAL
+POLYGON_LINE_DOMAIN_MIGRATION = BLOCKED_UNTIL_CERTIFIED
