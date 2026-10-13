@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -48,6 +49,9 @@ def main() -> int:
             handle.write(json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n")
 
     receipt = binding_receipt(results)
+    receipt["Binding_Output_SHA256"] = hashlib.sha256(args.bindings_out.read_bytes()).hexdigest()
+    receipt["Binding_Output_Bytes"] = args.bindings_out.stat().st_size
+    receipt["Input_SHA256"] = hashlib.sha256(args.input.read_bytes()).hexdigest()
     receipt["Binding_Output"] = str(args.bindings_out)
     receipt["Receipt_State"] = "PASS"
     args.receipt_out.parent.mkdir(parents=True, exist_ok=True)
