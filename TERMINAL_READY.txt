@@ -272,3 +272,31 @@ Cell_Bound_Length_Sum_m sums all qualifying per-cell line segments.
 Grid_Edge_Length_Multiplicity_m = cell-bound sum - traversed length;
 it measures multiple cell assignments due to shared grid boundaries,
 NOT repeated source traversals. Never interpret either as feature identity.
+
+INDEPENDENT ARTIFACT AUDIT (THIS BUILD)
+After materialization, run the read-only verifier. The verifier reopens the
+frozen source, manifest, rows, and receipt in a separate process; it verifies
+all input/source/output hashes, JSON Schema, canonical Cell_ID bounds,
+Grid_Level, per-record denominators and deterministic binding replay.
+
+MACOS / LINUX
+python scripts/audit_pr_grid_v2_binding_artifacts.py \
+  --input /tmp/pr_grid_v2_vnext_geometry.jsonl \
+  --source-manifest /tmp/pr_grid_v2_vnext_source_manifest.json \
+  --bindings /tmp/pr_grid_v2_vnext_bindings.jsonl \
+  --receipt /tmp/pr_grid_v2_vnext_receipt.json
+
+WINDOWS POWERSHELL
+python scripts/audit_pr_grid_v2_binding_artifacts.py --input INPUT.jsonl \
+  --source-manifest SOURCE_MANIFEST.json --bindings BINDINGS.jsonl \
+  --receipt RECEIPT.json
+
+EXPECTED:
+Audit_State = PASS
+Certification_State = AUDIT_ONLY
+Consumer_Activation = BLOCKED_UNTIL_CERTIFIED
+
+The verifier independently reads the emitted artifacts but reuses Spiderweb's
+canonical geometry engine for deterministic replay. It is NOT an independent
+geodetic certification, legal source-authority ruling, or live six-repo CI
+gate. A successful audit remains AUDIT_ONLY and does not unblock migration.
