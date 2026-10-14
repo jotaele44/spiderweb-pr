@@ -233,6 +233,34 @@ def test_denominator_and_touch_outside_conservation():
     assert receipt["Consumer_Activation"] == "BLOCKED_UNTIL_CERTIFIED"
 
 
+
+
+def freeze_fixture_source(tmp_path, input_path):
+    """Freeze byte-identical fixture snapshot, never assert external authority."""
+    from spiderweb.grid_v2_source_snapshot import SOURCE_CONTRACT
+
+    frozen = tmp_path / "snapshot_source.jsonl"
+    raw = input_path.read_bytes()
+    frozen.write_bytes(raw)
+    digest = hashlib.sha256(raw).hexdigest()
+    source_manifest = {
+        "contract": SOURCE_CONTRACT,
+        "source_manifestation_id": "fixture-immutable-input",
+        "source_uri": "urn:spiderweb:test:immutable-input",
+        "retrieval_utc": "2026-10-13T00:00:00Z",
+        "snapshot_filename": frozen.name,
+        "snapshot_sha256": digest,
+        "snapshot_bytes": len(raw),
+        "input_sha256": digest,
+        "input_bytes": len(raw),
+        "input_record_count": sum(bool(line.strip()) for line in raw.splitlines()),
+        "transformation": "BYTE_IDENTICAL",
+        "authority_evidence_state": "UNVERIFIED",
+    }
+    out = tmp_path / "source_snapshot_manifest.json"
+    out.write_text(json.dumps(source_manifest, indent=2) + "\n", encoding="utf-8")
+    return out
+
 def test_cli_smoke_and_hash_bound_receipt(tmp_path):
     import subprocess
     import sys
@@ -246,9 +274,11 @@ def test_cli_smoke_and_hash_bound_receipt(tmp_path):
     out = tmp_path / "bindings.jsonl"
     receipt_path = tmp_path / "receipt.json"
     source.write_text("".join(json.dumps(row) + "\n" for row in payload), encoding="utf-8")
+    manifest = freeze_fixture_source(tmp_path, source)
     cmd = [
         sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
         "--input", str(source), "--level", "L1",
+        "--source-manifest", str(manifest),
         "--bindings-out", str(out), "--receipt-out", str(receipt_path),
     ]
     done = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
@@ -258,6 +288,9 @@ def test_cli_smoke_and_hash_bound_receipt(tmp_path):
     assert saved["Binding_Row_Count"] == 3
     assert saved["State_Counts"] == {"BOUND": 2, "OUTSIDE": 1, "TOUCH_ONLY": 0}
     assert saved["Receipt_State"] == "PROVISIONAL"
+    assert saved["Source_Provenance_State"] == "BYTE_VERIFIED_AUTHORITY_UNRESOLVED"
+    assert saved["Source_Transformation"] == "BYTE_IDENTICAL"
+    assert saved["Source_Authority_Evidence_State"] == "UNVERIFIED"
     assert saved["Binding_Output_SHA256"] == hashlib.sha256(out.read_bytes()).hexdigest()
     assert saved["Binding_Output_Bytes"] == out.stat().st_size
     assert saved["Input_SHA256"] == hashlib.sha256(source.read_bytes()).hexdigest()
@@ -267,6 +300,7 @@ def test_cli_smoke_and_hash_bound_receipt(tmp_path):
         polygon(247000, 255100, 247500, 255900), "invalid",
         CRS="EPSG:4326"
     )) + "\n", encoding="utf-8")
+    manifest = freeze_fixture_source(tmp_path, source)
     other = tmp_path / "forbidden.jsonl"
     negative = subprocess.run([
         sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
@@ -278,3 +312,73 @@ def test_cli_smoke_and_hash_bound_receipt(tmp_path):
     assert "FAIL_CLOSED" in negative.stderr
     assert not other.exists()
     assert not (tmp_path / "forbidden-receipt.json").exists()
+
+
+def test_snapshot_manifest_negative_tampering_and_claims(tmp_path):
+    from spiderweb.grid_v2_source_snapshot import (
+        strict_json, verify_source_snapshot,
+    )
+    source = tmp_path / "in.jsonl"
+    source.write_text(json.dumps(record(
+        {"type": "Point", "coordinates": [246500, 255500]}
+    )) + "\n", encoding="utf-8")
+    manifest = freeze_fixture_source(tmp_path, source)
+    receipt = verify_source_snapshot(manifest, source, record_count=1)
+    assert receipt["Source_Provenance_State"] == "BYTE_VERIFIED_AUTHORITY_UNRESOLVED"
+    doc = json.loads(manifest.read_text())
+    doc["authority_evidence_state"] = "AUTHORITATIVE"
+    manifest.write_text(json.dumps(doc))
+    with pytest.raises(GridV2Error, match="authority"):
+        verify_source_snapshot(manifest, source, record_count=1)
+    doc["authority_evidence_state"] = "UNVERIFIED"
+    manifest.write_text(json.dumps(doc))
+    source.write_bytes(source.read_bytes() + b" ")
+    with pytest.raises(GridV2Error, match="SHA256"):
+        verify_source_snapshot(manifest, source, record_count=1)
+
+
+def test_duplicate_json_object_keys_fail_closed(tmp_path):
+    from spiderweb.grid_v2_source_snapshot import strict_json, verify_source_snapshot
+    with pytest.raises(GridV2Error, match="duplicate JSON key"):
+        strict_json('{"Repository":"a","Repository":"b"}')
+    with pytest.raises(GridV2Error, match="duplicate JSON key"):
+        strict_json('{"Geometry":{"type":"Point","type":"LineString"}}')
+    with pytest.raises(GridV2Error, match="numeric constant"):
+        strict_json('{"X":NaN}')
+    source = tmp_path / "src.jsonl"
+    source.write_text(json.dumps(record(
+        {"type": "Point", "coordinates": [246500, 255500]}
+    )) + "\n")
+    manifest = freeze_fixture_source(tmp_path, source)
+    manifest.write_text('{"contract":"x","contract":"y"}')
+    with pytest.raises(GridV2Error, match="duplicate JSON key"):
+        verify_source_snapshot(manifest, source, record_count=1)
+
+
+def test_snapshot_row_denominator_and_missing_files_fail_closed(tmp_path):
+    from spiderweb.grid_v2_source_snapshot import verify_source_snapshot
+    source = tmp_path / "src.jsonl"
+    source.write_text(json.dumps(record(
+        {"type": "Point", "coordinates": [246500, 255500]}
+    )) + "\n")
+    manifest = freeze_fixture_source(tmp_path, source)
+    with pytest.raises(GridV2Error, match="denominator"):
+        verify_source_snapshot(manifest, source, record_count=2)
+    frozen = tmp_path / "snapshot_source.jsonl"
+    frozen.unlink()
+    with pytest.raises((GridV2Error, FileNotFoundError)):
+        verify_source_snapshot(manifest, source, record_count=1)
+
+
+def test_source_manifest_rejects_unverified_transformation(tmp_path):
+    from spiderweb.grid_v2_source_snapshot import verify_source_snapshot
+    source = tmp_path / "src.jsonl"
+    source.write_text(json.dumps(record(
+        {"type": "Point", "coordinates": [246500, 255500]}
+    )) + "\n")
+    manifest = freeze_fixture_source(tmp_path, source)
+    m = json.loads(manifest.read_text())
+    m["transformation"] = "NORMALIZED_GEOMETRY"
+    manifest.write_text(json.dumps(m))
+    with pytest.raises(GridV2Error, match="transformation"):
+        verify_source_snapshot(manifest, source, record_count=1)
