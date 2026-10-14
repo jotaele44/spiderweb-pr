@@ -382,3 +382,67 @@ def test_source_manifest_rejects_unverified_transformation(tmp_path):
     manifest.write_text(json.dumps(m))
     with pytest.raises(GridV2Error, match="transformation"):
         verify_source_snapshot(manifest, source, record_count=1)
+
+
+def test_vnext_preserves_raw_record_identifiers_without_normalizing():
+    point = {"type": "Point", "coordinates": [246500, 255500]}
+    a = bind_exact_geometry(record(point, "  observed-ID  ", Repository=" source-pr "), level="L1")
+    assert a.repository == " source-pr "
+    assert a.record_id == "  observed-ID  "
+    assert a.bindings[0]["Repository"] == " source-pr "
+    assert a.bindings[0]["Record_ID"] == "  observed-ID  "
+    # Exact raw identifiers are different identities; no name-only coalescing.
+    result = bind_exact_geometries([
+        record(point, "ID"), record(point, " ID ")
+    ], level="L1")
+    assert len(result) == 2
+
+
+def test_cli_existing_outputs_immutable_and_exact_replay_idempotent(tmp_path):
+    import subprocess
+    import sys
+
+    row = record({"type": "Point", "coordinates": [246500, 255500]})
+    inp = tmp_path / "input.jsonl"
+    inp.write_text(json.dumps(row) + "\n", encoding="utf-8")
+    manifest = freeze_fixture_source(tmp_path, inp)
+    out = tmp_path / "out.jsonl"
+    receipt = tmp_path / "receipt.json"
+    command = [
+        sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
+        "--input", str(inp), "--source-manifest", str(manifest),
+        "--level", "L1", "--bindings-out", str(out), "--receipt-out", str(receipt),
+    ]
+    first = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    assert first.returncode == 0, first.stderr
+    preserved = (out.read_bytes(), receipt.read_bytes())
+    second = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    assert second.returncode == 0, second.stderr
+    assert (out.read_bytes(), receipt.read_bytes()) == preserved
+    # Tamper receipt: do not mutate existing binding nor overwrite the receipt.
+    receipt.write_bytes(b"manually changed")
+    third = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    assert third.returncode != 0
+    assert "nonidentical overwrite" in third.stderr
+    assert out.read_bytes() == preserved[0]
+    assert receipt.read_bytes() == b"manually changed"
+
+
+def test_cli_rejects_output_colliding_with_source_snapshot(tmp_path):
+    import subprocess
+    import sys
+
+    row = record({"type": "Point", "coordinates": [246500, 255500]})
+    inp = tmp_path / "input.jsonl"
+    inp.write_text(json.dumps(row) + "\n", encoding="utf-8")
+    manifest = freeze_fixture_source(tmp_path, inp)
+    frozen = tmp_path / "snapshot_source.jsonl"
+    original_bytes = frozen.read_bytes()
+    proc = subprocess.run([
+        sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
+        "--input", str(inp), "--source-manifest", str(manifest), "--level", "L1",
+        "--bindings-out", str(frozen), "--receipt-out", str(tmp_path / "receipt.json"),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert proc.returncode != 0
+    assert "frozen source snapshot" in proc.stderr
+    assert frozen.read_bytes() == original_bytes
