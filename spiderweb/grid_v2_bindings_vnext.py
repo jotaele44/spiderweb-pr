@@ -83,7 +83,8 @@ def _require_text(row: Mapping[str, Any], key: str) -> str:
     value = row.get(key)
     if not isinstance(value, str) or not value.strip():
         raise GridV2Error(f"{key} must be non-empty text")
-    return value.strip()
+    # Raw source identity must never be normalized as an implicit identity key.
+    return value
 
 
 def _assert_xy_coordinates(value: Any) -> None:
