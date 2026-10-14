@@ -144,8 +144,38 @@ cat > /tmp/pr_grid_v2_vnext_geometry.jsonl <<'JSONL'
 {"Repository":"aguayluz-pr","Record_ID":"outside","CRS":"EPSG:6566","Uncertainty_Class":"EXACT","Geometry":{"type":"Point","coordinates":[0,0]}}
 JSONL
 
+# The frozen source snapshot must be separate from the materialization input.
+# BYTE_IDENTICAL proves source/input byte equality only; authority remains OPEN.
+cp /tmp/pr_grid_v2_vnext_geometry.jsonl /tmp/pr_grid_v2_vnext_frozen_snapshot.jsonl
+
+python - <<'PY'
+import hashlib, json
+from pathlib import Path
+src = Path("/tmp/pr_grid_v2_vnext_geometry.jsonl")
+frozen = Path("/tmp/pr_grid_v2_vnext_frozen_snapshot.jsonl")
+raw = src.read_bytes()
+assert frozen.read_bytes() == raw
+h = hashlib.sha256(raw).hexdigest()
+manifest = {
+  "contract": "pr-grid-v2-source-snapshot/1.0",
+  "source_manifestation_id": "LOCAL_SMOKE_FIXTURE_ONLY",
+  "source_uri": "urn:spiderweb:test:binding-vnext-smoke",
+  "retrieval_utc": "2026-10-13T00:00:00Z",
+  "snapshot_filename": frozen.name,
+  "snapshot_sha256": h, "snapshot_bytes": len(raw),
+  "input_sha256": h, "input_bytes": len(raw),
+  "input_record_count": sum(bool(s.strip()) for s in raw.splitlines()),
+  "transformation": "BYTE_IDENTICAL",
+  "authority_evidence_state": "UNVERIFIED",
+}
+Path("/tmp/pr_grid_v2_vnext_source_manifest.json").write_text(
+    json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+)
+PY
+
 python scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py \
-  --input /tmp/pr_grid_v2_vnext_geometry.jsonl --level L1 \
+  --input /tmp/pr_grid_v2_vnext_geometry.jsonl \
+  --source-manifest /tmp/pr_grid_v2_vnext_source_manifest.json --level L1 \
   --bindings-out /tmp/pr_grid_v2_vnext_bindings.jsonl \
   --receipt-out /tmp/pr_grid_v2_vnext_receipt.json
 
@@ -197,3 +227,25 @@ VNEXT_GITHUB_ACTIONS_CI = OPEN until a completed green run is inspected
 LIVE_CROSS_REPO_CI_GATE = OPEN
 VNEXT_SCHEMA_CERTIFICATION = PROVISIONAL
 POLYGON_LINE_DOMAIN_MIGRATION = BLOCKED_UNTIL_CERTIFIED
+
+SOURCE SNAPSHOT HARDENING (THIS BUILD)
+Every vNext CLI materialization requires --source-manifest.
+- A second local frozen snapshot must exist at snapshot_filename relative to
+  the manifest's directory and must be a DIFFERENT file from input.
+- SHA-256, byte sizes, and input record count must match.
+- The transformation policy must be BYTE_IDENTICAL. No implicit geocoding,
+  reprojection, clipping, geometry repair, or source identity inference.
+- JSON parsing rejects duplicate keys, NaN and Infinity.
+- source_authority_evidence_state must be UNVERIFIED; this manifest is not
+  a certification of source authority or raw coordinate provenance.
+- Source_Provenance_State = BYTE_VERIFIED_AUTHORITY_UNRESOLVED.
+- Source_Manifest_SHA256 is the hash of the raw manifest bytes.
+- If manifest, input, or frozen snapshot changes, generate a NEW versioned
+  snapshot and receipt; never overwrite old manifests to simulate prior state.
+- Abort before writing either output when any source/row/hash gate fails.
+- Recheck receipt output hash after run and before downstream reads.
+
+RELEASE STATE
+A PASS result from this snapshot gate is AUDIT_ONLY for external source truth.
+Production polygon and line records remain BLOCKED until an authoritative,
+independently verifiable source-to-coordinate lineage is certified.
