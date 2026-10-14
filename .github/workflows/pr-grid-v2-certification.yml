@@ -20,8 +20,15 @@ on:
     branches: [main]
     paths:
       - "spiderweb/geographic_grid_v2.py"
+      - "spiderweb/grid_v2_bindings.py"
+      - "spiderweb/grid_v2_source_coordinates.py"
       - "scripts/generate_pr_grid_geographic_v2.py"
+      - "scripts/materialize_pr_grid_v2_exact_point_bindings.py"
+      - "scripts/materialize_pr_grid_v2_source_coordinate_bindings.py"
       - "tests/test_geographic_grid_v2.py"
+      - "tests/test_grid_v2_bindings.py"
+      - "tests/test_grid_v2_source_coordinates.py"
+      - "requirements-grid-v2.txt"
       - "schemas/pr_grid_geographic_v2_*.schema.json"
       - "registry/spatial/v2/**"
 
