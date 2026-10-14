@@ -87,6 +87,7 @@ def main() -> int:
     ]
     payload = ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8")
     receipt = binding_receipt_vnext(results)
+    receipt["Grid_Level"] = args.level
     receipt.update(source_provenance)
     receipt.update({
         "Input_SHA256": hashlib.sha256(args.input.read_bytes()).hexdigest(),
