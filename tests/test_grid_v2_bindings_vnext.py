@@ -231,6 +231,11 @@ def test_denominator_and_touch_outside_conservation():
     assert receipt["State_Counts"] == {"BOUND": 1, "OUTSIDE": 1, "TOUCH_ONLY": 1}
     assert receipt["Certification_State"] == "PROVISIONAL"
     assert receipt["Consumer_Activation"] == "BLOCKED_UNTIL_CERTIFIED"
+    assert [r["State"] for r in receipt["Record_Outcomes"]] == ["OUTSIDE", "TOUCH_ONLY", "BOUND"]
+    assert [r["Record_ID"] for r in receipt["Record_Outcomes"]] == ["p", "g", "l"]
+    assert [r["Binding_Row_Count"] for r in receipt["Record_Outcomes"]] == [0, 0, 2]
+    assert sum(r["Binding_Row_Count"] for r in receipt["Record_Outcomes"]) == receipt["Binding_Row_Count"]
+    assert all(len(r["Input_Geometry_SHA256"]) == 64 for r in receipt["Record_Outcomes"])
 
 
 
@@ -286,6 +291,10 @@ def test_cli_smoke_and_hash_bound_receipt(tmp_path):
     saved = json.loads(receipt_path.read_text())
     assert saved["Input_Record_Count"] == 3
     assert saved["Binding_Row_Count"] == 3
+    assert len(saved["Record_Outcomes"]) == 3
+    assert saved["Record_Outcomes"][2]["Record_ID"] == "outside"
+    assert saved["Record_Outcomes"][2]["State"] == "OUTSIDE"
+    assert saved["Record_Outcomes"][2]["Binding_Row_Count"] == 0
     assert saved["State_Counts"] == {"BOUND": 2, "OUTSIDE": 1, "TOUCH_ONLY": 0}
     assert saved["Receipt_State"] == "PROVISIONAL"
     assert saved["Source_Provenance_State"] == "BYTE_VERIFIED_AUTHORITY_UNRESOLVED"
