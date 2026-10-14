@@ -478,3 +478,93 @@ def test_outside_line_has_explicit_outcome_and_zero_support():
     assert receipt["Binding_Row_Count"] == 0
     assert receipt["Clipped_Traversal_Length_m"] == 0
     assert receipt["Distinct_Clipped_Spatial_Support_Length_m"] == 0
+
+
+def test_independent_artifact_audit_success_and_tamper(tmp_path):
+    import subprocess
+    import sys
+    from spiderweb.grid_v2_binding_artifact_audit import audit_binding_artifacts
+
+    points = [
+        record({"type": "Point", "coordinates": [247000, 255500]}, "edge"),
+        record(polygon(247000, 255100, 247500, 255900), "polygon"),
+        record(line((247000, 255100), (247000, 255900)), "line"),
+        record({"type": "Point", "coordinates": [0, 0]}, "outside"),
+    ]
+    source = tmp_path / "source.jsonl"
+    source.write_text("".join(json.dumps(row) + "\n" for row in points), encoding="utf-8")
+    frozen_manifest = freeze_fixture_source(tmp_path, source)
+    out = tmp_path / "bindings.jsonl"
+    receipt = tmp_path / "receipt.json"
+    p = subprocess.run([
+        sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
+        "--input", str(source), "--source-manifest", str(frozen_manifest),
+        "--level", "L1", "--bindings-out", str(out), "--receipt-out", str(receipt)
+    ], cwd=ROOT, text=True, capture_output=True)
+    assert p.returncode == 0, p.stderr
+    audit = audit_binding_artifacts(
+        input_path=source, manifest_path=frozen_manifest,
+        bindings_path=out, receipt_path=receipt,
+    )
+    assert audit["Audit_State"] == "PASS"
+    assert audit["Certification_State"] == "AUDIT_ONLY"
+    assert audit["Consumer_Activation"] == "BLOCKED_UNTIL_CERTIFIED"
+    assert audit["Input_Record_Count"] == 4
+    assert audit["Binding_Row_Count"] == 5
+    # CLI verification is a separate process from materialization.
+    q = subprocess.run([
+        sys.executable, "scripts/audit_pr_grid_v2_binding_artifacts.py",
+        "--input", str(source), "--source-manifest", str(frozen_manifest),
+        "--bindings", str(out), "--receipt", str(receipt),
+    ], cwd=ROOT, text=True, capture_output=True)
+    assert q.returncode == 0, q.stderr
+    assert json.loads(q.stdout)["Certification_State"] == "AUDIT_ONLY"
+    untouched = out.read_bytes()
+
+    # Hash-bound bytes: single-byte tamper must fail.
+    out.write_bytes(untouched + b" ")
+    with pytest.raises(GridV2Error, match="SHA256"):
+        audit_binding_artifacts(input_path=source, manifest_path=frozen_manifest,
+                                bindings_path=out, receipt_path=receipt)
+    out.write_bytes(untouched)
+
+    # Recompute receipt hash as an adversarial tampering simulation.
+    fake_rows = out.read_text(encoding="utf-8").splitlines()
+    forged = json.loads(fake_rows[0])
+    forged["Cell_ID"] = "PRG2:L1:R999:C9999"
+    fake_rows[0] = json.dumps(forged, sort_keys=True, separators=(",", ":"))
+    forged_bytes = ("\n".join(fake_rows) + "\n").encode("utf-8")
+    out.write_bytes(forged_bytes)
+    audit_receipt = json.loads(receipt.read_text())
+    audit_receipt["Binding_Output_SHA256"] = hashlib.sha256(forged_bytes).hexdigest()
+    audit_receipt["Binding_Output_Bytes"] = len(forged_bytes)
+    receipt.write_text(json.dumps(audit_receipt), encoding="utf-8")
+    with pytest.raises(GridV2Error, match="cell out of range"):
+        audit_binding_artifacts(input_path=source, manifest_path=frozen_manifest,
+                                bindings_path=out, receipt_path=receipt)
+
+
+def test_independent_audit_detects_receipt_level_tamper(tmp_path):
+    import subprocess
+    import sys
+    from spiderweb.grid_v2_binding_artifact_audit import audit_binding_artifacts
+
+    source = tmp_path / "input.jsonl"
+    source.write_text(json.dumps(record(
+        {"type": "Point", "coordinates": [246500, 255500]}
+    )) + "\n", encoding="utf-8")
+    manifest = freeze_fixture_source(tmp_path, source)
+    out = tmp_path / "bindings.jsonl"
+    receipt = tmp_path / "receipt.json"
+    run = subprocess.run([
+        sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
+        "--input", str(source), "--source-manifest", str(manifest),
+        "--level", "L1", "--bindings-out", str(out), "--receipt-out", str(receipt)
+    ], cwd=ROOT, text=True, capture_output=True)
+    assert run.returncode == 0, run.stderr
+    payload = json.loads(receipt.read_text())
+    payload["Grid_Level"] = "L2"
+    receipt.write_text(json.dumps(payload))
+    with pytest.raises(GridV2Error, match="Grid_Level"):
+        audit_binding_artifacts(input_path=source, manifest_path=manifest,
+                                bindings_path=out, receipt_path=receipt)
