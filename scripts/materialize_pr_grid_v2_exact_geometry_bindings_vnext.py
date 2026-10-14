@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from spiderweb.geographic_grid_v2 import GridV2Error  # noqa: E402
+from spiderweb.grid_v2_source_snapshot import strict_json, verify_source_snapshot  # noqa: E402
 from spiderweb.grid_v2_bindings_vnext import (  # noqa: E402
     bind_exact_geometries, binding_receipt_vnext, validate_schema_pins,
 )
@@ -26,8 +27,7 @@ def read_jsonl(path: Path) -> list[dict]:
             if not line.strip():
                 continue
             try:
-                row = json.loads(line, parse_constant=lambda x: (_ for _ in ()).throw(
-                    GridV2Error("nonfinite input constant")))
+                row = strict_json(line)
             except (ValueError, GridV2Error) as exc:
                 raise GridV2Error(f"{path}:{line_no}: invalid JSON") from exc
             if not isinstance(row, dict):
@@ -54,6 +54,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--level", choices=("L0", "L1", "L2", "L3"), required=True)
+    parser.add_argument("--source-manifest", type=Path, required=True)
     parser.add_argument("--bindings-out", type=Path, required=True)
     parser.add_argument("--receipt-out", type=Path, required=True)
     args = parser.parse_args()
@@ -62,14 +63,26 @@ def main() -> int:
         raise GridV2Error("binding output and receipt cannot share path")
     if args.input.resolve() in (args.bindings_out.resolve(), args.receipt_out.resolve()):
         raise GridV2Error("input and output paths must be distinct")
+    manifest_path = args.source_manifest.resolve(strict=True)
+    if manifest_path in (args.input.resolve(), args.bindings_out.resolve(),
+                         args.receipt_out.resolve()):
+        raise GridV2Error("source manifest overlaps input or outputs")
     validate_schema_pins()
-    results = bind_exact_geometries(read_jsonl(args.input), level=args.level)
+    inputs = read_jsonl(args.input)
+    source_provenance = verify_source_snapshot(
+        args.source_manifest, args.input, record_count=len(inputs)
+    )
+    snapshot_path = Path(source_provenance.pop("_Snapshot_Path"))
+    if snapshot_path in (args.bindings_out.resolve(), args.receipt_out.resolve()):
+        raise GridV2Error("outputs must not overwrite frozen source snapshot")
+    results = bind_exact_geometries(inputs, level=args.level)
     lines = [
         json.dumps(b, sort_keys=True, separators=(",", ":"), allow_nan=False)
         for result in results for b in result.bindings
     ]
     payload = ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8")
     receipt = binding_receipt_vnext(results)
+    receipt.update(source_provenance)
     receipt.update({
         "Input_SHA256": hashlib.sha256(args.input.read_bytes()).hexdigest(),
         "Binding_Output_SHA256": hashlib.sha256(payload).hexdigest(),
