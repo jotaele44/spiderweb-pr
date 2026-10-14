@@ -42,6 +42,7 @@ class GeometryBindingResult:
     bindings: tuple[dict[str, Any], ...]
     unique_clipped_length_m: float = 0.0
     clipped_area_m2: float = 0.0
+    input_geometry_sha256: str = ""
 
 
 def validate_schema_pins(root: Path | None = None) -> None:
@@ -259,7 +260,7 @@ def bind_exact_geometry(row: Mapping[str, Any], *, level: str) -> GeometryBindin
     else:
         state = "TOUCH_ONLY" if kind != "POINT" else "OUTSIDE"
     return GeometryBindingResult(repository, record_id, kind, state, tuple(rows),
-                                 unique_length, area)
+                                 unique_length, area, digest)
 
 
 def bind_exact_geometries(rows: Iterable[Mapping[str, Any]], *, level: str):
@@ -293,6 +294,17 @@ def binding_receipt_vnext(results: Iterable[GeometryBindingResult]):
         "Grid_Manifest_SHA256": GRID_MANIFEST_SHA256,
         "Binding_Schema_SHA256": BINDING_SCHEMA_SHA256,
         "CRS": CRS, "Input_Record_Count": len(items),
+        "Record_Outcomes": [
+            {
+                "Repository": r.repository,
+                "Record_ID": r.record_id,
+                "Source_Geometry_Type": r.source_geometry_type,
+                "State": r.state,
+                "Binding_Row_Count": len(r.bindings),
+                "Input_Geometry_SHA256": r.input_geometry_sha256,
+            }
+            for r in items
+        ],
         "Binding_Row_Count": len(rows), "State_Counts": states,
         "Cell_Bound_Length_Sum_m": lengths,
         "Unique_Clipped_Traversal_Length_m": unique,
