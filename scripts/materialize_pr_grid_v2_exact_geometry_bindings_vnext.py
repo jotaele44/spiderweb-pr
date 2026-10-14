@@ -37,6 +37,11 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def atomic_bytes(path: Path, content: bytes) -> None:
+    # Existing artifacts are immutable: retry is idempotent only if identical.
+    if path.exists():
+        if path.read_bytes() != content:
+            raise GridV2Error(f"refusing nonidentical overwrite of frozen artifact: {path}")
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(dir=path.parent, prefix="." + path.name + ".")
     try:
@@ -91,6 +96,11 @@ def main() -> int:
     })
     rpayload = (json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False)
                 + "\n").encode("utf-8")
+    # Both targets are checked before either is touched. Exact retries are
+    # idempotent; changed artifacts fail closed instead of overwriting evidence.
+    for path, expected in ((args.bindings_out, payload), (args.receipt_out, rpayload)):
+        if path.exists() and path.read_bytes() != expected:
+            raise GridV2Error(f"refusing nonidentical overwrite of frozen artifact: {path}")
     # Outputs are independently atomic. Any interrupted two-file promotion is
     # detected by the receipt's binding hash; never trust output alone.
     atomic_bytes(args.bindings_out, payload)
