@@ -108,3 +108,195 @@ PY
 Do not interpret a successful projected-point binding as source-position
 certification. Only exact, evidence-supported EPSG:6566 input may enter this
 migration. Non-exact and V1-only records remain outside this slice.
+
+
+============================================================
+VNEXT POLYGON / LINE BINDING CANDIDATE -- NOT CERTIFIED
+============================================================
+
+THIS IS A PROVISIONAL POST-RC1 BINDING SCHEMA.
+The V2 grid and exact-point RC1 schema/manifest remain frozen.
+Do not propagate new pins or assert consumer activation until Spiderweb
+certification and live federation CI prove acceptance.
+
+Version: pr-grid-v2-binding/2.0.0-rc1
+New schema SHA256:
+e3dbd844bd8c35451e112af6a8d39461b1490454e2f41e191133d8115980f2c8
+Frozen RC1 binding schema SHA256:
+dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022
+Frozen grid manifest SHA256:
+8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4
+
+MACOS / LINUX (from repository root; after venv setup above)
+python -m pytest -q tests/test_grid_v2_bindings.py tests/test_grid_v2_bindings_vnext.py
+python -m pytest -q
+
+python - <<'PY'
+from pathlib import Path
+from spiderweb.grid_v2_bindings_vnext import validate_schema_pins
+validate_schema_pins()
+print("VNEXT_PIN_READER=PASS")
+PY
+
+cat > /tmp/pr_grid_v2_vnext_geometry.jsonl <<'JSONL'
+{"Repository":"aguayluz-pr","Record_ID":"polygon","CRS":"EPSG:6566","Uncertainty_Class":"EXACT","Geometry":{"type":"Polygon","coordinates":[[[247000,255100],[247500,255100],[247500,255900],[247000,255900],[247000,255100]]]}}
+{"Repository":"aguayluz-pr","Record_ID":"line","CRS":"EPSG:6566","Uncertainty_Class":"EXACT","Geometry":{"type":"LineString","coordinates":[[247000,255100],[247000,255900]]}}
+{"Repository":"aguayluz-pr","Record_ID":"outside","CRS":"EPSG:6566","Uncertainty_Class":"EXACT","Geometry":{"type":"Point","coordinates":[0,0]}}
+JSONL
+
+# The frozen source snapshot must be separate from the materialization input.
+# BYTE_IDENTICAL proves source/input byte equality only; authority remains OPEN.
+cp /tmp/pr_grid_v2_vnext_geometry.jsonl /tmp/pr_grid_v2_vnext_frozen_snapshot.jsonl
+
+python - <<'PY'
+import hashlib, json
+from pathlib import Path
+src = Path("/tmp/pr_grid_v2_vnext_geometry.jsonl")
+frozen = Path("/tmp/pr_grid_v2_vnext_frozen_snapshot.jsonl")
+raw = src.read_bytes()
+assert frozen.read_bytes() == raw
+h = hashlib.sha256(raw).hexdigest()
+manifest = {
+  "contract": "pr-grid-v2-source-snapshot/1.0",
+  "source_manifestation_id": "LOCAL_SMOKE_FIXTURE_ONLY",
+  "source_uri": "urn:spiderweb:test:binding-vnext-smoke",
+  "retrieval_utc": "2026-10-13T00:00:00Z",
+  "snapshot_filename": frozen.name,
+  "snapshot_sha256": h, "snapshot_bytes": len(raw),
+  "input_sha256": h, "input_bytes": len(raw),
+  "input_record_count": sum(bool(s.strip()) for s in raw.splitlines()),
+  "transformation": "BYTE_IDENTICAL",
+  "authority_evidence_state": "UNVERIFIED",
+}
+Path("/tmp/pr_grid_v2_vnext_source_manifest.json").write_text(
+    json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+)
+PY
+
+python scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py \
+  --input /tmp/pr_grid_v2_vnext_geometry.jsonl \
+  --source-manifest /tmp/pr_grid_v2_vnext_source_manifest.json --level L1 \
+  --bindings-out /tmp/pr_grid_v2_vnext_bindings.jsonl \
+  --receipt-out /tmp/pr_grid_v2_vnext_receipt.json
+
+python - <<'PY'
+import hashlib, json
+from pathlib import Path
+from spiderweb.grid_v2_bindings_vnext import validate_schema_pins
+validate_schema_pins()
+bindings = Path("/tmp/pr_grid_v2_vnext_bindings.jsonl")
+receipt = json.loads(Path("/tmp/pr_grid_v2_vnext_receipt.json").read_text())
+rows = [json.loads(s) for s in bindings.read_text().splitlines()]
+assert receipt["Input_Record_Count"] == 3
+assert receipt["Binding_Row_Count"] == len(rows) == 3
+assert receipt["State_Counts"] == {"BOUND": 2, "OUTSIDE": 1, "TOUCH_ONLY": 0}
+assert len(receipt["Record_Outcomes"]) == 3
+assert sum(r["Binding_Row_Count"] for r in receipt["Record_Outcomes"]) == len(rows)
+assert receipt["Record_Outcomes"][2]["Record_ID"] == "outside"
+assert receipt["Record_Outcomes"][2]["State"] == "OUTSIDE"
+assert receipt["Record_Outcomes"][2]["Binding_Row_Count"] == 0
+assert receipt["Clipped_Traversal_Length_m"] == 800.0
+assert receipt["Cell_Bound_Length_Sum_m"] == 1600.0
+assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
+assert receipt["Binding_Output_Bytes"] == bindings.stat().st_size
+assert receipt["Input_SHA256"] == hashlib.sha256(
+    Path("/tmp/pr_grid_v2_vnext_geometry.jsonl").read_bytes()).hexdigest()
+assert receipt["Certification_State"] == "PROVISIONAL"
+assert receipt["Consumer_Activation"] == "BLOCKED_UNTIL_CERTIFIED"
+print("VNEXT_PROVISIONAL_SMOKE=PASS")
+PY
+
+WINDOWS POWERSHELL
+py -m pytest -q tests/test_grid_v2_bindings.py tests/test_grid_v2_bindings_vnext.py
+py -m pytest -q
+py -c "from spiderweb.grid_v2_bindings_vnext import validate_schema_pins; validate_schema_pins(); print('VNEXT_PIN_READER=PASS')"
+
+For Windows geometry smoke, provide UTF-8 JSONL records of the same three
+inputs using a here-string redirected with Set-Content -Encoding utf8, then
+run the CLI with Windows paths. Check SHA-256 with Get-FileHash -Algorithm SHA256.
+
+FAILURE / ROLLBACK
+- Missing or changed new/RC1 schema SHA blocks materialization.
+- Missing, wrong, or non-EXACT EPSG:6566 geometry blocks materialization.
+- Empty or invalid input geometry blocks; do not repair silently.
+- Touch-only polygon intersections produce no binding row.
+- Grid-edge overlapping lines deliberately bind both cells; cell lengths
+  are NOT additive to unique source traversal length.
+- A successful provisional test does not promote consumer schema pins.
+- To roll back the candidate, do not merge its pull request.
+- Resume RC1 using the unchanged existing exact-point commands above.
+
+RELEASE GATES
+VNEXT_LOCAL_REGRESSION = OPEN until independently executed
+VNEXT_GITHUB_ACTIONS_CI = OPEN until a completed green run is inspected
+LIVE_CROSS_REPO_CI_GATE = OPEN
+VNEXT_SCHEMA_CERTIFICATION = PROVISIONAL
+POLYGON_LINE_DOMAIN_MIGRATION = BLOCKED_UNTIL_CERTIFIED
+
+SOURCE SNAPSHOT HARDENING (THIS BUILD)
+Every vNext CLI materialization requires --source-manifest.
+- A second local frozen snapshot must exist at snapshot_filename relative to
+  the manifest's directory and must be a DIFFERENT file from input.
+- SHA-256, byte sizes, and input record count must match.
+- The transformation policy must be BYTE_IDENTICAL. No implicit geocoding,
+  reprojection, clipping, geometry repair, or source identity inference.
+- JSON parsing rejects duplicate keys, NaN and Infinity.
+- source_authority_evidence_state must be UNVERIFIED; this manifest is not
+  a certification of source authority or raw coordinate provenance.
+- Source_Provenance_State = BYTE_VERIFIED_AUTHORITY_UNRESOLVED.
+- Source_Manifest_SHA256 is the hash of the raw manifest bytes.
+- If manifest, input, or frozen snapshot changes, generate a NEW versioned
+  snapshot and receipt; never overwrite old manifests to simulate prior state.
+- Abort before writing either output when any source/row/hash gate fails.
+- Recheck receipt output hash after run and before downstream reads.
+
+RELEASE STATE
+A PASS result from this snapshot gate is AUDIT_ONLY for external source truth.
+Production polygon and line records remain BLOCKED until an authoritative,
+independently verifiable source-to-coordinate lineage is certified.
+
+PER-RECORD OUTCOMES (THIS BUILD)
+The vNext receipt now preserves every input record in input order, including
+OUTSIDE and TOUCH_ONLY records that have no Cell_ID binding rows.
+The sum of per-record Binding_Row_Count must equal Binding_Row_Count.
+Input_Geometry_SHA256 is SHA-256 of canonical JSON serialization of each
+input geometry, NOT a claim of original source-file byte identity.
+Source_Snapshot_SHA256 is separately computed from frozen raw input bytes.
+
+LINE LENGTH SEMANTICS (THIS BUILD)
+Clipped_Traversal_Length_m measures traversed length including repeated passes.
+Distinct_Clipped_Spatial_Support_Length_m dissolves overlapping source
+segments and measures unique geometric support (not number of visits).
+Retraversed_Spatial_Length_m = traversed length - distinct support length.
+Cell_Bound_Length_Sum_m sums all qualifying per-cell line segments.
+Grid_Edge_Length_Multiplicity_m = cell-bound sum - traversed length;
+it measures multiple cell assignments due to shared grid boundaries,
+NOT repeated source traversals. Never interpret either as feature identity.
+
+INDEPENDENT ARTIFACT AUDIT (THIS BUILD)
+After materialization, run the read-only verifier. The verifier reopens the
+frozen source, manifest, rows, and receipt in a separate process; it verifies
+all input/source/output hashes, JSON Schema, canonical Cell_ID bounds,
+Grid_Level, per-record denominators and deterministic binding replay.
+
+MACOS / LINUX
+python scripts/audit_pr_grid_v2_binding_artifacts.py \
+  --input /tmp/pr_grid_v2_vnext_geometry.jsonl \
+  --source-manifest /tmp/pr_grid_v2_vnext_source_manifest.json \
+  --bindings /tmp/pr_grid_v2_vnext_bindings.jsonl \
+  --receipt /tmp/pr_grid_v2_vnext_receipt.json
+
+WINDOWS POWERSHELL
+python scripts/audit_pr_grid_v2_binding_artifacts.py --input INPUT.jsonl \
+  --source-manifest SOURCE_MANIFEST.json --bindings BINDINGS.jsonl \
+  --receipt RECEIPT.json
+
+EXPECTED:
+Audit_State = PASS
+Certification_State = AUDIT_ONLY
+Consumer_Activation = BLOCKED_UNTIL_CERTIFIED
+
+The verifier independently reads the emitted artifacts but reuses Spiderweb's
+canonical geometry engine for deterministic replay. It is NOT an independent
+geodetic certification, legal source-authority ruling, or live six-repo CI
+gate. A successful audit remains AUDIT_ONLY and does not unblock migration.
