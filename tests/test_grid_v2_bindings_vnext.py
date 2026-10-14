@@ -112,7 +112,7 @@ def test_line_on_grid_edge_binds_both_and_marks_nonadditive_length():
     assert all(r["Boundary_Coincident"] is True for r in got.bindings)
     assert all(r["Length_In_Cell_m"] == 800 for r in got.bindings)
     receipt = binding_receipt_vnext([got])
-    assert receipt["Unique_Clipped_Traversal_Length_m"] == 800
+    assert receipt["Clipped_Traversal_Length_m"] == 800
     assert receipt["Cell_Bound_Length_Sum_m"] == 1600
     assert receipt["Grid_Edge_Length_Multiplicity_m"] == 800
 
@@ -455,3 +455,25 @@ def test_cli_rejects_output_colliding_with_source_snapshot(tmp_path):
     assert proc.returncode != 0
     assert "frozen source snapshot" in proc.stderr
     assert frozen.read_bytes() == original_bytes
+
+
+def test_retraced_route_length_is_not_distinct_spatial_support():
+    result = bind_exact_geometry(record(line(
+        (246500, 255500), (247500, 255500), (246500, 255500)
+    )), level="L1")
+    receipt = binding_receipt_vnext([result])
+    assert receipt["Clipped_Traversal_Length_m"] == 2000.0
+    assert receipt["Distinct_Clipped_Spatial_Support_Length_m"] == 1000.0
+    assert receipt["Retraversed_Spatial_Length_m"] == 1000.0
+    assert receipt["Cell_Bound_Length_Sum_m"] == 2000.0
+    assert receipt["Grid_Edge_Length_Multiplicity_m"] == 0.0
+
+
+def test_outside_line_has_explicit_outcome_and_zero_support():
+    result = bind_exact_geometry(record(line((0, 0), (100, 100))), level="L1")
+    receipt = binding_receipt_vnext([result])
+    assert receipt["State_Counts"] == {"BOUND": 0, "OUTSIDE": 1, "TOUCH_ONLY": 0}
+    assert receipt["Record_Outcomes"][0]["State"] == "OUTSIDE"
+    assert receipt["Binding_Row_Count"] == 0
+    assert receipt["Clipped_Traversal_Length_m"] == 0
+    assert receipt["Distinct_Clipped_Spatial_Support_Length_m"] == 0
