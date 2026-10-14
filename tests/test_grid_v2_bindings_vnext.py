@@ -313,7 +313,8 @@ def test_cli_smoke_and_hash_bound_receipt(tmp_path):
     other = tmp_path / "forbidden.jsonl"
     negative = subprocess.run([
         sys.executable, "scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py",
-        "--input", str(source), "--level", "L1",
+        "--input", str(source), "--source-manifest", str(manifest),
+        "--level", "L1",
         "--bindings-out", str(other),
         "--receipt-out", str(tmp_path / "forbidden-receipt.json"),
     ], cwd=ROOT, capture_output=True, text=True)
