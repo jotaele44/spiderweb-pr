@@ -69,16 +69,17 @@ recompute authoritative membership in a consumer.
 4. Run CLI `scripts/materialize_pr_grid_v2_exact_geometry_bindings_vnext.py`
    with `--source-manifest`, `--input`, `--level`,
    `--bindings-out`, `--receipt-out`.
-5. Check input/snapshot and output SHA256, byte sizes, counts, complete
+5. Run the separate read-only audit CLI `scripts/audit_pr_grid_v2_binding_artifacts.py` and require its `Audit_State=PASS` (still `AUDIT_ONLY`).
+6. Check input/snapshot and output SHA256, byte sizes, counts, complete
    `Record_Outcomes`, positive-area and positive-length invariants,
    and zero row counts for OUTSIDE/TOUCH_ONLY.
-6. Only interpret completed green CI for the exact HEAD under review as
+7. Only interpret completed green CI for the exact HEAD under review as
    execution evidence. Earlier runs are superseded.
-7. Keep release `PROVISIONAL` until scope, authority evidence,
+8. Keep release `PROVISIONAL` until scope, authority evidence,
    geometry tests, source classification and CI reach certification.
-8. Keep live six-repo consumer CI `OPEN` until it actually executes.
+9. Keep live six-repo consumer CI `OPEN` until it actually executes.
    Consumer pins must remain unchanged until Spiderweb certifies vNext.
-9. Never merge a draft PR or activate domain source migration based only
+10. Never merge a draft PR or activate domain source migration based only
    on local validation and passing fixture tests.
 
 ## Required outcome
@@ -88,3 +89,11 @@ Report a bounded table with `PASS`, `FAIL`, `OPEN`, `BLOCKED`,
 Record the exact branch and HEAD commit, frozen artifact/hash identities,
 test counts, skipped tests, CI run URL, and unresolved source-authority
 and cross-repository gaps. Include root `TERMINAL_READY.txt` in each build.
+
+## Audit separation
+
+The independent-process artifact verifier uses the same authoritative Spiderweb
+geometry engine for deterministic replay and therefore cannot certify a
+second, genuinely independent geometry implementation. It validates the
+emitted record set, schema, Cell_ID ranges and source/receipt hashes, and
+rejects hostile output tampering. Always label that success AUDIT_ONLY.
