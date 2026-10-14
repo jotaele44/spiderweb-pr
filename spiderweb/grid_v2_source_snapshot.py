@@ -39,7 +39,7 @@ def strict_json(raw: str) -> Any:
         raise GridV2Error(f"invalid JSON numeric constant: {value}")
     try:
         return json.loads(raw, object_pairs_hook=pairs, parse_constant=forbidden)
-    except (ValueError, TypeError) as exc:
+    except (json.JSONDecodeError, TypeError) as exc:
         raise GridV2Error("invalid JSON source/manifest bytes") from exc
 
 
