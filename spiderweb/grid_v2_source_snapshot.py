@@ -127,6 +127,7 @@ def verify_source_snapshot(
     # Two independent paths with the same digest prove byte identity,
     # not authoritative source manifestation or certified precision.
     return {
+        "_Snapshot_Path": str(snapshot),
         "Source_Provenance_State": SOURCE_PROVENANCE_STATE,
         "Source_Manifestation_ID": manifest["source_manifestation_id"],
         "Source_URI": manifest["source_uri"],
