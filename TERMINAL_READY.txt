@@ -195,7 +195,7 @@ assert sum(r["Binding_Row_Count"] for r in receipt["Record_Outcomes"]) == len(ro
 assert receipt["Record_Outcomes"][2]["Record_ID"] == "outside"
 assert receipt["Record_Outcomes"][2]["State"] == "OUTSIDE"
 assert receipt["Record_Outcomes"][2]["Binding_Row_Count"] == 0
-assert receipt["Unique_Clipped_Traversal_Length_m"] == 800.0
+assert receipt["Clipped_Traversal_Length_m"] == 800.0
 assert receipt["Cell_Bound_Length_Sum_m"] == 1600.0
 assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
 assert receipt["Binding_Output_Bytes"] == bindings.stat().st_size
@@ -262,3 +262,13 @@ The sum of per-record Binding_Row_Count must equal Binding_Row_Count.
 Input_Geometry_SHA256 is SHA-256 of canonical JSON serialization of each
 input geometry, NOT a claim of original source-file byte identity.
 Source_Snapshot_SHA256 is separately computed from frozen raw input bytes.
+
+LINE LENGTH SEMANTICS (THIS BUILD)
+Clipped_Traversal_Length_m measures traversed length including repeated passes.
+Distinct_Clipped_Spatial_Support_Length_m dissolves overlapping source
+segments and measures unique geometric support (not number of visits).
+Retraversed_Spatial_Length_m = traversed length - distinct support length.
+Cell_Bound_Length_Sum_m sums all qualifying per-cell line segments.
+Grid_Edge_Length_Multiplicity_m = cell-bound sum - traversed length;
+it measures multiple cell assignments due to shared grid boundaries,
+NOT repeated source traversals. Never interpret either as feature identity.
