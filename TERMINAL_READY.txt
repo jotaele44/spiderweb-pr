@@ -1,8 +1,16 @@
-TERMINAL_READY — Spiderweb PR Grid V2 Exact-Point Binding Materializer
+TERMINAL_READY — Spiderweb PR Grid V2 Binding Migration
+
+STATE
+RC1_CANDIDATE / EVIDENCE_GATED
 
 BUILD SCOPE
-Authoritative PR_GRID_GEOGRAPHIC_V2 binding migration for exact EPSG:6566 point records only.
-Consumers must not recompute these bindings.
+Spiderweb-authoritative PR_GRID_GEOGRAPHIC_V2 record binding for:
+1. exact points already in EPSG:6566
+2. exact evidence-backed source coordinates declared with an explicit EPSG code
+
+Consumers must not transform coordinates or recompute V2 membership.
+V1 remains unchanged. Approximate, inferred, administrative-only, and V1-only
+records remain outside this migration slice.
 
 MACOS / LINUX
 
@@ -11,16 +19,17 @@ From repository root:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+python -m pip install -r requirements-grid-v2.txt
 
 Run focused certification:
 
-python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py
+python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py
 
 Run full repository tests:
 
 python -m pytest -q
 
-Create a three-record smoke denominator:
+EXACT EPSG:6566 INPUT
 
 cat > /tmp/pr_grid_v2_exact_points.jsonl <<'JSONL'
 {"Repository":"aguayluz-pr","Record_ID":"interior","X":246500,"Y":255500,"CRS":"EPSG:6566","Uncertainty_Class":"EXACT"}
@@ -28,29 +37,74 @@ cat > /tmp/pr_grid_v2_exact_points.jsonl <<'JSONL'
 {"Repository":"aguayluz-pr","Record_ID":"outside","X":0,"Y":0,"CRS":"EPSG:6566","Uncertainty_Class":"EXACT"}
 JSONL
 
-Materialize:
-
 python scripts/materialize_pr_grid_v2_exact_point_bindings.py \
   --input /tmp/pr_grid_v2_exact_points.jsonl \
   --level L1 \
   --bindings-out /tmp/pr_grid_v2_exact_point_bindings.jsonl \
   --receipt-out /tmp/pr_grid_v2_exact_point_binding_receipt.json
 
-Verify denominator:
-
-wc -l /tmp/pr_grid_v2_exact_point_bindings.jsonl
-cat /tmp/pr_grid_v2_exact_point_binding_receipt.json
-shasum -a 256 /tmp/pr_grid_v2_exact_point_bindings.jsonl /tmp/pr_grid_v2_exact_point_binding_receipt.json
-
-Expected smoke semantics:
+Expected:
 Input_Record_Count = 3
 Binding_Row_Count = 3
 State_Counts.INTERIOR = 1
 State_Counts.EDGE_SHARED = 1
 State_Counts.OUTSIDE = 1
 
-The edge record emits two binding rows.
-The outside record emits zero binding rows but remains present in the receipt denominator.
+SOURCE-COORDINATE MIGRATION
+
+Input contract:
+Repository                  non-empty producer repository
+Record_ID                   non-empty producer record identity
+Source_X                    source CRS X / longitude when geographic
+Source_Y                    source CRS Y / latitude when geographic
+Source_CRS                  explicit EPSG:<code>
+Coordinate_Evidence_State   VERIFIED_SOURCE_COORDINATE
+Uncertainty_Class           EXACT
+Spatial_Role                optional, default POINT_LOCATION
+
+cat > /tmp/pr_grid_v2_source_points.jsonl <<'JSONL'
+{"Repository":"aguayluz-pr","Record_ID":"wgs84","Source_X":-66.0,"Source_Y":18.35,"Source_CRS":"EPSG:4326","Coordinate_Evidence_State":"VERIFIED_SOURCE_COORDINATE","Uncertainty_Class":"EXACT"}
+{"Repository":"aguayluz-pr","Record_ID":"edge","Source_X":247000.0000005,"Source_Y":255500,"Source_CRS":"EPSG:6566","Coordinate_Evidence_State":"VERIFIED_SOURCE_COORDINATE","Uncertainty_Class":"EXACT"}
+JSONL
+
+python scripts/materialize_pr_grid_v2_source_coordinate_bindings.py \
+  --input /tmp/pr_grid_v2_source_points.jsonl \
+  --level L1 \
+  --bindings-out /tmp/pr_grid_v2_source_bindings.jsonl \
+  --projection-out /tmp/pr_grid_v2_source_projection.jsonl \
+  --receipt-out /tmp/pr_grid_v2_source_receipt.json
+
+Verify:
+
+python - <<'PY'
+import hashlib, json
+from pathlib import Path
+bindings = Path("/tmp/pr_grid_v2_source_bindings.jsonl")
+projection = Path("/tmp/pr_grid_v2_source_projection.jsonl")
+receipt = json.loads(Path("/tmp/pr_grid_v2_source_receipt.json").read_text())
+assert receipt["Migration_Provenance_Class"] == "RECOMPUTED_FROM_SOURCE_COORDINATE"
+assert receipt["Coordinate_Evidence_State"] == "VERIFIED_SOURCE_COORDINATE"
+assert receipt["Grid_Manifest_SHA256"] == "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4"
+assert receipt["Binding_Schema_SHA256"] == "dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022"
+assert receipt["Input_Record_Count"] == 2
+assert receipt["Binding_Row_Count"] == 3
+assert receipt["Projection_Audit_Row_Count"] == 2
+assert receipt["State_Counts"] == {"EDGE_SHARED": 1, "INTERIOR": 1}
+assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
+assert receipt["Projection_Output_SHA256"] == hashlib.sha256(projection.read_bytes()).hexdigest()
+print("SOURCE_COORDINATE_MIGRATION=PASS")
+PY
+
+BOUNDARY NUMERICS
+
+Transformed coordinates within 0.000001 metre of an exact V2 grid boundary are
+snapped to that boundary before binding. The projection audit records whether X
+or Y was snapped. This prevents floating-point reprojection residue from silently
+turning an exact shared boundary into a false INTERIOR classification.
+
+The policy does not convert approximate coordinates into exact coordinates.
+Coordinate_Evidence_State=VERIFIED_SOURCE_COORDINATE and
+Uncertainty_Class=EXACT remain mandatory.
 
 GRID CONTRACT PINS
 
@@ -60,7 +114,7 @@ PR_GRID_GEOGRAPHIC_V2
 Grid_Version:
 2.0.0-rc1
 
-CRS:
+Target CRS:
 EPSG:6566
 
 Grid manifest SHA256:
@@ -71,40 +125,38 @@ dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022
 
 FAILURE HANDLING
 
-Wrong or missing CRS must fail.
+Missing or malformed Source_CRS must fail.
+Source_CRS must be an explicit EPSG:<code>.
+A non-EPSG free-form PROJ/WKT string must fail.
+Coordinate_Evidence_State other than VERIFIED_SOURCE_COORDINATE must fail.
 Uncertainty_Class other than EXACT must fail.
+Non-finite coordinates must fail.
+Unavailable or non-best CRS transformation must fail.
 Duplicate Repository/Record_ID identities must fail.
 EDGE_SHARED must not be collapsed to one Cell_ID.
 CORNER_SHARED must not be collapsed to one Cell_ID.
 OUTSIDE must not fabricate a Cell_ID.
-Do not add consumer-side coordinate-to-cell computation.
+Do not add consumer-side coordinate transformation or coordinate-to-cell computation.
 
 WINDOWS POWERSHELL
 
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py
+python -m pip install -r requirements-grid-v2.txt
+python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py
 
-Materialization on Windows uses the same Python CLI with Windows file paths.
+Materialization uses the same Python CLIs with Windows file paths.
 
+PROVENANCE RULE
 
-V2 RECEIPT HARDENING (THIS BUILD)
-The receipt now includes:
-Grid_Manifest_SHA256, Binding_Output_SHA256, Binding_Output_Bytes, Input_SHA256.
-Verify each digest against the exact bytes:
-python - <<'PY'
-import hashlib, json
-from pathlib import Path
-bindings = Path("/tmp/pr_grid_v2_exact_point_bindings.jsonl")
-receipt = json.loads(Path("/tmp/pr_grid_v2_exact_point_binding_receipt.json").read_text())
-assert receipt["Grid_Manifest_SHA256"] == "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4"
-assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
-assert receipt["Binding_Output_Bytes"] == bindings.stat().st_size
-assert receipt["Input_SHA256"] == hashlib.sha256(Path("/tmp/pr_grid_v2_exact_points.jsonl").read_bytes()).hexdigest()
-print("BOUND_BINDING_RECEIPT=PASS")
-PY
+A successful CRS transform and V2 binding proves only deterministic spatial
+resolution of the supplied source coordinate. It does not independently certify
+that the source coordinate describes the real-world record correctly. That
+evidentiary predicate is represented by VERIFIED_SOURCE_COORDINATE and must be
+established upstream from source evidence.
 
-Do not interpret a successful projected-point binding as source-position
-certification. Only exact, evidence-supported EPSG:6566 input may enter this
-migration. Non-exact and V1-only records remain outside this slice.
+Migration provenance for this slice:
+RECOMPUTED_FROM_SOURCE_COORDINATE
+
+Non-exact and V1-only records remain UNMIGRATED until a separate evidence-authorized vector.
