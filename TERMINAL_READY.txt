@@ -190,6 +190,11 @@ rows = [json.loads(s) for s in bindings.read_text().splitlines()]
 assert receipt["Input_Record_Count"] == 3
 assert receipt["Binding_Row_Count"] == len(rows) == 3
 assert receipt["State_Counts"] == {"BOUND": 2, "OUTSIDE": 1, "TOUCH_ONLY": 0}
+assert len(receipt["Record_Outcomes"]) == 3
+assert sum(r["Binding_Row_Count"] for r in receipt["Record_Outcomes"]) == len(rows)
+assert receipt["Record_Outcomes"][2]["Record_ID"] == "outside"
+assert receipt["Record_Outcomes"][2]["State"] == "OUTSIDE"
+assert receipt["Record_Outcomes"][2]["Binding_Row_Count"] == 0
 assert receipt["Unique_Clipped_Traversal_Length_m"] == 800.0
 assert receipt["Cell_Bound_Length_Sum_m"] == 1600.0
 assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
@@ -249,3 +254,11 @@ RELEASE STATE
 A PASS result from this snapshot gate is AUDIT_ONLY for external source truth.
 Production polygon and line records remain BLOCKED until an authoritative,
 independently verifiable source-to-coordinate lineage is certified.
+
+PER-RECORD OUTCOMES (THIS BUILD)
+The vNext receipt now preserves every input record in input order, including
+OUTSIDE and TOUCH_ONLY records that have no Cell_ID binding rows.
+The sum of per-record Binding_Row_Count must equal Binding_Row_Count.
+Input_Geometry_SHA256 is SHA-256 of canonical JSON serialization of each
+input geometry, NOT a claim of original source-file byte identity.
+Source_Snapshot_SHA256 is separately computed from frozen raw input bytes.
