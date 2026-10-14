@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from shapely.geometry import LineString, box, shape
+from shapely.ops import unary_union
 
 from spiderweb.geographic_grid_v2 import (
     CRS, EXTENT_X_MAX, EXTENT_X_MIN, EXTENT_Y_MAX, EXTENT_Y_MIN,
@@ -40,8 +41,9 @@ class GeometryBindingResult:
     source_geometry_type: str
     state: str
     bindings: tuple[dict[str, Any], ...]
-    unique_clipped_length_m: float = 0.0
+    clipped_traversal_length_m: float = 0.0
     clipped_area_m2: float = 0.0
+    distinct_spatial_support_length_m: float = 0.0
     input_geometry_sha256: str = ""
 
 
@@ -202,14 +204,18 @@ def _polygon_rows(repository, record_id, role, level, geom, digest):
 def _line_rows(repository, record_id, role, level, geom, digest):
     components = list(geom.geoms) if geom.geom_type == "MultiLineString" else [geom]
     candidate_rows = []
-    unique_length = 0.0
+    traversal_length = 0.0
+    clipped_segments = []
     for component_idx, component in enumerate(components):
         coords = list(component.coords)
         for segment_idx in range(len(coords) - 1):
             segment_geom = LineString([coords[segment_idx], coords[segment_idx + 1]])
             if segment_geom.length <= 0:
                 raise GridV2Error("zero-length line input segment")
-            unique_length += segment_geom.intersection(GRID_DOMAIN).length
+            domain_clip = segment_geom.intersection(GRID_DOMAIN)
+            traversal_length += domain_clip.length
+            if domain_clip.length > 0:
+                clipped_segments.append(domain_clip)
             for cell in _candidate_cells(segment_geom.bounds, level):
                 clip = segment_geom.intersection(box(*cell.bounds))
                 length = clip.length
@@ -234,11 +240,14 @@ def _line_rows(repository, record_id, role, level, geom, digest):
         in enumerate(candidate_rows)
     ]
     length_sum = sum(r["Length_In_Cell_m"] for r in rows)
-    if length_sum + max(1e-7, unique_length * 1e-9) < unique_length:
+    if length_sum + max(1e-7, traversal_length * 1e-9) < traversal_length:
         raise GridV2Error("line traversal conservation failure")
     if any(not math.isfinite(r["Length_In_Cell_m"]) for r in rows):
         raise GridV2Error("nonfinite line segment length")
-    return rows, unique_length
+    distinct_support = unary_union(clipped_segments).length if clipped_segments else 0.0
+    if distinct_support > traversal_length + max(1e-7, traversal_length * 1e-9):
+        raise GridV2Error("distinct spatial support exceeds traversed length")
+    return rows, traversal_length, distinct_support
 
 
 def bind_exact_geometry(row: Mapping[str, Any], *, level: str) -> GeometryBindingResult:
@@ -246,12 +255,12 @@ def bind_exact_geometry(row: Mapping[str, Any], *, level: str) -> GeometryBindin
     repository, record_id, role, kind, geom, digest = _parse_record(row)
     if kind == "POINT":
         rows = _point_rows(repository, record_id, role, level, geom, digest)
-        area, unique_length = 0.0, 0.0
+        area, traversal_length, distinct_support = 0.0, 0.0, 0.0
     elif kind == "POLYGON":
         rows, area = _polygon_rows(repository, record_id, role, level, geom, digest)
-        unique_length = 0.0
+        traversal_length, distinct_support = 0.0, 0.0
     else:
-        rows, unique_length = _line_rows(repository, record_id, role, level, geom, digest)
+        rows, traversal_length, distinct_support = _line_rows(repository, record_id, role, level, geom, digest)
         area = 0.0
     if rows:
         state = "BOUND"
@@ -260,7 +269,7 @@ def bind_exact_geometry(row: Mapping[str, Any], *, level: str) -> GeometryBindin
     else:
         state = "TOUCH_ONLY" if kind != "POINT" else "OUTSIDE"
     return GeometryBindingResult(repository, record_id, kind, state, tuple(rows),
-                                 unique_length, area, digest)
+                                 traversal_length, area, distinct_support, digest)
 
 
 def bind_exact_geometries(rows: Iterable[Mapping[str, Any]], *, level: str):
@@ -285,7 +294,8 @@ def binding_receipt_vnext(results: Iterable[GeometryBindingResult]):
     rows = [b for r in items for b in r.bindings]
     lengths = sum(float(b["Length_In_Cell_m"]) for b in rows
                   if b["Source_Geometry_Type"] == "LINE")
-    unique = sum(r.unique_clipped_length_m for r in items)
+    traversed = sum(r.clipped_traversal_length_m for r in items)
+    support = sum(r.distinct_spatial_support_length_m for r in items)
     if sum(states.values()) != len(items) or len(rows) != sum(len(r.bindings) for r in items):
         raise GridV2Error("record/binding count nonconservation")
     return {
@@ -307,8 +317,10 @@ def binding_receipt_vnext(results: Iterable[GeometryBindingResult]):
         ],
         "Binding_Row_Count": len(rows), "State_Counts": states,
         "Cell_Bound_Length_Sum_m": lengths,
-        "Unique_Clipped_Traversal_Length_m": unique,
-        "Grid_Edge_Length_Multiplicity_m": lengths - unique,
+        "Clipped_Traversal_Length_m": traversed,
+        "Distinct_Clipped_Spatial_Support_Length_m": support,
+        "Retraversed_Spatial_Length_m": traversed - support,
+        "Grid_Edge_Length_Multiplicity_m": lengths - traversed,
         "Polygon_Clipped_Area_Sum_m2": sum(r.clipped_area_m2 for r in items),
         "Consumer_Activation": "BLOCKED_UNTIL_CERTIFIED",
     }
