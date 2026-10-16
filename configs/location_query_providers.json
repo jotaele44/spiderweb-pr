@@ -28,7 +28,7 @@
     },
     "PRVI_1m_DEM_2018": {
       "family": "elevation",
-      "status": "PROVIDER_BINDING_OPEN",
+      "status": "RESOLVER_ONLY",
       "query_modes": [
         "point",
         "radius",
@@ -37,7 +37,17 @@
         "geojson"
       ],
       "acquisition": "tools/spatial_aoi_fetcher.py",
-      "reason": "catalog/source URL binding remains open; Cell_ID geography remains blocked pending certified grid georeference"
+      "reason": "Authoritative USGS/TNM locator and 128-KB header-footprint binding closed for 20 historical manifestations; overlapping D/E/G/H variants lack an authoritative canonical subset; full raster bytes are not acquired; legacy v1 Cell_ID remains denied.",
+      "dataset_id": "USGS_3DEP_1M_PR_PRVI_2018",
+      "manifestation_registry": "registry/spatial/source_manifestations.json",
+      "provider_binding_state": "PASS",
+      "certification_receipt": "registry/certification/location_query/PRVI_1m_DEM_2018_PROVIDER_BINDING_2026-10-16.json",
+      "binding_workflow_run_id": 38949544271,
+      "binding_artifact_sha256": "07654b029632314ecfb862e17009939f7e5bbac504c99a534e269676c5461002",
+      "manifestation_count": 20,
+      "canonical_source_subset_state": "UNRESOLVED_OVERLAPPING_HISTORICAL_VARIANTS",
+      "full_raster_bytes_acquired": false,
+      "legacy_v1_cell_id_binding": "DENY_PROVISIONAL_TRANSFORM"
     },
     "NCEI_COASTAL_DEM": {
       "family": "coastal_elevation",
