@@ -1,1 +1,2 @@
 pyproj>=3.7,<4
+shapely>=2.1,<3
