@@ -136,10 +136,26 @@ def _candidate_cells(geometry: BaseGeometry, *, level: str):
     ):
         return
 
-    min_col = max(0, math.floor((minx - EXTENT_X_MIN) / size))
-    max_col = min(spec.columns - 1, math.floor((maxx - EXTENT_X_MIN) / size))
-    min_row = max(0, math.floor((miny - EXTENT_Y_MIN) / size))
-    max_row = min(spec.rows - 1, math.floor((maxy - EXTENT_Y_MIN) / size))
+    q_min_col = (minx - EXTENT_X_MIN) / size
+    q_max_col = (maxx - EXTENT_X_MIN) / size
+    q_min_row = (miny - EXTENT_Y_MIN) / size
+    q_max_row = (maxy - EXTENT_Y_MIN) / size
+
+    raw_min_col = math.floor(q_min_col)
+    raw_min_row = math.floor(q_min_row)
+    # If the geometry begins exactly on an internal boundary, include the cell
+    # on the lower side as a candidate. Positive-measure filtering below will
+    # discard polygon touch-only contacts while retaining boundary-coincident
+    # line segments in both scientifically shared cells.
+    if raw_min_col > 0 and math.isclose(q_min_col, round(q_min_col), abs_tol=1e-12):
+        raw_min_col -= 1
+    if raw_min_row > 0 and math.isclose(q_min_row, round(q_min_row), abs_tol=1e-12):
+        raw_min_row -= 1
+
+    min_col = max(0, raw_min_col)
+    max_col = min(spec.columns - 1, math.floor(q_max_col))
+    min_row = max(0, raw_min_row)
+    max_row = min(spec.rows - 1, math.floor(q_max_row))
 
     # A geometry whose maximum lies exactly on the outer grid edge can floor to
     # columns/rows == dimension; clamp above keeps the candidate denominator valid.
