@@ -7,6 +7,8 @@ BUILD SCOPE
 Spiderweb-authoritative PR_GRID_GEOGRAPHIC_V2 record binding for:
 1. exact points already in EPSG:6566
 2. exact evidence-backed source coordinates declared with an explicit EPSG code
+3. exact EPSG:6566 Polygon/MultiPolygon geometries using positive-area intersection
+4. exact EPSG:6566 LineString/MultiLineString geometries using positive-length intersection
 
 Consumers must not transform coordinates or recompute V2 membership.
 V1 remains unchanged. Approximate, inferred, administrative-only, and V1-only
@@ -23,7 +25,7 @@ python -m pip install -r requirements-grid-v2.txt
 
 Run focused certification:
 
-python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py
+python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py
 
 Run full repository tests:
 
@@ -160,3 +162,71 @@ Migration provenance for this slice:
 RECOMPUTED_FROM_SOURCE_COORDINATE
 
 Non-exact and V1-only records remain UNMIGRATED until a separate evidence-authorized vector.
+
+
+EXACT SOURCE-GEOMETRY MIGRATION
+
+Input contract:
+Repository          non-empty producer repository
+Record_ID           non-empty producer record identity
+CRS                 EPSG:6566 only
+Uncertainty_Class   EXACT
+Spatial_Role        non-empty semantic role
+Geometry            GeoJSON Polygon|MultiPolygon|LineString|MultiLineString
+
+cat > /tmp/pr_grid_v2_geometries.jsonl <<'JSONL'
+{"Repository":"aguayluz-pr","Record_ID":"poly","CRS":"EPSG:6566","Spatial_Role":"FACILITY_FOOTPRINT","Uncertainty_Class":"EXACT","Geometry":{"type":"Polygon","coordinates":[[[246500,255250],[247500,255250],[247500,255750],[246500,255750],[246500,255250]]]}}
+{"Repository":"skywatcher-pr","Record_ID":"line","CRS":"EPSG:6566","Spatial_Role":"TRACK_SEGMENT","Uncertainty_Class":"EXACT","Geometry":{"type":"LineString","coordinates":[[246100,255500],[247900,255500]]}}
+JSONL
+
+python scripts/materialize_pr_grid_v2_geometry_bindings.py \
+  --input /tmp/pr_grid_v2_geometries.jsonl \
+  --level L1 \
+  --bindings-out /tmp/pr_grid_v2_geometry_bindings.jsonl \
+  --receipt-out /tmp/pr_grid_v2_geometry_receipt.json
+
+Verify:
+
+python - <<'PY'
+import hashlib, json
+from pathlib import Path
+bindings = Path("/tmp/pr_grid_v2_geometry_bindings.jsonl")
+rows = [json.loads(x) for x in bindings.read_text().splitlines() if x]
+receipt = json.loads(Path("/tmp/pr_grid_v2_geometry_receipt.json").read_text())
+assert receipt["Migration_Provenance_Class"] == "RECOMPUTED_FROM_SOURCE_GEOMETRY"
+assert receipt["Grid_Manifest_SHA256"] == "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4"
+assert receipt["Input_Record_Count"] == 2
+assert receipt["Binding_Row_Count"] == 4
+assert receipt["Binding_Method_Counts"] == {
+    "INTERSECTS_POSITIVE_AREA": 2,
+    "LINE_POSITIVE_LENGTH": 2,
+}
+assert sum(r["Overlap_Area_m2"] or 0 for r in rows) == 500000.0
+assert sum(r["Length_In_Cell_m"] or 0 for r in rows) == 1800.0
+assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
+assert receipt["Receipt_State"] == "PASS"
+print("SOURCE_GEOMETRY_MIGRATION=PASS")
+PY
+
+GEOMETRY SEMANTICS
+
+Polygon touch-only contact does not produce a binding row.
+Polygon bindings require strictly positive overlap area.
+Line bindings require strictly positive in-cell length.
+A line exactly coincident with an internal grid boundary preserves both shared
+cells; it is not silently assigned to one side.
+The frozen binding schema is unchanged. Binding_Method and Geometry_State carry
+the non-point predicate semantics; canonical geometry remains Spiderweb-owned.
+
+SOURCE-GEOMETRY FAILURE HANDLING
+
+Wrong or missing CRS must fail.
+Uncertainty_Class other than EXACT must fail.
+Invalid or empty geometry must fail.
+Point geometry must use the point/source-coordinate migration lane, not this lane.
+Duplicate Repository/Record_ID identities must fail.
+Touch-only polygon intersections must not be promoted to positive-area bindings.
+Zero-length line contacts must not be promoted to line bindings.
+
+Migration provenance for this slice:
+RECOMPUTED_FROM_SOURCE_GEOMETRY
