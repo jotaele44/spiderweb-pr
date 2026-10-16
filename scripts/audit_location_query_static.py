@@ -71,6 +71,7 @@ SSURGO_CHILDREN = ROOT / "configs/ssurgo_component_children.json"
 SSURGO_COMPAT = ROOT / "scripts/location_query_ssurgo.py"
 
 EXPECTED_BOUND = {
+    "PRVI_1m_DEM_2018",
     "SSURGO_SOILS",
     "USGS_3DHP_NHD",
     "USFWS_NWI",
@@ -117,6 +118,23 @@ def main() -> int:
         raise SystemExit(f"FAIL: missing source bindings {sorted(EXPECTED_BOUND-set(bound))}")
     if not EXPECTED_BOUND <= set(providers):
         raise SystemExit(f"FAIL: bound sources absent from provider registry {sorted(EXPECTED_BOUND-set(providers))}")
+
+    if providers["PRVI_1m_DEM_2018"]["status"] != "RESOLVER_ONLY":
+        raise SystemExit("FAIL: PRVI must remain RESOLVER_ONLY while canonical historical variant selection and full bytes remain open")
+    prvi = providers["PRVI_1m_DEM_2018"]
+    if prvi.get("provider_binding_state") != "PASS":
+        raise SystemExit("FAIL: PRVI provider binding state drift")
+    if prvi.get("canonical_source_subset_state") != "UNRESOLVED_OVERLAPPING_HISTORICAL_VARIANTS":
+        raise SystemExit("FAIL: PRVI canonical variant residue drift")
+    if prvi.get("full_raster_bytes_acquired") is not False:
+        raise SystemExit("FAIL: PRVI full-raster acquisition state drift")
+    if prvi.get("legacy_v1_cell_id_binding") != "DENY_PROVISIONAL_TRANSFORM":
+        raise SystemExit("FAIL: PRVI legacy Cell_ID gate drift")
+    prvi_binding = bound["PRVI_1m_DEM_2018"]
+    if prvi_binding.get("status") != "BOUND_PROVIDER_MANIFESTATION_SET_PASS_CANONICAL_VARIANT_OPEN":
+        raise SystemExit("FAIL: PRVI source binding status drift")
+    if prvi_binding.get("manifestation_count") != 20 or prvi_binding.get("header_pass_count") != 20:
+        raise SystemExit("FAIL: PRVI 20-manifestation header binding denominator drift")
 
     if providers["SSURGO_SOILS"]["status"] != "RESOLVER_ONLY":
         raise SystemExit("FAIL: SSURGO must remain RESOLVER_ONLY until tabular chain closes")
