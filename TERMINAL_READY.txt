@@ -9,6 +9,8 @@ Spiderweb-authoritative PR_GRID_GEOGRAPHIC_V2 record binding for:
 2. exact evidence-backed source coordinates declared with an explicit EPSG code
 3. exact EPSG:6566 Polygon/MultiPolygon geometries using positive-area intersection
 4. exact EPSG:6566 LineString/MultiLineString geometries using positive-length intersection
+5. evidence-gated administrative Polygon/MultiPolygon sets
+6. evidence-gated derived Polygon/MultiPolygon sets
 
 Consumers must not transform coordinates or recompute V2 membership.
 V1 remains unchanged. Approximate, inferred, administrative-only, and V1-only
@@ -25,7 +27,7 @@ python -m pip install -r requirements-grid-v2.txt
 
 Run focused certification:
 
-python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py
+python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py
 
 Run full repository tests:
 
@@ -146,7 +148,7 @@ py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-grid-v2.txt
-python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py
+python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py
 
 Materialization uses the same Python CLIs with Windows file paths.
 
@@ -230,3 +232,66 @@ Zero-length line contacts must not be promoted to line bindings.
 
 Migration provenance for this slice:
 RECOMPUTED_FROM_SOURCE_GEOMETRY
+
+
+ADMINISTRATIVE / DERIVED SET MIGRATION
+
+These rows represent bounded cell sets, not exact record locations.
+
+Required administrative pair:
+Binding_Method=ADMINISTRATIVE_SET
+Uncertainty_Class=ADMINISTRATIVE_ONLY
+Geometry_Evidence_State=VERIFIED_ADMINISTRATIVE_GEOMETRY
+
+Required derived pair:
+Binding_Method=DERIVED_SET
+Uncertainty_Class=DERIVED
+Geometry_Evidence_State=VERIFIED_DERIVED_GEOMETRY
+
+Input geometry must be Polygon or MultiPolygon in EPSG:6566.
+
+cat > /tmp/pr_grid_v2_sets.jsonl <<'JSONL'
+{"Repository":"ovnis-pr","Record_ID":"admin","CRS":"EPSG:6566","Spatial_Role":"REPORTED_MUNICIPALITY_EXTENT","Binding_Method":"ADMINISTRATIVE_SET","Uncertainty_Class":"ADMINISTRATIVE_ONLY","Geometry_Evidence_State":"VERIFIED_ADMINISTRATIVE_GEOMETRY","Geometry":{"type":"Polygon","coordinates":[[[246500,255250],[247500,255250],[247500,255750],[246500,255750],[246500,255250]]]}}
+{"Repository":"moneysweep-pr","Record_ID":"derived","CRS":"EPSG:6566","Spatial_Role":"DERIVED_ANALYSIS_EXTENT","Binding_Method":"DERIVED_SET","Uncertainty_Class":"DERIVED","Geometry_Evidence_State":"VERIFIED_DERIVED_GEOMETRY","Geometry":{"type":"Polygon","coordinates":[[[246500,255250],[247500,255250],[247500,255750],[246500,255750],[246500,255250]]]}}
+JSONL
+
+python scripts/materialize_pr_grid_v2_set_bindings.py \
+  --input /tmp/pr_grid_v2_sets.jsonl \
+  --level L1 \
+  --bindings-out /tmp/pr_grid_v2_set_bindings.jsonl \
+  --receipt-out /tmp/pr_grid_v2_set_receipt.json
+
+Verify:
+
+python - <<'PY'
+import hashlib, json
+from pathlib import Path
+bindings = Path("/tmp/pr_grid_v2_set_bindings.jsonl")
+rows = [json.loads(x) for x in bindings.read_text().splitlines() if x]
+receipt = json.loads(Path("/tmp/pr_grid_v2_set_receipt.json").read_text())
+assert receipt["Input_Record_Count"] == 2
+assert receipt["Binding_Row_Count"] == 4
+assert receipt["Exact_Cell_Claim_Permitted"] is False
+assert receipt["Binding_Method_Record_Counts"] == {
+    "ADMINISTRATIVE_SET": 1,
+    "DERIVED_SET": 1,
+}
+assert {r["Uncertainty_Class"] for r in rows} == {
+    "ADMINISTRATIVE_ONLY",
+    "DERIVED",
+}
+assert all(r["Confidence"] is None for r in rows)
+assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
+assert receipt["Receipt_State"] == "PASS"
+print("SET_BINDING_MIGRATION=PASS")
+PY
+
+SET-BINDING FAILURE HANDLING
+
+Binding_Method / Uncertainty_Class / Geometry_Evidence_State combinations are exact.
+A mismatched combination fails closed.
+Line and point geometry are rejected from this set lane.
+Touch-only polygon contact does not create membership.
+Confidence remains null because administrative/derived set membership is not an
+exact positional-confidence claim.
+Exact_Cell_Claim_Permitted remains false in the receipt.
