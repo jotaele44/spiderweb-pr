@@ -1,0 +1,223 @@
+{
+  "schema_version": "spiderweb.prvi_provider_binding.v1",
+  "issued_utc": "2026-10-16",
+  "source_head": "6c8f604b0754818d8a2929f2da48ccd9a6340f3b",
+  "workflow_run_id": 38949544271,
+  "artifact_id": 12067588895,
+  "artifact_sha256": "07654b029632314ecfb862e17009939f7e5bbac504c99a534e269676c5461002",
+  "input_registry_sha256": "6d374c3ec84030e5c1674086f5d95235d28918b3a90985b3bddc89a979774179",
+  "bound_registry_sha256": "47584c0d0e898287a11c70c82acc5105f86d61845c4d2d0f87403fb0f3325fa5",
+  "dataset_id": "USGS_3DEP_1M_PR_PRVI_2018",
+  "authority": "U.S. Geological Survey / The National Map",
+  "source_family": "USGS_3DEP",
+  "manifestation_count": 20,
+  "unique_manifestation_count": 20,
+  "unique_locator_count": 20,
+  "header_pass_count": 20,
+  "header_failure_count": 0,
+  "header_range_bytes_per_manifestation": 131072,
+  "header_http_status": "206_FOR_ALL_20",
+  "provider_crs_counts": {
+    "EPSG:26919": 10,
+    "EPSG:26920": 10
+  },
+  "provider_binding_state": "PASS",
+  "acquisition_state": "RESOLVER_ONLY",
+  "canonical_source_subset_state": "UNRESOLVED_OVERLAPPING_HISTORICAL_VARIANTS",
+  "full_raster_bytes_acquired": false,
+  "legacy_v1_cell_id_binding": "DENY_PROVISIONAL_TRANSFORM",
+  "grid_v2_identity": "SEPARATE_CERTIFIED_GRID_NOT_IMPLICIT_SOURCE_BINDING",
+  "credential_policy": "NO_PROVIDER_CREDENTIALS_SUPPLIED",
+  "detailed_header_footprints_location": "workflow artifact 12067588895",
+  "detailed_header_footprints_artifact_sha256": "07654b029632314ecfb862e17009939f7e5bbac504c99a534e269676c5461002",
+  "invariants": {
+    "filename_or_name_is_not_identity": true,
+    "overlapping_footprints_do_not_choose_canonical_variant": true,
+    "header_range_binding_is_not_full_raster_acquisition": true,
+    "provider_binding_does_not_promote_legacy_cell_id": true,
+    "grid_v2_does_not_select_source_variant": true
+  },
+  "manifestations": [
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x17y203_PR_PRVI_D_2018",
+      "Provider_Object_ID": "USGS_1m_x17y203_PR_PRVI_D_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x17y203_PR_PRVI_D_2018.tif",
+      "Expected_Bytes": 306257039,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb228a082cefae35a29c4a9",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x17y203_PR_PRVI_H_2018",
+      "Provider_Object_ID": "USGS_1m_x17y203_PR_PRVI_H_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x17y203_PR_PRVI_H_2018.tif",
+      "Expected_Bytes": 101011996,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb379f682ce25b5135878e6",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x17y204_PR_PRVI_D_2018",
+      "Provider_Object_ID": "USGS_1m_x17y204_PR_PRVI_D_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x17y204_PR_PRVI_D_2018.tif",
+      "Expected_Bytes": 63935167,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb228a082cefae35a29c4ab",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x17y204_PR_PRVI_E_2018",
+      "Provider_Object_ID": "USGS_1m_x17y204_PR_PRVI_E_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x17y204_PR_PRVI_E_2018.tif",
+      "Expected_Bytes": 114081937,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5fb49d2dd34eb413d5e1350c",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x17y204_PR_PRVI_G_2018",
+      "Provider_Object_ID": "USGS_1m_x17y204_PR_PRVI_G_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_G_2018/TIFF/USGS_1m_x17y204_PR_PRVI_G_2018.tif",
+      "Expected_Bytes": 246389931,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb228a082cefae35a29c4ad",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x18y203_PR_PRVI_D_2018",
+      "Provider_Object_ID": "USGS_1m_x18y203_PR_PRVI_D_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x18y203_PR_PRVI_D_2018.tif",
+      "Expected_Bytes": 309990020,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb228a182cefae35a29c4af",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x18y203_PR_PRVI_H_2018",
+      "Provider_Object_ID": "USGS_1m_x18y203_PR_PRVI_H_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x18y203_PR_PRVI_H_2018.tif",
+      "Expected_Bytes": 86788540,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb379f882ce25b5135878f4",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x18y204_PR_PRVI_D_2018",
+      "Provider_Object_ID": "USGS_1m_x18y204_PR_PRVI_D_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x18y204_PR_PRVI_D_2018.tif",
+      "Expected_Bytes": 57530434,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb228a182cefae35a29c4b1",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x18y204_PR_PRVI_E_2018",
+      "Provider_Object_ID": "USGS_1m_x18y204_PR_PRVI_E_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x18y204_PR_PRVI_E_2018.tif",
+      "Expected_Bytes": 120407718,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5fb49d2ad34eb413d5e13504",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x18y204_PR_PRVI_G_2018",
+      "Provider_Object_ID": "USGS_1m_x18y204_PR_PRVI_G_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_G_2018/TIFF/USGS_1m_x18y204_PR_PRVI_G_2018.tif",
+      "Expected_Bytes": 254528193,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb228a182cefae35a29c4b3",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x81y203_PR_PRVI_D_2018",
+      "Provider_Object_ID": "USGS_1m_x81y203_PR_PRVI_D_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x81y203_PR_PRVI_D_2018.tif",
+      "Expected_Bytes": 309924822,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb2297182cefae35a29c5a3",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x81y203_PR_PRVI_H_2018",
+      "Provider_Object_ID": "USGS_1m_x81y203_PR_PRVI_H_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x81y203_PR_PRVI_H_2018.tif",
+      "Expected_Bytes": 92208503,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb37aa682ce25b513587968",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x81y204_PR_PRVI_D_2018",
+      "Provider_Object_ID": "USGS_1m_x81y204_PR_PRVI_D_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x81y204_PR_PRVI_D_2018.tif",
+      "Expected_Bytes": 57259776,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb2297282cefae35a29c5a5",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x81y204_PR_PRVI_E_2018",
+      "Provider_Object_ID": "USGS_1m_x81y204_PR_PRVI_E_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x81y204_PR_PRVI_E_2018.tif",
+      "Expected_Bytes": 114299552,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5fb49d28d34eb413d5e134fe",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x81y204_PR_PRVI_G_2018",
+      "Provider_Object_ID": "USGS_1m_x81y204_PR_PRVI_G_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_G_2018/TIFF/USGS_1m_x81y204_PR_PRVI_G_2018.tif",
+      "Expected_Bytes": 248742868,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb2297282cefae35a29c5a7",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x82y203_PR_PRVI_D_2018",
+      "Provider_Object_ID": "USGS_1m_x82y203_PR_PRVI_D_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x82y203_PR_PRVI_D_2018.tif",
+      "Expected_Bytes": 303248521,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb2297282cefae35a29c5a9",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x82y203_PR_PRVI_H_2018",
+      "Provider_Object_ID": "USGS_1m_x82y203_PR_PRVI_H_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x82y203_PR_PRVI_H_2018.tif",
+      "Expected_Bytes": 81555922,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb37aa882ce25b513587976",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x82y204_PR_PRVI_D_2018",
+      "Provider_Object_ID": "USGS_1m_x82y204_PR_PRVI_D_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x82y204_PR_PRVI_D_2018.tif",
+      "Expected_Bytes": 63165214,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb2297282cefae35a29c5ab",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x82y204_PR_PRVI_E_2018",
+      "Provider_Object_ID": "USGS_1m_x82y204_PR_PRVI_E_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x82y204_PR_PRVI_E_2018.tif",
+      "Expected_Bytes": 130403348,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5fb49d2ad34eb413d5e13506",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    },
+    {
+      "Manifestation_ID": "USGS3DEP:USGS_1m_x82y204_PR_PRVI_G_2018",
+      "Provider_Object_ID": "USGS_1m_x82y204_PR_PRVI_G_2018",
+      "Fetch_Locator": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_G_2018/TIFF/USGS_1m_x82y204_PR_PRVI_G_2018.tif",
+      "Expected_Bytes": 261047198,
+      "Metadata_URI": "https://www.sciencebase.gov/catalog/item/5eb2297382cefae35a29c5ad",
+      "Dataset_Version": "2018",
+      "Manifestation_Class": "HISTORICAL"
+    }
+  ],
+  "state": "PASS_WITH_CANONICAL_VARIANT_AND_FULL_BYTES_OPEN"
+}
