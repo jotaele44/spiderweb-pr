@@ -30,7 +30,7 @@ python scripts/export_usgs_native.py --input-manifest tests/fixtures/usgs_native
 For the real Hub staging input use its `data/usgs/producer_inputs/spiderweb-native.v1.json`
 as `--input-manifest` and its repository root as `--source-root`. The produced
 package includes `TERMINAL_READY.txt`. Validate with the Hub's canonical package
-validator and `scripts/validate_usgs_exports.py` from its USGS branch. Schema PASS
+validator and the independent USGS export validator on its companion PR branch. Schema PASS
 is explicitly separate from scientific or production readiness.
 
 Regression gates include duplicate IDs and primary keys, missing/foreign source
