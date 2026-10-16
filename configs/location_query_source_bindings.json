@@ -85,6 +85,30 @@
       "status": "BOUND_SERVICE_ROOT_DENOMINATOR_PASS_LAYER_OPEN",
       "note": "USACE service root froze PASS on 2026-09-20 with 206 services and zero folders; per-service metadata and layer denominators remain open.",
       "certification_receipt": "registry/certification/location_query/USACE_GENERAL_ROOT_SERVICES_2026-09-20.json"
+    },
+    "PRVI_1m_DEM_2018": {
+      "authority": "U.S. Geological Survey / The National Map",
+      "source_family": "USGS_3DEP",
+      "dataset_id": "USGS_3DEP_1M_PR_PRVI_2018",
+      "manifestation_registry": "registry/spatial/source_manifestations.json",
+      "status": "BOUND_PROVIDER_MANIFESTATION_SET_PASS_CANONICAL_VARIANT_OPEN",
+      "verification_date_utc": "2026-10-16",
+      "certification_receipt": "registry/certification/location_query/PRVI_1m_DEM_2018_PROVIDER_BINDING_2026-10-16.json",
+      "workflow_run_id": 38949544271,
+      "artifact_id": 12067588895,
+      "artifact_sha256": "07654b029632314ecfb862e17009939f7e5bbac504c99a534e269676c5461002",
+      "manifestation_count": 20,
+      "provider_crs_counts": {
+        "EPSG:26919": 10,
+        "EPSG:26920": 10
+      },
+      "header_pass_count": 20,
+      "header_failure_count": 0,
+      "canonical_source_subset_state": "UNRESOLVED_OVERLAPPING_HISTORICAL_VARIANTS",
+      "full_raster_bytes_acquired": false,
+      "legacy_v1_cell_id_binding": "DENY_PROVISIONAL_TRANSFORM",
+      "grid_v2_identity": "SEPARATE_CERTIFIED_GRID_NOT_IMPLICIT_SOURCE_BINDING",
+      "note": "Provider locator/footprint binding is closed. No repository VRT exists and overlapping historical variants are not adjudicated into a canonical subset. Binding does not authorize legacy Cell_ID claims or full-byte acquisition."
     }
   },
   "invariants": {
