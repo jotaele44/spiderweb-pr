@@ -1,0 +1,194 @@
+name: Spiderweb PRVI provider binding — header footprints
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [recovery/floot-baseline-2026-09-30]
+    paths:
+      - ".github/workflows/recovery-spiderweb-prvi-binding.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  prvi-provider-binding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact current Spiderweb source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded binding dependencies
+        run: python -m pip install --disable-pip-version-check requests
+
+      - name: Freeze exact PRVI header footprints
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/prvi-binding/headers
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import time
+          from pathlib import Path
+          import requests
+          from tools import source_manifestation_seed as seed
+
+          registry_path=Path("registry/spatial/source_manifestations.json")
+          payload=json.loads(registry_path.read_text())
+          rows=[row for row in payload["manifestations"]
+                if row.get("Dataset_ID")=="USGS_3DEP_1M_PR_PRVI_2018"]
+          if len(rows)!=20:
+              raise SystemExit(f"expected 20 PRVI manifestations, got {len(rows)}")
+          if len({row["Manifestation_ID"] for row in rows})!=20:
+              raise SystemExit("duplicate PRVI manifestation IDs")
+          if len({row["Fetch_Locator"] for row in rows})!=20:
+              raise SystemExit("duplicate PRVI fetch locators")
+
+          evidence=[]
+          failures=[]
+          session=requests.Session()
+          headers={"Range":f"bytes=0-{seed.HEADER_BYTES-1}","User-Agent":seed.USER_AGENT}
+
+          def get_header(url):
+              last=None
+              for attempt in range(1,5):
+                  try:
+                      response=session.get(url,headers=headers,timeout=120)
+                      last=response
+                      if response.status_code in (200,206):
+                          return response, attempt
+                      if response.status_code < 500:
+                          return response, attempt
+                  except requests.RequestException as exc:
+                      last=exc
+                  time.sleep(2*attempt)
+              if isinstance(last, Exception):
+                  raise last
+              return last, 4
+
+          for row in rows:
+              url=row["Fetch_Locator"]
+              try:
+                  response,attempt=get_header(url)
+                  if response.status_code not in (200,206):
+                      raise RuntimeError(f"HTTP {response.status_code}")
+                  raw=response.content
+                  tags, order=seed._read_tags(raw)
+                  width=(seed._values(tags,order,seed.TAG_IMAGE_WIDTH) or [None])[0]
+                  height=(seed._values(tags,order,seed.TAG_IMAGE_LENGTH) or [None])[0]
+                  scale=seed._values(tags,order,seed.TAG_MODEL_PIXEL_SCALE)
+                  tiepoint=seed._values(tags,order,seed.TAG_MODEL_TIEPOINT)
+                  geo_keys=seed._values(tags,order,seed.TAG_GEO_KEY_DIRECTORY)
+                  if not all((width,height,scale,tiepoint,geo_keys)):
+                      raise RuntimeError("missing georeferencing tags")
+                  epsg=None
+                  for index in range(4,len(geo_keys),4):
+                      if geo_keys[index]==seed.GEO_KEY_PROJECTED_CRS:
+                          epsg=int(geo_keys[index+3]); break
+                  if epsg is None:
+                      raise RuntimeError("missing projected CRS geokey")
+                  ox,oy=float(tiepoint[3]),float(tiepoint[4])
+                  rx,ry=float(scale[0]),float(scale[1])
+                  bbox=[ox,oy-int(height)*ry,ox+int(width)*rx,oy]
+
+                  row["Provider_CRS"]=f"EPSG:{epsg}"
+                  row["Footprint_BBox_Native"]=bbox
+                  row["Footprint_Width_Px"]=int(width)
+                  row["Footprint_Height_Px"]=int(height)
+                  row["Footprint_Resolution_M"]=[rx,ry]
+                  row["Footprint_Source"]="PROVIDER_HEADER_RANGE_READ_RECOVERY"
+                  row["Header_SHA256"]=hashlib.sha256(raw).hexdigest()
+                  row["Header_Bytes_Observed"]=len(raw)
+
+                  safe=row["Provider_Object_ID"].replace("/","_")
+                  Path(f"/tmp/prvi-binding/headers/{safe}.header.bin").write_bytes(raw)
+                  evidence.append({
+                      "Manifestation_ID":row["Manifestation_ID"],
+                      "Provider_Object_ID":row["Provider_Object_ID"],
+                      "Fetch_Locator":url,
+                      "Expected_Bytes":row.get("Expected_Bytes"),
+                      "Provider_CRS":row["Provider_CRS"],
+                      "Footprint_BBox_Native":bbox,
+                      "Footprint_Width_Px":int(width),
+                      "Footprint_Height_Px":int(height),
+                      "Footprint_Resolution_M":[rx,ry],
+                      "header_http_status":response.status_code,
+                      "header_attempt":attempt,
+                      "header_bytes":len(raw),
+                      "header_sha256":hashlib.sha256(raw).hexdigest(),
+                      "state":"PASS",
+                  })
+              except Exception as exc:
+                  failures.append({
+                      "Manifestation_ID":row.get("Manifestation_ID"),
+                      "Fetch_Locator":url,
+                      "error":f"{type(exc).__name__}: {exc}",
+                      "state":"FAIL",
+                  })
+
+          registry_bytes=(json.dumps(payload,indent=2,sort_keys=True)+"\n").encode()
+          Path("/tmp/prvi-binding/source_manifestations.bound.json").write_bytes(registry_bytes)
+          adjudication={
+              "schema_version":"spiderweb.prvi_provider_binding.recovery.v1",
+              "source_head":os.environ["GITHUB_SHA"],
+              "input_registry_sha256":hashlib.sha256(registry_path.read_bytes()).hexdigest(),
+              "output_registry_sha256":hashlib.sha256(registry_bytes).hexdigest(),
+              "dataset_id":"USGS_3DEP_1M_PR_PRVI_2018",
+              "manifestation_count":len(rows),
+              "unique_manifestation_count":len({r["Manifestation_ID"] for r in rows}),
+              "unique_locator_count":len({r["Fetch_Locator"] for r in rows}),
+              "header_pass_count":len(evidence),
+              "header_failure_count":len(failures),
+              "provider_crs_values":sorted({r["Provider_CRS"] for r in rows if r.get("Provider_CRS")}),
+              "legacy_v1_cell_id_binding":"DENY_PROVISIONAL_TRANSFORM",
+              "grid_v2_identity":"SEPARATE_CERTIFIED_GRID_NOT_IMPLICIT_SOURCE_BINDING",
+              "full_raster_bytes_acquired":False,
+              "credential_policy":"NO_PROVIDER_CREDENTIALS_SUPPLIED",
+              "records":evidence,
+              "failures":failures,
+              "state":"PASS" if len(evidence)==20 and not failures else "BLOCKED",
+          }
+          Path("/tmp/prvi-binding/PRVI_PROVIDER_BINDING_ADJUDICATION.json").write_text(
+              json.dumps(adjudication,indent=2,sort_keys=True)+"\n"
+          )
+          print(json.dumps({
+              k:adjudication[k] for k in [
+                  "state","manifestation_count","header_pass_count","header_failure_count",
+                  "provider_crs_values","legacy_v1_cell_id_binding","full_raster_bytes_acquired"
+              ]
+          },indent=2,sort_keys=True))
+          if adjudication["state"]!="PASS":
+              raise SystemExit(1)
+          PY
+          find /tmp/prvi-binding -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/prvi-binding/ARTIFACT_SHA256SUMS.txt
+
+      - name: Upload PRVI provider binding evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiderweb-prvi-provider-binding
+          if-no-files-found: error
+          path: /tmp/prvi-binding
+
+      - name: Enforce provider binding
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("/tmp/prvi-binding/PRVI_PROVIDER_BINDING_ADJUDICATION.json").read_text())
+          assert d["state"]=="PASS"
+          assert d["manifestation_count"]==20
+          assert d["header_pass_count"]==20
+          assert d["header_failure_count"]==0
+          assert d["legacy_v1_cell_id_binding"]=="DENY_PROVISIONAL_TRANSFORM"
+          assert d["full_raster_bytes_acquired"] is False
+          print("PRVI_PROVIDER_BINDING=PASS")
+          PY
