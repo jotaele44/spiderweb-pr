@@ -295,3 +295,15 @@ Touch-only polygon contact does not create membership.
 Confidence remains null because administrative/derived set membership is not an
 exact positional-confidence claim.
 Exact_Cell_Claim_Permitted remains false in the receipt.
+
+USGS NATIVE DOCUMENTARY EXPORT — TEST MODE ONLY
+Run from Spiderweb repository root after normal dependency installation:
+python -m pytest -q tests/test_usgs_native_reference.py tests/test_federation_export.py
+python scripts/export_usgs_native.py --input-manifest tests/fixtures/usgs_native/input.json --source-root . --out /absolute/path/new-empty-package
+Windows: use py -3 in place of python, with an absolute Windows output path.
+From thehub-pr root: python -m hub validate-package /absolute/path/new-empty-package
+Expected: 3 sources, 92 source-snapshot observations, zero canonical locations.
+Do not aggregate this diagnostic package into production. Native CRS/features
+are retained, no geological-event time or PR coverage is certified. Production
+mode fails before writing; unresolved semantic/consumer gates block activation.
+See docs/USGS_NATIVE_REFERENCE_EXPORT.md and package usgs_export_audit.json.
