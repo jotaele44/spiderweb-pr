@@ -4,6 +4,10 @@ on:
     paths:
       - 'federation/usgs_native_reference.py'
       - 'scripts/export_usgs_native.py'
+      - 'federation/usgs_source_review.py'
+      - 'scripts/review_usgs_sources.py'
+      - 'tests/test_usgs_source_review.py'
+      - 'tests/fixtures/usgs_source_review/**'
       - 'scripts/federation_export.py'
       - 'tests/test_usgs_native_reference.py'
       - 'tests/fixtures/usgs_native/**'
@@ -19,9 +23,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install existing export helper and test dependencies
-        run: pip install pytest jsonschema 'prii-export-utils @ git+https://github.com/jotaele44/thehub-pr.git@f2b81769924689b4d959554928810b1d7b7ef3d6#subdirectory=packages/prii_export_utils'
+        run: pip install pytest jsonschema 'shapely>=2.1,<3' 'prii-export-utils @ git+https://github.com/jotaele44/thehub-pr.git@f2b81769924689b4d959554928810b1d7b7ef3d6#subdirectory=packages/prii_export_utils'
       - name: Frozen native-source regression tests
-        run: pytest -q tests/test_usgs_native_reference.py tests/test_federation_export.py
+        run: pytest -q tests/test_usgs_native_reference.py tests/test_federation_export.py tests/test_usgs_source_review.py
       - name: Emit isolated documentary test package
         run: python scripts/export_usgs_native.py --input-manifest tests/fixtures/usgs_native/input.json --source-root . --out "$RUNNER_TEMP/usgs-native"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -43,6 +47,13 @@ jobs:
           assert (package / 'TERMINAL_READY.txt').is_file()
           print('PASS: test-mode schema/integrity only; production and activation BLOCKED')
           PY
+      - name: Require scientific source-review refusal
+        run: |
+          set +e
+          python scripts/review_usgs_sources.py --input tests/fixtures/usgs_source_review/input.json --source-root . --out "$RUNNER_TEMP/usgs-native/source_review.json"
+          status=$?
+          set -e
+          test "$status" -eq 2
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: usgs-native-reference-test-package

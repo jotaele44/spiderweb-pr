@@ -38,3 +38,24 @@ identity, typed integer/string keys, checksum disagreement, path escape,
 expanded-size limits, duplicate JSON fields, non-finite values, count drift,
 naive timestamps, production refusal and deterministic replay. A nonempty output
 directory fails closed so previous packages cannot be partially overwritten.
+
+## Frozen cross-format review
+
+`scripts/review_usgs_sources.py` uses the producer-owned
+`federation/usgs_source_review.py` to compare preserved GeoJSON with three paired
+CSVs and the FGDC metadata. Install the existing Shapely dependency (>=2.1,<3).
+Run `python -m pytest -q tests/test_usgs_source_review.py`.
+Run `python scripts/review_usgs_sources.py --input tests/fixtures/usgs_source_review/input.json --source-root . --out /absolute/path/new-review.json`.
+Expected exit: **2**, scientific staging BLOCKED. Existing output paths are refused.
+The diagnostic is a maintenance CLI, not an added canonical export command.
+
+All 3 native geometries pass format checks, but all 3 cross-format comparisons
+fail. Preserve EGQ5/EQG5, 15 raw numeric CSV/GeoJSON tuple differences, shortened
+text, blank/N/A/null distinctions and the FS6 HIS/Offshore conflict. CSV CRS/axis
+semantics remain unverified; do not label raw numeric deltas as physical distances.
+Two layers exceed the publisher's PRVI extent; that extent is not PR jurisdiction.
+Literal FGDC access/use fields `none` close recording only. The migration note's
+no-data-change wording is a source claim, not verified byte lineage.
+No aliases, geometry repair, production export or activation are authorized by
+this review. CI passes only when the implementation preserves these conflicts
+and refuses scientific staging; it does not certify the dataset.

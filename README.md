@@ -124,3 +124,7 @@ Spiderweb is the federation's Puerto Rico spatial-analysis producer and geometry
 
 Certification requires current regression, source, geometry, rendered desktop+iPhone, and federation-consumer evidence with frozen hashes and zero material in-scope residue. Keep acquisition controls closed when their source/coverage gates are not actually satisfied.
 <!-- PROJECT-OPERATING-CONTRACT:END -->
+
+The [USGS documentary export review](docs/USGS_NATIVE_REFERENCE_EXPORT.md)
+preserves frozen cross-format conflicts and refuses scientific staging (exit 2).
+Native geometry format PASS does not certify source consistency or activation.
