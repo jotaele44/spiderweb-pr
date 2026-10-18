@@ -1,9 +1,9 @@
 {
   "schema_version": "spiderweb.jp-flood-live-receipt/v1",
-  "generated_at": "2026-10-11T16:23:24.692624+00:00",
-  "source_main_sha": "a91ca11497cbac80a96fd557b8c31f1ddc88782c",
-  "workflow_run_id": 38155034343,
-  "workflow_run_number": 6,
+  "generated_at": "2026-10-18T14:05:11.070239+00:00",
+  "source_main_sha": "828a88734a2901fef4b5aba921959af1bde045eb",
+  "workflow_run_id": 39134218963,
+  "workflow_run_number": 7,
   "event_name": "schedule",
   "transition": {
     "status": "PASS",
