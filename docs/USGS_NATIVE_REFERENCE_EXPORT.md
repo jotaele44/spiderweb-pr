@@ -98,6 +98,13 @@ negative-longitude X values and GeoJSON/KML tuples. No axis swap is performed.
 RecurUn in the README versus RecurUnc in data remains an unresolved schema label.
 The fault changelog retains 36 rows: 35 keyed matches and one blank-key Bowin
 row, which is neither dropped nor joined by name. The polygons changelog has
-6 keyed matches. FS6 Offshore is corroborated by the fault changelog. The full
-14-file frozen release denominator is independently checked by the Hub; this
+6 keyed matches. FS6 Offshore is corroborated by the fault changelog. The 14-file legacy top-level review denominator is independently checked by the Hub; this
 excludes external links/services and does not claim current-version completeness.
+
+The Hub's recursive metadata scan additionally found 16 shapefile components
+in facets and 30 distribution-file references for this release. These 46 nested
+references were outside the legacy top-level inventory. They are not certified
+unique assets or verified payloads. Across the catalog, 850 facet references,
+3,136 distribution-file references and 702 non-array files fields remain separate
+from the original 2,286 top-level references. Full file/payload closure is OPEN.
+The original counts and evidence remain preserved, not silently replaced.

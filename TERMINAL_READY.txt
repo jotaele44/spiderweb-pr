@@ -334,3 +334,10 @@ README: WGS84 and units documented; X=latitude/Y=longitude contradict values.
 No axis swap. Unit-value validation and canonical authority remain unresolved.
 Fault changelog: 36 rows = 35 keyed + 1 blank-key Bowin row retained.
 The Hub verifies 14/14 declared frozen files for this one release only.
+
+ENUMERATION SCOPE CORRECTION
+14/14 is legacy TOP-LEVEL file review only. This release additionally has
+16 facet shapefile components and 30 distribution references, not yet payload-
+verified or reconciled as unique assets. Full file closure is OPEN.
+The Hub retains the original 2286-reference baseline and a separate nested
+reference inventory. Never treat the combined observations as unique assets.

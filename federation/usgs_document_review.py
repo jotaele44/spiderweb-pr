@@ -110,8 +110,8 @@ def review_documents(entries, root, native_features):
             "Bibliography preserved; cited publications not acquired by this review"
         ),
         "shapefile_scope": (
-            "README mentions SHP; no SHP file descriptor in frozen release "
-            "inventory. Availability unresolved."
+            "Shapefile component references exist in nested frozen metadata. "
+            "The legacy top-level inventory did not acquire those payloads."
         ),
         "canonical_authority_selection": "UNRESOLVED",
         "source_repairs": 0,
