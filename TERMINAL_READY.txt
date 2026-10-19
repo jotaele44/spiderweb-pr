@@ -319,3 +319,18 @@ CSV CRS/axis semantics, PR jurisdiction, units, lineage and fitness unresolved.
 No source repair, canonical entity mapping or dataset certification is issued.
 Production eligible and activated remain zero. Installation uses native Python
 on macOS/Linux or Windows (py -3; venv Scripts\Activate.ps1 in PowerShell).
+
+USGS KML CORROBORATION — 2026-10-19
+python -m pytest -q tests/test_usgs_kml_review.py tests/test_usgs_source_review.py tests/test_usgs_native_reference.py tests/test_federation_export.py
+python scripts/review_usgs_kml.py --input tests/fixtures/usgs_kml_review/input.json --source-root . --out /absolute/path/new-kml-review.json
+Expected exit 2, AUDIT_ONLY. Existing outputs are refused.
+92 KML keys agree with GeoJSON; CSV conflicts remain. 36 exact geometries,
+92 within numeric tolerance, no geometry repair or canonical authority selection.
+Do not promote any dataset because two source formats agree.
+
+SUPPORT DOCUMENT ADJUDICATION
+The same review also records four support documents and all 44 definitions.
+README: WGS84 and units documented; X=latitude/Y=longitude contradict values.
+No axis swap. Unit-value validation and canonical authority remain unresolved.
+Fault changelog: 36 rows = 35 keyed + 1 blank-key Bowin row retained.
+The Hub verifies 14/14 declared frozen files for this one release only.

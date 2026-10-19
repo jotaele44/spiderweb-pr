@@ -128,3 +128,6 @@ Certification requires current regression, source, geometry, rendered desktop+iP
 The [USGS documentary export review](docs/USGS_NATIVE_REFERENCE_EXPORT.md)
 preserves frozen cross-format conflicts and refuses scientific staging (exit 2).
 Native geometry format PASS does not certify source consistency or activation.
+
+The USGS KML maintenance review preserves third-format corroboration separately
+from canonical authority; scientific staging remains blocked.

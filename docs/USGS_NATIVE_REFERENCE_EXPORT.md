@@ -59,3 +59,45 @@ no-data-change wording is a source claim, not verified byte lineage.
 No aliases, geometry repair, production export or activation are authorized by
 this review. CI passes only when the implementation preserves these conflicts
 and refuses scientific staging; it does not certify the dataset.
+
+
+## KML corroboration (2026-10-19)
+
+The maintenance command `scripts/review_usgs_kml.py` compares all three frozen
+KMLs with the previously reviewed CSV and GeoJSON. No successful bytes were
+reacquired. Run `python -m pytest -q tests/test_usgs_kml_review.py` and
+`python scripts/review_usgs_kml.py --input tests/fixtures/usgs_kml_review/input.json --source-root . --out /absolute/path/new-kml-review.json`.
+Expected exit 2: AUDIT_ONLY, scientific staging/certification BLOCKED.
+
+Stable-key intersections with GeoJSON are 51/6/35; symmetric differences are 0.
+CSV-to-KML preserves EGQ5/EQG5 (intersection 50, union 52, symmetric difference 2)
+and 15 raw numeric coordinate conflicts. KML also records FS6 as Offshore, but
+two agreeing source formats do not establish authority over the CSV HIS value.
+All 92 geometry comparisons fall within a declared 1e-10 raw numeric tolerance
+(maximum 5e-14); only 36 are exact comparison objects and topologically equal.
+No snapping, topology repair, coordinate rounding or canonical export is done.
+The comparison retains native geometry tags, dimensions and coordinate text.
+71 numeric property serialization differences and 43 missing-versus-null fields
+remain explicit. The polygons KML declares an internal v0 schema while its
+filename declares v1; this is unresolved version-label evidence, not proof of
+an older or newer authoritative release. The supporting README records WGS84 and scientific unit definitions.
+Its X/Y axis definitions contradict the values and geometry; actual unit-value
+validation remains unresolved.
+
+Regressions reject duplicate IDs/fields, wrong schema URLs, unknown geometry,
+network links, nonfinite coordinates, DTD/entity declarations and unclosed rings.
+Rehashed changed geometry is retained as conflicting evidence; excessive
+tolerances cannot hide it. Whole stable-key rows remain separate.
+
+The release also has four byte-passing supporting documents. Their 44 field
+definitions and full raw changelog rows are retained. The publisher directs
+users to CSV for complete Obsern text and allows sites outside the hazard area;
+this does not define a PR jurisdiction mask or prove the metadata bbox's role.
+The README labels X as latitude and Y as longitude, conflicting with the
+negative-longitude X values and GeoJSON/KML tuples. No axis swap is performed.
+RecurUn in the README versus RecurUnc in data remains an unresolved schema label.
+The fault changelog retains 36 rows: 35 keyed matches and one blank-key Bowin
+row, which is neither dropped nor joined by name. The polygons changelog has
+6 keyed matches. FS6 Offshore is corroborated by the fault changelog. The full
+14-file frozen release denominator is independently checked by the Hub; this
+excludes external links/services and does not claim current-version completeness.
