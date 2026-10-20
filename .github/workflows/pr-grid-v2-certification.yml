@@ -1,6 +1,7 @@
 name: PR grid V2 certification
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "spiderweb/geographic_grid_v2.py"
@@ -224,4 +225,131 @@ jobs:
         with:
           name: pr-grid-geographic-v2-rc1
           path: artifacts/pr-grid-v2/
+          retention-days: 90
+
+
+  certify-aguayluz-nwps:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AGUAYLUZ_NWPS_COMMIT: 459c0777365786419da5c62db20abfdec21aa092
+      AGUAYLUZ_NWPS_BLOB_SHA1: f8ec4cdf63fb74bc73bce84560c9525444a8620c
+      GRID_LEVEL: L1
+    steps:
+      - name: Check out Spiderweb authority
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Check out frozen AguaYLuz source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: jotaele44/aguayluz-pr
+          ref: ${{ env.AGUAYLUZ_NWPS_COMMIT }}
+          path: _source/aguayluz-pr
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Verify frozen source identity
+        run: |
+          test "$(git -C _source/aguayluz-pr rev-parse HEAD)" = "$AGUAYLUZ_NWPS_COMMIT"
+          test "$(git -C _source/aguayluz-pr hash-object data/nwps_gauge_state.jsonl)" = "$AGUAYLUZ_NWPS_BLOB_SHA1"
+
+      - name: Install grid migration dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-grid-v2.txt
+
+      - name: Export exact NWPS source-coordinate denominator
+        run: |
+          mkdir -p artifacts/aguayluz-nwps-v2
+          python _source/aguayluz-pr/scripts/export_nwps_grid_v2_source_records.py \
+            --source _source/aguayluz-pr/data/nwps_gauge_state.jsonl \
+            --binding-out artifacts/aguayluz-nwps-v2/binding_input.jsonl \
+            --records-out artifacts/aguayluz-nwps-v2/profile_records.jsonl \
+            --receipt-out artifacts/aguayluz-nwps-v2/export_receipt.json
+
+      - name: Materialize Spiderweb-authoritative V2 bindings
+        run: |
+          python scripts/materialize_pr_grid_v2_source_coordinate_bindings.py \
+            --input artifacts/aguayluz-nwps-v2/binding_input.jsonl \
+            --level "$GRID_LEVEL" \
+            --bindings-out artifacts/aguayluz-nwps-v2/bindings.jsonl \
+            --projection-out artifacts/aguayluz-nwps-v2/projection_audit.jsonl \
+            --receipt-out artifacts/aguayluz-nwps-v2/binding_receipt.json
+
+      - name: Materialize AguaYLuz domain Cell Profiles
+        run: |
+          python _source/aguayluz-pr/federation/spatial/materialize_pr_grid_v2_profiles.py \
+            --pin _source/aguayluz-pr/federation/spatial/pr_grid_geographic_v2.pin.json \
+            --records artifacts/aguayluz-nwps-v2/profile_records.jsonl \
+            --bindings artifacts/aguayluz-nwps-v2/bindings.jsonl \
+            --binding-receipt artifacts/aguayluz-nwps-v2/binding_receipt.json \
+            --level "$GRID_LEVEL" \
+            --out artifacts/aguayluz-nwps-v2/profiles.jsonl \
+            --receipt-out artifacts/aguayluz-nwps-v2/profile_receipt.json
+
+      - name: Certify frozen migration artifact
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/aguayluz-nwps-v2")
+          source = Path("_source/aguayluz-pr/data/nwps_gauge_state.jsonl")
+          export = json.loads((root / "export_receipt.json").read_text())
+          binding = json.loads((root / "binding_receipt.json").read_text())
+          profile = json.loads((root / "profile_receipt.json").read_text())
+
+          count = export["Input_Record_Count"]
+          assert count > 0
+          assert export["Unique_Record_ID_Count"] == count
+          assert export["Binding_Input_Record_Count"] == count
+          assert export["Profile_Record_Count"] == count
+          assert binding["Input_Record_Count"] == count
+          assert binding["Projection_Audit_Row_Count"] == count
+          assert binding["Migration_Provenance_Class"] == "RECOMPUTED_FROM_SOURCE_COORDINATE"
+          assert binding["Coordinate_Evidence_State"] == "VERIFIED_SOURCE_COORDINATE"
+          assert binding["Source_CRS_Counts"] == {"EPSG:4326": count}
+          assert binding["Receipt_State"] == "PASS"
+          assert profile["Migration_Class"] == "RECOMPUTED_FROM_SOURCE_COORDINATE"
+          assert profile["Geometry_Copied"] is False
+          assert profile["State"] == "CANDIDATE_NOT_CANONICAL"
+
+          files = {}
+          for path in sorted(root.iterdir()):
+              if path.is_file():
+                  payload = path.read_bytes()
+                  files[path.name] = {
+                      "bytes": len(payload),
+                      "sha256": hashlib.sha256(payload).hexdigest(),
+                  }
+
+          cert = {
+              "Contract": "aguayluz-nwps-pr-grid-v2-certification/1.0",
+              "Repository": "aguayluz-pr",
+              "Source_Commit": os.environ["AGUAYLUZ_NWPS_COMMIT"],
+              "Source_Git_Blob_SHA1": os.environ["AGUAYLUZ_NWPS_BLOB_SHA1"],
+              "Source_SHA256": hashlib.sha256(source.read_bytes()).hexdigest(),
+              "Grid_Level": os.environ["GRID_LEVEL"],
+              "Input_Record_Count": count,
+              "Binding_Row_Count": binding["Binding_Row_Count"],
+              "State_Counts": binding["State_Counts"],
+              "Profile_Count": profile["Profile_Count"],
+              "Artifacts": files,
+              "Geometry_Copied": False,
+              "State": "PASS",
+          }
+          (root / "certification.json").write_text(
+              json.dumps(cert, indent=2, sort_keys=True) + "\n"
+          )
+          print(json.dumps(cert, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload frozen NWPS V2 migration artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: aguayluz-nwps-pr-grid-v2-L1
+          path: artifacts/aguayluz-nwps-v2/
           retention-days: 90
