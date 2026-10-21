@@ -152,7 +152,7 @@ jobs:
           cp artifacts/authority/L1.binding_receipt.json "$target/L1.binding_receipt.json"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$target"
+          git add -f "$target/L1.bindings.jsonl" "$target/L1.projection_audit.jsonl" "$target/L1.binding_receipt.json"
           if git diff --cached --quiet; then
             echo "AUTHORITY_OUTPUTS_ALREADY_FROZEN=PASS"
             exit 0
