@@ -24,5 +24,17 @@
   "Geometry_Authority": "spiderweb-pr",
   "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
   "Consumer_Assignment_Forbidden": true,
-  "State": "CANDIDATE_PENDING_AUTHORITY_BINDING"
+  "State": "AUTHORITY_BINDING_PASS",
+  "Authority_Workflow_Run_ID": 39533078349,
+  "Authority_Artifact_ID": 12315738872,
+  "Authority_Artifact_SHA256": "b5a40d4135de0ead04d016b2b594ab04e7be46f3d9c43baac6017ed5fb1765b0",
+  "Authority_Binding_Output_SHA256": "7c49ff0463eb3b950f86854b54a3ff8e607b30114594db75a3fda7732bdc2bf1",
+  "Authority_Projection_Output_SHA256": "ca997c75f009a12fdefb73d2dec3c88a6f447c8ca29dd39cafe919d80f6b35f9",
+  "Authority_Binding_Row_Count": 118,
+  "Authority_State_Counts": {
+    "INTERIOR": 118
+  },
+  "Authority_Boundary_Snap_Record_Count": 0,
+  "PyProj_Version": "3.8.0",
+  "PROJ_Version": "9.8.1"
 }
