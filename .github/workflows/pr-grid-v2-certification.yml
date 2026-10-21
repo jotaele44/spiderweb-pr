@@ -8,16 +8,19 @@ on:
       - "spiderweb/grid_v2_bindings.py"
       - "spiderweb/grid_v2_source_coordinates.py"
       - "spiderweb/grid_v2_geometry_bindings.py"
+      - "spiderweb/grid_v2_record_migration.py"
       - "scripts/generate_pr_grid_geographic_v2.py"
       - "scripts/materialize_pr_grid_v2_exact_point_bindings.py"
       - "scripts/materialize_pr_grid_v2_source_coordinate_bindings.py"
       - "scripts/materialize_pr_grid_v2_geometry_bindings.py"
       - "scripts/materialize_pr_grid_v2_set_bindings.py"
+      - "scripts/materialize_pr_grid_v2_record_bindings.py"
       - "tests/test_geographic_grid_v2.py"
       - "tests/test_grid_v2_bindings.py"
       - "tests/test_grid_v2_source_coordinates.py"
       - "tests/test_grid_v2_geometry_bindings.py"
       - "tests/test_grid_v2_set_bindings.py"
+      - "tests/test_grid_v2_record_migration.py"
       - "requirements-grid-v2.txt"
       - "schemas/pr_grid_geographic_v2_*.schema.json"
       - "registry/spatial/v2/**"
@@ -28,15 +31,24 @@ on:
       - "spiderweb/geographic_grid_v2.py"
       - "spiderweb/grid_v2_bindings.py"
       - "spiderweb/grid_v2_source_coordinates.py"
+      - "spiderweb/grid_v2_geometry_bindings.py"
+      - "spiderweb/grid_v2_record_migration.py"
       - "scripts/generate_pr_grid_geographic_v2.py"
       - "scripts/materialize_pr_grid_v2_exact_point_bindings.py"
       - "scripts/materialize_pr_grid_v2_source_coordinate_bindings.py"
+      - "scripts/materialize_pr_grid_v2_geometry_bindings.py"
+      - "scripts/materialize_pr_grid_v2_set_bindings.py"
+      - "scripts/materialize_pr_grid_v2_record_bindings.py"
       - "tests/test_geographic_grid_v2.py"
       - "tests/test_grid_v2_bindings.py"
       - "tests/test_grid_v2_source_coordinates.py"
+      - "tests/test_grid_v2_geometry_bindings.py"
+      - "tests/test_grid_v2_set_bindings.py"
+      - "tests/test_grid_v2_record_migration.py"
       - "requirements-grid-v2.txt"
       - "schemas/pr_grid_geographic_v2_*.schema.json"
       - "registry/spatial/v2/**"
+      - ".github/workflows/pr-grid-v2-certification.yml"
 
 permissions:
   contents: read
@@ -55,7 +67,7 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest jsonschema -r requirements-grid-v2.txt
 
       - name: Run native V2 certification tests
-        run: python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py
+        run: python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py
 
       - name: Smoke source-coordinate migration
         run: |
@@ -155,6 +167,44 @@ jobs:
           assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
           assert receipt["Receipt_State"] == "PASS"
           print("SET_BINDING_MIGRATION=PASS")
+          PY
+
+      - name: Smoke canonical mixed record migration dispatcher
+        run: |
+          cat > /tmp/pr_grid_v2_mixed_migration.jsonl <<'JSONL'
+          {"Migration_Input_Class":"EXACT_PROJECTED_POINT","Repository":"aguayluz-pr","Record_ID":"point","X":246500,"Y":255500,"CRS":"EPSG:6566","Uncertainty_Class":"EXACT"}
+          {"Migration_Input_Class":"EXACT_SOURCE_POINT","Repository":"ovnis-pr","Record_ID":"edge","Source_X":247000,"Source_Y":255500,"Source_CRS":"EPSG:6566","Coordinate_Evidence_State":"VERIFIED_SOURCE_COORDINATE","Uncertainty_Class":"EXACT"}
+          {"Migration_Input_Class":"EXACT_PROJECTED_GEOMETRY","Repository":"skywatcher-pr","Record_ID":"line","CRS":"EPSG:6566","Spatial_Role":"TRACK_SEGMENT","Uncertainty_Class":"EXACT","Geometry":{"type":"LineString","coordinates":[[246100,255500],[247900,255500]]}}
+          {"Migration_Input_Class":"ADMINISTRATIVE_SET","Repository":"ovnis-pr","Record_ID":"admin","CRS":"EPSG:6566","Binding_Method":"ADMINISTRATIVE_SET","Uncertainty_Class":"ADMINISTRATIVE_ONLY","Geometry_Evidence_State":"VERIFIED_ADMINISTRATIVE_GEOMETRY","Geometry":{"type":"Polygon","coordinates":[[[246500,255250],[247500,255250],[247500,255750],[246500,255750],[246500,255250]]]}}
+          {"Migration_Input_Class":"DERIVED_SET","Repository":"moneysweep-pr","Record_ID":"derived","CRS":"EPSG:6566","Binding_Method":"DERIVED_SET","Uncertainty_Class":"DERIVED","Geometry_Evidence_State":"VERIFIED_DERIVED_GEOMETRY","Geometry":{"type":"Polygon","coordinates":[[[246500,255250],[247500,255250],[247500,255750],[246500,255750],[246500,255250]]]}}
+          JSONL
+          python scripts/materialize_pr_grid_v2_record_bindings.py \
+            --input /tmp/pr_grid_v2_mixed_migration.jsonl \
+            --level L1 \
+            --bindings-out /tmp/pr_grid_v2_mixed_bindings.jsonl \
+            --audit-out /tmp/pr_grid_v2_mixed_audit.jsonl \
+            --receipt-out /tmp/pr_grid_v2_mixed_receipt.json
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          bindings = Path("/tmp/pr_grid_v2_mixed_bindings.jsonl")
+          audit = Path("/tmp/pr_grid_v2_mixed_audit.jsonl")
+          receipt = json.loads(Path("/tmp/pr_grid_v2_mixed_receipt.json").read_text())
+          assert receipt["contract"] == "pr-grid-v2-record-migration/1.0"
+          assert receipt["Input_Record_Count"] == 5
+          assert receipt["Unique_Record_Identity_Count"] == 5
+          assert receipt["Binding_Row_Count"] == 9
+          assert receipt["Projection_Audit_Row_Count"] == 1
+          assert receipt["Exact_Record_Count"] == 3
+          assert receipt["Non_Exact_Set_Record_Count"] == 2
+          assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
+          assert receipt["Audit_Output_SHA256"] == hashlib.sha256(audit.read_bytes()).hexdigest()
+          assert receipt["Receipt_State"] == "PASS"
+          assert receipt["Promotion_State"] == "CANDIDATE_NOT_CANONICAL"
+          assert receipt["Geometry_Copied"] is False
+          print("CANONICAL_RECORD_MIGRATION_DISPATCHER=PASS")
           PY
 
       - name: Materialize complete L0-L3 indexes
