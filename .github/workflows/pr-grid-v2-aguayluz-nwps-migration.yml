@@ -32,7 +32,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install authority migration dependencies
-        run: python -m pip install --disable-pip-version-check pytest pyproj
+        run: python -m pip install --disable-pip-version-check pytest pyproj==3.8.0
 
       - name: Re-derive exact producer packet
         run: |
@@ -109,6 +109,16 @@ jobs:
           assert all(row["Target_CRS"] == "EPSG:6566" for row in projections)
           assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings_path.read_bytes()).hexdigest()
           assert receipt["Projection_Output_SHA256"] == hashlib.sha256(projection_path.read_bytes()).hexdigest()
+          assert receipt["Binding_Output_SHA256"] == "7c49ff0463eb3b950f86854b54a3ff8e607b30114594db75a3fda7732bdc2bf1"
+          assert receipt["Projection_Output_SHA256"] == "ca997c75f009a12fdefb73d2dec3c88a6f447c8ca29dd39cafe919d80f6b35f9"
+
+          frozen = json.loads(Path(
+              "registry/spatial/v2/migrations/aguayluz_nwps_v1/binding_receipt.json"
+          ).read_text())
+          assert receipt == frozen
+
+          versions = {(row["PyProj_Version"], row["PROJ_Version"]) for row in projections}
+          assert versions == {("3.8.0", "9.8.1")}
           print("AGUAYLUZ_NWPS_V2_AUTHORITY_BINDING=PASS")
           PY
 
