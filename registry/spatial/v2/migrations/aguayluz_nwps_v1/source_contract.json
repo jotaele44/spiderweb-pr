@@ -2,7 +2,7 @@
   "Schema_Version": "pr-grid-v2-migration-source-contract/1.0",
   "Migration_ID": "AGUAYLUZ_NWPS_V1",
   "Producer_Repository": "jotaele44/aguayluz-pr",
-  "Producer_Commit": "c12cccce16e3704b2ddbcb0a9a0a6e30f90ce77a",
+  "Producer_Commit": "c5082ac80e6d25235e724732216cbf14d31eaacf",
   "Producer_Source_Path": "data/nwps_gauge_state.jsonl",
   "Producer_Exporter_Path": "scripts/export_nwps_grid_v2_source_records.py",
   "Producer_Workflow_Run_ID": 39532836826,
@@ -36,5 +36,7 @@
   },
   "Authority_Boundary_Snap_Record_Count": 0,
   "PyProj_Version": "3.8.0",
-  "PROJ_Version": "9.8.1"
+  "PROJ_Version": "9.8.1",
+  "Producer_Artifact_Source_Commit": "c12cccce16e3704b2ddbcb0a9a0a6e30f90ce77a",
+  "Producer_Packet_Merge_Commit": "c5082ac80e6d25235e724732216cbf14d31eaacf"
 }
