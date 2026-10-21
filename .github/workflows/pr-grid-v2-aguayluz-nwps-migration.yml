@@ -1,6 +1,8 @@
 name: PR grid V2 AguaYLuz NWPS authority migration
 
 on:
+  push:
+    branches: ["feat/pr-grid-v2-aguayluz-nwps-migration-v1"]
   pull_request:
     paths:
       - "spiderweb/geographic_grid_v2.py"
@@ -12,7 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   bind-nwps:
@@ -128,3 +130,21 @@ jobs:
           name: spiderweb-aguayluz-nwps-pr-grid-v2-l1
           path: artifacts/
           retention-days: 90
+
+      - name: Persist Spiderweb-owned authority outputs
+        if: github.event_name == 'push'
+        run: |
+          target=registry/spatial/v2/migrations/aguayluz_nwps_v1/generated
+          mkdir -p "$target"
+          cp artifacts/authority/L1.bindings.jsonl "$target/L1.bindings.jsonl"
+          cp artifacts/authority/L1.projection_audit.jsonl "$target/L1.projection_audit.jsonl"
+          cp artifacts/authority/L1.binding_receipt.json "$target/L1.binding_receipt.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$target"
+          if git diff --cached --quiet; then
+            echo "AUTHORITY_OUTPUTS_ALREADY_FROZEN=PASS"
+            exit 0
+          fi
+          git commit -m "cert(spatial): freeze AguaYLuz NWPS V2 authority outputs"
+          git push origin HEAD:feat/pr-grid-v2-aguayluz-nwps-migration-v1
