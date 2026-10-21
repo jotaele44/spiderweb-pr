@@ -38,5 +38,8 @@
   "PyProj_Version": "3.8.0",
   "PROJ_Version": "9.8.1",
   "Producer_Artifact_Source_Commit": "c12cccce16e3704b2ddbcb0a9a0a6e30f90ce77a",
-  "Producer_Packet_Merge_Commit": "c5082ac80e6d25235e724732216cbf14d31eaacf"
+  "Producer_Source_Commit": "c12cccce16e3704b2ddbcb0a9a0a6e30f90ce77a",
+  "Producer_Packet_Commit": "c5082ac80e6d25235e724732216cbf14d31eaacf",
+  "Source_Drift_Policy": "FROZEN_PACKET_PRESERVES_HISTORICAL_SOURCE_BYTES",
+  "Mutable_Source_Refresh_Does_Not_Rewrite_Migration": true
 }
