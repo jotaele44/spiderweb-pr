@@ -23,11 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Check out exact AguaYLuz producer commit
+      - name: Check out frozen AguaYLuz producer packet
         run: |
           git clone --filter=blob:none --no-checkout https://github.com/jotaele44/aguayluz-pr.git _producer/aguayluz-pr
           git -C _producer/aguayluz-pr checkout --detach c5082ac80e6d25235e724732216cbf14d31eaacf
           test "$(git -C _producer/aguayluz-pr rev-parse HEAD)" = "c5082ac80e6d25235e724732216cbf14d31eaacf"
+          git -C _producer/aguayluz-pr fetch --depth 1 origin c12cccce16e3704b2ddbcb0a9a0a6e30f90ce77a
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
@@ -36,10 +37,13 @@ jobs:
       - name: Install authority migration dependencies
         run: python -m pip install --disable-pip-version-check pytest pyproj==3.8.0
 
-      - name: Re-derive exact producer packet
+      - name: Stage frozen producer packet and historical source bytes
         run: |
           mkdir -p artifacts/producer artifacts/authority
-          python _producer/aguayluz-pr/scripts/export_nwps_grid_v2_source_records.py             --source _producer/aguayluz-pr/data/nwps_gauge_state.jsonl             --binding-out artifacts/producer/binding_input.jsonl             --records-out artifacts/producer/profile_records.jsonl             --receipt-out artifacts/producer/producer_receipt.json
+          cp _producer/aguayluz-pr/federation/spatial/migrations/nwps_v1/binding_input.jsonl artifacts/producer/binding_input.jsonl
+          cp _producer/aguayluz-pr/federation/spatial/migrations/nwps_v1/profile_records.jsonl artifacts/producer/profile_records.jsonl
+          cp _producer/aguayluz-pr/federation/spatial/migrations/nwps_v1/producer_receipt.json artifacts/producer/producer_receipt.json
+          git -C _producer/aguayluz-pr show c12cccce16e3704b2ddbcb0a9a0a6e30f90ce77a:data/nwps_gauge_state.jsonl > artifacts/producer/source_snapshot_at_export.jsonl
 
       - name: Verify frozen producer packet
         run: |
@@ -52,13 +56,17 @@ jobs:
           receipt = json.loads((root / "producer_receipt.json").read_text())
           binding = root / "binding_input.jsonl"
           records = root / "profile_records.jsonl"
+          source = root / "source_snapshot_at_export.jsonl"
 
+          assert hashlib.sha256(source.read_bytes()).hexdigest() == "ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639"
           assert receipt["Source_SHA256"] == "ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639"
           assert receipt["Binding_Input_SHA256"] == "cc20eac89b8588dd234574543741eb8af90ffd6edaf23a44692cf2fbe2bd5df7"
           assert receipt["Profile_Records_SHA256"] == "4f470d1747e0073aff64e5e622744d79b45508c2438868d710ceba4df537535e"
           assert hashlib.sha256(binding.read_bytes()).hexdigest() == receipt["Binding_Input_SHA256"]
           assert hashlib.sha256(records.read_bytes()).hexdigest() == receipt["Profile_Records_SHA256"]
           assert receipt["Input_Record_Count"] == 118
+          assert receipt["Binding_Input_Record_Count"] == 118
+          assert receipt["Profile_Record_Count"] == 118
           assert receipt["Unique_Record_ID_Count"] == 118
           assert receipt["Source_CRS"] == "EPSG:4326"
           assert receipt["Coordinate_Evidence_State"] == "VERIFIED_SOURCE_COORDINATE"
