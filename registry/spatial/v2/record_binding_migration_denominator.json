@@ -1,0 +1,82 @@
+{
+  "Schema_Version": "pr-grid-v2-record-binding-migration-denominator/1.0",
+  "State": "MIGRATION_STARTED_EVIDENCE_GATED",
+  "Grid_ID": "PR_GRID_GEOGRAPHIC_V2",
+  "Grid_Version": "2.0.0-rc1",
+  "CRS": "EPSG:6566",
+  "Grid_Manifest_SHA256": "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4",
+  "Binding_Schema_SHA256": "dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022",
+  "Binding_Schema_Version": "pr-grid-v2-binding/1.0",
+  "Geometry_Authority": "spiderweb-pr",
+  "Geometry_Authority_Commit": "0c66e13d14232c0d7cbcbc179b3655904777dc71",
+  "Geometry_Producer_Count": 1,
+  "Identity_Default": "CANDIDATE_NOT_IDENTITY",
+  "Canonical_Dispatcher": {
+    "Contract": "pr-grid-v2-record-migration/1.0",
+    "Module": "spiderweb/grid_v2_record_migration.py",
+    "CLI": "scripts/materialize_pr_grid_v2_record_bindings.py",
+    "Migration_Input_Classes": [
+      "EXACT_PROJECTED_POINT",
+      "EXACT_SOURCE_POINT",
+      "EXACT_PROJECTED_GEOMETRY",
+      "ADMINISTRATIVE_SET",
+      "DERIVED_SET"
+    ],
+    "Auto_Detection_Permitted": false,
+    "Canonical_Geometry_Copied_To_Consumers": false
+  },
+  "Producer_Denominator_Count": 5,
+  "Producers": [
+    {
+      "Repository": "aguayluz-pr",
+      "Default_Level": "L1",
+      "Cell_Profile_Materializer_State": "IMPLEMENTED",
+      "Migration_State": "FIRST_SLICE_PIPELINE_IMPLEMENTED",
+      "Slices": [
+        {
+          "Slice_ID": "NWPS_GAUGE_STATE",
+          "Source_Path": "data/nwps_gauge_state.jsonl",
+          "Source_Commit": "459c0777365786419da5c62db20abfdec21aa092",
+          "Source_Git_Blob_SHA1": "f8ec4cdf63fb74bc73bce84560c9525444a8620c",
+          "Migration_Input_Class": "EXACT_SOURCE_POINT",
+          "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
+          "Target_Level": "L1",
+          "Workflow": ".github/workflows/pr-grid-v2-certification.yml",
+          "Workflow_Job": "certify-aguayluz-nwps",
+          "Execution_Evidence_State": "CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY",
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+        }
+      ]
+    },
+    {
+      "Repository": "skywatcher-pr",
+      "Default_Level": "L2",
+      "Cell_Profile_Materializer_State": "IMPLEMENTED",
+      "Migration_State": "NOT_YET_MIGRATED",
+      "Slices": []
+    },
+    {
+      "Repository": "ovnis-pr",
+      "Default_Level": "L1",
+      "Cell_Profile_Materializer_State": "IMPLEMENTED",
+      "Migration_State": "NOT_YET_MIGRATED",
+      "Slices": []
+    },
+    {
+      "Repository": "moneysweep-pr",
+      "Default_Level": "L1",
+      "Cell_Profile_Materializer_State": "IMPLEMENTED",
+      "Migration_State": "NOT_YET_MIGRATED",
+      "Slices": []
+    },
+    {
+      "Repository": "centinelas-pr",
+      "Default_Level": "L0",
+      "Cell_Profile_Materializer_State": "IMPLEMENTED",
+      "Migration_State": "NOT_YET_MIGRATED",
+      "Slices": []
+    }
+  ],
+  "Unmigrated_Domains_Are_Not_Zero": true,
+  "Notes": "This denominator freezes migration scope and implementation state. NOT_YET_MIGRATED and CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY are explicit non-promotion states. TheHub is a control-plane/index consumer and is not a domain geometry producer."
+}
