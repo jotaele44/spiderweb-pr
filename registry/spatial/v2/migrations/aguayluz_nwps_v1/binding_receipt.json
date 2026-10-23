@@ -1,0 +1,29 @@
+{
+  "Binding_Output_Bytes": 57702,
+  "Binding_Output_SHA256": "7c49ff0463eb3b950f86854b54a3ff8e607b30114594db75a3fda7732bdc2bf1",
+  "Binding_Row_Count": 118,
+  "Binding_Schema_SHA256": "dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022",
+  "Binding_Schema_Version": "pr-grid-v2-binding/1.0",
+  "Boundary_Snap_Record_Count": 0,
+  "Boundary_Snap_Tolerance_m": "0.000001",
+  "Coordinate_Evidence_State": "VERIFIED_SOURCE_COORDINATE",
+  "Grid_ID": "PR_GRID_GEOGRAPHIC_V2",
+  "Grid_Manifest_SHA256": "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4",
+  "Grid_Version": "2.0.0-rc1",
+  "Input_Bytes": 54001,
+  "Input_Record_Count": 118,
+  "Input_SHA256": "cc20eac89b8588dd234574543741eb8af90ffd6edaf23a44692cf2fbe2bd5df7",
+  "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
+  "Projection_Audit_Row_Count": 118,
+  "Projection_Output_Bytes": 107597,
+  "Projection_Output_SHA256": "ca997c75f009a12fdefb73d2dec3c88a6f447c8ca29dd39cafe919d80f6b35f9",
+  "Receipt_State": "PASS",
+  "Source_CRS_Counts": {
+    "EPSG:4326": 118
+  },
+  "State_Counts": {
+    "INTERIOR": 118
+  },
+  "Target_CRS": "EPSG:6566",
+  "contract": "pr-grid-v2-source-coordinate-binding-receipt/1.0"
+}
