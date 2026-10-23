@@ -28,6 +28,23 @@
         "sources"
       ],
       "ppp_geometry_lane": "readiness/ppp_geometry.py resolves moneysweep-pr concession projects from a municipality to a WGS84 point using configs/airport_registry.yaml, and scripts/federation_export.py emits the result as anchored canonical observations. Unmatched projects stay in the geocode queue rather than receiving a municipality-centroid guess. Skipped when no moneysweep-pr sibling checkout is present."
+    },
+    "usgs_native_reference": {
+      "adapter": "federation/usgs_native_reference.py",
+      "export_entrypoint": "scripts/export_usgs_native.py",
+      "package_writer": "scripts/federation_export.py:write_package",
+      "scope": "Checksum-verified source-native documentary reference snapshots only",
+      "mode": "test",
+      "production_export_state": "BLOCKED",
+      "activation_state": "BLOCKED",
+      "open_gates": [
+        "consumer_fitness",
+        "PR_coverage",
+        "geometry_CRS_Z_M",
+        "version_lineage",
+        "usage_constraints",
+        "domain_semantics"
+      ]
     }
   },
   "hub_callable_commands": {
@@ -36,13 +53,15 @@
     "validate_schemas": "python3 scripts/validate_schemas.py --json",
     "validate_export": "python scripts/validate_export.py --package exports/samples --mode test",
     "export_canonical": "python3 scripts/federation_export.py --package exports/real --mode production",
-    "maintenance": "python3 scripts/run_maintenance.py --repo spiderweb-pr --mode audit"
+    "maintenance": "python3 scripts/run_maintenance.py --repo spiderweb-pr --mode audit",
+    "export_usgs_native_reference": "python3 scripts/export_usgs_native.py --input-manifest <path> --source-root <hub_root> --out <new_empty_package> --mode test"
   },
   "canonical_outputs": {
     "export_sample_manifest": "exports/samples/manifest.sample.json",
     "federation_readiness_doc": "docs/federation_readiness.md",
     "canonical_export_dir": "exports/federation",
-    "maintenance_report": "reports/maintenance/latest.json"
+    "maintenance_report": "reports/maintenance/latest.json",
+    "usgs_native_reference_doc": "docs/USGS_NATIVE_REFERENCE_EXPORT.md"
   },
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
