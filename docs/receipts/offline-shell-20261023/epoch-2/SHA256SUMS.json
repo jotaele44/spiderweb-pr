@@ -1,0 +1,16 @@
+{
+  "browser-receipt.json": "891add7aec40f3cdf4b3d1b53f867489f2a6657caae4030257cb306801dcc4e2",
+  "build-manifest.json": "95e795f1cd267c425991e1dd3faff704ad0cd4f05c70cf5d09d0e5d9df33d345",
+  "candidate-receipt.json": "a3c6ccbc9fc830db0e8a49a477934abf95fcc4149c71498cfe131d028a07db17",
+  "offline-1440.png": "b67598d59527543e9b91ee380ab1281a5144b2e93bd2994b8fc60ef704eb5431",
+  "offline-393.png": "e18790c0f704df5241b0791fcf60074bcf337744c8aed5520be63d0f7e5625a5",
+  "offline-430.png": "f08de1d84b9db9d3de707c0aa436f91d20a14e9da77e649c341ab1e0147343ad",
+  "spiderweb-pr-offline-browser-diag.log": "d533aee4d9ef582368d71b7efdb526aeaa0d9fe247d286b056b57e3a9bd899f9",
+  "spiderweb-pr-offline-browser-final.log": "826ace09072d3b18416f33a13c4bbd3ba03a8e3390120aa9e539ae9884b305ea",
+  "spiderweb-pr-offline-build-final.log": "12277f4420c8648aef5faf7fcf4a94a8c4644a2dc542a4de818b97c5d5bc858c",
+  "spiderweb-pr-offline-lint-final.log": "46daa930e6826c1f77db21957146e93db1b4396fa812e394d3820cf0f2b4d265",
+  "spiderweb-pr-offline-lint.log": "ddf26130cd9dc21449d2000a485f8c193cb637adc4a1efcd93737df7af806b0e",
+  "spiderweb-pr-offline-tests-final.log": "d3cb0b584f284ff3e7a6791e3f2b1f9af1206973f00294656bd5c9e363c20d14",
+  "spiderweb-pr-offline-typecheck-final.log": "fd1de2c08a168ae31ce126482f1d58b8ffc54e99309478d3f5196962a8f32c28",
+  "spiderweb-pr-offline-typecheck.log": "fd1de2c08a168ae31ce126482f1d58b8ffc54e99309478d3f5196962a8f32c28"
+}

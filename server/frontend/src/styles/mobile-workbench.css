@@ -10,7 +10,7 @@
 
 @media (max-width: 767px) {
   .workbench {
-    --cmd-h: 92px;
+    --cmd-h: 132px;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: var(--cmd-h) minmax(0, 1fr) var(--time-h);
     grid-template-areas:
@@ -49,11 +49,12 @@
     order: 2;
     width: 100%;
     min-width: 0;
-    min-height: 48px;
+    min-height: 88px;
     padding: 4px 8px;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .runstate > span {
