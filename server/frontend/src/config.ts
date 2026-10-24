@@ -42,9 +42,8 @@ export function martinTileUrlTemplate(sourceId: string): string {
  * Raster base-map tile template for the Spatial module.
  *
  * Defaults to public OpenStreetMap tiles. Override with `VITE_TILE_URL` to point
- * a packaged desktop build at a local or self-hosted tile source — the app is
- * otherwise fully offline-capable (fonts are bundled, the fixture dataset is the
- * fallback), and this is the one runtime asset that still requires the network.
+ * a packaged desktop build at a local or self-hosted tile source — fonts and the app shell can be bundled for offline use. Remote map tiles
+ * and server-backed capabilities remain independent network dependencies.
  */
 export const TILE_URL: string =
   import.meta.env.VITE_TILE_URL ?? "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
