@@ -284,7 +284,7 @@ jobs:
     timeout-minutes: 20
     env:
       AGUAYLUZ_NWPS_COMMIT: 459c0777365786419da5c62db20abfdec21aa092
-      AGUAYLUZ_NWPS_BLOB_SHA1: f8ec4cdf63fb74bc73bce84560c9525444a8620c
+      AGUAYLUZ_NWPS_BLOB_SHA1: e79f4526c8f6128f6e312ce3592f5518332ecd2f
       GRID_LEVEL: L1
     steps:
       - name: Check out Spiderweb authority
