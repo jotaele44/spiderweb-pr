@@ -36,15 +36,20 @@
         {
           "Slice_ID": "NWPS_GAUGE_STATE",
           "Source_Path": "data/nwps_gauge_state.jsonl",
-          "Source_Commit": "459c0777365786419da5c62db20abfdec21aa092",
-          "Source_Git_Blob_SHA1": "f8ec4cdf63fb74bc73bce84560c9525444a8620c",
+          "Source_Git_Blob_SHA1": "4c2f8efe6cbb25eadf5f822b06fea1e23df076b0",
           "Migration_Input_Class": "EXACT_SOURCE_POINT",
           "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
           "Target_Level": "L1",
           "Workflow": ".github/workflows/pr-grid-v2-certification.yml",
           "Workflow_Job": "certify-aguayluz-nwps",
-          "Execution_Evidence_State": "CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY",
-          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+          "Execution_Evidence_State": "FROZEN_PRODUCER_PACKET_VERIFIED_EXECUTION_PENDING",
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL",
+          "Producer_Packet_Commit": "c5082ac80e6d25235e724732216cbf14d31eaacf",
+          "Consumer_Runtime_Commit": "725c1de5c093ba13830294a5547fb20a63f13932",
+          "Source_SHA256": "ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639",
+          "Frozen_Packet_Record_Count": 118,
+          "Frozen_Packet_Receipt": "federation/spatial/migrations/nwps_v1/producer_receipt.json",
+          "Frozen_Packet_Receipt_Git_Blob_SHA1": "d7ca50c2112af8a29bb70f3f2549b62115361ece"
         }
       ]
     },
