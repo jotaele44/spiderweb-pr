@@ -283,40 +283,84 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      AGUAYLUZ_NWPS_COMMIT: 459c0777365786419da5c62db20abfdec21aa092
-      AGUAYLUZ_NWPS_BLOB_SHA1: f8ec4cdf63fb74bc73bce84560c9525444a8620c
+      AGUAYLUZ_PACKET_COMMIT: c5082ac80e6d25235e724732216cbf14d31eaacf
+      AGUAYLUZ_RUNTIME_COMMIT: 725c1de5c093ba13830294a5547fb20a63f13932
+      NWPS_SOURCE_BLOB_SHA1: 4c2f8efe6cbb25eadf5f822b06fea1e23df076b0
+      NWPS_BINDING_BLOB_SHA1: 131b2a3cbcc308a8e93bc668b26ba559a80e099e
+      NWPS_PROFILE_BLOB_SHA1: a819f0e4efeec8f0a4eea707291b96dcc84039b4
+      NWPS_RECEIPT_BLOB_SHA1: d7ca50c2112af8a29bb70f3f2549b62115361ece
+      NWPS_SOURCE_SHA256: ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639
       GRID_LEVEL: L1
     steps:
       - name: Check out Spiderweb authority
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Check out frozen AguaYLuz source
+      - name: Check out frozen AguaYLuz producer packet
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: jotaele44/aguayluz-pr
-          ref: ${{ env.AGUAYLUZ_NWPS_COMMIT }}
-          path: _source/aguayluz-pr
+          ref: ${{ env.AGUAYLUZ_PACKET_COMMIT }}
+          path: _source/aguayluz-packet
+
+      - name: Check out certified AguaYLuz V2 runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: jotaele44/aguayluz-pr
+          ref: ${{ env.AGUAYLUZ_RUNTIME_COMMIT }}
+          path: _runtime/aguayluz-pr
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
 
-      - name: Verify frozen source identity
+      - name: Verify frozen producer packet identity
         run: |
-          test "$(git -C _source/aguayluz-pr rev-parse HEAD)" = "$AGUAYLUZ_NWPS_COMMIT"
-          test "$(git -C _source/aguayluz-pr hash-object data/nwps_gauge_state.jsonl)" = "$AGUAYLUZ_NWPS_BLOB_SHA1"
+          set -euo pipefail
+          packet=_source/aguayluz-packet
+          test "$(git -C "$packet" rev-parse HEAD)" = "$AGUAYLUZ_PACKET_COMMIT"
+          test "$(git -C "$packet" hash-object data/nwps_gauge_state.jsonl)" = "$NWPS_SOURCE_BLOB_SHA1"
+          test "$(git -C "$packet" hash-object federation/spatial/migrations/nwps_v1/binding_input.jsonl)" = "$NWPS_BINDING_BLOB_SHA1"
+          test "$(git -C "$packet" hash-object federation/spatial/migrations/nwps_v1/profile_records.jsonl)" = "$NWPS_PROFILE_BLOB_SHA1"
+          test "$(git -C "$packet" hash-object federation/spatial/migrations/nwps_v1/producer_receipt.json)" = "$NWPS_RECEIPT_BLOB_SHA1"
+          test "$(sha256sum "$packet/data/nwps_gauge_state.jsonl" | awk '{print $1}')" = "$NWPS_SOURCE_SHA256"
+          test "$(git -C _runtime/aguayluz-pr rev-parse HEAD)" = "$AGUAYLUZ_RUNTIME_COMMIT"
+
+      - name: Verify producer receipt and stage immutable packet
+        run: |
+          mkdir -p artifacts/aguayluz-nwps-v2
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          packet = Path("_source/aguayluz-packet/federation/spatial/migrations/nwps_v1")
+          receipt = json.loads((packet / "producer_receipt.json").read_text())
+          binding = packet / "binding_input.jsonl"
+          records = packet / "profile_records.jsonl"
+
+          assert receipt["Contract"] == "aguayluz-nwps-grid-v2-source-export/1.0"
+          assert receipt["State"] == "PASS"
+          assert receipt["Input_Record_Count"] == 118
+          assert receipt["Unique_Record_ID_Count"] == 118
+          assert receipt["Binding_Input_Record_Count"] == 118
+          assert receipt["Profile_Record_Count"] == 118
+          assert receipt["Coordinate_Evidence_State"] == "VERIFIED_SOURCE_COORDINATE"
+          assert receipt["Source_CRS"] == "EPSG:4326"
+          assert receipt["Source_SHA256"] == "ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639"
+          assert receipt["Binding_Input_SHA256"] == hashlib.sha256(binding.read_bytes()).hexdigest()
+          assert receipt["Profile_Records_SHA256"] == hashlib.sha256(records.read_bytes()).hexdigest()
+
+          out = Path("artifacts/aguayluz-nwps-v2")
+          (out / "binding_input.jsonl").write_bytes(binding.read_bytes())
+          (out / "profile_records.jsonl").write_bytes(records.read_bytes())
+          (out / "export_receipt.json").write_bytes(
+              (packet / "producer_receipt.json").read_bytes()
+          )
+          print("FROZEN_PRODUCER_PACKET=PASS")
+          PY
 
       - name: Install grid migration dependencies
         run: python -m pip install --disable-pip-version-check -r requirements-grid-v2.txt
-
-      - name: Export exact NWPS source-coordinate denominator
-        run: |
-          mkdir -p artifacts/aguayluz-nwps-v2
-          python _source/aguayluz-pr/scripts/export_nwps_grid_v2_source_records.py \
-            --source _source/aguayluz-pr/data/nwps_gauge_state.jsonl \
-            --binding-out artifacts/aguayluz-nwps-v2/binding_input.jsonl \
-            --records-out artifacts/aguayluz-nwps-v2/profile_records.jsonl \
-            --receipt-out artifacts/aguayluz-nwps-v2/export_receipt.json
 
       - name: Materialize Spiderweb-authoritative V2 bindings
         run: |
@@ -329,8 +373,8 @@ jobs:
 
       - name: Materialize AguaYLuz domain Cell Profiles
         run: |
-          python _source/aguayluz-pr/federation/spatial/materialize_pr_grid_v2_profiles.py \
-            --pin _source/aguayluz-pr/federation/spatial/pr_grid_geographic_v2.pin.json \
+          python _runtime/aguayluz-pr/federation/spatial/materialize_pr_grid_v2_profiles.py \
+            --pin _runtime/aguayluz-pr/federation/spatial/pr_grid_geographic_v2.pin.json \
             --records artifacts/aguayluz-nwps-v2/profile_records.jsonl \
             --bindings artifacts/aguayluz-nwps-v2/bindings.jsonl \
             --binding-receipt artifacts/aguayluz-nwps-v2/binding_receipt.json \
@@ -347,13 +391,12 @@ jobs:
           from pathlib import Path
 
           root = Path("artifacts/aguayluz-nwps-v2")
-          source = Path("_source/aguayluz-pr/data/nwps_gauge_state.jsonl")
           export = json.loads((root / "export_receipt.json").read_text())
           binding = json.loads((root / "binding_receipt.json").read_text())
           profile = json.loads((root / "profile_receipt.json").read_text())
 
           count = export["Input_Record_Count"]
-          assert count > 0
+          assert count == 118
           assert export["Unique_Record_ID_Count"] == count
           assert export["Binding_Input_Record_Count"] == count
           assert export["Profile_Record_Count"] == count
@@ -377,11 +420,12 @@ jobs:
                   }
 
           cert = {
-              "Contract": "aguayluz-nwps-pr-grid-v2-certification/1.0",
+              "Contract": "aguayluz-nwps-pr-grid-v2-certification/1.1",
               "Repository": "aguayluz-pr",
-              "Source_Commit": os.environ["AGUAYLUZ_NWPS_COMMIT"],
-              "Source_Git_Blob_SHA1": os.environ["AGUAYLUZ_NWPS_BLOB_SHA1"],
-              "Source_SHA256": hashlib.sha256(source.read_bytes()).hexdigest(),
+              "Producer_Packet_Commit": os.environ["AGUAYLUZ_PACKET_COMMIT"],
+              "Consumer_Runtime_Commit": os.environ["AGUAYLUZ_RUNTIME_COMMIT"],
+              "Source_Git_Blob_SHA1": os.environ["NWPS_SOURCE_BLOB_SHA1"],
+              "Source_SHA256": os.environ["NWPS_SOURCE_SHA256"],
               "Grid_Level": os.environ["GRID_LEVEL"],
               "Input_Record_Count": count,
               "Binding_Row_Count": binding["Binding_Row_Count"],
@@ -389,6 +433,7 @@ jobs:
               "Profile_Count": profile["Profile_Count"],
               "Artifacts": files,
               "Geometry_Copied": False,
+              "Promotion_State": "CANDIDATE_NOT_CANONICAL",
               "State": "PASS",
           }
           (root / "certification.json").write_text(
