@@ -6,7 +6,6 @@
   "producer_packet_commit": "c5082ac80e6d25235e724732216cbf14d31eaacf",
   "consumer_runtime_commit": "725c1de5c093ba13830294a5547fb20a63f13932",
   "source_path": "data/nwps_gauge_state.jsonl",
-  "source_git_blob_sha1": "4c2f8efe6cbb25eadf5f822b06fea1e23df076b0",
   "source_sha256": "ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639",
   "frozen_packet": {
     "binding_input_path": "federation/spatial/migrations/nwps_v1/binding_input.jsonl",
@@ -38,5 +37,6 @@
     "profile_receipt.json",
     "certification.json"
   ],
-  "state": "REQUESTED_NOT_CERTIFIED"
+  "state": "REQUESTED_NOT_CERTIFIED",
+  "source_identity_state": "PRODUCER_RECEIPT_BOUND"
 }
