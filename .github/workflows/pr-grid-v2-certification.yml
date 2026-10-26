@@ -402,9 +402,12 @@ jobs:
           assert binding["Coordinate_Evidence_State"] == "VERIFIED_SOURCE_COORDINATE"
           assert binding["Source_CRS_Counts"] == {"EPSG:4326": count}
           assert binding["Receipt_State"] == "PASS"
-          assert profile["Migration_Class"] == "RECOMPUTED_FROM_SOURCE_COORDINATE"
+          assert profile["Input_Record_Count"] == count
+          assert profile["Migration_Class"] == "SPIDERWEB_CERTIFIED_EXACT_BINDINGS"
           assert profile["Geometry_Copied"] is False
           assert profile["State"] == "CANDIDATE_NOT_CANONICAL"
+          assert profile["Profile_Count"] == 111
+          assert profile["Data_State_Counts"] == {"HAS_RECORDS": 111}
 
           files = {}
           for path in sorted(root.iterdir()):
