@@ -37,6 +37,11 @@
     "profile_receipt.json",
     "certification.json"
   ],
-  "state": "REQUESTED_NOT_CERTIFIED",
-  "source_identity_state": "PRODUCER_RECEIPT_BOUND"
+  "state": "EXECUTION_CERTIFIED_CANDIDATE_NOT_CANONICAL",
+  "source_identity_state": "PRODUCER_RECEIPT_BOUND",
+  "certification_receipt": "registry/spatial/v2/aguayluz_nwps_l1_migration.certification.json",
+  "certification_receipt_sha256": "91687d200eefda1b3c5e454e9ef4547eafc60abc4843172909fb33fc4b75a8f3",
+  "certification_workflow_run_id": 40371848300,
+  "certification_artifact_id": 12672673063,
+  "certification_artifact_digest": "sha256:02ea1461121e5693c940a5c41f1f962ddfa9676b2fe3ed46dbb970f4aa1cf036"
 }
