@@ -285,11 +285,9 @@ jobs:
     env:
       AGUAYLUZ_PACKET_COMMIT: c5082ac80e6d25235e724732216cbf14d31eaacf
       AGUAYLUZ_RUNTIME_COMMIT: 725c1de5c093ba13830294a5547fb20a63f13932
-      NWPS_SOURCE_BLOB_SHA1: 4c2f8efe6cbb25eadf5f822b06fea1e23df076b0
       NWPS_BINDING_BLOB_SHA1: 131b2a3cbcc308a8e93bc668b26ba559a80e099e
       NWPS_PROFILE_BLOB_SHA1: a819f0e4efeec8f0a4eea707291b96dcc84039b4
       NWPS_RECEIPT_BLOB_SHA1: d7ca50c2112af8a29bb70f3f2549b62115361ece
-      NWPS_SOURCE_SHA256: ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639
       GRID_LEVEL: L1
     steps:
       - name: Check out Spiderweb authority
@@ -318,11 +316,9 @@ jobs:
           set -euo pipefail
           packet=_source/aguayluz-packet
           test "$(git -C "$packet" rev-parse HEAD)" = "$AGUAYLUZ_PACKET_COMMIT"
-          test "$(git -C "$packet" hash-object data/nwps_gauge_state.jsonl)" = "$NWPS_SOURCE_BLOB_SHA1"
           test "$(git -C "$packet" hash-object federation/spatial/migrations/nwps_v1/binding_input.jsonl)" = "$NWPS_BINDING_BLOB_SHA1"
           test "$(git -C "$packet" hash-object federation/spatial/migrations/nwps_v1/profile_records.jsonl)" = "$NWPS_PROFILE_BLOB_SHA1"
           test "$(git -C "$packet" hash-object federation/spatial/migrations/nwps_v1/producer_receipt.json)" = "$NWPS_RECEIPT_BLOB_SHA1"
-          test "$(sha256sum "$packet/data/nwps_gauge_state.jsonl" | awk '{print $1}')" = "$NWPS_SOURCE_SHA256"
           test "$(git -C _runtime/aguayluz-pr rev-parse HEAD)" = "$AGUAYLUZ_RUNTIME_COMMIT"
 
       - name: Verify producer receipt and stage immutable packet
@@ -424,8 +420,8 @@ jobs:
               "Repository": "aguayluz-pr",
               "Producer_Packet_Commit": os.environ["AGUAYLUZ_PACKET_COMMIT"],
               "Consumer_Runtime_Commit": os.environ["AGUAYLUZ_RUNTIME_COMMIT"],
-              "Source_Git_Blob_SHA1": os.environ["NWPS_SOURCE_BLOB_SHA1"],
-              "Source_SHA256": os.environ["NWPS_SOURCE_SHA256"],
+              "Source_SHA256": export["Source_SHA256"],
+              "Source_Identity_State": "PRODUCER_RECEIPT_BOUND",
               "Grid_Level": os.environ["GRID_LEVEL"],
               "Input_Record_Count": count,
               "Binding_Row_Count": binding["Binding_Row_Count"],
