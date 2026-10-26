@@ -36,7 +36,6 @@
         {
           "Slice_ID": "NWPS_GAUGE_STATE",
           "Source_Path": "data/nwps_gauge_state.jsonl",
-          "Source_Git_Blob_SHA1": "4c2f8efe6cbb25eadf5f822b06fea1e23df076b0",
           "Migration_Input_Class": "EXACT_SOURCE_POINT",
           "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
           "Target_Level": "L1",
@@ -49,7 +48,8 @@
           "Source_SHA256": "ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639",
           "Frozen_Packet_Record_Count": 118,
           "Frozen_Packet_Receipt": "federation/spatial/migrations/nwps_v1/producer_receipt.json",
-          "Frozen_Packet_Receipt_Git_Blob_SHA1": "d7ca50c2112af8a29bb70f3f2549b62115361ece"
+          "Frozen_Packet_Receipt_Git_Blob_SHA1": "d7ca50c2112af8a29bb70f3f2549b62115361ece",
+          "Source_Identity_State": "PRODUCER_RECEIPT_BOUND"
         }
       ]
     },
