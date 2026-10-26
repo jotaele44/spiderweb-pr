@@ -8,7 +8,7 @@
   "Binding_Schema_SHA256": "dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022",
   "Binding_Schema_Version": "pr-grid-v2-binding/1.0",
   "Geometry_Authority": "spiderweb-pr",
-  "Geometry_Authority_Commit": "0c66e13d14232c0d7cbcbc179b3655904777dc71",
+  "Geometry_Authority_Commit": "b8f5cf303ab7fc2b6ed006edce0fb12e1344a096",
   "Geometry_Producer_Count": 1,
   "Identity_Default": "CANDIDATE_NOT_IDENTITY",
   "Canonical_Dispatcher": {
@@ -31,7 +31,7 @@
       "Repository": "aguayluz-pr",
       "Default_Level": "L1",
       "Cell_Profile_Materializer_State": "IMPLEMENTED",
-      "Migration_State": "FIRST_SLICE_PIPELINE_IMPLEMENTED",
+      "Migration_State": "FIRST_SLICE_EXECUTION_CERTIFIED_CANDIDATE",
       "Slices": [
         {
           "Slice_ID": "NWPS_GAUGE_STATE",
@@ -41,7 +41,7 @@
           "Target_Level": "L1",
           "Workflow": ".github/workflows/pr-grid-v2-certification.yml",
           "Workflow_Job": "certify-aguayluz-nwps",
-          "Execution_Evidence_State": "FROZEN_PRODUCER_PACKET_VERIFIED_EXECUTION_PENDING",
+          "Execution_Evidence_State": "FROZEN_CERTIFICATION_RECEIPT_PASS",
           "Promotion_State": "CANDIDATE_NOT_CANONICAL",
           "Producer_Packet_Commit": "c5082ac80e6d25235e724732216cbf14d31eaacf",
           "Consumer_Runtime_Commit": "725c1de5c093ba13830294a5547fb20a63f13932",
@@ -49,7 +49,15 @@
           "Frozen_Packet_Record_Count": 118,
           "Frozen_Packet_Receipt": "federation/spatial/migrations/nwps_v1/producer_receipt.json",
           "Frozen_Packet_Receipt_Git_Blob_SHA1": "d7ca50c2112af8a29bb70f3f2549b62115361ece",
-          "Source_Identity_State": "PRODUCER_RECEIPT_BOUND"
+          "Source_Identity_State": "PRODUCER_RECEIPT_BOUND",
+          "Certification_Receipt": "registry/spatial/v2/aguayluz_nwps_l1_migration.certification.json",
+          "Certification_Receipt_SHA256": "91687d200eefda1b3c5e454e9ef4547eafc60abc4843172909fb33fc4b75a8f3",
+          "Certification_Workflow_Run_ID": 40371848300,
+          "Certification_Artifact_ID": 12672673063,
+          "Certification_Artifact_Digest": "sha256:02ea1461121e5693c940a5c41f1f962ddfa9676b2fe3ed46dbb970f4aa1cf036",
+          "Input_Record_Count": 118,
+          "Binding_Row_Count": 118,
+          "Profile_Count": 111
         }
       ]
     },
