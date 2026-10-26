@@ -1,0 +1,83 @@
+{
+  "Contract": "aguayluz-nwps-pr-grid-v2-durable-certification/1.0",
+  "Repository": "aguayluz-pr",
+  "Slice_ID": "NWPS_GAUGE_STATE",
+  "State": "PASS",
+  "Promotion_State": "CANDIDATE_NOT_CANONICAL",
+  "Source_Identity_State": "PRODUCER_RECEIPT_BOUND",
+  "Producer_Packet_Commit": "c5082ac80e6d25235e724732216cbf14d31eaacf",
+  "Consumer_Runtime_Commit": "725c1de5c093ba13830294a5547fb20a63f13932",
+  "Geometry_Authority": "spiderweb-pr",
+  "Geometry_Authority_Epoch": "b8f5cf303ab7fc2b6ed006edce0fb12e1344a096",
+  "Geometry_Copied": false,
+  "Grid_ID": "PR_GRID_GEOGRAPHIC_V2",
+  "Grid_Version": "2.0.0-rc1",
+  "Grid_Level": "L1",
+  "Grid_Manifest_SHA256": "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4",
+  "Binding_Schema_SHA256": "dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022",
+  "Source_SHA256": "ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639",
+  "Input_Record_Count": 118,
+  "Unique_Record_ID_Count": 118,
+  "Binding_Row_Count": 118,
+  "Binding_State_Counts": {
+    "INTERIOR": 118
+  },
+  "Boundary_Snap_Record_Count": 0,
+  "Projection_Audit_Row_Count": 118,
+  "Profile_Count": 111,
+  "Profile_Data_State_Counts": {
+    "HAS_RECORDS": 111
+  },
+  "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
+  "Profile_Migration_Class": "SPIDERWEB_CERTIFIED_EXACT_BINDINGS",
+  "Workflow_Evidence": {
+    "Workflow_Run_ID": 40371848300,
+    "Workflow_Job_ID": 121744350584,
+    "Execution_Head_SHA": "953d9720823eaf36a76521c0ff7e6af20b390036",
+    "Artifact_ID": 12672673063,
+    "Artifact_Name": "aguayluz-nwps-pr-grid-v2-L1",
+    "Artifact_Size_Bytes": 34135,
+    "Artifact_Digest": "sha256:02ea1461121e5693c940a5c41f1f962ddfa9676b2fe3ed46dbb970f4aa1cf036",
+    "Artifact_Created_At": "2026-10-26T17:47:32Z",
+    "Artifact_Expires_At": "2027-01-24T17:47:04Z"
+  },
+  "Artifacts": {
+    "binding_input.jsonl": {
+      "bytes": 54001,
+      "sha256": "cc20eac89b8588dd234574543741eb8af90ffd6edaf23a44692cf2fbe2bd5df7"
+    },
+    "binding_receipt.json": {
+      "bytes": 1208,
+      "sha256": "a275dcace717dee031bbcca66782967200674e8bed7da53035fe24e782458dbd"
+    },
+    "bindings.jsonl": {
+      "bytes": 57702,
+      "sha256": "7c49ff0463eb3b950f86854b54a3ff8e607b30114594db75a3fda7732bdc2bf1"
+    },
+    "certification.json": {
+      "bytes": 1766,
+      "sha256": "1cbe05c12a18542e9efa3fa33594b6ea306600d9ac627ff77a2053f174a9db40"
+    },
+    "export_receipt.json": {
+      "bytes": 879,
+      "sha256": "d7b51210c4b3c55ffa5f0d3ac23c7950188f896b9898496567be01bd904b37c1"
+    },
+    "profile_receipt.json": {
+      "bytes": 1414,
+      "sha256": "2132438f6a7e64c1f1fa66b0bff71f7b4a1d9938c0b5aec41bbad06163711fda"
+    },
+    "profile_records.jsonl": {
+      "bytes": 44827,
+      "sha256": "4f470d1747e0073aff64e5e622744d79b45508c2438868d710ceba4df537535e"
+    },
+    "profiles.jsonl": {
+      "bytes": 114305,
+      "sha256": "98602437fe49dfa6e7e800224c6b810c85d40289cddd394ffc10bc45e0770dd4"
+    },
+    "projection_audit.jsonl": {
+      "bytes": 107597,
+      "sha256": "ca997c75f009a12fdefb73d2dec3c88a6f447c8ca29dd39cafe919d80f6b35f9"
+    }
+  },
+  "Certification_Boundary": "The durable receipt certifies the frozen producer packet through Spiderweb binding and producer Cell_Profile materialization. It does not promote the slice to canonical publication and does not certify unrelated AguaYLuz records."
+}

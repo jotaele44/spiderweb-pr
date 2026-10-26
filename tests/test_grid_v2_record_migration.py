@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
+
 import pytest
 
 from spiderweb.geographic_grid_v2 import GridV2Error
@@ -188,3 +192,54 @@ def test_duplicate_identity_across_different_families_fails_before_routing():
 def test_wrong_level_fails_closed():
     with pytest.raises(GridV2Error, match="unknown grid level"):
         migrate_records(_mixed_rows(), level="L9")
+
+
+def test_nwps_durable_certification_closes_denominator_without_promotion():
+    root = Path(__file__).resolve().parents[1]
+    receipt_path = root / "registry/spatial/v2/aguayluz_nwps_l1_migration.certification.json"
+    denominator_path = root / "registry/spatial/v2/record_binding_migration_denominator.json"
+    request_path = root / "registry/spatial/v2/aguayluz_nwps_l1_migration.request.json"
+
+    receipt_bytes = receipt_path.read_bytes()
+    receipt = json.loads(receipt_bytes)
+    denominator = json.loads(denominator_path.read_text())
+    request = json.loads(request_path.read_text())
+
+    producer = next(
+        row for row in denominator["Producers"]
+        if row["Repository"] == "aguayluz-pr"
+    )
+    slice_row = next(
+        row for row in producer["Slices"]
+        if row["Slice_ID"] == "NWPS_GAUGE_STATE"
+    )
+
+    assert denominator["Geometry_Authority_Commit"] == "b8f5cf303ab7fc2b6ed006edce0fb12e1344a096"
+    assert producer["Migration_State"] == "FIRST_SLICE_EXECUTION_CERTIFIED_CANDIDATE"
+    assert slice_row["Execution_Evidence_State"] == "FROZEN_CERTIFICATION_RECEIPT_PASS"
+    assert slice_row["Promotion_State"] == "CANDIDATE_NOT_CANONICAL"
+    assert slice_row["Certification_Receipt"] == str(
+        receipt_path.relative_to(root)
+    )
+    assert slice_row["Certification_Receipt_SHA256"] == hashlib.sha256(
+        receipt_bytes
+    ).hexdigest()
+
+    assert receipt["State"] == "PASS"
+    assert receipt["Promotion_State"] == "CANDIDATE_NOT_CANONICAL"
+    assert receipt["Geometry_Copied"] is False
+    assert receipt["Input_Record_Count"] == 118
+    assert receipt["Binding_Row_Count"] == 118
+    assert receipt["Binding_State_Counts"] == {"INTERIOR": 118}
+    assert receipt["Profile_Count"] == 111
+    assert receipt["Profile_Data_State_Counts"] == {"HAS_RECORDS": 111}
+    assert receipt["Migration_Provenance_Class"] == "RECOMPUTED_FROM_SOURCE_COORDINATE"
+    assert receipt["Profile_Migration_Class"] == "SPIDERWEB_CERTIFIED_EXACT_BINDINGS"
+
+    assert request["state"] == "EXECUTION_CERTIFIED_CANDIDATE_NOT_CANONICAL"
+    assert request["certification_receipt"] == str(
+        receipt_path.relative_to(root)
+    )
+    assert request["certification_receipt_sha256"] == hashlib.sha256(
+        receipt_bytes
+    ).hexdigest()

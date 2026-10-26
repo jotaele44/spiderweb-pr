@@ -1,11 +1,23 @@
 {
-  "contract": "pr-grid-v2-migration-request/1.0",
+  "contract": "pr-grid-v2-migration-request/1.1",
   "repository": "aguayluz-pr",
   "dataset": "NWPS_GAUGE_STATE",
   "source_repository": "jotaele44/aguayluz-pr",
-  "source_commit": "459c0777365786419da5c62db20abfdec21aa092",
+  "producer_packet_commit": "c5082ac80e6d25235e724732216cbf14d31eaacf",
+  "consumer_runtime_commit": "725c1de5c093ba13830294a5547fb20a63f13932",
   "source_path": "data/nwps_gauge_state.jsonl",
-  "source_git_blob_sha1": "f8ec4cdf63fb74bc73bce84560c9525444a8620c",
+  "source_sha256": "ef1c19c06a428faa188b1f2d92d8fe6156798904eb982456e2f0269d7216e639",
+  "frozen_packet": {
+    "binding_input_path": "federation/spatial/migrations/nwps_v1/binding_input.jsonl",
+    "binding_input_git_blob_sha1": "131b2a3cbcc308a8e93bc668b26ba559a80e099e",
+    "binding_input_sha256": "cc20eac89b8588dd234574543741eb8af90ffd6edaf23a44692cf2fbe2bd5df7",
+    "profile_records_path": "federation/spatial/migrations/nwps_v1/profile_records.jsonl",
+    "profile_records_git_blob_sha1": "a819f0e4efeec8f0a4eea707291b96dcc84039b4",
+    "profile_records_sha256": "4f470d1747e0073aff64e5e622744d79b45508c2438868d710ceba4df537535e",
+    "producer_receipt_path": "federation/spatial/migrations/nwps_v1/producer_receipt.json",
+    "producer_receipt_git_blob_sha1": "d7ca50c2112af8a29bb70f3f2549b62115361ece",
+    "record_count": 118
+  },
   "grid_id": "PR_GRID_GEOGRAPHIC_V2",
   "grid_version": "2.0.0-rc1",
   "grid_manifest_sha256": "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4",
@@ -25,5 +37,11 @@
     "profile_receipt.json",
     "certification.json"
   ],
-  "state": "REQUESTED_NOT_CERTIFIED"
+  "state": "EXECUTION_CERTIFIED_CANDIDATE_NOT_CANONICAL",
+  "source_identity_state": "PRODUCER_RECEIPT_BOUND",
+  "certification_receipt": "registry/spatial/v2/aguayluz_nwps_l1_migration.certification.json",
+  "certification_receipt_sha256": "91687d200eefda1b3c5e454e9ef4547eafc60abc4843172909fb33fc4b75a8f3",
+  "certification_workflow_run_id": 40371848300,
+  "certification_artifact_id": 12672673063,
+  "certification_artifact_digest": "sha256:02ea1461121e5693c940a5c41f1f962ddfa9676b2fe3ed46dbb970f4aa1cf036"
 }
