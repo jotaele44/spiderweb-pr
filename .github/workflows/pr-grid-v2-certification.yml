@@ -279,7 +279,7 @@ jobs:
 
 
   certify-aguayluz-nwps:
-    if: github.event_name != 'pull_request' || github.head_ref == 'cert/nwps-v2-freeze-receipt'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
