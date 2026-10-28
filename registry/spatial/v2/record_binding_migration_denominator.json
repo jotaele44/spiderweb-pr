@@ -8,7 +8,7 @@
   "Binding_Schema_SHA256": "dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022",
   "Binding_Schema_Version": "pr-grid-v2-binding/1.0",
   "Geometry_Authority": "spiderweb-pr",
-  "Geometry_Authority_Commit": "0c66e13d14232c0d7cbcbc179b3655904777dc71",
+  "Geometry_Authority_Commit": "b8f5cf303ab7fc2b6ed006edce0fb12e1344a096",
   "Geometry_Producer_Count": 1,
   "Identity_Default": "CANDIDATE_NOT_IDENTITY",
   "Canonical_Dispatcher": {
@@ -78,5 +78,5 @@
     }
   ],
   "Unmigrated_Domains_Are_Not_Zero": true,
-  "Notes": "This denominator freezes migration scope and implementation state. NOT_YET_MIGRATED and CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY are explicit non-promotion states. TheHub is a control-plane/index consumer and is not a domain geometry producer."
+  "Notes": "Authority generation advanced to b8f5cf303ab7fc2b6ed006edce0fb12e1344a096 because that commit preserves the frozen V2 geometry manifest/schema bytes while adding the canonical binding-migration implementation. This denominator freezes migration scope and implementation state. NOT_YET_MIGRATED and CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY are explicit non-promotion states. TheHub is a control-plane/index consumer and is not a domain geometry producer."
 }
