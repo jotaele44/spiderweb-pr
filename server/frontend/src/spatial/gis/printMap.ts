@@ -19,6 +19,20 @@ export interface PrintSidecar {
   scale_text: string;
 }
 
+/**
+ * Plain text of a source attribution (which MapLibre styles carry as HTML,
+ * e.g. `<a href=…>© OpenStreetMap</a>`). Parsed into an inert DOMParser
+ * document — never executed, never inserted into the page — and only its text
+ * content is kept (minus any angle brackets), so no markup survives into the
+ * print footer or sidecar.
+ */
+export function plainTextAttribution(html: string): string {
+  const text = new DOMParser().parseFromString(html, "text/html").body.textContent;
+  // Drop every angle bracket left in the text so nothing tag-shaped survives
+  // even if a later consumer renders this string as HTML.
+  return text.replace(/[<>]/g, "").replace(/\s+/g, " ").trim();
+}
+
 /** Metres per CSS pixel at the map centre (Web Mercator). */
 export function metresPerPixel(lat: number, zoom: number): number {
   return (156543.03392 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;

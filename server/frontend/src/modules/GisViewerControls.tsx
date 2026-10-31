@@ -13,7 +13,7 @@ import {
   type MapViewState,
 } from "../spatial/gis/mapState";
 import { setSourceOpacity } from "../spatial/gis/opacity";
-import { buildPrintSidecar, printMap } from "../spatial/gis/printMap";
+import { buildPrintSidecar, plainTextAttribution, printMap } from "../spatial/gis/printMap";
 
 /**
  * Viewer-level GIS controls for the MapLibre runtime: search, home/previous/
@@ -46,7 +46,7 @@ function attributionText(map: maplibregl.Map): string {
   const parts = new Set<string>();
   for (const source of Object.values(style.sources ?? {})) {
     const attribution = (source as { attribution?: unknown }).attribution;
-    if (typeof attribution === "string" && attribution) parts.add(attribution.replace(/<[^>]+>/g, ""));
+    if (typeof attribution === "string" && attribution) parts.add(plainTextAttribution(attribution));
   }
   return [...parts].join(" · ");
 }

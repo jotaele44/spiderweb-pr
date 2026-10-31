@@ -6,7 +6,7 @@ import { ExtentHistory } from "./extentHistory";
 import { googleMapsPointUrl, googleStreetViewUrl } from "./externalLinks";
 import { drawPolygonCollection, formatArea, polygonFromVertices, ringAreaM2 } from "./measure";
 import { createGisClient, polygonQueryBody } from "./gisApi";
-import { buildPrintSidecar, metresPerPixel, scaleBar } from "./printMap";
+import { buildPrintSidecar, metresPerPixel, plainTextAttribution, scaleBar } from "./printMap";
 import { scaledOpacity, setSourceOpacity } from "./opacity";
 
 function memoryStorage() {
@@ -123,6 +123,12 @@ describe("print sidecar and scale bar", () => {
     const bar = scaleBar(18.2, 9, 120);
     expect(["10 km", "20 km", "5 km", "2 km"]).toContain(bar.label);
     expect(bar.px).toBeLessThanOrEqual(120);
+  });
+
+  it("reduces HTML attributions to plain text with no surviving markup", () => {
+    expect(plainTextAttribution('<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a> contributors')).toBe("© OpenStreetMap contributors");
+    expect(plainTextAttribution("<scr<script>ipt>alert(1)</script>Terrain")).not.toMatch(/<|>/);
+    expect(plainTextAttribution("<img src=x onerror=alert(1)>Tiles")).toBe("Tiles");
   });
 
   it("records extent, layers and timestamp", () => {
