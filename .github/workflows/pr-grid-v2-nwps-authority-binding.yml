@@ -1,0 +1,138 @@
+name: PR grid V2 NWPS authority binding
+
+on:
+  push:
+    branches:
+      - "feat/pr-grid-v2-nwps-binding-v1"
+    paths:
+      - "registry/spatial/v2/migrations/aguayluz_nwps_v1/**"
+      - ".github/workflows/pr-grid-v2-nwps-authority-binding.yml"
+  pull_request:
+    paths:
+      - "registry/spatial/v2/migrations/aguayluz_nwps_v1/**"
+      - ".github/workflows/pr-grid-v2-nwps-authority-binding.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bind-nwps-l1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install authoritative projection dependency
+        run: python -m pip install --disable-pip-version-check pyproj
+
+      - name: Fetch exact AguaYLuz producer packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          producer="$RUNNER_TEMP/aguayluz-pr"
+          sha="cc72624655ab167f6e35395a61b4a5201a92e49e"
+          git clone --filter=blob:none --no-checkout https://github.com/jotaele44/aguayluz-pr.git "$producer"
+          git -C "$producer" sparse-checkout init --no-cone
+          git -C "$producer" sparse-checkout set --no-cone             /federation/spatial/migrations/nwps_v1/binding_input.jsonl             /federation/spatial/migrations/nwps_v1/profile_records.jsonl             /federation/spatial/migrations/nwps_v1/producer_receipt.json
+          git -C "$producer" fetch --depth 1 origin "$sha"
+          git -C "$producer" checkout --detach FETCH_HEAD
+          test "$(git -C "$producer" rev-parse HEAD)" = "$sha"
+
+      - name: Validate frozen producer packet
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "aguayluz-pr"
+          packet = root / "federation/spatial/migrations/nwps_v1"
+          binding = packet / "binding_input.jsonl"
+          records = packet / "profile_records.jsonl"
+          receipt = json.loads((packet / "producer_receipt.json").read_text())
+          spec = json.loads(
+              Path("registry/spatial/v2/migrations/aguayluz_nwps_v1/migration_spec.json").read_text()
+          )
+
+          binding_bytes = binding.read_bytes()
+          records_bytes = records.read_bytes()
+          binding_rows = [json.loads(x) for x in binding_bytes.decode().splitlines() if x.strip()]
+          record_rows = [json.loads(x) for x in records_bytes.decode().splitlines() if x.strip()]
+
+          assert receipt["State"] == "PASS"
+          assert receipt["Repository"] == "aguayluz-pr"
+          assert receipt["Binding_Input_Record_Count"] == 118
+          assert receipt["Profile_Record_Count"] == 118
+          assert len(binding_rows) == 118
+          assert len(record_rows) == 118
+          assert len({r["Record_ID"] for r in binding_rows}) == 118
+          assert hashlib.sha256(binding_bytes).hexdigest() == spec["producer"]["binding_input_sha256"]
+          assert len(binding_bytes) == spec["producer"]["binding_input_bytes"]
+          assert hashlib.sha256(records_bytes).hexdigest() == spec["producer"]["profile_records_sha256"]
+          assert all(r["Repository"] == "aguayluz-pr" for r in binding_rows)
+          assert all(r["Source_CRS"] == "EPSG:4326" for r in binding_rows)
+          assert all(r["Coordinate_Evidence_State"] == "VERIFIED_SOURCE_COORDINATE" for r in binding_rows)
+          assert all(r["Uncertainty_Class"] == "EXACT" for r in binding_rows)
+          assert all("Cell_ID" not in r for r in binding_rows)
+          print("NWPS_PRODUCER_PACKET=PASS")
+          PY
+
+      - name: Materialize Spiderweb-authoritative L1 bindings
+        run: |
+          mkdir -p artifacts/pr-grid-v2-nwps-authority
+          python scripts/materialize_pr_grid_v2_source_coordinate_bindings.py             --input "$RUNNER_TEMP/aguayluz-pr/federation/spatial/migrations/nwps_v1/binding_input.jsonl"             --level L1             --bindings-out artifacts/pr-grid-v2-nwps-authority/bindings.jsonl             --projection-out artifacts/pr-grid-v2-nwps-authority/projection_audit.jsonl             --receipt-out artifacts/pr-grid-v2-nwps-authority/authority_receipt.json
+
+      - name: Certify authoritative migration outputs
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path("artifacts/pr-grid-v2-nwps-authority")
+          bindings = root / "bindings.jsonl"
+          projections = root / "projection_audit.jsonl"
+          receipt = json.loads((root / "authority_receipt.json").read_text())
+          binding_rows = [json.loads(x) for x in bindings.read_text().splitlines() if x.strip()]
+          projection_rows = [json.loads(x) for x in projections.read_text().splitlines() if x.strip()]
+
+          assert receipt["Receipt_State"] == "PASS"
+          assert receipt["Migration_Provenance_Class"] == "RECOMPUTED_FROM_SOURCE_COORDINATE"
+          assert receipt["Coordinate_Evidence_State"] == "VERIFIED_SOURCE_COORDINATE"
+          assert receipt["Grid_ID"] == "PR_GRID_GEOGRAPHIC_V2"
+          assert receipt["Grid_Version"] == "2.0.0-rc1"
+          assert receipt["Grid_Manifest_SHA256"] == "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4"
+          assert receipt["Binding_Schema_SHA256"] == "dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022"
+          assert receipt["Input_SHA256"] == "cc20eac89b8588dd234574543741eb8af90ffd6edaf23a44692cf2fbe2bd5df7"
+          assert receipt["Input_Record_Count"] == 118
+          assert receipt["Projection_Audit_Row_Count"] == 118
+          assert receipt["Binding_Row_Count"] == len(binding_rows)
+          assert 118 <= len(binding_rows) <= 472
+          assert len(projection_rows) == 118
+          assert not ({"OUTSIDE", "UNRESOLVED"} & set(receipt["State_Counts"]))
+          assert all(r["Repository"] == "aguayluz-pr" for r in binding_rows)
+          assert all(r["Grid_Level"] == "L1" for r in binding_rows)
+          assert all(r["Cell_ID"].startswith("PRG2:L1:") for r in binding_rows)
+          assert all(r["Uncertainty_Class"] == "EXACT" for r in binding_rows)
+          assert receipt["Binding_Output_SHA256"] == hashlib.sha256(bindings.read_bytes()).hexdigest()
+          assert receipt["Projection_Output_SHA256"] == hashlib.sha256(projections.read_bytes()).hexdigest()
+          print("NWPS_SPIDERWEB_AUTHORITY_BINDING=PASS")
+          print(json.dumps({
+              "binding_rows": len(binding_rows),
+              "state_counts": receipt["State_Counts"],
+              "binding_sha256": receipt["Binding_Output_SHA256"],
+              "projection_sha256": receipt["Projection_Output_SHA256"],
+          }, sort_keys=True))
+          PY
+
+      - name: Upload authority migration evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr-grid-v2-aguayluz-nwps-v1-authority
+          path: artifacts/pr-grid-v2-nwps-authority/
+          retention-days: 90
