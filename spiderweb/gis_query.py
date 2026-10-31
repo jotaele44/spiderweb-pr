@@ -678,11 +678,20 @@ def search_features(
     return [item[2] for item in ranked[:limit]]
 
 
-_DD_RE = re.compile(
-    r"^\s*([+-]?\d{1,3}(?:\.\d+)?)\s*[,;\s]\s*([+-]?\d{1,3}(?:\.\d+)?)\s*$"
+# Coordinate parsing is linear-time by construction (the text is typed by a
+# user): decimal pairs are split on one separator class and each token is
+# full-matched; DMS is matched only after all whitespace is removed, against a
+# pattern whose quantifiers are all bounded. Nothing longer than a coordinate
+# could plausibly be is parsed at all.
+MAX_COORDINATE_TEXT = 64
+_SEPARATORS_RE = re.compile(r"[\s,;]+")
+_DECIMAL_RE = re.compile(r"[+-]?\d{1,3}(?:\.\d{1,12})?")
+_DMS_PART = (
+    r"(\d{1,3})[°d](?:(\d{1,2}(?:\.\d{1,6})?)['′m])?"
+    r"(?:(\d{1,2}(?:\.\d{1,6})?)(?:\"|″|''|s))?([NSEWnsew])"
 )
-_DMS_PART = r"(\d{1,3})\s*[°d]\s*(?:(\d{1,2}(?:\.\d+)?)\s*['′m])?\s*(?:(\d{1,2}(?:\.\d+)?)\s*(?:\"|″|''|s))?\s*([NSEWnsew])"
-_DMS_RE = re.compile(rf"^\s*{_DMS_PART}\s*[,;]?\s*{_DMS_PART}\s*$")
+_DMS_RE = re.compile(rf"{_DMS_PART}[,;]?{_DMS_PART}")
+_WHITESPACE_RE = re.compile(r"\s+")
 
 
 def _dms_value(
@@ -712,9 +721,12 @@ def parse_coordinate_text(
     falls inside ``prefer_region``; if neither reading is in the region, the
     first valid reading wins.
     """
-    match = _DD_RE.match(text or "")
-    if match:
-        a, b = float(match.group(1)), float(match.group(2))
+    text = (text or "").strip()
+    if not text or len(text) > MAX_COORDINATE_TEXT:
+        return None
+    tokens = [token for token in _SEPARATORS_RE.split(text) if token]
+    if len(tokens) == 2 and all(_DECIMAL_RE.fullmatch(token) for token in tokens):
+        a, b = float(tokens[0]), float(tokens[1])
         readings: list[Position] = []
         for lat, lon in ((a, b), (b, a)):
             try:
@@ -728,7 +740,7 @@ def parse_coordinate_text(
             r for r in readings if west <= r[0] <= east and south <= r[1] <= north
         ]
         return (in_region or readings)[0]
-    match = _DMS_RE.match(text or "")
+    match = _DMS_RE.fullmatch(_WHITESPACE_RE.sub("", text))
     if match:
         first, h1 = _dms_value(*match.group(1, 2, 3, 4))
         second, h2 = _dms_value(*match.group(5, 6, 7, 8))

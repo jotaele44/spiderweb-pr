@@ -216,6 +216,14 @@ def test_parse_coordinate_text(text, expected):
     assert lat == pytest.approx(expected[1])
 
 
+def test_parse_coordinate_text_is_linear_on_adversarial_whitespace():
+    # CodeQL py/polynomial-redos: long whitespace runs must not backtrack.
+    assert gq.parse_coordinate_text("1" + "\t" * 50_000 + "x") is None
+    assert gq.parse_coordinate_text("18" + " " * 40 + "-66") == (-66.0, 18.0)
+    assert gq.parse_coordinate_text("18°" + " " * 30 + "28'N 66°42'W") is not None
+    assert gq.parse_coordinate_text("18.4723") is None  # never split one number in two
+
+
 def test_parse_coordinate_text_rejects_non_coordinates():
     assert gq.parse_coordinate_text("Arecibo") is None
     assert gq.parse_coordinate_text("200, 300") is None
