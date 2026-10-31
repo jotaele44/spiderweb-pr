@@ -1,0 +1,36 @@
+{
+  "contract_version": "federation-spatial-impact/1.0",
+  "producer_repo": "spiderweb-pr",
+  "branch": "claude/gis-viewer-api",
+  "base_sha": "f0adae4d1093261b25b4121b0ae0a9f592bebf0b",
+  "head_sha": null,
+  "changes": {
+    "contracts": ["gis-layer-catalog/1.0", "gis-query/1.0", "gis-scenario-result/1.0"],
+    "schemas": [
+      "schemas/gis_layer_catalog_v1.schema.json",
+      "schemas/gis_query_v1.schema.json",
+      "schemas/gis_scenario_result_v1.schema.json"
+    ],
+    "geometry_semantics": [
+      "AOI vocabulary copied unchanged from location_query (point/radius/bbox/polygon|geojson)",
+      "boundary-inclusive point-in-polygon and segment intersection over WGS84 lon/lat",
+      "radius and identify distances via federation.spatial_core.geodesic_distance_m",
+      "features without usable geometry counted in excluded_count, never inferred",
+      "PR Grid V2 identify lookup marked CURSOR_LOOKUP_NOT_RECORD_BINDING; no record-cell binding path changed"
+    ],
+    "crs": ["OGC:CRS84/EPSG:4326 for every /gis request and response", "EPSG:6566 used only inside the grid cursor lookup (pyproj, allow_ballpark=False)"],
+    "api": [
+      "additive: GET /gis/catalog, GET /gis/identify, GET /gis/search, POST /gis/query, POST /gis/export",
+      "no existing endpoint changed"
+    ]
+  },
+  "affected_consumers": [
+    {"repo": "spiderweb-pr", "impact": "REQUIRED", "reason": "authors the contracts and serves /gis/* over its existing /geo layers", "migration": null},
+    {"repo": "moneysweep-pr", "impact": "OPTIONAL", "reason": "may mirror the contracts, router and gis_query module to expose its capital/project geography to a viewer", "migration": "mirror schemas byte-for-byte; supply its own catalog provider and feature loader"},
+    {"repo": "aguayluz-pr", "impact": "OPTIONAL", "reason": "may mirror the contracts and add gis-scenario-result/1.0 over its asset dependency graph", "migration": "mirror schemas byte-for-byte; supply its own catalog provider and feature loader"},
+    {"repo": "skywatcher-pr", "impact": "OPTIONAL", "reason": "may mirror the contracts for observation/track AOI queries and what-if airspace zones", "migration": "mirror schemas byte-for-byte; supply its own catalog provider and feature loader"}
+  ],
+  "backward_compatible": true,
+  "rollback": "revert the branch commits; the change is additive and mutates no database or existing contract",
+  "gates": {"schema": "PASS", "geometry": "PASS", "tests": "PASS", "security": "OPEN", "performance": "OPEN", "desktop": "OPEN", "ios": "N/A", "federation": "BLOCKED"}
+}

@@ -53,6 +53,7 @@ the relevant subsystem below.
 - [EXTERNAL_AERODROME_LAYER.md](EXTERNAL_AERODROME_LAYER.md)
 - [PR_GEODATA_INTEGRITY_AUDIT.md](PR_GEODATA_INTEGRITY_AUDIT.md)
 - [DUCKDB_SPATIAL.md](DUCKDB_SPATIAL.md) — embedded spatial SQL for ad hoc joins/queries over on-disk GeoJSON
+- [GIS_VIEWER_API.md](GIS_VIEWER_API.md) — `/gis/*` catalog, identify, search, AOI query/export, and the map viewer tools
 - DEM workflow: [PR_DEM_END_TO_END_PROCESS.md](PR_DEM_END_TO_END_PROCESS.md),
   [PR_DEM_ONE_TILE_PILOT.md](PR_DEM_ONE_TILE_PILOT.md),
   [PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md](PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md),
