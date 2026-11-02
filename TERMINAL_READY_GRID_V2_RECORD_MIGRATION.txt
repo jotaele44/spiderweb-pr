@@ -26,7 +26,7 @@ python scripts/materialize_pr_grid_v2_record_bindings.py --input /tmp/pr_grid_v2
 
 FULL CERTIFICATION TEST
 
-python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py
+python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py tests/test_aguayluz_nwps_v2_frozen_execution.py tests/test_grid_v2_source_qualification_denominator.py
 
 MINIMAL MIXED SMOKE INPUT
 
@@ -75,14 +75,16 @@ MIGRATION DENOMINATOR
 registry/spatial/v2/record_binding_migration_denominator.json
 
 Current bounded state:
-aguayluz-pr    FIRST_SLICE_PIPELINE_IMPLEMENTED (NWPS_GAUGE_STATE)
-skywatcher-pr  NOT_YET_MIGRATED
+aguayluz-pr    FIRST_SLICE_EXECUTION_FROZEN (NWPS_GAUGE_STATE; 118 bindings / 111 profiles)
+skywatcher-pr  SOURCE_QUALIFIED_EXECUTION_BLOCKED (N400AH; 50 source files / 12,455 point rows / L2 candidate)
 ovnis-pr       NOT_YET_MIGRATED
 moneysweep-pr  NOT_YET_MIGRATED
 centinelas-pr  NOT_YET_MIGRATED
 
 Do not interpret NOT_YET_MIGRATED as ZERO_RECORDS or NO_DATA.
-Do not interpret CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY as certified execution evidence.
+Skywatcher source qualification does NOT mean migration execution: the recovered provider manifestation is not yet CI-addressable.
+Original N400AH.zip byte identity remains UNRESOLVED; the broader recovery container is DISTINCT_PAYLOADS even though the frozen 50-member source subset is byte-identical.
+Both executed and source-qualified slices remain CANDIDATE_NOT_CANONICAL.
 
 FAIL-CLOSED CONDITIONS
 
