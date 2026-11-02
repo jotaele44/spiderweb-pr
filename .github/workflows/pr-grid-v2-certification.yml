@@ -23,6 +23,7 @@ on:
       - "tests/test_grid_v2_record_migration.py"
       - "tests/test_aguayluz_nwps_v2_frozen_execution.py"
       - "tests/test_skywatcher_n400ah_v2_migration_ledger.py"
+      - "tests/test_ovnis_v2_coordinate_evidence_ledger.py"
       - "requirements-grid-v2.txt"
       - "schemas/pr_grid_geographic_v2_*.schema.json"
       - "registry/spatial/v2/**"
@@ -49,6 +50,7 @@ on:
       - "tests/test_grid_v2_record_migration.py"
       - "tests/test_aguayluz_nwps_v2_frozen_execution.py"
       - "tests/test_skywatcher_n400ah_v2_migration_ledger.py"
+      - "tests/test_ovnis_v2_coordinate_evidence_ledger.py"
       - "requirements-grid-v2.txt"
       - "schemas/pr_grid_geographic_v2_*.schema.json"
       - "registry/spatial/v2/**"
@@ -71,7 +73,7 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest jsonschema -r requirements-grid-v2.txt
 
       - name: Run native V2 certification tests
-        run: python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py tests/test_aguayluz_nwps_v2_frozen_execution.py tests/test_skywatcher_n400ah_v2_migration_ledger.py
+        run: python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py tests/test_aguayluz_nwps_v2_frozen_execution.py tests/test_skywatcher_n400ah_v2_migration_ledger.py tests/test_ovnis_v2_coordinate_evidence_ledger.py
 
       - name: Smoke source-coordinate migration
         run: |
