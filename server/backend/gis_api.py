@@ -18,7 +18,8 @@ as ``<package>/gis_query.py``).
 from __future__ import annotations
 
 import json
-from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse, Response
@@ -41,10 +42,10 @@ class GisQueryRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    contract_version: Optional[str] = None
+    contract_version: str | None = None
     geometry: dict[str, Any]
     layers: list[str] = Field(min_length=1)
-    time_range: Optional[dict[str, Optional[str]]] = None
+    time_range: dict[str, str | None] | None = None
     tolerance_m: float = Field(
         default=gq.DEFAULT_TOLERANCE_M, gt=0, le=MAX_IDENTIFY_TOLERANCE_M
     )
@@ -78,7 +79,7 @@ def _project_properties(
     return {field: props.get(field) for field in fields if field in props}
 
 
-def _csv_list(raw: Optional[str]) -> list[str]:
+def _csv_list(raw: str | None) -> list[str]:
     return [item.strip() for item in (raw or "").split(",") if item.strip()]
 
 
@@ -87,7 +88,7 @@ def build_gis_router(
     producer_repo: str,
     catalog_provider: CatalogProvider,
     feature_loader: FeatureLoader,
-    location_context: Optional[LocationContext] = None,
+    location_context: LocationContext | None = None,
     summary_builder: SummaryBuilder = default_summary,
 ) -> APIRouter:
     router = APIRouter(prefix="/gis", tags=["gis"])
@@ -156,7 +157,7 @@ def build_gis_router(
         lon: float,
         lat: float,
         tol_m: float = Query(gq.DEFAULT_TOLERANCE_M, gt=0, le=MAX_IDENTIFY_TOLERANCE_M),
-        layers: Optional[str] = None,
+        layers: str | None = None,
         limit: int = Query(10, ge=1, le=100),
     ):
         """Features at a clicked point, nearest first, plus location context."""
@@ -206,7 +207,7 @@ def build_gis_router(
     @router.get("/search")
     async def gis_search(
         q: str = Query(..., min_length=1, max_length=200),
-        layers: Optional[str] = None,
+        layers: str | None = None,
         limit: int = Query(20, ge=1, le=200),
     ):
         """Ranked text search over each layer's search_fields, plus coordinate parsing."""

@@ -30,8 +30,9 @@ import io
 import math
 import re
 import unicodedata
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Iterable, Iterator, Mapping, Sequence
+from typing import Any
 
 from federation.spatial_core import geodesic_distance_m, validate_lon_lat
 
@@ -150,6 +151,13 @@ def _destination(
     return (math.degrees(l2) + 540) % 360 - 180, math.degrees(p2)
 
 
+def _number(value: Any) -> float:
+    """``float(value)``; a missing or non-numeric value raises TypeError/ValueError."""
+    if isinstance(value, bool):
+        raise TypeError("a coordinate must be a number, not a boolean")
+    return float(value)
+
+
 def circle_ring(
     lon: float, lat: float, radius_m: float, segments: int = _CIRCLE_SEGMENTS
 ) -> Ring:
@@ -170,7 +178,9 @@ def parse_geometry(
     kind = geometry.get("type")
     if kind in ("point", "radius"):
         try:
-            lon, lat = validate_lon_lat(geometry.get("lon"), geometry.get("lat"))
+            lon, lat = validate_lon_lat(
+                _number(geometry.get("lon")), _number(geometry.get("lat"))
+            )
         except (TypeError, ValueError) as exc:
             raise GisQueryError(f"invalid {kind} centre: {exc}") from exc
         if kind == "radius":
@@ -196,8 +206,12 @@ def parse_geometry(
         )
     if kind == "bbox":
         try:
-            west, south = validate_lon_lat(geometry.get("west"), geometry.get("south"))
-            east, north = validate_lon_lat(geometry.get("east"), geometry.get("north"))
+            west, south = validate_lon_lat(
+                _number(geometry.get("west")), _number(geometry.get("south"))
+            )
+            east, north = validate_lon_lat(
+                _number(geometry.get("east")), _number(geometry.get("north"))
+            )
         except (TypeError, ValueError) as exc:
             raise GisQueryError(f"invalid bbox: {exc}") from exc
         if west > east or south > north:
@@ -519,9 +533,7 @@ def _in_time(
         return None
     if start and key < start:
         return False
-    if end and key > end:
-        return False
-    return True
+    return not (end and key > end)
 
 
 # ─── Query / identify / search ────────────────────────────────────────────────
@@ -790,13 +802,13 @@ def features_to_csv(
     )
     for feature in features:
         props = feature.get("properties") or {}
-        anchor = feature_anchor(feature) or [None, None]
+        anchor = feature_anchor(feature)
         geometry = feature.get("geometry") or {}
         writer.writerow(
             [
                 feature_identifier(feature, id_fields) or "",
-                "" if anchor[0] is None else round(anchor[0], 7),
-                "" if anchor[1] is None else round(anchor[1], 7),
+                "" if anchor is None else round(anchor[0], 7),
+                "" if anchor is None else round(anchor[1], 7),
                 geometry.get("type", "") if isinstance(geometry, Mapping) else "",
                 *["" if props.get(c) is None else props.get(c) for c in columns],
             ]
