@@ -77,7 +77,7 @@ registry/spatial/v2/record_binding_migration_denominator.json
 Current bounded state:
 aguayluz-pr    FIRST_SLICE_EXECUTION_FROZEN (NWPS_GAUGE_STATE / L1)
 skywatcher-pr  SOURCE_QUALIFIED_LOCAL_RECOMPUTATION_PASS_CI_BLOCKED_RIGHTS (N400AH_STRUCTURED_TRACKS_2026Q2_Q3_v1 / L2)
-ovnis-pr       NOT_YET_MIGRATED
+ovnis-pr       BLOCKED_NO_VERIFIED_SOURCE_COORDINATE_DENOMINATOR (470 master / 469 coordinate pairs / 0 exact-admissible)
 moneysweep-pr  NOT_YET_MIGRATED
 centinelas-pr  NOT_YET_MIGRATED
 
@@ -92,7 +92,7 @@ CI/public source-byte replay = BLOCKED_REDISTRIBUTION_RIGHTS_UNVERIFIED
 promotion = CANDIDATE_NOT_CANONICAL
 raw provider payloads / coordinate rows / per-cell aggregate committed = NO
 
-Do not interpret NOT_YET_MIGRATED as ZERO_RECORDS or NO_DATA.
+OVNIS coordinate presence is discovery only: 469 numeric pairs do not satisfy EXACT_SOURCE_POINT without VERIFIED_SOURCE_COORDINATE provenance.\nDo not interpret NOT_YET_MIGRATED or BLOCKED migration states as ZERO_RECORDS or NO_DATA.
 Do not interpret independent numeric recomputation PASS as Spiderweb authority execution.
 Do not publish provider payloads, derived coordinate tracks, or per-cell aggregate artifacts while redistribution rights remain UNVERIFIED.
 
