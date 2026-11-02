@@ -75,14 +75,26 @@ MIGRATION DENOMINATOR
 registry/spatial/v2/record_binding_migration_denominator.json
 
 Current bounded state:
-aguayluz-pr    FIRST_SLICE_PIPELINE_IMPLEMENTED (NWPS_GAUGE_STATE)
-skywatcher-pr  NOT_YET_MIGRATED
+aguayluz-pr    FIRST_SLICE_EXECUTION_FROZEN (NWPS_GAUGE_STATE / L1)
+skywatcher-pr  SOURCE_QUALIFIED_LOCAL_RECOMPUTATION_PASS_CI_BLOCKED_RIGHTS (N400AH_STRUCTURED_TRACKS_2026Q2_Q3_v1 / L2)
 ovnis-pr       NOT_YET_MIGRATED
 moneysweep-pr  NOT_YET_MIGRATED
 centinelas-pr  NOT_YET_MIGRATED
 
+Skywatcher N400AH bounded evidence:
+source provider subset = 50/50 BYTE_IDENTICAL
+source coordinate denominator = 12,455 VERIFIED_SOURCE_COORDINATE points
+independent numeric recomputation = 10,875 INTERIOR + 1,580 OUTSIDE = 12,455
+binding rows = 10,875
+unique bound L2 cells = 3,211
+Spiderweb authority execution = NOT_EXECUTED
+CI/public source-byte replay = BLOCKED_REDISTRIBUTION_RIGHTS_UNVERIFIED
+promotion = CANDIDATE_NOT_CANONICAL
+raw provider payloads / coordinate rows / per-cell aggregate committed = NO
+
 Do not interpret NOT_YET_MIGRATED as ZERO_RECORDS or NO_DATA.
-Do not interpret CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY as certified execution evidence.
+Do not interpret independent numeric recomputation PASS as Spiderweb authority execution.
+Do not publish provider payloads, derived coordinate tracks, or per-cell aggregate artifacts while redistribution rights remain UNVERIFIED.
 
 FAIL-CLOSED CONDITIONS
 
