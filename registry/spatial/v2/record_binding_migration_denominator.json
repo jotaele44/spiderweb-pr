@@ -116,8 +116,38 @@
       "Repository": "ovnis-pr",
       "Default_Level": "L1",
       "Cell_Profile_Materializer_State": "IMPLEMENTED",
-      "Migration_State": "NOT_YET_MIGRATED",
-      "Slices": []
+      "Migration_State": "BLOCKED_NO_VERIFIED_SOURCE_COORDINATE_DENOMINATOR",
+      "Slices": [
+        {
+          "Slice_ID": "OVNIS_MASTER_CASE_COORDINATE_EVIDENCE_AUDIT",
+          "Slice_Type": "MIGRATION_ELIGIBILITY_AUDIT",
+          "Evidence_Commit": "2c6fc34970b1cd863821e6fdf6895ea1f454ae99",
+          "Source_Path": "data/master/master_cases.jsonl",
+          "Source_Commit": "6fcbfe58b349c59ed3ebd27ca2bca4afcad4aa22",
+          "Source_Git_Blob_SHA1": "428990a32070295f1efe7a7779e4b0e9f7200e82",
+          "Coordinate_Evidence_Denominator_Path": "data/master/pr_grid_v2_coordinate_evidence_denominator.json",
+          "Coordinate_Evidence_Denominator_Git_Blob_SHA1": "7622a8d8ba918458a8b98a24a82ea3d7754f8339",
+          "Coordinate_Evidence_Auditor_Path": "federation/spatial/audit_pr_grid_v2_coordinate_evidence.py",
+          "Coordinate_Evidence_Auditor_Git_Blob_SHA1": "9df6cd1a7fbe83567f3469bf82aa78e99eb5eda2",
+          "Migration_Input_Class": "EXACT_SOURCE_POINT",
+          "Required_Coordinate_Evidence_State": "VERIFIED_SOURCE_COORDINATE",
+          "Master_Row_Count": 470,
+          "Numeric_Coordinate_Pair_Count": 469,
+          "Missing_Or_NonNumeric_Coordinate_Pair_Count": 1,
+          "Verified_Source_Coordinate_Marker_Count": 0,
+          "Coordinate_Provenance_Field_Row_Count": 0,
+          "Exact_Source_Point_Admissible_Count": 0,
+          "Coordinate_Presence_Is_Exact_Evidence": false,
+          "Location_Confidence_Is_Exact_Evidence": false,
+          "Evidence_Tier_Is_Exact_Coordinate_Evidence": false,
+          "Source_Exporter_Geometry_Precision_State": "UNKNOWN",
+          "Generated_Federation_Exports_Committed": false,
+          "Authority_Execution_State": "NOT_EXECUTED",
+          "Execution_Evidence_State": "AUDIT_PASS_BLOCKED",
+          "Geometry_Copied": false,
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+        }
+      ]
     },
     {
       "Repository": "moneysweep-pr",
@@ -135,5 +165,5 @@
     }
   ],
   "Unmigrated_Domains_Are_Not_Zero": true,
-  "Notes": "Authority generation remains evidence-gated. AguaYLuz NWPS L1 has a frozen CI authority execution artifact. Skywatcher N400AH L2 now has byte-identical source-subset recovery plus an independent numeric recomputation receipt, but Spiderweb authority execution and CI/public source-byte replay remain blocked because provider redistribution rights are unverified. No raw provider payloads, derived coordinate rows, or per-cell aggregates are committed. CANDIDATE_NOT_CANONICAL remains in force; independent recomputation PASS is not authority execution or canonical promotion. NOT_YET_MIGRATED remains distinct from zero records."
+  "Notes": "Authority generation remains evidence-gated. AguaYLuz NWPS L1 has a frozen CI authority execution artifact. Skywatcher N400AH L2 has byte-identical source-subset recovery plus an independent numeric recomputation receipt, but Spiderweb authority execution and CI/public source-byte replay remain blocked because provider redistribution rights are unverified. OVNIS now has a frozen coordinate-evidence eligibility audit: 469/470 master cases contain numeric coordinate pairs, but zero rows carry VERIFIED_SOURCE_COORDINATE or coordinate-provenance fields, so exact-source-point migration remains blocked. Coordinate presence, confidence, and evidence tier are not promoted to exactness. CANDIDATE_NOT_CANONICAL remains in force; blocked/unmigrated states remain distinct from zero records."
 }
