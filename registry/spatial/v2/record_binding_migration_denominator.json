@@ -65,8 +65,52 @@
       "Repository": "skywatcher-pr",
       "Default_Level": "L2",
       "Cell_Profile_Materializer_State": "IMPLEMENTED",
-      "Migration_State": "NOT_YET_MIGRATED",
-      "Slices": []
+      "Migration_State": "SOURCE_QUALIFIED_LOCAL_RECOMPUTATION_PASS_CI_BLOCKED_RIGHTS",
+      "Slices": [
+        {
+          "Slice_ID": "N400AH_STRUCTURED_TRACKS_2026Q2_Q3_v1",
+          "Evidence_Commit": "7f5a3be1fed169d2521cb8c728101246ffb17b6c",
+          "Source_Recovery_Commit": "7812b0795a800e8ff02b6bf54d7313a1879f8e84",
+          "Source_Hash_Ledger_Path": "data/flight_tracks/N400AH/source_hashes.csv",
+          "Source_Hash_Ledger_Git_Blob_SHA1": "cd3a7afe618f3fe29546336aa03dedbdbab679f8",
+          "Source_Recovery_Attestation_Path": "data/flight_tracks/N400AH/source_recovery_attestation.json",
+          "Source_Recovery_Attestation_Git_Blob_SHA1": "d36ef10ef3a706f2dba252f8f9ada38f67fa16d6",
+          "Local_Recomputation_Receipt_Path": "data/flight_tracks/N400AH/grid_v2_local_recomputation_receipt.json",
+          "Local_Recomputation_Receipt_Git_Blob_SHA1": "c5b5d9a9945ba53e9ea762a2f3909d6416b13308",
+          "Local_Recomputation_Receipt_SHA256": "e3a49f4d35e269483cfeacfaca0d6fcb515353a3fc99c6023a1fdc3a675596b7",
+          "Migration_Input_Class": "EXACT_SOURCE_POINT",
+          "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
+          "Coordinate_Evidence_State": "VERIFIED_SOURCE_COORDINATE",
+          "Source_CRS": "EPSG:4326",
+          "Target_Level": "L2",
+          "Execution_Evidence_State": "INDEPENDENT_NUMERIC_RECOMPUTATION_PASS",
+          "Authority_Execution_State": "NOT_EXECUTED",
+          "CI_Reproducibility_State": "BLOCKED_REDISTRIBUTION_RIGHTS_UNVERIFIED",
+          "Provider_Source_Redistribution_State": "UNVERIFIED",
+          "Original_Source_Archive_Byte_Identity_State": "UNRESOLVED",
+          "Recovery_Container_Comparison_State": "DISTINCT_PAYLOADS",
+          "Frozen_Provider_Member_Count": 50,
+          "Frozen_Provider_Matched_Byte_Identical_Count": 50,
+          "Input_Record_Count": 12455,
+          "Binding_Row_Count": 10875,
+          "Interior_Record_Count": 10875,
+          "Outside_Record_Count": 1580,
+          "Edge_Shared_Record_Count": 0,
+          "Corner_Shared_Record_Count": 0,
+          "Boundary_Snap_Record_Count": 0,
+          "Unique_Bound_L2_Cell_Count": 3211,
+          "Deterministic_Local_Source_Bundle_Bytes": 941340,
+          "Deterministic_Local_Source_Bundle_SHA256": "5474176bf080b38174c1fbc2b15b9afc3ef6d0d69fb04612769ca1e7485ac504",
+          "Local_Aggregate_Bytes": 86797,
+          "Local_Aggregate_SHA256": "45662554e29a86fb6eb57eb7dd7740476e2d83430d746e594422ff43bcbb28e3",
+          "Raw_Provider_Payloads_Committed": false,
+          "Derived_Coordinate_Rows_Committed": false,
+          "Per_Cell_Aggregate_Committed": false,
+          "Profile_Execution_State": "NOT_EXECUTED",
+          "Geometry_Copied": false,
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+        }
+      ]
     },
     {
       "Repository": "ovnis-pr",
@@ -91,5 +135,5 @@
     }
   ],
   "Unmigrated_Domains_Are_Not_Zero": true,
-  "Notes": "Authority generation remains evidence-gated. AguaYLuz NWPS L1 now has a frozen CI execution artifact whose source commit/blob, source SHA256, binding/profile counts, internal output hashes, and no-geometry-copy invariant are receipt-bound. CANDIDATE_NOT_CANONICAL remains in force; execution PASS is not canonical promotion. NOT_YET_MIGRATED remains distinct from zero records."
+  "Notes": "Authority generation remains evidence-gated. AguaYLuz NWPS L1 has a frozen CI authority execution artifact. Skywatcher N400AH L2 now has byte-identical source-subset recovery plus an independent numeric recomputation receipt, but Spiderweb authority execution and CI/public source-byte replay remain blocked because provider redistribution rights are unverified. No raw provider payloads, derived coordinate rows, or per-cell aggregates are committed. CANDIDATE_NOT_CANONICAL remains in force; independent recomputation PASS is not authority execution or canonical promotion. NOT_YET_MIGRATED remains distinct from zero records."
 }
