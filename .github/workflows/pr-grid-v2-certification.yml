@@ -279,7 +279,8 @@ jobs:
 
 
   certify-aguayluz-nwps:
-    if: github.event_name != 'pull_request'
+    # ONE-SHOT CERTIFICATION REPLAY: revert to main-only before merge.
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
