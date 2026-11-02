@@ -31,7 +31,7 @@
       "Repository": "aguayluz-pr",
       "Default_Level": "L1",
       "Cell_Profile_Materializer_State": "IMPLEMENTED",
-      "Migration_State": "FIRST_SLICE_PIPELINE_IMPLEMENTED",
+      "Migration_State": "FIRST_SLICE_EXECUTION_FROZEN",
       "Slices": [
         {
           "Slice_ID": "NWPS_GAUGE_STATE",
@@ -43,8 +43,21 @@
           "Target_Level": "L1",
           "Workflow": ".github/workflows/pr-grid-v2-certification.yml",
           "Workflow_Job": "certify-aguayluz-nwps",
-          "Execution_Evidence_State": "CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY",
-          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+          "Execution_Evidence_State": "FROZEN_CI_ARTIFACT_PASS",
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL",
+          "Certification_Receipt_Path": "registry/spatial/v2/aguayluz_nwps_l1_migration.certification.json",
+          "Certification_SHA256": "9f6b31369b8372e64f697079b5335c769573cb0dfd1f98147af8649e13eeb5b0",
+          "Source_SHA256": "232569ad1465a6b89e3e3625fe237dc8a18fa5547cf81bc3dd3e7f5f5d8c2363",
+          "Input_Record_Count": 118,
+          "Binding_Row_Count": 118,
+          "Profile_Count": 111,
+          "Workflow_Run_ID": 41530288733,
+          "Workflow_Job_ID": 125568406973,
+          "Workflow_Head_SHA": "9c7809310aa7013c87f6b7affae213f6e96b34b5",
+          "Workflow_Artifact_ID": 13181641984,
+          "Workflow_Artifact_Bytes": 33989,
+          "Workflow_Artifact_SHA256": "432df011b706eacd6a1462201c6747d403934317ef02c9d4f3cbc8feb88c9449",
+          "Execution_Observed_UTC": "2026-11-02T21:39:24Z"
         }
       ]
     },
@@ -78,5 +91,5 @@
     }
   ],
   "Unmigrated_Domains_Are_Not_Zero": true,
-  "Notes": "Authority generation advanced to b8f5cf303ab7fc2b6ed006edce0fb12e1344a096 because that commit preserves the frozen V2 geometry manifest/schema bytes while adding the canonical binding-migration implementation. This denominator freezes migration scope and implementation state. NOT_YET_MIGRATED and CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY are explicit non-promotion states. TheHub is a control-plane/index consumer and is not a domain geometry producer."
+  "Notes": "Authority generation remains evidence-gated. AguaYLuz NWPS L1 now has a frozen CI execution artifact whose source commit/blob, source SHA256, binding/profile counts, internal output hashes, and no-geometry-copy invariant are receipt-bound. CANDIDATE_NOT_CANONICAL remains in force; execution PASS is not canonical promotion. NOT_YET_MIGRATED remains distinct from zero records."
 }
