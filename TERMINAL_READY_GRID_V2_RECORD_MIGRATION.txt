@@ -26,7 +26,7 @@ python scripts/materialize_pr_grid_v2_record_bindings.py --input /tmp/pr_grid_v2
 
 FULL CERTIFICATION TEST
 
-python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py
+python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py tests/test_aguayluz_nwps_v2_frozen_execution.py tests/test_skywatcher_n400ah_v2_migration_ledger.py tests/test_ovnis_v2_coordinate_evidence_ledger.py
 
 MINIMAL MIXED SMOKE INPUT
 
@@ -77,7 +77,7 @@ registry/spatial/v2/record_binding_migration_denominator.json
 Current bounded state:
 aguayluz-pr    FIRST_SLICE_EXECUTION_FROZEN (NWPS_GAUGE_STATE / L1)
 skywatcher-pr  SOURCE_QUALIFIED_LOCAL_RECOMPUTATION_PASS_CI_BLOCKED_RIGHTS (N400AH_STRUCTURED_TRACKS_2026Q2_Q3_v1 / L2)
-ovnis-pr       NOT_YET_MIGRATED
+ovnis-pr       BLOCKED_NO_VERIFIED_SOURCE_COORDINATE_DENOMINATOR (470 master / 469 coordinate pairs / 0 exact-admissible)
 moneysweep-pr  NOT_YET_MIGRATED
 centinelas-pr  NOT_YET_MIGRATED
 
@@ -92,7 +92,8 @@ CI/public source-byte replay = BLOCKED_REDISTRIBUTION_RIGHTS_UNVERIFIED
 promotion = CANDIDATE_NOT_CANONICAL
 raw provider payloads / coordinate rows / per-cell aggregate committed = NO
 
-Do not interpret NOT_YET_MIGRATED as ZERO_RECORDS or NO_DATA.
+OVNIS coordinate presence is discovery only: 469 numeric pairs do not satisfy EXACT_SOURCE_POINT without VERIFIED_SOURCE_COORDINATE provenance.
+Do not interpret NOT_YET_MIGRATED or BLOCKED migration states as ZERO_RECORDS or NO_DATA.
 Do not interpret independent numeric recomputation PASS as Spiderweb authority execution.
 Do not publish provider payloads, derived coordinate tracks, or per-cell aggregate artifacts while redistribution rights remain UNVERIFIED.
 
@@ -128,7 +129,7 @@ PASS only when:
 
 WINDOWS POWERSHELL
 
-python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py
+python -m pytest -q tests/test_geographic_grid_v2.py tests/test_grid_v2_bindings.py tests/test_grid_v2_source_coordinates.py tests/test_grid_v2_geometry_bindings.py tests/test_grid_v2_set_bindings.py tests/test_grid_v2_record_migration.py tests/test_aguayluz_nwps_v2_frozen_execution.py tests/test_skywatcher_n400ah_v2_migration_ledger.py tests/test_ovnis_v2_coordinate_evidence_ledger.py
 
 Use the same materialization CLI with Windows-native input/output paths.
 
