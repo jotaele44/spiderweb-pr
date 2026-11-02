@@ -65,8 +65,34 @@
       "Repository": "skywatcher-pr",
       "Default_Level": "L2",
       "Cell_Profile_Materializer_State": "IMPLEMENTED",
-      "Migration_State": "NOT_YET_MIGRATED",
-      "Slices": []
+      "Migration_State": "SOURCE_QUALIFIED_EXECUTION_BLOCKED",
+      "Slices": [
+        {
+          "Slice_ID": "N400AH_STRUCTURED_TRACK_POINTS",
+          "Dataset_ID": "N400AH_STRUCTURED_TRACKS_2026Q2_Q3_v1",
+          "Source_Attestation_Path": "data/flight_tracks/N400AH/source_recovery_attestation.json",
+          "Source_Attestation_Commit": "7812b0795a800e8ff02b6bf54d7313a1879f8e84",
+          "Source_Attestation_Git_Blob_SHA1": "d79061e5cced22823307bbcb522376c91f01395b",
+          "Source_Hash_Ledger_Path": "data/flight_tracks/N400AH/source_hashes.csv",
+          "Source_Hash_Ledger_Git_Blob_SHA1": "cd3a7afe618f3fe29546336aa03dedbdbab679f8",
+          "Original_Source_Archive_SHA256": "fa64d13aa3fc32b36b70e84e591b1a3ededb89bb3335e35dda711bb0182b264e",
+          "Original_Archive_Byte_Identity": "UNRESOLVED",
+          "Recovery_Container_SHA256": "ace93d7f47041df32a987d5d4afd3a236f07e835dd10fbf1e082d38dceee5998",
+          "Recovery_Container_Comparison_State": "DISTINCT_PAYLOADS",
+          "In_Scope_Source_Payload_State": "PASS_BYTE_IDENTICAL_SUBSET",
+          "Source_File_Count": 50,
+          "Provider_CSV_Count": 25,
+          "Provider_KML_Count": 25,
+          "Expected_Record_Count": 12455,
+          "Coordinate_Evidence_State": "VERIFIED_SOURCE_COORDINATE",
+          "Source_CRS": "EPSG:4326",
+          "Migration_Input_Class": "EXACT_SOURCE_POINT",
+          "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
+          "Target_Level": "L2",
+          "Execution_Evidence_State": "BLOCKED_SOURCE_NOT_CI_ADDRESSABLE",
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+        }
+      ]
     },
     {
       "Repository": "ovnis-pr",
@@ -91,5 +117,5 @@
     }
   ],
   "Unmigrated_Domains_Are_Not_Zero": true,
-  "Notes": "Authority generation remains evidence-gated. AguaYLuz NWPS L1 now has a frozen CI execution artifact whose source commit/blob, source SHA256, binding/profile counts, internal output hashes, and no-geometry-copy invariant are receipt-bound. CANDIDATE_NOT_CANONICAL remains in force; execution PASS is not canonical promotion. NOT_YET_MIGRATED remains distinct from zero records."
+  "Notes": "Authority generation remains evidence-gated. AguaYLuz NWPS L1 has a frozen CI execution artifact and remains CANDIDATE_NOT_CANONICAL. Skywatcher N400AH has source-qualified exact WGS84 provider payload evidence (50/50 frozen source members byte-identical; 12,455 source rows), but migration execution remains blocked because the recovered provider manifestation is not yet CI-addressable. The original N400AH.zip byte identity remains UNRESOLVED and the broader recovery container is DISTINCT_PAYLOADS. NOT_YET_MIGRATED and execution-blocked states remain distinct from zero records."
 }
