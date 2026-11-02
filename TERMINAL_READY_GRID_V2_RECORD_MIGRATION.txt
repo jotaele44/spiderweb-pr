@@ -92,7 +92,8 @@ CI/public source-byte replay = BLOCKED_REDISTRIBUTION_RIGHTS_UNVERIFIED
 promotion = CANDIDATE_NOT_CANONICAL
 raw provider payloads / coordinate rows / per-cell aggregate committed = NO
 
-OVNIS coordinate presence is discovery only: 469 numeric pairs do not satisfy EXACT_SOURCE_POINT without VERIFIED_SOURCE_COORDINATE provenance.\nDo not interpret NOT_YET_MIGRATED or BLOCKED migration states as ZERO_RECORDS or NO_DATA.
+OVNIS coordinate presence is discovery only: 469 numeric pairs do not satisfy EXACT_SOURCE_POINT without VERIFIED_SOURCE_COORDINATE provenance.
+Do not interpret NOT_YET_MIGRATED or BLOCKED migration states as ZERO_RECORDS or NO_DATA.
 Do not interpret independent numeric recomputation PASS as Spiderweb authority execution.
 Do not publish provider payloads, derived coordinate tracks, or per-cell aggregate artifacts while redistribution rights remain UNVERIFIED.
 
