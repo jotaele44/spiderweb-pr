@@ -56,7 +56,21 @@
           "layer_id": {"type": ["string", "null"]},
           "feature_id": {"type": "string"},
           "hops": {"type": ["integer", "null"], "minimum": 0},
-          "relation": {"type": ["string", "null"]}
+          "relation": {"type": ["string", "null"]},
+          "edge_id": {
+            "description": "The dependency link through which this feature was first reached.",
+            "type": ["string", "null"]
+          },
+          "confidence": {
+            "description": "Confidence (0-100) of the weakest link on the path that reached this feature, as recorded by the producer.",
+            "type": ["number", "null"],
+            "minimum": 0,
+            "maximum": 100
+          },
+          "evidence_required": {
+            "description": "True when any link on the path is a proxy that still needs evidence (for example a proximity-inferred dependency, not a verified circuit).",
+            "type": ["boolean", "null"]
+          }
         }
       }
     },
@@ -72,6 +86,10 @@
           "name": {"type": ["string", "null"]}
         }
       }
+    },
+    "unverified_links_used": {
+      "description": "True when any impacted feature was reached through a link with evidence_required. Consumers must then label the result as relying on unverified (proxy) dependencies.",
+      "type": "boolean"
     },
     "evidence_state": {"const": "HYPOTHESIS"},
     "persisted": {"const": false},

@@ -28,7 +28,12 @@ same JSON. The two APIs have different jobs:
 AOI, while `gis-query` reads *features the producer already holds*.
 
 Scenario results are always `evidence_state: HYPOTHESIS` and `persisted:
-false`. They never enter canonical exports or federation streams.
+false`. They never enter canonical exports or federation streams. Each
+impacted feature can carry the `edge_id` that first reached it, plus the
+`confidence` and `evidence_required` of the weakest link on that path. When
+any link used is a proxy that still needs evidence, the result sets
+`unverified_links_used: true`, and consumers must label it as relying on
+unverified dependencies.
 
 ## Catalog derivation
 

@@ -120,7 +120,17 @@ def test_query_request_and_scenario_examples_validate():
             "selected": [{"layer_id": "assets", "feature_id": "A1"}],
             "parameters": {"out_of_service": True},
         },
-        "impacted": [{"feature_id": "A2", "hops": 1, "relation": "FLOWS_TO"}],
+        "impacted": [
+            {
+                "feature_id": "A2",
+                "hops": 1,
+                "relation": "energizes",
+                "edge_id": "EDGE-1",
+                "confidence": 47,
+                "evidence_required": True,
+            }
+        ],
+        "unverified_links_used": True,
         "affected_areas": [
             {"area_type": "municipio", "area_id": "72127", "name": "San Juan"}
         ],
@@ -132,4 +142,12 @@ def test_query_request_and_scenario_examples_validate():
         jsonschema.validate(
             {**scenario, "evidence_state": "FACT"},
             _schema("gis_scenario_result_v1.schema.json"),
+        )
+    bad_confidence = {
+        **scenario,
+        "impacted": [{"feature_id": "A2", "confidence": 147}],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(
+            bad_confidence, _schema("gis_scenario_result_v1.schema.json")
         )
