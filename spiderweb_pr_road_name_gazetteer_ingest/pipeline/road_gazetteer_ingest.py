@@ -71,6 +71,86 @@ def route_number_from_text(*values: object) -> str:
             return m.group(1).upper()
     return ""
 
+# Puerto Rico route-number bands (see docs/ROAD_NUMBERING_LOGIC.md).
+# A band describes where a number sits in the numbering scheme, NOT the road's
+# network class: one route can be signed primary, urban-primary, secondary or
+# tertiary depending on the area it crosses. Bounds are inclusive; adjust here if
+# DTOP/ACT review says otherwise. Published sources disagree on the tertiary upper
+# bound (999 vs 9999); the wider bound is used.
+ROUTE_NUMBER_BANDS: List[Tuple[int, int, str]] = [
+    (1, 99, "primary_band"),
+    (100, 299, "secondary_band"),
+    (300, 9999, "tertiary_band"),
+]
+
+RAMAL_SUFFIX = "R"
+
+_ROUTE_SPLIT = re.compile(r"^(\d{1,5})([A-Z]?)$")
+_KM_PATTERN = re.compile(r"\b(?:KM|K\.M\.?|KIL[OÓ]METRO)\s*\.?\s*(\d{1,3}(?:[.,]\d{1,2})?)(?:\s*(?:HM|HEC?T[OÓ]METRO)\s*\.?\s*(\d))?", re.I)
+
+
+def route_number_band(base_number: object) -> str:
+    """Return the numbering band for a base route number, or 'unknown'."""
+    try:
+        n = int(str(base_number).strip())
+    except (TypeError, ValueError):
+        return "unknown"
+    for lo, hi, band in ROUTE_NUMBER_BANDS:
+        if lo <= n <= hi:
+            return band
+    return "unknown"
+
+
+def split_route_number(route_number: str) -> Tuple[str, str]:
+    """Split '3R' -> ('3', 'R'); '191' -> ('191', ''); unparseable -> ('', '')."""
+    m = _ROUTE_SPLIT.match(str(route_number or "").strip().upper())
+    if not m:
+        return "", ""
+    return str(int(m.group(1))), m.group(2)
+
+
+def km_marker_from_text(*values: object) -> Optional[float]:
+    """Parse a kilometre marker ('Km 12.4', 'Carr. 3 Km 5 Hm 2') to kilometres."""
+    text = " ".join(str(v) for v in values if v is not None and str(v).strip() and str(v).lower() != "nan")
+    m = _KM_PATTERN.search(strip_diacritics(text)) if text else None
+    if not m:
+        return None
+    km = float(m.group(1).replace(",", "."))
+    if m.group(2):
+        km += int(m.group(2)) / 10.0
+    return round(km, 3)
+
+
+def parse_route_ref(*values: object) -> Dict[str, object]:
+    """Break a free-text road reference into its numbering parts."""
+    route_number = route_number_from_text(*values)
+    base, suffix = split_route_number(route_number)
+    return {
+        "route_number": route_number,
+        "base_number": base,
+        "suffix": suffix,
+        "is_ramal": suffix == RAMAL_SUFFIX,
+        "route_number_band": route_number_band(base) if base else "unknown",
+        "km": km_marker_from_text(*values),
+    }
+
+
+_CLASS_NETWORK_TOKENS = [
+    ("primary", ("PRIMARIA", "PRIMARY", "PRINCIPAL")),
+    ("secondary", ("SECUNDARIA", "SECONDARY")),
+    ("tertiary", ("TERCIARIA", "TERTIARY", "LOCAL", "RURAL")),
+]
+
+
+def road_class_network(road_class: object) -> str:
+    """Map a free-text network class ('Primaria Urbana', 'Secundaria') to primary/secondary/tertiary, else ''."""
+    up = strip_diacritics(str(road_class or "")).upper()
+    for net, tokens in _CLASS_NETWORK_TOKENS:
+        if any(t in up for t in tokens):
+            return net
+    return ""
+
+
 def make_road_id(source_family: str, source_record_id: str, route_number: str = "", normalized_name: str = "") -> str:
     base = f"{source_family}|{source_record_id}|{route_number}|{normalized_name}"
     digest = hashlib.sha1(base.encode("utf-8")).hexdigest()[:16]
@@ -91,6 +171,10 @@ def alias_variants(route_number: str, canonical_name: str = "") -> List[Tuple[st
         rn = route_number.upper()
         for name in [f"PR-{rn}", f"PR {rn}", f"Puerto Rico Highway {rn}", f"Puerto Rico Route {rn}", f"Carretera PR-{rn}", f"Carretera {rn}", f"Ruta {rn}"]:
             add(name, "generated_variant")
+        base, suffix = split_route_number(rn)
+        if suffix == RAMAL_SUFFIX:
+            add(f"Ramal {base}", "generated_variant")
+            add(f"PR-{base} Ramal", "generated_variant")
     return out
 
 def safe_wkt(geom) -> str:
@@ -348,6 +432,9 @@ class RoadGazetteerIngest:
             'normalized_name': normalized_name,
             'route_number': route_number,
             'route_ref': route_ref,
+            'route_number_band': route_number_band(split_route_number(route_number)[0]),
+            'route_suffix': split_route_number(route_number)[1],
+            'is_ramal': split_route_number(route_number)[1] == RAMAL_SUFFIX,
             'road_class': road_class,
             'mtfcc': mtfcc,
             'municipio_geoid': municipio_geoid,
@@ -420,9 +507,34 @@ class RoadGazetteerIngest:
                     'notes': 'Same route number in same municipio has different road-name strings across sources.'
                 })
 
+        # Informational: a DTOP road_class that names a network different from the
+        # number band. Bands are not classes (see ROUTE_NUMBER_BANDS), so this is
+        # LOW severity and only raised for the authoritative source.
+        dtop = df[df['source_family'].eq('DTOP_ROUTE_DATA') & df['route_number'].fillna('').ne('')]
+        for _, r in dtop.iterrows():
+            declared = road_class_network(r.get('road_class', ''))
+            band = r.get('route_number_band', 'unknown')
+            if declared and band != 'unknown' and not band.startswith(declared):
+                idx += 1
+                self.conflict_rows.append({
+                    'conflict_id': f'road_conflict:{idx:06d}',
+                    'conflict_type': 'ROUTE_BAND_CLASS_DIVERGENCE',
+                    'normalized_key': f"PR-{r['route_number']}|{r.get('municipio_geoid', '')}",
+                    'route_number': r['route_number'],
+                    'municipio_geoid': r.get('municipio_geoid', ''),
+                    'municipio_name': r.get('municipio_name', ''),
+                    'source_a': 'ROUTE_NUMBER_BAND',
+                    'source_b': 'DTOP_ROUTE_DATA',
+                    'value_a': band,
+                    'value_b': str(r.get('road_class', '')),
+                    'severity': 'LOW',
+                    'resolution_status': 'OPEN',
+                    'notes': 'Declared network differs from the number band. Often legitimate: a route keeps its number while its network class changes by area.'
+                })
+
     def write_outputs(self) -> None:
         headers = {
-            'road_canonical_features.csv': ['spiderweb_road_id','source_family','source_id','source_record_id','canonical_name','normalized_name','route_number','route_ref','road_class','mtfcc','municipio_geoid','municipio_name','geometry_type','geometry_wkt','geometry_source','source_rank','source_dataset','confidence','review_status','ingested_at_utc'],
+            'road_canonical_features.csv': ['spiderweb_road_id','source_family','source_id','source_record_id','canonical_name','normalized_name','route_number','route_ref','route_number_band','route_suffix','is_ramal','road_class','mtfcc','municipio_geoid','municipio_name','geometry_type','geometry_wkt','geometry_source','source_rank','source_dataset','confidence','review_status','ingested_at_utc'],
             'road_feature_names.csv': ['spiderweb_road_id','source_family','source_id','source_record_id','name_value','normalized_name','name_type','language','route_number','source_rank','source_dataset','review_status'],
             'road_municipio_edges.csv': ['spiderweb_road_id','municipio_geoid','municipio_name','edge_type','source_family','source_id','confidence','review_status'],
             'road_source_conflicts.csv': ['conflict_id','conflict_type','normalized_key','route_number','municipio_geoid','municipio_name','source_a','source_b','value_a','value_b','severity','resolution_status','notes'],
@@ -443,6 +555,8 @@ class RoadGazetteerIngest:
             'road_municipio_edge_rows': len(self.edge_rows),
             'road_source_conflict_rows': len(self.conflict_rows),
             'source_manifest_rows': len(self.source_manifest),
+            'route_number_band_counts': pd.Series([r.get('route_number_band', 'unknown') for r in self.canonical_rows]).value_counts().to_dict() if self.canonical_rows else {},
+            'ramal_rows': sum(1 for r in self.canonical_rows if r.get('is_ramal')),
             'source_status_counts': pd.Series([s.status for s in self.source_manifest]).value_counts().to_dict() if self.source_manifest else {},
             'gnis_duplication_guard': 'Only road:* namespace emitted; GNIS non-road records are not copied into road outputs.',
         }
