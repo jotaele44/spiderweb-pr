@@ -9,7 +9,7 @@ The code that applies these rules is in `pipeline/road_gazetteer_ingest.py`.
 |---|---|---|
 | `primary_band` | 1–99 | Main links between regions. No geographic pattern in the numbers. |
 | `secondary_band` | 100–299 | Join municipios to the primary network. Laid out roughly as a grid: PR-100 is in the southwest and numbers rise toward the northeast. |
-| `tertiary_band` | 300–9999 | Local and rural network. Published sources disagree on the upper limit (999 or 9999); the ingest uses 9999. |
+| `tertiary_band` | 300–9999 | Local and rural network. Published sources disagree on the upper limit (999 or 9999). The ingest uses 9999 because Census TIGER 2025 contains routes up to PR-9991. |
 | `unknown` | anything else, or no number | |
 
 The bounds live in `ROUTE_NUMBER_BANDS`. If DTOP/ACT data shows different cut-offs, change them there.
@@ -19,7 +19,7 @@ The bounds live in `ROUTE_NUMBER_BANDS`. If DTOP/ACT data shows different cut-of
 A route keeps its number for its whole length, but its *network* (primary, urban primary, secondary, tertiary) can change depending on the area it passes through. So:
 
 - `route_number_band` comes only from the number. It never overwrites `road_class`, which is whatever the source declares.
-- When a DTOP row's declared network differs from its band, the ingest records a `ROUTE_BAND_CLASS_DIVERGENCE` conflict at **LOW** severity. Treat it as a cue to review the row, not as an error. It is checked only for DTOP (T1) rows, because TIGER `RTTYP` and OSM `fclass` don't use DTOP network names.
+- When a DTOP row's declared network differs from its band, the ingest records a `ROUTE_BAND_CLASS_DIVERGENCE` conflict at **LOW** severity. Treat it as a cue to review the row, not as an error. It is checked only for DTOP (T1) rows, because TIGER `RTTYP` and OSM `fclass` don't use DTOP network names. In TIGER 2025 for Puerto Rico, `RTTYP` is only `M`, `O` or blank, so it carries no network information.
 
 ## Suffixes and ramales
 
@@ -27,6 +27,11 @@ A route keeps its number for its whole length, but its *network* (primary, urban
 - `R` stands for *ramal*: a branch or loop of the base route, often through a town centre. PR-2 has several. `is_ramal` is true for these rows.
 - `PR-3` and `PR-3R` are related but separate routes. The suffix stays in `route_number`, so name-variance conflicts never group a ramal with its parent route.
 - Ramal rows also get `Ramal <n>` and `PR-<n> Ramal` aliases.
+
+### Names that look like route references but are not parsed
+
+- A bare `Ramal N` name is **not** read as route `NR`. In TIGER 2025 it is ambiguous. Some are route spurs: `Ramal 110` (two municipios), alongside `Pr- 110R`. Others are local streets in a subdivision: `Ramal 3 Amaneceres` and `Ramal 4 Amaneceres` in Carolina. The suffixed forms (`Pr- 110R`, `Pr- 3r`) are parsed.
+- `Carr N Int` / `Carr N Interior` names a local *interior* road off route N. It parses as route N because that is the route it is attached to; the name keeps the `Int` qualifier.
 
 ## Kilometre markers
 
@@ -39,6 +44,19 @@ Locations along a route are given as a kilometre marker counted from the route's
 ## Source precedence
 
 DTOP/ACT route data (T1) > Census TIGER (T2) > OSM (T3). OSM is used only for aliases and context; see `ROAD_GAZETTEER_INGEST_RUNBOOK.md`.
+
+## What TIGER 2025 looks like (all 78 municipio files)
+
+Counts from one full ingest run, kept here so a later run can be compared with them:
+
+| | rows |
+|---|---|
+| canonical road rows | 178,603 |
+| with a route number | 4,909 (`primary_band` 570, `secondary_band` 1,042, `tertiary_band` 3,297) |
+| no route number (`unknown`, mostly `Cll …` streets) | 173,694 |
+| ramal (`R` suffix) | 64 |
+
+Most common route spellings: `Pr- N` (4,443), `Carr N` (148), `Pr- NR` (58), `Pr N` (44). Besides `R`, a few routes carry the suffixes `P`, `N` or `E`; those are kept in `route_suffix` but not interpreted.
 
 ## Use by other federation repos
 
