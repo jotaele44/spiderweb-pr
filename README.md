@@ -48,6 +48,8 @@ Cross-producer correlation is owned by the Hub and downstream consumers. Spiderw
 | FR24 ingestion and airspace observations | `skywatcher-pr` |
 | Public-money and procurement records | `moneysweep-pr` / `moneysweep-pr` |
 | Water, wastewater, power, outage, and recovery records | `aguayluz-pr` |
+| Solid-waste (vertedero/landfill) site registry (proposed, aguayluz-pr ADR-0004) | `aguayluz-pr` |
+| Satellite imagery observations for registered sites (proposed, interim; hub ADR 0006) | `spiderweb-pr` |
 | Puerto Rico historical case corpus | `OVNIS` / `ovnis-pr` |
 | Producer discovery, validation, aggregation, and cross-producer correlation | `thehub-pr` |
 
