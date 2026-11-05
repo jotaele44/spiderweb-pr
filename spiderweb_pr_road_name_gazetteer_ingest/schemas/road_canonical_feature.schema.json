@@ -54,6 +54,35 @@
         "null"
       ]
     },
+    "route_number_band": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "primary_band",
+        "secondary_band",
+        "tertiary_band",
+        "unknown",
+        null
+      ],
+      "description": "Band of the base route number (1-99, 100-299, 300-9999). Not a network class; see docs/ROAD_NUMBERING_LOGIC.md."
+    },
+    "route_suffix": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z]?$",
+      "description": "Letter suffix of the route number, e.g. 'R' in PR-3R."
+    },
+    "is_ramal": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "True when the suffix is 'R' (ramal: branch or loop of the base route)."
+    },
     "road_class": {
       "type": [
         "string",

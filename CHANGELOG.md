@@ -10,6 +10,13 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Road gazetteer: Puerto Rico route-numbering logic.** Canonical road rows now
+  carry `route_number_band` (1–99 / 100–299 / 300–9999), `route_suffix` and
+  `is_ramal`. Ramal aliases are generated, and DTOP rows whose declared network
+  differs from the number band are flagged as LOW-severity
+  `ROUTE_BAND_CLASS_DIVERGENCE` conflicts. New helpers `parse_route_ref` and
+  `km_marker_from_text` are available to federation consumers. See
+  `spiderweb_pr_road_name_gazetteer_ingest/docs/ROAD_NUMBERING_LOGIC.md`.
 - **Cross-source missing-persons linkage (annotate-only):**
   `consolidate_missing_persons.py` now flags likely cross-source duplicates —
   rows sharing a deterministic blocking key (`sex|age_band|last_seen_municipio|
