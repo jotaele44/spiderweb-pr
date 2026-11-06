@@ -27,6 +27,8 @@
 | PostGIS durable plane | v1 migration | v1 migration | v1 migration | v1 migration | repo-local ownership |
 | vector tiles | planned v1 extension | producer | producer | producer | shared serving contract |
 | offline package | `fedgeopack/1.0` | `fedgeopack/1.0` | `fedgeopack/1.0` | `fedgeopack/1.0` | shared contract |
+| viewer API (catalog/identify/search/AOI query/export) | `gis-layer-catalog/1.0` + `gis-query/1.0` | planned mirror | planned mirror | planned mirror | Spiderweb-authored contract; producers mirror ([GIS_VIEWER_API.md](GIS_VIEWER_API.md)) |
+| hypothetical scenario results | n/a | n/a | planned (`gis-scenario-result/1.0`) | planned (`gis-scenario-result/1.0`) | always `HYPOTHESIS`, never persisted |
 
 ## Duplication rules
 

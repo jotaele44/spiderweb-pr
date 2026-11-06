@@ -27,6 +27,7 @@ open site/api/index.html   # macOS; use xdg-open on Linux
 | `federation.hub.query` | Cross-producer correlation query. |
 | `pipeline.logging_config` / `pipeline.config_loader` / `pipeline.seeding` / `pipeline.path_safety` | Observability + robustness helpers. |
 | `provenance_utils` | Reproducibility metadata + GeoJSON `_meta`. |
+| `spiderweb.gis_query` / `spiderweb.gis_catalog` / `server.backend.gis_api` | `/gis/*` viewer API: AOI query, identify, search, export, catalog ([GIS_VIEWER_API.md](GIS_VIEWER_API.md)). |
 
 The curated lint/type allowlist in `.github/workflows/ci.yml` tracks which
 modules are fully ruff/black/mypy-clean today; it grows over time.
