@@ -1,0 +1,14 @@
+{
+  "browser-receipt.json": "9737cc11aae738e6da0497d64acd235d5706a3705676f3a2d6cb2b0f4ae2310c",
+  "build-manifest.json": "7853ad2798ec67299b332eff4a3c81cbcace1835eeda35106d38e306fe1c3392",
+  "candidate-receipt.json": "67405665f62fb7203171d44a420c919343599a7d90a5bbcfd538b3fd1f52d9a2",
+  "offline-1440.png": "b67598d59527543e9b91ee380ab1281a5144b2e93bd2994b8fc60ef704eb5431",
+  "offline-393.png": "57b5ad8753f5dd17db7663153db481c4e5df622a5546427ebcea297c067b48a5",
+  "offline-430.png": "ea82cfd95a53d0b4979624ad7fd53aee91608325afe3ca39ac6e9d7b5c7c3311",
+  "spiderweb-pr-offline-browser-closure2.log": "64dbba9425e0bbce9a305c48038266d14d53f32f0bf1cb8d6b2820069bb887f4",
+  "spiderweb-pr-offline-browser-stable.log": "826ace09072d3b18416f33a13c4bbd3ba03a8e3390120aa9e539ae9884b305ea",
+  "spiderweb-pr-offline-build-closure.log": "68e956c724072647053dab6c42a344bbf5c54e39617604ddcd6c787ca54763c0",
+  "spiderweb-pr-offline-build-closure2.log": "db09a95d8e3626a091488b40327ca9cde6b77da4eda4e50e43ad7c33797f24ac",
+  "spiderweb-pr-offline-build-stable.log": "0d2923df9fe37a93309b245979442e062a34fa4dbdcc9f4a2fd215c5e8e07bb4",
+  "spiderweb-pr-offline-docs.log": "eb7949cfbaa2a974b7cc799c2a37b23674e7cf74f038086890b57b10f6d93d54"
+}

@@ -9,6 +9,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LeftRail } from "./components/LeftRail";
 import { Inspector } from "./components/Inspector";
 import { Timeline } from "./components/Timeline";
+import { saveLocalDataset } from './api/localDataset';
 
 // Route-split the modules so heavy dependencies (MapLibre for Spatial, TanStack
 // Table for Finance) load only when their tab is first opened.
@@ -45,6 +46,9 @@ export default function App() {
   const [data, setData] = useState<PriisData>(mockData);
   const [live, setLive] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sourceKind, setSourceKind] = useState<'live' | 'demo'>('demo');
+  const [saveStatus, setSaveStatus] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const [moduleId, setModule] = useState<ModuleId>("command");
   // Seeded defaults used to be fixture ids (anomaly A-014, INV-007, cursor
@@ -85,9 +89,11 @@ export default function App() {
 
   // Load real data on mount; fall back to mock if API is down
   useEffect(() => {
-    void fetchPriisDataWithFallback().then(({ data: d, live: l }) => {
+    void fetchPriisDataWithFallback().then(({ data: d, live: l, sourceKind: kind, savedAt }) => {
       setData(d);
       setLive(l);
+      setSourceKind(kind);
+      if (savedAt) setSaveStatus(`Local ${kind} copy · ${savedAt}`);
       setLoading(false);
       // Anchor the temporal cursor in the data that actually loaded, rather than
       // a literal that drifts from every dataset but the original fixture.
@@ -228,6 +234,14 @@ export default function App() {
           runState={runState}
           onRunPipeline={() => { void handlePipelineRun(); }}
           live={live}
+          dataLabel={live ? 'LIVE' : sourceKind === 'live' ? 'SAVED LIVE' : 'DEMO'}
+          datasetStatus={saveStatus}
+          savingDataset={saving || loading}
+          onSaveDataset={() => {
+            setSaving(true);
+            void saveLocalDataset(data, sourceKind).then(saved => setSaveStatus(`Local ${saved.sourceKind} copy · ${saved.savedAt}`))
+              .catch(error => setSaveStatus(errorText(error))).finally(() => setSaving(false));
+          }}
           theme={theme}
           onToggleTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))}
         />
