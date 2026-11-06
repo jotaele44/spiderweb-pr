@@ -85,13 +85,13 @@ The registry includes:
 - PRPB geology/karst/caves — `READY_SPECIALIZED` via the existing frozen subsurface source denominator
 - PR aquifers/wells/springs — `READY_SPECIALIZED` via PRPB + USGS Water Data queryable manifestations
 - PR marine lidar/topobathy — `READY_SPECIALIZED`
-- SSURGO — `RESOLVER_ONLY`: AOI SurveyAreaPoly/MapunitPoly requests are bound; MUKEY→COKEY→child production certification remains open in-repo
-- USGS 3DHP/NHD — `RESOLVER_ONLY`: the authoritative `3DHP_all` FeatureServer is bound and six observed layer-ID candidates are preserved, but production routing remains metadata-first until raw service metadata + receipt are frozen and stable-ID set adjudication closes
+- SSURGO — `RESOLVER_ONLY`: the 2026-09-20 Húcar runtime closed WFS bounding-envelope preselection → 15 MUKEYs → 20 COKEYs → all 22 current child tables; exact AOI spatial adjudication was subsequently implemented and remains to be frozen in a runtime certification before readiness promotion
+- USGS 3DHP/NHD — `READY_SPECIALIZED`: authoritative runtime metadata is frozen; stable layer IDs `{20,30,40,50,60,80}` exactly equal the provisional denominator with symmetric difference zero
 - USFWS NWI — `READY_SPECIALIZED`: Wetlands FeatureServer layer bound
-- FEMA NFHL — `RESOLVER_ONLY`: official public WMS/MSC surface bound; vector denominator remains open
-- FEMA Puerto Rico ABFE 1% — `RESOLVER_ONLY`: Puerto Rico-specific map service bound; layer denominator remains open and is separate from effective NFHL identity
+- FEMA NFHL — `RESOLVER_ONLY`: the prior WMS manifestation is superseded by the operational ArcGIS REST MapServer; a frozen 32-unique-layer denominator is PASS, while dependent AOI feature acquisition remains open
+- FEMA Puerto Rico ABFE 1% — `RESOLVER_ONLY`: the Puerto Rico SIGE advisory MapServer has a frozen 20-unique-layer denominator PASS; dependent AOI feature acquisition remains open and remains separate from effective NFHL identity
 - USACE ports/navigation — `READY_SPECIALIZED`: ports, principal ports, navigation facilities and waterway-network nodes bound
-- general USACE GIS — `RESOLVER_ONLY`: enterprise service denominator remains open
+- general USACE GIS — `RESOLVER_ONLY`: the enterprise root denominator is frozen at 206 services and zero advertised folders; per-service metadata and layer denominators remain open
 
 ## Execution coverage gate
 
@@ -144,15 +144,14 @@ The router references rather than replaces:
 
 ## Remaining integration denominator
 
-1. execute and certify the in-repo SSURGO staged chain, including the current component-child denominator, without flattening 1:N;
-2. resolve FEMA NFHL vector-feature manifestation(s) without conflating WMS display with feature identity;
-3. freeze the Puerto Rico ABFE service layer denominator separately from NFHL;
-4. close the recursive USACE root + folder service denominator through `provider_denominators.py`, `denominator_chain.py`, and `merge_location_service_denominators.py`; the root-only `location_query_usace_inventory.py` compatibility lane fails closed when folders exist;
-5. freeze 3DHP raw FeatureServer metadata and run stable layer-ID set adjudication before any readiness promotion;
+1. execute and freeze the implemented exact-spatial SSURGO Húcar stage, then bind Stage 2 to that certified exact AOI MUKEY denominator; preserve the prior bbox-preselection runtime as a bounded historical manifestation;
+2. execute FEMA NFHL dependent AOI feature acquisition from the frozen 32-layer denominator without conflating service/layer identity with AOI coverage;
+3. execute Puerto Rico advisory dependent AOI feature acquisition from its frozen 20-layer denominator, separately from effective NFHL identity;
+4. close USACE per-service metadata and service→layer denominators across the frozen 206-service root denominator;
+5. retain the certified six-layer 3DHP stable-ID denominator and run bounded AOI feature acquisition without inheriting capability across layers;
 6. delegate existing USGS 3DEP, NCEI and imagery specialized adapters into the unified fetch executor without duplicating their acquisition logic;
-7. execute the frozen Puerto Rico reference-AOI regression corpus when runner infrastructure is available;
+7. execute and package the full Húcar | San Juan | Boquerón runtime reference corpus;
 8. keep place-name geocoding discovery-only until a selected candidate is explicitly bound to bounded geometry.
-
 
 ## Runtime closure workflow
 
@@ -178,7 +177,7 @@ GitHub Actions manual entry point:
 
 `.github/workflows/location-query-runtime-closure.yml`
 
-The workflow is intentionally `workflow_dispatch` only and has `contents: read` permission. It uploads the versioned runtime snapshot as an Actions artifact. Actions execution remains certification evidence only when job steps actually run; a zero-step/null-step infrastructure failure remains `BLOCKED_ACTIONS_INFRASTRUCTURE`.
+The workflow runs on designated LOCATION_QUERY certification branches and also supports manual `workflow_dispatch`; it has `contents: read` permission. It uploads the versioned runtime snapshot as an Actions artifact. Actions execution remains certification evidence only when job steps actually run; a zero-step/null-step infrastructure failure remains `BLOCKED_ACTIONS_INFRASTRUCTURE`.
 
 ### Runtime promotion policy
 
