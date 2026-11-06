@@ -1,0 +1,18 @@
+{
+  "Contract": "PR_GRID_V2_BINDING_VNEXT",
+  "Binding_Version": "pr-grid-v2-binding/2.0.0-rc1",
+  "Binding_Schema_Path": "schemas/pr_grid_geographic_v2_binding_vnext.schema.json",
+  "Binding_Schema_SHA256": "e3dbd844bd8c35451e112af6a8d39461b1490454e2f41e191133d8115980f2c8",
+  "Grid_ID": "PR_GRID_GEOGRAPHIC_V2",
+  "Grid_Version": "2.0.0-rc1",
+  "Grid_Manifest_SHA256": "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4",
+  "RC1_Binding_Schema_SHA256": "dabc461e47134b3b150be9aeb23b3d0097563493b33b3187538255e06b16a022",
+  "Certification_State": "PROVISIONAL",
+  "Consumer_Activation": "BLOCKED_UNTIL_CERTIFIED",
+  "Geometry_Authority": "spiderweb-pr",
+  "Identity_Effect": "NONE",
+  "Positive_Area_Policy": "GEOS_area_strictly_greater_than_zero",
+  "Positive_Length_Policy": "GEOS_length_strictly_greater_than_zero",
+  "Boundary_Coincident_Length": "MULTIBOUND_LENGTHS_NONADDITIVE",
+  "Row_Grain": "POINT:record_cell;POLYGON:record_cell;LINE:record_component_segment_cell"
+}
