@@ -16,6 +16,14 @@ doesn't drift back into split authority with the hub.
   emit a validated evidence envelope; `scripts/federation_export.py` projects it to the
   Hub's canonical `{entities, sources, relationships}` (geometry carried on entities).
   Validated by `scripts/validate_export.py`; declared in `federation.json`.
+- **Site imagery observations** (proposed, interim, not yet implemented): dated satellite
+  scenes for sites that another producer registers, acquired through the `imagery/`
+  package and `readiness/satellite_ingest.py` and exported as provisional hub
+  `observations` rows. Contract: `docs/contracts/SITE_IMAGERY_TIMELINE.md`. This is an
+  interim path: hub ADR 0006 (Accepted, 2026-07-29) moves satellite-provider
+  acquisition, credentials and caching into `thehub-pr`, and it names `thehub-pr` and
+  `skywatcher-pr`, not this repo. The trigger to revisit is the hub acquisition runtime
+  shipping.
 
 ## Retired airspace surface (2026-07-29)
 The FR24/RLSM **ingestion** subsystem migrated to skywatcher-pr in 2026-06, but
@@ -54,6 +62,10 @@ this drift fails a maintenance audit instead of accumulating silently.
   aggregation) — that is the parent hub, [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
 - **Cross-producer correlation** — owned by `thehub-pr` (aggregate graph) and the
   downstream **PRIIS** consumer (lead scoring). spiderweb emits its package and stops there.
+- **A solid-waste (vertedero/landfill) site registry** — proposed for `aguayluz-pr`
+  (its ADR-0004, status Proposed). The landfill-named pins in `configs/pin_registry.yaml`
+  are discovery seeds only, at 2-3 decimal coordinates; they are not a registry and are
+  never treated as identity.
 
 Any future federation/consumer code added here must be a thin client of the canonical
 control plane, not a second copy of it.
