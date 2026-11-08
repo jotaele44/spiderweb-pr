@@ -41,7 +41,12 @@ class ChangeMetric(Protocol):
         before: SceneRecord,
         after: SceneRecord,
         payloads: tuple[bytes, bytes],
-    ) -> Measurement: ...
+    ) -> Measurement:
+        """Return change signals keyed by SATIM change class plus method metadata.
+
+        Raises ``MetricUnavailable`` when the metric cannot run; it never reports
+        "no change" for a pair it could not measure.
+        """
 
 
 class FixtureMetric:

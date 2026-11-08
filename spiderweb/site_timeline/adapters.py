@@ -31,9 +31,19 @@ class AcquisitionUnavailable(RuntimeError):
 class AcquisitionAdapter(Protocol):
     name: str
 
-    def search(self, site: Site, start: str, end: str) -> list[SceneRecord]: ...
+    def search(self, site: Site, start: str, end: str) -> list[SceneRecord]:
+        """Return candidate scenes for ``site`` between two ISO dates.
 
-    def fetch(self, site: Site, scene: SceneRecord) -> bytes: ...
+        May include undated captures so that series admission excludes them
+        visibly. Raises ``AcquisitionUnavailable`` rather than return partial data.
+        """
+
+    def fetch(self, site: Site, scene: SceneRecord) -> bytes:
+        """Return the scene bytes, held in memory only.
+
+        The caller verifies them against ``scene.content_sha256``. Implementations
+        never write them to disk and never log credentials.
+        """
 
 
 def synthetic_payload(scene_id: str) -> bytes:
