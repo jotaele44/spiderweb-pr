@@ -16,14 +16,17 @@ doesn't drift back into split authority with the hub.
   emit a validated evidence envelope; `scripts/federation_export.py` projects it to the
   Hub's canonical `{entities, sources, relationships}` (geometry carried on entities).
   Validated by `scripts/validate_export.py`; declared in `federation.json`.
-- **Site imagery observations** (proposed, interim, not yet implemented): dated satellite
-  scenes for sites that another producer registers, acquired through the `imagery/`
-  package and `readiness/satellite_ingest.py` and exported as provisional hub
-  `observations` rows. Contract: `docs/contracts/SITE_IMAGERY_TIMELINE.md`. This is an
-  interim path: hub ADR 0006 (Accepted, 2026-07-29) moves satellite-provider
-  acquisition, credentials and caching into `thehub-pr`, and it names `thehub-pr` and
-  `skywatcher-pr`, not this repo. The trigger to revisit is the hub acquisition runtime
-  shipping.
+- **Site imagery observations** (implemented offline; live acquisition is a fail-closed
+  stub): provisional dated-scene timelines for sites that another producer registers,
+  built by `spiderweb/site_timeline/` and exported as hub `observations` rows only when
+  `scripts/federation_export.py --site-imagery-timeline` is given. Tests and the
+  `scripts/build_site_imagery_timeline.py` command run on synthetic fixtures; live
+  Sentinel-2 acquisition needs credentials supplied through environment variables and is
+  not wired. Contract: `docs/contracts/SITE_IMAGERY_TIMELINE.md`. This is an interim
+  path: hub ADR 0006 (Accepted, 2026-07-29) moves satellite-provider acquisition,
+  credentials and caching into `thehub-pr`, and it names `thehub-pr` and `skywatcher-pr`,
+  not this repo. `spiderweb/site_timeline/adapters.py` is the single seam to replace
+  when the hub acquisition runtime ships.
 
 ## Retired airspace surface (2026-07-29)
 The FR24/RLSM **ingestion** subsystem migrated to skywatcher-pr in 2026-06, but
