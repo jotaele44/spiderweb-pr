@@ -46,8 +46,10 @@ from tests.site_timeline_support import (
     START,
     coarse_site,
     document_for,
+    make_live,
     precise_site,
     scene,
+    set_after_date,
     standard_document,
     timeline_for,
 )
@@ -487,6 +489,93 @@ MUTATIONS = {
 }
 
 
+def _clear_flags(doc, *, artifacts=False, acquisitions=False, signals=False):
+    for entry in doc["sites"]:
+        for art in entry["artifacts"] if artifacts else []:
+            art["synthetic"] = False
+        for acq in entry["acquisitions"] if acquisitions else []:
+            acq["synthetic"] = False
+        for cmp in entry["comparisons"] if signals else []:
+            cmp["signal"]["result"]["synthetic"] = False
+
+
+def _live_but_test_only(doc):
+    make_live(doc)
+    doc["sites"][0]["acquisitions"][0]["classification"] = "TEST_ONLY"
+
+
+def _cleared_on_artifacts_and_document(doc):
+    doc["synthetic"] = False
+    _clear_flags(doc, artifacts=True)
+
+
+def _synthetic_only_on_acquisitions(doc):
+    doc["synthetic"] = False
+    _clear_flags(doc, artifacts=True, signals=True)
+
+
+def _duplicate_first_scene(doc):
+    """Copy a scene's artifact, epoch record and receipt over the second scene.
+
+    The comparisons are dropped so that nothing else disagrees: only the uniqueness
+    of scene ids is left to catch it.
+    """
+    entry = doc["sites"][1]
+    for key in ("artifacts", "epochs", "acquisitions"):
+        entry[key][1] = copy.deepcopy(entry[key][0])
+    entry["comparisons"] = []
+
+
+MUTATIONS.update(
+    {
+        "synthetic left only on acquisitions": _synthetic_only_on_acquisitions,
+        "scene duplicated across artifact, epoch and receipt": (_duplicate_first_scene),
+        # Codex finding on #446 (P1): synthetic status must agree across every record.
+        "synthetic cleared on artifacts and document only": (
+            _cleared_on_artifacts_and_document
+        ),
+        "synthetic cleared on acquisitions only": lambda d: _clear_flags(
+            d, acquisitions=True
+        ),
+        "synthetic cleared on change records only": lambda d: _clear_flags(
+            d, signals=True
+        ),
+        "live records still classed TEST_ONLY": _live_but_test_only,
+        # Codex finding on #446 (P2): the epoch class is derived, not trusted.
+        "stale epoch label after dates edited to the same day": lambda d: (
+            set_after_date(d, d["sites"][0]["artifacts"][0]["acquired_at"])
+        ),
+        "near-epoch pair labelled cross_epoch": lambda d: set_after_date(
+            d, "2017-03-12T14:50:00Z"
+        ),
+        # Cross-record consistency the export relies on.
+        "epoch record date disagrees with its artifact": lambda d: d["sites"][0][
+            "epochs"
+        ][0].__setitem__("capture_time", "2001-01-01T00:00:00Z"),
+        "epoch record names another scene": lambda d: d["sites"][0]["epochs"][0][
+            "provenance"
+        ].__setitem__("scene_id", "elsewhere"),
+        "acquisition names another artifact": lambda d: d["sites"][0]["acquisitions"][
+            0
+        ].__setitem__("artifact_ids", d["sites"][0]["acquisitions"][1]["artifact_ids"]),
+        "duplicate scene id": lambda d: d["sites"][0]["artifacts"][1].__setitem__(
+            "scene_id", d["sites"][0]["artifacts"][0]["scene_id"]
+        ),
+        "before reference names an unknown scene": lambda d: _first_signal(d)["result"][
+            "before"
+        ].__setitem__("scene_id", "ghost"),
+        "before reference disagrees with its artifact": lambda d: _first_signal(d)[
+            "result"
+        ]["before"].__setitem__("provider", "other"),
+        "signal artifacts differ from before and after": lambda d: _first_signal(
+            d
+        ).__setitem__(
+            "source_artifact_ids", [_first_signal(d)["result"]["after"]["artifact_id"]]
+        ),
+    }
+)
+
+
 @pytest.mark.parametrize("name", sorted(MUTATIONS))
 def test_validator_catches_tampering(name):
     doc = copy.deepcopy(standard_document())
@@ -498,6 +587,14 @@ def test_validator_rejects_non_documents():
     for bad in (None, [], "x", 3):
         assert validate_document(bad)
     assert validate_document({"sites": "nope"})
+
+
+def test_a_consistently_live_document_validates():
+    """The cross-record synthetic check must not reject a legitimate live document."""
+    doc = make_live(copy.deepcopy(standard_document()))
+    assert validate_document(doc) == []
+    for entry in doc["sites"]:
+        assert {a["classification"] for a in entry["acquisitions"]} == {"INTERNAL"}
 
 
 def test_a_document_mixing_synthetic_and_live_scenes_is_rejected():

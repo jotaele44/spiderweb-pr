@@ -2,7 +2,7 @@
 
 Status: **Implemented offline, on synthetic fixtures. Live acquisition is a fail-closed
 stub. Every output is provisional.**
-Date: 2026-11-07 (first written 2026-11-05 as a proposal)
+Date: 2026-11-11 (first written 2026-11-05 as a proposal)
 
 ## Purpose
 
@@ -176,7 +176,19 @@ the timestamp.
 The command line produces one JSON document (`spiderweb.site_imagery_timeline.v1`) that
 carries the guardrails, the prohibited outputs, an interim-acquisition note and, per
 site, the ledger, exclusions, epochs, acquisitions, artifacts and comparisons.
-`validate_document` checks it and is the gate for both the command and the export.
+`validate_document` checks it and is the gate for both the command and the export. It does
+not trust labels a document carries about itself:
+
+- The epoch class of every comparison is recomputed from the scenes it references, so a
+  same-date pair cannot keep a change claim and a near-epoch pair cannot skip review.
+- The `synthetic` flag must agree across the document, its artifacts, its acquisition
+  records and its change records, and an acquisition is classified `TEST_ONLY` exactly when
+  it is synthetic. A flag cleared on some records but not others is rejected, so test data
+  cannot reach a production export.
+- The epoch records, acquisition records and each change record's before and after
+  references must describe the artifacts they name, and scene ids are unique within a site.
+  Artifact ids are content hashes, so two scenes with identical pixels share one; scenes are
+  therefore identified by scene id.
 
 ### Hub rows
 
@@ -197,8 +209,9 @@ Observations point at the series entity through `entity_id` and carry the regist
 producer's id in `attributes.producer_entity_id`, the external site id, and the scene or
 comparison context. Scene rows declare `CURATED`, change rows `COMPUTED`, and both a
 representative point; no row declares an observation state, so absence is never asserted.
-Row confidence is bounded by the site's ceiling. Rows carry `synthetic` from the
-document, and `--mode production` refuses synthetic rows. An invalid document fails the
+Row confidence is bounded by the site's ceiling. A scene observation's id includes the
+scene id as well as the artifact id, so identical pixels in two scenes still yield two
+observations. Rows carry `synthetic` from the document, and `--mode production` refuses synthetic rows. An invalid document fails the
 export instead of being skipped. Hub schemas are frozen: no hub schema change is proposed.
 
 ## Operating rules

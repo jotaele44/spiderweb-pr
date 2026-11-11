@@ -108,3 +108,30 @@ def standard_document() -> dict[str, Any]:
         {("T-2018", "T-2022"): {"EXPANSION": 0.9, "ACCESS_CHANGE": 0.9}},
     )
     return document_for(a, t)
+
+
+def make_live(doc: dict[str, Any]) -> dict[str, Any]:
+    """Re-flag a synthetic document as live, consistently, on every record type."""
+    doc["synthetic"] = False
+    for entry in doc["sites"]:
+        for art in entry["artifacts"]:
+            art["synthetic"] = False
+        for acq in entry["acquisitions"]:
+            acq["synthetic"] = False
+            acq["classification"] = "INTERNAL"
+        for cmp in entry["comparisons"]:
+            cmp["signal"]["result"]["synthetic"] = False
+    return doc
+
+
+def set_after_date(doc: dict[str, Any], new_date: str) -> dict[str, Any]:
+    """Edit the first comparison's after date everywhere it appears, consistently.
+
+    The epoch label is left alone, which is the tampering a stale label allows.
+    """
+    entry = doc["sites"][0]
+    entry["artifacts"][1]["acquired_at"] = new_date
+    entry["epochs"][1]["capture_time"] = new_date
+    entry["epochs"][1]["provenance"]["acquired_at"] = new_date
+    entry["comparisons"][0]["signal"]["result"]["after"]["acquired_at"] = new_date
+    return doc

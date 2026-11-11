@@ -496,8 +496,14 @@ def build_site_imagery_streams(
         for art, acq in zip(entry["artifacts"], entry["acquisitions"]):
             observations.append(
                 {
+                    # Scene identity is part of the id: two scenes can share pixel
+                    # content (one artifact id) yet be distinct catalog observations.
                     "observation_id": _fid(
-                        "obs", "site_imagery_scene", producer_ent, art["artifact_id"]
+                        "obs",
+                        "site_imagery_scene",
+                        producer_ent,
+                        art["scene_id"],
+                        art["artifact_id"],
                     ),
                     "source_id": sid,
                     "entity_id": ent_id,

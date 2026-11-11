@@ -10,6 +10,7 @@ producer's id as its own. Synthetic data only.
 from __future__ import annotations
 
 import copy
+import dataclasses
 import hashlib
 import json
 import re
@@ -32,8 +33,10 @@ from tests.site_timeline_support import (
     PIN_ENT,
     coarse_site,
     document_for,
+    make_live,
     precise_site,
     scene,
+    set_after_date,
     standard_document,
     timeline_for,
 )
@@ -299,6 +302,95 @@ def test_production_mode_refuses_synthetic_lane_rows(tmp_path):
         str(_write_doc(tmp_path)),
     )
     assert proc.returncode == 1 and "synthetic" in proc.stdout
+    assert not out.exists()
+
+
+def test_scenes_with_identical_pixels_keep_distinct_observations():
+    """Codex finding on #446 (P2): artifact ids may repeat across scenes."""
+    from spiderweb.site_timeline.adapters import SyntheticAdapter
+    from spiderweb.site_timeline.metrics import FixtureMetric
+    from spiderweb.site_timeline.timeline import build_site_timeline, validate_document
+
+    site = precise_site()
+    payload = b"identical-bytes"
+    digest = hashlib.sha256(payload).hexdigest()
+
+    class Constant(SyntheticAdapter):
+        def fetch(self, site, scene):
+            return payload
+
+    scenes = [
+        dataclasses.replace(scene(site, name, day, 1.0), content_sha256=digest)
+        for name, day in (("A", "2017-03-02"), ("B", "2021-03-05"))
+    ]
+    timeline = build_site_timeline(
+        site,
+        Constant({site.external_site_id: scenes}),
+        FixtureMetric({("A", "B"): {"SURFACE_COVER_CHANGE": 0.5}}),
+        start="2015-06-23",
+        end="2026-11-07",
+        now=NOW,
+    )
+    doc = document_for(timeline)
+    assert validate_document(doc) == []
+    lane = fx.build_site_imagery_streams(doc, NOW)
+    scene_rows = [
+        o for o in lane["observations"] if o["observation_type"] == "satellite_scene"
+    ]
+    assert len(scene_rows) == 2
+    assert len({o["observation_id"] for o in scene_rows}) == 2
+    assert len({o["attributes"]["artifact_id"] for o in scene_rows}) == 1
+    streams = {"sources": [], "entities": [], "observations": []}
+    fx.merge_site_imagery(streams, lane)
+    kept = [
+        o for o in streams["observations"] if o["observation_type"] == "satellite_scene"
+    ]
+    assert {o["attributes"]["scene_id"] for o in kept} == {"A", "B"}
+
+
+def test_partially_cleared_synthetic_flags_never_reach_a_production_export(tmp_path):
+    """Codex finding on #446 (P1): test data must not pass the production gate."""
+    doc = standard_document()
+    doc["synthetic"] = False
+    for entry in doc["sites"]:
+        for art in entry["artifacts"]:
+            art["synthetic"] = False
+    proc, out = _run_export(
+        tmp_path,
+        "--mode",
+        "production",
+        "--site-imagery-timeline",
+        str(_write_doc(tmp_path, doc)),
+    )
+    assert proc.returncode == 2 and "mixes synthetic and live" in proc.stderr
+    assert not out.exists()
+
+
+def test_a_consistently_live_document_passes_the_production_export(tmp_path):
+    doc = make_live(standard_document())
+    proc, out = _run_export(
+        tmp_path,
+        "--mode",
+        "production",
+        "--site-imagery-timeline",
+        str(_write_doc(tmp_path, doc)),
+    )
+    assert proc.returncode == 0, proc.stderr
+    rows = [
+        json.loads(line)
+        for line in (out / "observations.jsonl").read_text().splitlines()
+    ]
+    assert rows and {r["synthetic"] for r in rows} == {False}
+
+
+def test_a_stale_epoch_label_fails_the_export(tmp_path):
+    """Codex finding on #446 (P2): a same-date pair cannot keep a change claim."""
+    doc = standard_document()
+    set_after_date(doc, doc["sites"][0]["artifacts"][0]["acquired_at"])
+    proc, out = _run_export(
+        tmp_path, "--site-imagery-timeline", str(_write_doc(tmp_path, doc))
+    )
+    assert proc.returncode == 2 and "does not match its scenes" in proc.stderr
     assert not out.exists()
 
 

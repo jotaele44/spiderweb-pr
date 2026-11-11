@@ -379,13 +379,30 @@ def validate_document(doc: Any) -> list[str]:
         if site_id in seen_sites:
             problems.append(f"{site_id}: duplicate site")
         seen_sites.add(site_id)
-        flags |= {bool(a.get("synthetic")) for a in entry.get("artifacts", [])}
+        flags |= _synthetic_flags(entry)
         problems += _validate_site(site_id, entry)
     if len(flags) > 1:
-        problems.append("document mixes synthetic and live scenes")
+        problems.append(
+            "document mixes synthetic and live records "
+            "(artifacts, acquisitions and change records must agree)"
+        )
     if bool(doc.get("synthetic")) != (True in flags):
-        problems.append("document synthetic flag does not match its scenes")
+        problems.append("document synthetic flag does not match its records")
     return problems
+
+
+def _synthetic_flags(entry: dict[str, Any]) -> set[bool]:
+    """The synthetic flag of every record type a site carries.
+
+    The export stamps every row from the document flag, and production mode relies
+    on it, so a flag cleared on some records but not others must not pass.
+    """
+    flags = {bool(a.get("synthetic")) for a in entry.get("artifacts", [])}
+    flags |= {bool(a.get("synthetic")) for a in entry.get("acquisitions", [])}
+    for cmp in entry.get("comparisons", []):
+        result = (cmp.get("signal") or {}).get("result") or {}
+        flags.add(bool(result.get("synthetic")))
+    return flags
 
 
 def _validate_site(site_id: str, entry: dict[str, Any]) -> list[str]:
@@ -419,6 +436,29 @@ def _validate_site(site_id: str, entry: dict[str, Any]) -> list[str]:
         if parse_acquired_at(art.get("acquired_at")) is None:
             problems.append(f"{site_id}: {aid} has no acquisition date")
         by_artifact[aid] = art
+    # Artifact ids are content hashes, so two scenes with identical pixels share one.
+    # Scene ids are unique per site (checked below), so resolve scenes by that.
+    by_scene = {str(art.get("scene_id")): art for art in artifacts}
+
+    scene_ids = [art.get("scene_id") for art in artifacts]
+    if len(scene_ids) != len(set(scene_ids)):
+        problems.append(f"{site_id}: scene ids are not unique")
+    # The export reads observed_at from the epoch records and the receipt id from the
+    # acquisitions, so each must describe the artifact at the same position.
+    for art, epoch_rec in zip(artifacts, entry.get("epochs", []), strict=False):
+        provenance = epoch_rec.get("provenance") or {}
+        when = parse_acquired_at(art.get("acquired_at"))
+        if provenance.get("scene_id") != art.get("scene_id") or (
+            when is None or when != parse_acquired_at(epoch_rec.get("capture_time"))
+        ):
+            problems.append(
+                f"{site_id}: epoch record does not match artifact {art.get('scene_id')}"
+            )
+    for art, acq in zip(artifacts, entry.get("acquisitions", []), strict=False):
+        if acq.get("artifact_ids") != [art.get("artifact_id")]:
+            problems.append(
+                f"{site_id}: acquisition does not match artifact {art.get('scene_id')}"
+            )
 
     for acq in entry.get("acquisitions", []):
         if acq.get("schema_version") != ACQUISITION_SCHEMA:
@@ -429,14 +469,17 @@ def _validate_site(site_id: str, entry: dict[str, Any]) -> list[str]:
             )
         if not set(acq.get("artifact_ids", [])) <= set(by_artifact):
             problems.append(f"{site_id}: acquisition names an unknown artifact")
-        if acq.get("synthetic") and acq.get("classification") != (
-            CLASSIFICATION_SYNTHETIC
+        if bool(acq.get("synthetic")) != (
+            acq.get("classification") == CLASSIFICATION_SYNTHETIC
         ):
-            problems.append(f"{site_id}: synthetic acquisition is not TEST_ONLY")
+            problems.append(
+                f"{site_id}: acquisition classification does not match its "
+                "synthetic flag (TEST_ONLY exactly when synthetic)"
+            )
 
     site = entry.get("site", {})
     for cmp in entry.get("comparisons", []):
-        problems += _validate_comparison(site_id, site, cmp, by_artifact)
+        problems += _validate_comparison(site_id, site, cmp, by_artifact, by_scene)
     return problems
 
 
@@ -445,6 +488,7 @@ def _validate_comparison(
     site: dict[str, Any],
     cmp: dict[str, Any],
     by_artifact: dict[str, dict[str, Any]],
+    by_scene: dict[str, dict[str, Any]],
 ) -> list[str]:
     problems: list[str] = []
     label = f"{site_id}:{cmp.get('comparison_id', '?')}"
@@ -472,6 +516,8 @@ def _validate_comparison(
     if t_before is None or t_after is None or t_after < t_before:
         problems.append(f"{label}: epochs are undated or out of order")
 
+    problems += _epoch_problems(label, epoch, signal, result, by_scene)
+
     if epoch in ("unknown_epoch", "same_epoch"):
         if score is not None or signal.get("confidence") is not None:
             problems.append(f"{label}: {epoch} must not carry a change claim")
@@ -493,13 +539,80 @@ def _validate_comparison(
     ):
         problems.append(f"{label}: coarse geometry carries a fine change class")
     resolutions = [
-        by_artifact[a].get("resolution_m")
-        for a in signal.get("source_artifact_ids", [])
-        if a in by_artifact
+        by_scene[sid].get("resolution_m")
+        for sid in (
+            str((result.get(side) or {}).get("scene_id"))
+            for side in ("before", "after")
+        )
+        if sid in by_scene
     ]
     coarse_imagery = any(r is None or r > COARSE_ONLY_ABOVE_M for r in resolutions)
     if coarse_imagery and not set(score.get("change_types", [])) <= (
         COARSE_CHANGE_TYPES
     ):
         problems.append(f"{label}: coarse imagery carries a fine change class")
+    return problems
+
+
+def _scene_from_artifact(art: dict[str, Any]) -> SceneRecord | None:
+    """Rebuild the fields epoch classification reads. Missing data fails closed."""
+    try:
+        west, south, east, north = art["bbox"]
+        return SceneRecord(
+            scene_id=art["scene_id"],
+            provider=art["provider"],
+            acquired_at=art.get("acquired_at"),
+            cloud_cover_pct=art.get("cloud_cover_pct"),
+            resolution_m=art.get("resolution_m"),
+            bbox=(west, south, east, north),
+            content_sha256=art["content_sha256"],
+            capture_kind=art.get("capture_kind") or "",
+        )
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _epoch_problems(
+    label: str,
+    epoch: Any,
+    signal: dict[str, Any],
+    result: dict[str, Any],
+    by_scene: dict[str, dict[str, Any]],
+) -> list[str]:
+    """Derive the epoch class from the referenced scenes; do not trust the label.
+
+    A label that disagrees with the scenes would let a same-date pair keep a change
+    claim, or a near-epoch pair skip review.
+    """
+    problems: list[str] = []
+    scenes: dict[str, SceneRecord | None] = {}
+    for side in ("before", "after"):
+        ref = result.get(side) or {}
+        art = by_scene.get(str(ref.get("scene_id")))
+        if art is None:
+            problems.append(f"{label}: {side} names an unknown scene")
+            continue
+        for key in ("artifact_id", "provider", "acquired_at"):
+            if ref.get(key) != art.get(key):
+                problems.append(f"{label}: {side} {key} does not match its artifact")
+        scenes[side] = _scene_from_artifact(art)
+
+    declared = {
+        (result.get("before") or {}).get("artifact_id"),
+        (result.get("after") or {}).get("artifact_id"),
+    }
+    if set(signal.get("source_artifact_ids", [])) != declared:
+        problems.append(f"{label}: signal artifacts differ from its before and after")
+
+    before, after = scenes.get("before"), scenes.get("after")
+    if before is None or after is None:
+        return problems
+    try:
+        expected = classify_epoch(before, after).value
+    except ValueError:
+        return problems  # after precedes before: reported by the date check
+    if expected != epoch:
+        problems.append(
+            f"{label}: epoch_class {epoch} does not match its scenes ({expected})"
+        )
     return problems
