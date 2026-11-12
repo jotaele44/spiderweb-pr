@@ -214,3 +214,33 @@ def test_tar_extraction_refuses_entries_outside_the_target(tmp_path, name, linkn
         setup._extract_tar(archive, tmp_path / "out")
     assert not (tmp_path / "escape").exists()
     assert not (tmp_path / "outside").exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX symlinks and modes")
+def test_tar_extraction_keeps_inner_symlinks_and_exec_bits(tmp_path):
+    archive = tmp_path / "ok.tar.gz"
+    with tarfile.open(archive, "w:gz") as tf:
+        script = tarfile.TarInfo("pkg/lib/cli.js")
+        script.mode = 0o755
+        script.size = 2
+        tf.addfile(script, io.BytesIO(b"ok"))
+        link = tarfile.TarInfo("pkg/bin/npm")
+        link.type = tarfile.SYMTYPE
+        link.linkname = "../lib/cli.js"
+        tf.addfile(link)
+    out = tmp_path / "out"
+    setup._extract_tar(archive, out)
+    assert (out / "pkg" / "bin" / "npm").is_symlink()
+    assert (out / "pkg" / "bin" / "npm").read_bytes() == b"ok"
+    assert os.access(out / "pkg" / "lib" / "cli.js", os.X_OK)
+
+
+def test_tar_extraction_refuses_hard_links_and_devices(tmp_path):
+    archive = tmp_path / "odd.tar.gz"
+    with tarfile.open(archive, "w:gz") as tf:
+        info = tarfile.TarInfo("pkg/hard")
+        info.type = tarfile.LNKTYPE
+        info.linkname = "pkg/other"
+        tf.addfile(info)
+    with pytest.raises(SystemExit, match="unexpected"):
+        setup._extract_tar(archive, tmp_path / "out")

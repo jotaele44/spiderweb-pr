@@ -273,28 +273,34 @@ def _extract_tar(archive: Path, dest: Path) -> None:
 
     The checksum only proves the download matches the release list, which
     comes from the same server, so the member paths are checked here too:
-    plain files, directories and links only, all resolving under dest.
+    plain files, directories and symlinks only, all resolving under dest.
     """
     root = Path(os.path.abspath(dest))
     root.mkdir(parents=True, exist_ok=True)
     with tarfile.open(archive) as tf:
         for member in tf:
             target = root / member.name
-            if not (
-                member.isfile() or member.isdir() or member.issym() or member.islnk()
-            ):
+            if not (member.isfile() or member.isdir() or member.issym()):
                 raise SystemExit(f"Setup stopped: unexpected entry {member.name!r}.")
             if not _inside(root, target):
                 raise SystemExit(f"Setup stopped: unsafe path {member.name!r}.")
             if member.issym() and not _inside(root, target.parent / member.linkname):
                 raise SystemExit(f"Setup stopped: unsafe link {member.name!r}.")
-            if member.islnk() and not _inside(root, root / member.linkname):
-                raise SystemExit(f"Setup stopped: unsafe link {member.name!r}.")
-            member.mode &= 0o755
-            if hasattr(tarfile, "data_filter"):
-                tf.extract(member, root, filter="data")
-            else:  # Python 3.11.0–3.11.3 has no extraction filters.
-                tf.extract(member, root)
+            # Written by hand rather than with tarfile.extract(), so nothing
+            # is created at a path that was not checked above.
+            if member.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if member.issym():
+                os.symlink(member.linkname, target)
+                continue
+            source = tf.extractfile(member)
+            if source is None:
+                raise SystemExit(f"Setup stopped: unreadable entry {member.name!r}.")
+            with source, target.open("wb") as out:
+                shutil.copyfileobj(source, out)
+            target.chmod(member.mode & 0o755)
 
 
 def install_private_node() -> Path:
