@@ -10,11 +10,16 @@ Double-click the launcher for your system in the repo root:
 
 The **first run** needs an internet connection once: it creates a private
 `.venv`, installs the desktop-scoped Python dependencies, and builds the
-Vite single-page app under `server/frontend` (requires
-[Python 3.11+](https://www.python.org/downloads/) and
-[Node.js](https://nodejs.org) to be installed). Every later run starts
-instantly and **works offline** — the app serves its FastAPI backend and the
-built dashboard from a local server and shows it in a native window.
+Vite single-page app under `server/frontend`. It requires
+[Python 3.11+](https://www.python.org/downloads/) to be installed. Node.js
+is needed for the build but does not have to be installed: setup uses a copy
+it finds (on `PATH`, or under nvm, fnm, asdf, Volta, Homebrew) and otherwise
+downloads the current Node 22 release from nodejs.org into a private `.node/`
+folder in the checkout, after verifying its checksum. `git` is optional too —
+without it the pinned `prii-desktop` runtime is installed from the same
+commit's source archive. Every later run starts instantly and **works
+offline** — the app serves its FastAPI backend and the built dashboard from a
+local server and shows it in a native window.
 
 Offline caveat: map basemap tiles are fetched from the internet
 (OpenStreetMap), so without a connection the map background is blank while
@@ -37,7 +42,8 @@ is absent; existing user state is left untouched.
   shared `prii_desktop` runtime, which picks a free port, starts uvicorn,
   and opens a native [pywebview](https://pywebview.flowrl.com/) window
   (falls back to the default browser).
-- `desktop/setup.py` — idempotent one-time setup (`--force` to redo). It
+- `desktop/setup.py` — idempotent one-time setup (`--force` to redo); finds or
+  downloads Node.js for the dashboard build. It
   installs only the FastAPI-scoped dependencies declared in
   `requirements-desktop.txt` (`fastapi`, `uvicorn`, `pywebview`,
   `sse-starlette`, `aiosqlite`, plus the shared `prii-desktop` runtime) — not
@@ -60,10 +66,11 @@ python3 desktop/setup.py          # one-time setup
 ## macOS app icon
 
 `PRII-SPIDERWEB.app` is a double-click macOS app (Apple-silicon and Intel).
-Double-click it in Finder and the dashboard opens in its own window — no
-Terminal. The first launch runs the same one-time setup described above
-(needs internet once, plus Node.js for the dashboard build); after that it
-starts straight away and works offline.
+Double-click it in Finder and the dashboard opens in its own window. The
+first launch runs the same one-time setup described above: the app opens a
+Terminal window that shows the setup's progress and then reopens the app by
+itself — there is nothing to type. After that it starts straight away, with
+no Terminal, and works offline.
 
 Because the app is a small self-locating wrapper around `desktop/launch.py`,
 it must stay at the repo root (it finds the repo from its own location).
@@ -98,7 +105,18 @@ one of the following clears it — you only do this once per download:
   app, and click **Open Anyway**. On macOS Sequoia 15 and later this replaces
   the old right-click → **Open** trick.
 
-## If the app reports that first-run setup could not finish
+## If first-run setup does not finish
+
+The setup window (`PRII-SPIDERWEB.app/Contents/Resources/first-run-setup.command`)
+never asks for a command. If a step fails — usually no internet connection —
+it names the step and waits; press Return in that window to try again. Its
+output is also saved to `~/Library/Logs/PRII-Spiderweb/setup.log`.
+
+The one thing it cannot install is Python itself: when no Python 3.11+ is
+found it opens the python.org download page and waits for the installer to
+be run.
+
+## If the app says it is running from a temporary copy
 
 Opening `PRII-SPIDERWEB.app` straight out of an unzipped download makes
 macOS run it from a throwaway read-only copy under
@@ -107,7 +125,3 @@ is not present and no `.venv` can be written. Move the folder somewhere else
 (your home folder is fine), double-click `Fix-Gatekeeper.command` once, then
 open the app again. Running `PRII-SPIDERWEB.command` instead also avoids it —
 only `.app` bundles are translocated.
-
-Genuine setup failures write their output to
-`$TMPDIR/prii-spiderweb-pr-setup.log`, and the failure message names that
-file.
