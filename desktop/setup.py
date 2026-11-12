@@ -264,6 +264,39 @@ def _download(url: str, dest: Path) -> None:
         )
 
 
+def _inside(root: Path, target: Path) -> bool:
+    return os.path.commonpath([root, os.path.abspath(target)]) == str(root)
+
+
+def _extract_tar(archive: Path, dest: Path) -> None:
+    """Unpack a tarball, refusing any entry that would land outside dest.
+
+    The checksum only proves the download matches the release list, which
+    comes from the same server, so the member paths are checked here too:
+    plain files, directories and links only, all resolving under dest.
+    """
+    root = Path(os.path.abspath(dest))
+    root.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(archive) as tf:
+        for member in tf:
+            target = root / member.name
+            if not (
+                member.isfile() or member.isdir() or member.issym() or member.islnk()
+            ):
+                raise SystemExit(f"Setup stopped: unexpected entry {member.name!r}.")
+            if not _inside(root, target):
+                raise SystemExit(f"Setup stopped: unsafe path {member.name!r}.")
+            if member.issym() and not _inside(root, target.parent / member.linkname):
+                raise SystemExit(f"Setup stopped: unsafe link {member.name!r}.")
+            if member.islnk() and not _inside(root, root / member.linkname):
+                raise SystemExit(f"Setup stopped: unsafe link {member.name!r}.")
+            member.mode &= 0o755
+            if hasattr(tarfile, "data_filter"):
+                tf.extract(member, root, filter="data")
+            else:  # Python 3.11.0–3.11.3 has no extraction filters.
+                tf.extract(member, root)
+
+
 def install_private_node() -> Path:
     """Download the current Node 22 release into .node/ and return its bin dir."""
     print(
@@ -300,13 +333,7 @@ def install_private_node() -> Path:
             with zipfile.ZipFile(archive) as zf:
                 zf.extractall(unpacked)
         else:
-            with tarfile.open(archive) as tf:
-                # The archive's checksum was verified above. `filter` exists
-                # from Python 3.11.4; earlier 3.11 releases take no argument.
-                if hasattr(tarfile, "tar_filter"):
-                    tf.extractall(unpacked, filter="tar")
-                else:
-                    tf.extractall(unpacked)
+            _extract_tar(archive, unpacked)
         shutil.rmtree(NODE_DIR, ignore_errors=True)
         shutil.move(str(next(unpacked.iterdir())), str(NODE_DIR))
     return private_node_bin()

@@ -193,3 +193,24 @@ def test_desktop_constraints_agree_with_the_lockfile():
     assert not drifted, "constraints-desktop.txt disagrees with uv.lock:\n" + "\n".join(
         drifted
     )
+
+
+@pytest.mark.parametrize(
+    ("name", "linkname"),
+    [("../escape", None), ("/abs/escape", None), ("pkg/link", "../../outside")],
+)
+def test_tar_extraction_refuses_entries_outside_the_target(tmp_path, name, linkname):
+    archive = tmp_path / "bad.tar.gz"
+    with tarfile.open(archive, "w:gz") as tf:
+        info = tarfile.TarInfo(name)
+        if linkname:
+            info.type = tarfile.SYMTYPE
+            info.linkname = linkname
+            tf.addfile(info)
+        else:
+            info.size = 1
+            tf.addfile(info, io.BytesIO(b"x"))
+    with pytest.raises(SystemExit, match="unsafe"):
+        setup._extract_tar(archive, tmp_path / "out")
+    assert not (tmp_path / "escape").exists()
+    assert not (tmp_path / "outside").exists()
