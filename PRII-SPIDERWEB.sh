@@ -5,22 +5,27 @@
 set -eu
 cd "$(dirname "$0")"
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "Python 3 is required (e.g. sudo apt install python3 python3-venv)."
+# Newest Python that meets the project's 3.11 floor.
+PYTHON=""
+for candidate in python3.14 python3.13 python3.12 python3.11 python3; do
+  if command -v "$candidate" >/dev/null 2>&1 \
+    && "$candidate" -c 'import sys; raise SystemExit(sys.version_info < (3, 11))' 2>/dev/null; then
+    PYTHON="$candidate"
+    break
+  fi
+done
+if [ -z "$PYTHON" ]; then
+  echo "Python 3.11 or newer is required (e.g. sudo apt install python3 python3-venv)."
   exit 1
 fi
 
-LOG="$(mktemp "${TMPDIR:-/tmp}/prii-spiderweb-pr-setup.XXXXXX")"
-if ! python3 desktop/setup.py --ensure >"$LOG" 2>&1; then
-  cat "$LOG"
+if ! "$PYTHON" desktop/setup.py --ensure; then
   echo
-  echo "Setup failed. If Node.js is missing, install it from https://nodejs.org and re-run this launcher."
-  echo "Full log: $LOG"
+  echo "Setup did not finish; the last lines above say which step stopped."
   if [ -t 0 ]; then
     printf '%s' "Press Enter to close… "
     read -r _
   fi
   exit 1
 fi
-rm -f "$LOG"
 exec .venv/bin/python desktop/launch.py "$@"

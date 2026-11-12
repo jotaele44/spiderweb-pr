@@ -56,7 +56,8 @@ Cross-producer correlation is owned by the Hub and downstream consumers. Spiderw
 ## Desktop app
 
 Double-click launchers at the repo root start the local desktop app (first run
-installs dependencies, later runs work offline). This is the diagnostic
+installs dependencies by itself — on macOS the app opens a Terminal window for
+that step and then reopens — and later runs work offline). This is the diagnostic
 dashboard described above (ADR 0001, Phase 2), not the federation's supported
 product surface:
 
