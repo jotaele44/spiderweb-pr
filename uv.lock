@@ -3451,8 +3451,8 @@ wheels = [
 
 [[package]]
 name = "prii-export-utils"
-version = "0.1.0"
-source = { git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_export_utils&rev=f2b81769924689b4d959554928810b1d7b7ef3d6#f2b81769924689b4d959554928810b1d7b7ef3d6" }
+version = "0.2.0"
+source = { git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_export_utils&rev=0f62e4bdde10b5ac82787a329d6f15481ab9c7f0#0f62e4bdde10b5ac82787a329d6f15481ab9c7f0" }
 
 [[package]]
 name = "prii-maintenance"
@@ -5298,7 +5298,7 @@ requires-dist = [
     { name = "pillow", marker = "extra == 'earthgpt'", specifier = ">=10.0,<13" },
     { name = "pillow", marker = "extra == 'imagery'", specifier = ">=10.0,<13" },
     { name = "praw", marker = "extra == 'rag'", specifier = ">=7.8.1,<9" },
-    { name = "prii-export-utils", git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_export_utils&rev=f2b81769924689b4d959554928810b1d7b7ef3d6" },
+    { name = "prii-export-utils", git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_export_utils&rev=0f62e4bdde10b5ac82787a329d6f15481ab9c7f0" },
     { name = "prii-maintenance", git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_maintenance&rev=f2b81769924689b4d959554928810b1d7b7ef3d6" },
     { name = "pyarrow", marker = "extra == 'airspace'", specifier = ">=14.0" },
     { name = "pydantic", marker = "extra == 'server'", specifier = ">=2.7,<3" },
