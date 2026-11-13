@@ -17,7 +17,9 @@ alongside the other producers:
 
 Reads a package dir (defaults to exports/samples, accepting `<name>.jsonl` or
 `<name>.sample.jsonl`) and writes `exports/federation/{sources,entities,
-relationships}.jsonl` + a Hub-conformant manifest. Deterministic ids. Stdlib only.
+relationships}.jsonl` + a Hub-conformant manifest. Deterministic ids. Besides the
+pinned prii-export-utils package, stdlib only; the source_monitors stream below
+also reads a YAML registry, which needs PyYAML (the `airspace` extra).
 
 NOTE (Z2): the canonical entity schema now carries an optional `location`
 {lat, lon}; record entities (observations/events/tracks) project a representative
@@ -36,10 +38,15 @@ A fifth lane, the site imagery timeline (`build_site_imagery_streams`), adds a
 and `satellite_visible_change` observations. It is omitted unless a timeline document
 is passed with `--site-imagery-timeline`, and an invalid document fails the export
 instead of being skipped.
+
+Every package also carries `source_monitors` (thehub-pr ADR 0013, see
+`build_source_monitors`): one row per source this repo's registries say it
+monitors, with when the source last succeeded and how that is known.
 """
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import sys
@@ -47,6 +54,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from prii_export_utils import SourceRunState, resolve_last_success, source_monitor_row
 from prii_export_utils import fid as _fid
 from prii_export_utils import norm as _norm
 from prii_export_utils import sha256 as _sha256
@@ -62,8 +70,11 @@ STREAM_SCHEMA = {
     "entities": "federation_entity.schema.json",
     "relationships": "federation_relationship.schema.json",
     "observations": "federation_observation.schema.json",
+    "source_monitors": "federation_source_monitor.schema.json",
 }
-PACKAGE_STREAMS = ("sources", "entities", "relationships", "observations")
+PACKAGE_STREAMS = (
+    "sources", "entities", "relationships", "observations", "source_monitors",
+)
 RECORD_STREAMS = {
     "airspace_events": "airspace_event",
     "observations": "airspace_observation",
@@ -598,6 +609,202 @@ def merge_site_imagery(
                 known.add(row[id_field])
 
 
+# --------------------------------------------------------------------------
+# source_monitors stream (thehub-pr ADR 0013). One row per source that this
+# repo's two source registries say it monitors. A missing-persons entry marked
+# `federation_eligible: false` (raw PII, ToS-restricted, tip-stream stratum C)
+# is never emitted, not even as a monitor row.
+#
+# Name, family, tier, cadence, window and declared status reproduce thehub-pr's
+# registry reader (src/hub/source_monitor.py: _parse_spiderweb_hydrography,
+# _parse_spiderweb_missing_persons, normalize_cadence, normalize_status,
+# normalize_tier, cadence_from_seconds, _window), so nothing the Hub shows
+# changes when it starts reading this producer from the stream. They say what
+# the registry declares; they are not a health check.
+#
+# When a source last succeeded comes only from a run receipt in
+# data/source_run_state.json (prii_export_utils.record_run; RUN_RECEIPT). No
+# fetcher writes one yet, and no committed output carries a per-source retrieval
+# time (hydrography snapshots and harvester outputs stay out of git), so every
+# source is NOT_RECORDED with a null time. Nothing here reads file or git dates.
+# --------------------------------------------------------------------------
+SOURCE_MONITOR_REGISTRIES = {
+    "hydrography": "manifests/pr_hydrography/source_registry.csv",
+    "missing_persons": "configs/missing_persons_sources.yaml",
+}
+SOURCE_RUN_STATE = "data/source_run_state.json"
+_HYDROGRAPHY_COLUMNS = (
+    "source_id", "authority", "universe", "refresh_policy", "evidence_tier",
+)
+# Nominal window per named cadence (hub CADENCE_WINDOW_SECONDS); event, static,
+# manual and unknown have none.
+_MONITOR_WINDOWS = {
+    "realtime": 3600, "hourly": 3600, "daily": 86400, "weekly": 7 * 86400,
+    "monthly": 31 * 86400, "quarterly": 92 * 86400, "yearly": 366 * 86400,
+}
+# The hub's _NAMED_CADENCE / _NAMED_STATUS entries for this repo's vocabularies.
+# tests/test_federation_source_monitors.py fails on a committed registry value
+# that is not mapped here.
+_REFRESH_POLICY_CADENCE = {
+    "pin_by_vintage": "static",
+    "probe_service_then_snapshot_if_changed": "event",
+    "probe_sciencebase_item_then_snapshot_if_changed": "event",
+}
+_MISSING_PERSONS_STATUS = {
+    "harvester_landed": "active",
+    "harvester_planned": "not_active",
+    "manual_pull": "manual",
+    "aggregate_only": "partial",
+    "cannot_reach": "inactive",
+}
+_MONITOR_TIERS = ("T1", "T2", "T3", "T4")
+
+
+def _monitor_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _named(raw: Any, vocabulary: dict[str, str]) -> str:
+    if raw is None:
+        return "unknown"
+    return vocabulary.get(str(raw).strip().lower(), "unknown")
+
+
+def _monitor_tier(raw: Any) -> str | None:
+    if raw is None:
+        return None
+    value = str(raw).strip().upper()
+    return value if value in _MONITOR_TIERS else None
+
+
+def _cadence_from_seconds(seconds: Any) -> str:
+    """Largest-first buckets with the hub's 25% tolerance (90 days is quarterly)."""
+    try:
+        value = float(seconds)
+    except (TypeError, ValueError):
+        return "unknown"
+    if value <= 0:
+        return "unknown"
+    for name in ("yearly", "quarterly", "monthly", "weekly", "daily", "hourly"):
+        if value * 1.25 >= _MONITOR_WINDOWS[name]:
+            return name
+    return "realtime"
+
+
+def _monitor_window(cadence: str, declared_seconds: Any = None) -> int | None:
+    """A declared window in seconds wins; otherwise the cadence's nominal one."""
+    try:
+        declared = float(declared_seconds) if declared_seconds is not None else 0.0
+    except (TypeError, ValueError):
+        declared = 0.0
+    if declared > 0:
+        return int(declared)
+    return _MONITOR_WINDOWS.get(cadence)
+
+
+def _hydrography_monitors(path: Path) -> list[dict[str, Any]]:
+    with path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        fields = reader.fieldnames or []
+        missing = [c for c in _HYDROGRAPHY_COLUMNS if c not in fields]
+        if missing:
+            raise ValueError(f"{path}: missing column(s): {', '.join(missing)}")
+        rows = list(reader)
+    out = []
+    for r in rows:
+        cadence = _named(r["refresh_policy"], _REFRESH_POLICY_CADENCE)
+        out.append({
+            "source_ref": r["source_id"],
+            "name": _monitor_text(f"{r['authority']}: {r['universe']}"),
+            "producer_family": _monitor_text(r["universe"]),
+            "evidence_tier": _monitor_tier(r["evidence_tier"]),
+            "cadence": cadence,
+            "cadence_window_seconds": _monitor_window(cadence),
+            "declared_status": "unknown",
+            "source_url": _monitor_text(r.get("endpoint")),
+        })
+    return out
+
+
+def _missing_persons_monitors(path: Path) -> list[dict[str, Any]]:
+    try:
+        import yaml
+    except ImportError as exc:  # not a base dependency; the airspace extra has it
+        raise RuntimeError(f"reading {path} needs PyYAML") from exc
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    sources = data.get("sources") if isinstance(data, dict) else None
+    if not isinstance(sources, dict):
+        raise ValueError(f"{path}: expected a top-level 'sources' mapping")
+    out = []
+    for sid, s in sources.items():
+        if not isinstance(s, dict):
+            raise ValueError(f"{path}: source {sid!r} is not a mapping")
+        # Only the three options the registry documents (true, false,
+        # aggregate_only); anything else fails rather than guess at eligibility.
+        eligible = s.get("federation_eligible")
+        if not (eligible is True or eligible is False or eligible == "aggregate_only"):
+            raise ValueError(f"{path}: {sid!r} federation_eligible={eligible!r}")
+        if eligible is False:
+            continue
+        days = s.get("refresh_cadence_days")
+        positive = isinstance(days, (int, float)) and days > 0
+        seconds = float(days) * 86400 if positive else None
+        # 0 days marks a one-off dataset or a per-event backfill: nothing recurs.
+        cadence = "static" if days == 0 else _cadence_from_seconds(seconds)
+        out.append({
+            "source_ref": sid,
+            "name": _monitor_text(s.get("operator")) or _monitor_text(sid),
+            "producer_family": "missing_persons",
+            "evidence_tier": None,
+            "cadence": cadence,
+            "cadence_window_seconds": _monitor_window(cadence, seconds),
+            "declared_status": _named(s.get("status"), _MISSING_PERSONS_STATUS),
+            "source_url": _monitor_text(s.get("url")),
+        })
+    return out
+
+
+_MONITOR_READERS = {
+    "hydrography": _hydrography_monitors,
+    "missing_persons": _missing_persons_monitors,
+}
+
+
+def build_source_monitors(
+    now: str,
+    *,
+    repo_root: Path = REPO_ROOT,
+    run_state_path: Path | None = None,
+) -> list[dict[str, Any]]:
+    """The ``source_monitors`` stream: one row per registered source, by source id."""
+    state_path = run_state_path or repo_root / SOURCE_RUN_STATE
+    state = SourceRunState.load(state_path)
+    inputs = [*SOURCE_MONITOR_REGISTRIES.values(), SOURCE_RUN_STATE]
+    rows: dict[str, dict[str, Any]] = {}
+    for key, rel in SOURCE_MONITOR_REGISTRIES.items():
+        for entry in _MONITOR_READERS[key](repo_root / rel):
+            ref = _monitor_text(entry.pop("source_ref"))
+            if not ref:
+                raise ValueError(f"{rel}: source without an id")
+            if ref in rows:
+                raise ValueError(f"duplicate source id {ref!r} across registries")
+            receipt = state.get(ref) or {}
+            at, basis = resolve_last_success(receipt, None)
+            rows[ref] = source_monitor_row(
+                producer=PRODUCER, source_ref=ref, registry_path=rel,
+                lineage=_lineage("SOURCE_MONITOR", inputs, "registry_projection"),
+                created_at=now, extracted_at=now,
+                last_success_at=at, last_success_basis=basis,
+                last_attempt_at=receipt.get("last_attempt_at"),
+                last_attempt_status=receipt.get("last_attempt_status"),
+                **entry,
+            )
+    return [rows[k] for k in sorted(rows)]
+
+
 def _rel(src_ent, rtype, tgt_ent, sid, score, synthetic, created, now):
     rid = _fid("rel", src_ent, rtype, tgt_ent)
     return {rid: {
@@ -708,6 +915,7 @@ def main() -> int:
         return 0
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     streams = build_streams(sources_in, records, now)
+    streams["source_monitors"] = build_source_monitors(now)
 
     if not args.no_ppp_geometry:
         try:
