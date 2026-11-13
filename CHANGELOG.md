@@ -10,6 +10,14 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Federation `source_monitors` stream (thehub-pr ADR 0013).**
+  `scripts/federation_export.py` now writes `source_monitors.jsonl`. It has one row per
+  source in `manifests/pr_hydrography/source_registry.csv` and
+  `configs/missing_persons_sources.yaml`, and never one marked
+  `federation_eligible: false`. Each row carries the declared status and cadence the Hub
+  already showed, plus when the source last succeeded. That time is read only from run
+  receipts in `data/source_run_state.json`. None exist yet, so every source is
+  `NOT_RECORDED`. `prii-export-utils` is pinned to thehub-pr `0f62e4b` (0.2.0).
 - **Road gazetteer: Puerto Rico route-numbering logic.** Canonical road rows now
   carry `route_number_band` (1–99 / 100–299 / 300–9999), `route_suffix` and
   `is_ramal`. Ramal aliases are generated, and DTOP rows whose declared network
