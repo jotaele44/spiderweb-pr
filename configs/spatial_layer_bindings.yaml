@@ -13,7 +13,7 @@ generated_at: "2026-07-29T00:00:00Z"
 bindings:
   # Backend-served today via GET /geo/{layer}.geojson (server/backend/main.py
   # _FALLBACK_LAYERS / _ALLOWED_LAYERS) and rendered by the MapLibre runtime in
-  # workbench/priis-v1/app/src/modules/SpatialIntelligence.tsx.
+  # server/frontend/src/modules/SpatialIntelligence.tsx.
   - layer_id: municipios
     extent_id: SPIDERWEB_ANALYTICAL_DOMAIN
     format: geojson

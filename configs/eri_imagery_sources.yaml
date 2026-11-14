@@ -1,0 +1,182 @@
+# NOAA NGS Emergency Response Imagery (ERI) flights covering Puerto Rico and the
+# U.S. Virgin Islands, served to the map by server/backend/eri_imagery.py.
+#
+# Source: the public AWS Open Data bucket `noaa-eri-pds` (CC0-1.0). The bucket
+# holds per-flight folders of GeoTIFFs (EPSG:4326, RGBA) and no pre-rendered
+# tile pyramid, so the backend renders Web-Mercator tiles from them on request.
+#
+# Every entry below was read from the bucket's own STAC index
+# (`noaa_eri_stac.parquet`, bbox filter over PR/USVI) on 2026-11-14: flight
+# folder, image count, extent and cell size are observed, not assumed.
+# `acquired` is the STAC `datetime` date, except CB2201a where STAC carries only
+# a 2022-01-01 placeholder, so the year alone is recorded.
+#
+# cell_arcsec is the nominal image cell. File names encode the north-west
+# corner (`C0643345w174500n` = 064°33'45"W 17°45'00"N); the backend derives each
+# image footprint from that corner plus this cell size.
+#
+# min_zoom bounds how many images one tile can touch (a tile below it would
+# need dozens of remote reads). The map shows footprints below min_zoom.
+# Measured 2026-11-14 from a cold cache: a zoom-14 tile composites 4-9 images
+# in roughly 3-5 s for the pre-event flights; the 2017 flights are plain
+# (non-cloud-optimized) JPEG GeoTIFFs and took up to 18 s, zoom 15+ about 1-6 s.
+#
+# This registry is deliberately separate from configs/layer_catalog.yaml: that
+# catalog is the label tree for pin (vector) layers and is held in a one-to-one
+# mapping with configs/master_pin_registry.yaml, which has no place for raster
+# imagery.
+version: eri_imagery_sources_v0_1
+bucket_url: https://noaa-eri-pds.s3.amazonaws.com
+attribution: "NOAA National Geodetic Survey — Emergency Response Imagery (CC0-1.0)"
+
+datasets:
+  - id: pre_event_2024_cb2401a
+    label: "2024 Pre-Event — Puerto Rico & USVI"
+    event: 2024_Pre_Event
+    flight: CB2401a_OB_N_RGB
+    kind: pre_event
+    acquired: "2024-03-19"
+    cell_arcsec: 45
+    bbox: [-67.2876, 17.6624, -64.6999, 18.5501]
+    min_zoom: 14
+    max_zoom: 20
+  - id: pre_event_2022_cb2201a
+    label: "2022 Pre-Event — Puerto Rico & USVI"
+    event: 2022_Pre_Event
+    flight: CB2201a_OB_N_RGB
+    kind: pre_event
+    acquired: "2022"
+    cell_arcsec: 45
+    bbox: [-67.3001, 17.6624, -64.5499, 18.5251]
+    min_zoom: 14
+    max_zoom: 20
+  - id: maria_20170926b
+    label: "Hurricane Maria — 26 Sep 2017 (b) — Eastern PR"
+    event: 2017_Hurricane_Maria
+    flight: 20170926b_RGB
+    kind: post_event
+    acquired: "2017-09-26"
+    cell_arcsec: 90
+    bbox: [-65.8751, 18.0749, -65.4249, 18.2501]
+    min_zoom: 14
+    max_zoom: 20
+  - id: maria_20170926a
+    label: "Hurricane Maria — 26 Sep 2017 (a) — Southern PR"
+    event: 2017_Hurricane_Maria
+    flight: 20170926a_RGB
+    kind: post_event
+    acquired: "2017-09-26"
+    cell_arcsec: 90
+    bbox: [-66.9501, 17.8999, -65.6999, 18.2251]
+    min_zoom: 14
+    max_zoom: 20
+  - id: maria_20170925a
+    label: "Hurricane Maria — 25 Sep 2017 — Eastern PR"
+    event: 2017_Hurricane_Maria
+    flight: 20170925a_RGB
+    kind: post_event
+    acquired: "2017-09-25"
+    cell_arcsec: 90
+    bbox: [-65.8251, 18.0749, -65.5999, 18.4251]
+    min_zoom: 14
+    max_zoom: 20
+  - id: maria_20170924b
+    label: "Hurricane Maria — 24 Sep 2017 (b) — Northern PR"
+    event: 2017_Hurricane_Maria
+    flight: 20170924b_RGB
+    kind: post_event
+    acquired: "2017-09-24"
+    cell_arcsec: 90
+    bbox: [-66.7751, 18.1749, -65.5749, 18.5001]
+    min_zoom: 14
+    max_zoom: 20
+  - id: maria_20170924a
+    label: "Hurricane Maria — 24 Sep 2017 (a) — Vieques, Culebra & East PR"
+    event: 2017_Hurricane_Maria
+    flight: 20170924a_RGB
+    kind: post_event
+    acquired: "2017-09-24"
+    cell_arcsec: 90
+    bbox: [-65.9001, 17.9749, -65.2249, 18.3751]
+    min_zoom: 14
+    max_zoom: 20
+  - id: maria_20170923b
+    label: "Hurricane Maria — 23 Sep 2017 (b) — St. Croix"
+    event: 2017_Hurricane_Maria
+    flight: 20170923b_RGB
+    kind: post_event
+    acquired: "2017-09-23"
+    cell_arcsec: 90
+    bbox: [-64.9251, 17.6999, -64.6249, 17.8001]
+    min_zoom: 14
+    max_zoom: 20
+  - id: maria_20170923a
+    label: "Hurricane Maria — 23 Sep 2017 (a) — St. Croix"
+    event: 2017_Hurricane_Maria
+    flight: 20170923a_RGB
+    kind: post_event
+    acquired: "2017-09-23"
+    cell_arcsec: 90
+    bbox: [-64.9251, 17.6499, -64.5499, 17.7751]
+    min_zoom: 14
+    max_zoom: 20
+  - id: maria_20170922a
+    label: "Hurricane Maria — 22 Sep 2017 — USVI"
+    event: 2017_Hurricane_Maria
+    flight: 20170922a_RGB
+    kind: post_event
+    acquired: "2017-09-22"
+    cell_arcsec: 90
+    bbox: [-65.0751, 17.6499, -64.5499, 18.4001]
+    min_zoom: 14
+    max_zoom: 20
+  - id: irma_20170918a
+    label: "Hurricane Irma — 18 Sep 2017 — St. Croix"
+    event: 2017_Hurricane_Irma
+    flight: 20170918a_RGB
+    kind: post_event
+    acquired: "2017-09-18"
+    cell_arcsec: 90
+    bbox: [-64.9251, 17.6499, -64.5499, 17.8001]
+    min_zoom: 14
+    max_zoom: 20
+  - id: irma_20170917a
+    label: "Hurricane Irma — 17 Sep 2017 — St. Croix"
+    event: 2017_Hurricane_Irma
+    flight: 20170917a_RGB
+    kind: post_event
+    acquired: "2017-09-17"
+    cell_arcsec: 90
+    bbox: [-64.9251, 17.6499, -64.5749, 17.7501]
+    min_zoom: 14
+    max_zoom: 20
+  - id: irma_20170916b
+    label: "Hurricane Irma — 16 Sep 2017 — St. Thomas & St. John"
+    event: 2017_Hurricane_Irma
+    flight: 20170916b_RGB
+    kind: post_event
+    acquired: "2017-09-16"
+    cell_arcsec: 90
+    bbox: [-65.0751, 18.2749, -64.6499, 18.4001]
+    min_zoom: 14
+    max_zoom: 20
+  - id: irma_20170915b
+    label: "Hurricane Irma — 15 Sep 2017 (b) — St. Thomas & St. John"
+    event: 2017_Hurricane_Irma
+    flight: 20170915b_RGB
+    kind: post_event
+    acquired: "2017-09-15"
+    cell_arcsec: 90
+    bbox: [-65.0001, 18.2749, -64.6499, 18.4001]
+    min_zoom: 14
+    max_zoom: 20
+  - id: irma_20170915_16_usvi
+    label: "Hurricane Irma — 15–16 Sep 2017 — USVI mosaic"
+    event: 2017_Hurricane_Irma
+    flight: 20170915_16_USVI
+    kind: post_event
+    acquired: "2017-09-15"
+    cell_arcsec: 90
+    bbox: [-65.0751, 18.2749, -64.6499, 18.4001]
+    min_zoom: 14
+    max_zoom: 20

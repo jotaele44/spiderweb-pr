@@ -10,6 +10,17 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **NOAA aerial imagery on the Spatial map.** The backend renders map tiles and
+  image footprints from NOAA's public Emergency Response Imagery bucket
+  (`noaa-eri-pds`) for 15 Puerto Rico / USVI flights — 2022 and 2024 pre-event
+  baselines, Hurricane Maria and Hurricane Irma 2017 — registered in
+  `configs/eri_imagery_sources.yaml` (`GET /imagery/eri/*`,
+  `server/backend/eri_imagery.py`). The map gains a flight picker, opacity,
+  image footprints with click-to-identify, swipe comparison between two flights,
+  a base-map toggle, a scale bar, a cursor coordinate readout, and a URL
+  fragment that restores the view. `VITE_TILE_URL`, previously defined but
+  unused, now sets the base-map tiles. The `server` extra gains `rasterio` and
+  `PyYAML`.
 - **Road gazetteer: Puerto Rico route-numbering logic.** Canonical road rows now
   carry `route_number_band` (1–99 / 100–299 / 300–9999), `route_suffix` and
   `is_ramal`. Ramal aliases are generated, and DTOP rows whose declared network

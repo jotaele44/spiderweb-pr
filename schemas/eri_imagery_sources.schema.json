@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "eri_imagery_sources",
+  "title": "Spiderweb-PR NOAA ERI Imagery Source Registry",
+  "description": "NOAA NGS Emergency Response Imagery flights the backend may render as map tiles (configs/eri_imagery_sources.yaml). The registry is the allowlist: server/backend/eri_imagery.py only ever reads objects under bucket_url/{event}/{flight}/ for an entry listed here, so it cannot be used as a general proxy.",
+  "type": "object",
+  "required": ["version", "bucket_url", "attribution", "datasets"],
+  "properties": {
+    "version": {"type": "string", "pattern": "^eri_imagery_sources_v"},
+    "bucket_url": {"const": "https://noaa-eri-pds.s3.amazonaws.com"},
+    "attribution": {"type": "string", "minLength": 1},
+    "datasets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/definitions/dataset"}
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "dataset": {
+      "type": "object",
+      "required": [
+        "id", "label", "event", "flight", "kind", "acquired",
+        "cell_arcsec", "bbox", "min_zoom", "max_zoom"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "label": {"type": "string", "minLength": 1},
+        "event": {"type": "string", "pattern": "^[A-Za-z0-9_]+$"},
+        "flight": {"type": "string", "pattern": "^[A-Za-z0-9_]+$"},
+        "kind": {"enum": ["pre_event", "post_event"]},
+        "acquired": {
+          "type": "string",
+          "pattern": "^[0-9]{4}(-[0-9]{2}-[0-9]{2})?$",
+          "description": "Acquisition date (YYYY-MM-DD), or the year alone when the source index carries no real date."
+        },
+        "cell_arcsec": {"type": "number", "exclusiveMinimum": 0},
+        "bbox": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "[west, south, east, north] in EPSG:4326."
+        },
+        "min_zoom": {"type": "integer", "minimum": 0, "maximum": 24},
+        "max_zoom": {"type": "integer", "minimum": 0, "maximum": 24}
+      },
+      "additionalProperties": false
+    }
+  }
+}
