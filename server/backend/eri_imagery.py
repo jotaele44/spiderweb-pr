@@ -19,7 +19,7 @@ Boundaries that are deliberate:
   ever requested; nothing in a request can name a host or a key.
 * Footprints come from the bucket's own key listing. File names encode the
   north-west corner of each image, and the registry supplies the cell size.
-* Rendering needs ``rasterio`` (the ``dem`` extra). Without it the dataset and
+* Rendering needs ``rasterio`` (in the ``server`` extra). Without it the dataset and
   footprint routes still work and the tile route answers 503.
 """
 
@@ -545,10 +545,12 @@ def create_router(
             png = render(hits, z, x, y)
         except RendererUnavailable as exc:
             raise HTTPException(
-                503, "ERI tile rendering needs rasterio (install the 'dem' extra)"
+                503, "ERI tile rendering needs rasterio (install the 'server' extra)"
             ) from exc
         except Exception as exc:  # noqa: BLE001 - upstream read failure
-            log.warning("ERI tile %s/%s/%s/%s failed (%s)", dataset.id, z, x, y, exc)
+            # dataset.id is the registry's own value and z/x/y are validated
+            # integers, so nothing request-controlled can add a line to the log.
+            log.warning("ERI tile %s/%d/%d/%d failed (%s)", dataset.id, z, x, y, exc)
             raise HTTPException(502, "NOAA ERI imagery could not be read") from exc
         tile_cache.put(cache_key, png)
         return Response(png, media_type="image/png", headers=headers)
