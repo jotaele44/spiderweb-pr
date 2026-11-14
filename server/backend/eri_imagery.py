@@ -548,9 +548,10 @@ def create_router(
                 503, "ERI tile rendering needs rasterio (install the 'server' extra)"
             ) from exc
         except Exception as exc:  # noqa: BLE001 - upstream read failure
-            # dataset.id is the registry's own value and z/x/y are validated
-            # integers, so nothing request-controlled can add a line to the log.
-            log.warning("ERI tile %s/%d/%d/%d failed (%s)", dataset.id, z, x, y, exc)
+            # The tile coordinates are deliberately not logged: they come from
+            # the request path. render_tile already logs each image that failed
+            # by its bucket key, which locates the problem.
+            log.warning("ERI tile render failed for %s (%s)", dataset.id, exc)
             raise HTTPException(502, "NOAA ERI imagery could not be read") from exc
         tile_cache.put(cache_key, png)
         return Response(png, media_type="image/png", headers=headers)
