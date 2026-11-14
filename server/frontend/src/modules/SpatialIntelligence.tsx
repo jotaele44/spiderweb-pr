@@ -13,7 +13,11 @@ import {
   martinTileUrlTemplate,
 } from "../config";
 import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
-import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
+import { BASEMAP_ID, DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
+import { CompareOverlay } from "../spatial/imagery/CompareOverlay";
+import { CoordinateReadout } from "../spatial/imagery/CoordinateReadout";
+import { ImageryPanel } from "../spatial/imagery/ImageryPanel";
+import { useImageryController } from "../spatial/imagery/useImageryController";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 import { useSpatialTools, SpatialToolsPanel } from "./SpatialToolsPanel";
 
@@ -430,6 +434,14 @@ export function SpatialIntelligence({
   } = useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG, spatialMode);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const spatialToolActiveRef = useRef(false);
+  // NOAA emergency-response imagery, base-map toggle and the shareable URL
+  // fragment. MapLibre-only: in 3D mode mapRef is null and this stays idle.
+  const imagery = useImageryController({
+    mapRef,
+    ready: mapReady && activeMode === "maplibre",
+    basemapLayerId: BASEMAP_ID,
+    clickSuppressedRef: spatialToolActiveRef,
+  });
   const densityGeoidsRef = useRef<Set<string>>(new Set());
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
@@ -760,7 +772,7 @@ export function SpatialIntelligence({
       <div className="panel-head">
         <div>
           <h1>Spatial Intelligence</h1>
-          <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence</span>
+          <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence · NOAA aerial imagery</span>
         </div>
         <div className="row">
           <button
@@ -811,6 +823,19 @@ export function SpatialIntelligence({
       >
         <div className="map-col">
           <div ref={hostRef} className="map-host" />
+          {activeMode === "maplibre" && mapReady && imagery.dataset && imagery.compareDataset && (
+            <CompareOverlay
+              mapRef={mapRef}
+              basemapStyle={DEFAULT_REGIONAL_SCENE_CONFIG.basemapStyle}
+              basemapLayerId={BASEMAP_ID}
+              basemapVisible={imagery.basemapVisible}
+              dataset={imagery.compareDataset}
+              attribution={imagery.attribution}
+              opacity={imagery.opacity}
+              leftLabel={imagery.dataset.label}
+            />
+          )}
+          {activeMode === "maplibre" && <CoordinateReadout mapRef={mapRef} ready={mapReady} />}
           {activeMode === "maplibre" && failedLayers.length > 0 && (
             <div className="map-error" role="alert">
               <span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span>
@@ -875,6 +900,12 @@ export function SpatialIntelligence({
               <div className="density-legend-bar" />
               <div className="density-legend-labels"><span>Low</span><span>High</span></div>
             </div>
+          )}
+          {activeMode === "maplibre" && (
+            <>
+              <div className="hr" />
+              <ImageryPanel {...imagery.panelProps} />
+            </>
           )}
           <div className="hr" />
           <h2>Top spatial anomalies</h2>

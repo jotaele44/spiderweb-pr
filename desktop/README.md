@@ -23,7 +23,10 @@ local server and shows it in a native window.
 
 Offline caveat: map basemap tiles are fetched from the internet
 (OpenStreetMap), so without a connection the map background is blank while
-all other data, tables, and charts keep working.
+all other data, tables, and charts keep working. The same holds for the
+"Aerial imagery" layer on the Spatial map: its tiles are rendered on demand
+from NOAA's public `noaa-eri-pds` bucket, so with no connection the flight
+list still loads but the imagery and its footprints report an error.
 
 First launch also creates a writable workspace and prepares `server/priis.db`
 for the live backend. It seeds the diagnostic dataset only when the database

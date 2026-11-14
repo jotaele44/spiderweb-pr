@@ -316,9 +316,13 @@ is a defect today — each is documented as intentional in
   annotate, or status change. The app has no write path for domain data at all:
   the only non-`GET` routes it calls are `POST /pipeline/run`, `POST /rag/query`
   and `DELETE /pipeline/{job_id}`, all of which are job control.
-- **No router.** Module selection is `useState`, so there are no deep links, no
-  back button, and no shareable view — a significant gap for collaborative work
-  and a small change to close (`react-router` or a hash-based scheme).
+- **No router.** Module selection is `useState`, so there are no deep links to a
+  module and no back button — a significant gap for collaborative work and a
+  small change to close (`react-router` or a hash-based scheme). The one
+  exception is the Spatial map: its camera and imagery state are kept in the URL
+  fragment (`spatial/imagery/viewHash.ts`, e.g.
+  `#map=16.00/18.46550/-66.11670&eri=pre_event_2022_cb2201a`) and restored on
+  load, but the fragment does not select the Spatial module itself.
 - **No responsive layout.** `styles/app.css` contains **zero** `@media` queries.
   The shell is a fixed `100vw`/`100vh` three-column grid with hardcoded inline
   column widths (`"1fr 300px"`, `"320px 1fr"`, `"1fr 280px"`). Below roughly
@@ -336,11 +340,15 @@ is a defect today — each is documented as intentional in
   warns: the Spatial chunk is ~1.03 MB raw / ~276 kB gzipped, essentially all
   MapLibre. It is already route-split, so it only loads when the Spatial tab is
   opened, but nothing stops that number growing.
-- **Map tiles still need the network.** `TILE_URL` is now configurable via
-  `VITE_TILE_URL` (this change) so a packaged build can point at a local source,
-  but the default remains `tile.openstreetmap.org`. Fonts were self-hosted during
-  the offline hardening; tiles were not. Bundling or caching tiles is the
-  remaining offline gap.
+- **Map tiles still need the network.** `TILE_URL` is configurable via
+  `VITE_TILE_URL` so a packaged build can point at a local source; the setting
+  was defined in `config.ts` but unused until `spatial/config/regionalScene.ts`
+  was wired to it alongside the NOAA imagery work. The default remains
+  `tile.openstreetmap.org`. Fonts were self-hosted during the offline hardening;
+  tiles were not. Bundling or caching tiles is the remaining offline gap. The
+  NOAA aerial imagery layer has the same dependency and more: every tile is
+  rendered by the backend from GeoTIFFs in the public `noaa-eri-pds` bucket, so
+  it needs both the backend and the network.
 - **`/catalog` has no UI.** The backend serves it; nothing in the app calls it.
 - **Browser chrome cannot follow the theme toggle.** `index.html` gained a
   description, a `<noscript>` fallback and a web manifest for the previously

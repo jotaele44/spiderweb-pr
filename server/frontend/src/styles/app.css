@@ -201,6 +201,60 @@ button.source-row { width: 100%; border: 0; background: transparent; color: inhe
   background: var(--surface-2); border: 1px solid var(--line); color: var(--muted);
   padding: 4px 10px; font-size: 11px; z-index: 5;
 }
+/* Cursor position + zoom, under the zoom buttons. The bottom edge belongs to
+   MapLibre's attribution and scale bar, which grow with the active sources. */
+.map-readout {
+  position: absolute; left: 10px; top: 84px; z-index: 4;
+  display: flex; gap: 10px; pointer-events: none;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink);
+  padding: 3px 8px; font: 11px var(--font-mono);
+}
+/* Swipe comparison: a mirror map clipped to the right of the divider. Only the
+   divider takes pointer events, so the main map underneath stays interactive. */
+/* z-index 1: above the map canvas, below MapLibre's own controls (z-index 2),
+   so zoom buttons, scale bar and attribution stay visible and clickable. */
+.map-compare { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.map-compare-host { position: absolute; inset: 0; }
+.map-compare-divider {
+  position: absolute; top: 0; bottom: 0; width: 24px; margin-left: -12px;
+  display: grid; place-items: center; cursor: ew-resize; pointer-events: auto; touch-action: none;
+}
+.map-compare-divider::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 11px; width: 2px;
+  background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .55);
+}
+.map-compare-divider:focus-visible { outline: 2px solid var(--info, #4dc4d6); outline-offset: -2px; }
+.map-compare-grip {
+  position: relative; width: 14px; height: 40px; border-radius: 7px;
+  background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .55);
+}
+.map-compare-label {
+  position: absolute; top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: #fff; color: #1a1a1a; border: 1px solid rgba(0, 0, 0, .55);
+  padding: 3px 8px; font: 10px var(--font-mono); text-transform: uppercase;
+}
+.map-compare-label[data-side="left"] { left: 52px; }
+.map-compare-label[data-side="right"] { right: 10px; }
+.imagery-panel { display: grid; gap: 8px; }
+.imagery-panel > h2 { margin: 0; font-size: 12px; }
+.imagery-panel .subtle { margin: 0; font-size: 12px; }
+.imagery-field { display: grid; gap: 4px; font-size: 11px; color: var(--ink-2); }
+.imagery-field select, .imagery-field input[type="range"] { width: 100%; }
+.imagery-field select {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  padding: 5px 6px; font: inherit; font-size: 12px;
+}
+.imagery-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 10px var(--font-mono); text-transform: uppercase; color: var(--ink-2); }
+.imagery-meta > [data-status="error"] { color: var(--alert); }
+.imagery-meta > [data-status="loading"] { font-style: italic; }
+.imagery-hint, .imagery-inline-error, .imagery-identify {
+  display: grid; gap: 4px; padding: 6px 8px; font-size: 11px; line-height: 1.4;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2);
+}
+.imagery-inline-error { border-color: var(--alert); color: var(--alert); }
+.imagery-identify code { font: 11px var(--font-mono); color: var(--ink); overflow-wrap: anywhere; }
+.imagery-identify-head { display: flex; justify-content: space-between; gap: 8px; color: var(--ink); }
+.imagery-identify a, .imagery-source { color: var(--ink); text-decoration: underline; font-size: 11px; }
 .linklike { border: 0; background: transparent; color: inherit; text-decoration: underline; padding: 0; font: inherit; }
 .navbtn[data-status="error"] > span:last-child { color: var(--alert); }
 .navbtn[data-status="loading"] > span:last-child { color: var(--muted); font-style: italic; }

@@ -81,6 +81,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# NOAA Emergency Response Imagery tiles + footprints (/imagery/eri/*). Mounted
+# here rather than in production.py so the dev server, the desktop wrapper and
+# production all serve the same imagery routes. Guarded like the YAML registries
+# below: a missing optional dependency must not take the rest of the API down.
+try:
+    from server.backend.eri_imagery import router as _eri_router
+
+    app.include_router(_eri_router)
+except Exception as exc:  # noqa: BLE001 — log and keep serving
+    log.warning("ERI imagery routes unavailable: %s", exc)
+
 # In-memory job registry: job_id → subprocess.Popen
 _jobs: dict = {}
 
@@ -562,7 +573,7 @@ _LAYER_BINDING_REGISTRY = _load_spatial_yaml(LAYER_BINDING_REGISTRY_PATH)
 async def spatial_capabilities():
     """What the spatial runtime can actually do right now — not aspirational.
 
-    cesium is True as of Phase 2: workbench/priis-v1/app ships a lazily-loaded
+    cesium is True as of Phase 2: server/frontend ships a lazily-loaded
     CesiumRegionalRuntime behind the SpatialRuntime seam. It is a regional
     *shell* only — ellipsoid globe with no imagery and no terrain (terrain is
     Phase 4, gated on the GEBCO vertical-datum work), and it falls back to

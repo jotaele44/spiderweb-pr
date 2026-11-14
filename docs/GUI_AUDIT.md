@@ -141,6 +141,12 @@ TanStack Table over `data.contracts`, default-sorted by amount descending.
 MapLibre GL map over a raster OSM basemap, with app-managed GeoJSON/vector-tile
 overlay layers and DOM-element markers per site.
 
+The "Aerial imagery" controls, the coordinate readout and the scale bar listed
+at the end of the table were added after this audit's live pass. Their "Verified"
+entries record a separate headless-Chromium run on 2026-11-14 against a local
+backend with network access to the NOAA bucket; they are not part of the element
+totals below.
+
 | Element | Type | Label | Handler / Behavior | Verified | Notes |
 |---|---|---|---|---|---|
 | "Hide layers" / "Show layers" | Button | Toggle text | Toggles `layerPanelCollapsed` (persisted `spiderweb_layer_collapsed`); also bound to the `L` key; triggers a delayed `map.resize()` | Live | |
@@ -149,6 +155,14 @@ overlay layers and DOM-element markers per site.
 | "dismiss base map note" | Button | dismiss | `setTilesFailed(false)` | Static-only | Only rendered when `tilesFailed` is true, set by `map.on("error", e => e.sourceId==="osm" && setTilesFailed(true))`. With OSM tile requests actively blocked for 6+ seconds the banner never appeared — MapLibre's per-tile raster failures don't appear to surface as a map-level `error` event with that `sourceId` in this environment, so this control may be effectively unreachable short of a harder basemap failure. Code path read and confirmed correctly wired |
 | Top spatial anomalies cards (dynamic) | Button list (`AnomalyCard`) | Anomaly id, site name | `setSelection({kind:"anomaly", id})` | Live | |
 | Map zoom +/− control | Third-party (MapLibre `NavigationControl`) | `+` / `−` | Native MapLibre zoom, no app-level handler | Live (visually confirmed present) | Not counted in the element totals below — not app-authored |
+| Map scale bar | Third-party (MapLibre `ScaleControl`, bottom-right) | Distance in m/km | Native MapLibre, no app-level handler | Live 2026-11-14 | Not app-authored |
+| Coordinate readout (`spatial/imagery/CoordinateReadout.tsx`) | Status text under the zoom control | `18.46550°N 66.11670°W  z 16.0` | Follows `mousemove` / `zoom` on the map; `—` when the cursor is off the map | Live 2026-11-14 | 2D only |
+| "Base map" | Button, `aria-pressed` | Base map + `on`/`off` | Sets the `osm` layer's `visibility`; mirrored in the swipe-compare map | Live 2026-11-14 | 2D only, like every control below |
+| "NOAA emergency response flight" | `<select>`, grouped by event | Flight labels from `GET /imagery/eri/datasets`; first option `Off` | Adds/removes the `eri-imagery` raster source (`/imagery/eri/{id}/tiles/{z}/{x}/{y}.png`), inserted above the base map and below every vector overlay | Live 2026-11-14 | Catalog failure shows an inline alert with `retry`. Below the flight's minimum zoom (14) no tiles are requested and a hint with a "zoom to imagery" button appears |
+| "Opacity" | Range input, 0–100 step 5 | `Opacity · N%` | `raster-opacity` on the imagery layer (and on the compare map) | Live 2026-11-14 | Shown only with a flight selected |
+| "Image footprints" | Button, `aria-pressed` | Image footprints + status | Adds one outline per source image from `GET /imagery/eri/{id}/footprints.geojson`; clicking an outline identifies that image (name, flight, date, size, link to the source GeoTIFF) and highlights it | Live 2026-11-14 | Identify is suppressed while a Spatial tool (measure/buffer/nearest) owns map clicks |
+| "Swipe compare with" | `<select>` + draggable divider (`role="slider"`, arrow keys) | Second flight; `Off` | Stacks a non-interactive mirror map showing the second flight, clipped to the right of the divider (`spatial/imagery/CompareOverlay.tsx`) | Live 2026-11-14 | Site markers and vector overlays are covered on the right-hand side while comparing |
+| "Copy link to this view" | Button | Copy link to this view / `copied` | Copies `location.href`; the fragment already carries camera, flight, opacity, compare, footprints and base-map state | Fragment round-trip live 2026-11-14; clipboard write static-only | Clipboard API needs a secure context |
 
 ## 7. Anomaly Workbench (`modules/AnomalyWorkbench.tsx`)
 
