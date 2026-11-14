@@ -116,7 +116,7 @@ describe("ImageryPanel", () => {
     const p = props({ catalogState: { status: "error", message: "request failed (503)" } });
     const { unmount } = render(<ImageryPanel {...p} />);
     expect(screen.getByRole("alert").textContent).toContain("503");
-    fireEvent.click(screen.getByRole("button", { name: "retry" }));
+    fireEvent.click(screen.getByRole("button", { name: "retry imagery catalog" }));
     expect(p.onRetryCatalog).toHaveBeenCalled();
     unmount();
     render(<ImageryPanel {...props({ datasetId: pre.id, imageryStatus: "error" })} />);

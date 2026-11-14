@@ -94,7 +94,8 @@ export function ImageryPanel(props: ImageryPanelProps) {
       {catalogState.status === "error" && (
         <div className="imagery-inline-error" role="alert">
           <span>Imagery catalog unavailable — {catalogState.message}</span>
-          <button className="linklike" onClick={props.onRetryCatalog}>retry</button>
+          {/* Not a bare "retry": the density overlay already has one in this panel. */}
+          <button className="linklike" onClick={props.onRetryCatalog}>retry imagery catalog</button>
         </div>
       )}
 
