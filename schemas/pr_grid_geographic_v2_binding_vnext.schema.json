@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/pr_grid_geographic_v2_binding_vnext.schema.json",
+  "title": "PR Grid Geographic V2 Binding vNext - provisional",
+  "description": "Versioned post-RC1 binding contract. Grid geometry and RC1 source manifest remain immutable. OUTSIDE and TOUCH_ONLY observations have zero binding rows and remain in receipts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "Grid_ID",
+    "Grid_Version",
+    "Grid_Manifest_SHA256",
+    "Binding_Version",
+    "Grid_Level",
+    "Repository",
+    "Record_ID",
+    "Cell_ID",
+    "Spatial_Role",
+    "Source_Geometry_Type",
+    "Binding_Method",
+    "Uncertainty_Class",
+    "Binding_State",
+    "Point_Boundary_State",
+    "Spatial_Relation",
+    "Overlap_Area_m2",
+    "Cell_Coverage_Fraction",
+    "Length_In_Cell_m",
+    "Component_Index",
+    "Segment_Index",
+    "Traversal_Order",
+    "Boundary_Coincident",
+    "Input_Geometry_SHA256",
+    "Geometry_State"
+  ],
+  "properties": {
+    "Grid_ID": {
+      "const": "PR_GRID_GEOGRAPHIC_V2"
+    },
+    "Grid_Version": {
+      "const": "2.0.0-rc1"
+    },
+    "Grid_Manifest_SHA256": {
+      "const": "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4"
+    },
+    "Binding_Version": {
+      "const": "pr-grid-v2-binding/2.0.0-rc1"
+    },
+    "Grid_Level": {
+      "enum": [
+        "L0",
+        "L1",
+        "L2",
+        "L3"
+      ]
+    },
+    "Repository": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Record_ID": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Cell_ID": {
+      "type": "string",
+      "pattern": "^PRG2:L[0-3]:R[0-9]{3}:C[0-9]{4}$"
+    },
+    "Spatial_Role": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Source_Geometry_Type": {
+      "enum": [
+        "POINT",
+        "POLYGON",
+        "LINE"
+      ]
+    },
+    "Binding_Method": {
+      "enum": [
+        "COVERS",
+        "INTERSECTS_POSITIVE_AREA",
+        "LINE_POSITIVE_LENGTH"
+      ]
+    },
+    "Uncertainty_Class": {
+      "const": "EXACT"
+    },
+    "Binding_State": {
+      "const": "BOUND"
+    },
+    "Point_Boundary_State": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "INTERIOR",
+        "EDGE_SHARED",
+        "CORNER_SHARED",
+        null
+      ]
+    },
+    "Spatial_Relation": {
+      "enum": [
+        "POINT_COVERED",
+        "POLYGON_POSITIVE_AREA",
+        "LINE_POSITIVE_LENGTH"
+      ]
+    },
+    "Overlap_Area_m2": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "Cell_Coverage_Fraction": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "Length_In_Cell_m": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "Component_Index": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "Segment_Index": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "Traversal_Order": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "Boundary_Coincident": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "Input_Geometry_SHA256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Geometry_State": {
+      "const": "VALID_PROJECTED_GEOMETRY"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "Source_Geometry_Type": {
+            "const": "POINT"
+          }
+        },
+        "required": [
+          "Source_Geometry_Type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "Binding_Method": {
+            "const": "COVERS"
+          },
+          "Spatial_Relation": {
+            "const": "POINT_COVERED"
+          },
+          "Point_Boundary_State": {
+            "enum": [
+              "INTERIOR",
+              "EDGE_SHARED",
+              "CORNER_SHARED"
+            ]
+          },
+          "Overlap_Area_m2": {
+            "type": "null"
+          },
+          "Cell_Coverage_Fraction": {
+            "type": "null"
+          },
+          "Length_In_Cell_m": {
+            "type": "null"
+          },
+          "Component_Index": {
+            "type": "null"
+          },
+          "Segment_Index": {
+            "type": "null"
+          },
+          "Traversal_Order": {
+            "type": "null"
+          },
+          "Boundary_Coincident": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "Source_Geometry_Type": {
+            "const": "POLYGON"
+          }
+        },
+        "required": [
+          "Source_Geometry_Type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "Binding_Method": {
+            "const": "INTERSECTS_POSITIVE_AREA"
+          },
+          "Spatial_Relation": {
+            "const": "POLYGON_POSITIVE_AREA"
+          },
+          "Point_Boundary_State": {
+            "type": "null"
+          },
+          "Overlap_Area_m2": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "Cell_Coverage_Fraction": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+          },
+          "Length_In_Cell_m": {
+            "type": "null"
+          },
+          "Component_Index": {
+            "type": "null"
+          },
+          "Segment_Index": {
+            "type": "null"
+          },
+          "Traversal_Order": {
+            "type": "null"
+          },
+          "Boundary_Coincident": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "Source_Geometry_Type": {
+            "const": "LINE"
+          }
+        },
+        "required": [
+          "Source_Geometry_Type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "Binding_Method": {
+            "const": "LINE_POSITIVE_LENGTH"
+          },
+          "Spatial_Relation": {
+            "const": "LINE_POSITIVE_LENGTH"
+          },
+          "Point_Boundary_State": {
+            "type": "null"
+          },
+          "Overlap_Area_m2": {
+            "type": "null"
+          },
+          "Cell_Coverage_Fraction": {
+            "type": "null"
+          },
+          "Length_In_Cell_m": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "Component_Index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Segment_Index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Traversal_Order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Boundary_Coincident": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  ]
+}
