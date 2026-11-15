@@ -17,6 +17,7 @@
     "synthetic": {"type": "boolean"},
     "created_at": {"type": "string", "minLength": 1},
     "extracted_at": {"type": "string", "minLength": 1},
+    "evidence_state": {"type": "object", "description": "Additive FEDERATION_EPISTEMIC_STATE_CONTRACT_V1 producer declaration (thehub-pr, candidate); validated against schemas/federation_epistemic_state.v1.schema.json#/$defs/producer_declaration by tests/test_federation_evidence_state.py."},
     "location": {
       "type": "object",
       "required": ["lat", "lon"],

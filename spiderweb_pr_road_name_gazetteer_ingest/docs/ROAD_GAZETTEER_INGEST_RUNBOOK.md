@@ -1,5 +1,7 @@
 # Road gazetteer ingest runbook
 
+For what route numbers, suffixes (ramales) and km markers mean, see [`ROAD_NUMBERING_LOGIC.md`](ROAD_NUMBERING_LOGIC.md).
+
 ## 0. Confirm source acquisition
 
 Expected raw files:
@@ -63,3 +65,4 @@ Promote only after:
 - DTOP source is present or explicitly waived.
 - OSM source has been used only as T3 alias/context.
 - `road:*` outputs do not include `gnis:*` features.
+- `road_ingest_report.json` `route_number_band_counts` has no unexpectedly large `unknown` share; review any `ROUTE_BAND_CLASS_DIVERGENCE` rows (LOW, informational).

@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "scope": "Bounded authoring-provenance recovery for pr_grid_full_cell_index_saturated_v1",
+  "retrieval_date_utc": "2026-09-27",
+  "source_head": "33f7b106b3d160059aed72ac5f7008726471ec01",
+  "grid": {
+    "path": "registry/spatial/pr_grid_full_cell_index_saturated.csv",
+    "sha256": "17733f3f18c8a644e31c1eb25fb27b73b4bf353c6de57d5203c4311e05d64483",
+    "rows": 98304,
+    "canvas_px": [1536, 1024],
+    "grid_cells": [384, 256],
+    "coastline_or_land_cells": 794
+  },
+  "recovery_vectors": [
+    {
+      "vector": "git_history",
+      "state": "PASS_BOUNDED_EXHAUSTION",
+      "evidence": {
+        "baseline_merge_commit": "fb654eec3d976563132dabaeecee55ad6a6037b5",
+        "pull_request": 144,
+        "csv_introduction_commit": "9793d8a62622cdc39d927dc639ac984e441b1f06",
+        "introduction_commit_message": "Add Puerto Rico baseline grid CSV",
+        "introduction_actor": "jorgegonzalez44"
+      },
+      "finding": "The CSV was copied into the repository as a pre-existing artifact. The introducing PR and commit contain no source 1536x1024 image, world file, authoring bounds binding, or generator script."
+    },
+    {
+      "vector": "connected_github_repositories",
+      "state": "PASS_BOUNDED_SEARCH",
+      "queries": [
+        "pr_grid_full_cell_index_saturated.csv",
+        "17733f3f18c8a644e31c1eb25fb27b73b4bf353c6de57d5203c4311e05d64483",
+        "1536x1024",
+        "Coastline_or_Land",
+        "Gridline_Dominant"
+      ],
+      "finding": "Search recovered federation copies and consumers but no independent authoring artifact or upstream generator."
+    },
+    {
+      "vector": "connected_google_drive",
+      "state": "PASS_BOUNDED_SEARCH",
+      "queries": [
+        "pr_grid_full_cell_index_saturated",
+        "1536 1024 Puerto Rico grid",
+        "Coastline_or_Land Gridline_Dominant",
+        "17733f3f18c8a644e31c1eb25fb27b73b4bf353c6de57d5203c4311e05d64483",
+        "world file Puerto Rico grid"
+      ],
+      "finding": "No matching authoring artifact recovered. One broad 'world file' text-search hit was unrelated and is excluded."
+    },
+    {
+      "vector": "connected_gmail",
+      "state": "PASS_BOUNDED_SEARCH",
+      "queries": [
+        "\"pr_grid_full_cell_index_saturated\"",
+        "\"Coastline_or_Land\"",
+        "\"Gridline_Dominant\"",
+        "\"17733f3f18c8a644e31c1eb25fb27b73b4bf353c6de57d5203c4311e05d64483\"",
+        "\"1536x1024\""
+      ],
+      "finding": "No matching messages or attachments recovered."
+    }
+  ],
+  "contradictions": [
+    {
+      "class": "SCOPE",
+      "state": "UNRESOLVED",
+      "observation_a": "Transform metadata labels -67.30/-65.20/17.92/18.65 as documented authoring bounds.",
+      "observation_b": "The same bounds occur elsewhere in the federation as a Puerto Rico GEBCO/OpenTopography acquisition extent.",
+      "adjudication": "The numeric tuple is not accepted as authoring provenance. Matching bounds are source-scope evidence only and cannot establish canonical transform identity."
+    }
+  ],
+  "candidate_artifacts": [],
+  "authoritative_parameters_recovered": false,
+  "residue": {
+    "source_image_1536x1024": "UNRESOLVED",
+    "world_file": "UNRESOLVED",
+    "generator_script": "UNRESOLVED",
+    "authoring_bounds_binding": "UNRESOLVED"
+  },
+  "certification_state": "PROVISIONAL",
+  "claim": "Bounded exhaustion of the connected GitHub, Google Drive, Gmail, and inspected repository-history vectors only. This is not universal exhaustion of local disks, offline backups, unconnected accounts, or deleted external artifacts."
+}

@@ -37,7 +37,7 @@ export function useSpatialRuntime(
     let unsubscribeError: Unsubscribe = () => {};
 
     const bootMapLibre = async (): Promise<{ runtime: SpatialRuntime; mapLibre: MapLibreRuntime }> => {
-      const runtime = createSpatialRuntime("maplibre");
+      const runtime = createSpatialRuntime();
       runtimeRef.current = runtime;
       await runtime.initialize(host, config);
       return { runtime, mapLibre: runtime };
@@ -70,6 +70,14 @@ export function useSpatialRuntime(
       }
 
       setGraphicsUnavailableReason(null);
+
+      // Basemap-error state belongs to the runtime instance that raised it.
+      // Without this reset a failure from a previous boot stays latched: the
+      // "base map tiles unavailable" notice would survive a successful
+      // re-init, and would even show while Cesium (which has no basemap tile
+      // source at all) is the active runtime.
+      setTilesFailed(false);
+
       let resolvedMode: SpatialRuntimeMode = mode;
       let fallback: string | null = null;
       let runtime: SpatialRuntime;

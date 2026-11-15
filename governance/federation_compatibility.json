@@ -4,5 +4,13 @@
   "central_baseline": "2026-08-31",
   "central_governance_pr": 218,
   "disposition": "UPDATED",
-  "contracts": ["repo_federation_manifest@1", "federation_export_manifest@1", "contract_finance_bundle@1"]
+  "contracts": ["repo_federation_manifest@1", "federation_export_manifest@1", "contract_finance_bundle@1"],
+  "drift_reconciliation": {
+    "cause": "thehub-pr docs/FEDERATION_MAX_AUDIT_2026-09-24.md finding F4",
+    "cause_change": "hub_callable_commands.export_canonical switched from the synthetic sample package in test mode to the committed real streams (exports/real) in production mode",
+    "reviewed_at": "2026-09-24",
+    "reviewed_head": "3723176a10e93401f96d6fdea3cf148bc4ca5971",
+    "finding": "COMPATIBLE",
+    "rationale": "the export emits the same canonical streams under federation_export_manifest@1; the package now carries 874 non-synthetic rows (0 synthetic) instead of 30 synthetic rows, matching the declared ready_for_hub_live_execution and production_status PRODUCTION; thehub-pr validate-package returns VALID and the command passes the hub fetch allowlist"
+  }
 }

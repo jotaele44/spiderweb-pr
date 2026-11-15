@@ -17,7 +17,9 @@ alongside the other producers:
 
 Reads a package dir (defaults to exports/samples, accepting `<name>.jsonl` or
 `<name>.sample.jsonl`) and writes `exports/federation/{sources,entities,
-relationships}.jsonl` + a Hub-conformant manifest. Deterministic ids. Stdlib only.
+relationships}.jsonl` + a Hub-conformant manifest. Deterministic ids. Besides the
+pinned prii-export-utils package, stdlib only; the source_monitors stream below
+also reads a YAML registry, which needs PyYAML (the `airspace` extra).
 
 NOTE (Z2): the canonical entity schema now carries an optional `location`
 {lat, lon}; record entities (observations/events/tracks) project a representative
@@ -30,10 +32,21 @@ concession project with a municipality and no coordinates, and this lane resolve
 that municipality to a real point from a committed reference geography and hands
 it back. The stream is omitted unless an explicit verified moneysweep-pr package
 is supplied.
+
+A fifth lane, the site imagery timeline (`build_site_imagery_streams`), adds a
+`site_imagery_series` entity per registered site plus provisional `satellite_scene`
+and `satellite_visible_change` observations. It is omitted unless a timeline document
+is passed with `--site-imagery-timeline`, and an invalid document fails the export
+instead of being skipped.
+
+Every package also carries `source_monitors` (thehub-pr ADR 0013, see
+`build_source_monitors`): one row per source this repo's registries say it
+monitors, with when the source last succeeded and how that is known.
 """
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import sys
@@ -41,6 +54,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from prii_export_utils import SourceRunState, resolve_last_success, source_monitor_row
 from prii_export_utils import fid as _fid
 from prii_export_utils import norm as _norm
 from prii_export_utils import sha256 as _sha256
@@ -56,8 +70,11 @@ STREAM_SCHEMA = {
     "entities": "federation_entity.schema.json",
     "relationships": "federation_relationship.schema.json",
     "observations": "federation_observation.schema.json",
+    "source_monitors": "federation_source_monitor.schema.json",
 }
-PACKAGE_STREAMS = ("sources", "entities", "relationships", "observations")
+PACKAGE_STREAMS = (
+    "sources", "entities", "relationships", "observations", "source_monitors",
+)
 RECORD_STREAMS = {
     "airspace_events": "airspace_event",
     "observations": "airspace_observation",
@@ -65,6 +82,43 @@ RECORD_STREAMS = {
 }
 _ENTITY_TYPE_BY_OBSERVATION_TYPE = {"usgs_metallic_occurrence": "mineral_occurrence"}
 _ENTITY_TYPE_BY_SOURCE_KIND = {"gis_layer_reference": "gis_layer_reference"}
+
+
+# Additive FEDERATION_EPISTEMIC_STATE_CONTRACT_V1 declarations (thehub-pr,
+# candidate; vendored at schemas/federation_epistemic_state.v1.schema.json).
+# Only record types whose provenance is documented get a class/geometry claim;
+# anything else is left undeclared so the Hub fails closed (UNCLASSIFIED/UNKNOWN).
+EVIDENCE_STATE_CONTRACT = "federation-evidence-state-v1"
+# observation_type -> (epistemic_class, geometry_precision, coordinate_method, observation_state)
+_RECORD_EVIDENCE: dict[str, tuple[str, str, str, str | None]] = {
+    # USGS OFR 98-038 metallic *point* coverage: LAB coordinates are the
+    # published occurrence points (data/usgs_ofr_98_038/docs).
+    "usgs_metallic_occurrence": ("CURATED", "OBSERVED_POINT", "AUTHORITATIVE", "OBSERVED_PRESENT"),
+    # Airport reference points: an official point standing in for the airfield.
+    "airport_reference_location": ("CURATED", "REPRESENTATIVE_POINT", "AUTHORITATIVE", None),
+    # Operator-placed point on imagery after human review (visual only).
+    "structure_sighting": ("CURATED", "INTERPRETED_POINT", "INFERRED", "OBSERVED_PRESENT"),
+}
+
+
+def _evidence_state(**fields: Any) -> dict[str, Any]:
+    declared = {k: v for k, v in fields.items() if v is not None}
+    return {"contract": EVIDENCE_STATE_CONTRACT, "data_stage": "CANONICAL", **declared}
+
+
+def _record_evidence_state(record: dict[str, Any], has_point: bool) -> dict[str, Any]:
+    """Declaration for a record-derived row. A LineString's first vertex is
+    only ever a representative point, whatever the record type."""
+    spec = _RECORD_EVIDENCE.get(record.get("observation_type"))
+    klass, precision, method, observation = spec if spec else (None, None, None, None)
+    geom = record.get("geometry")
+    from_point = isinstance(geom, dict) and geom.get("type") == "Point"
+    if has_point and not from_point:
+        precision, method = "REPRESENTATIVE_POINT", "FIRST_VERTEX"
+    if not has_point:
+        precision = method = None
+    return _evidence_state(epistemic_class=klass, geometry_precision=precision,
+                           coordinate_method=method, observation_state=observation)
 
 
 def _score(conf: Any) -> float:
@@ -92,7 +146,16 @@ def _lineage(
     }
 
 
+# Record types whose subject_id names a non-aircraft subject (an airport, a
+# site, a mineral occurrence). Their subjects must never become aircraft.
+_NON_AIRCRAFT_SUBJECT_TYPES = frozenset(
+    {"usgs_metallic_occurrence", "airport_reference_location", "structure_sighting"}
+)
+
+
 def _aircraft(record: dict[str, Any]) -> str | None:
+    if record.get("observation_type") in _NON_AIRCRAFT_SUBJECT_TYPES:
+        return None
     return record.get("subject_id") or (record.get("attributes") or {}).get("callsign")
 
 
@@ -138,6 +201,7 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
             "source_name": raw, "source_ref": raw, "confidence": score,
             "lineage": _lineage("SOURCE_REGISTRY"), "synthetic": synthetic,
             "created_at": s.get("first_seen_at") or now, "extracted_at": now,
+            "evidence_state": _evidence_state(epistemic_class="CURATED"),
         }
         ent_id = _fid("ent", "source", raw)
         src_entity[raw] = ent_id
@@ -147,6 +211,7 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
             "normalized_name": _norm(raw), "entity_type": source_entity_type,
             "jurisdiction": "PR", "confidence": score, "lineage": _lineage("SOURCE_ENTITY"),
             "synthetic": synthetic, "created_at": s.get("first_seen_at") or now, "extracted_at": now,
+            "evidence_state": _evidence_state(epistemic_class="CURATED"),
         }
 
     for stream, etype in RECORD_STREAMS.items():
@@ -170,6 +235,7 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
             loc = _point(r)
             if loc:
                 entities[ent_id]["location"] = loc
+            entities[ent_id]["evidence_state"] = _record_evidence_state(r, has_point=bool(loc))
             tgt = src_entity.get(raw_src) or _fid("ent", "source", raw_src)
             relationships.update(_rel(ent_id, "reported_by", tgt, sid, score, synthetic, when, now))
             ac = _aircraft(r)
@@ -180,6 +246,8 @@ def build_streams(sources_in: list[dict], records_by_stream: dict[str, list[dict
                     "normalized_name": _norm(ac), "entity_type": "aircraft",
                     "jurisdiction": "PR", "confidence": score, "lineage": _lineage("AIRCRAFT_ENTITY"),
                     "synthetic": synthetic, "created_at": when, "extracted_at": now,
+                    # Keyed on a callsign/subject id: a callsign is not an airframe identity.
+                    "evidence_state": _evidence_state(identity_state="CANDIDATE"),
                 })
                 relationships.update(_rel(ent_id, "observed", ac_id, sid, score, synthetic, when, now))
 
@@ -238,7 +306,12 @@ def build_ppp_geometry_streams(resolution: dict[str, Any], now: str) -> dict[str
         "synthetic": False,
         "created_at": now,
         "extracted_at": now,
+        "evidence_state": _evidence_state(epistemic_class="CURATED"),
     }
+    # A municipality resolved to a committed reference asset point: computed,
+    # and only ever a representative point for the project's location.
+    ppp_state = _evidence_state(epistemic_class="COMPUTED", geometry_precision="REPRESENTATIVE_POINT",
+                                coordinate_method="LINKED_ASSET")
 
     entities: list[dict] = []
     observations: list[dict] = []
@@ -264,6 +337,7 @@ def build_ppp_geometry_streams(resolution: dict[str, Any], now: str) -> dict[str
                 "location": location,
                 "confidence": row["geometry_confidence"],
                 "lineage": lineage,
+                "evidence_state": dict(ppp_state),
                 "synthetic": False,
                 "created_at": now,
                 "extracted_at": now,
@@ -291,6 +365,7 @@ def build_ppp_geometry_streams(resolution: dict[str, Any], now: str) -> dict[str
                 },
                 "confidence": row["geometry_confidence"],
                 "lineage": _ppp_lineage("PPP_GEOMETRY", resolution, row["reference_path"]),
+                "evidence_state": dict(ppp_state),
                 "synthetic": False,
                 "created_at": now,
                 "extracted_at": now,
@@ -312,6 +387,424 @@ def merge_ppp_geometry(streams: dict[str, list[dict]], ppp: dict[str, list[dict]
     streams["observations"].extend(ppp["observations"])
 
 
+# --------------------------------------------------------------------------
+# Site imagery timeline lane (spiderweb/site_timeline, docs/contracts/
+# SITE_IMAGERY_TIMELINE.md). Mirrors the PPP lane: a spiderweb-owned entity per
+# registered site plus `observations` rows that point at it and carry the
+# registering producer's entity id in attributes.producer_entity_id. The hub
+# adjudicates any equivalence with that producer's entity (hub ADR 0009); this
+# lane never claims it. Every row is provisional. Omitted unless a timeline
+# document is passed with --site-imagery-timeline.
+# --------------------------------------------------------------------------
+SITE_IMAGERY_SOURCE_REF = "spiderweb-pr:site_imagery_timeline"
+# Confidence ceilings for this lane. They duplicate PRECISE_CONFIDENCE_CAP and
+# COARSE_CONFIDENCE_CAP in spiderweb.site_timeline.models (uncalibrated heuristics) so
+# this script's default import surface stays unchanged; a test pins them together.
+SITE_IMAGERY_SOURCE_CONFIDENCE = 0.6
+SITE_IMAGERY_COARSE_CONFIDENCE = 0.3
+
+
+def _site_imagery_lineage(
+    phase: str, doc_sha256: str, document: dict[str, Any]
+) -> dict[str, Any]:
+    window = document.get("window") or {}
+    lineage = _lineage(
+        phase,
+        [f"site_imagery_timeline:sha256:{doc_sha256}"],
+        "provisional_visible_change_projection",
+    )
+    lineage["upstream_document"] = {
+        "schema_version": document.get("schema_version"),
+        "sha256": doc_sha256,
+        "adapter": document.get("adapter"),
+        "window_start": window.get("start"),
+        "window_end": window.get("end"),
+    }
+    return lineage
+
+
+def build_site_imagery_streams(
+    document: dict[str, Any], now: str
+) -> dict[str, list[dict]]:
+    """Sources/entities/observations for a validated site imagery timeline document."""
+    sites = document.get("sites") or []
+    if not sites:
+        return {"sources": [], "entities": [], "observations": []}
+
+    doc_sha = hashlib.sha256(
+        json.dumps(document, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    synthetic = bool(document.get("synthetic"))
+    sid = _fid("src", SITE_IMAGERY_SOURCE_REF)
+    source = {
+        "source_id": sid,
+        "source_type": "satellite_imagery_timeline",
+        "source_name": SITE_IMAGERY_SOURCE_REF,
+        "source_ref": SITE_IMAGERY_SOURCE_REF,
+        "confidence": SITE_IMAGERY_SOURCE_CONFIDENCE,
+        "lineage": _site_imagery_lineage("SITE_IMAGERY_SOURCE", doc_sha, document),
+        "synthetic": synthetic,
+        "created_at": now,
+        "extracted_at": now,
+        "evidence_state": _evidence_state(epistemic_class="COMPUTED"),
+    }
+    # A scene row is a provider catalog fact (CURATED); a change row is a computed
+    # difference (COMPUTED). Both place the site at its registry point, which is only
+    # ever a representative point for the site chip.
+    scene_state = _evidence_state(
+        epistemic_class="CURATED",
+        geometry_precision="REPRESENTATIVE_POINT",
+        coordinate_method="REGISTRY_SITE_POINT",
+    )
+    change_state = _evidence_state(
+        epistemic_class="COMPUTED",
+        geometry_precision="REPRESENTATIVE_POINT",
+        coordinate_method="REGISTRY_SITE_POINT",
+    )
+
+    entities: list[dict] = []
+    observations: list[dict] = []
+    for entry in sites:
+        site = entry["site"]
+        producer_ent = site["producer_entity_id"]
+        name = f"{site['name']} (imagery series)"
+        ent_id = _fid("ent", "site_imagery_series", producer_ent)
+        location = {"lat": site["lat"], "lon": site["lon"]}
+        cap = (
+            SITE_IMAGERY_COARSE_CONFIDENCE
+            if site["geometry_coarse"]
+            else SITE_IMAGERY_SOURCE_CONFIDENCE
+        )
+        common = {
+            "producer_entity_id": producer_ent,
+            "external_site_id": site["external_site_id"],
+            "geometry_coarse": site["geometry_coarse"],
+            "provisional": True,
+        }
+        entities.append(
+            {
+                "entity_id": ent_id,
+                "source_id": sid,
+                "name": name,
+                "normalized_name": _norm(name),
+                "entity_type": "site_imagery_series",
+                "jurisdiction": "PR",
+                "location": location,
+                "confidence": cap,
+                "lineage": _site_imagery_lineage(
+                    "SITE_IMAGERY_SERIES_ENTITY", doc_sha, document
+                ),
+                "evidence_state": dict(scene_state),
+                "synthetic": synthetic,
+                "created_at": now,
+                "extracted_at": now,
+            }
+        )
+
+        capture_by_scene = {
+            e["provenance"]["scene_id"]: e["capture_time"] for e in entry["epochs"]
+        }
+        for art, acq in zip(entry["artifacts"], entry["acquisitions"]):
+            observations.append(
+                {
+                    # Scene identity is part of the id: two scenes can share pixel
+                    # content (one artifact id) yet be distinct catalog observations.
+                    "observation_id": _fid(
+                        "obs",
+                        "site_imagery_scene",
+                        producer_ent,
+                        art["scene_id"],
+                        art["artifact_id"],
+                    ),
+                    "source_id": sid,
+                    "entity_id": ent_id,
+                    "observation_type": "satellite_scene",
+                    "observed_at": capture_by_scene[art["scene_id"]],
+                    "location": location,
+                    "attributes": {
+                        **common,
+                        "scene_id": art["scene_id"],
+                        "provider": art["provider"],
+                        "collection": art["collection"],
+                        "platform": art["platform"],
+                        "instrument": art["instrument"],
+                        "artifact_id": art["artifact_id"],
+                        "content_sha256": art["content_sha256"],
+                        "cloud_cover_pct": art["cloud_cover_pct"],
+                        "resolution_m": art["resolution_m"],
+                        "geometric_confidence": art["geometric_confidence"],
+                        "acquisition_receipt_id": acq["receipt_id"],
+                    },
+                    "confidence": min(art["geometric_confidence"], cap),
+                    "lineage": _site_imagery_lineage(
+                        "SITE_IMAGERY_SCENE", doc_sha, document
+                    ),
+                    "evidence_state": dict(scene_state),
+                    "synthetic": synthetic,
+                    "created_at": now,
+                    "extracted_at": now,
+                }
+            )
+
+        for cmp in entry["comparisons"]:
+            # Unknown and same-epoch pairs make no claim, so they are not exported.
+            if cmp["disposition"] != "SCORED":
+                continue
+            signal = cmp["signal"]
+            result = signal["result"]
+            score = result["score"]
+            observations.append(
+                {
+                    "observation_id": _fid(
+                        "obs", "site_imagery_change", cmp["comparison_id"]
+                    ),
+                    "source_id": sid,
+                    "entity_id": ent_id,
+                    "observation_type": "satellite_visible_change",
+                    "observed_at": capture_by_scene[result["after"]["scene_id"]],
+                    "location": location,
+                    "attributes": {
+                        **common,
+                        "comparison_id": cmp["comparison_id"],
+                        "pair_kind": cmp["pair_kind"],
+                        "epoch_class": cmp["epoch_class"],
+                        "classification": score["classification"],
+                        "change_types": score["change_types"],
+                        "adjusted_change_score": score["adjusted_change_score"],
+                        "review_required": result["review_required"],
+                        "review_reasons": result["review_reasons"],
+                        "review_status": signal["review_status"],
+                        "signal_id": signal["signal_id"],
+                        "method": signal["method"],
+                        "method_version": signal["method_version"],
+                        "before_scene_id": result["before"]["scene_id"],
+                        "after_scene_id": result["after"]["scene_id"],
+                        "before_artifact_id": result["before"]["artifact_id"],
+                        "after_artifact_id": result["after"]["artifact_id"],
+                        "guardrail": "VISIBLE_EPOCH_CHANGE_ONLY",
+                    },
+                    "confidence": signal["confidence"],
+                    "lineage": _site_imagery_lineage(
+                        "SITE_IMAGERY_CHANGE", doc_sha, document
+                    ),
+                    "evidence_state": dict(change_state),
+                    "synthetic": synthetic,
+                    "created_at": now,
+                    "extracted_at": now,
+                }
+            )
+    return {"sources": [source], "entities": entities, "observations": observations}
+
+
+def merge_site_imagery(
+    streams: dict[str, list[dict]], lane: dict[str, list[dict]]
+) -> None:
+    """Fold the site imagery lane into the canonical streams, in place (idempotent)."""
+    for stream, id_field in (("sources", "source_id"), ("entities", "entity_id"),
+                             ("observations", "observation_id")):
+        known = {row[id_field] for row in streams.setdefault(stream, [])}
+        for row in lane[stream]:
+            if row[id_field] not in known:
+                streams[stream].append(row)
+                known.add(row[id_field])
+
+
+# --------------------------------------------------------------------------
+# source_monitors stream (thehub-pr ADR 0013). One row per source that this
+# repo's two source registries say it monitors. A missing-persons entry marked
+# `federation_eligible: false` (raw PII, ToS-restricted, tip-stream stratum C)
+# is never emitted, not even as a monitor row.
+#
+# Name, family, tier, cadence, window and declared status reproduce thehub-pr's
+# registry reader (src/hub/source_monitor.py: _parse_spiderweb_hydrography,
+# _parse_spiderweb_missing_persons, normalize_cadence, normalize_status,
+# normalize_tier, cadence_from_seconds, _window), so nothing the Hub shows
+# changes when it starts reading this producer from the stream. They say what
+# the registry declares; they are not a health check.
+#
+# When a source last succeeded comes only from a run receipt in
+# data/source_run_state.json (prii_export_utils.record_run; RUN_RECEIPT). No
+# fetcher writes one yet, and no committed output carries a per-source retrieval
+# time (hydrography snapshots and harvester outputs stay out of git), so every
+# source is NOT_RECORDED with a null time. Nothing here reads file or git dates.
+# --------------------------------------------------------------------------
+SOURCE_MONITOR_REGISTRIES = {
+    "hydrography": "manifests/pr_hydrography/source_registry.csv",
+    "missing_persons": "configs/missing_persons_sources.yaml",
+}
+SOURCE_RUN_STATE = "data/source_run_state.json"
+_HYDROGRAPHY_COLUMNS = (
+    "source_id", "authority", "universe", "refresh_policy", "evidence_tier",
+)
+# Nominal window per named cadence (hub CADENCE_WINDOW_SECONDS); event, static,
+# manual and unknown have none.
+_MONITOR_WINDOWS = {
+    "realtime": 3600, "hourly": 3600, "daily": 86400, "weekly": 7 * 86400,
+    "monthly": 31 * 86400, "quarterly": 92 * 86400, "yearly": 366 * 86400,
+}
+# The hub's _NAMED_CADENCE / _NAMED_STATUS entries for this repo's vocabularies.
+# tests/test_federation_source_monitors.py fails on a committed registry value
+# that is not mapped here.
+_REFRESH_POLICY_CADENCE = {
+    "pin_by_vintage": "static",
+    "probe_service_then_snapshot_if_changed": "event",
+    "probe_sciencebase_item_then_snapshot_if_changed": "event",
+}
+_MISSING_PERSONS_STATUS = {
+    "harvester_landed": "active",
+    "harvester_planned": "not_active",
+    "manual_pull": "manual",
+    "aggregate_only": "partial",
+    "cannot_reach": "inactive",
+}
+_MONITOR_TIERS = ("T1", "T2", "T3", "T4")
+
+
+def _monitor_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _named(raw: Any, vocabulary: dict[str, str]) -> str:
+    if raw is None:
+        return "unknown"
+    return vocabulary.get(str(raw).strip().lower(), "unknown")
+
+
+def _monitor_tier(raw: Any) -> str | None:
+    if raw is None:
+        return None
+    value = str(raw).strip().upper()
+    return value if value in _MONITOR_TIERS else None
+
+
+def _cadence_from_seconds(seconds: Any) -> str:
+    """Largest-first buckets with the hub's 25% tolerance (90 days is quarterly)."""
+    try:
+        value = float(seconds)
+    except (TypeError, ValueError):
+        return "unknown"
+    if value <= 0:
+        return "unknown"
+    for name in ("yearly", "quarterly", "monthly", "weekly", "daily", "hourly"):
+        if value * 1.25 >= _MONITOR_WINDOWS[name]:
+            return name
+    return "realtime"
+
+
+def _monitor_window(cadence: str, declared_seconds: Any = None) -> int | None:
+    """A declared window in seconds wins; otherwise the cadence's nominal one."""
+    try:
+        declared = float(declared_seconds) if declared_seconds is not None else 0.0
+    except (TypeError, ValueError):
+        declared = 0.0
+    if declared > 0:
+        return int(declared)
+    return _MONITOR_WINDOWS.get(cadence)
+
+
+def _hydrography_monitors(path: Path) -> list[dict[str, Any]]:
+    with path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        fields = reader.fieldnames or []
+        missing = [c for c in _HYDROGRAPHY_COLUMNS if c not in fields]
+        if missing:
+            raise ValueError(f"{path}: missing column(s): {', '.join(missing)}")
+        rows = list(reader)
+    out = []
+    for r in rows:
+        cadence = _named(r["refresh_policy"], _REFRESH_POLICY_CADENCE)
+        out.append({
+            "source_ref": r["source_id"],
+            "name": _monitor_text(f"{r['authority']}: {r['universe']}"),
+            "producer_family": _monitor_text(r["universe"]),
+            "evidence_tier": _monitor_tier(r["evidence_tier"]),
+            "cadence": cadence,
+            "cadence_window_seconds": _monitor_window(cadence),
+            "declared_status": "unknown",
+            "source_url": _monitor_text(r.get("endpoint")),
+        })
+    return out
+
+
+def _missing_persons_monitors(path: Path) -> list[dict[str, Any]]:
+    try:
+        import yaml
+    except ImportError as exc:  # not a base dependency; the airspace extra has it
+        raise RuntimeError(f"reading {path} needs PyYAML") from exc
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    sources = data.get("sources") if isinstance(data, dict) else None
+    if not isinstance(sources, dict):
+        raise ValueError(f"{path}: expected a top-level 'sources' mapping")
+    out = []
+    for sid, s in sources.items():
+        if not isinstance(s, dict):
+            raise ValueError(f"{path}: source {sid!r} is not a mapping")
+        # Only the three options the registry documents (true, false,
+        # aggregate_only); anything else fails rather than guess at eligibility.
+        eligible = s.get("federation_eligible")
+        if not (eligible is True or eligible is False or eligible == "aggregate_only"):
+            raise ValueError(f"{path}: {sid!r} federation_eligible={eligible!r}")
+        if eligible is False:
+            continue
+        days = s.get("refresh_cadence_days")
+        positive = isinstance(days, (int, float)) and days > 0
+        seconds = float(days) * 86400 if positive else None
+        # 0 days marks a one-off dataset or a per-event backfill: nothing recurs.
+        cadence = "static" if days == 0 else _cadence_from_seconds(seconds)
+        out.append({
+            "source_ref": sid,
+            "name": _monitor_text(s.get("operator")) or _monitor_text(sid),
+            "producer_family": "missing_persons",
+            "evidence_tier": None,
+            "cadence": cadence,
+            "cadence_window_seconds": _monitor_window(cadence, seconds),
+            "declared_status": _named(s.get("status"), _MISSING_PERSONS_STATUS),
+            "source_url": _monitor_text(s.get("url")),
+        })
+    return out
+
+
+_MONITOR_READERS = {
+    "hydrography": _hydrography_monitors,
+    "missing_persons": _missing_persons_monitors,
+}
+
+
+def build_source_monitors(
+    now: str,
+    *,
+    repo_root: Path = REPO_ROOT,
+    run_state_path: Path | None = None,
+) -> list[dict[str, Any]]:
+    """The ``source_monitors`` stream: one row per registered source, by source id."""
+    state_path = run_state_path or repo_root / SOURCE_RUN_STATE
+    state = SourceRunState.load(state_path)
+    inputs = [*SOURCE_MONITOR_REGISTRIES.values(), SOURCE_RUN_STATE]
+    rows: dict[str, dict[str, Any]] = {}
+    for key, rel in SOURCE_MONITOR_REGISTRIES.items():
+        for entry in _MONITOR_READERS[key](repo_root / rel):
+            ref = _monitor_text(entry.pop("source_ref"))
+            if not ref:
+                raise ValueError(f"{rel}: source without an id")
+            if ref in rows:
+                raise ValueError(f"duplicate source id {ref!r} across registries")
+            receipt = state.get(ref) or {}
+            at, basis = resolve_last_success(receipt, None)
+            rows[ref] = source_monitor_row(
+                producer=PRODUCER, source_ref=ref, registry_path=rel,
+                lineage=_lineage("SOURCE_MONITOR", inputs, "registry_projection"),
+                created_at=now, extracted_at=now,
+                last_success_at=at, last_success_basis=basis,
+                last_attempt_at=receipt.get("last_attempt_at"),
+                last_attempt_status=receipt.get("last_attempt_status"),
+                **entry,
+            )
+    return [rows[k] for k in sorted(rows)]
+
+
 def _rel(src_ent, rtype, tgt_ent, sid, score, synthetic, created, now):
     rid = _fid("rel", src_ent, rtype, tgt_ent)
     return {rid: {
@@ -319,6 +812,9 @@ def _rel(src_ent, rtype, tgt_ent, sid, score, synthetic, created, now):
         "target_entity_id": tgt_ent, "relationship_type": rtype, "evidence_source_id": sid,
         "confidence": score, "lineage": _lineage("RELATIONSHIP"),
         "synthetic": synthetic, "created_at": created, "extracted_at": now,
+        # reported_by is documented by the record itself; "observed" links a
+        # record to a callsign-keyed aircraft and is not given a class.
+        "evidence_state": _evidence_state(epistemic_class="CURATED" if rtype == "reported_by" else None),
     }}
 
 
@@ -406,16 +902,20 @@ def main() -> int:
                     help="explicit verified moneysweep-pr canonical export package for PPP geometry")
     ap.add_argument("--no-ppp-geometry", action="store_true",
                     help="Skip the PPP geometry lane even if a producer package is supplied.")
+    ap.add_argument("--site-imagery-timeline", default=None,
+                    help="site imagery timeline document (JSON) to export as a "
+                         "provisional lane; an invalid document fails the export")
     args = ap.parse_args()
 
     pkg = Path(args.package)
     sources_in = _read_stream(pkg, "sources")
     records = {name: _read_stream(pkg, name) for name in RECORD_STREAMS}
-    if not sources_in and not any(records.values()):
+    if not sources_in and not any(records.values()) and not args.site_imagery_timeline:
         print(f"no envelope streams found in {pkg} — nothing to export")
         return 0
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     streams = build_streams(sources_in, records, now)
+    streams["source_monitors"] = build_source_monitors(now)
 
     if not args.no_ppp_geometry:
         try:
@@ -432,6 +932,25 @@ def main() -> int:
                     f"{resolution['unresolved_count']} left in the geocode queue",
                     file=sys.stderr,
                 )
+
+    if args.site_imagery_timeline:
+        try:
+            document = json.loads(Path(args.site_imagery_timeline).read_text())
+            from spiderweb.site_timeline.timeline import validate_document
+
+            problems = validate_document(document)
+        except (OSError, ValueError) as exc:
+            print(f"FAIL — site imagery timeline unreadable: {exc}", file=sys.stderr)
+            return 2
+        if problems:
+            print(
+                f"FAIL — site imagery timeline invalid ({len(problems)} problems):",
+                file=sys.stderr,
+            )
+            for problem in problems[:20]:
+                print(f"  - {problem}", file=sys.stderr)
+            return 2
+        merge_site_imagery(streams, build_site_imagery_streams(document, now))
 
     if args.mode == "production":
         synthetic = [r for s in streams.values() for r in s if r.get("synthetic")]

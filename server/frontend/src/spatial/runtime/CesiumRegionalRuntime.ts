@@ -42,9 +42,11 @@ function altitudeToZoom(altitudeM: number): number {
 }
 
 /**
- * Regional 3D shell — Phase 2. Deliberately minimal: no imagery layer (no
- * Cesium ion token, no network dependency for the base globe — just the
- * default ellipsoid), no terrain provider (flat WGS84 ellipsoid; real
+ * Regional 3D shell — Phase 2. Deliberately minimal: no external or Cesium ion
+ * imagery and no ion token, so the base globe needs no network — just the
+ * ellipsoid plus a locally generated GridImageryProvider overlay that gives
+ * the otherwise-untextured surface visible relief. No terrain provider
+ * (flat WGS84 ellipsoid; real
  * terrain is Phase 4, pending the GEBCO vertical-datum work), no stock
  * Cesium UI widgets (this is a producer-local diagnostic scene, not a
  * general-purpose Cesium app shell). Site markers, boundary overlays, and
