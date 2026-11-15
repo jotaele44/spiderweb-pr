@@ -112,3 +112,17 @@ def test_batch_receipt_preserves_record_and_binding_denominators():
         "INTERIOR": 1,
         "OUTSIDE": 1,
     }
+
+
+def test_binding_receipt_carries_frozen_authority_hash():
+    from spiderweb.grid_v2_bindings import GRID_MANIFEST_SHA256
+
+    result = bind_exact_point(
+        ExactPointRecord("aguayluz-pr", "hash-proof", 246500, 255500, "EPSG:6566"),
+        level="L1",
+    )
+    receipt = binding_receipt([result])
+    assert receipt["Grid_Manifest_SHA256"] == GRID_MANIFEST_SHA256
+    assert receipt["Grid_Manifest_SHA256"] == (
+        "8902af188ad449955119016f5747fe2393c582d9ed552fb03bcaecd9ab510aa4"
+    )

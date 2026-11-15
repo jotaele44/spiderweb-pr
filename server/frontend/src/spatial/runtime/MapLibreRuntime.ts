@@ -24,6 +24,7 @@ export class MapLibreRuntime implements SpatialRuntime {
       maxBounds: REGIONAL_CAMERA_CONSTRAINTS.bounds,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: "metric" }), "bottom-right");
     // Scoping to basemapSourceId keeps benign per-tile/abort noise for other
     // sources (backend GeoJSON layers report their own status separately) out
     // of the basemap-error signal.

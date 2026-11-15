@@ -27,7 +27,7 @@ import aiosqlite
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sse_starlette.sse import EventSourceResponse
 
 log = logging.getLogger("priis.backend")
@@ -80,6 +80,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# NOAA Emergency Response Imagery tiles + footprints (/imagery/eri/*). Mounted
+# here rather than in production.py so the dev server, the desktop wrapper and
+# production all serve the same imagery routes. Guarded like the YAML registries
+# below: a missing optional dependency must not take the rest of the API down.
+try:
+    from server.backend.eri_imagery import router as _eri_router
+
+    app.include_router(_eri_router)
+except Exception as exc:  # noqa: BLE001 — log and keep serving
+    log.warning("ERI imagery routes unavailable: %s", exc)
 
 # In-memory job registry: job_id → subprocess.Popen
 _jobs: dict = {}
@@ -562,7 +573,7 @@ _LAYER_BINDING_REGISTRY = _load_spatial_yaml(LAYER_BINDING_REGISTRY_PATH)
 async def spatial_capabilities():
     """What the spatial runtime can actually do right now — not aspirational.
 
-    cesium is True as of Phase 2: workbench/priis-v1/app ships a lazily-loaded
+    cesium is True as of Phase 2: server/frontend ships a lazily-loaded
     CesiumRegionalRuntime behind the SpatialRuntime seam. It is a regional
     *shell* only — ellipsoid globe with no imagery and no terrain (terrain is
     Phase 4, gated on the GEBCO vertical-datum work), and it falls back to
@@ -647,15 +658,23 @@ async def spatial_boundary_geometry(boundary_id: str):
 # ─── RAG / Query ───────────────────────────────────────────────────────────────
 
 class RagQueryRequest(BaseModel):
-    query: str
-    top_k: int = 5
+    query: str = Field(min_length=1, max_length=1000)
+    top_k: int = Field(default=5, ge=1, le=20)
     no_context: bool = False
 
 
-async def _stream_rag(query: str, top_k: int, no_context: bool) -> AsyncGenerator[dict, None]:
-    cmd = ["python", str(ROOT / "query_llm.py"), query, "--top-k", str(top_k)]
-    if no_context:
+def _rag_query_command(query: str, top_k: int, no_context: bool) -> list[str]:
+    """Fixed executable and options, followed by positional-only user text."""
+    validated = RagQueryRequest(query=query, top_k=top_k, no_context=no_context)
+    cmd = [sys.executable, str(ROOT / "query_llm.py"), "--top-k", str(validated.top_k)]
+    if validated.no_context:
         cmd.append("--no-context")
+    cmd.extend(["--", validated.query])
+    return cmd
+
+
+async def _stream_rag(query: str, top_k: int, no_context: bool) -> AsyncGenerator[dict, None]:
+    cmd = _rag_query_command(query, top_k, no_context)
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
