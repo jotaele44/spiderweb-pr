@@ -28,7 +28,7 @@ dependencies = [
 
 [tool.uv.sources]
 prii-maintenance = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_maintenance" }
-prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_export_utils" }
+prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "0f62e4bdde10b5ac82787a329d6f15481ab9c7f0", subdirectory = "packages/prii_export_utils" }
 
 # Per-subsystem extras. The shared scientific stack lives in `dependencies` above;
 # each extra adds only what that subsystem needs on top. Install e.g.

@@ -10,6 +10,14 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Federation `source_monitors` stream (thehub-pr ADR 0013).**
+  `scripts/federation_export.py` now writes `source_monitors.jsonl`. It has one row per
+  source in `manifests/pr_hydrography/source_registry.csv` and
+  `configs/missing_persons_sources.yaml`, and never one marked
+  `federation_eligible: false`. Each row carries the declared status and cadence the Hub
+  already showed, plus when the source last succeeded. That time is read only from run
+  receipts in `data/source_run_state.json`. None exist yet, so every source is
+  `NOT_RECORDED`. `prii-export-utils` is pinned to thehub-pr `0f62e4b` (0.2.0).
 - **NOAA aerial imagery on the Spatial map.** The backend renders map tiles and
   image footprints from NOAA's public Emergency Response Imagery bucket
   (`noaa-eri-pds`) for 15 Puerto Rico / USVI flights — 2022 and 2024 pre-event
