@@ -7,7 +7,6 @@ artificial (``TEST-...``) so nothing can be mistaken for a real survey.
 from __future__ import annotations
 
 from gebco.marine_evidence import CoverageState, ProductStage, SensorType
-
 from spiderweb.access_points import models as m
 from spiderweb.access_points import namespaces as ns
 from spiderweb.access_points import vocabulary as v
@@ -21,8 +20,12 @@ UTC = "2026-11-15T00:00:00Z"
 SHA = "a" * 64
 
 
-def direct_source(root: str = "TEST-SURVEY-001", *, sensor=SensorType.MULTIBEAM_ECHOSOUNDER,
-                  parents: tuple[str, ...] = ()) -> m.SourceManifestation:
+def direct_source(
+    root: str = "TEST-SURVEY-001",
+    *,
+    sensor=SensorType.MULTIBEAM_ECHOSOUNDER,
+    parents: tuple[str, ...] = (),
+) -> m.SourceManifestation:
     """A held, hashed, rooted sensor product: the only kind that is 'direct'."""
 
     return m.SourceManifestation(
@@ -78,8 +81,14 @@ def unregistered_source(name: str = "TEST-SCREENSHOT-001") -> m.SourceManifestat
     )
 
 
-def point_observation(namespace, source: m.SourceManifestation, native: str,
-                      lon: float = -66.0, lat: float = 18.0, **extra) -> m.Observation:
+def point_observation(
+    namespace,
+    source: m.SourceManifestation,
+    native: str,
+    lon: float = -66.0,
+    lat: float = 18.0,
+    **extra,
+) -> m.Observation:
     return m.Observation(
         observation_id=ns.observation_id(namespace, source.source_id, native),
         namespace=namespace,
@@ -92,8 +101,15 @@ def point_observation(namespace, source: m.SourceManifestation, native: str,
     )
 
 
-def assertion(dimension, tier, source: m.SourceManifestation | None = None, *,
-              claim=v.ClaimClass.FACT, basis=("field_survey",), **extra) -> m.EvidenceAssertion:
+def assertion(
+    dimension,
+    tier,
+    source: m.SourceManifestation | None = None,
+    *,
+    claim=v.ClaimClass.FACT,
+    basis=("field_survey",),
+    **extra,
+) -> m.EvidenceAssertion:
     if claim is v.ClaimClass.COMPUTED:
         extra.setdefault("method", "test-method")
         extra.setdefault("method_version", "1")
@@ -104,7 +120,9 @@ def assertion(dimension, tier, source: m.SourceManifestation | None = None, *,
         tier=tier,
         claim_class=claim,
         basis=basis,
-        statement=extra.pop("statement", f"synthetic statement about {dimension.value}"),
+        statement=extra.pop(
+            "statement", f"synthetic statement about {dimension.value}"
+        ),
         source_ids=(source.source_id,) if source is not None else (),
         **extra,
     )
@@ -114,12 +132,19 @@ def accepted(a: m.EvidenceAssertion, reviewer: str = REVIEWER) -> m.EvidenceAsse
     from dataclasses import replace
 
     return replace(
-        a, adjudication=v.AdjudicationStatus.ACCEPTED, adjudicated_by=reviewer, adjudicated_utc=UTC
+        a,
+        adjudication=v.AdjudicationStatus.ACCEPTED,
+        adjudicated_by=reviewer,
+        adjudicated_utc=UTC,
     )
 
 
-def registry_with_direct_feature(namespace=OFFSHORE, *, reviewer: str | None = REVIEWER,
-                                 feature_class: str | None = None):
+def registry_with_direct_feature(
+    namespace=OFFSHORE,
+    *,
+    reviewer: str | None = REVIEWER,
+    feature_class: str | None = None,
+):
     """A registry holding one feature whose opening is directly observed.
 
     With an independent ``reviewer`` the feature is promotable; with ``None``
@@ -132,7 +157,9 @@ def registry_with_direct_feature(namespace=OFFSHORE, *, reviewer: str | None = R
     observation = point_observation(namespace, source, "TEST-RECORD-1")
     registry.add_observation(observation)
     existence = assertion(v.EvidenceDimension.EXISTENCE, v.EvidenceTier.DIRECT, source)
-    opening = assertion(v.EvidenceDimension.PHYSICAL_OPENING, v.EvidenceTier.DIRECT, source)
+    opening = assertion(
+        v.EvidenceDimension.PHYSICAL_OPENING, v.EvidenceTier.DIRECT, source
+    )
     if reviewer is not None:
         existence, opening = accepted(existence, reviewer), accepted(opening, reviewer)
     default = "CAVE_ENTRANCE" if namespace is INLAND else "SUBMARINE_CAVE_ENTRANCE"

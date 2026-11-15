@@ -51,12 +51,12 @@ __all__ = [
 class ClaimClass(StrEnum):
     """How a statement was arrived at.  Every reported statement carries one."""
 
-    FACT = "FACT"                # read directly from a registered primary source
-    COMPUTED = "COMPUTED"        # deterministic output of a versioned method
-    BINDING = "BINDING"          # an explicit, evidenced link between two records
-    INFERENCE = "INFERENCE"      # reasoned from facts; could be wrong
-    ASSUMPTION = "ASSUMPTION"    # taken as given without evidence
-    HYPOTHESIS = "HYPOTHESIS"    # proposed for testing; not supported yet
+    FACT = "FACT"  # read directly from a registered primary source
+    COMPUTED = "COMPUTED"  # deterministic output of a versioned method
+    BINDING = "BINDING"  # an explicit, evidenced link between two records
+    INFERENCE = "INFERENCE"  # reasoned from facts; could be wrong
+    ASSUMPTION = "ASSUMPTION"  # taken as given without evidence
+    HYPOTHESIS = "HYPOTHESIS"  # proposed for testing; not supported yet
     UNKNOWN = "UNKNOWN"
 
 
@@ -80,17 +80,17 @@ class AssertionRung(IntEnum):
     as an input.  Each rung requires the one below it.
     """
 
-    ANOMALY = 0      # something was noticed; nothing more
-    FEATURE = 1      # a physical feature exists there
-    OPENING = 2      # the feature has a physical opening
-    PASSAGE = 3      # the opening can be entered
-    CONNECTION = 4   # the passage reaches somewhere else
+    ANOMALY = 0  # something was noticed; nothing more
+    FEATURE = 1  # a physical feature exists there
+    OPENING = 2  # the feature has a physical opening
+    PASSAGE = 3  # the opening can be entered
+    CONNECTION = 4  # the passage reaches somewhere else
 
 
 class RecordLayer(StrEnum):
-    RAW = "RAW"                # exactly as the source published it
+    RAW = "RAW"  # exactly as the source published it
     NORMALIZED = "NORMALIZED"  # reprojected / unit-converted, losslessly traceable
-    CANONICAL = "CANONICAL"    # the registry's adjudicated statement
+    CANONICAL = "CANONICAL"  # the registry's adjudicated statement
 
 
 class IdentityKind(StrEnum):
@@ -116,10 +116,12 @@ assert {member.value for member in Cardinality} == set(CARDINALITIES)
 
 
 class RegistryStatus(StrEnum):
-    PROVISIONAL_DISCOVERY = "PROVISIONAL_DISCOVERY"  # noticed; provenance not yet registered
-    CANDIDATE = "CANDIDATE"                          # source-backed, not adjudicated
+    PROVISIONAL_DISCOVERY = (
+        "PROVISIONAL_DISCOVERY"  # noticed; provenance not yet registered
+    )
+    CANDIDATE = "CANDIDATE"  # source-backed, not adjudicated
     UNDER_REVIEW = "UNDER_REVIEW"
-    VERIFIED = "VERIFIED"                            # independently adjudicated
+    VERIFIED = "VERIFIED"  # independently adjudicated
     REJECTED = "REJECTED"
     SUPERSEDED = "SUPERSEDED"
 
@@ -136,19 +138,21 @@ class AdjudicationStatus(StrEnum):
 class ProvenanceState(StrEnum):
     """Whether the bytes behind a source are actually held and hashed."""
 
-    REGISTERED = "REGISTERED"            # exact bytes frozen with SHA-256
+    REGISTERED = "REGISTERED"  # exact bytes frozen with SHA-256
     REFERENCED_ONLY = "REFERENCED_ONLY"  # a stable identifier/URL, bytes not held
-    UNREGISTERED = "UNREGISTERED"        # described by an operator; nothing attached
+    UNREGISTERED = "UNREGISTERED"  # described by an operator; nothing attached
 
 
 class GeometryBasis(StrEnum):
     """Where a geometry came from.  Decides what it may be used for."""
 
-    MEASURED = "MEASURED"                          # surveyed coordinates from the source
-    SOURCE_DIGITIZED = "SOURCE_DIGITIZED"          # digitised by the source publisher
-    DERIVED_FROM_RASTER = "DERIVED_FROM_RASTER"    # delineated by a versioned method
-    GEOREGISTERED_IMAGE = "GEOREGISTERED_IMAGE"    # from an image with certified control points
-    LOCALITY_LABEL_ONLY = "LOCALITY_LABEL_ONLY"    # a place name; no coordinates exist
+    MEASURED = "MEASURED"  # surveyed coordinates from the source
+    SOURCE_DIGITIZED = "SOURCE_DIGITIZED"  # digitised by the source publisher
+    DERIVED_FROM_RASTER = "DERIVED_FROM_RASTER"  # delineated by a versioned method
+    GEOREGISTERED_IMAGE = (
+        "GEOREGISTERED_IMAGE"  # from an image with certified control points
+    )
+    LOCALITY_LABEL_ONLY = "LOCALITY_LABEL_ONLY"  # a place name; no coordinates exist
     NONE = "NONE"
 
 

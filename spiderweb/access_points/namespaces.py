@@ -125,20 +125,43 @@ _LEGACY_PATTERNS: tuple[tuple[re.Pattern[str], Namespace], ...] = (
     (re.compile(r"^ferrocarril_ilap_"), Namespace.SOURCE_FERROCARRIL_ILAP),
     (re.compile(r"^(?i:fic_osap)"), Namespace.SOURCE_FIC_OSAP),
     (re.compile(r"^PIN_AC_FICOSAP[A-Z0-9]*(_[0-9]{6})?$"), Namespace.SOURCE_FIC_OSAP),
-    (re.compile(r"^OSAP_(to_ILAP|Primary_to_Secondary|Primary_Ring)$"), Namespace.SOURCE_FIC_OSAP),
-    (re.compile(r"^(ILAP_SCORE|ilap_score|ILAP_anomalies|ilap_dem_anomalies)$"), Namespace.TERRAIN_ILAP_SCORE),
+    (
+        re.compile(r"^OSAP_(to_ILAP|Primary_to_Secondary|Primary_Ring)$"),
+        Namespace.SOURCE_FIC_OSAP,
+    ),
+    (
+        re.compile(r"^(ILAP_SCORE|ilap_score|ILAP_anomalies|ilap_dem_anomalies)$"),
+        Namespace.TERRAIN_ILAP_SCORE,
+    ),
     (re.compile(r"^PIN_AC_ILAPDEMANO(_[0-9]{6})?$"), Namespace.TERRAIN_ILAP_SCORE),
     (re.compile(r"^ilap_context(_distance_m)?$"), Namespace.ENRICHMENT_ILAP_CONTEXT),
     (re.compile(r"^SW-ALL-[0-9]{7}$"), Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED),
-    (re.compile(r"^(ilap_constructs|ilap_master_nodes|ilap_predictions)$"), Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED),
-    (re.compile(r"^PIN_AC_ILAP(MASTER|PREDIC)(_[0-9]{6})?$"), Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED),
-    (re.compile(r"^(ilap_id|ilap_type|ilap_subtype|ilap_class|ilap_subcategory|ilap_type_calc)$"), Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED),
-    (re.compile(r"^ILAP-(Urban|Coastal|Hydro-Karst|Ridge)$"), Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED),
+    (
+        re.compile(r"^(ilap_constructs|ilap_master_nodes|ilap_predictions)$"),
+        Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED,
+    ),
+    (
+        re.compile(r"^PIN_AC_ILAP(MASTER|PREDIC)(_[0-9]{6})?$"),
+        Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED,
+    ),
+    (
+        re.compile(
+            r"^(ilap_id|ilap_type|ilap_subtype|ilap_class|ilap_subcategory|ilap_type_calc)$"
+        ),
+        Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED,
+    ),
+    (
+        re.compile(r"^ILAP-(Urban|Coastal|Hydro-Karst|Ridge)$"),
+        Namespace.ANALYTIC_ILAP_INFRASTRUCTURE_LINKED,
+    ),
     # skywatcher-pr's governed threshold registry owns identifiers of the form
     # ILAP-WEIGHT-*, ILAP-INFRA-*NM, ILAP-GRID-0.05DEG, ILAP-OVERALL-*, ...
     (re.compile(r"^ILAP-[A-Z0-9.-]+$"), Namespace.AVIATION_ILAP_PATH),
     (re.compile(r"^ilap_status$"), Namespace.AVIATION_ILAP_PATH),
-    (re.compile(r"^airspace_ilap_candidates(\.geojson|\.kml)?$"), Namespace.AVIATION_ILAP_PATH),
+    (
+        re.compile(r"^airspace_ilap_candidates(\.geojson|\.kml)?$"),
+        Namespace.AVIATION_ILAP_PATH,
+    ),
     (re.compile(r"^ilap_corridor_candidate$"), Namespace.AVIATION_ILAP_PATH),
     # The aviation bridge writes corridor ids as ``ILAP_<flight_id>``.  This is
     # deliberately last: the AREA / CLUSTER forms above are more specific.
@@ -183,7 +206,9 @@ def classify_identifier(value: str) -> Classification | None:
         if pattern.match(text):
             return Classification(namespace, IdentifierKind.OBSERVATION)
     if _PROVISIONAL_LABEL_RE.match(text):
-        return Classification(Namespace.ACCESS_POINT_OFFSHORE, IdentifierKind.PROVISIONAL_LABEL)
+        return Classification(
+            Namespace.ACCESS_POINT_OFFSHORE, IdentifierKind.PROVISIONAL_LABEL
+        )
     if text == _BARE_AVIATION_CANDIDATE_TYPE:
         return Classification(Namespace.AVIATION_ILAP_PATH, IdentifierKind.LEGACY)
     for pattern, namespace in _LEGACY_PATTERNS:
@@ -245,8 +270,12 @@ def _digest16(payload: object) -> str:
     return canonical_json_sha256(payload)[:16]
 
 
-def source_id(provider: str, native_identifier: str | None, source_uri: str | None,
-              manifestation_sha256: str | None) -> str:
+def source_id(
+    provider: str,
+    native_identifier: str | None,
+    source_uri: str | None,
+    manifestation_sha256: str | None,
+) -> str:
     """Identity of one source manifestation (one exact published thing).
 
     Two downloads of byte-identical content from the same provider record share
@@ -276,12 +305,20 @@ def observation_id(namespace: Namespace, source: str, native_record_id: str) -> 
     if not native_record_id or not str(native_record_id).strip():
         raise ValueError("native_record_id is required; identity is never positional")
     return f"{REGISTRY_CODE[namespace]}-OBS-" + _digest16(
-        {"namespace": namespace.value, "source": source, "native": str(native_record_id).strip()}
+        {
+            "namespace": namespace.value,
+            "source": source,
+            "native": str(native_record_id).strip(),
+        }
     )
 
 
-def geometry_id(observation_ids: tuple[str, ...], method: str, method_version: str,
-                geometry_logical_sha256: str) -> str:
+def geometry_id(
+    observation_ids: tuple[str, ...],
+    method: str,
+    method_version: str,
+    geometry_logical_sha256: str,
+) -> str:
     if not observation_ids:
         raise ValueError("a derived geometry must cite at least one observation")
     return "APGEO-" + _digest16(
@@ -294,8 +331,12 @@ def geometry_id(observation_ids: tuple[str, ...], method: str, method_version: s
     )
 
 
-def relationship_id(relationship_type: str, source_ref: TypedRef, target_ref: TypedRef,
-                    connectivity_kind: str | None) -> str:
+def relationship_id(
+    relationship_type: str,
+    source_ref: TypedRef,
+    target_ref: TypedRef,
+    connectivity_kind: str | None,
+) -> str:
     return "APREL-" + _digest16(
         {
             "type": relationship_type,

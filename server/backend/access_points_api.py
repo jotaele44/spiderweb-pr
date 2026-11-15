@@ -124,12 +124,12 @@ FEATURE_CLASSES: dict[Namespace, type] = {
 
 _UNKNOWN_REGISTRY = "unknown registry; expected one of: " + ", ".join(REGISTRY_SLUG)
 _FEATURE_NOT_FOUND = "feature not found in this registry"
-_AMBIGUOUS_IDENTIFIER = (
-    "identifier is ambiguous: it names several unrelated things; use a full record identifier"
-)
+_AMBIGUOUS_IDENTIFIER = "identifier is ambiguous: it names several unrelated things; use a full record identifier"
 _UNRECOGNISED_IDENTIFIER = "identifier is not a recognised record identifier"
 
-_Token = Annotated[str, StringConstraints(min_length=1, max_length=MAX_IDENTIFIER_LENGTH)]
+_Token = Annotated[
+    str, StringConstraints(min_length=1, max_length=MAX_IDENTIFIER_LENGTH)
+]
 
 
 class GeoJSONResponse(JSONResponse):
@@ -303,10 +303,14 @@ def create_router(
         """Recorded relationships, each with the class it may be drawn as."""
         if feature_id is not None:
             _classified_or_400(feature_id)
-        if render_class is not None and render_class not in {m.value for m in RenderClass}:
+        if render_class is not None and render_class not in {
+            m.value for m in RenderClass
+        }:
             raise HTTPException(400, "render_class is not a known render class")
         with _service_errors():
-            return service().relationships(feature_id=feature_id, render_class=render_class)
+            return service().relationships(
+                feature_id=feature_id, render_class=render_class
+            )
 
     @router.get("/paths")
     def paths(
@@ -330,10 +334,17 @@ def create_router(
                 document = cross_section()
             except ImportError as exc:
                 log.warning("control cross-section unavailable: %s", exc)
-                raise HTTPException(503, "control cross-section is unavailable") from exc
-            if not isinstance(document, dict) or document.get("truth_kind") != SYNTHETIC_CONTROL:
+                raise HTTPException(
+                    503, "control cross-section is unavailable"
+                ) from exc
+            if (
+                not isinstance(document, dict)
+                or document.get("truth_kind") != SYNTHETIC_CONTROL
+            ):
                 log.error("control cross-section is not labelled %s", SYNTHETIC_CONTROL)
-                raise HTTPException(503, "control cross-section is not labelled as synthetic")
+                raise HTTPException(
+                    503, "control cross-section is not labelled as synthetic"
+                )
             with lock:
                 state["cross_section"] = document
         return document
@@ -343,8 +354,12 @@ def create_router(
     @router.get("/{registry}/features", response_class=GeoJSONResponse)
     def features(
         registry: str,
-        bbox: Annotated[str | None, Query(min_length=1, max_length=MAX_BBOX_LENGTH)] = None,
-        status: Annotated[list[_Token] | None, Query(max_length=MAX_FILTER_VALUES)] = None,
+        bbox: Annotated[
+            str | None, Query(min_length=1, max_length=MAX_BBOX_LENGTH)
+        ] = None,
+        status: Annotated[
+            list[_Token] | None, Query(max_length=MAX_FILTER_VALUES)
+        ] = None,
         feature_class: Annotated[
             list[_Token] | None, Query(max_length=MAX_FILTER_VALUES)
         ] = None,
@@ -358,7 +373,9 @@ def create_router(
         if feature_class:
             known = {member.value for member in FEATURE_CLASSES[namespace]}
             if any(value not in known for value in feature_class):
-                raise HTTPException(400, "feature_class is not a feature class of this registry")
+                raise HTTPException(
+                    400, "feature_class is not a feature class of this registry"
+                )
         with _service_errors():
             return service().feature_collection(
                 registry,
@@ -372,7 +389,9 @@ def create_router(
     @router.get("/{registry}/features/{feature_id}", response_class=GeoJSONResponse)
     def feature(
         registry: str,
-        feature_id: Annotated[str, PathParam(min_length=1, max_length=MAX_IDENTIFIER_LENGTH)],
+        feature_id: Annotated[
+            str, PathParam(min_length=1, max_length=MAX_IDENTIFIER_LENGTH)
+        ],
     ) -> dict[str, Any]:
         """One record as a GeoJSON Feature."""
         _require_feature_id(_namespace_or_404(registry), feature_id)
@@ -382,7 +401,9 @@ def create_router(
     @router.get("/{registry}/features/{feature_id}/evidence")
     def feature_evidence(
         registry: str,
-        feature_id: Annotated[str, PathParam(min_length=1, max_length=MAX_IDENTIFIER_LENGTH)],
+        feature_id: Annotated[
+            str, PathParam(min_length=1, max_length=MAX_IDENTIFIER_LENGTH)
+        ],
     ) -> dict[str, Any]:
         """Every assertion with the tier it is worth, its sources and what blocks promotion."""
         _require_feature_id(_namespace_or_404(registry), feature_id)

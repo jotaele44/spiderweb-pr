@@ -26,7 +26,12 @@ from types import MappingProxyType
 from typing import Any, Iterable, Mapping
 
 from federation.spatial_core import canonical_json_sha256
-from gebco.marine_evidence import CoverageState, ProductStage, SensorType, VerticalReference
+from gebco.marine_evidence import (
+    CoverageState,
+    ProductStage,
+    SensorType,
+    VerticalReference,
+)
 
 from . import CONTRACT_VERSION
 from .models import (
@@ -101,9 +106,13 @@ def source_from_dict(data: Mapping[str, Any]) -> SourceManifestation:
         survey_date=data.get("survey_date"),
         lineage_root_id=data.get("lineage_root_id"),
         parent_source_ids=tuple(data.get("parent_source_ids") or ()),
-        product_stage=ProductStage(data.get("product_stage", ProductStage.DERIVED_PRODUCT.value)),
+        product_stage=ProductStage(
+            data.get("product_stage", ProductStage.DERIVED_PRODUCT.value)
+        ),
         sensor_type=_opt_enum(SensorType, data.get("sensor_type")),
-        coverage_state=CoverageState(data.get("coverage_state", CoverageState.UNKNOWN.value)),
+        coverage_state=CoverageState(
+            data.get("coverage_state", CoverageState.UNKNOWN.value)
+        ),
         provenance_state=ProvenanceState(
             data.get("provenance_state", ProvenanceState.UNREGISTERED.value)
         ),
@@ -186,7 +195,9 @@ def feature_from_dict(data: Mapping[str, Any]) -> Feature:
         feature_id=data["feature_id"],
         namespace=Namespace(data["namespace"]),
         feature_class=data["feature_class"],
-        status=RegistryStatus(data.get("status", RegistryStatus.PROVISIONAL_DISCOVERY.value)),
+        status=RegistryStatus(
+            data.get("status", RegistryStatus.PROVISIONAL_DISCOVERY.value)
+        ),
         observation_ids=tuple(data.get("observation_ids") or ()),
         assertions=tuple(assertion_from_dict(a) for a in data.get("assertions") or ()),
         geometry_id=data.get("geometry_id"),
@@ -296,13 +307,19 @@ class AccessPointRegistry:
             raise RegistryIntegrityError(
                 f"observation cites unknown source {observation.source_id}"
             )
-        return self._put(self._observations, observation.observation_id, observation, "observation")
+        return self._put(
+            self._observations, observation.observation_id, observation, "observation"
+        )
 
     def add_geometry(self, geometry: DerivedGeometry) -> bool:
         missing = [o for o in geometry.observation_ids if o not in self._observations]
         if missing:
-            raise RegistryIntegrityError(f"derived geometry cites unknown observations: {missing}")
-        return self._put(self._geometries, geometry.geometry_id, geometry, "derived geometry")
+            raise RegistryIntegrityError(
+                f"derived geometry cites unknown observations: {missing}"
+            )
+        return self._put(
+            self._geometries, geometry.geometry_id, geometry, "derived geometry"
+        )
 
     def next_feature_id(self) -> str:
         return feature_id(self.namespace, self._last_sequence + 1)
@@ -320,21 +337,39 @@ class AccessPointRegistry:
             )
         missing = [o for o in feature.observation_ids if o not in self._observations]
         if missing:
-            raise RegistryIntegrityError(f"feature cites unknown observations: {missing}")
-        if feature.geometry_id is not None and feature.geometry_id not in self._geometries:
-            raise RegistryIntegrityError(f"feature cites unknown geometry {feature.geometry_id}")
+            raise RegistryIntegrityError(
+                f"feature cites unknown observations: {missing}"
+            )
+        if (
+            feature.geometry_id is not None
+            and feature.geometry_id not in self._geometries
+        ):
+            raise RegistryIntegrityError(
+                f"feature cites unknown geometry {feature.geometry_id}"
+            )
         for assertion in feature.assertions:
             unknown = [s for s in assertion.source_ids if s not in self._sources]
             if unknown:
-                raise RegistryIntegrityError(f"assertion cites unknown sources: {unknown}")
-            foreign = [o for o in assertion.observation_ids if o not in self._observations]
+                raise RegistryIntegrityError(
+                    f"assertion cites unknown sources: {unknown}"
+                )
+            foreign = [
+                o for o in assertion.observation_ids if o not in self._observations
+            ]
             if foreign:
-                raise RegistryIntegrityError(f"assertion cites unknown observations: {foreign}")
+                raise RegistryIntegrityError(
+                    f"assertion cites unknown observations: {foreign}"
+                )
         for prior in feature.supersedes:
             if prior not in self._features:
-                raise RegistryIntegrityError(f"feature supersedes unknown feature {prior}")
+                raise RegistryIntegrityError(
+                    f"feature supersedes unknown feature {prior}"
+                )
         if not status_is_permitted(
-            feature, self._sources, self._observations, producer_identity=self.producer_identity
+            feature,
+            self._sources,
+            self._observations,
+            producer_identity=self.producer_identity,
         ):
             ceiling = permitted_status(
                 feature,
@@ -390,7 +425,10 @@ class AccessPointRegistry:
         )
         self._check_feature(draft)
         ceiling = permitted_status(
-            draft, self._sources, self._observations, producer_identity=self.producer_identity
+            draft,
+            self._sources,
+            self._observations,
+            producer_identity=self.producer_identity,
         )
         status = (
             RegistryStatus.PROVISIONAL_DISCOVERY
@@ -427,7 +465,9 @@ class AccessPointRegistry:
             )
         feature = self.feature(identifier)
         if feature.status in {RegistryStatus.REJECTED, RegistryStatus.SUPERSEDED}:
-            raise PromotionError(f"{identifier} is {feature.status.value} and cannot be promoted")
+            raise PromotionError(
+                f"{identifier} is {feature.status.value} and cannot be promoted"
+            )
         blockers = self.blockers(identifier)
         if blockers:
             raise PromotionError(
@@ -438,7 +478,9 @@ class AccessPointRegistry:
         self._features[identifier] = promoted
         return promoted
 
-    def set_status(self, identifier: str, status: RegistryStatus, *, utc: str) -> Feature:
+    def set_status(
+        self, identifier: str, status: RegistryStatus, *, utc: str
+    ) -> Feature:
         """Move between non-verified statuses.  ``VERIFIED`` only via :meth:`promote`."""
 
         if status is RegistryStatus.VERIFIED:
@@ -468,7 +510,8 @@ class AccessPointRegistry:
     @staticmethod
     def counts_close(counts: Mapping[str, Any]) -> bool:
         return (
-            counts["observations_bound"] + counts["observations_unbound"] == counts["observations"]
+            counts["observations_bound"] + counts["observations_unbound"]
+            == counts["observations"]
             and sum(counts["features_by_status"].values()) == counts["features"]
         )
 
@@ -483,8 +526,12 @@ class AccessPointRegistry:
             "registry_code": self.code,
             "producer_identity": self.producer_identity,
             "sources": [self._sources[k].to_dict() for k in sorted(self._sources)],
-            "observations": [self._observations[k].to_dict() for k in sorted(self._observations)],
-            "derived_geometries": [self._geometries[k].to_dict() for k in sorted(self._geometries)],
+            "observations": [
+                self._observations[k].to_dict() for k in sorted(self._observations)
+            ],
+            "derived_geometries": [
+                self._geometries[k].to_dict() for k in sorted(self._geometries)
+            ],
             "features": [self._features[k].to_dict() for k in sorted(self._features)],
             "counts": self.counts(),
         }
@@ -503,20 +550,25 @@ class AccessPointRegistry:
         try:
             digest = canonical_json_sha256(body)
         except (TypeError, ValueError) as exc:
-            raise RegistryIntegrityError(f"registry document is not canonical JSON: {exc}") from exc
+            raise RegistryIntegrityError(
+                f"registry document is not canonical JSON: {exc}"
+            ) from exc
         if document.get("content_sha256") != digest:
             raise RegistryIntegrityError(
                 "registry document hash mismatch: the file was altered or truncated"
             )
         try:
             registry = cls(
-                Namespace(document["namespace"]), producer_identity=document["producer_identity"]
+                Namespace(document["namespace"]),
+                producer_identity=document["producer_identity"],
             )
             pending = [source_from_dict(s) for s in document.get("sources", [])]
             # Parents before children, whatever order the file lists them in.
             while pending:
                 ready = [
-                    s for s in pending if all(p in registry._sources for p in s.parent_source_ids)
+                    s
+                    for s in pending
+                    if all(p in registry._sources for p in s.parent_source_ids)
                 ]
                 if not ready:
                     raise RegistryIntegrityError(
@@ -529,20 +581,32 @@ class AccessPointRegistry:
                 registry.add_observation(observation_from_dict(item))
             for item in document.get("derived_geometries", []):
                 registry.add_geometry(geometry_from_dict(item))
-            features = [feature_from_dict(item) for item in document.get("features", [])]
+            features = [
+                feature_from_dict(item) for item in document.get("features", [])
+            ]
             # Features that supersede others load after the ones they replace.
             remaining = features
             while remaining:
-                ready_f = [f for f in remaining if all(p in registry._features for p in f.supersedes)]
+                ready_f = [
+                    f
+                    for f in remaining
+                    if all(p in registry._features for p in f.supersedes)
+                ]
                 if not ready_f:
-                    raise RegistryIntegrityError("feature supersession is cyclic or dangling")
+                    raise RegistryIntegrityError(
+                        "feature supersession is cyclic or dangling"
+                    )
                 for feature in ready_f:
                     registry.add_feature(feature)
-                remaining = [f for f in remaining if f.feature_id not in registry._features]
+                remaining = [
+                    f for f in remaining if f.feature_id not in registry._features
+                ]
         except RegistryIntegrityError:
             raise
         except (KeyError, TypeError, ValueError) as exc:
-            raise RegistryIntegrityError(f"registry document is invalid: {exc}") from exc
+            raise RegistryIntegrityError(
+                f"registry document is invalid: {exc}"
+            ) from exc
         counts = registry.counts()
         if counts != document.get("counts") or not cls.counts_close(counts):
             raise RegistryIntegrityError("registry record counts do not close")
@@ -551,7 +615,10 @@ class AccessPointRegistry:
     def save(self, path: str | Path) -> Path:
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        text = json.dumps(self.to_document(), indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+        text = (
+            json.dumps(self.to_document(), indent=2, sort_keys=True, ensure_ascii=False)
+            + "\n"
+        )
         target.write_text(text, encoding="utf-8")
         return target
 
@@ -560,5 +627,7 @@ class AccessPointRegistry:
         try:
             document = json.loads(Path(path).read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            raise RegistryIntegrityError(f"registry document is not valid JSON: {exc}") from exc
+            raise RegistryIntegrityError(
+                f"registry document is not valid JSON: {exc}"
+            ) from exc
         return cls.from_document(document)

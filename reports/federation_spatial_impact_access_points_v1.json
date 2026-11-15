@@ -1,0 +1,67 @@
+{
+  "contract_version": "federation-spatial-impact/1.0",
+  "producer_repo": "spiderweb-pr",
+  "branch": "claude/spiderweb-ilap-osap-modernization-hu0qc4",
+  "base_sha": "cb5aa8eb726ba882b410bcfe0a402799af86ed5a",
+  "head_sha": null,
+  "changes": {
+    "contracts": [
+      "access-point-registry/1.0 (repository-local; not a federation contract)"
+    ],
+    "schemas": [
+      "schemas/access_point_registry.schema.json",
+      "schemas/access_point_relationship_ledger.schema.json",
+      "schemas/access_point_certification_report.schema.json"
+    ],
+    "geometry_semantics": [
+      "no existing semantics changed",
+      "new repository-local records keep CANDIDATE_NOT_IDENTITY as the default for any proximity relation",
+      "a record without a registered source carries no geometry"
+    ],
+    "crs": [
+      "no change; OGC:CRS84 remains the interchange CRS",
+      "new: a controlled vertical-datum vocabulary, repository-local"
+    ],
+    "api": [
+      "additive read-only routes under GET /v1/access-points; no existing route changed"
+    ]
+  },
+  "affected_consumers": [
+    {
+      "repo": "spiderweb-pr",
+      "impact": "OPTIONAL",
+      "reason": "new registries, API routes and map panel are additive; code relying on a placeholder vertical datum being accepted by gebco.marine_evidence will now fail closed",
+      "migration": null
+    },
+    {
+      "repo": "moneysweep-pr",
+      "impact": "NONE",
+      "reason": "nothing new is exported; its package is read as context only and no shared schema or identifier rule changed",
+      "migration": null
+    },
+    {
+      "repo": "aguayluz-pr",
+      "impact": "NONE",
+      "reason": "nothing new is exported; no shared schema, grid or identifier rule changed",
+      "migration": null
+    },
+    {
+      "repo": "skywatcher-pr",
+      "impact": "NONE",
+      "reason": "nothing new is exported; the airspace meaning of ILAP and its identifiers are untouched and reserved",
+      "migration": null
+    }
+  ],
+  "backward_compatible": true,
+  "rollback": "revert the branch commits; no database, external service or sibling repository was modified",
+  "gates": {
+    "schema": "PASS",
+    "geometry": "OPEN",
+    "tests": "PASS",
+    "security": "OPEN",
+    "performance": "OPEN",
+    "desktop": "OPEN",
+    "ios": "OPEN",
+    "federation": "BLOCKED"
+  }
+}

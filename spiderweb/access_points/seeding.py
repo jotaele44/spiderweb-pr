@@ -20,14 +20,20 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import yaml
+
 from gebco.marine_evidence import CoverageState, ProductStage, SensorType
 
-from .models import HORIZONTAL_INTERCHANGE_CRS, EvidenceAssertion, Observation, SourceManifestation
+from .models import (
+    HORIZONTAL_INTERCHANGE_CRS,
+    EvidenceAssertion,
+    Observation,
+    SourceManifestation,
+)
 from .namespaces import (
+    IdentifierKind,
     Namespace,
     TypedRef,
     classify_identifier,
-    IdentifierKind,
     observation_id,
     source_id,
 )
@@ -45,7 +51,9 @@ from .vocabulary import (
 PRODUCER_IDENTITY = "spiderweb-pr:spiderweb.access_points.seeding"
 SEEDS_PATH = "configs/access_point_seeds.yaml"
 CROSSWALK_PATH = "configs/access_point_legacy_crosswalk.yaml"
-GUAYAMA_RECEIPT_PATH = "evidence/marine/guayama_punta_tuna_v0_1/source_denominator_receipt.json"
+GUAYAMA_RECEIPT_PATH = (
+    "evidence/marine/guayama_punta_tuna_v0_1/source_denominator_receipt.json"
+)
 REGISTRY_DIR = "registry/access_points"
 ADJACENCY_THRESHOLD_M = 2000.0
 
@@ -65,7 +73,9 @@ def _load_yaml(path: Path) -> Mapping[str, Any]:
     return data
 
 
-def seed_offshore(registry: AccessPointRegistry, config: Mapping[str, Any]) -> list[str]:
+def seed_offshore(
+    registry: AccessPointRegistry, config: Mapping[str, Any]
+) -> list[str]:
     """Register provisional labels as locality-only discovery observations."""
 
     if config.get("registry") != registry.namespace.value:
@@ -99,7 +109,9 @@ def seed_offshore(registry: AccessPointRegistry, config: Mapping[str, Any]) -> l
             provenance_state=ProvenanceState(str(source_cfg["provenance_state"])),
         )
         if source.provenance_state is not ProvenanceState.UNREGISTERED:
-            raise SeedingError("seed sources are UNREGISTERED until their files are attached")
+            raise SeedingError(
+                "seed sources are UNREGISTERED until their files are attached"
+            )
         registry.add_source(source)
         observation = Observation(
             observation_id=observation_id(registry.namespace, source.source_id, label),
@@ -188,7 +200,8 @@ def crosswalk_legacy(
         {
             str(n["source_file"])
             for n in nodes
-            if n.get("source_file") and (str(n.get("ilap_type")), str(n.get("ilap_subtype"))) in rules
+            if n.get("source_file")
+            and (str(n.get("ilap_type")), str(n.get("ilap_subtype"))) in rules
         }
     )
     parents = [
@@ -202,13 +215,17 @@ def crosswalk_legacy(
         for name in upstream_files
     ]
     legacy_source = SourceManifestation(
-        source_id=source_id("SPIDERWEB_LEGACY_NODE_REGISTRY", legacy_rel, None, _sha256(legacy_path)),
+        source_id=source_id(
+            "SPIDERWEB_LEGACY_NODE_REGISTRY", legacy_rel, None, _sha256(legacy_path)
+        ),
         provider="SPIDERWEB_LEGACY_NODE_REGISTRY",
         title=f"{legacy_rel} ({legacy.get('version')}), legacy analytic node compilation",
         native_identifier=legacy_rel,
         manifestation_sha256=_sha256(legacy_path),
         retrieved_utc=stamp,
-        published_date=str(legacy.get("generated_at")) if legacy.get("generated_at") else None,
+        published_date=(
+            str(legacy.get("generated_at")) if legacy.get("generated_at") else None
+        ),
         parent_source_ids=tuple(p.source_id for p in parents),
         product_stage=ProductStage.DERIVED_PRODUCT,
         coverage_state=CoverageState.UNKNOWN,
@@ -283,7 +300,9 @@ def crosswalk_legacy(
         )
         created.append(feature.feature_id)
         matched += 1
-    result = CrosswalkResult(len(nodes), matched, no_subtype, no_coords, unmatched, tuple(created))
+    result = CrosswalkResult(
+        len(nodes), matched, no_subtype, no_coords, unmatched, tuple(created)
+    )
     if not result.closes():
         raise SeedingError("legacy crosswalk counts do not close")
     return result
@@ -292,7 +311,9 @@ def crosswalk_legacy(
 _GUAYAMA_TITLE = "listed in the Guayama-Punta Tuna v0.1 source-denominator receipt"
 
 
-def register_guayama_sources(registry: AccessPointRegistry, receipt_path: Path) -> dict[str, int]:
+def register_guayama_sources(
+    registry: AccessPointRegistry, receipt_path: Path
+) -> dict[str, int]:
     """Register the surveys named by the committed Guayama receipt as references.
 
     These are catalogue and inventory listings.  Their data products are not
@@ -301,9 +322,21 @@ def register_guayama_sources(registry: AccessPointRegistry, receipt_path: Path) 
     """
 
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-    counts = {"multibeam": 0, "sounding": 0, "bag": 0, "topobathy_lidar": 0, "datum_placeholders": 0}
+    counts = {
+        "multibeam": 0,
+        "sounding": 0,
+        "bag": 0,
+        "topobathy_lidar": 0,
+        "datum_placeholders": 0,
+    }
 
-    def add(provider: str, native: str, title: str, sensor: SensorType, survey: str | None = None) -> None:
+    def add(
+        provider: str,
+        native: str,
+        title: str,
+        sensor: SensorType,
+        survey: str | None = None,
+    ) -> None:
         registry.add_source(
             SourceManifestation(
                 source_id=source_id(provider, native, None, None),
@@ -321,13 +354,28 @@ def register_guayama_sources(registry: AccessPointRegistry, receipt_path: Path) 
         )
 
     for survey in receipt["ncei_multibeam_survey_ids"]:
-        add("NCEI_MULTIBEAM_CATALOG", f"NCEI:multibeam:{survey}", str(survey), SensorType.MULTIBEAM_ECHOSOUNDER)
+        add(
+            "NCEI_MULTIBEAM_CATALOG",
+            f"NCEI:multibeam:{survey}",
+            str(survey),
+            SensorType.MULTIBEAM_ECHOSOUNDER,
+        )
         counts["multibeam"] += 1
     for survey in receipt["ncei_sounding_survey_ids"]:
-        add("NCEI_SOUNDING_CATALOG", f"NCEI:sounding:{survey}", str(survey), SensorType.HYDROGRAPHIC_SOUNDINGS)
+        add(
+            "NCEI_SOUNDING_CATALOG",
+            f"NCEI:sounding:{survey}",
+            str(survey),
+            SensorType.HYDROGRAPHIC_SOUNDINGS,
+        )
         counts["sounding"] += 1
     for survey in receipt["nos_bag_survey_ids"]:
-        add("NOS_BAG_INVENTORY", f"NOS:BAG:{survey}", str(survey), SensorType.MULTIBEAM_ECHOSOUNDER)
+        add(
+            "NOS_BAG_INVENTORY",
+            f"NOS:BAG:{survey}",
+            str(survey),
+            SensorType.MULTIBEAM_ECHOSOUNDER,
+        )
         counts["bag"] += 1
     for feature in receipt["usiei_topobathy_features"]:
         add(
@@ -351,7 +399,9 @@ def register_guayama_sources(registry: AccessPointRegistry, receipt_path: Path) 
     return counts
 
 
-def _point_of(registry: AccessPointRegistry, feature_id: str) -> tuple[float, float] | None:
+def _point_of(
+    registry: AccessPointRegistry, feature_id: str
+) -> tuple[float, float] | None:
     feature = registry.feature(feature_id)
     for oid in feature.observation_ids:
         geometry = registry.observations[oid].geometry
@@ -402,11 +452,18 @@ def build_all(repo_root: str | Path) -> BuildResult:
     root = Path(repo_root)
     seeds = _load_yaml(root / SEEDS_PATH)
     crosswalk_cfg = _load_yaml(root / CROSSWALK_PATH)
-    inland = AccessPointRegistry(Namespace.ACCESS_POINT_INLAND, producer_identity=PRODUCER_IDENTITY)
-    offshore = AccessPointRegistry(Namespace.ACCESS_POINT_OFFSHORE, producer_identity=PRODUCER_IDENTITY)
+    inland = AccessPointRegistry(
+        Namespace.ACCESS_POINT_INLAND, producer_identity=PRODUCER_IDENTITY
+    )
+    offshore = AccessPointRegistry(
+        Namespace.ACCESS_POINT_OFFSHORE, producer_identity=PRODUCER_IDENTITY
+    )
     seeded = seed_offshore(offshore, seeds)
     crosswalk = crosswalk_legacy(
-        {Namespace.ACCESS_POINT_INLAND: inland, Namespace.ACCESS_POINT_OFFSHORE: offshore},
+        {
+            Namespace.ACCESS_POINT_INLAND: inland,
+            Namespace.ACCESS_POINT_OFFSHORE: offshore,
+        },
         crosswalk_cfg,
         root,
     )
@@ -414,9 +471,16 @@ def build_all(repo_root: str | Path) -> BuildResult:
     ledger = adjacency_ledger(inland, offshore, threshold_m=ADJACENCY_THRESHOLD_M)
     inputs = {
         rel: _sha256(root / rel)
-        for rel in (SEEDS_PATH, CROSSWALK_PATH, str(crosswalk_cfg["legacy_file"]), GUAYAMA_RECEIPT_PATH)
+        for rel in (
+            SEEDS_PATH,
+            CROSSWALK_PATH,
+            str(crosswalk_cfg["legacy_file"]),
+            GUAYAMA_RECEIPT_PATH,
+        )
     }
-    return BuildResult(inland, offshore, ledger, crosswalk, tuple(seeded), guayama, inputs)
+    return BuildResult(
+        inland, offshore, ledger, crosswalk, tuple(seeded), guayama, inputs
+    )
 
 
 def write_documents(result: BuildResult, repo_root: str | Path) -> dict[str, str]:
@@ -439,7 +503,10 @@ def write_documents(result: BuildResult, repo_root: str | Path) -> dict[str, str
         "producer_identity": PRODUCER_IDENTITY,
         "inputs": dict(sorted(result.input_hashes.items())),
         "outputs": {
-            name: {"sha256": digest, "content_sha256": documents[name]["content_sha256"]}
+            name: {
+                "sha256": digest,
+                "content_sha256": documents[name]["content_sha256"],
+            }
             for name, digest in sorted(hashes.items())
         },
         "counts": {

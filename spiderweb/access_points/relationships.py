@@ -16,9 +16,13 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass, replace
 from enum import StrEnum
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
-from federation.spatial_core import IDENTITY_DEFAULT, canonical_json_sha256, geodesic_distance_m
+from federation.spatial_core import (
+    IDENTITY_DEFAULT,
+    canonical_json_sha256,
+    geodesic_distance_m,
+)
 
 from . import CONTRACT_VERSION
 from .models import Relationship, SourceManifestation
@@ -56,7 +60,9 @@ _LEGACY_ALLOWED = frozenset(
     }
 )
 
-_SPECULATIVE = frozenset({ClaimClass.HYPOTHESIS, ClaimClass.ASSUMPTION, ClaimClass.UNKNOWN})
+_SPECULATIVE = frozenset(
+    {ClaimClass.HYPOTHESIS, ClaimClass.ASSUMPTION, ClaimClass.UNKNOWN}
+)
 
 
 class RenderClass(StrEnum):
@@ -101,7 +107,8 @@ def make_relationship(
     """Build a relationship, enforcing what each type is allowed to mean."""
 
     legacy_end = (
-        source.namespace not in REGISTRY_NAMESPACES or target.namespace not in REGISTRY_NAMESPACES
+        source.namespace not in REGISTRY_NAMESPACES
+        or target.namespace not in REGISTRY_NAMESPACES
     )
     if legacy_end and relationship_type not in _LEGACY_ALLOWED:
         raise NamespaceCollisionError(
@@ -120,14 +127,21 @@ def make_relationship(
             )
     elif relationship_type is RelationshipType.HYPOTHESIZED_CONNECTION:
         if connectivity_kind is None:
-            raise ValueError("a hypothesised connection must say which kind it hypothesises")
+            raise ValueError(
+                "a hypothesised connection must say which kind it hypothesises"
+            )
     elif connectivity_kind is not None and relationship_type in {
         RelationshipType.SAME_VERIFIED_PHYSICAL_FEATURE,
         RelationshipType.SHARED_GEOLOGICAL_UNIT,
         RelationshipType.SPATIAL_ADJACENCY,
     }:
-        raise ValueError(f"{relationship_type.value} is not a connection and carries no kind")
-    if relationship_type is RelationshipType.CONTRADICTORY_RELATIONSHIP and not contradicts:
+        raise ValueError(
+            f"{relationship_type.value} is not a connection and carries no kind"
+        )
+    if (
+        relationship_type is RelationshipType.CONTRADICTORY_RELATIONSHIP
+        and not contradicts
+    ):
         raise ValueError("a contradictory relationship must name what it contradicts")
     return Relationship(
         relationship_id=relationship_id(
@@ -245,8 +259,13 @@ class RelationshipLedger:
 
     def add_source(self, source: SourceManifestation) -> None:
         existing = self._sources.get(source.source_id)
-        if existing is not None and existing.logical_sha256() != source.logical_sha256():
-            raise ValueError(f"source {source.source_id} already exists with different content")
+        if (
+            existing is not None
+            and existing.logical_sha256() != source.logical_sha256()
+        ):
+            raise ValueError(
+                f"source {source.source_id} already exists with different content"
+            )
         self._sources[source.source_id] = source
 
     def add(self, relationship: Relationship) -> bool:
@@ -255,7 +274,9 @@ class RelationshipLedger:
             raise ValueError(f"relationship cites unknown sources: {unknown}")
         missing = [r for r in relationship.contradicts if r not in self._relationships]
         if missing:
-            raise ValueError(f"relationship contradicts unknown relationships: {missing}")
+            raise ValueError(
+                f"relationship contradicts unknown relationships: {missing}"
+            )
         existing = self._relationships.get(relationship.relationship_id)
         if existing is None:
             self._relationships[relationship.relationship_id] = relationship
@@ -276,7 +297,10 @@ class RelationshipLedger:
     def contradicted_ids(self) -> frozenset[str]:
         hit: set[str] = set()
         for relationship in self._relationships.values():
-            if relationship.relationship_type is RelationshipType.CONTRADICTORY_RELATIONSHIP:
+            if (
+                relationship.relationship_type
+                is RelationshipType.CONTRADICTORY_RELATIONSHIP
+            ):
                 hit.update(relationship.contradicts)
         return frozenset(hit)
 
@@ -296,7 +320,8 @@ class RelationshipLedger:
 
     def render_class(self, relationship: Relationship) -> RenderClass:
         if (
-            relationship.relationship_type is RelationshipType.CONTRADICTORY_RELATIONSHIP
+            relationship.relationship_type
+            is RelationshipType.CONTRADICTORY_RELATIONSHIP
             or relationship.relationship_id in self.contradicted_ids()
             or relationship.tier is EvidenceTier.CONTRADICTED
         ):
@@ -326,7 +351,9 @@ class RelationshipLedger:
         classes = [self.render_class(edge) for edge in edges]
         ids = tuple(edge.relationship_id for edge in edges)
         weak = tuple(
-            edge.relationship_id for edge, cls in zip(edges, classes) if cls is not RenderClass.VERIFIED
+            edge.relationship_id
+            for edge, cls in zip(edges, classes)
+            if cls is not RenderClass.VERIFIED
         )
         if RenderClass.CONTRADICTED in classes:
             return PathAssessment(PathState.CONTRADICTED, None, ids, weak)
@@ -337,7 +364,8 @@ class RelationshipLedger:
         kinds = {
             edge.connectivity_kind
             for edge in edges
-            if edge.relationship_type is not RelationshipType.SAME_VERIFIED_PHYSICAL_FEATURE
+            if edge.relationship_type
+            is not RelationshipType.SAME_VERIFIED_PHYSICAL_FEATURE
         }
         if len(kinds) > 1:
             # Every edge is verified, but for different things.  Water reaching
@@ -346,21 +374,32 @@ class RelationshipLedger:
         kind = next(iter(kinds)) if kinds else None
         return PathAssessment(PathState.VERIFIED, kind, ids, ())
 
-    def paths(self, start: TypedRef, goal: TypedRef, *, max_hops: int = 6) -> list["PathAssessment"]:
+    def paths(
+        self, start: TypedRef, goal: TypedRef, *, max_hops: int = 6
+    ) -> list["PathAssessment"]:
         """All simple paths up to ``max_hops``, each with its own assessment."""
 
         if max_hops < 1:
             raise ValueError("max_hops must be at least 1")
         adjacency: dict[TypedRef, list[tuple[TypedRef, Relationship]]] = {}
-        for relationship in sorted(self._relationships.values(), key=lambda r: r.relationship_id):
-            if relationship.relationship_type is RelationshipType.CONTRADICTORY_RELATIONSHIP:
+        for relationship in sorted(
+            self._relationships.values(), key=lambda r: r.relationship_id
+        ):
+            if (
+                relationship.relationship_type
+                is RelationshipType.CONTRADICTORY_RELATIONSHIP
+            ):
                 continue
-            adjacency.setdefault(relationship.source, []).append((relationship.target, relationship))
-            adjacency.setdefault(relationship.target, []).append((relationship.source, relationship))
+            adjacency.setdefault(relationship.source, []).append(
+                (relationship.target, relationship)
+            )
+            adjacency.setdefault(relationship.target, []).append(
+                (relationship.source, relationship)
+            )
         found: list[PathAssessment] = []
-        queue: deque[tuple[TypedRef, tuple[TypedRef, ...], tuple[Relationship, ...]]] = deque(
-            [(start, (start,), ())]
-        )
+        queue: deque[
+            tuple[TypedRef, tuple[TypedRef, ...], tuple[Relationship, ...]]
+        ] = deque([(start, (start,), ())])
         while queue:
             node, visited, edges = queue.popleft()
             if node == goal and edges:
@@ -371,10 +410,14 @@ class RelationshipLedger:
             for neighbour, relationship in adjacency.get(node, []):
                 if neighbour in visited:
                     continue
-                queue.append((neighbour, visited + (neighbour,), edges + (relationship,)))
+                queue.append(
+                    (neighbour, visited + (neighbour,), edges + (relationship,))
+                )
         return found
 
-    def best_path_state(self, start: TypedRef, goal: TypedRef, *, max_hops: int = 6) -> PathState:
+    def best_path_state(
+        self, start: TypedRef, goal: TypedRef, *, max_hops: int = 6
+    ) -> PathState:
         states = [p.state for p in self.paths(start, goal, max_hops=max_hops)]
         if not states:
             return PathState.NO_PATH
@@ -395,11 +438,15 @@ class RelationshipLedger:
         """Relationships expressed with the federation's existing relation verbs."""
 
         rows = []
-        for relationship in sorted(self._relationships.values(), key=lambda r: r.relationship_id):
+        for relationship in sorted(
+            self._relationships.values(), key=lambda r: r.relationship_id
+        ):
             rows.append(
                 {
                     "relationship_id": relationship.relationship_id,
-                    "relation_type": FEDERATION_RELATION_VERB[relationship.relationship_type],
+                    "relation_type": FEDERATION_RELATION_VERB[
+                        relationship.relationship_type
+                    ],
                     "access_point_relationship_type": relationship.relationship_type.value,
                     "source_feature_id": str(relationship.source),
                     "target_feature_id": str(relationship.target),
@@ -494,7 +541,9 @@ def ledger_from_document(document: Mapping[str, Any]) -> RelationshipLedger:
     from .registry import RegistryIntegrityError, source_from_dict
 
     if document.get("schema") != LEDGER_SCHEMA:
-        raise RegistryIntegrityError(f"unsupported ledger schema: {document.get('schema')!r}")
+        raise RegistryIntegrityError(
+            f"unsupported ledger schema: {document.get('schema')!r}"
+        )
     body = {k: v for k, v in document.items() if k != "content_sha256"}
     if document.get("content_sha256") != canonical_json_sha256(body):
         raise RegistryIntegrityError("relationship ledger hash mismatch")
@@ -502,14 +551,24 @@ def ledger_from_document(document: Mapping[str, Any]) -> RelationshipLedger:
     try:
         for item in document.get("sources", []):
             ledger.add_source(source_from_dict(item))
-        pending = [relationship_from_dict(item) for item in document.get("relationships", [])]
+        pending = [
+            relationship_from_dict(item) for item in document.get("relationships", [])
+        ]
         while pending:
-            ready = [r for r in pending if all(c in ledger._relationships for c in r.contradicts)]
+            ready = [
+                r
+                for r in pending
+                if all(c in ledger._relationships for c in r.contradicts)
+            ]
             if not ready:
-                raise RegistryIntegrityError("contradiction links are cyclic or dangling")
+                raise RegistryIntegrityError(
+                    "contradiction links are cyclic or dangling"
+                )
             for relationship in ready:
                 ledger.add(relationship)
-            pending = [r for r in pending if r.relationship_id not in ledger._relationships]
+            pending = [
+                r for r in pending if r.relationship_id not in ledger._relationships
+            ]
     except RegistryIntegrityError:
         raise
     except (KeyError, TypeError, ValueError) as exc:

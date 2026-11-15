@@ -25,7 +25,8 @@ from .models import Feature
 from .namespaces import REGISTRY_CODE, REGISTRY_TITLE, Namespace, TypedRef, typed_ref
 from .registry import AccessPointRegistry, RegistryIntegrityError
 from .relationships import RelationshipLedger, effective_tier, ledger_from_document
-from .rules import RULES_VERSION, effective_tier as assertion_effective_tier
+from .rules import RULES_VERSION
+from .rules import effective_tier as assertion_effective_tier
 from .seeding import REGISTRY_DIR
 from .vocabulary import EvidenceDimension, GeometryBasis, RegistryStatus
 
@@ -67,7 +68,12 @@ def parse_bbox(text: str) -> tuple[float, float, float, float]:
         west, south, east, north = (float(p) for p in parts)
     except ValueError:
         raise InvalidQuery("bbox values must be numbers") from None
-    if not (-180 <= west <= 180 and -180 <= east <= 180 and -90 <= south <= 90 and -90 <= north <= 90):
+    if not (
+        -180 <= west <= 180
+        and -180 <= east <= 180
+        and -90 <= south <= 90
+        and -90 <= north <= 90
+    ):
         raise InvalidQuery("bbox is outside WGS84 bounds")
     if west >= east or south >= north:
         raise InvalidQuery("bbox minimums must be less than maximums")
@@ -92,9 +98,14 @@ def _envelope(geometry: Mapping[str, Any]) -> tuple[float, float, float, float]:
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def _intersects(envelope: tuple[float, float, float, float], bbox: tuple[float, float, float, float]) -> bool:
+def _intersects(
+    envelope: tuple[float, float, float, float], bbox: tuple[float, float, float, float]
+) -> bool:
     return not (
-        envelope[2] < bbox[0] or envelope[0] > bbox[2] or envelope[3] < bbox[1] or envelope[1] > bbox[3]
+        envelope[2] < bbox[0]
+        or envelope[0] > bbox[2]
+        or envelope[3] < bbox[1]
+        or envelope[1] > bbox[3]
     )
 
 
@@ -108,9 +119,15 @@ class _Loaded:
 class AccessPointService:
     """Loads and verifies the registry documents once, then answers queries."""
 
-    def __init__(self, repo_root: str | Path, *, registry_dir: str | Path | None = None) -> None:
+    def __init__(
+        self, repo_root: str | Path, *, registry_dir: str | Path | None = None
+    ) -> None:
         self._root = Path(repo_root)
-        self._dir = Path(registry_dir) if registry_dir is not None else self._root / REGISTRY_DIR
+        self._dir = (
+            Path(registry_dir)
+            if registry_dir is not None
+            else self._root / REGISTRY_DIR
+        )
         self._registries: dict[Namespace, _Loaded] = {}
         self._ledger: tuple[RelationshipLedger, Path, str] | None = None
 
@@ -132,12 +149,22 @@ class AccessPointService:
             return loaded
         path = self._dir / _DOCUMENT_NAME[namespace]
         if not path.is_file():
-            raise RegistryUnavailable(f"registry document {self._display(path)} has not been built")
+            raise RegistryUnavailable(
+                f"registry document {self._display(path)} has not been built"
+            )
         raw = path.read_bytes()
         try:
-            registry = AccessPointRegistry.from_document(json.loads(raw.decode("utf-8")))
-        except (RegistryIntegrityError, json.JSONDecodeError, UnicodeDecodeError) as exc:
-            raise RegistryUnavailable(f"registry document failed verification: {exc}") from exc
+            registry = AccessPointRegistry.from_document(
+                json.loads(raw.decode("utf-8"))
+            )
+        except (
+            RegistryIntegrityError,
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+        ) as exc:
+            raise RegistryUnavailable(
+                f"registry document failed verification: {exc}"
+            ) from exc
         if registry.namespace is not namespace:
             raise RegistryUnavailable("registry document holds a different registry")
         loaded = _Loaded(registry, path, hashlib.sha256(raw).hexdigest())
@@ -154,8 +181,14 @@ class AccessPointService:
             raw = path.read_bytes()
             try:
                 ledger = ledger_from_document(json.loads(raw.decode("utf-8")))
-            except (RegistryIntegrityError, json.JSONDecodeError, UnicodeDecodeError) as exc:
-                raise RegistryUnavailable(f"relationship ledger failed verification: {exc}") from exc
+            except (
+                RegistryIntegrityError,
+                json.JSONDecodeError,
+                UnicodeDecodeError,
+            ) as exc:
+                raise RegistryUnavailable(
+                    f"relationship ledger failed verification: {exc}"
+                ) from exc
             self._ledger = (ledger, path, hashlib.sha256(raw).hexdigest())
         return self._ledger
 
@@ -188,18 +221,27 @@ class AccessPointService:
 
     # -- features --------------------------------------------------------
 
-    def _geometry(self, loaded: _Loaded, feature: Feature) -> tuple[Mapping[str, Any] | None, str, bool]:
+    def _geometry(
+        self, loaded: _Loaded, feature: Feature
+    ) -> tuple[Mapping[str, Any] | None, str, bool]:
         """Display geometry, its basis, and whether it is modelled."""
 
         registry = loaded.registry
         if feature.geometry_id is not None:
             derived = registry.geometries[feature.geometry_id]
-            return derived.geometry, GeometryBasis.DERIVED_FROM_RASTER.value, derived.modeled
+            return (
+                derived.geometry,
+                GeometryBasis.DERIVED_FROM_RASTER.value,
+                derived.modeled,
+            )
         for oid in feature.observation_ids:
             observation = registry.observations[oid]
             if observation.geometry is not None:
                 return observation.geometry, observation.geometry_basis.value, False
-        bases = {registry.observations[o].geometry_basis.value for o in feature.observation_ids}
+        bases = {
+            registry.observations[o].geometry_basis.value
+            for o in feature.observation_ids
+        }
         return None, sorted(bases)[0] if bases else GeometryBasis.NONE.value, False
 
     def _properties(self, loaded: _Loaded, feature: Feature) -> dict[str, Any]:
@@ -211,7 +253,9 @@ class AccessPointService:
         for oid in feature.observation_ids:
             observation = registry.observations[oid]
             if observation.horizontal_uncertainty_m is not None:
-                uncertainty = max(uncertainty or 0.0, observation.horizontal_uncertainty_m)
+                uncertainty = max(
+                    uncertainty or 0.0, observation.horizontal_uncertainty_m
+                )
             if observation.locality_label:
                 localities.append(observation.locality_label)
         return {
@@ -227,7 +271,9 @@ class AccessPointService:
             "geometry_basis": basis,
             "geometry_is_modeled": modeled,
             "horizontal_uncertainty_m": uncertainty,
-            "horizontal_uncertainty_state": "STATED" if uncertainty is not None else "UNKNOWN",
+            "horizontal_uncertainty_state": (
+                "STATED" if uncertainty is not None else "UNKNOWN"
+            ),
             "locality_labels": localities,
             "provisional_labels": list(feature.provisional_labels),
             "raw_names": list(feature.raw_names),
@@ -253,9 +299,15 @@ class AccessPointService:
             except RegistryUnavailable as exc:
                 entry.update({"available": False, "reason": str(exc)})
             else:
-                entry.update({"available": True, "provenance": self._provenance(loaded)})
+                entry.update(
+                    {"available": True, "provenance": self._provenance(loaded)}
+                )
             items.append(entry)
-        return {"service_version": SERVICE_VERSION, "registries": items, "scope": self._scope()}
+        return {
+            "service_version": SERVICE_VERSION,
+            "registries": items,
+            "scope": self._scope(),
+        }
 
     def feature_collection(
         self,
@@ -361,7 +413,9 @@ class AccessPointService:
                     "adjudicated_by": assertion.adjudicated_by,
                     "source_ids": list(assertion.source_ids),
                     "connectivity_kind": (
-                        None if assertion.connectivity_kind is None else assertion.connectivity_kind.value
+                        None
+                        if assertion.connectivity_kind is None
+                        else assertion.connectivity_kind.value
                     ),
                     "valid_from": assertion.valid_from,
                     "valid_to": assertion.valid_to,
@@ -404,7 +458,9 @@ class AccessPointService:
         for sid in sorted(sources):
             source = sources[sid]
             bucket = by_provider.setdefault(source.provider, {})
-            bucket[source.provenance_state.value] = bucket.get(source.provenance_state.value, 0) + 1
+            bucket[source.provenance_state.value] = (
+                bucket.get(source.provenance_state.value, 0) + 1
+            )
             rows.append(
                 {
                     "source_id": sid,
@@ -413,7 +469,9 @@ class AccessPointService:
                     "native_identifier": source.native_identifier,
                     "provenance_state": source.provenance_state.value,
                     "product_stage": source.product_stage.value,
-                    "sensor_type": None if source.sensor_type is None else source.sensor_type.value,
+                    "sensor_type": (
+                        None if source.sensor_type is None else source.sensor_type.value
+                    ),
                     "coverage_state": source.coverage_state.value,
                     "is_direct_measurement": source.is_direct_measurement,
                     "survey_date": source.survey_date,
@@ -425,8 +483,12 @@ class AccessPointService:
             )
         return {
             "sources": rows,
-            "by_provider": {k: dict(sorted(v.items())) for k, v in sorted(by_provider.items())},
-            "direct_measurement_sources": sum(1 for r in rows if r["is_direct_measurement"]),
+            "by_provider": {
+                k: dict(sorted(v.items())) for k, v in sorted(by_provider.items())
+            },
+            "direct_measurement_sources": sum(
+                1 for r in rows if r["is_direct_measurement"]
+            ),
             "note": "a listed source is a reference; inventory coverage is not a measurement",
             "provenance": self._provenance(loaded),
             "scope": self._scope(),
@@ -481,7 +543,13 @@ class AccessPointService:
         return {
             "relationships": rows,
             "number_returned": len(rows),
-            "render_classes": ["verified", "context", "hypothesized", "contradicted", "unresolved"],
+            "render_classes": [
+                "verified",
+                "context",
+                "hypothesized",
+                "contradicted",
+                "unresolved",
+            ],
             "provenance": {
                 "path": self._display(path),
                 "sha256": digest,
@@ -506,13 +574,21 @@ class AccessPointService:
                 {
                     "state": p.state.value,
                     "may_render_as_verified": p.may_render_as_verified,
-                    "connectivity_kind": None if p.connectivity_kind is None else p.connectivity_kind.value,
+                    "connectivity_kind": (
+                        None
+                        if p.connectivity_kind is None
+                        else p.connectivity_kind.value
+                    ),
                     "relationship_ids": list(p.relationship_ids),
                     "unverified_relationship_ids": list(p.unverified_relationship_ids),
                 }
                 for p in assessments
             ],
-            "provenance": {"path": self._display(path), "sha256": digest, "exists": True},
+            "provenance": {
+                "path": self._display(path),
+                "sha256": digest,
+                "exists": True,
+            },
             "scope": self._scope(),
         }
 
@@ -528,6 +604,7 @@ def control_cross_section() -> dict[str, Any]:
     """
 
     import numpy as np
+
     from gebco.marine_evidence import VerticalReference
 
     from .controls import CONTROLS_VERSION, add_gaussian_basin, tilted_plane
@@ -536,23 +613,36 @@ def control_cross_section() -> dict[str, Any]:
 
     crs = "EPSG:32620"
     land_values = add_gaussian_basin(
-        tilted_plane(60, 200, base_m=1.0, slope_x=0.04, slope_y=0.0), 30.0, 120.0,
-        depth_m=4.0, sigma_cells=10.0,
+        tilted_plane(60, 200, base_m=1.0, slope_x=0.04, slope_y=0.0),
+        30.0,
+        120.0,
+        depth_m=4.0,
+        sigma_cells=10.0,
     )
     land = make_grid(
-        land_values, cell_size_m=(5.0, 5.0), origin=(1000.0, 300.0), crs=crs,
+        land_values,
+        cell_size_m=(5.0, 5.0),
+        origin=(1000.0, 300.0),
+        crs=crs,
         kind=SurfaceKind.TERRAIN_BARE_EARTH,
         vertical_reference=VerticalReference(crs, None, "PRVD02", None, "up"),
-        uncertainty_m=0.15, source_id=None,
+        uncertainty_m=0.15,
+        source_id=None,
     )
     depth = np.tile(np.linspace(18.0, 2.0, 160), (60, 1))
     sea = make_grid(
-        depth, cell_size_m=(5.0, 5.0), origin=(100.0, 300.0), crs=crs,
+        depth,
+        cell_size_m=(5.0, 5.0),
+        origin=(100.0, 300.0),
+        crs=crs,
         kind=SurfaceKind.BATHYMETRY,
         vertical_reference=VerticalReference(crs, None, None, "MLLW", "down"),
-        uncertainty_m=0.4, source_id=None,
+        uncertainty_m=0.4,
+        source_id=None,
     )
-    section = build_cross_section([land, sea], [(120.0, 150.0), (1900.0, 150.0)], spacing_m=20.0)
+    section = build_cross_section(
+        [land, sea], [(120.0, 150.0), (1900.0, 150.0)], spacing_m=20.0
+    )
     document = cross_section_to_dict(section, truth_kind="SYNTHETIC_CONTROL")
     document["controls_version"] = CONTROLS_VERSION
     document["statement"] = (

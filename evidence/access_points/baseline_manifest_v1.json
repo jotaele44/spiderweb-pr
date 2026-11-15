@@ -1,0 +1,153 @@
+{
+  "schema": "access_point_baseline_manifest/1.0",
+  "generated_utc": "2026-11-15T14:00:00Z",
+  "claim_class": "FACT",
+  "statement": "State of the five repositories and of the spiderweb-pr test suites before any change was made. Recorded on 2026-11-14 from the working copies; every head equalled its origin/main.",
+  "repositories": [
+    {
+      "repo": "spiderweb-pr",
+      "head_sha": "cb5aa8eb726ba882b410bcfe0a402799af86ed5a",
+      "tree_sha": "2cc93ed0fec2c47700ab9c29f5e560cd9955a466",
+      "tracked_files": 1306,
+      "equals_origin_main": true,
+      "lockfile_sha256_prefix": "aa7b9ec848dc65f4"
+    },
+    {
+      "repo": "aguayluz-pr",
+      "head_sha": "e29bfbc55df5e9ea1724fd77837f0ee064ca6d31",
+      "tree_sha": "a1c8e9a2e1a9da828c954d8345b2868a6974b1e6",
+      "tracked_files": 2407,
+      "equals_origin_main": true,
+      "lockfile_sha256_prefix": "74946dec4082c8a3"
+    },
+    {
+      "repo": "thehub-pr",
+      "head_sha": "70b74c7e71a6f380a45fd374332e60eef174e9b8",
+      "tree_sha": "5884b50efd72dee7425bfcd53b1a75e0c8118632",
+      "tracked_files": 1822,
+      "equals_origin_main": true,
+      "lockfile_sha256_prefix": "431960a5a6e67fd2"
+    },
+    {
+      "repo": "skywatcher-pr",
+      "head_sha": "0c0b5c8b075e64797777cdaa5d6518ca7823aaf5",
+      "tree_sha": "8dd837d4fdf678ff3ef343aa69c2f77c45dfd90a",
+      "tracked_files": 1432,
+      "equals_origin_main": true,
+      "lockfile_sha256_prefix": "62177d5ef9c10bf3"
+    },
+    {
+      "repo": "moneysweep-pr",
+      "head_sha": "08e1bb2ee7e92c786ba7eb60397fe10703f2ce53",
+      "tree_sha": "8256d5abb8fa49ebca177d11e6729220edf410e4",
+      "tracked_files": 2623,
+      "equals_origin_main": true,
+      "lockfile_sha256_prefix": "cd013460e181d920"
+    }
+  ],
+  "environment": {
+    "python": "3.12.3",
+    "installed_packages_total": 82,
+    "dependency_versions": {
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "pandas": "3.0.5",
+      "xarray": "2026.7.0",
+      "netcdf4": "1.7.4",
+      "shapely": "2.1.2",
+      "scikit-image": "0.26.0",
+      "rasterio": "1.5.2",
+      "duckdb": "1.5.6",
+      "fastapi": "0.163.0",
+      "starlette": "1.10.0",
+      "pydantic": "2.14.3",
+      "jsonschema": "4.26.0",
+      "pyyaml": "6.0.3",
+      "pytest": "9.1.1",
+      "httpx": "0.28.1",
+      "matplotlib": "3.11.1",
+      "pyarrow": "26.0.1"
+    },
+    "frontend": "node 22.23.4; 299 packages from package-lock.json"
+  },
+  "baseline_tests": {
+    "core_python_suite": {
+      "command": "python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py",
+      "passed": 2109,
+      "skipped": 52,
+      "failed": 0,
+      "deselected": 4,
+      "seconds": 52.4
+    },
+    "bathymetry_grid_suite": {
+      "command": "python -m pytest tests/test_io.py tests/test_terrain.py",
+      "passed": 50,
+      "failed": 0
+    },
+    "frontend": {
+      "unit_tests_passed": 148,
+      "test_files": 20,
+      "typecheck": "PASS",
+      "lint": "PASS"
+    },
+    "skip_reasons": {
+      "no local service (connection refused)": 14,
+      "playwright not installed": 6,
+      "chromadb not installed": 6,
+      "geopandas not installed": 5,
+      "optional geospatial dependency": 4,
+      "torch not installed": 3,
+      "pyproj not installed": 2,
+      "operator-local data absent": 5,
+      "frontend not built": 1,
+      "fastmcp not installed": 1
+    }
+  },
+  "schemas": {
+    "schema_files_at_baseline": 83,
+    "schema_files_after": 86
+  },
+  "frozen_inputs": [
+    {
+      "path": "configs/ilap_registry.yaml",
+      "sha256": "71991b9f2c66b07902963c77fc264751a6d07be4b1b068a272f5a356072ffd21",
+      "version": "ilap_registry_v0_1",
+      "nodes": 103,
+      "nodes_with_coordinates": 75,
+      "geometry_type": "point (lat/lon)",
+      "crs_declared": null,
+      "vertical_reference": null,
+      "note": "coordinate reference system is not declared in the file"
+    },
+    {
+      "path": "evidence/marine/guayama_punta_tuna_v0_1/source_denominator_receipt.json",
+      "sha256": "ea05431e7a351535bdf04a53f115a0c7dd4083384bba1f7f778d5962fab28290",
+      "counts": {
+        "ncei_multibeam_surveys": 13,
+        "ncei_sounding_surveys": 29,
+        "nos_bag_surveys": 1,
+        "usiei_topobathy_features": 4,
+        "usiei_bathymetric_features": 0,
+        "usiei_other_bathymetric_features": 0
+      },
+      "bounded_aoi_wgs84": [
+        -66.2,
+        17.5,
+        -65.8,
+        18.05
+      ],
+      "vertical_datums_published_by_inventory": [
+        "Not Provided",
+        "User Specified"
+      ]
+    }
+  ],
+  "known_contradictions": [
+    "ILAP carries eight meanings in this repository and a ninth in skywatcher-pr",
+    "Guayama v0.5: vertical datum equivalence UNRESOLVED_CONTRADICTION; depth subtraction BLOCKED",
+    "a gridded survey receipt reports negative values under a positive-down depth label",
+    "three registries of the same coastal elevation products use different datum vocabularies",
+    "skywatcher-pr and this repository disagree on the canonical expansion of ILAP"
+  ],
+  "rollback_state": "origin/main at cb5aa8eb726ba882b410bcfe0a402799af86ed5a; the change is additive and confined to one branch of spiderweb-pr"
+}

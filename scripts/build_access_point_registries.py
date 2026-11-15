@@ -20,12 +20,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from spiderweb.access_points.seeding import REGISTRY_DIR, build_all, write_documents  # noqa: E402
+from spiderweb.access_points.seeding import (  # noqa: E402
+    REGISTRY_DIR,
+    build_all,
+    write_documents,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--check", action="store_true", help="verify committed documents are current")
+    parser.add_argument(
+        "--check", action="store_true", help="verify committed documents are current"
+    )
     args = parser.parse_args(argv)
 
     result = build_all(REPO_ROOT)

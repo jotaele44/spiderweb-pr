@@ -60,7 +60,9 @@ class Correspondence:
             raise ValueError("statement is required")
 
 
-def identity_semantics(correspondence: Correspondence, *, producer_identity: str) -> str:
+def identity_semantics(
+    correspondence: Correspondence, *, producer_identity: str
+) -> str:
     """``IDENTITY_BINDING`` only with authoritative basis and independent acceptance."""
 
     bases = {b.strip().lower() for b in correspondence.basis}
@@ -108,7 +110,9 @@ def group_correspondences(
         raise ValueError("duplicate record in a universe")
     if left_set & right_set:
         raise ValueError("a record cannot be on both sides of a correspondence")
-    parent: dict[TypedRef, TypedRef] = {ref: ref for ref in list(left_universe) + list(right_universe)}
+    parent: dict[TypedRef, TypedRef] = {
+        ref: ref for ref in list(left_universe) + list(right_universe)
+    }
 
     def find(node: TypedRef) -> TypedRef:
         while parent[node] != node:
@@ -121,7 +125,9 @@ def group_correspondences(
         if a in right_set and b in left_set:
             a, b = b, a
         if a not in left_set or b not in right_set:
-            raise ValueError(f"correspondence {a} ~ {b} references a record outside the universes")
+            raise ValueError(
+                f"correspondence {a} ~ {b} references a record outside the universes"
+            )
         parent[find(a)] = find(b)
 
     members: dict[TypedRef, list[TypedRef]] = {}
@@ -132,12 +138,11 @@ def group_correspondences(
         refs = members[root]
         lefts = tuple(sorted((r for r in refs if r in left_set), key=str))
         rights = tuple(sorted((r for r in refs if r in right_set), key=str))
-        involved = tuple(
-            l for l in links if find(l.left) == root
-        )
+        involved = tuple(link for link in links if find(link.left) == root)
         unsettled = any(
-            l.adjudication in {AdjudicationStatus.UNRESOLVED, AdjudicationStatus.CONTRADICTED}
-            for l in involved
+            link.adjudication
+            in {AdjudicationStatus.UNRESOLVED, AdjudicationStatus.CONTRADICTED}
+            for link in involved
         )
         if unsettled:
             cardinality = Cardinality.UNRESOLVED

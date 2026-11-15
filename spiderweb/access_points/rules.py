@@ -41,20 +41,38 @@ from .vocabulary import (
 RULES_VERSION = "access-point-evidence-rules/1.0"
 
 # Dimensions that shape (terrain / bathymetric morphology) can speak to.
-_SHAPE_DIMENSIONS = frozenset({EvidenceDimension.EXISTENCE, EvidenceDimension.MORPHOLOGY})
+_SHAPE_DIMENSIONS = frozenset(
+    {EvidenceDimension.EXISTENCE, EvidenceDimension.MORPHOLOGY}
+)
 
-_SPECULATIVE_CLAIMS = frozenset({ClaimClass.HYPOTHESIS, ClaimClass.ASSUMPTION, ClaimClass.UNKNOWN})
+_SPECULATIVE_CLAIMS = frozenset(
+    {ClaimClass.HYPOTHESIS, ClaimClass.ASSUMPTION, ClaimClass.UNKNOWN}
+)
 
 # What each rung needs, in order.
-_RUNG_REQUIREMENTS: tuple[tuple[AssertionRung, EvidenceDimension, frozenset[EvidenceTier]], ...] = (
+_RUNG_REQUIREMENTS: tuple[
+    tuple[AssertionRung, EvidenceDimension, frozenset[EvidenceTier]], ...
+] = (
     (
         AssertionRung.FEATURE,
         EvidenceDimension.EXISTENCE,
         frozenset({EvidenceTier.SUPPORTING, EvidenceTier.DIRECT}),
     ),
-    (AssertionRung.OPENING, EvidenceDimension.PHYSICAL_OPENING, frozenset({EvidenceTier.DIRECT})),
-    (AssertionRung.PASSAGE, EvidenceDimension.ACCESSIBILITY, frozenset({EvidenceTier.DIRECT})),
-    (AssertionRung.CONNECTION, EvidenceDimension.CONNECTIVITY, frozenset({EvidenceTier.DIRECT})),
+    (
+        AssertionRung.OPENING,
+        EvidenceDimension.PHYSICAL_OPENING,
+        frozenset({EvidenceTier.DIRECT}),
+    ),
+    (
+        AssertionRung.PASSAGE,
+        EvidenceDimension.ACCESSIBILITY,
+        frozenset({EvidenceTier.DIRECT}),
+    ),
+    (
+        AssertionRung.CONNECTION,
+        EvidenceDimension.CONNECTIVITY,
+        frozenset({EvidenceTier.DIRECT}),
+    ),
 )
 
 
@@ -106,7 +124,11 @@ def effective_tier(
         tier = _cap(tier, EvidenceTier.CANDIDATE)
     if bases & DISCOVERY_ONLY_BASES:
         tier = _cap(tier, EvidenceTier.CANDIDATE)
-    if bases and bases <= MORPHOLOGY_ONLY_BASES and assertion.dimension not in _SHAPE_DIMENSIONS:
+    if (
+        bases
+        and bases <= MORPHOLOGY_ONLY_BASES
+        and assertion.dimension not in _SHAPE_DIMENSIONS
+    ):
         tier = _cap(tier, EvidenceTier.CANDIDATE)
     if assertion.claim_class in _SPECULATIVE_CLAIMS:
         tier = _cap(tier, EvidenceTier.CANDIDATE)
@@ -204,7 +226,8 @@ def promotion_blockers(
             a
             for a in feature.assertions
             if a.dimension is dimension
-            and effective_tier(a, sources) in {EvidenceTier.SUPPORTING, EvidenceTier.DIRECT}
+            and effective_tier(a, sources)
+            in {EvidenceTier.SUPPORTING, EvidenceTier.DIRECT}
         ]
         if not carrying:
             continue  # already reported through the rung
@@ -223,7 +246,10 @@ def promotion_blockers(
         for assertion in carrying:
             for sid in assertion.source_ids:
                 source = sources.get(sid)
-                if source is None or source.provenance_state is not ProvenanceState.REGISTERED:
+                if (
+                    source is None
+                    or source.provenance_state is not ProvenanceState.REGISTERED
+                ):
                     blockers.append(
                         f"{dimension.value} cites source {sid} whose exact bytes are not registered"
                     )
@@ -254,7 +280,8 @@ def permitted_status(
         if observation is not None:
             cited.add(observation.source_id)
     backed = any(
-        sid in sources and sources[sid].provenance_state is not ProvenanceState.UNREGISTERED
+        sid in sources
+        and sources[sid].provenance_state is not ProvenanceState.UNREGISTERED
         for sid in cited
     )
     if not backed:

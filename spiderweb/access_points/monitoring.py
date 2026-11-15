@@ -110,7 +110,9 @@ def _row_hash(row: DiscoveredRow) -> str:
     return canonical_json_sha256(
         {
             "title": row.title,
-            "attributes": {str(k): row.attributes[k] for k in sorted(row.attributes, key=str)},
+            "attributes": {
+                str(k): row.attributes[k] for k in sorted(row.attributes, key=str)
+            },
             "metadata_uri": row.metadata_uri,
             "data_access_uri": row.data_access_uri,
             "surveyed": row.surveyed,
@@ -124,8 +126,12 @@ def _retrieved(run: ProviderRun) -> str | None:
 
 
 def _event(
-    run: ProviderRun, row: DiscoveredRow, change: SourceChange, discovered_utc: str,
-    previous: str | None, current: str | None,
+    run: ProviderRun,
+    row: DiscoveredRow,
+    change: SourceChange,
+    discovered_utc: str,
+    previous: str | None,
+    current: str | None,
 ) -> ChangeEvent:
     return ChangeEvent(
         provider_id=run.provider_id,
@@ -151,21 +157,35 @@ def compare_provider(
 ) -> ProviderComparison:
     if current.state is RunState.FAIL:
         return ProviderComparison(
-            current.provider_id, ProviderChange.SOURCE_UNAVAILABLE, (),
+            current.provider_id,
+            ProviderChange.SOURCE_UNAVAILABLE,
+            (),
             f"current run failed ({current.error}); no conclusion about its sources",
         )
     if current.state not in _RAN:
         return ProviderComparison(
-            current.provider_id, ProviderChange.NOT_COMPARABLE, (), "current run did not execute"
+            current.provider_id,
+            ProviderChange.NOT_COMPARABLE,
+            (),
+            "current run did not execute",
         )
     now = {row.native_identifier: row for row in current.rows}
     if previous is None or previous.state not in _RAN:
         events = tuple(
-            _event(current, row, SourceChange.NEW_SOURCE, discovered_utc, None, _row_hash(row))
+            _event(
+                current,
+                row,
+                SourceChange.NEW_SOURCE,
+                discovered_utc,
+                None,
+                _row_hash(row),
+            )
             for row in sorted(now.values(), key=lambda r: r.native_identifier)
         )
         return ProviderComparison(
-            current.provider_id, ProviderChange.FIRST_OBSERVATION, events,
+            current.provider_id,
+            ProviderChange.FIRST_OBSERVATION,
+            events,
             "no comparable earlier run; every source is new to this registry",
         )
     before = {row.native_identifier: row for row in previous.rows}
@@ -173,10 +193,26 @@ def compare_provider(
     for native in sorted(set(before) | set(now)):
         old, new = before.get(native), now.get(native)
         if old is None and new is not None:
-            events.append(_event(current, new, SourceChange.NEW_SOURCE, discovered_utc, None, _row_hash(new)))
+            events.append(
+                _event(
+                    current,
+                    new,
+                    SourceChange.NEW_SOURCE,
+                    discovered_utc,
+                    None,
+                    _row_hash(new),
+                )
+            )
         elif new is None and old is not None:
             events.append(
-                _event(current, old, SourceChange.WITHDRAWN_SOURCE, discovered_utc, _row_hash(old), None)
+                _event(
+                    current,
+                    old,
+                    SourceChange.WITHDRAWN_SOURCE,
+                    discovered_utc,
+                    _row_hash(old),
+                    None,
+                )
             )
         elif old is not None and new is not None:
             a, b = _row_hash(old), _row_hash(new)
@@ -205,9 +241,13 @@ def compare_receipts(
             raise ValueError("receipts belong to different registries")
         if previous.bbox != current.bbox:
             raise ValueError("receipts cover different boxes and cannot be compared")
-    earlier = {run.provider_id: run for run in previous.runs} if previous is not None else {}
+    earlier = (
+        {run.provider_id: run for run in previous.runs} if previous is not None else {}
+    )
     return [
-        compare_provider(earlier.get(run.provider_id), run, discovered_utc=current.discovered_utc)
+        compare_provider(
+            earlier.get(run.provider_id), run, discovered_utc=current.discovered_utc
+        )
         for run in sorted(current.runs, key=lambda r: r.provider_id)
     ]
 
@@ -215,10 +255,16 @@ def compare_receipts(
 def _relation(envelope: BoundingBox | None, lon: float, lat: float) -> SpatialRelation:
     if envelope is None:
         return SpatialRelation.NULL_EMPTY
-    inside = envelope.min_lon <= lon <= envelope.max_lon and envelope.min_lat <= lat <= envelope.max_lat
+    inside = (
+        envelope.min_lon <= lon <= envelope.max_lon
+        and envelope.min_lat <= lat <= envelope.max_lat
+    )
     if not inside:
         return SpatialRelation.OUTSIDE
-    on_edge = lon in (envelope.min_lon, envelope.max_lon) or lat in (envelope.min_lat, envelope.max_lat)
+    on_edge = lon in (envelope.min_lon, envelope.max_lon) or lat in (
+        envelope.min_lat,
+        envelope.max_lat,
+    )
     return SpatialRelation.TOUCH_ONLY if on_edge else SpatialRelation.FULLY_WITHIN
 
 
@@ -241,7 +287,10 @@ def review_flags(
             for feature_id in sorted(feature_points):
                 lon, lat = feature_points[feature_id]
                 relation = _relation(event.envelope, lon, lat)
-                if relation not in {SpatialRelation.FULLY_WITHIN, SpatialRelation.TOUCH_ONLY}:
+                if relation not in {
+                    SpatialRelation.FULLY_WITHIN,
+                    SpatialRelation.TOUCH_ONLY,
+                }:
                     continue
                 flags.append(
                     ReviewFlag(
@@ -260,7 +309,10 @@ def review_flags(
 
 
 def change_report(
-    comparisons: Sequence[ProviderComparison], flags: Sequence[ReviewFlag], *, discovered_utc: str
+    comparisons: Sequence[ProviderComparison],
+    flags: Sequence[ReviewFlag],
+    *,
+    discovered_utc: str,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
         "schema": "access_point_source_change_report/1.0",
@@ -271,8 +323,14 @@ def change_report(
                 "provider_id": c.provider_id,
                 "state": c.state.value,
                 "detail": c.detail,
-                "events": [e.to_dict() for e in c.events if e.change is not SourceChange.UNCHANGED],
-                "unchanged_count": sum(1 for e in c.events if e.change is SourceChange.UNCHANGED),
+                "events": [
+                    e.to_dict()
+                    for e in c.events
+                    if e.change is not SourceChange.UNCHANGED
+                ],
+                "unchanged_count": sum(
+                    1 for e in c.events if e.change is SourceChange.UNCHANGED
+                ),
             }
             for c in comparisons
         ],

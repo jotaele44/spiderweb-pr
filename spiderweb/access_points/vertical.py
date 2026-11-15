@@ -71,8 +71,8 @@ class DatumKind(StrEnum):
 
 
 class VerticalDatum(StrEnum):
-    PRVD02 = "PRVD02"                      # Puerto Rico Vertical Datum of 2002
-    VIVD09 = "VIVD09"                      # Virgin Islands Vertical Datum of 2009
+    PRVD02 = "PRVD02"  # Puerto Rico Vertical Datum of 2002
+    VIVD09 = "VIVD09"  # Virgin Islands Vertical Datum of 2009
     NAVD88 = "NAVD88"
     MLLW = "MLLW"
     MLW = "MLW"
@@ -233,7 +233,11 @@ def bind(reference: VerticalReference | None) -> BoundVertical:
         raise UnknownVerticalDatumError("no vertical reference was supplied")
     stated = [
         value
-        for value in (reference.vertical_datum, reference.tidal_datum, reference.vertical_crs)
+        for value in (
+            reference.vertical_datum,
+            reference.tidal_datum,
+            reference.vertical_crs,
+        )
         if not is_placeholder(value)
     ]
     if not stated:
@@ -263,7 +267,9 @@ def bind(reference: VerticalReference | None) -> BoundVertical:
     )
 
 
-def elevation_up_m(value_m: float, reference: VerticalReference | BoundVertical) -> float:
+def elevation_up_m(
+    value_m: float, reference: VerticalReference | BoundVertical
+) -> float:
     """Express a value as elevation, positive up, *on its own datum*.
 
     This changes the sign convention only.  It does not move the value to
@@ -301,7 +307,9 @@ class CertifiedTransform:
         if not math.isfinite(self.offset_m):
             raise ValueError("offset_m must be finite")
         if DatumKind.ASSUMED in {DATUM_KIND[self.source], DATUM_KIND[self.target]}:
-            raise ValueError("an assumed datum cannot be an end of a certified transform")
+            raise ValueError(
+                "an assumed datum cannot be an end of a certified transform"
+            )
         if self.uncertainty_m is not None and (
             not math.isfinite(self.uncertainty_m) or self.uncertainty_m < 0
         ):
@@ -319,7 +327,9 @@ class CertifiedTransform:
         w, s, e, n = self.valid_bbox
         return w <= lon <= e and s <= lat <= n
 
-    def as_depth_transform(self, source: BoundVertical, target: BoundVertical) -> DepthTransform:
+    def as_depth_transform(
+        self, source: BoundVertical, target: BoundVertical
+    ) -> DepthTransform:
         """Express this offset for :func:`gebco.marine_evidence.compare_depths`."""
 
         if source.datum is not self.source or target.datum is not self.target:
@@ -343,7 +353,9 @@ def _find(
     lat: float | None,
 ) -> CertifiedTransform | None:
     matches = [
-        t for t in transforms if t.source is source and t.target is target and t.covers(lon, lat)
+        t
+        for t in transforms
+        if t.source is source and t.target is target and t.covers(lon, lat)
     ]
     if len(matches) > 1:
         raise VerticalCompatibilityError(
@@ -451,7 +463,10 @@ def decide_join(
         )
     if land_bound.datum is sea_bound.datum:
         return JoinDecision(
-            JoinState.SAME_REFERENCE, land_bound.datum, None, "both surfaces state the same datum"
+            JoinState.SAME_REFERENCE,
+            land_bound.datum,
+            None,
+            "both surfaces state the same datum",
         )
     transform = _find(sea_bound.datum, land_bound.datum, transforms, lon, lat)
     if transform is not None:

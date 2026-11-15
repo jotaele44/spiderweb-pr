@@ -52,7 +52,9 @@ class SurfaceProfile:
     def covered_fraction(self) -> float:
         if not self.samples:
             return 0.0
-        return sum(1 for s in self.samples if s.elevation_m is not None) / len(self.samples)
+        return sum(1 for s in self.samples if s.elevation_m is not None) / len(
+            self.samples
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,14 +144,22 @@ def sample_profile(
                     sigma = float(unc[row, col])
                 if grid.interpolated is not None:
                     interp = bool(grid.interpolated[row, col])
-        samples.append(TransectSample(float(distance), (float(x), float(y)), value, sigma, interp))
-    return SurfaceProfile(grid.source_id, grid.kind.value, grid.vertical.datum, tuple(samples))
+        samples.append(
+            TransectSample(float(distance), (float(x), float(y)), value, sigma, interp)
+        )
+    return SurfaceProfile(
+        grid.source_id, grid.kind.value, grid.vertical.datum, tuple(samples)
+    )
 
 
-def _gaps(distances: Sequence[float], profiles: Sequence[SurfaceProfile]) -> tuple[Gap, ...]:
+def _gaps(
+    distances: Sequence[float], profiles: Sequence[SurfaceProfile]
+) -> tuple[Gap, ...]:
     covered = np.zeros(len(distances), dtype=bool)
     for profile in profiles:
-        covered |= np.array([s.elevation_m is not None for s in profile.samples], dtype=bool)
+        covered |= np.array(
+            [s.elevation_m is not None for s in profile.samples], dtype=bool
+        )
     gaps: list[Gap] = []
     start: int | None = None
     for i, ok in enumerate(covered):
@@ -196,7 +206,9 @@ def build_cross_section(
             surfaces[0].cell_size_m[0] / surfaces[0].cell_size_crs[0],
             rel_tol=1e-6,
         ):
-            raise GridMismatchError("surfaces disagree about the ground size of a CRS unit")
+            raise GridMismatchError(
+                "surfaces disagree about the ground size of a CRS unit"
+            )
     distances, points, length = _stations(surfaces[0], line_xy, spacing_m)
     profiles = tuple(sample_profile(grid, distances, points) for grid in surfaces)
 
@@ -230,10 +242,18 @@ def build_cross_section(
                 TransectSample(
                     s.distance_m,
                     s.xy,
-                    None if s.elevation_m is None else s.elevation_m + transform.offset_m,
-                    None
-                    if s.elevation_m is None
-                    else combined_uncertainty_m(s.uncertainty_m, transform.uncertainty_m),
+                    (
+                        None
+                        if s.elevation_m is None
+                        else s.elevation_m + transform.offset_m
+                    ),
+                    (
+                        None
+                        if s.elevation_m is None
+                        else combined_uncertainty_m(
+                            s.uncertainty_m, transform.uncertainty_m
+                        )
+                    ),
                     s.interpolated,
                 )
                 for s in profiles[1].samples
@@ -241,7 +261,9 @@ def build_cross_section(
             assert common_datum is not None
             common = (
                 profiles[0],
-                SurfaceProfile(profiles[1].source_id, profiles[1].kind, common_datum, moved),
+                SurfaceProfile(
+                    profiles[1].source_id, profiles[1].kind, common_datum, moved
+                ),
             )
     elif len({p.datum for p in profiles}) == 1:
         common_datum = profiles[0].datum
@@ -290,19 +312,28 @@ def cross_section_to_dict(section: CrossSection, *, truth_kind: str) -> dict:
         "length_m": section.length_m,
         "is_continuous": section.is_continuous,
         "gaps": [
-            {"start_m": g.start_m, "end_m": g.end_m, "length_m": g.length_m} for g in section.gaps
+            {"start_m": g.start_m, "end_m": g.end_m, "length_m": g.length_m}
+            for g in section.gaps
         ],
         "profiles": [profile(p) for p in section.profiles],
-        "join": None
-        if section.join is None
-        else {
-            "state": section.join.state.value,
-            "common_datum": None if section.join.common_datum is None else section.join.common_datum.value,
-            "authority": section.join.authority,
-            "reason": section.join.reason,
-            "may_difference": section.join.may_difference,
-        },
-        "common_datum": None if section.common_datum is None else section.common_datum.value,
+        "join": (
+            None
+            if section.join is None
+            else {
+                "state": section.join.state.value,
+                "common_datum": (
+                    None
+                    if section.join.common_datum is None
+                    else section.join.common_datum.value
+                ),
+                "authority": section.join.authority,
+                "reason": section.join.reason,
+                "may_difference": section.join.may_difference,
+            }
+        ),
+        "common_datum": (
+            None if section.common_datum is None else section.common_datum.value
+        ),
         "common_profiles": [profile(p) for p in section.common_profiles],
         "vertical_axis": "elevation in metres, positive up, each profile on its own datum",
     }

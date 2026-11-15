@@ -10,6 +10,24 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Inland and Off-Shore Access Point registries.** A new package,
+  `spiderweb/access_points/`, holds two independent registries of candidate
+  geographic features on one shared evidence foundation. Each record states,
+  separately for existence, morphology, origin, physical opening,
+  accessibility, function, connectivity and temporal validity, how well the
+  claim is supported; the code keeps "anomaly", "feature", "opening", "passage"
+  and "connection" apart and has no automatic promotion. Includes a
+  vertical-datum contract, shared terrain and bathymetry processing with
+  closed-basin delineation, typed relationships with path verification,
+  cross-coastal transects, default-deny metadata discovery, and a read-only
+  reader for other producers' exported packages. Read-only API under
+  `GET /v1/access-points/*` (`server/backend/access_points_api.py`) and an
+  Access points group on the Spatial map. The registries hold 5 candidate
+  records crosswalked from the legacy node registry and 5 provisional
+  off-shore records that carry no coordinates. Nothing is exported to the hub.
+  The acronyms ILAP and OSAP already mean other things here and are not used
+  as identifiers; see `docs/ACCESS_POINT_TERMINOLOGY_DECISION.md`. Start at
+  `docs/ACCESS_POINT_REGISTRIES.md`.
 - **NOAA aerial imagery on the Spatial map.** The backend renders map tiles and
   image footprints from NOAA's public Emergency Response Imagery bucket
   (`noaa-eri-pds`) for 15 Puerto Rico / USVI flights — 2022 and 2024 pre-event
@@ -38,6 +56,16 @@ GitHub Release using the matching section below (T6-53).
   layered on later. `linkage_group_id` is a consolidation-only output column
   (`CONSOLIDATED_COLUMNS`); the per-source harvester `CANONICAL_COLUMNS` contract
   is untouched.
+
+### Fixed
+- **Vertical-datum and evidence gates no longer accept placeholders.** In
+  `gebco/marine_evidence.py`, a datum field holding "Not Provided", "User
+  Specified" or similar no longer counts as a stated vertical reference, so
+  two surveys that share only such a label can no longer be compared as if on
+  one datum; and a direct observation with no acquisition root no longer ranks
+  above one whose root is known. In
+  `source_adapters/ncei_coastal_dem/datum_policy.py`, a selection whose datum
+  is `source_dependent` now requires review instead of passing as "same datum".
 
 ### Changed
 - **NWI wetlands layer made servable:** `ingest_reference_geo.py` now, by default,

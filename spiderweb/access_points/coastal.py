@@ -45,7 +45,9 @@ class CoastlineVersion:
         if self.land is None or self.land.is_empty:
             raise ValueError("a coastline version needs a land geometry")
         if not self.land.is_valid:
-            raise ValueError("land geometry is invalid; repair it at the source, not here")
+            raise ValueError(
+                "land geometry is invalid; repair it at the source, not here"
+            )
 
 
 class CoastalSide(StrEnum):
@@ -113,7 +115,9 @@ class CoastalAssessment:
         return _REGISTRY[next(iter(self.sides))]
 
 
-def classify(geometry: BaseGeometry | None, coastline: CoastlineVersion, *, crs: str) -> CoastalRelation:
+def classify(
+    geometry: BaseGeometry | None, coastline: CoastlineVersion, *, crs: str
+) -> CoastalRelation:
     if crs != coastline.crs:
         raise ValueError(
             f"geometry is in {crs} but the coastline is in {coastline.crs}; "

@@ -101,7 +101,9 @@ def load_package(
     """Verify and load an exported federation package directory."""
 
     base = Path(directory)
-    if not allow_fixture and _FIXTURE_PATH_PARTS & {part.lower() for part in base.parts}:
+    if not allow_fixture and _FIXTURE_PATH_PARTS & {
+        part.lower() for part in base.parts
+    }:
         raise PackageIntegrityError(
             f"{base} is a fixture or sample location and cannot be used as evidence"
         )
@@ -124,13 +126,18 @@ def load_package(
     try:
         major = int(version.split(".")[0])
     except ValueError:
-        raise PackageIntegrityError(f"unreadable export_contract_version {version!r}") from None
+        raise PackageIntegrityError(
+            f"unreadable export_contract_version {version!r}"
+        ) from None
     if major != SUPPORTED_CONTRACT_MAJOR:
         raise PackageIntegrityError(
             f"export_contract_version {version} is not supported (major {SUPPORTED_CONTRACT_MAJOR})"
         )
     federation = manifest.get("federation")
-    if not isinstance(federation, Mapping) or federation.get("hub_parent") != EXPECTED_HUB_PARENT:
+    if (
+        not isinstance(federation, Mapping)
+        or federation.get("hub_parent") != EXPECTED_HUB_PARENT
+    ):
         raise PackageIntegrityError(
             "package is not a hub-canonical export (federation.hub_parent is not thehub-pr)"
         )
@@ -193,16 +200,16 @@ def load_package(
 
 
 class ContextClass(StrEnum):
-    MONITORING_SITE = "MONITORING_SITE"            # a gauge, well or sampling location
+    MONITORING_SITE = "MONITORING_SITE"  # a gauge, well or sampling location
     INFRASTRUCTURE_ASSET = "INFRASTRUCTURE_ASSET"  # a plant, reservoir, pumping station
-    DOCUMENTARY = "DOCUMENTARY"                    # a contract, award, project, property
+    DOCUMENTARY = "DOCUMENTARY"  # a contract, award, project, property
     OTHER = "OTHER"
 
 
 class CoordinateBasis(StrEnum):
-    PRODUCER_POINT = "PRODUCER_POINT"                      # producer-published lat/lon
+    PRODUCER_POINT = "PRODUCER_POINT"  # producer-published lat/lon
     VERIFIED_SOURCE_COORDINATE = "VERIFIED_SOURCE_COORDINATE"
-    MUNICIPALITY_LABEL_ONLY = "MUNICIPALITY_LABEL_ONLY"    # a name; never a point
+    MUNICIPALITY_LABEL_ONLY = "MUNICIPALITY_LABEL_ONLY"  # a name; never a point
     NONE = "NONE"
 
 
@@ -232,7 +239,12 @@ class ContextRecord:
 
 
 _AGUAYLUZ_MONITORING = frozenset(
-    {"groundwater_well", "stream_gage", "tide_gauge", "water_quality_monitoring_location"}
+    {
+        "groundwater_well",
+        "stream_gage",
+        "tide_gauge",
+        "water_quality_monitoring_location",
+    }
 )
 _AGUAYLUZ_ASSETS = frozenset({"wastewater_treatment", "reservoir", "pumping_station"})
 _MONEYSWEEP_DOCUMENTARY = frozenset({"project", "property", "contract"})
@@ -269,7 +281,9 @@ def aguayluz_context(package: VerifiedPackage) -> list[ContextRecord]:
     for row in package.rows("entities"):
         if row.get("entity_type") != "utility_asset":
             continue
-        attributes = row.get("attributes") if isinstance(row.get("attributes"), Mapping) else {}
+        attributes = (
+            row.get("attributes") if isinstance(row.get("attributes"), Mapping) else {}
+        )
         subtype = attributes.get("asset_subtype")
         if subtype in _AGUAYLUZ_MONITORING:
             context_class = ContextClass.MONITORING_SITE
@@ -285,7 +299,9 @@ def aguayluz_context(package: VerifiedPackage) -> list[ContextRecord]:
                 record_kind=str(subtype),
                 name=row.get("name"),
                 context_class=context_class,
-                coordinate_basis=CoordinateBasis.PRODUCER_POINT if point else CoordinateBasis.NONE,
+                coordinate_basis=(
+                    CoordinateBasis.PRODUCER_POINT if point else CoordinateBasis.NONE
+                ),
                 lon_lat=point,
                 municipality=_municipality(row.get("location")),
                 evidence_tier_raw=attributes.get("evidence_tier"),
@@ -316,10 +332,15 @@ def moneysweep_context(package: VerifiedPackage) -> list[ContextRecord]:
         kind = row.get("entity_type")
         if kind not in _MONEYSWEEP_DOCUMENTARY:
             continue
-        attributes = row.get("attributes") if isinstance(row.get("attributes"), Mapping) else {}
+        attributes = (
+            row.get("attributes") if isinstance(row.get("attributes"), Mapping) else {}
+        )
         point = None
         basis = CoordinateBasis.NONE
-        if attributes.get("grid_v2_coordinate_evidence_state") == _VERIFIED_COORDINATE_STATE:
+        if (
+            attributes.get("grid_v2_coordinate_evidence_state")
+            == _VERIFIED_COORDINATE_STATE
+        ):
             point = _point(row.get("location"))
             if point is not None:
                 basis = CoordinateBasis.VERIFIED_SOURCE_COORDINATE
@@ -419,7 +440,11 @@ def context_assertion(record: ContextRecord, statement: str) -> EvidenceAssertio
     CONNECTIVITY assertion from context.
     """
 
-    basis = "funding_record" if record.record_kind in {"funding_award", "transaction"} else "contract_record"
+    basis = (
+        "funding_record"
+        if record.record_kind in {"funding_award", "transaction"}
+        else "contract_record"
+    )
     return EvidenceAssertion(
         dimension=EvidenceDimension.FUNCTION,
         tier=EvidenceTier.CANDIDATE,

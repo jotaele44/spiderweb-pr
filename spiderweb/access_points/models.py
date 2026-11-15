@@ -24,7 +24,12 @@ from enum import Enum
 from typing import Any, Mapping
 
 from federation.spatial_core import canonical_json_sha256, validate_lon_lat
-from gebco.marine_evidence import CoverageState, ProductStage, SensorType, VerticalReference
+from gebco.marine_evidence import (
+    CoverageState,
+    ProductStage,
+    SensorType,
+    VerticalReference,
+)
 
 from .namespaces import (
     Namespace,
@@ -123,7 +128,9 @@ def validate_geometry(geometry: Mapping[str, Any]) -> None:
         if (
             isinstance(node, (list, tuple))
             and len(node) >= 2
-            and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in node)
+            and all(
+                isinstance(v, (int, float)) and not isinstance(v, bool) for v in node
+            )
         ):
             validate_lon_lat(node[0], node[1])
             if len(node) > 3:
@@ -181,16 +188,22 @@ class SourceManifestation(_Record):
         _require_tuple(self.parent_source_ids, "parent_source_ids")
         if self.source_id in self.parent_source_ids:
             raise ValueError("a source cannot be its own parent")
-        if self.manifestation_sha256 is not None and not _SHA256_RE.match(self.manifestation_sha256):
+        if self.manifestation_sha256 is not None and not _SHA256_RE.match(
+            self.manifestation_sha256
+        ):
             raise ValueError("manifestation_sha256 must be 64 lowercase hex characters")
         if self.provenance_state is ProvenanceState.REGISTERED:
             if not self.manifestation_sha256:
-                raise ValueError("a REGISTERED source needs the SHA-256 of its exact bytes")
+                raise ValueError(
+                    "a REGISTERED source needs the SHA-256 of its exact bytes"
+                )
             _require_text(self.retrieved_utc, "retrieved_utc")
         if self.provenance_state is ProvenanceState.REFERENCED_ONLY and not (
             self.native_identifier or self.source_uri
         ):
-            raise ValueError("a REFERENCED_ONLY source needs a stable identifier or URI")
+            raise ValueError(
+                "a REFERENCED_ONLY source needs a stable identifier or URI"
+            )
 
     @property
     def is_direct_measurement(self) -> bool:
@@ -236,7 +249,9 @@ class Observation(_Record):
     def __post_init__(self) -> None:
         require_registry_namespace(self.namespace)
         if not is_observation_id(self.observation_id, self.namespace):
-            raise ValueError("observation_id does not belong to this registry namespace")
+            raise ValueError(
+                "observation_id does not belong to this registry namespace"
+            )
         if not is_source_id(self.source_id):
             raise ValueError("source_id must be an APSRC identifier")
         _require_text(self.native_record_id, "native_record_id")
@@ -247,8 +262,13 @@ class Observation(_Record):
                     "an observation without geometry must say so: geometry_basis "
                     "LOCALITY_LABEL_ONLY or NONE"
                 )
-            if self.horizontal_crs is not None or self.horizontal_uncertainty_m is not None:
-                raise ValueError("CRS and horizontal uncertainty are meaningless without geometry")
+            if (
+                self.horizontal_crs is not None
+                or self.horizontal_uncertainty_m is not None
+            ):
+                raise ValueError(
+                    "CRS and horizontal uncertainty are meaningless without geometry"
+                )
         else:
             if self.geometry_basis in no_geometry_bases:
                 raise ValueError(
@@ -313,10 +333,19 @@ class EvidenceAssertion(_Record):
                     "a CONNECTIVITY assertion must name which kind of connection it means"
                 )
         elif self.connectivity_kind is not None:
-            raise ValueError("connectivity_kind is only valid on the CONNECTIVITY dimension")
-        if self.origin is not None and self.dimension is not EvidenceDimension.NATURAL_OR_ARTIFICIAL_ORIGIN:
-            raise ValueError("origin is only valid on the NATURAL_OR_ARTIFICIAL_ORIGIN dimension")
-        if self.claim_class is ClaimClass.COMPUTED and not (self.method and self.method_version):
+            raise ValueError(
+                "connectivity_kind is only valid on the CONNECTIVITY dimension"
+            )
+        if (
+            self.origin is not None
+            and self.dimension is not EvidenceDimension.NATURAL_OR_ARTIFICIAL_ORIGIN
+        ):
+            raise ValueError(
+                "origin is only valid on the NATURAL_OR_ARTIFICIAL_ORIGIN dimension"
+            )
+        if self.claim_class is ClaimClass.COMPUTED and not (
+            self.method and self.method_version
+        ):
             raise ValueError("a COMPUTED claim must name its method and version")
         decided = {AdjudicationStatus.ACCEPTED, AdjudicationStatus.REJECTED}
         if self.adjudication in decided:
@@ -344,11 +373,15 @@ class DerivedGeometry(_Record):
             raise ValueError("geometry_id must be an APGEO identifier")
         _require_tuple(self.observation_ids, "observation_ids")
         if not self.observation_ids:
-            raise ValueError("a derived geometry must cite the observations it came from")
+            raise ValueError(
+                "a derived geometry must cite the observations it came from"
+            )
         _require_text(self.method, "method")
         _require_text(self.method_version, "method_version")
         validate_geometry(self.geometry)
-        if self.geometry_logical_sha256 != canonical_json_sha256(_jsonable(self.geometry)):
+        if self.geometry_logical_sha256 != canonical_json_sha256(
+            _jsonable(self.geometry)
+        ):
             raise ValueError("geometry_logical_sha256 does not match the geometry")
 
 
@@ -379,7 +412,13 @@ class Feature(_Record):
             raise ValueError(
                 f"{self.feature_class!r} is not a feature class of {self.namespace.value}"
             )
-        for name in ("observation_ids", "assertions", "provisional_labels", "raw_names", "supersedes"):
+        for name in (
+            "observation_ids",
+            "assertions",
+            "provisional_labels",
+            "raw_names",
+            "supersedes",
+        ):
             _require_tuple(getattr(self, name), name)
         for obs in self.observation_ids:
             if not is_observation_id(obs, self.namespace):
@@ -392,7 +431,9 @@ class Feature(_Record):
             raise ValueError("geometry_id must be an APGEO identifier")
         for prior in self.supersedes:
             if not is_feature_id(prior, self.namespace):
-                raise ValueError("supersedes must reference features of the same registry")
+                raise ValueError(
+                    "supersedes must reference features of the same registry"
+                )
         if self.feature_id in self.supersedes:
             raise ValueError("a feature cannot supersede itself")
 
@@ -432,7 +473,9 @@ class Relationship(_Record):
             raise ValueError("source_ids must be APSRC identifiers")
         if any(not is_relationship_id(r) for r in self.contradicts):
             raise ValueError("contradicts must reference relationship ids")
-        if self.distance_m is not None and (not math.isfinite(self.distance_m) or self.distance_m < 0):
+        if self.distance_m is not None and (
+            not math.isfinite(self.distance_m) or self.distance_m < 0
+        ):
             raise ValueError("distance_m must be a finite non-negative number")
         decided = {AdjudicationStatus.ACCEPTED, AdjudicationStatus.REJECTED}
         if self.adjudication in decided:

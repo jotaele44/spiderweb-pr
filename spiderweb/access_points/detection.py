@@ -68,7 +68,9 @@ class DetectionFlag(StrEnum):
     ADJOINS_EDGE = "ADJOINS_EDGE"
 
 
-ARTIFACT_FLAGS = frozenset({DetectionFlag.SEAM_OVERLAP, DetectionFlag.MOSTLY_INTERPOLATED})
+ARTIFACT_FLAGS = frozenset(
+    {DetectionFlag.SEAM_OVERLAP, DetectionFlag.MOSTLY_INTERPOLATED}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,7 +126,9 @@ class Detection:
         return bool(set(self.flags) & ARTIFACT_FLAGS)
 
 
-def _flags(region: DepressionRegion, on_seam: bool, params: DetectionParameters) -> tuple[DetectionFlag, ...]:
+def _flags(
+    region: DepressionRegion, on_seam: bool, params: DetectionParameters
+) -> tuple[DetectionFlag, ...]:
     flags: list[DetectionFlag] = []
     if on_seam:
         flags.append(DetectionFlag.SEAM_OVERLAP)
@@ -157,10 +161,18 @@ def _shape_tier(flags: Sequence[DetectionFlag]) -> EvidenceTier:
 def discovery_score(region: DepressionRegion, flags: Sequence[DetectionFlag]) -> float:
     """Review-priority score in [0, 100].  Ranking only, never evidence."""
 
-    significance = 0.0 if region.significance is None else min(region.significance / 10.0, 1.0)
+    significance = (
+        0.0 if region.significance is None else min(region.significance / 10.0, 1.0)
+    )
     relief = min(region.depth_to_diameter / 0.3, 1.0)
-    wall = 0.0 if region.mean_wall_slope_deg is None else min(region.mean_wall_slope_deg / 35.0, 1.0)
-    score = 35.0 * significance + 25.0 * relief + 15.0 * region.circularity + 10.0 * wall
+    wall = (
+        0.0
+        if region.mean_wall_slope_deg is None
+        else min(region.mean_wall_slope_deg / 35.0, 1.0)
+    )
+    score = (
+        35.0 * significance + 25.0 * relief + 15.0 * region.circularity + 10.0 * wall
+    )
     score += 15.0 if not (region.adjoins_edge or region.adjoins_nodata) else 0.0
     if DetectionFlag.SEAM_OVERLAP in flags:
         score *= 0.25
@@ -323,7 +335,9 @@ def detect_inland(
                 f"closed basin, circularity {region.circularity:.2f}, "
                 f"depth/diameter {region.depth_to_diameter:.3f}"
             )
-        assertions = _shape_assertions(source, tier, _SHAPE_BASIS, region, shape) + extra
+        assertions = (
+            _shape_assertions(source, tier, _SHAPE_BASIS, region, shape) + extra
+        )
         detections.append(
             Detection(
                 namespace=Namespace.ACCESS_POINT_INLAND,
@@ -398,7 +412,9 @@ def detect_offshore(
                 crs=grid.crs,
                 discovery_score=discovery_score(region, flags),
                 flags=flags,
-                assertions=tuple(_shape_assertions(source, tier, _SEABED_BASIS, region, shape)),
+                assertions=tuple(
+                    _shape_assertions(source, tier, _SEABED_BASIS, region, shape)
+                ),
                 method=DETECTION_METHOD,
                 method_version=DETECTION_VERSION,
                 measurements=_measurements(region),
@@ -420,7 +436,9 @@ def detect_escarpments(
     if grid.kind not in {SurfaceKind.BATHYMETRY, SurfaceKind.TOPOBATHYMETRY}:
         raise ValueError("escarpment detection needs a measured bathymetric surface")
     if not 0 < min_slope_deg < 90 or min_length_m <= 0:
-        raise ValueError("min_slope_deg must be within (0, 90) and min_length_m positive")
+        raise ValueError(
+            "min_slope_deg must be within (0, 90) and min_length_m positive"
+        )
     slope = slope_degrees(grid)
     steep = np.where(np.isfinite(slope), slope >= min_slope_deg, False)
     labels = measure.label(steep, connectivity=2)
@@ -471,13 +489,22 @@ def detect_escarpments(
             Detection(
                 namespace=Namespace.ACCESS_POINT_OFFSHORE,
                 proposed_class=(
-                    OffshoreFeatureClass.SURVEY_ARTIFACT if seam_hit else OffshoreFeatureClass.ESCARPMENT
+                    OffshoreFeatureClass.SURVEY_ARTIFACT
+                    if seam_hit
+                    else OffshoreFeatureClass.ESCARPMENT
                 ).value,
                 native_record_id=f"{ESCARPMENT_METHOD}@{centre[0]:.6f},{centre[1]:.6f}",
                 region=None,
                 centroid_xy=centre,
                 crs=grid.crs,
-                discovery_score=round(min(100.0, 40.0 * min(relief / 50.0, 1.0) + 30.0 * min(float(np.mean(band)) / 45.0, 1.0)), 2),
+                discovery_score=round(
+                    min(
+                        100.0,
+                        40.0 * min(relief / 50.0, 1.0)
+                        + 30.0 * min(float(np.mean(band)) / 45.0, 1.0),
+                    ),
+                    2,
+                ),
                 flags=flags,
                 assertions=assertions,
                 method=ESCARPMENT_METHOD,
@@ -501,8 +528,8 @@ class TruthKind(StrEnum):
 
 class EvaluationState(StrEnum):
     SOFTWARE_CONTROL = "SOFTWARE_CONTROL"  # synthetic surfaces: verifies code only
-    EXPLORATORY = "EXPLORATORY"            # no independent truth: no accuracy claim
-    MEASURED = "MEASURED"                  # scored against independent field truth
+    EXPLORATORY = "EXPLORATORY"  # no independent truth: no accuracy claim
+    MEASURED = "MEASURED"  # scored against independent field truth
 
 
 @dataclass(frozen=True, slots=True)
@@ -583,7 +610,8 @@ def evaluate(
             if class_sensitive and detection.proposed_class != label.feature_class:
                 continue
             dist = math.hypot(
-                detection.centroid_xy[0] - label.xy[0], detection.centroid_xy[1] - label.xy[1]
+                detection.centroid_xy[0] - label.xy[0],
+                detection.centroid_xy[1] - label.xy[1],
             )
             if dist <= label.match_radius:
                 pairs.append((dist, i, j))
@@ -598,26 +626,43 @@ def evaluate(
         used_l.add(j)
         matched.append((detections[i].native_record_id, labels[j].label_id))
 
-    classes = sorted({d.proposed_class for d in detections} | {l.feature_class for l in labels})
+    classes = sorted(
+        {d.proposed_class for d in detections}
+        | {label.feature_class for label in labels}
+    )
     scores = []
     for name in classes:
-        tp = sum(1 for i in used_d if detections[i].proposed_class == name) if class_sensitive else 0
+        tp = (
+            sum(1 for i in used_d if detections[i].proposed_class == name)
+            if class_sensitive
+            else 0
+        )
         if not class_sensitive:
             tp = sum(1 for j in used_l if labels[j].feature_class == name)
         fp = sum(
-            1 for i, d in enumerate(detections) if d.proposed_class == name and i not in used_d
+            1
+            for i, d in enumerate(detections)
+            if d.proposed_class == name and i not in used_d
         )
-        fn = sum(1 for j, l in enumerate(labels) if l.feature_class == name and j not in used_l)
+        fn = sum(
+            1
+            for j, label in enumerate(labels)
+            if label.feature_class == name and j not in used_l
+        )
         scores.append(ClassScore(name, tp, fp, fn))
     synthetic = kinds == {TruthKind.SYNTHETIC_CONTROL}
     return EvaluationReport(
-        state=EvaluationState.SOFTWARE_CONTROL if synthetic else EvaluationState.MEASURED,
+        state=(
+            EvaluationState.SOFTWARE_CONTROL if synthetic else EvaluationState.MEASURED
+        ),
         scores=tuple(scores),
         matched=tuple(matched),
         unmatched_detections=tuple(
             d.native_record_id for i, d in enumerate(detections) if i not in used_d
         ),
-        unmatched_labels=tuple(l.label_id for j, l in enumerate(labels) if j not in used_l),
+        unmatched_labels=tuple(
+            label.label_id for j, label in enumerate(labels) if j not in used_l
+        ),
         statement=(
             "scored against synthetic controls: verifies the software, not field accuracy"
             if synthetic

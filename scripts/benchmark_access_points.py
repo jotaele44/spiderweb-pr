@@ -26,8 +26,13 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import numpy as np  # noqa: E402
-from gebco.marine_evidence import CoverageState, ProductStage, SensorType, VerticalReference  # noqa: E402
 
+from gebco.marine_evidence import (  # noqa: E402
+    CoverageState,
+    ProductStage,
+    SensorType,
+    VerticalReference,
+)
 from spiderweb.access_points import controls, detection, raster  # noqa: E402
 from spiderweb.access_points.models import (  # noqa: E402
     HORIZONTAL_INTERCHANGE_CRS,
@@ -35,7 +40,11 @@ from spiderweb.access_points.models import (  # noqa: E402
     Observation,
     SourceManifestation,
 )
-from spiderweb.access_points.namespaces import Namespace, observation_id, source_id  # noqa: E402
+from spiderweb.access_points.namespaces import (  # noqa: E402
+    Namespace,
+    observation_id,
+    source_id,
+)
 from spiderweb.access_points.registry import AccessPointRegistry  # noqa: E402
 from spiderweb.access_points.seeding import build_all, write_documents  # noqa: E402
 from spiderweb.access_points.service import AccessPointService  # noqa: E402
@@ -82,10 +91,17 @@ def _land(n: int) -> raster.SurfaceGrid:
     step = max(n // 12, 40)
     for r in range(step, n - step, step):
         for c in range(step, n - step, step):
-            surface = controls.add_gaussian_basin(
-                surface, float(r), float(c), depth_m=float(rng.uniform(2, 9)),
-                sigma_cells=float(rng.uniform(5, 11)),
-            ) if n <= 1024 else surface
+            surface = (
+                controls.add_gaussian_basin(
+                    surface,
+                    float(r),
+                    float(c),
+                    depth_m=float(rng.uniform(2, 9)),
+                    sigma_cells=float(rng.uniform(5, 11)),
+                )
+                if n <= 1024
+                else surface
+            )
     if n > 1024:
         # Large grids: stamp basins into windows instead of full-grid Gaussians.
         yy, xx = np.mgrid[-40:41, -40:41].astype(np.float64)
@@ -95,10 +111,16 @@ def _land(n: int) -> raster.SurfaceGrid:
                 surface[r - 40 : r + 41, c - 40 : c + 41] -= rng.uniform(2, 9) * bowl
     surface = controls.add_noise(surface, sigma_m=0.03, seed=9)
     return raster.make_grid(
-        surface, cell_size_m=(1.0, 1.0), origin=(200000.0, 2000000.0 + n), crs="EPSG:32619",
+        surface,
+        cell_size_m=(1.0, 1.0),
+        origin=(200000.0, 2000000.0 + n),
+        crs="EPSG:32619",
         kind=raster.SurfaceKind.TERRAIN_BARE_EARTH,
-        vertical_reference=VerticalReference("EPSG:32619", "EPSG:6641", None, None, "up"),
-        uncertainty_m=0.1, expect="emergent",
+        vertical_reference=VerticalReference(
+            "EPSG:32619", "EPSG:6641", None, None, "up"
+        ),
+        uncertainty_m=0.1,
+        expect="emergent",
     )
 
 
@@ -127,7 +149,9 @@ def bench_processing(sizes: list[int]) -> list[dict[str, Any]]:
         cells = n * n
         fill = measure(lambda: raster.fill_depressions(grid))
         regions = measure(
-            lambda: raster.delineate_depressions(grid, min_depth_m=1.0, min_area_m2=40.0)
+            lambda: raster.delineate_depressions(
+                grid, min_depth_m=1.0, min_area_m2=40.0
+            )
         )
         detect = measure(lambda: detection.detect_inland(grid, source, params))
         seams = measure(lambda: raster.detect_seams(grid))
@@ -143,7 +167,10 @@ def bench_processing(sizes: list[int]) -> list[dict[str, Any]]:
                     "regions_found": len(regions["_result"]),
                     "cells_per_second": round(cells / regions["best_s"]),
                 },
-                "detect_inland": {**_strip(detect), "detections": len(detect["_result"])},
+                "detect_inland": {
+                    **_strip(detect),
+                    "detections": len(detect["_result"]),
+                },
                 "detect_seams": _strip(seams),
                 "slope_degrees": _strip(slope),
             }
@@ -157,7 +184,10 @@ def bench_tiling(n: int) -> dict[str, Any]:
     whole = measure(lambda: raster.position_index(grid, radius), repeats=2)
     tiled = measure(
         lambda: raster.apply_tiled(
-            grid, lambda sub: raster.position_index(sub, radius), tile=512, halo=radius + 1
+            grid,
+            lambda sub: raster.position_index(sub, radius),
+            tile=512,
+            halo=radius + 1,
         ),
         repeats=2,
     )
@@ -175,7 +205,9 @@ def bench_tiling(n: int) -> dict[str, Any]:
 
 
 def _synthetic_registry(count: int) -> AccessPointRegistry:
-    registry = AccessPointRegistry(Namespace.ACCESS_POINT_INLAND, producer_identity="benchmark")
+    registry = AccessPointRegistry(
+        Namespace.ACCESS_POINT_INLAND, producer_identity="benchmark"
+    )
     source = _source("bench-registry")
     registry.add_source(source)
     rng = np.random.default_rng(3)
@@ -183,7 +215,9 @@ def _synthetic_registry(count: int) -> AccessPointRegistry:
     lats = rng.uniform(17.9, 18.5, count)
     for i in range(count):
         observation = Observation(
-            observation_id=observation_id(registry.namespace, source.source_id, f"cell-{i}"),
+            observation_id=observation_id(
+                registry.namespace, source.source_id, f"cell-{i}"
+            ),
             namespace=registry.namespace,
             source_id=source.source_id,
             native_record_id=f"cell-{i}",
@@ -223,18 +257,28 @@ def bench_service(count: int) -> dict[str, Any]:
         registry = ingest["_result"]
         save = measure(lambda: registry.save(registry_dir / "inland.json"), repeats=2)
         size_mb = (registry_dir / "inland.json").stat().st_size / 1e6
-        load = measure(lambda: AccessPointRegistry.load(registry_dir / "inland.json"), repeats=2)
+        load = measure(
+            lambda: AccessPointRegistry.load(registry_dir / "inland.json"), repeats=2
+        )
 
         service = AccessPointService(root)
-        service.feature_collection("inland", limit=1)  # warm: verified once, then cached
-        samples: dict[str, list[float]] = {"page_100": [], "bbox_100": [], "evidence": []}
+        service.feature_collection(
+            "inland", limit=1
+        )  # warm: verified once, then cached
+        samples: dict[str, list[float]] = {
+            "page_100": [],
+            "bbox_100": [],
+            "evidence": [],
+        }
         first = service.feature_collection("inland", limit=1)["features"][0]["id"]
         for _ in range(30):
             t = time.perf_counter()
             service.feature_collection("inland", limit=100)
             samples["page_100"].append(time.perf_counter() - t)
             t = time.perf_counter()
-            service.feature_collection("inland", bbox=(-66.6, 18.1, -66.2, 18.3), limit=100)
+            service.feature_collection(
+                "inland", bbox=(-66.6, 18.1, -66.2, 18.3), limit=100
+            )
             samples["bbox_100"].append(time.perf_counter() - t)
             t = time.perf_counter()
             service.evidence("inland", first)
@@ -258,7 +302,9 @@ def bench_service(count: int) -> dict[str, Any]:
             "document_size_mb": round(size_mb, 2),
             "save_document": _strip(save),
             "load_and_verify_document": _strip(load),
-            "query_latency_in_process": {name: latency(v) for name, v in samples.items()},
+            "query_latency_in_process": {
+                name: latency(v) for name, v in samples.items()
+            },
             "note": (
                 "in-process service calls; HTTP serialisation and network are not included. "
                 "Queries scan all features: no spatial index is used at this size."
@@ -301,7 +347,9 @@ def main(argv: list[str] | None = None) -> int:
         "registry_and_service": bench_service(args.registry_features),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.output.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(json.dumps(report, indent=1)[:6000])
     return 0
 

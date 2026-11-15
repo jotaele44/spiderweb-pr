@@ -23,11 +23,10 @@ from gebco.marine_evidence import (
     classify_feature_evidence,
     compare_depths,
 )
-from spiderweb.access_points import coastal, controls, detection
+from spiderweb.access_points import coastal, controls, detection, rules, transects
 from spiderweb.access_points import models as m
 from spiderweb.access_points import namespaces as ns
 from spiderweb.access_points import raster as R
-from spiderweb.access_points import rules, transects
 from spiderweb.access_points import vertical as V
 from spiderweb.access_points import vocabulary as v
 from tests import access_points_support as sup
@@ -35,24 +34,49 @@ from tests import access_points_support as sup
 CRS = "EPSG:32620"
 PRVD = VerticalReference(CRS, None, "PRVD02", None, "up")
 MLLW_DOWN = VerticalReference(CRS, None, None, "MLLW", "down")
-PLACEHOLDERS = ["", "Unknown", "unknown", "Not Provided", "User Specified", "N/A", "n/a",
-                "source_dependent", "Source Dependent", "None", "TBD", "various", None]
+PLACEHOLDERS = [
+    "",
+    "Unknown",
+    "unknown",
+    "Not Provided",
+    "User Specified",
+    "N/A",
+    "n/a",
+    "source_dependent",
+    "Source Dependent",
+    "None",
+    "TBD",
+    "various",
+    None,
+]
 
 
 def land(values, **kw):
     kw.setdefault("uncertainty_m", 0.1)
-    return R.make_grid(values, cell_size_m=(1.0, 1.0), origin=(0.0, float(values.shape[0])), crs=CRS,
-                       kind=kw.pop("kind", R.SurfaceKind.TERRAIN_BARE_EARTH),
-                       vertical_reference=kw.pop("vertical_reference", PRVD), **kw)
+    return R.make_grid(
+        values,
+        cell_size_m=(1.0, 1.0),
+        origin=(0.0, float(values.shape[0])),
+        crs=CRS,
+        kind=kw.pop("kind", R.SurfaceKind.TERRAIN_BARE_EARTH),
+        vertical_reference=kw.pop("vertical_reference", PRVD),
+        **kw,
+    )
 
 
 def sea(elevation_up, **kw):
     """Build a bathymetric grid from elevations (positive up) published as depth."""
 
     kw.setdefault("uncertainty_m", 0.3)
-    return R.make_grid(-elevation_up, cell_size_m=(2.0, 2.0),
-                       origin=(0.0, 2.0 * elevation_up.shape[0]), crs=CRS,
-                       kind=R.SurfaceKind.BATHYMETRY, vertical_reference=MLLW_DOWN, **kw)
+    return R.make_grid(
+        -elevation_up,
+        cell_size_m=(2.0, 2.0),
+        origin=(0.0, 2.0 * elevation_up.shape[0]),
+        crs=CRS,
+        kind=R.SurfaceKind.BATHYMETRY,
+        vertical_reference=MLLW_DOWN,
+        **kw,
+    )
 
 
 # ── Vertical datum contract ──────────────────────────────────────────────────
@@ -67,8 +91,14 @@ def test_placeholder_datum_fails_closed_everywhere(value):
     with pytest.raises(V.UnknownVerticalDatumError):
         V.bind(reference)
     with pytest.raises(V.UnknownVerticalDatumError):
-        R.make_grid(np.zeros((4, 4)), cell_size_m=(1, 1), origin=(0, 4), crs=CRS,
-                    kind=R.SurfaceKind.BATHYMETRY, vertical_reference=reference)
+        R.make_grid(
+            np.zeros((4, 4)),
+            cell_size_m=(1, 1),
+            origin=(0, 4),
+            crs=CRS,
+            kind=R.SurfaceKind.BATHYMETRY,
+            vertical_reference=reference,
+        )
     assert V.decide_join(PRVD, reference).state is V.JoinState.BLOCKED_UNKNOWN_DATUM
     assert not V.decide_join(PRVD, reference).may_difference
     with pytest.raises(V.UnknownVerticalDatumError):
@@ -77,11 +107,17 @@ def test_placeholder_datum_fails_closed_everywhere(value):
 
 @pytest.mark.parametrize(
     "spelling, datum",
-    [("PRVD02", V.VerticalDatum.PRVD02), ("Puerto Rico Vertical Datum of 2002", V.VerticalDatum.PRVD02),
-     ("MLLW", V.VerticalDatum.MLLW), ("Mean Lower Low Water", V.VerticalDatum.MLLW),
-     ("Mean High Water", V.VerticalDatum.MHW), ("EPSG:5866", V.VerticalDatum.MLLW),
-     ("EPSG:5715", V.VerticalDatum.MSL), ("EPSG:5703", V.VerticalDatum.NAVD88),
-     ("mean_sea_level_assumed", V.VerticalDatum.MSL_ASSUMED)],
+    [
+        ("PRVD02", V.VerticalDatum.PRVD02),
+        ("Puerto Rico Vertical Datum of 2002", V.VerticalDatum.PRVD02),
+        ("MLLW", V.VerticalDatum.MLLW),
+        ("Mean Lower Low Water", V.VerticalDatum.MLLW),
+        ("Mean High Water", V.VerticalDatum.MHW),
+        ("EPSG:5866", V.VerticalDatum.MLLW),
+        ("EPSG:5715", V.VerticalDatum.MSL),
+        ("EPSG:5703", V.VerticalDatum.NAVD88),
+        ("mean_sea_level_assumed", V.VerticalDatum.MSL_ASSUMED),
+    ],
 )
 def test_spellings_found_in_this_repository_resolve(spelling, datum):
     assert V.normalize_datum(spelling) is datum
@@ -99,7 +135,10 @@ def test_unrecognised_and_conflicting_references_fail_closed():
         V.bind(VerticalReference(CRS, "EPSG:5866", None, None, "up"))
     with pytest.raises(VerticalCompatibilityError):
         V.bind(VerticalReference(CRS, "EPSG:6641", None, None, "down"))
-    assert V.bind(VerticalReference(CRS, "EPSG:5866", None, "MLLW", "down")).datum is V.VerticalDatum.MLLW
+    assert (
+        V.bind(VerticalReference(CRS, "EPSG:5866", None, "MLLW", "down")).datum
+        is V.VerticalDatum.MLLW
+    )
 
 
 def test_sign_is_normalised_exactly_once():
@@ -116,10 +155,24 @@ def test_wrong_depth_sign_is_caught_not_analysed_upside_down():
     # normalisation the "seabed" would sit above the datum.
     negative_values_labelled_depth = np.full((20, 20), -500.0)
     with pytest.raises(R.SignConventionError):
-        R.make_grid(negative_values_labelled_depth, cell_size_m=(64, 64), origin=(0, 1280), crs=CRS,
-                    kind=R.SurfaceKind.BATHYMETRY, vertical_reference=MLLW_DOWN, expect="submerged")
-    ok = R.make_grid(-negative_values_labelled_depth, cell_size_m=(64, 64), origin=(0, 1280), crs=CRS,
-                     kind=R.SurfaceKind.BATHYMETRY, vertical_reference=MLLW_DOWN, expect="submerged")
+        R.make_grid(
+            negative_values_labelled_depth,
+            cell_size_m=(64, 64),
+            origin=(0, 1280),
+            crs=CRS,
+            kind=R.SurfaceKind.BATHYMETRY,
+            vertical_reference=MLLW_DOWN,
+            expect="submerged",
+        )
+    ok = R.make_grid(
+        -negative_values_labelled_depth,
+        cell_size_m=(64, 64),
+        origin=(0, 1280),
+        crs=CRS,
+        kind=R.SurfaceKind.BATHYMETRY,
+        vertical_reference=MLLW_DOWN,
+        expect="submerged",
+    )
     assert float(ok.values.max()) == -500.0
     with pytest.raises(R.SignConventionError):
         land(np.full((10, 10), -30.0), expect="emergent")
@@ -130,15 +183,30 @@ def test_wrong_depth_sign_is_caught_not_analysed_upside_down():
 def test_values_on_different_datums_need_a_certified_transform():
     with pytest.raises(VerticalCompatibilityError):
         V.to_common_elevation_m(8.0, MLLW_DOWN, V.VerticalDatum.PRVD02)
-    transform = V.CertifiedTransform(V.VerticalDatum.MLLW, V.VerticalDatum.PRVD02, -0.25,
-                                     "synthetic test authority", 0.04)
-    moved = V.to_common_elevation_m(8.0, MLLW_DOWN, V.VerticalDatum.PRVD02,
-                                    transforms=[transform], uncertainty_m=0.3)
+    transform = V.CertifiedTransform(
+        V.VerticalDatum.MLLW,
+        V.VerticalDatum.PRVD02,
+        -0.25,
+        "synthetic test authority",
+        0.04,
+    )
+    moved = V.to_common_elevation_m(
+        8.0,
+        MLLW_DOWN,
+        V.VerticalDatum.PRVD02,
+        transforms=[transform],
+        uncertainty_m=0.3,
+    )
     assert moved.elevation_m == pytest.approx(-8.25)
     assert moved.uncertainty_m == pytest.approx(math.hypot(0.3, 0.04))
     assert moved.transform_authority == "synthetic test authority"
-    unknown_part = V.to_common_elevation_m(8.0, MLLW_DOWN, V.VerticalDatum.PRVD02,
-                                           transforms=[transform], uncertainty_m=None)
+    unknown_part = V.to_common_elevation_m(
+        8.0,
+        MLLW_DOWN,
+        V.VerticalDatum.PRVD02,
+        transforms=[transform],
+        uncertainty_m=None,
+    )
     assert unknown_part.uncertainty_m is None  # unknown stays unknown, never 0
     assert V.combined_uncertainty_m(0.3, None) is None
     same = V.to_common_elevation_m(3.0, PRVD, V.VerticalDatum.PRVD02, uncertainty_m=0.1)
@@ -147,21 +215,41 @@ def test_values_on_different_datums_need_a_certified_transform():
 
 def test_transform_must_be_real_unambiguous_and_in_range():
     make = lambda **kw: V.CertifiedTransform(  # noqa: E731
-        **{"source": V.VerticalDatum.MLLW, "target": V.VerticalDatum.PRVD02, "offset_m": -0.2,
-           "authority": "synthetic test authority", **kw})
-    for bad in ({"authority": " "}, {"authority": "Unknown"}, {"target": V.VerticalDatum.MLLW},
-                {"offset_m": float("inf")}, {"uncertainty_m": -1.0},
-                {"target": V.VerticalDatum.MSL_ASSUMED}, {"valid_bbox": (1.0, 0.0, 0.0, 1.0)}):
+        **{
+            "source": V.VerticalDatum.MLLW,
+            "target": V.VerticalDatum.PRVD02,
+            "offset_m": -0.2,
+            "authority": "synthetic test authority",
+            **kw,
+        }
+    )
+    for bad in (
+        {"authority": " "},
+        {"authority": "Unknown"},
+        {"target": V.VerticalDatum.MLLW},
+        {"offset_m": float("inf")},
+        {"uncertainty_m": -1.0},
+        {"target": V.VerticalDatum.MSL_ASSUMED},
+        {"valid_bbox": (1.0, 0.0, 0.0, 1.0)},
+    ):
         with pytest.raises(ValueError):
             make(**bad)
     with pytest.raises(VerticalCompatibilityError, match="more than one"):
-        V.to_common_elevation_m(8.0, MLLW_DOWN, V.VerticalDatum.PRVD02, transforms=[make(), make(offset_m=-0.3)])
+        V.to_common_elevation_m(
+            8.0,
+            MLLW_DOWN,
+            V.VerticalDatum.PRVD02,
+            transforms=[make(), make(offset_m=-0.3)],
+        )
     local = make(valid_bbox=(-66.5, 17.8, -66.0, 18.2))
-    assert V.to_common_elevation_m(8.0, MLLW_DOWN, V.VerticalDatum.PRVD02, transforms=[local],
-                                   lon=-66.2, lat=18.0).elevation_m == pytest.approx(-8.2)
+    assert V.to_common_elevation_m(
+        8.0, MLLW_DOWN, V.VerticalDatum.PRVD02, transforms=[local], lon=-66.2, lat=18.0
+    ).elevation_m == pytest.approx(-8.2)
     for where in ({"lon": -65.0, "lat": 18.0}, {}):
         with pytest.raises(VerticalCompatibilityError):
-            V.to_common_elevation_m(8.0, MLLW_DOWN, V.VerticalDatum.PRVD02, transforms=[local], **where)
+            V.to_common_elevation_m(
+                8.0, MLLW_DOWN, V.VerticalDatum.PRVD02, transforms=[local], **where
+            )
     assumed = VerticalReference(CRS, None, "mean_sea_level_assumed", None, "up")
     with pytest.raises(VerticalCompatibilityError):
         V.to_common_elevation_m(-10.0, assumed, V.VerticalDatum.MSL_ASSUMED)
@@ -171,18 +259,27 @@ def test_transform_must_be_real_unambiguous_and_in_range():
 @pytest.mark.parametrize("src_sign", ["up", "down"])
 @pytest.mark.parametrize("dst_sign", ["up", "down"])
 def test_transform_agrees_with_the_existing_depth_comparison(src_sign, dst_sign):
-    transform = V.CertifiedTransform(V.VerticalDatum.MLLW, V.VerticalDatum.PRVD02, -0.25,
-                                     "synthetic test authority")
+    transform = V.CertifiedTransform(
+        V.VerticalDatum.MLLW, V.VerticalDatum.PRVD02, -0.25, "synthetic test authority"
+    )
     source = V.BoundVertical(V.VerticalDatum.MLLW, src_sign, CRS)
     target = V.BoundVertical(V.VerticalDatum.PRVD02, dst_sign, CRS)
     value_b = 8.0 if src_sign == "down" else -8.0  # eight metres below MLLW
     value_a = 8.25 if dst_sign == "down" else -8.25  # the same point on PRVD02
     obs = lambda oid, val, ref: MarineObservation(  # noqa: E731
-        oid, SensorType.MULTIBEAM_ECHOSOUNDER, ProductStage.PROCESSED_OBSERVATION, oid,
-        ref, CoverageState.DIRECTLY_OBSERVED, value_m=val)
+        oid,
+        SensorType.MULTIBEAM_ECHOSOUNDER,
+        ProductStage.PROCESSED_OBSERVATION,
+        oid,
+        ref,
+        CoverageState.DIRECTLY_OBSERVED,
+        value_m=val,
+    )
     comparison = compare_depths(
-        obs("a", value_a, target.to_reference()), obs("b", value_b, source.to_reference()),
-        transforms=[transform.as_depth_transform(source, target)])
+        obs("a", value_a, target.to_reference()),
+        obs("b", value_b, source.to_reference()),
+        transforms=[transform.as_depth_transform(source, target)],
+    )
     assert comparison.delta_b_minus_a_m == pytest.approx(0.0, abs=1e-12)
 
 
@@ -191,18 +288,41 @@ def test_transform_agrees_with_the_existing_depth_comparison(src_sign, dst_sign)
 
 def test_grid_requires_crs_datum_and_sane_shape():
     with pytest.raises(R.MissingCRSError):
-        R.make_grid(np.zeros((4, 4)), cell_size_m=(1, 1), origin=(0, 4), crs=None,
-                    kind=R.SurfaceKind.TERRAIN_BARE_EARTH, vertical_reference=PRVD)
+        R.make_grid(
+            np.zeros((4, 4)),
+            cell_size_m=(1, 1),
+            origin=(0, 4),
+            crs=None,
+            kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+            vertical_reference=PRVD,
+        )
     with pytest.raises(R.MissingCRSError):
-        R.make_grid(np.zeros((4, 4)), cell_size_m=(1, 1), origin=(0, 4), crs="  ",
-                    kind=R.SurfaceKind.TERRAIN_BARE_EARTH, vertical_reference=PRVD)
+        R.make_grid(
+            np.zeros((4, 4)),
+            cell_size_m=(1, 1),
+            origin=(0, 4),
+            crs="  ",
+            kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+            vertical_reference=PRVD,
+        )
     with pytest.raises(V.UnknownVerticalDatumError):
-        R.make_grid(np.zeros((4, 4)), cell_size_m=(1, 1), origin=(0, 4), crs=CRS,
-                    kind=R.SurfaceKind.TERRAIN_BARE_EARTH)
+        R.make_grid(
+            np.zeros((4, 4)),
+            cell_size_m=(1, 1),
+            origin=(0, 4),
+            crs=CRS,
+            kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+        )
     for bad in ({"cell_size_m": (0, 1)}, {"cell_size_m": (1, float("nan"))}):
         with pytest.raises(ValueError):
-            R.make_grid(np.zeros((4, 4)), origin=(0, 4), crs=CRS,
-                        kind=R.SurfaceKind.TERRAIN_BARE_EARTH, vertical_reference=PRVD, **bad)
+            R.make_grid(
+                np.zeros((4, 4)),
+                origin=(0, 4),
+                crs=CRS,
+                kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+                vertical_reference=PRVD,
+                **bad,
+            )
     with pytest.raises(ValueError):
         land(np.zeros(5))
     with pytest.raises(R.GridMismatchError):
@@ -213,19 +333,39 @@ def test_grid_requires_crs_datum_and_sane_shape():
         grid.values[0, 0] = 5.0  # immutable
 
 
-@pytest.mark.parametrize("kind", [R.SurfaceKind.SIDESCAN_INTENSITY, R.SurfaceKind.BACKSCATTER_INTENSITY])
+@pytest.mark.parametrize(
+    "kind", [R.SurfaceKind.SIDESCAN_INTENSITY, R.SurfaceKind.BACKSCATTER_INTENSITY]
+)
 def test_intensity_raster_is_not_a_depth_surface(kind):
-    image = R.make_grid(np.random.default_rng(1).random((30, 30)), cell_size_m=(1, 1), origin=(0, 30),
-                        crs=CRS, kind=kind)
+    image = R.make_grid(
+        np.random.default_rng(1).random((30, 30)),
+        cell_size_m=(1, 1),
+        origin=(0, 30),
+        crs=CRS,
+        kind=kind,
+    )
     assert not image.is_elevation
-    for operation in (R.slope_degrees, R.fill_depressions, R.depression_depth, R.detect_seams,
-                      lambda g: R.position_index(g, 3), lambda g: R.local_relief(g, 2), R.hillshade,
-                      lambda g: R.delineate_depressions(g, min_depth_m=1, min_area_m2=1)):
+    for operation in (
+        R.slope_degrees,
+        R.fill_depressions,
+        R.depression_depth,
+        R.detect_seams,
+        lambda g: R.position_index(g, 3),
+        lambda g: R.local_relief(g, 2),
+        R.hillshade,
+        lambda g: R.delineate_depressions(g, min_depth_m=1, min_area_m2=1),
+    ):
         with pytest.raises(R.NotAnElevationSurfaceError):
             operation(image)
     with pytest.raises(R.NotAnElevationSurfaceError):
-        R.make_grid(np.zeros((4, 4)), cell_size_m=(1, 1), origin=(0, 4), crs=CRS, kind=kind,
-                    vertical_reference=PRVD)
+        R.make_grid(
+            np.zeros((4, 4)),
+            cell_size_m=(1, 1),
+            origin=(0, 4),
+            crs=CRS,
+            kind=kind,
+            vertical_reference=PRVD,
+        )
     with pytest.raises(R.NotAnElevationSurfaceError):
         transects.build_cross_section([image], [(0, 5), (20, 5)], spacing_m=1)
 
@@ -237,16 +377,29 @@ FIND = dict(min_depth_m=0.5, min_area_m2=20.0)
 
 @pytest.mark.parametrize(
     "surface",
-    [controls.tilted_plane(120, 120),
-     np.full((120, 120), 50.0),
-     controls.tilted_plane(120, 120, slope_x=0.5, slope_y=-0.3),
-     50.0 + 10.0 * np.exp(-(((np.mgrid[0:120, 0:120][0] - 60) ** 2
-                              + (np.mgrid[0:120, 0:120][1] - 60) ** 2) / 400.0))],
+    [
+        controls.tilted_plane(120, 120),
+        np.full((120, 120), 50.0),
+        controls.tilted_plane(120, 120, slope_x=0.5, slope_y=-0.3),
+        50.0
+        + 10.0
+        * np.exp(
+            -(
+                (
+                    (np.mgrid[0:120, 0:120][0] - 60) ** 2
+                    + (np.mgrid[0:120, 0:120][1] - 60) ** 2
+                )
+                / 400.0
+            )
+        ),
+    ],
     ids=["tilted-plane", "flat", "steep-plane", "dome"],
 )
 def test_surfaces_without_basins_yield_none(surface):
     assert R.delineate_depressions(land(surface), **FIND) == []
-    assert float(np.nanmax(R.depression_depth(land(surface)))) == pytest.approx(0.0, abs=1e-9)
+    assert float(np.nanmax(R.depression_depth(land(surface)))) == pytest.approx(
+        0.0, abs=1e-9
+    )
 
 
 @pytest.mark.parametrize("seed", range(5))
@@ -257,8 +410,9 @@ def test_noise_alone_yields_nothing_above_thresholds(seed):
 
 
 def test_planted_basin_is_found_once_where_it_was_put():
-    surface = controls.add_gaussian_basin(np.full((200, 200), 100.0), 80.0, 120.0,
-                                          depth_m=6.0, sigma_cells=9.0)
+    surface = controls.add_gaussian_basin(
+        np.full((200, 200), 100.0), 80.0, 120.0, depth_m=6.0, sigma_cells=9.0
+    )
     regions = R.delineate_depressions(land(surface), **FIND)
     assert len(regions) == 1
     basin = regions[0]
@@ -266,20 +420,31 @@ def test_planted_basin_is_found_once_where_it_was_put():
     assert basin.spill_elevation_m == pytest.approx(100.0, abs=0.05)
     assert basin.floor_elevation_m == pytest.approx(94.0, abs=0.05)
     assert basin.deepest_xy == (120.5, 200.0 - 80.5)
-    assert abs(basin.centroid_xy[0] - 120.5) < 1.5 and abs(basin.centroid_xy[1] - 119.5) < 1.5
+    assert (
+        abs(basin.centroid_xy[0] - 120.5) < 1.5
+        and abs(basin.centroid_xy[1] - 119.5) < 1.5
+    )
     analytic_volume = 6.0 * 2.0 * math.pi * 9.0**2
     assert basin.volume_m3 == pytest.approx(analytic_volume, rel=0.05)
     assert basin.circularity > 0.8 and basin.elongation < 1.2
     assert not basin.adjoins_edge and not basin.adjoins_nodata
     assert basin.depth_uncertainty_m == pytest.approx(math.sqrt(2) * 0.1)
-    assert basin.significance == pytest.approx(basin.max_depth_m / basin.depth_uncertainty_m)
+    assert basin.significance == pytest.approx(
+        basin.max_depth_m / basin.depth_uncertainty_m
+    )
 
 
 @pytest.mark.parametrize(
     "name, analytic_circularity, tolerance, rectangular",
-    [("disc", 1.0, 0.04, False), ("square", math.pi / 4, 0.13, True), ("bar", 0.503, 0.10, True)],
+    [
+        ("disc", 1.0, 0.04, False),
+        ("square", math.pi / 4, 0.13, True),
+        ("bar", 0.503, 0.10, True),
+    ],
 )
-def test_shape_measures_against_analytic_shapes(name, analytic_circularity, tolerance, rectangular):
+def test_shape_measures_against_analytic_shapes(
+    name, analytic_circularity, tolerance, rectangular
+):
     yy, xx = np.mgrid[0:200, 0:200].astype(float)
     footprint = {
         "disc": (xx - 100) ** 2 + (yy - 100) ** 2 <= 900,
@@ -299,20 +464,27 @@ def test_shape_measures_against_analytic_shapes(name, analytic_circularity, tole
 
 
 def test_tilt_lowers_the_spill_level_but_not_the_location():
-    tilted = controls.add_gaussian_basin(controls.tilted_plane(200, 200, slope_x=0.03, slope_y=0.0),
-                                         100.0, 100.0, depth_m=6.0, sigma_cells=9.0)
+    tilted = controls.add_gaussian_basin(
+        controls.tilted_plane(200, 200, slope_x=0.03, slope_y=0.0),
+        100.0,
+        100.0,
+        depth_m=6.0,
+        sigma_cells=9.0,
+    )
     (basin,) = R.delineate_depressions(land(tilted), **FIND)
     assert 2.0 < basin.max_depth_m < 6.0
     assert abs(basin.deepest_xy[0] - 100.5) < 6.0
 
 
 def test_basin_that_could_drain_into_unmeasured_ground_is_not_reported():
-    surface = controls.add_gaussian_basin(np.full((160, 160), 100.0), 80.0, 80.0,
-                                          depth_m=6.0, sigma_cells=9.0)
+    surface = controls.add_gaussian_basin(
+        np.full((160, 160), 100.0), 80.0, 80.0, depth_m=6.0, sigma_cells=9.0
+    )
     holed = controls.add_nodata_block(surface, 75, 75, 86, 86)  # floor never measured
     assert R.delineate_depressions(land(holed), **FIND) == []
-    edge = controls.add_gaussian_basin(np.full((160, 160), 100.0), 80.0, 2.0,
-                                       depth_m=6.0, sigma_cells=9.0)
+    edge = controls.add_gaussian_basin(
+        np.full((160, 160), 100.0), 80.0, 2.0, depth_m=6.0, sigma_cells=9.0
+    )
     assert R.delineate_depressions(land(edge), **FIND) == []  # open to the grid edge
     nodata_far_away = controls.add_nodata_block(surface, 0, 0, 10, 10)
     assert len(R.delineate_depressions(land(nodata_far_away), **FIND)) == 1
@@ -323,20 +495,32 @@ def test_no_data_survives_every_derivative_and_coverage_closes():
     surface = controls.add_nodata_block(controls.tilted_plane(80, 80), 30, 30, 40, 40)
     mask = controls.interpolation_mask(surface.shape, 0, 0, 20, 80)
     grid = land(surface, interpolated=mask)
-    for product in (R.slope_degrees(grid), R.position_index(grid, 4), R.local_relief(grid, 3),
-                    R.fill_depressions(grid), R.depression_depth(grid), R.hillshade(grid)):
+    for product in (
+        R.slope_degrees(grid),
+        R.position_index(grid, 4),
+        R.local_relief(grid, 3),
+        R.fill_depressions(grid),
+        R.depression_depth(grid),
+        R.hillshade(grid),
+    ):
         assert np.all(np.isnan(product[30:40, 30:40]))
     summary = R.coverage(grid)
     assert summary.closes()
     assert summary.nodata_cells == 100 and summary.valid_cells == 6300
     assert summary.interpolated_cells == 1600 and summary.measured_cells == 4700
     unknown = R.coverage(land(surface))
-    assert unknown.measured_cells is None and unknown.measured_fraction is None and unknown.closes()
+    assert (
+        unknown.measured_cells is None
+        and unknown.measured_fraction is None
+        and unknown.closes()
+    )
 
 
 def test_seam_is_found_with_its_axis_index_and_step():
     rough = controls.add_noise(controls.tilted_plane(200, 200), sigma_m=0.05, seed=4)
-    (column_seam,) = R.detect_seams(land(controls.add_column_seam(rough, 130, step_m=0.8)))
+    (column_seam,) = R.detect_seams(
+        land(controls.add_column_seam(rough, 130, step_m=0.8))
+    )
     assert (column_seam.axis, column_seam.index) == ("column", 129)
     assert column_seam.step_m == pytest.approx(0.8 + 0.02, abs=0.05)
     assert column_seam.sign_consistency > 0.95
@@ -350,19 +534,27 @@ def test_seam_is_found_with_its_axis_index_and_step():
 
 
 def test_tiled_processing_equals_untiled_and_is_deterministic():
-    surface = controls.add_noise(controls.karst_plateau_scene(noise_m=0.0)[0], sigma_m=0.02, seed=2)
+    surface = controls.add_noise(
+        controls.karst_plateau_scene(noise_m=0.0)[0], sigma_m=0.02, seed=2
+    )
     grid = land(surface)
-    for operation, halo in ((R.slope_degrees, 2), (lambda g: R.position_index(g, 6), 7)):
+    for operation, halo in (
+        (R.slope_degrees, 2),
+        (lambda g: R.position_index(g, 6), 7),
+    ):
         whole = operation(grid)
         assert np.array_equal(whole, operation(grid), equal_nan=True)
         tiled = R.apply_tiled(grid, operation, tile=64, halo=halo)
         assert np.allclose(whole, tiled, equal_nan=True)
     seamless = R.apply_tiled(grid, lambda g: R.position_index(g, 6), tile=64, halo=0)
-    assert not np.allclose(R.position_index(grid, 6), seamless, equal_nan=True)  # halo matters
+    assert not np.allclose(
+        R.position_index(grid, 6), seamless, equal_nan=True
+    )  # halo matters
     first = R.delineate_depressions(grid, **FIND)
     second = R.delineate_depressions(grid, **FIND)
     assert [(r.label, r.max_depth_m, r.area_m2) for r in first] == [
-        (r.label, r.max_depth_m, r.area_m2) for r in second]
+        (r.label, r.max_depth_m, r.area_m2) for r in second
+    ]
     with pytest.raises(ValueError):
         list(R.iter_windows((10, 10), 0))
 
@@ -392,9 +584,13 @@ def test_surface_difference_controls():
     shifted = R.difference(earlier, land(base + 0.5, uncertainty_m=0.05))
     assert np.allclose(shifted.delta_m, 0.5) and shifted.detectable.all()
     assert shifted.uncertainty_m[0, 0] == pytest.approx(math.hypot(0.05, 0.05))
-    noisy = R.difference(land(base, uncertainty_m=0.4), land(base + 0.5, uncertainty_m=0.4))
+    noisy = R.difference(
+        land(base, uncertainty_m=0.4), land(base + 0.5, uncertainty_m=0.4)
+    )
     assert not noisy.detectable.any()  # 0.5 m is inside 2 sigma of 0.57 m
-    unknown = R.difference(land(base, uncertainty_m=None), land(base + 0.5, uncertainty_m=None))
+    unknown = R.difference(
+        land(base, uncertainty_m=None), land(base + 0.5, uncertainty_m=None)
+    )
     assert unknown.detectable is None and unknown.uncertainty_m is None
     assert unknown.compared_cells == 2500
 
@@ -404,22 +600,49 @@ def test_surface_difference_refuses_incomparable_grids():
     a = land(base)
     with pytest.raises(R.GridMismatchError):
         R.difference(a, land(controls.tilted_plane(40, 41)))
-    shifted_origin = R.make_grid(base, cell_size_m=(1, 1), origin=(0.5, 40.0), crs=CRS,
-                                 kind=R.SurfaceKind.TERRAIN_BARE_EARTH, vertical_reference=PRVD)
+    shifted_origin = R.make_grid(
+        base,
+        cell_size_m=(1, 1),
+        origin=(0.5, 40.0),
+        crs=CRS,
+        kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+        vertical_reference=PRVD,
+    )
     with pytest.raises(R.GridMismatchError):
         R.difference(a, shifted_origin)
-    other_crs = R.make_grid(base, cell_size_m=(1, 1), origin=(0.0, 40.0), crs="EPSG:32619",
-                            kind=R.SurfaceKind.TERRAIN_BARE_EARTH, vertical_reference=PRVD)
+    other_crs = R.make_grid(
+        base,
+        cell_size_m=(1, 1),
+        origin=(0.0, 40.0),
+        crs="EPSG:32619",
+        kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+        vertical_reference=PRVD,
+    )
     with pytest.raises(R.GridMismatchError):
         R.difference(a, other_crs)
-    on_msl = land(base, vertical_reference=VerticalReference(CRS, None, "MSL", None, "up"))
+    on_msl = land(
+        base, vertical_reference=VerticalReference(CRS, None, "MSL", None, "up")
+    )
     with pytest.raises(VerticalCompatibilityError):
         R.difference(a, on_msl)
-    transform = V.CertifiedTransform(V.VerticalDatum.MSL, V.VerticalDatum.PRVD02, 0.1,
-                                     "synthetic test authority", 0.02)
+    transform = V.CertifiedTransform(
+        V.VerticalDatum.MSL,
+        V.VerticalDatum.PRVD02,
+        0.1,
+        "synthetic test authority",
+        0.02,
+    )
     moved = R.difference(a, on_msl, transforms=[transform])
-    assert np.allclose(moved.delta_m, 0.1) and moved.transform_authority == "synthetic test authority"
-    assumed = land(base, vertical_reference=VerticalReference(CRS, None, "mean_sea_level_assumed", None, "up"))
+    assert (
+        np.allclose(moved.delta_m, 0.1)
+        and moved.transform_authority == "synthetic test authority"
+    )
+    assumed = land(
+        base,
+        vertical_reference=VerticalReference(
+            CRS, None, "mean_sea_level_assumed", None, "up"
+        ),
+    )
     with pytest.raises(VerticalCompatibilityError):
         R.difference(assumed, assumed)
 
@@ -428,14 +651,19 @@ def test_surface_difference_refuses_incomparable_grids():
 
 PARAMS = detection.DetectionParameters(min_depth_m=1.0, min_area_m2=30.0)
 SOURCE = sup.direct_source("TEST-LIDAR-001", sensor=SensorType.TOPOBATHYMETRIC_LIDAR)
-KARST = detection.GeologicalContext("APSRC-" + "7" * 16, "synthetic limestone unit", True,
-                                    v.SpatialState.FULLY_WITHIN)
+KARST = detection.GeologicalContext(
+    "APSRC-" + "7" * 16, "synthetic limestone unit", True, v.SpatialState.FULLY_WITHIN
+)
 
 
 def _flat_scene():
     surface = np.full((260, 260), 120.0)
-    surface = controls.add_gaussian_basin(surface, 70.0, 70.0, depth_m=6.0, sigma_cells=9.0)
-    surface = controls.add_steep_pit(surface, 180.0, 70.0, depth_m=10.0, radius_cells=8.0)
+    surface = controls.add_gaussian_basin(
+        surface, 70.0, 70.0, depth_m=6.0, sigma_cells=9.0
+    )
+    surface = controls.add_steep_pit(
+        surface, 180.0, 70.0, depth_m=10.0, radius_cells=8.0
+    )
     surface = controls.add_rectangular_cut(surface, 60, 170, 90, 230, floor_m=114.0)
     return controls.add_noise(surface, sigma_m=0.02, seed=6)
 
@@ -447,7 +675,11 @@ def test_inland_detection_finds_each_planted_feature_with_the_right_class():
     assert by_class == ["CLOSED_DEPRESSION", "CLOSED_DEPRESSION", "SURFACE_EXCAVATION"]
     cut = next(d for d in found if d.proposed_class == "SURFACE_EXCAVATION")
     assert 170 < cut.centroid_xy[0] < 230 and cut.region.rectangularity > 0.9
-    origin = [a for a in cut.assertions if a.dimension is v.EvidenceDimension.NATURAL_OR_ARTIFICIAL_ORIGIN]
+    origin = [
+        a
+        for a in cut.assertions
+        if a.dimension is v.EvidenceDimension.NATURAL_OR_ARTIFICIAL_ORIGIN
+    ]
     assert origin and origin[0].tier is v.EvidenceTier.CANDIDATE
     assert origin[0].claim_class is v.ClaimClass.HYPOTHESIS
     assert all(d.namespace is sup.INLAND and not d.flags for d in found)
@@ -455,25 +687,42 @@ def test_inland_detection_finds_each_planted_feature_with_the_right_class():
 
 def test_sinkhole_reading_needs_an_evidenced_karst_context():
     grid = land(_flat_scene())
-    assert "SINKHOLE" not in {d.proposed_class for d in detection.detect_inland(grid, SOURCE, PARAMS)}
+    assert "SINKHOLE" not in {
+        d.proposed_class for d in detection.detect_inland(grid, SOURCE, PARAMS)
+    }
     with_karst = detection.detect_inland(grid, SOURCE, PARAMS, geology=KARST)
     assert sorted(d.proposed_class for d in with_karst).count("SINKHOLE") == 2
-    assert "SURFACE_EXCAVATION" in {d.proposed_class for d in with_karst}  # the cut is still a cut
-    for state in (v.SpatialState.PARTIAL, v.SpatialState.TOUCH_ONLY, v.SpatialState.OUTSIDE,
-                  v.SpatialState.UNRESOLVED, v.SpatialState.NULL_EMPTY):
+    assert "SURFACE_EXCAVATION" in {
+        d.proposed_class for d in with_karst
+    }  # the cut is still a cut
+    for state in (
+        v.SpatialState.PARTIAL,
+        v.SpatialState.TOUCH_ONLY,
+        v.SpatialState.OUTSIDE,
+        v.SpatialState.UNRESOLVED,
+        v.SpatialState.NULL_EMPTY,
+    ):
         weak = detection.GeologicalContext(KARST.source_id, "unit", True, state)
-        assert "SINKHOLE" not in {d.proposed_class for d in
-                                  detection.detect_inland(grid, SOURCE, PARAMS, geology=weak)}
-    not_karst = detection.GeologicalContext(KARST.source_id, "volcanic unit", False,
-                                            v.SpatialState.FULLY_WITHIN)
-    assert "SINKHOLE" not in {d.proposed_class for d in
-                              detection.detect_inland(grid, SOURCE, PARAMS, geology=not_karst)}
+        assert "SINKHOLE" not in {
+            d.proposed_class
+            for d in detection.detect_inland(grid, SOURCE, PARAMS, geology=weak)
+        }
+    not_karst = detection.GeologicalContext(
+        KARST.source_id, "volcanic unit", False, v.SpatialState.FULLY_WITHIN
+    )
+    assert "SINKHOLE" not in {
+        d.proposed_class
+        for d in detection.detect_inland(grid, SOURCE, PARAMS, geology=not_karst)
+    }
 
 
 def test_offshore_detection_classes():
     surface, _ = controls.shelf_scene()
-    found = detection.detect_offshore(sea(surface), SOURCE,
-                                      detection.DetectionParameters(min_depth_m=1.0, min_area_m2=100.0))
+    found = detection.detect_offshore(
+        sea(surface),
+        SOURCE,
+        detection.DetectionParameters(min_depth_m=1.0, min_area_m2=100.0),
+    )
     classes = {d.proposed_class for d in found}
     assert classes == {"BLUE_HOLE_CANDIDATE", "SEAFLOOR_DEPRESSION"}
     pit = next(d for d in found if d.proposed_class == "BLUE_HOLE_CANDIDATE")
@@ -484,40 +733,58 @@ def test_offshore_detection_classes():
 def test_detection_refuses_the_wrong_kind_of_surface():
     scene = _flat_scene()
     with pytest.raises(ValueError, match="bare-earth"):
-        detection.detect_inland(land(scene, kind=R.SurfaceKind.TERRAIN_FIRST_RETURN), SOURCE, PARAMS)
+        detection.detect_inland(
+            land(scene, kind=R.SurfaceKind.TERRAIN_FIRST_RETURN), SOURCE, PARAMS
+        )
     with pytest.raises(ValueError):
         detection.detect_inland(sea(-scene), SOURCE, PARAMS)
     with pytest.raises(ValueError):
         detection.detect_offshore(land(scene), SOURCE, PARAMS)
     with pytest.raises(ValueError):
-        detection.detect_escarpments(land(scene), SOURCE, min_slope_deg=20, min_length_m=50)
+        detection.detect_escarpments(
+            land(scene), SOURCE, min_slope_deg=20, min_length_m=50
+        )
     with pytest.raises(ValueError):
         detection.DetectionParameters(min_depth_m=0, min_area_m2=1)
 
 
 def test_detection_never_claims_an_opening_whatever_the_score():
     surface, _ = controls.shelf_scene()
-    found = detection.detect_offshore(sea(surface), SOURCE,
-                                      detection.DetectionParameters(min_depth_m=1.0, min_area_m2=100.0))
+    found = detection.detect_offshore(
+        sea(surface),
+        SOURCE,
+        detection.DetectionParameters(min_depth_m=1.0, min_area_m2=100.0),
+    )
     found += detection.detect_inland(land(_flat_scene()), SOURCE, PARAMS, geology=KARST)
-    forbidden = {v.EvidenceDimension.PHYSICAL_OPENING, v.EvidenceDimension.ACCESSIBILITY,
-                 v.EvidenceDimension.FUNCTION, v.EvidenceDimension.CONNECTIVITY}
+    forbidden = {
+        v.EvidenceDimension.PHYSICAL_OPENING,
+        v.EvidenceDimension.ACCESSIBILITY,
+        v.EvidenceDimension.FUNCTION,
+        v.EvidenceDimension.CONNECTIVITY,
+    }
     assert max(d.discovery_score for d in found) > 90
     held = {SOURCE.source_id: SOURCE}
     for d in found:
         assert not forbidden & {a.dimension for a in d.assertions}
-        feature = m.Feature(ns.feature_id(d.namespace, 1), d.namespace, d.proposed_class,
-                            assertions=tuple(a for a in d.assertions if set(a.source_ids) <= set(held)))
+        feature = m.Feature(
+            ns.feature_id(d.namespace, 1),
+            d.namespace,
+            d.proposed_class,
+            assertions=tuple(a for a in d.assertions if set(a.source_ids) <= set(held)),
+        )
         assert rules.assertion_rung(feature, held) <= v.AssertionRung.FEATURE
 
 
 def test_artefact_flags_lower_the_tier_and_the_score():
-    surface = controls.add_gaussian_basin(np.full((160, 160), -30.0), 80.0, 80.0,
-                                          depth_m=5.0, sigma_cells=8.0)
+    surface = controls.add_gaussian_basin(
+        np.full((160, 160), -30.0), 80.0, 80.0, depth_m=5.0, sigma_cells=8.0
+    )
     params = detection.DetectionParameters(min_depth_m=1.0, min_area_m2=40.0)
     (clean,) = detection.detect_offshore(sea(surface), SOURCE, params)
     mask = controls.interpolation_mask(surface.shape, 50, 50, 110, 110)
-    (interp,) = detection.detect_offshore(sea(surface, interpolated=mask), SOURCE, params)
+    (interp,) = detection.detect_offshore(
+        sea(surface, interpolated=mask), SOURCE, params
+    )
     assert detection.DetectionFlag.MOSTLY_INTERPOLATED in interp.flags
     assert interp.proposed_class == "SURVEY_ARTIFACT" and interp.possible_artifact
     assert all(a.tier is v.EvidenceTier.CANDIDATE for a in interp.assertions)
@@ -525,58 +792,93 @@ def test_artefact_flags_lower_the_tier_and_the_score():
     assert clean.proposed_class != "SURVEY_ARTIFACT"
     assert all(a.tier is v.EvidenceTier.SUPPORTING for a in clean.assertions)
     (inland_interp,) = detection.detect_inland(
-        land(surface + 200.0, interpolated=mask), SOURCE, params)
+        land(surface + 200.0, interpolated=mask), SOURCE, params
+    )
     assert inland_interp.proposed_class == "UNCLASSIFIED_ANOMALY"
 
 
 def test_depth_must_exceed_its_uncertainty():
-    surface = controls.add_gaussian_basin(np.full((160, 160), 100.0), 80.0, 80.0,
-                                          depth_m=1.5, sigma_cells=8.0)
+    surface = controls.add_gaussian_basin(
+        np.full((160, 160), 100.0), 80.0, 80.0, depth_m=1.5, sigma_cells=8.0
+    )
     # Depth barely above what the survey can resolve: reported, flagged, capped.
     (weak,) = detection.detect_inland(land(surface, uncertainty_m=0.5), SOURCE, PARAMS)
     assert weak.region.significance < 3.0
     assert detection.DetectionFlag.BELOW_UNCERTAINTY in weak.flags
     # Depth the survey cannot tell from zero over a reportable area: not reported at all.
-    assert detection.detect_inland(land(surface, uncertainty_m=1.0), SOURCE, PARAMS) == []
+    assert (
+        detection.detect_inland(land(surface, uncertainty_m=1.0), SOURCE, PARAMS) == []
+    )
     assert all(a.tier is v.EvidenceTier.CANDIDATE for a in weak.assertions)
-    (unknown,) = detection.detect_inland(land(surface, uncertainty_m=None), SOURCE, PARAMS)
+    (unknown,) = detection.detect_inland(
+        land(surface, uncertainty_m=None), SOURCE, PARAMS
+    )
     assert detection.DetectionFlag.UNCERTAINTY_UNKNOWN in unknown.flags
     assert all(a.tier is v.EvidenceTier.CANDIDATE for a in unknown.assertions)
-    (strong,) = detection.detect_inland(land(surface, uncertainty_m=0.05), SOURCE, PARAMS)
+    (strong,) = detection.detect_inland(
+        land(surface, uncertainty_m=0.05), SOURCE, PARAMS
+    )
     assert not strong.flags and strong.native_record_id == weak.native_record_id
 
 
 def test_escarpment_detection():
     yy, xx = np.mgrid[0:120, 0:200].astype(float)
     shelf = np.where(xx < 100, -20.0, -20.0 - np.clip(xx - 100, 0, 12) * 5.0)
-    (scarp,) = detection.detect_escarpments(sea(shelf), SOURCE, min_slope_deg=30, min_length_m=100)
+    (scarp,) = detection.detect_escarpments(
+        sea(shelf), SOURCE, min_slope_deg=30, min_length_m=100
+    )
     assert scarp.proposed_class == "ESCARPMENT" and scarp.region is None
     assert scarp.measurements["relief_m"] > 40 and scarp.measurements["length_m"] > 200
-    assert detection.detect_escarpments(sea(np.full((80, 80), -20.0)), SOURCE,
-                                        min_slope_deg=30, min_length_m=100) == []
+    assert (
+        detection.detect_escarpments(
+            sea(np.full((80, 80), -20.0)), SOURCE, min_slope_deg=30, min_length_m=100
+        )
+        == []
+    )
 
 
 def test_evaluation_is_one_to_one_class_wise_and_honest_about_truth():
     found = detection.detect_inland(land(_flat_scene()), SOURCE, PARAMS)
-    label = lambda i, cls, x, y, kind=detection.TruthKind.SYNTHETIC_CONTROL: (  # noqa: E731
-        detection.ReferenceLabel(f"L{i}", cls, (x, y), 15.0, kind))
-    labels = [label(1, "CLOSED_DEPRESSION", 70.5, 189.5), label(2, "CLOSED_DEPRESSION", 70.5, 79.5),
-              label(3, "SURFACE_EXCAVATION", 200.0, 185.0)]
+    label = (
+        lambda i, cls, x, y, kind=detection.TruthKind.SYNTHETIC_CONTROL: (  # noqa: E731
+            detection.ReferenceLabel(f"L{i}", cls, (x, y), 15.0, kind)
+        )
+    )
+    labels = [
+        label(1, "CLOSED_DEPRESSION", 70.5, 189.5),
+        label(2, "CLOSED_DEPRESSION", 70.5, 79.5),
+        label(3, "SURFACE_EXCAVATION", 200.0, 185.0),
+    ]
     report = detection.evaluate(found, labels)
     assert report.state is detection.EvaluationState.SOFTWARE_CONTROL
-    assert {(s.feature_class, s.true_positives, s.false_positives, s.false_negatives)
-            for s in report.scores} == {("CLOSED_DEPRESSION", 2, 0, 0), ("SURFACE_EXCAVATION", 1, 0, 0)}
+    assert {
+        (s.feature_class, s.true_positives, s.false_positives, s.false_negatives)
+        for s in report.scores
+    } == {("CLOSED_DEPRESSION", 2, 0, 0), ("SURFACE_EXCAVATION", 1, 0, 0)}
     # Two labels near one detection: one match and one miss, never two matches.
-    crowded = detection.evaluate(found, labels + [label(4, "SURFACE_EXCAVATION", 201.0, 186.0)])
+    crowded = detection.evaluate(
+        found, labels + [label(4, "SURFACE_EXCAVATION", 201.0, 186.0)]
+    )
     cut = next(s for s in crowded.scores if s.feature_class == "SURFACE_EXCAVATION")
     assert (cut.true_positives, cut.false_negatives) == (1, 1) and cut.recall == 0.5
     # A wrong class is a miss and a false alarm, not a hit.
     wrong = detection.evaluate(found, [label(1, "SINKHOLE", 70.5, 189.5)])
-    assert next(s for s in wrong.scores if s.feature_class == "SINKHOLE").false_negatives == 1
+    assert (
+        next(s for s in wrong.scores if s.feature_class == "SINKHOLE").false_negatives
+        == 1
+    )
     empty = detection.evaluate(found, [])
     assert empty.state is detection.EvaluationState.EXPLORATORY and empty.scores == ()
     assert "no precision" in empty.statement
-    field = [label(9, "CLOSED_DEPRESSION", 70.5, 189.5, detection.TruthKind.INDEPENDENT_FIELD_TRUTH)]
+    field = [
+        label(
+            9,
+            "CLOSED_DEPRESSION",
+            70.5,
+            189.5,
+            detection.TruthKind.INDEPENDENT_FIELD_TRUTH,
+        )
+    ]
     assert detection.evaluate(found, field).state is detection.EvaluationState.MEASURED
     with pytest.raises(ValueError, match="separately"):
         detection.evaluate(found, labels + field)
@@ -588,20 +890,32 @@ def test_evaluation_is_one_to_one_class_wise_and_honest_about_truth():
 
 
 def _coast_pair(sea_reference=MLLW_DOWN):
-    land_grid = R.make_grid(controls.tilted_plane(40, 100, base_m=1.0, slope_x=0.05, slope_y=0.0),
-                            cell_size_m=(1, 1), origin=(0.0, 40.0), crs=CRS,
-                            kind=R.SurfaceKind.TERRAIN_BARE_EARTH, vertical_reference=PRVD,
-                            uncertainty_m=0.1)
-    sea_grid = R.make_grid(np.full((40, 100), 8.0), cell_size_m=(1, 1), origin=(-130.0, 40.0), crs=CRS,
-                           kind=R.SurfaceKind.BATHYMETRY, vertical_reference=sea_reference,
-                           uncertainty_m=0.3)
+    land_grid = R.make_grid(
+        controls.tilted_plane(40, 100, base_m=1.0, slope_x=0.05, slope_y=0.0),
+        cell_size_m=(1, 1),
+        origin=(0.0, 40.0),
+        crs=CRS,
+        kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+        vertical_reference=PRVD,
+        uncertainty_m=0.1,
+    )
+    sea_grid = R.make_grid(
+        np.full((40, 100), 8.0),
+        cell_size_m=(1, 1),
+        origin=(-130.0, 40.0),
+        crs=CRS,
+        kind=R.SurfaceKind.BATHYMETRY,
+        vertical_reference=sea_reference,
+        uncertainty_m=0.3,
+    )
     return land_grid, sea_grid
 
 
 def test_cross_section_reports_the_unsurveyed_gap_and_bridges_nothing():
     land_grid, sea_grid = _coast_pair()
-    section = transects.build_cross_section([land_grid, sea_grid], [(-120.0, 20.0), (90.0, 20.0)],
-                                            spacing_m=5.0)
+    section = transects.build_cross_section(
+        [land_grid, sea_grid], [(-120.0, 20.0), (90.0, 20.0)], spacing_m=5.0
+    )
     assert section.length_m == pytest.approx(210.0)
     assert not section.is_continuous
     (gap,) = section.gaps
@@ -612,20 +926,37 @@ def test_cross_section_reports_the_unsurveyed_gap_and_bridges_nothing():
                 assert sample.elevation_m is None  # nothing interpolated across the gap
     assert section.join.state is V.JoinState.SEPARATE_SURFACES_ONLY
     assert section.common_profiles == () and section.common_datum is None
-    assert [p.datum for p in section.profiles] == [V.VerticalDatum.PRVD02, V.VerticalDatum.MLLW]
+    assert [p.datum for p in section.profiles] == [
+        V.VerticalDatum.PRVD02,
+        V.VerticalDatum.MLLW,
+    ]
     sea_profile = section.profiles[1]
-    assert sea_profile.samples[0].elevation_m == -8.0  # the cell value, not a smoothed one
+    assert (
+        sea_profile.samples[0].elevation_m == -8.0
+    )  # the cell value, not a smoothed one
     assert 0 < sea_profile.covered_fraction < 1
     document = transects.cross_section_to_dict(section, truth_kind="SYNTHETIC_CONTROL")
-    assert document["truth_kind"] == "SYNTHETIC_CONTROL" and document["join"]["may_difference"] is False
+    assert (
+        document["truth_kind"] == "SYNTHETIC_CONTROL"
+        and document["join"]["may_difference"] is False
+    )
 
 
 def test_cross_section_joins_only_with_a_certified_transform():
     land_grid, sea_grid = _coast_pair()
-    transform = V.CertifiedTransform(V.VerticalDatum.MLLW, V.VerticalDatum.PRVD02, -0.2,
-                                     "synthetic test authority", 0.05)
-    section = transects.build_cross_section([land_grid, sea_grid], [(-120.0, 20.0), (90.0, 20.0)],
-                                            spacing_m=5.0, transforms=[transform])
+    transform = V.CertifiedTransform(
+        V.VerticalDatum.MLLW,
+        V.VerticalDatum.PRVD02,
+        -0.2,
+        "synthetic test authority",
+        0.05,
+    )
+    section = transects.build_cross_section(
+        [land_grid, sea_grid],
+        [(-120.0, 20.0), (90.0, 20.0)],
+        spacing_m=5.0,
+        transforms=[transform],
+    )
     assert section.join.state is V.JoinState.TRANSFORMED
     assert section.common_datum is V.VerticalDatum.PRVD02
     moved = section.common_profiles[1].samples[0]
@@ -633,47 +964,113 @@ def test_cross_section_joins_only_with_a_certified_transform():
     assert moved.uncertainty_m == pytest.approx(math.hypot(0.3, 0.05))
     assert section.gaps  # a transform does not fill a coverage gap
     same_datum = transects.build_cross_section(
-        [land_grid, _coast_pair(VerticalReference(CRS, None, "PRVD02", None, "down"))[1]],
-        [(-120.0, 20.0), (90.0, 20.0)], spacing_m=5.0)
-    assert same_datum.join.state is V.JoinState.SAME_REFERENCE and len(same_datum.common_profiles) == 2
+        [
+            land_grid,
+            _coast_pair(VerticalReference(CRS, None, "PRVD02", None, "down"))[1],
+        ],
+        [(-120.0, 20.0), (90.0, 20.0)],
+        spacing_m=5.0,
+    )
+    assert (
+        same_datum.join.state is V.JoinState.SAME_REFERENCE
+        and len(same_datum.common_profiles) == 2
+    )
 
 
 def test_cross_section_input_rules():
     land_grid, sea_grid = _coast_pair()
-    other = R.make_grid(np.zeros((4, 4)), cell_size_m=(1, 1), origin=(0, 4), crs="EPSG:32619",
-                        kind=R.SurfaceKind.TERRAIN_BARE_EARTH, vertical_reference=PRVD)
+    other = R.make_grid(
+        np.zeros((4, 4)),
+        cell_size_m=(1, 1),
+        origin=(0, 4),
+        crs="EPSG:32619",
+        kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+        vertical_reference=PRVD,
+    )
     with pytest.raises(R.GridMismatchError):
         transects.build_cross_section([land_grid, other], [(0, 2), (3, 2)], spacing_m=1)
-    for bad in ({"surfaces": []}, {"line": [(0, 0)]}, {"spacing": 0}, {"line": [(5, 5), (5, 5)]}):
+    for bad in (
+        {"surfaces": []},
+        {"line": [(0, 0)]},
+        {"spacing": 0},
+        {"line": [(5, 5), (5, 5)]},
+    ):
         with pytest.raises(ValueError):
-            transects.build_cross_section(bad.get("surfaces", [land_grid]),
-                                          bad.get("line", [(0, 20), (50, 20)]),
-                                          spacing_m=bad.get("spacing", 5))
-    bent = transects.build_cross_section([land_grid], [(0.0, 20.0), (30.0, 20.0), (30.0, 5.0)],
-                                         spacing_m=10.0)
+            transects.build_cross_section(
+                bad.get("surfaces", [land_grid]),
+                bad.get("line", [(0, 20), (50, 20)]),
+                spacing_m=bad.get("spacing", 5),
+            )
+    bent = transects.build_cross_section(
+        [land_grid], [(0.0, 20.0), (30.0, 20.0), (30.0, 5.0)], spacing_m=10.0
+    )
     assert bent.length_m == pytest.approx(45.0)
-    assert [s.distance_m for s in bent.profiles[0].samples] == [0.0, 10.0, 20.0, 30.0, 40.0, 45.0]
-    assert bent.is_continuous and bent.join is None and bent.common_datum is V.VerticalDatum.PRVD02
+    assert [s.distance_m for s in bent.profiles[0].samples] == [
+        0.0,
+        10.0,
+        20.0,
+        30.0,
+        40.0,
+        45.0,
+    ]
+    assert (
+        bent.is_continuous
+        and bent.join is None
+        and bent.common_datum is V.VerticalDatum.PRVD02
+    )
 
 
 # ── Coast ────────────────────────────────────────────────────────────────────
 
-MHW = coastal.CoastlineVersion("mhw-2018", "APSRC-" + "0" * 16, V.VerticalDatum.MHW, "2018-01-01",
-                               box(0, 0, 100, 100), CRS)
-MLLW_COAST = coastal.CoastlineVersion("mllw-2022", "APSRC-" + "1" * 16, V.VerticalDatum.MLLW,
-                                      "2022-01-01", box(-10, 0, 100, 100), CRS)
+MHW = coastal.CoastlineVersion(
+    "mhw-2018",
+    "APSRC-" + "0" * 16,
+    V.VerticalDatum.MHW,
+    "2018-01-01",
+    box(0, 0, 100, 100),
+    CRS,
+)
+MLLW_COAST = coastal.CoastlineVersion(
+    "mllw-2022",
+    "APSRC-" + "1" * 16,
+    V.VerticalDatum.MLLW,
+    "2022-01-01",
+    box(-10, 0, 100, 100),
+    CRS,
+)
 
 
 @pytest.mark.parametrize(
     "geometry, state, side, registry",
-    [(Point(50, 50), v.SpatialState.FULLY_WITHIN, coastal.CoastalSide.LAND, sup.INLAND),
-     (Point(-50, 50), v.SpatialState.OUTSIDE, coastal.CoastalSide.SEA, sup.OFFSHORE),
-     (box(-20, 40, 20, 60), v.SpatialState.PARTIAL, coastal.CoastalSide.STRADDLES_COAST, None),
-     (LineString([(-5, 50), (0, 50)]), v.SpatialState.TOUCH_ONLY, coastal.CoastalSide.ON_COASTLINE, None),
-     (Point(), v.SpatialState.NULL_EMPTY, coastal.CoastalSide.UNRESOLVED, None),
-     (None, v.SpatialState.NULL_EMPTY, coastal.CoastalSide.UNRESOLVED, None),
-     (Polygon([(10, 10), (30, 30), (30, 10), (10, 30)]), v.SpatialState.UNRESOLVED,
-      coastal.CoastalSide.UNRESOLVED, None)],
+    [
+        (
+            Point(50, 50),
+            v.SpatialState.FULLY_WITHIN,
+            coastal.CoastalSide.LAND,
+            sup.INLAND,
+        ),
+        (Point(-50, 50), v.SpatialState.OUTSIDE, coastal.CoastalSide.SEA, sup.OFFSHORE),
+        (
+            box(-20, 40, 20, 60),
+            v.SpatialState.PARTIAL,
+            coastal.CoastalSide.STRADDLES_COAST,
+            None,
+        ),
+        (
+            LineString([(-5, 50), (0, 50)]),
+            v.SpatialState.TOUCH_ONLY,
+            coastal.CoastalSide.ON_COASTLINE,
+            None,
+        ),
+        (Point(), v.SpatialState.NULL_EMPTY, coastal.CoastalSide.UNRESOLVED, None),
+        (None, v.SpatialState.NULL_EMPTY, coastal.CoastalSide.UNRESOLVED, None),
+        (
+            Polygon([(10, 10), (30, 30), (30, 10), (10, 30)]),
+            v.SpatialState.UNRESOLVED,
+            coastal.CoastalSide.UNRESOLVED,
+            None,
+        ),
+    ],
     ids=["land", "sea", "straddles", "touches", "empty", "none", "invalid"],
 )
 def test_coastal_relation_states(geometry, state, side, registry):
@@ -684,7 +1081,10 @@ def test_coastal_relation_states(geometry, state, side, registry):
 
 def test_coastal_side_is_reported_per_coastline_version():
     assessment = coastal.assess(Point(-5, 50), [MLLW_COAST, MHW], crs=CRS)
-    assert [r.version_id for r in assessment.relations] == ["mhw-2018", "mllw-2022"]  # by date
+    assert [r.version_id for r in assessment.relations] == [
+        "mhw-2018",
+        "mllw-2022",
+    ]  # by date
     assert assessment.sides == {coastal.CoastalSide.SEA, coastal.CoastalSide.LAND}
     assert not assessment.is_stable and assessment.registry is None
     assert coastal.side_changes(assessment) == {"mhw-2018->mllw-2022": ("SEA", "LAND")}
@@ -702,8 +1102,14 @@ def test_coastline_inputs_are_validated():
     with pytest.raises(ValueError):
         coastal.CoastlineVersion("x", "s", V.VerticalDatum.MHW, "2020", Polygon(), CRS)
     with pytest.raises(ValueError, match="invalid"):
-        coastal.CoastlineVersion("x", "s", V.VerticalDatum.MHW, "2020",
-                                 Polygon([(0, 0), (2, 2), (2, 0), (0, 2)]), CRS)
+        coastal.CoastlineVersion(
+            "x",
+            "s",
+            V.VerticalDatum.MHW,
+            "2020",
+            Polygon([(0, 0), (2, 2), (2, 0), (0, 2)]),
+            CRS,
+        )
 
 
 # ── Hardened pre-existing gates ──────────────────────────────────────────────
@@ -712,41 +1118,81 @@ def test_coastline_inputs_are_validated():
 @pytest.mark.parametrize("value", [p for p in PLACEHOLDERS if p is not None])
 def test_placeholder_no_longer_binds_a_vertical_reference(value):
     assert not VerticalReference(CRS, None, value, None).is_fully_bound()
-    a = MarineObservation("a", SensorType.MULTIBEAM_ECHOSOUNDER, ProductStage.PROCESSED_OBSERVATION,
-                          "r1", VerticalReference(CRS, None, value, None),
-                          CoverageState.DIRECTLY_OBSERVED, value_m=10.0)
-    b = MarineObservation("b", SensorType.BATHYMETRIC_LIDAR, ProductStage.PROCESSED_OBSERVATION,
-                          "r2", VerticalReference(CRS, None, value, None),
-                          CoverageState.DIRECTLY_OBSERVED, value_m=11.0)
+    a = MarineObservation(
+        "a",
+        SensorType.MULTIBEAM_ECHOSOUNDER,
+        ProductStage.PROCESSED_OBSERVATION,
+        "r1",
+        VerticalReference(CRS, None, value, None),
+        CoverageState.DIRECTLY_OBSERVED,
+        value_m=10.0,
+    )
+    b = MarineObservation(
+        "b",
+        SensorType.BATHYMETRIC_LIDAR,
+        ProductStage.PROCESSED_OBSERVATION,
+        "r2",
+        VerticalReference(CRS, None, value, None),
+        CoverageState.DIRECTLY_OBSERVED,
+        value_m=11.0,
+    )
     with pytest.raises(VerticalCompatibilityError):
         compare_depths(a, b)  # two unknowns that merely share a word are not one datum
 
 
 def test_real_references_still_bind_and_compare():
-    for reference in (VerticalReference(CRS, None, "MLLW", None), VerticalReference(CRS, "EPSG:5866", None, None),
-                      VerticalReference(CRS, None, None, "MHW")):
+    for reference in (
+        VerticalReference(CRS, None, "MLLW", None),
+        VerticalReference(CRS, "EPSG:5866", None, None),
+        VerticalReference(CRS, None, None, "MHW"),
+    ):
         assert reference.is_fully_bound()
     ref = VerticalReference(CRS, None, "MLLW", None)
     obs = lambda oid, val: MarineObservation(  # noqa: E731
-        oid, SensorType.MULTIBEAM_ECHOSOUNDER, ProductStage.PROCESSED_OBSERVATION, oid, ref,
-        CoverageState.DIRECTLY_OBSERVED, value_m=val)
-    assert compare_depths(obs("a", 10.0), obs("b", 11.5)).delta_b_minus_a_m == pytest.approx(1.5)
+        oid,
+        SensorType.MULTIBEAM_ECHOSOUNDER,
+        ProductStage.PROCESSED_OBSERVATION,
+        oid,
+        ref,
+        CoverageState.DIRECTLY_OBSERVED,
+        value_m=val,
+    )
+    assert compare_depths(
+        obs("a", 10.0), obs("b", 11.5)
+    ).delta_b_minus_a_m == pytest.approx(1.5)
 
 
 def test_rootless_observation_no_longer_outranks_a_rooted_one():
     ref = VerticalReference(CRS, None, "MLLW", None)
     direct = lambda oid, root, sensor=SensorType.MULTIBEAM_ECHOSOUNDER: MarineObservation(  # noqa: E731
-        oid, sensor, ProductStage.PROCESSED_OBSERVATION, root, ref, CoverageState.DIRECTLY_OBSERVED,
-        value_m=10.0)
-    assert classify_feature_evidence([direct("a", None)]) is EvidenceState.SINGLE_SENSOR_SUPPORTED
-    assert classify_feature_evidence([direct("a", "r1")]) is EvidenceState.SINGLE_SENSOR_SUPPORTED
+        oid,
+        sensor,
+        ProductStage.PROCESSED_OBSERVATION,
+        root,
+        ref,
+        CoverageState.DIRECTLY_OBSERVED,
+        value_m=10.0,
+    )
+    assert (
+        classify_feature_evidence([direct("a", None)])
+        is EvidenceState.SINGLE_SENSOR_SUPPORTED
+    )
+    assert (
+        classify_feature_evidence([direct("a", "r1")])
+        is EvidenceState.SINGLE_SENSOR_SUPPORTED
+    )
     assert classify_feature_evidence([direct("a", "r1"), direct("b", "r2")]) is (
-        EvidenceState.DIRECT_SENSOR_CONFIRMED)
-    assert classify_feature_evidence(
-        [direct("a", "r1"), direct("b", "r2", SensorType.BATHYMETRIC_LIDAR)]
-    ) is EvidenceState.MULTISENSOR_CONFIRMED
+        EvidenceState.DIRECT_SENSOR_CONFIRMED
+    )
+    assert (
+        classify_feature_evidence(
+            [direct("a", "r1"), direct("b", "r2", SensorType.BATHYMETRIC_LIDAR)]
+        )
+        is EvidenceState.MULTISENSOR_CONFIRMED
+    )
     assert classify_feature_evidence([direct("a", None), direct("b", None)]) is (
-        EvidenceState.SINGLE_SENSOR_SUPPORTED)
+        EvidenceState.SINGLE_SENSOR_SUPPORTED
+    )
 
 
 def test_undeclared_datum_no_longer_passes_datum_policy():
@@ -754,10 +1200,18 @@ def test_undeclared_datum_no_longer_passes_datum_policy():
     from source_adapters.ncei_coastal_dem.registry import load_registry
 
     records = load_registry()
-    undeclared = [r for r in records if r.vertical_datum.strip().lower() == "source_dependent"]
+    undeclared = [
+        r for r in records if r.vertical_datum.strip().lower() == "source_dependent"
+    ]
     declared = [r for r in records if r.vertical_datum.strip() == "PRVD02"]
     assert undeclared and declared, "registry no longer holds both kinds of row"
     result = evaluate_datum_policy(undeclared)
-    assert result.review_status == "review_required" and result.requires_vertical_normalization
+    assert (
+        result.review_status == "review_required"
+        and result.requires_vertical_normalization
+    )
     assert evaluate_datum_policy(declared[:1]).review_status == "pass"
-    assert evaluate_datum_policy(declared[:1] + undeclared[:1]).review_status == "review_required"
+    assert (
+        evaluate_datum_policy(declared[:1] + undeclared[:1]).review_status
+        == "review_required"
+    )

@@ -120,7 +120,11 @@ class LifecycleLog:
         }
 
     def record(self, state: LifecycleState, outcome: StepOutcome, detail: str) -> None:
-        expected = LIFECYCLE_ORDER[len(self._steps)] if len(self._steps) < len(LIFECYCLE_ORDER) else None
+        expected = (
+            LIFECYCLE_ORDER[len(self._steps)]
+            if len(self._steps) < len(LIFECYCLE_ORDER)
+            else None
+        )
         if self.halted:
             raise LifecycleError(
                 f"lifecycle halted at {self._steps[-1].state.value}; "
@@ -168,13 +172,17 @@ class Authorization:
                 raise ValueError("a grant must bound the number of requests")
 
     @classmethod
-    def from_environment(cls, environ: Mapping[str, str] | None = None) -> "Authorization":
+    def from_environment(
+        cls, environ: Mapping[str, str] | None = None
+    ) -> "Authorization":
         """``SPIDERWEB_ACCESS_POINT_ACQUISITION=metadata:<max_requests>:<granted_by>``.
 
         Anything else, including an unset variable, grants nothing.
         """
 
-        raw = (environ if environ is not None else os.environ).get(AUTHORIZATION_ENV, "")
+        raw = (environ if environ is not None else os.environ).get(
+            AUTHORIZATION_ENV, ""
+        )
         parts = raw.split(":", 2)
         if len(parts) != 3 or parts[0] != "metadata":
             return cls()
@@ -327,11 +335,18 @@ def replay_transport(directory: Path) -> Transport:
     table: dict[str, FrozenHttpResponse] = {}
     for manifest_path in sorted(Path(directory).glob("*.manifest.json")):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        body_path = manifest_path.with_name(manifest_path.name.replace(".manifest.json", ".bin"))
+        body_path = manifest_path.with_name(
+            manifest_path.name.replace(".manifest.json", ".bin")
+        )
         body = body_path.read_bytes()
         digest = hashlib.sha256(body).hexdigest()
-        if digest != manifest["response_sha256"] or len(body) != manifest["response_size"]:
-            raise ValueError(f"frozen fixture {body_path.name} does not match its manifest")
+        if (
+            digest != manifest["response_sha256"]
+            or len(body) != manifest["response_size"]
+        ):
+            raise ValueError(
+                f"frozen fixture {body_path.name} does not match its manifest"
+            )
         url = manifest["request_url"]
         if url in table:
             raise ValueError(f"duplicate frozen fixture for {url}")
@@ -369,8 +384,10 @@ class SourceFamily(StrEnum):
 
 
 class Completeness(StrEnum):
-    COUNT_CLOSED = "COUNT_CLOSED"                  # rows retained == count reported
-    TRANSFER_LIMIT_FOLLOWED = "TRANSFER_LIMIT_FOLLOWED"  # paged until the service said done
+    COUNT_CLOSED = "COUNT_CLOSED"  # rows retained == count reported
+    TRANSFER_LIMIT_FOLLOWED = (
+        "TRANSFER_LIMIT_FOLLOWED"  # paged until the service said done
+    )
 
 
 @dataclass(frozen=True)
@@ -397,7 +414,9 @@ class ProviderSpec:
     sensor: SensorType | None
     license_class: str
     completeness: Completeness
-    discover: Callable[[BoundingBox, Transport], list[DiscoveredRow]] = field(repr=False, compare=False)
+    discover: Callable[[BoundingBox, Transport], list[DiscoveredRow]] = field(
+        repr=False, compare=False
+    )
 
 
 def _text(value: Any) -> str | None:
@@ -407,14 +426,18 @@ def _text(value: Any) -> str | None:
     return text or None
 
 
-def _usiei_rows(layer: LidarInventoryLayer) -> Callable[[BoundingBox, Transport], list[DiscoveredRow]]:
+def _usiei_rows(
+    layer: LidarInventoryLayer,
+) -> Callable[[BoundingBox, Transport], list[DiscoveredRow]]:
     def discover(bbox: BoundingBox, transport: Transport) -> list[DiscoveredRow]:
         rows: list[DiscoveredRow] = []
         for page in fetch_all_usiei_pages(layer, bbox, transport=transport):
             for feature in page.features:
                 attrs = feature.get("attributes")
                 if not isinstance(attrs, Mapping):
-                    raise ValueError("inventory feature is missing an attributes object")
+                    raise ValueError(
+                        "inventory feature is missing an attributes object"
+                    )
                 stable = None
                 for key in ("GlobalID", "UUID", "InvID"):
                     if _text(attrs.get(key)):
@@ -428,9 +451,11 @@ def _usiei_rows(layer: LidarInventoryLayer) -> Callable[[BoundingBox, Transport]
                         # OBJECTID is a row number local to one layer; it is
                         # kept so the row can be cited, and flagged so it is
                         # never used to equate records.
-                        native_identifier=stable or f"USIEI:LAYER{int(layer)}:OBJECTID:{local}",
+                        native_identifier=stable
+                        or f"USIEI:LAYER{int(layer)}:OBJECTID:{local}",
                         identifier_is_stable=stable is not None,
-                        title=_text(attrs.get("ProjectName")) or "(untitled inventory record)",
+                        title=_text(attrs.get("ProjectName"))
+                        or "(untitled inventory record)",
                         attributes={str(k): v for k, v in attrs.items()},
                         envelope=esri_feature_envelope(feature),
                         metadata_uri=_text(attrs.get("MetadataLink")),
@@ -446,12 +471,18 @@ def _usiei_rows(layer: LidarInventoryLayer) -> Callable[[BoundingBox, Transport]
     return discover
 
 
-def _ncei_rows(family: CatalogFamily) -> Callable[[BoundingBox, Transport], list[DiscoveredRow]]:
+def _ncei_rows(
+    family: CatalogFamily,
+) -> Callable[[BoundingBox, Transport], list[DiscoveredRow]]:
     def discover(bbox: BoundingBox, transport: Transport) -> list[DiscoveredRow]:
         rows: list[DiscoveredRow] = []
         for page in fetch_all_ncei_catalog_pages(family, bbox, transport=transport):
             for item in page.items:
-                survey = _text(item.get("survey")) or _text(item.get("surveyId")) or _text(item.get("id"))
+                survey = (
+                    _text(item.get("survey"))
+                    or _text(item.get("surveyId"))
+                    or _text(item.get("id"))
+                )
                 if survey is None:
                     raise ValueError("catalogue row carries no survey identifier")
                 rows.append(
@@ -463,7 +494,8 @@ def _ncei_rows(family: CatalogFamily) -> Callable[[BoundingBox, Transport], list
                         envelope=None,
                         metadata_uri=None,
                         data_access_uri=None,
-                        surveyed=_text(item.get("year")) or _text(item.get("startDate")),
+                        surveyed=_text(item.get("year"))
+                        or _text(item.get("startDate")),
                         published=None,
                         vertical_datum_raw=None,
                         horizontal_datum_raw=None,
@@ -480,7 +512,9 @@ def _nos_bag_rows(bbox: BoundingBox, transport: Transport) -> list[DiscoveredRow
         for feature in page.features:
             attrs = feature.get("attributes")
             if not isinstance(attrs, Mapping):
-                raise ValueError("BAG inventory feature is missing an attributes object")
+                raise ValueError(
+                    "BAG inventory feature is missing an attributes object"
+                )
             survey = _text(attrs.get("SURVEY_ID"))
             if survey is None:
                 raise ValueError("BAG inventory feature carries no SURVEY_ID")
@@ -510,38 +544,86 @@ _NOAA_LICENSE = "US_GOVERNMENT_PUBLIC_DOMAIN"
 
 def _providers() -> dict[str, ProviderSpec]:
     specs = [
-        ProviderSpec("USIEI_TOPOGRAPHIC_LIDAR", "NOAA Office for Coastal Management",
-                     SourceFamily.TERRESTRIAL_LIDAR_INVENTORY, _INLAND, None, _NOAA_LICENSE,
-                     Completeness.TRANSFER_LIMIT_FOLLOWED, _usiei_rows(LidarInventoryLayer.TOPOGRAPHIC)),
-        ProviderSpec("USIEI_TOPOBATHY_LIDAR", "NOAA Office for Coastal Management",
-                     SourceFamily.TOPOBATHYMETRIC_LIDAR_INVENTORY, _BOTH,
-                     SensorType.TOPOBATHYMETRIC_LIDAR, _NOAA_LICENSE,
-                     Completeness.TRANSFER_LIMIT_FOLLOWED,
-                     _usiei_rows(LidarInventoryLayer.TOPOBATHY_SHORELINE)),
-        ProviderSpec("USIEI_BATHYMETRIC_LIDAR", "NOAA Office for Coastal Management",
-                     SourceFamily.BATHYMETRIC_LIDAR_INVENTORY, _OFFSHORE,
-                     SensorType.BATHYMETRIC_LIDAR, _NOAA_LICENSE,
-                     Completeness.TRANSFER_LIMIT_FOLLOWED, _usiei_rows(LidarInventoryLayer.BATHYMETRIC)),
-        ProviderSpec("USIEI_IFSAR", "NOAA Office for Coastal Management",
-                     SourceFamily.IFSAR_INVENTORY, _INLAND, None, _NOAA_LICENSE,
-                     Completeness.TRANSFER_LIMIT_FOLLOWED, _usiei_rows(LidarInventoryLayer.IFSAR)),
-        ProviderSpec("USIEI_OTHER_BATHYMETRIC", "NOAA Office for Coastal Management",
-                     SourceFamily.OTHER_BATHYMETRIC_SURVEY_INVENTORY, _OFFSHORE,
-                     SensorType.DERIVED_BATHYMETRIC_GRID, _NOAA_LICENSE,
-                     Completeness.TRANSFER_LIMIT_FOLLOWED,
-                     _usiei_rows(LidarInventoryLayer.OTHER_BATHYMETRIC_SURVEYS)),
-        ProviderSpec("NCEI_MULTIBEAM_CATALOG", "NOAA NCEI",
-                     SourceFamily.MULTIBEAM_SURVEY_CATALOG, _OFFSHORE,
-                     SensorType.MULTIBEAM_ECHOSOUNDER, _NOAA_LICENSE,
-                     Completeness.COUNT_CLOSED, _ncei_rows(CatalogFamily.MULTIBEAM)),
-        ProviderSpec("NCEI_SOUNDING_CATALOG", "NOAA NCEI",
-                     SourceFamily.SOUNDING_SURVEY_CATALOG, _OFFSHORE,
-                     SensorType.HYDROGRAPHIC_SOUNDINGS, _NOAA_LICENSE,
-                     Completeness.COUNT_CLOSED, _ncei_rows(CatalogFamily.SOUNDING)),
-        ProviderSpec("NOS_BAG_INVENTORY", "NOAA NCEI / Office of Coast Survey",
-                     SourceFamily.HYDROGRAPHIC_BAG_INVENTORY, _OFFSHORE,
-                     SensorType.MULTIBEAM_ECHOSOUNDER, _NOAA_LICENSE,
-                     Completeness.TRANSFER_LIMIT_FOLLOWED, _nos_bag_rows),
+        ProviderSpec(
+            "USIEI_TOPOGRAPHIC_LIDAR",
+            "NOAA Office for Coastal Management",
+            SourceFamily.TERRESTRIAL_LIDAR_INVENTORY,
+            _INLAND,
+            None,
+            _NOAA_LICENSE,
+            Completeness.TRANSFER_LIMIT_FOLLOWED,
+            _usiei_rows(LidarInventoryLayer.TOPOGRAPHIC),
+        ),
+        ProviderSpec(
+            "USIEI_TOPOBATHY_LIDAR",
+            "NOAA Office for Coastal Management",
+            SourceFamily.TOPOBATHYMETRIC_LIDAR_INVENTORY,
+            _BOTH,
+            SensorType.TOPOBATHYMETRIC_LIDAR,
+            _NOAA_LICENSE,
+            Completeness.TRANSFER_LIMIT_FOLLOWED,
+            _usiei_rows(LidarInventoryLayer.TOPOBATHY_SHORELINE),
+        ),
+        ProviderSpec(
+            "USIEI_BATHYMETRIC_LIDAR",
+            "NOAA Office for Coastal Management",
+            SourceFamily.BATHYMETRIC_LIDAR_INVENTORY,
+            _OFFSHORE,
+            SensorType.BATHYMETRIC_LIDAR,
+            _NOAA_LICENSE,
+            Completeness.TRANSFER_LIMIT_FOLLOWED,
+            _usiei_rows(LidarInventoryLayer.BATHYMETRIC),
+        ),
+        ProviderSpec(
+            "USIEI_IFSAR",
+            "NOAA Office for Coastal Management",
+            SourceFamily.IFSAR_INVENTORY,
+            _INLAND,
+            None,
+            _NOAA_LICENSE,
+            Completeness.TRANSFER_LIMIT_FOLLOWED,
+            _usiei_rows(LidarInventoryLayer.IFSAR),
+        ),
+        ProviderSpec(
+            "USIEI_OTHER_BATHYMETRIC",
+            "NOAA Office for Coastal Management",
+            SourceFamily.OTHER_BATHYMETRIC_SURVEY_INVENTORY,
+            _OFFSHORE,
+            SensorType.DERIVED_BATHYMETRIC_GRID,
+            _NOAA_LICENSE,
+            Completeness.TRANSFER_LIMIT_FOLLOWED,
+            _usiei_rows(LidarInventoryLayer.OTHER_BATHYMETRIC_SURVEYS),
+        ),
+        ProviderSpec(
+            "NCEI_MULTIBEAM_CATALOG",
+            "NOAA NCEI",
+            SourceFamily.MULTIBEAM_SURVEY_CATALOG,
+            _OFFSHORE,
+            SensorType.MULTIBEAM_ECHOSOUNDER,
+            _NOAA_LICENSE,
+            Completeness.COUNT_CLOSED,
+            _ncei_rows(CatalogFamily.MULTIBEAM),
+        ),
+        ProviderSpec(
+            "NCEI_SOUNDING_CATALOG",
+            "NOAA NCEI",
+            SourceFamily.SOUNDING_SURVEY_CATALOG,
+            _OFFSHORE,
+            SensorType.HYDROGRAPHIC_SOUNDINGS,
+            _NOAA_LICENSE,
+            Completeness.COUNT_CLOSED,
+            _ncei_rows(CatalogFamily.SOUNDING),
+        ),
+        ProviderSpec(
+            "NOS_BAG_INVENTORY",
+            "NOAA NCEI / Office of Coast Survey",
+            SourceFamily.HYDROGRAPHIC_BAG_INVENTORY,
+            _OFFSHORE,
+            SensorType.MULTIBEAM_ECHOSOUNDER,
+            _NOAA_LICENSE,
+            Completeness.TRANSFER_LIMIT_FOLLOWED,
+            _nos_bag_rows,
+        ),
     ]
     return {spec.provider_id: spec for spec in specs}
 
@@ -557,9 +639,9 @@ def providers_for(namespace: Namespace) -> list[ProviderSpec]:
 
 
 class RunState(StrEnum):
-    PASS = "PASS"                      # executed, rows returned, completeness proven
-    ZERO = "ZERO"                      # executed successfully, source reports none
-    FAIL = "FAIL"                      # executed and failed; says nothing about coverage
+    PASS = "PASS"  # executed, rows returned, completeness proven
+    ZERO = "ZERO"  # executed successfully, source reports none
+    FAIL = "FAIL"  # executed and failed; says nothing about coverage
     NOT_AUTHORIZED = "NOT_AUTHORIZED"  # not executed
     NOT_RUN = "NOT_RUN"
 
@@ -599,7 +681,7 @@ class DiscoveryReceipt:
 
     @property
     def zero_result_claim_permitted(self) -> bool:
-        """"No sources exist here" may be said only if every provider ran clean."""
+        """ "No sources exist here" may be said only if every provider ran clean."""
 
         return bool(self.runs) and all(run.state is RunState.ZERO for run in self.runs)
 
@@ -629,7 +711,9 @@ class DiscoveryReceipt:
                         "native_identifier": row.native_identifier,
                         "identifier_is_stable": row.identifier_is_stable,
                         "title": row.title,
-                        "envelope_relation": classify_bbox_relation(self.bbox, row.envelope).value,
+                        "envelope_relation": classify_bbox_relation(
+                            self.bbox, row.envelope
+                        ).value,
                         "surveyed": row.surveyed,
                         "vertical_datum_raw": row.vertical_datum_raw,
                         "basis": "ENVELOPE_ONLY_PLANNING",
@@ -644,7 +728,12 @@ class DiscoveryReceipt:
             "contract_version": CONTRACT_VERSION,
             "acquisition_version": ACQUISITION_VERSION,
             "namespace": self.namespace.value,
-            "bbox": [self.bbox.min_lon, self.bbox.min_lat, self.bbox.max_lon, self.bbox.max_lat],
+            "bbox": [
+                self.bbox.min_lon,
+                self.bbox.min_lat,
+                self.bbox.max_lon,
+                self.bbox.max_lat,
+            ],
             "dates": {
                 "discovered_utc": self.discovered_utc,
                 "note": "published, surveyed and retrieved dates are recorded per source",
@@ -663,7 +752,9 @@ class DiscoveryReceipt:
                     "state": run.state.value,
                     "row_count": run.row_count,
                     "request_count": run.request_count,
-                    "completeness": None if run.completeness is None else run.completeness.value,
+                    "completeness": (
+                        None if run.completeness is None else run.completeness.value
+                    ),
                     "error": run.error,
                     "requests": [response.manifest() for response in run.responses],
                 }
@@ -685,7 +776,9 @@ class DiscoveryReceipt:
         return body
 
 
-def to_source_manifestation(spec: ProviderSpec, row: DiscoveredRow) -> SourceManifestation:
+def to_source_manifestation(
+    spec: ProviderSpec, row: DiscoveredRow
+) -> SourceManifestation:
     """An inventory row as a citable source.  Never a direct measurement."""
 
     uri = row.metadata_uri or row.data_access_uri
@@ -738,14 +831,26 @@ def discover_sources(
     runs: list[ProviderRun] = []
 
     if auth.level is not AuthorizationLevel.METADATA_DISCOVERY:
-        log.record(LifecycleState.DISCOVER, StepOutcome.NOT_AUTHORIZED,
-                   "no metadata-discovery grant; no request was made")
+        log.record(
+            LifecycleState.DISCOVER,
+            StepOutcome.NOT_AUTHORIZED,
+            "no metadata-discovery grant; no request was made",
+        )
         runs = [
-            ProviderRun(spec.provider_id, spec.family, RunState.NOT_AUTHORIZED, 0, 0, None,
-                        "not authorised")
+            ProviderRun(
+                spec.provider_id,
+                spec.family,
+                RunState.NOT_AUTHORIZED,
+                0,
+                0,
+                None,
+                "not authorised",
+            )
             for spec in chosen
         ]
-        return DiscoveryReceipt(bbox, namespace, discovered_utc, auth, tuple(runs), log.steps)
+        return DiscoveryReceipt(
+            bbox, namespace, discovered_utc, auth, tuple(runs), log.steps
+        )
 
     gate = budgeted(transport, auth)
     for spec in chosen:
@@ -753,22 +858,49 @@ def discover_sources(
         try:
             rows = spec.discover(bbox, recorder)
         except (AcquisitionNotAuthorized, RequestBudgetExceeded) as exc:
-            runs.append(ProviderRun(spec.provider_id, spec.family, RunState.NOT_AUTHORIZED, 0,
-                                    len(recorder.responses), None, str(exc),
-                                    responses=tuple(recorder.responses)))
+            runs.append(
+                ProviderRun(
+                    spec.provider_id,
+                    spec.family,
+                    RunState.NOT_AUTHORIZED,
+                    0,
+                    len(recorder.responses),
+                    None,
+                    str(exc),
+                    responses=tuple(recorder.responses),
+                )
+            )
             continue
-        except Exception as exc:  # noqa: BLE001 - every source failure is reported, none hidden
-            runs.append(ProviderRun(spec.provider_id, spec.family, RunState.FAIL, 0,
-                                    len(recorder.responses), None,
-                                    f"{type(exc).__name__}: {exc}",
-                                    responses=tuple(recorder.responses)))
+        except (
+            Exception
+        ) as exc:  # noqa: BLE001 - every source failure is reported, none hidden
+            runs.append(
+                ProviderRun(
+                    spec.provider_id,
+                    spec.family,
+                    RunState.FAIL,
+                    0,
+                    len(recorder.responses),
+                    None,
+                    f"{type(exc).__name__}: {exc}",
+                    responses=tuple(recorder.responses),
+                )
+            )
             continue
         ids = [row.native_identifier for row in rows]
         if len(ids) != len(set(ids)):
-            runs.append(ProviderRun(spec.provider_id, spec.family, RunState.FAIL, 0,
-                                    len(recorder.responses), None,
-                                    "duplicate native identifier in one provider response",
-                                    responses=tuple(recorder.responses)))
+            runs.append(
+                ProviderRun(
+                    spec.provider_id,
+                    spec.family,
+                    RunState.FAIL,
+                    0,
+                    len(recorder.responses),
+                    None,
+                    "duplicate native identifier in one provider response",
+                    responses=tuple(recorder.responses),
+                )
+            )
             continue
         runs.append(
             ProviderRun(
@@ -786,21 +918,45 @@ def discover_sources(
 
     failed = [run.provider_id for run in runs if run.state is RunState.FAIL]
     total = sum(run.row_count for run in runs)
-    log.record(LifecycleState.DISCOVER,
-               StepOutcome.FAIL if failed and total == 0 else StepOutcome.PASS,
-               f"{len(runs)} providers queried, {total} rows, failed: {failed or 'none'}")
+    log.record(
+        LifecycleState.DISCOVER,
+        StepOutcome.FAIL if failed and total == 0 else StepOutcome.PASS,
+        f"{len(runs)} providers queried, {total} rows, failed: {failed or 'none'}",
+    )
     if not log.halted:
-        log.record(LifecycleState.INSPECT_METADATA, StepOutcome.PASS,
-                   "inventory attributes kept verbatim")
-        unstable = sum(1 for run in runs for row in run.rows if not row.identifier_is_stable)
-        log.record(LifecycleState.IDENTIFY_SOURCE, StepOutcome.PASS,
-                   f"{total - unstable} stable identifiers, {unstable} layer-local only")
-        log.record(LifecycleState.VALIDATE_SCOPE, StepOutcome.PASS,
-                   "footprint envelopes classified against the query box (planning only)")
-        log.record(LifecycleState.VERIFY_ACCESS, StepOutcome.PASS,
-                   "public catalogue endpoints answered")
-        log.record(LifecycleState.PLAN_ACQUISITION, StepOutcome.PASS,
-                   "candidate products listed; nothing scheduled")
-        log.record(LifecycleState.ACQUIRE_IF_AUTHORIZED, StepOutcome.NOT_AUTHORIZED,
-                   "data-product download is outside this module's grant")
-    return DiscoveryReceipt(bbox, namespace, discovered_utc, auth, tuple(runs), log.steps)
+        log.record(
+            LifecycleState.INSPECT_METADATA,
+            StepOutcome.PASS,
+            "inventory attributes kept verbatim",
+        )
+        unstable = sum(
+            1 for run in runs for row in run.rows if not row.identifier_is_stable
+        )
+        log.record(
+            LifecycleState.IDENTIFY_SOURCE,
+            StepOutcome.PASS,
+            f"{total - unstable} stable identifiers, {unstable} layer-local only",
+        )
+        log.record(
+            LifecycleState.VALIDATE_SCOPE,
+            StepOutcome.PASS,
+            "footprint envelopes classified against the query box (planning only)",
+        )
+        log.record(
+            LifecycleState.VERIFY_ACCESS,
+            StepOutcome.PASS,
+            "public catalogue endpoints answered",
+        )
+        log.record(
+            LifecycleState.PLAN_ACQUISITION,
+            StepOutcome.PASS,
+            "candidate products listed; nothing scheduled",
+        )
+        log.record(
+            LifecycleState.ACQUIRE_IF_AUTHORIZED,
+            StepOutcome.NOT_AUTHORIZED,
+            "data-product download is outside this module's grant",
+        )
+    return DiscoveryReceipt(
+        bbox, namespace, discovered_utc, auth, tuple(runs), log.steps
+    )

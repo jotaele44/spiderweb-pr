@@ -161,7 +161,11 @@ def make_grid(
     dx, dy = (float(cell_size_m[0]), float(cell_size_m[1]))
     if not (math.isfinite(dx) and math.isfinite(dy) and dx > 0 and dy > 0):
         raise ValueError("cell_size_m must be two positive finite numbers")
-    crs_cell = (dx, dy) if cell_size_crs is None else (float(cell_size_crs[0]), float(cell_size_crs[1]))
+    crs_cell = (
+        (dx, dy)
+        if cell_size_crs is None
+        else (float(cell_size_crs[0]), float(cell_size_crs[1]))
+    )
     if not (crs_cell[0] > 0 and crs_cell[1] > 0):
         raise ValueError("cell_size_crs must be positive")
     if nodata is not None:
@@ -208,7 +212,9 @@ def make_grid(
         if expect not in {"submerged", "emergent"}:
             raise ValueError("expect must be 'submerged' or 'emergent'")
         if kind not in ELEVATION_KINDS:
-            raise NotAnElevationSurfaceError("sign expectation applies to height surfaces only")
+            raise NotAnElevationSurfaceError(
+                "sign expectation applies to height surfaces only"
+            )
         finite = array[np.isfinite(array)]
         if finite.size:
             above = float(np.mean(finite > 0))
@@ -270,7 +276,9 @@ class CoverageSummary:
     def closes(self) -> bool:
         ok = self.valid_cells + self.nodata_cells == self.total_cells
         if self.interpolated_cells is not None and self.measured_cells is not None:
-            ok = ok and self.interpolated_cells + self.measured_cells == self.valid_cells
+            ok = (
+                ok and self.interpolated_cells + self.measured_cells == self.valid_cells
+            )
         return ok
 
 
@@ -310,7 +318,9 @@ def _disk(radius: int, inner: int = 0) -> np.ndarray:
     return kernel.astype(np.float64)
 
 
-def position_index(grid: SurfaceGrid, outer_radius_cells: int, inner_radius_cells: int = 0) -> np.ndarray:
+def position_index(
+    grid: SurfaceGrid, outer_radius_cells: int, inner_radius_cells: int = 0
+) -> np.ndarray:
     """Cell height minus the mean height of its neighbourhood.
 
     The topographic position index on land and the bathymetric position index
@@ -319,13 +329,19 @@ def position_index(grid: SurfaceGrid, outer_radius_cells: int, inner_radius_cell
     """
 
     _require_elevation(grid, "position index")
-    if outer_radius_cells < 1 or inner_radius_cells < 0 or inner_radius_cells >= outer_radius_cells:
+    if (
+        outer_radius_cells < 1
+        or inner_radius_cells < 0
+        or inner_radius_cells >= outer_radius_cells
+    ):
         raise ValueError("radii must satisfy 0 <= inner < outer and outer >= 1")
     kernel = _disk(int(outer_radius_cells), int(inner_radius_cells))
     valid = grid.valid
     filled = np.where(valid, grid.values, 0.0)
     total = ndimage.convolve(filled, kernel, mode="constant", cval=0.0)
-    count = ndimage.convolve(valid.astype(np.float64), kernel, mode="constant", cval=0.0)
+    count = ndimage.convolve(
+        valid.astype(np.float64), kernel, mode="constant", cval=0.0
+    )
     with np.errstate(invalid="ignore", divide="ignore"):
         mean = np.where(count > 0, total / count, np.nan)
     return np.where(valid, grid.values - mean, np.nan)
@@ -339,22 +355,32 @@ def local_relief(grid: SurfaceGrid, radius_cells: int) -> np.ndarray:
         raise ValueError("radius_cells must be at least 1")
     size = 2 * int(radius_cells) + 1
     valid = grid.valid
-    high = ndimage.maximum_filter(np.where(valid, grid.values, -np.inf), size=size, mode="constant", cval=-np.inf)
-    low = ndimage.minimum_filter(np.where(valid, grid.values, np.inf), size=size, mode="constant", cval=np.inf)
+    high = ndimage.maximum_filter(
+        np.where(valid, grid.values, -np.inf), size=size, mode="constant", cval=-np.inf
+    )
+    low = ndimage.minimum_filter(
+        np.where(valid, grid.values, np.inf), size=size, mode="constant", cval=np.inf
+    )
     relief = high - low
     return np.where(valid & np.isfinite(relief), relief, np.nan)
 
 
-def hillshade(grid: SurfaceGrid, azimuth_deg: float = 315.0, altitude_deg: float = 45.0) -> np.ndarray:
+def hillshade(
+    grid: SurfaceGrid, azimuth_deg: float = 315.0, altitude_deg: float = 45.0
+) -> np.ndarray:
     """Shaded relief in [0, 1] for display.  A rendering, never evidence."""
 
     _require_elevation(grid, "hillshade")
-    _, dz_dx, dz_dy = compute_slope(grid.values, grid.cell_size_m[0], grid.cell_size_m[1])
+    _, dz_dx, dz_dy = compute_slope(
+        grid.values, grid.cell_size_m[0], grid.cell_size_m[1]
+    )
     slope = np.arctan(np.hypot(dz_dx, dz_dy))
     aspect = np.arctan2(dz_dy, -dz_dx)
     azimuth = math.radians(360.0 - azimuth_deg + 90.0)
     altitude = math.radians(altitude_deg)
-    shade = np.sin(altitude) * np.cos(slope) + np.cos(altitude) * np.sin(slope) * np.cos(azimuth - aspect)
+    shade = np.sin(altitude) * np.cos(slope) + np.cos(altitude) * np.sin(
+        slope
+    ) * np.cos(azimuth - aspect)
     return np.where(np.isfinite(shade), np.clip(shade, 0.0, 1.0), np.nan)
 
 
@@ -451,7 +477,11 @@ def delineate_depressions(
         floor = (
             NUMERICAL_DEPTH_FLOOR_M
             if sigma is None
-            else np.where(np.isfinite(sigma), np.maximum(math.sqrt(2.0) * sigma, NUMERICAL_DEPTH_FLOOR_M), NUMERICAL_DEPTH_FLOOR_M)
+            else np.where(
+                np.isfinite(sigma),
+                np.maximum(math.sqrt(2.0) * sigma, NUMERICAL_DEPTH_FLOOR_M),
+                NUMERICAL_DEPTH_FLOOR_M,
+            )
         )
     wet = depth > floor
     labels = measure.label(wet, connectivity=2)
@@ -462,9 +492,13 @@ def delineate_depressions(
     # thresholds with vectorised per-label statistics before measuring shape,
     # so the per-region work is spent only on basins that will be reported.
     index = np.arange(1, label_count + 1)
-    label_max_depth = np.asarray(ndimage.maximum(depth, labels, index), dtype=np.float64)
+    label_max_depth = np.asarray(
+        ndimage.maximum(depth, labels, index), dtype=np.float64
+    )
     label_cells = np.bincount(labels.ravel(), minlength=label_count + 1)[1:]
-    keep = (label_max_depth >= min_depth_m) & (label_cells * grid.cell_area_m2 >= min_area_m2)
+    keep = (label_max_depth >= min_depth_m) & (
+        label_cells * grid.cell_area_m2 >= min_area_m2
+    )
     if not keep.any():
         return []
     windows = ndimage.find_objects(labels)
@@ -484,23 +518,34 @@ def delineate_depressions(
         d = depth[window][member]
         max_depth = float(d.max())
         area = float(prop.area) * grid.cell_area_m2
-        halo = (slice(max(r0 - 1, 0), min(r1 + 1, rows)), slice(max(c0 - 1, 0), min(c1 + 1, cols)))
+        halo = (
+            slice(max(r0 - 1, 0), min(r1 + 1, rows)),
+            slice(max(c0 - 1, 0), min(c1 + 1, cols)),
+        )
         ring = ndimage.binary_dilation(labels[halo] == label, structure=structure)
         adjoins_nodata = bool((ring & ~valid[halo]).any())
         adjoins_edge = r0 == 0 or c0 == 0 or r1 == rows or c1 == cols
         # Crofton's estimator: unbiased for curved outlines, where counting
         # boundary cells overstates the perimeter and understates circularity.
         perimeter_cells = (
-            float(measure.perimeter_crofton(member, directions=4)) if prop.area > 1 else 4.0
+            float(measure.perimeter_crofton(member, directions=4))
+            if prop.area > 1
+            else 4.0
         )
         perimeter_m = perimeter_cells * math.sqrt(dx * dy)
-        circularity = min(1.0, 4.0 * math.pi * area / (perimeter_m * perimeter_m)) if perimeter_m > 0 else 0.0
+        circularity = (
+            min(1.0, 4.0 * math.pi * area / (perimeter_m * perimeter_m))
+            if perimeter_m > 0
+            else 0.0
+        )
         major = float(prop.axis_major_length) or 1.0
         minor = float(prop.axis_minor_length) or 1.0
         diameter = 2.0 * math.sqrt(area / math.pi)
         s = slope[window][member]
         s = s[np.isfinite(s)]
-        local = np.unravel_index(int(np.argmax(np.where(member, depth[window], -1.0))), member.shape)
+        local = np.unravel_index(
+            int(np.argmax(np.where(member, depth[window], -1.0))), member.shape
+        )
         deepest = (r0 + int(local[0]), c0 + int(local[1]))
         interp_fraction = None
         if grid.interpolated is not None:
@@ -604,7 +649,9 @@ def detect_seams(
             z = (float(med[index]) - centre) / scale
             if abs(z) < z_threshold or abs(float(med[index])) < min_step_m:
                 continue
-            consistency = float(max(positive[index], negative[index])) / float(count[index])
+            consistency = float(max(positive[index], negative[index])) / float(
+                count[index]
+            )
             if consistency < min_sign_consistency:
                 continue
             seams.append(
@@ -621,7 +668,9 @@ def detect_seams(
     return seams
 
 
-def seam_mask(grid: SurfaceGrid, seams: Sequence[Seam], halo_cells: int = 1) -> np.ndarray:
+def seam_mask(
+    grid: SurfaceGrid, seams: Sequence[Seam], halo_cells: int = 1
+) -> np.ndarray:
     mask = np.zeros(grid.shape, dtype=bool)
     for seam in seams:
         lo = max(seam.index - halo_cells + 1, 0)
@@ -670,7 +719,9 @@ def apply_tiled(
     """
 
     out = np.full(grid.shape, np.nan, dtype=np.float64)
-    unc = grid.uncertainty_array() if isinstance(grid.uncertainty_m, np.ndarray) else None
+    unc = (
+        grid.uncertainty_array() if isinstance(grid.uncertainty_m, np.ndarray) else None
+    )
     for read, inner, core in iter_windows(grid.shape, tile, halo):
         west, north = grid.xy(read[0].start, read[1].start)
         sub = SurfaceGrid(
@@ -711,7 +762,11 @@ def coarsen(grid: SurfaceGrid, factor: int) -> SurfaceGrid:
         values = np.where(count > 0, total / count, np.nan)
     interp = None
     if grid.interpolated is not None:
-        interp = grid.interpolated[: r * factor, : c * factor].reshape(r, factor, c, factor).any(axis=(1, 3))
+        interp = (
+            grid.interpolated[: r * factor, : c * factor]
+            .reshape(r, factor, c, factor)
+            .any(axis=(1, 3))
+        )
         interp = interp | ((count > 0) & (count < factor * factor))
     unc: float | np.ndarray | None = grid.uncertainty_m
     if isinstance(unc, np.ndarray):
@@ -775,7 +830,9 @@ def difference(
         raise GridMismatchError("grids are not cell-aligned; resample explicitly first")
     assert earlier.vertical is not None and later.vertical is not None
     if DatumKind.ASSUMED in {earlier.vertical.kind, later.vertical.kind}:
-        raise VerticalCompatibilityError("a surface on an assumed datum cannot be differenced")
+        raise VerticalCompatibilityError(
+            "a surface on an assumed datum cannot be differenced"
+        )
 
     offset = 0.0
     authority = None
@@ -801,12 +858,22 @@ def difference(
     unc = None
     detectable = None
     if ua is not None and ub is not None and transform_unc is not None:
-        unc = np.where(both, np.sqrt(ua * ua + ub * ub + transform_unc * transform_unc), np.nan)
+        unc = np.where(
+            both, np.sqrt(ua * ua + ub * ub + transform_unc * transform_unc), np.nan
+        )
         detectable = np.where(both, np.abs(delta) > coverage_factor * unc, False)
     either = None
     if earlier.interpolated is not None or later.interpolated is not None:
-        ia = earlier.interpolated if earlier.interpolated is not None else np.zeros(earlier.shape, bool)
-        ib = later.interpolated if later.interpolated is not None else np.zeros(later.shape, bool)
+        ia = (
+            earlier.interpolated
+            if earlier.interpolated is not None
+            else np.zeros(earlier.shape, bool)
+        )
+        ib = (
+            later.interpolated
+            if later.interpolated is not None
+            else np.zeros(later.shape, bool)
+        )
         either = (ia | ib) & both
     return SurfaceDifference(
         delta_m=delta,
