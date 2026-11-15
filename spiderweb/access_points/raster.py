@@ -36,6 +36,9 @@ from .vertical import BoundVertical, CertifiedTransform, DatumKind, bind
 
 PROCESSING_VERSION = "access-point-surface-processing/1.0"
 
+# Fill depths at or below this are numerical residue, not relief.
+NUMERICAL_DEPTH_FLOOR_M = 1e-6
+
 
 class MissingCRSError(ValueError):
     """A grid was offered without a horizontal coordinate reference system."""
@@ -422,15 +425,35 @@ def delineate_depressions(
     min_depth_m: float,
     min_area_m2: float,
     max_regions: int | None = None,
+    footprint_min_depth_m: float | None = None,
 ) -> list[DepressionRegion]:
-    """Find closed basins and measure them.  Ordered deepest first, then by label."""
+    """Find closed basins and measure them.  Ordered deepest first, then by label.
+
+    A cell belongs to a basin only where its fill depth can be told apart from
+    zero.  By default that floor is the uncertainty of a depth (root two times
+    the cell's stated vertical uncertainty), or one micrometre where no
+    uncertainty is stated; ``footprint_min_depth_m`` overrides it.  Without a
+    floor, numerical residue on a level rim spreads a basin's outline far
+    beyond the ground that is measurably lower.
+    """
 
     _require_elevation(grid, "depression delineation")
     if min_depth_m <= 0 or min_area_m2 <= 0:
         raise ValueError("min_depth_m and min_area_m2 must be positive")
     filled = fill_depressions(grid)
     depth = np.where(grid.valid, np.maximum(filled - grid.values, 0.0), 0.0)
-    wet = depth > 0
+    if footprint_min_depth_m is not None:
+        if not (math.isfinite(footprint_min_depth_m) and footprint_min_depth_m >= 0):
+            raise ValueError("footprint_min_depth_m must be finite and non-negative")
+        floor: float | np.ndarray = float(footprint_min_depth_m)
+    else:
+        sigma = grid.uncertainty_array()
+        floor = (
+            NUMERICAL_DEPTH_FLOOR_M
+            if sigma is None
+            else np.where(np.isfinite(sigma), np.maximum(math.sqrt(2.0) * sigma, NUMERICAL_DEPTH_FLOOR_M), NUMERICAL_DEPTH_FLOOR_M)
+        )
+    wet = depth > floor
     labels = measure.label(wet, connectivity=2)
     label_count = int(labels.max())
     if label_count == 0:
@@ -465,7 +488,11 @@ def delineate_depressions(
         ring = ndimage.binary_dilation(labels[halo] == label, structure=structure)
         adjoins_nodata = bool((ring & ~valid[halo]).any())
         adjoins_edge = r0 == 0 or c0 == 0 or r1 == rows or c1 == cols
-        perimeter_cells = float(measure.perimeter(member, neighborhood=8)) if prop.area > 1 else 4.0
+        # Crofton's estimator: unbiased for curved outlines, where counting
+        # boundary cells overstates the perimeter and understates circularity.
+        perimeter_cells = (
+            float(measure.perimeter_crofton(member, directions=4)) if prop.area > 1 else 4.0
+        )
         perimeter_m = perimeter_cells * math.sqrt(dx * dy)
         circularity = min(1.0, 4.0 * math.pi * area / (perimeter_m * perimeter_m)) if perimeter_m > 0 else 0.0
         major = float(prop.axis_major_length) or 1.0

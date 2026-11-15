@@ -53,6 +53,7 @@ from .vocabulary import (
 DETECTION_METHOD = "closed-basin-delineation"
 DETECTION_VERSION = "access-point-detection/1.0"
 ESCARPMENT_METHOD = "slope-band-delineation"
+RECTANGULARITY_THRESHOLD = 0.88
 
 _SHAPE_BASIS = ("terrain_derivative", "depression_shape")
 _SEABED_BASIS = ("bathymetric_anomaly", "depression_shape")
@@ -267,11 +268,12 @@ def detect_inland(
         hit = bool(on_seam is not None and on_seam[region.slices].any())
         flags = _flags(region, hit, params)
         tier = _shape_tier(flags)
+        # A disc fills pi/4 (0.785) of its bounding box; an axis-aligned
+        # rectangle fills all of it.  The threshold sits between the two.
         rectangular = (
-            region.rectangularity >= 0.8
+            region.rectangularity >= RECTANGULARITY_THRESHOLD
             and region.flat_floor_fraction is not None
             and region.flat_floor_fraction >= 0.5
-            and region.circularity < 0.85
         )
         extra: list[EvidenceAssertion] = []
         if set(flags) & ARTIFACT_FLAGS:

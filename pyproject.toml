@@ -211,7 +211,8 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["integration", "pipeline", "readiness", "federation", "llm",
-          "earthgpt", "imagery", "spiderweb.subsurface", "provenance_utils", "run_modes", "release_check"]
+          "earthgpt", "imagery", "spiderweb.subsurface", "spiderweb.access_points",
+          "provenance_utils", "run_modes", "release_check"]
 omit = [
     "tests/*",
     "scripts/*",
