@@ -88,6 +88,11 @@ server = [
     "sse-starlette>=2.1,<4",
     "aiosqlite>=0.20,<1",
     "pydantic>=2.7,<3",
+    # NOAA ERI imagery tiles (server/backend/eri_imagery.py): PyYAML reads the
+    # flight registry, rasterio warps the remote GeoTIFFs onto the tile grid.
+    # Same ranges as the `airspace` and `dem` extras.
+    "PyYAML>=6.0,<7",
+    "rasterio>=1.4,<2",
 ]
 # Cross-repo federation hub.
 federation = [
