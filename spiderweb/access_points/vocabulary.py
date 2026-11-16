@@ -40,6 +40,7 @@ __all__ = [
     "OffshoreFeatureClass",
     "Origin",
     "ProvenanceState",
+    "RELATIONSHIP_CONNECTIVITY_KIND",
     "RecordLayer",
     "RegistryStatus",
     "RelationshipType",

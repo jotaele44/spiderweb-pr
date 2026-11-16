@@ -342,13 +342,13 @@
     },
     {
       "path": "spiderweb/access_points/vertical.py",
-      "sha256": "3f5a2ac6166b0c520b1321881ff233fc1768c6f6c99fb34b621bf1d46de0309e",
-      "bytes": 17273
+      "sha256": "80e84a31d495844d6daec3d2e48664b693f548f92dc5beddc702e216f5b77dc3",
+      "bytes": 17291
     },
     {
       "path": "spiderweb/access_points/vocabulary.py",
-      "sha256": "d53e6ede6876e94217f4a696d60392e6d97911041f8d05c6548ddb53e82f351e",
-      "bytes": 10554
+      "sha256": "e0696c7d8fa3c0aa5d29b48491bf7a5b86a9d602486cce57a56f538b5391daeb",
+      "bytes": 10592
     },
     {
       "path": "tests/access_points_support.py",

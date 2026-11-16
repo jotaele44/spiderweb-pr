@@ -614,7 +614,7 @@
     },
     {
       "path": "evidence/access_points/artifact_manifest_v1.json",
-      "sha256": "8eabb821758a42cfa4485e30fe71a4fc99b248d8a153ef63a4a6ecdb40c5df2f"
+      "sha256": "75f8af6b8a5cab3d6ce8dacca8098fe3e7bd9c1f09b7eac4547283563e1f31cc"
     },
     {
       "path": "evidence/access_points/benchmark_v1.json",

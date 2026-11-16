@@ -43,6 +43,7 @@ from gebco.marine_evidence import (
 __all__ = [
     "BoundVertical",
     "CertifiedTransform",
+    "DATUM_KIND",
     "DatumKind",
     "JoinDecision",
     "JoinState",
