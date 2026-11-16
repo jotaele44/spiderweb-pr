@@ -75,6 +75,14 @@ families:
         canonical: infrastructure_linked_access_point
         plain_language: candidate place where infrastructure context overlaps route or POI evidence
         aliases: [ILAP, infrastructure linked access point, inferred access point, access-linked POI]
+      INAP:
+        canonical: inland_access_point
+        plain_language: record in the Inland Access Points registry; a candidate terrestrial or inland-subsurface feature with evidence stated per dimension. Not the same thing as ILAP above.
+        aliases: [INAP, inland access point, Inland Access Points]
+      OFAP:
+        canonical: offshore_access_point
+        plain_language: record in the Off-Shore Access Points registry; a candidate marine or submerged feature with evidence stated per dimension. Not the same thing as the FIC OSAP source layers.
+        aliases: [OFAP, off-shore access point, Off-Shore Access Points]
       ROW:
         canonical: right_of_way
         plain_language: utility, road, rail, or service corridor

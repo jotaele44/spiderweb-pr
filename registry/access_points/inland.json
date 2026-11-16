@@ -1,0 +1,422 @@
+{
+  "content_sha256": "6461f3c561a02444f7aedd7150d60aac0d8fca1a07f1b66b0ec042a782c26e90",
+  "contract_version": "access-point-registry/1.0",
+  "counts": {
+    "derived_geometries": 0,
+    "features": 4,
+    "features_by_status": {
+      "CANDIDATE": 4,
+      "PROVISIONAL_DISCOVERY": 0,
+      "REJECTED": 0,
+      "SUPERSEDED": 0,
+      "UNDER_REVIEW": 0,
+      "VERIFIED": 0
+    },
+    "observations": 4,
+    "observations_bound": 4,
+    "observations_unbound": 0,
+    "sources": 2
+  },
+  "derived_geometries": [],
+  "features": [
+    {
+      "assertions": [
+        {
+          "adjudicated_by": null,
+          "adjudicated_utc": null,
+          "adjudication": "UNREVIEWED",
+          "basis": [
+            "legacy_registry_listing"
+          ],
+          "claim_class": "ASSUMPTION",
+          "connectivity_kind": null,
+          "dimension": "EXISTENCE",
+          "method": null,
+          "method_version": null,
+          "observation_ids": [
+            "INAP-OBS-3940553fdbe81821"
+          ],
+          "origin": null,
+          "source_ids": [
+            "APSRC-a995fc05dbfe1005"
+          ],
+          "statement": "legacy registry lists node CMB-02 of type Quarry / Terraced; its coordinate reference system is not declared (WGS84 assumed) and its positional accuracy is unknown",
+          "tier": "CANDIDATE",
+          "valid_from": null,
+          "valid_to": null
+        }
+      ],
+      "created_utc": "2026-11-15T00:00:00Z",
+      "feature_class": "SURFACE_EXCAVATION",
+      "feature_id": "INAP-PR-000001",
+      "geometry_id": null,
+      "namespace": "access_point.inland",
+      "notes": "Crosswalked from legacy node CMB-02 (analytic.ilap_infrastructure_linked). Coastal side not tested: no coastline version is registered.",
+      "observation_ids": [
+        "INAP-OBS-3940553fdbe81821"
+      ],
+      "provisional_labels": [],
+      "raw_names": [
+        "Adjuntas Quarry"
+      ],
+      "status": "CANDIDATE",
+      "supersedes": [],
+      "updated_utc": "2026-11-15T00:00:00Z"
+    },
+    {
+      "assertions": [
+        {
+          "adjudicated_by": null,
+          "adjudicated_utc": null,
+          "adjudication": "UNREVIEWED",
+          "basis": [
+            "legacy_registry_listing"
+          ],
+          "claim_class": "ASSUMPTION",
+          "connectivity_kind": null,
+          "dimension": "EXISTENCE",
+          "method": null,
+          "method_version": null,
+          "observation_ids": [
+            "INAP-OBS-1d0c6f5dc82224f1"
+          ],
+          "origin": null,
+          "source_ids": [
+            "APSRC-a995fc05dbfe1005"
+          ],
+          "statement": "legacy registry lists node CMB-05 of type Hydro / Tunnel; its coordinate reference system is not declared (WGS84 assumed) and its positional accuracy is unknown",
+          "tier": "CANDIDATE",
+          "valid_from": null,
+          "valid_to": null
+        }
+      ],
+      "created_utc": "2026-11-15T00:00:00Z",
+      "feature_class": "ENGINEERED_UNDERGROUND_STRUCTURE",
+      "feature_id": "INAP-PR-000002",
+      "geometry_id": null,
+      "namespace": "access_point.inland",
+      "notes": "Crosswalked from legacy node CMB-05 (analytic.ilap_infrastructure_linked). Coastal side not tested: no coastline version is registered.",
+      "observation_ids": [
+        "INAP-OBS-1d0c6f5dc82224f1"
+      ],
+      "provisional_labels": [],
+      "raw_names": [
+        "Caonillas–Dos Bocas Transfer"
+      ],
+      "status": "CANDIDATE",
+      "supersedes": [],
+      "updated_utc": "2026-11-15T00:00:00Z"
+    },
+    {
+      "assertions": [
+        {
+          "adjudicated_by": null,
+          "adjudicated_utc": null,
+          "adjudication": "UNREVIEWED",
+          "basis": [
+            "legacy_registry_listing"
+          ],
+          "claim_class": "ASSUMPTION",
+          "connectivity_kind": null,
+          "dimension": "EXISTENCE",
+          "method": null,
+          "method_version": null,
+          "observation_ids": [
+            "INAP-OBS-dd788dfd4f0032ed"
+          ],
+          "origin": null,
+          "source_ids": [
+            "APSRC-a995fc05dbfe1005"
+          ],
+          "statement": "legacy registry lists node NK-01 of type Hydro / Sinkhole; its coordinate reference system is not declared (WGS84 assumed) and its positional accuracy is unknown",
+          "tier": "CANDIDATE",
+          "valid_from": null,
+          "valid_to": null
+        }
+      ],
+      "created_utc": "2026-11-15T00:00:00Z",
+      "feature_class": "SINKHOLE",
+      "feature_id": "INAP-PR-000003",
+      "geometry_id": null,
+      "namespace": "access_point.inland",
+      "notes": "Crosswalked from legacy node NK-01 (analytic.ilap_infrastructure_linked). Coastal side not tested: no coastline version is registered.",
+      "observation_ids": [
+        "INAP-OBS-dd788dfd4f0032ed"
+      ],
+      "provisional_labels": [],
+      "raw_names": [
+        "Sistema de Cuevas Río Camuy"
+      ],
+      "status": "CANDIDATE",
+      "supersedes": [],
+      "updated_utc": "2026-11-15T00:00:00Z"
+    },
+    {
+      "assertions": [
+        {
+          "adjudicated_by": null,
+          "adjudicated_utc": null,
+          "adjudication": "UNREVIEWED",
+          "basis": [
+            "legacy_registry_listing"
+          ],
+          "claim_class": "ASSUMPTION",
+          "connectivity_kind": null,
+          "dimension": "EXISTENCE",
+          "method": null,
+          "method_version": null,
+          "observation_ids": [
+            "INAP-OBS-d586ead7e3bdad67"
+          ],
+          "origin": null,
+          "source_ids": [
+            "APSRC-a995fc05dbfe1005"
+          ],
+          "statement": "legacy registry lists node NK-02 of type Hydro / Spring; its coordinate reference system is not declared (WGS84 assumed) and its positional accuracy is unknown",
+          "tier": "CANDIDATE",
+          "valid_from": null,
+          "valid_to": null
+        }
+      ],
+      "created_utc": "2026-11-15T00:00:00Z",
+      "feature_class": "SPRING",
+      "feature_id": "INAP-PR-000004",
+      "geometry_id": null,
+      "namespace": "access_point.inland",
+      "notes": "Crosswalked from legacy node NK-02 (analytic.ilap_infrastructure_linked). Coastal side not tested: no coastline version is registered.",
+      "observation_ids": [
+        "INAP-OBS-d586ead7e3bdad67"
+      ],
+      "provisional_labels": [],
+      "raw_names": [
+        "Manantial Río Camuy"
+      ],
+      "status": "CANDIDATE",
+      "supersedes": [],
+      "updated_utc": "2026-11-15T00:00:00Z"
+    }
+  ],
+  "namespace": "access_point.inland",
+  "observations": [
+    {
+      "claim_class": "ASSUMPTION",
+      "discovered_utc": "2026-11-15T00:00:00Z",
+      "geometry": {
+        "coordinates": [
+          -66.6687,
+          18.3112
+        ],
+        "type": "Point"
+      },
+      "geometry_basis": "SOURCE_DIGITIZED",
+      "horizontal_crs": "OGC:CRS84",
+      "horizontal_uncertainty_m": null,
+      "locality_label": null,
+      "namespace": "access_point.inland",
+      "native_record_id": "CMB-05",
+      "observation_id": "INAP-OBS-1d0c6f5dc82224f1",
+      "observed_date": null,
+      "raw_attributes": {
+        "corridor_id": "AASB-C02",
+        "corridor_name": "Central Mountain Ridge Cut",
+        "horizontal_crs_basis": "ASSUMED_WGS84_UNDECLARED_IN_SOURCE",
+        "ilap_subtype": "Tunnel",
+        "ilap_type": "Hydro",
+        "lat": 18.3112,
+        "legacy_namespace": "analytic.ilap_infrastructure_linked",
+        "lon": -66.6687,
+        "municipality": "Utuado",
+        "name": "Caonillas–Dos Bocas Transfer",
+        "node_confidence": 88,
+        "node_id": "CMB-05",
+        "source_crs_declared": null,
+        "source_file": "AASB_All_Corridors_Nodes_v1.geojson",
+        "source_table": "features",
+        "status": "registered",
+        "structural_role": "Subsurface",
+        "visibility": "V3"
+      },
+      "raw_label": "Caonillas–Dos Bocas Transfer",
+      "source_id": "APSRC-a995fc05dbfe1005",
+      "value_m": null,
+      "vertical_reference": null,
+      "vertical_uncertainty_m": null
+    },
+    {
+      "claim_class": "ASSUMPTION",
+      "discovered_utc": "2026-11-15T00:00:00Z",
+      "geometry": {
+        "coordinates": [
+          -66.7321,
+          18.1643
+        ],
+        "type": "Point"
+      },
+      "geometry_basis": "SOURCE_DIGITIZED",
+      "horizontal_crs": "OGC:CRS84",
+      "horizontal_uncertainty_m": null,
+      "locality_label": null,
+      "namespace": "access_point.inland",
+      "native_record_id": "CMB-02",
+      "observation_id": "INAP-OBS-3940553fdbe81821",
+      "observed_date": null,
+      "raw_attributes": {
+        "corridor_id": "AASB-C02",
+        "corridor_name": "Central Mountain Ridge Cut",
+        "horizontal_crs_basis": "ASSUMED_WGS84_UNDECLARED_IN_SOURCE",
+        "ilap_subtype": "Terraced",
+        "ilap_type": "Quarry",
+        "lat": 18.1643,
+        "legacy_namespace": "analytic.ilap_infrastructure_linked",
+        "lon": -66.7321,
+        "municipality": "Adjuntas",
+        "name": "Adjuntas Quarry",
+        "node_confidence": 77,
+        "node_id": "CMB-02",
+        "source_crs_declared": null,
+        "source_file": "AASB_All_Corridors_Nodes_v1.geojson",
+        "source_table": "features",
+        "status": "registered",
+        "structural_role": "Mask",
+        "visibility": "V3"
+      },
+      "raw_label": "Adjuntas Quarry",
+      "source_id": "APSRC-a995fc05dbfe1005",
+      "value_m": null,
+      "vertical_reference": null,
+      "vertical_uncertainty_m": null
+    },
+    {
+      "claim_class": "ASSUMPTION",
+      "discovered_utc": "2026-11-15T00:00:00Z",
+      "geometry": {
+        "coordinates": [
+          -66.9015,
+          18.3742
+        ],
+        "type": "Point"
+      },
+      "geometry_basis": "SOURCE_DIGITIZED",
+      "horizontal_crs": "OGC:CRS84",
+      "horizontal_uncertainty_m": null,
+      "locality_label": null,
+      "namespace": "access_point.inland",
+      "native_record_id": "NK-02",
+      "observation_id": "INAP-OBS-d586ead7e3bdad67",
+      "observed_date": null,
+      "raw_attributes": {
+        "corridor_id": "AASB-C01",
+        "corridor_name": "Northern Karst Spine",
+        "horizontal_crs_basis": "ASSUMED_WGS84_UNDECLARED_IN_SOURCE",
+        "ilap_subtype": "Spring",
+        "ilap_type": "Hydro",
+        "lat": 18.3742,
+        "legacy_namespace": "analytic.ilap_infrastructure_linked",
+        "lon": -66.9015,
+        "municipality": "Camuy",
+        "name": "Manantial Río Camuy",
+        "node_confidence": 90,
+        "node_id": "NK-02",
+        "source_crs_declared": null,
+        "source_file": "AASB_All_Corridors_Nodes_v1.geojson",
+        "source_table": "features",
+        "status": "registered",
+        "structural_role": "Pressure Node",
+        "visibility": "V3"
+      },
+      "raw_label": "Manantial Río Camuy",
+      "source_id": "APSRC-a995fc05dbfe1005",
+      "value_m": null,
+      "vertical_reference": null,
+      "vertical_uncertainty_m": null
+    },
+    {
+      "claim_class": "ASSUMPTION",
+      "discovered_utc": "2026-11-15T00:00:00Z",
+      "geometry": {
+        "coordinates": [
+          -66.8893,
+          18.3687
+        ],
+        "type": "Point"
+      },
+      "geometry_basis": "SOURCE_DIGITIZED",
+      "horizontal_crs": "OGC:CRS84",
+      "horizontal_uncertainty_m": null,
+      "locality_label": null,
+      "namespace": "access_point.inland",
+      "native_record_id": "NK-01",
+      "observation_id": "INAP-OBS-dd788dfd4f0032ed",
+      "observed_date": null,
+      "raw_attributes": {
+        "corridor_id": "AASB-C01",
+        "corridor_name": "Northern Karst Spine",
+        "horizontal_crs_basis": "ASSUMED_WGS84_UNDECLARED_IN_SOURCE",
+        "ilap_subtype": "Sinkhole",
+        "ilap_type": "Hydro",
+        "lat": 18.3687,
+        "legacy_namespace": "analytic.ilap_infrastructure_linked",
+        "lon": -66.8893,
+        "municipality": "Camuy",
+        "name": "Sistema de Cuevas Río Camuy",
+        "node_confidence": 95,
+        "node_id": "NK-01",
+        "source_crs_declared": null,
+        "source_file": "AASB_All_Corridors_Nodes_v1.geojson",
+        "source_table": "features",
+        "status": "registered",
+        "structural_role": "Anchor",
+        "visibility": "V3"
+      },
+      "raw_label": "Sistema de Cuevas Río Camuy",
+      "source_id": "APSRC-a995fc05dbfe1005",
+      "value_m": null,
+      "vertical_reference": null,
+      "vertical_uncertainty_m": null
+    }
+  ],
+  "producer_identity": "spiderweb-pr:spiderweb.access_points.seeding",
+  "registry_code": "INAP",
+  "rules_version": "access-point-evidence-rules/1.0",
+  "schema": "access_point_registry/1.0",
+  "sources": [
+    {
+      "coverage_state": "UNKNOWN",
+      "license_note": null,
+      "lineage_root_id": null,
+      "manifestation_sha256": null,
+      "native_identifier": "AASB_All_Corridors_Nodes_v1.geojson",
+      "parent_source_ids": [],
+      "product_stage": "DERIVED_PRODUCT",
+      "provenance_state": "UNREGISTERED",
+      "provider": "OPERATOR_LOCAL_DATASET",
+      "published_date": null,
+      "retrieved_utc": null,
+      "sensor_type": null,
+      "source_id": "APSRC-417da27056f0d6ed",
+      "source_uri": null,
+      "survey_date": null,
+      "title": "AASB_All_Corridors_Nodes_v1.geojson (operator-local input of the legacy registry; not in this repository)"
+    },
+    {
+      "coverage_state": "UNKNOWN",
+      "license_note": null,
+      "lineage_root_id": null,
+      "manifestation_sha256": "71991b9f2c66b07902963c77fc264751a6d07be4b1b068a272f5a356072ffd21",
+      "native_identifier": "configs/ilap_registry.yaml",
+      "parent_source_ids": [
+        "APSRC-417da27056f0d6ed"
+      ],
+      "product_stage": "DERIVED_PRODUCT",
+      "provenance_state": "REGISTERED",
+      "provider": "SPIDERWEB_LEGACY_NODE_REGISTRY",
+      "published_date": "2026-06-13T10:31:25Z",
+      "retrieved_utc": "2026-11-15T00:00:00Z",
+      "sensor_type": null,
+      "source_id": "APSRC-a995fc05dbfe1005",
+      "source_uri": null,
+      "survey_date": null,
+      "title": "configs/ilap_registry.yaml (ilap_registry_v0_1), legacy analytic node compilation"
+    }
+  ]
+}
