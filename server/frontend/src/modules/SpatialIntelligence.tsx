@@ -18,6 +18,9 @@ import { CompareOverlay } from "../spatial/imagery/CompareOverlay";
 import { CoordinateReadout } from "../spatial/imagery/CoordinateReadout";
 import { ImageryPanel } from "../spatial/imagery/ImageryPanel";
 import { useImageryController } from "../spatial/imagery/useImageryController";
+import { AccessPointsPanel } from "../spatial/accessPoints/AccessPointsPanel";
+import { useAccessPointsController } from "../spatial/accessPoints/useAccessPointsController";
+import { ControlCrossSection } from "../spatial/transect/ControlCrossSection";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 import { useSpatialTools, SpatialToolsPanel } from "./SpatialToolsPanel";
 
@@ -441,6 +444,12 @@ export function SpatialIntelligence({
     ready: mapReady && activeMode === "maplibre",
     basemapLayerId: BASEMAP_ID,
     clickSuppressedRef: spatialToolActiveRef,
+  });
+  // Inland and Off-Shore Access Point registries. MapLibre-only, like imagery:
+  // in 3D mode mapRef is null, nothing is drawn, and the panel says so.
+  const accessPoints = useAccessPointsController({
+    mapRef,
+    ready: mapReady && activeMode === "maplibre",
   });
   const densityGeoidsRef = useRef<Set<string>>(new Set());
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
@@ -905,7 +914,16 @@ export function SpatialIntelligence({
             <>
               <div className="hr" />
               <ImageryPanel {...imagery.panelProps} />
+              <div className="hr" />
+              <AccessPointsPanel controller={accessPoints} />
+              <div className="hr" />
+              <ControlCrossSection />
             </>
+          )}
+          {activeMode !== "maplibre" && (
+            <p className="ap-note" role="note">
+              Access-point layers are drawn in the 2D map only. Switch to 2D to see them.
+            </p>
           )}
           <div className="hr" />
           <h2>Top spatial anomalies</h2>

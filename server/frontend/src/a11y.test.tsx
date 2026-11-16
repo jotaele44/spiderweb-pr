@@ -13,6 +13,12 @@ import { Inspector } from "./components/Inspector";
 import { LeftRail } from "./components/LeftRail";
 import { CommandBar } from "./components/CommandBar";
 import { Timeline } from "./components/Timeline";
+import { RelationshipGraph } from "./components/RelationshipGraph";
+import { AccessPointDetail } from "./spatial/accessPoints/AccessPointDetail";
+import { toGraph } from "./spatial/accessPoints/AccessPointRelationships";
+import * as accessPointFixtures from "./spatial/accessPoints/fixtures";
+import { SourceCoveragePanel } from "./spatial/accessPoints/SourceCoveragePanel";
+import { TransectProfile } from "./spatial/transect/TransectProfile";
 
 // The automated a11y gate the UI cleanup plan called for (Phase 5) and never
 // got. It runs inside `npm run test`, which CI already gates, rather than as a
@@ -106,6 +112,38 @@ const cases: [string, () => ReactElement][] = [
       <Timeline events={priisData.events} cursor="2024-08-14" setCursor={noop} setSelection={noop} />
     ),
   ],
+  [
+    "AccessPointDetail (provisional record)",
+    () => <AccessPointDetail feature={accessPointFixtures.seed} evidence={{ status: "idle" }} onClose={noop} />,
+  ],
+  [
+    "AccessPointDetail (with evidence)",
+    () => (
+      <AccessPointDetail
+        feature={accessPointFixtures.candidate}
+        evidence={{ status: "ready", evidence: accessPointFixtures.evidence }}
+      />
+    ),
+  ],
+  [
+    "SourceCoveragePanel",
+    () => (
+      <SourceCoveragePanel registry="offshore" state={{ status: "ready", coverage: accessPointFixtures.coverage }} />
+    ),
+  ],
+  [
+    "RelationshipGraph",
+    () => (
+      <RelationshipGraph
+        {...toGraph(
+          accessPointFixtures.relationships(["verified", "context", "hypothesized", "contradicted", "unresolved"]),
+        )}
+      />
+    ),
+  ],
+  ["RelationshipGraph (empty)", () => <RelationshipGraph nodes={[]} edges={[]} />],
+  ["TransectProfile (separate datums)", () => <TransectProfile section={accessPointFixtures.crossSection(false)} />],
+  ["TransectProfile (joined)", () => <TransectProfile section={accessPointFixtures.crossSection(true)} />],
 ];
 
 describe("accessibility", () => {

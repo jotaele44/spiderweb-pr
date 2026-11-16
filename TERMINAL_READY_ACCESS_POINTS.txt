@@ -1,0 +1,99 @@
+TERMINAL_READY — Inland and Off-Shore Access Point Registries
+REPOSITORY: spiderweb-pr
+STATE: DEVELOPMENT_COMPLETE / SOFTWARE_TESTED / NOT_CERTIFIED / PRODUCTION_NOT_AUTHORIZED
+BASE COMMIT: cb5aa8eb726ba882b410bcfe0a402799af86ed5a (audited); main merged in at b2c532fb2c4674a8d838423dc4d832dd5ca91369
+NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
+IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
+RECORDS EXPORTED TO THE HUB: NONE
+INDEPENDENT REVIEW: NOT PERFORMED
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v1.json
+
+PURPOSE
+
+Two independent registries of candidate geographic features on one shared
+evidence foundation. "ILAP" and "OSAP" already name other things in this
+repository; the registries do not use those acronyms as identifiers. See
+docs/ACCESS_POINT_TERMINOLOGY_DECISION.md.
+
+WHAT A PASSING RUN MEANS
+
+The software behaves as specified on synthetic controls and on the committed
+registry documents. It does not mean any record is a real access point, that
+any method has been validated on real terrain or seabed, or that anything is
+ready for production.
+
+SETUP (from the repository root)
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install uv
+uv pip install -c constraints.txt -e ".[airspace,earthgpt,server,dev]"
+
+VERIFY
+
+1. Registry documents are current and deterministic:
+
+   python scripts/build_access_point_registries.py --check
+   expected: registry documents are current
+
+2. Access-point test suites (350 tests):
+
+   python -m pytest -q tests/test_access_points_core.py tests/test_access_points_science.py tests/test_access_points_integration.py tests/test_access_points_api.py tests/test_access_points_schemas.py
+   expected: 350 passed
+
+3. Full repository suite with the coverage floor:
+
+   python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-fail-under=62
+   expected at the certified commit: 2484 passed, 0 failed, total coverage 75.57%
+
+4. Frontend (from server/frontend, after npm ci):
+
+   npm run lint && npm run typecheck && npm run test && npm run build
+   expected: 183 tests passed; lint, typecheck and build clean
+
+5. Documentation and data policy:
+
+   python3 tools/check_docs_sync.py --base origin/main
+   python scripts/check_data_policy.py
+
+RUN
+
+   uvicorn server.backend.main:app --port 8000
+   curl http://127.0.0.1:8000/v1/access-points
+   curl "http://127.0.0.1:8000/v1/access-points/offshore/features"
+   curl http://127.0.0.1:8000/v1/access-points/offshore/features/OFAP-PR-000004/evidence
+
+   The five provisional off-shore records return "geometry": null. That is
+   correct: no registered source gives them a position.
+
+EXPECTED REGISTRY CONTENTS
+
+   inland:    4 features, all CANDIDATE
+   offshore:  6 features: 5 PROVISIONAL_DISCOVERY (no coordinates), 1 CANDIDATE
+   relationships: 0
+   verified features: 0
+
+BENCHMARK (optional; software performance on synthetic surfaces)
+
+   python scripts/benchmark_access_points.py --output /tmp/access_point_benchmark.json
+
+SOURCE DISCOVERY (off by default)
+
+   Metadata discovery makes no request unless a grant is set:
+   SPIDERWEB_ACCESS_POINT_ACQUISITION=metadata:<max requests>:<who authorised>
+   No data product is downloaded by any code path in this package.
+
+OPEN BEFORE ANY RELEASE
+
+   - Independent review has not been performed. The producer cannot certify itself.
+   - No method has been scored against independent field truth.
+   - No real survey has been processed; the five seed screenshots are not registered.
+   - Live source discovery has not been executed.
+   - aguayluz-pr has no committed export package to read.
+   - Nothing is exported to the hub; export was not authorised.
+   - Three naming questions for the owners are open (see the terminology decision).
+
+ROLLBACK
+
+   Revert the branch commits. The change is additive; no database, external
+   service or sibling repository was modified.
