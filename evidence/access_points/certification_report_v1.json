@@ -1,6 +1,6 @@
 {
   "schema": "access_point_certification_report/1.0",
-  "generated_utc": "2026-11-15T14:00:00Z",
+  "generated_utc": "2026-11-16T11:50:00Z",
   "statement": "Software tested; science exploratory; not certified; production not authorised. A passing test suite is not a certification.",
   "repositories": [
     {
@@ -43,7 +43,7 @@
       "evidence": [
         "evidence/access_points/baseline_manifest_v1.json"
       ],
-      "detail": "All five heads equalled origin/main; spiderweb-pr was at the commit named in the proposal. 2109 core tests, 50 grid tests and 148 frontend tests passed before the change."
+      "detail": "All five heads equalled origin/main; spiderweb-pr was at the commit named in the proposal. 2109 core tests, 50 grid tests and 148 frontend tests passed before the change. main later advanced to b2c532f and was merged into the branch; one textual conflict in CHANGELOG.md."
     },
     {
       "gate_id": "TERMINOLOGY_COLLISION",
@@ -74,7 +74,7 @@
       "evidence": [
         "tests/"
       ],
-      "detail": "2460 passed, 51 skipped, 0 failed; total coverage 75.57% against a floor of 62. 350 of the tests are new."
+      "detail": "2484 passed, 51 skipped, 0 failed on the tree with main merged in; total coverage 75.57% against a floor of 62. 350 of the tests are new in this change; 24 arrived from main."
     },
     {
       "gate_id": "SCHEMA_TESTS",
@@ -301,6 +301,16 @@
       "claim_class": "FACT",
       "evidence": [],
       "detail": "Not given. Nothing was deployed and no production data store was written."
+    },
+    {
+      "gate_id": "CI_ON_PULL_REQUEST",
+      "title": "Continuous integration on the pull request",
+      "state": "PROVISIONAL",
+      "claim_class": "FACT",
+      "evidence": [
+        "https://github.com/jotaele44/spiderweb-pr/pull/458"
+      ],
+      "detail": "All 17 check runs passed on the pre-merge head 955f9f9 (tests on Python 3.11 and 3.12, lint, frontend, lockfile, install matrix, release check, data policy, template drift, spatial index gates). They must pass again on the merge commit."
     }
   ],
   "readiness": {
@@ -383,7 +393,7 @@
   ],
   "measurements": {
     "tests": {
-      "core_passed": 2460,
+      "core_passed": 2484,
       "core_failed": 0,
       "core_skipped": 51,
       "coverage_percent": 75.57,
@@ -393,7 +403,8 @@
       "new_python_tests": 350,
       "new_frontend_tests": 35,
       "baseline_core_passed": 2109,
-      "baseline_frontend_passed": 148
+      "baseline_frontend_passed": 148,
+      "tests_arrived_from_main": 24
     },
     "registry": {
       "guayama_reference_sources": {
@@ -577,7 +588,8 @@
         "unit": "s",
         "improvement_factor": 0.71
       }
-    ]
+    ],
+    "schema_files": 87
   },
   "artifacts": [
     {
@@ -598,11 +610,11 @@
     },
     {
       "path": "evidence/access_points/baseline_manifest_v1.json",
-      "sha256": "82d177355aa413dcd925a81c31278e0405bdbe8a6c76bbdbfb513045ffc82472"
+      "sha256": "b17ec07fa2dff19e3e49089fd11154f8906364eccb7db2c1a8dd4b3d953ff98a"
     },
     {
       "path": "evidence/access_points/artifact_manifest_v1.json",
-      "sha256": "37306c42d617fdb889af49cdabadd8e88fce02aadbb57cf6ddb0164b04dd91e3"
+      "sha256": "8eabb821758a42cfa4485e30fe71a4fc99b248d8a153ef63a4a6ecdb40c5df2f"
     },
     {
       "path": "evidence/access_points/benchmark_v1.json",

@@ -1,19 +1,19 @@
 {
   "schema": "access_point_artifact_manifest/1.0",
-  "generated_utc": "2026-11-15T14:00:00Z",
-  "base_sha": "cb5aa8eb726ba882b410bcfe0a402799af86ed5a",
-  "statement": "SHA-256 of every file this change adds or modifies, taken from the working tree. The certification report and this manifest are excluded because they reference it.",
+  "generated_utc": "2026-11-16T11:50:00Z",
+  "base_sha": "b2c532fb2c4674a8d838423dc4d832dd5ca91369",
+  "statement": "SHA-256 of every file this change adds or modifies relative to main at the base commit shown, taken from the working tree after main was merged in. The certification report and this manifest are excluded because they reference it.",
   "file_count": 75,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "a1b9f4e2561b3f2e884d3d2d473cf3c088bda658dc5fa8c9413c3abda796e456",
-      "bytes": 13887
+      "sha256": "eea8359f73272cc389878d2863b7d2ff5dd92e3eb08d70ea7ca902edd9d171f5",
+      "bytes": 14500
     },
     {
       "path": "TERMINAL_READY_ACCESS_POINTS.txt",
-      "sha256": "fb04799c2c67b353e13d46f65442ada743a3037a4fd4ad91d645f5c3a79ca8c9",
-      "bytes": 3845
+      "sha256": "ca8e1b101a62b82351fe571114374b413502a4f799ecb51bec21d65bb940d116",
+      "bytes": 3915
     },
     {
       "path": "configs/access_point_legacy_crosswalk.yaml",
@@ -67,8 +67,8 @@
     },
     {
       "path": "evidence/access_points/baseline_manifest_v1.json",
-      "sha256": "82d177355aa413dcd925a81c31278e0405bdbe8a6c76bbdbfb513045ffc82472",
-      "bytes": 5170
+      "sha256": "b17ec07fa2dff19e3e49089fd11154f8906364eccb7db2c1a8dd4b3d953ff98a",
+      "bytes": 5705
     },
     {
       "path": "evidence/access_points/benchmark_comparison_v1.json",
@@ -97,7 +97,7 @@
     },
     {
       "path": "pyproject.toml",
-      "sha256": "10711bf2f4ef8e7ac93f4ee3b388963a2468a1c16a031e06b9289277b07454a5",
+      "sha256": "51c2766540a0ede2b42aafd92af5188ed6235d143283ffefc4676b9799e22f46",
       "bytes": 9223
     },
     {

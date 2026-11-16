@@ -105,7 +105,9 @@
   },
   "schemas": {
     "schema_files_at_baseline": 83,
-    "schema_files_after": 86
+    "schema_files_added_by_this_change": 3,
+    "schema_files_added_by_main_since_baseline": 1,
+    "schema_files_after_merge": 87
   },
   "frozen_inputs": [
     {
@@ -149,5 +151,10 @@
     "three registries of the same coastal elevation products use different datum vocabularies",
     "skywatcher-pr and this repository disagree on the canonical expansion of ILAP"
   ],
-  "rollback_state": "origin/main at cb5aa8eb726ba882b410bcfe0a402799af86ed5a; the change is additive and confined to one branch of spiderweb-pr"
+  "rollback_state": "origin/main at cb5aa8eb726ba882b410bcfe0a402799af86ed5a; the change is additive and confined to one branch of spiderweb-pr",
+  "base_branch_movement": {
+    "audited_main": "cb5aa8eb726ba882b410bcfe0a402799af86ed5a",
+    "merged_main": "b2c532fb2c4674a8d838423dc4d832dd5ca91369",
+    "note": "main advanced after the audit (federation source_monitors stream; prii-export-utils re-pinned). It was merged into the branch with one textual conflict in CHANGELOG.md, resolved by keeping both entries. The baseline figures above describe the audited commit."
+  }
 }

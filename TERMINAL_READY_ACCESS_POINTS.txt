@@ -1,7 +1,7 @@
 TERMINAL_READY — Inland and Off-Shore Access Point Registries
 REPOSITORY: spiderweb-pr
 STATE: DEVELOPMENT_COMPLETE / SOFTWARE_TESTED / NOT_CERTIFIED / PRODUCTION_NOT_AUTHORIZED
-BASE COMMIT: cb5aa8eb726ba882b410bcfe0a402799af86ed5a
+BASE COMMIT: cb5aa8eb726ba882b410bcfe0a402799af86ed5a (audited); main merged in at b2c532fb2c4674a8d838423dc4d832dd5ca91369
 NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
 IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
 RECORDS EXPORTED TO THE HUB: NONE
@@ -44,7 +44,7 @@ VERIFY
 3. Full repository suite with the coverage floor:
 
    python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-fail-under=62
-   expected at the certified commit: 2460 passed, 0 failed, total coverage 75.57%
+   expected at the certified commit: 2484 passed, 0 failed, total coverage 75.57%
 
 4. Frontend (from server/frontend, after npm ci):
 
