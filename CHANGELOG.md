@@ -10,6 +10,16 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Planned source-discovery runs for the access-point registries.**
+  `scripts/discover_access_point_sources.py` plans (offline), runs (only under
+  an explicit grant) and re-checks (offline) a metadata-only query of the public
+  survey catalogues over declared search boxes. Search boxes for the five
+  off-shore seeds live in `configs/access_point_discovery_corridors.yaml`; a box
+  says where to look and can never give a seed a position. A run keeps the exact
+  response bytes and writes a sealed source catalogue, which
+  `scripts/build_access_point_registries.py` now reads to register the listed
+  surveys as references. No live run has been executed and no registry record
+  changed. See "Source discovery runs" in `docs/ACCESS_POINT_REGISTRIES.md`.
 - **Inland and Off-Shore Access Point registries.** A new package,
   `spiderweb/access_points/`, holds two independent registries of candidate
   geographic features on one shared evidence foundation. Each record states,

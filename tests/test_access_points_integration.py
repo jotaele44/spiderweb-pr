@@ -1070,19 +1070,30 @@ def test_legacy_crosswalk_is_exact_closed_and_read_only():
 
 def test_guayama_reference_sources_match_the_receipt_and_are_not_measurements():
     build = seeding.build_all(REPO)
-    assert build.guayama == {
+    listed = {
         "multibeam": 13,
         "sounding": 29,
         "bag": 1,
         "topobathy_lidar": 4,
         "datum_placeholders": 4,
     }
+    assert {key: build.guayama[key] for key in listed} == listed
+    # Every survey the receipt names is held exactly once: either added from the
+    # receipt or already registered by a later discovery run.
+    assert build.guayama["added"] + build.guayama["already_registered"] == 47
     referenced = [
         s
         for s in build.offshore.sources.values()
         if s.provenance_state is v.ProvenanceState.REFERENCED_ONLY
     ]
-    assert len(referenced) == 47
+    held = [(s.provider, s.native_identifier) for s in referenced]
+    assert len(held) == len(set(held))
+    if build.discovery is None:
+        assert len(referenced) == 47
+    else:
+        assert len(referenced) == 47 - build.guayama["already_registered"] + (
+            build.discovery["registered"]["access_point.offshore"]
+        )
     assert not any(s.is_direct_measurement for s in build.offshore.sources.values())
     assert len(build.ledger.relationships) == 0
 

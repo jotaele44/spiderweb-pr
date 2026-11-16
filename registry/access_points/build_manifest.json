@@ -1,6 +1,8 @@
 {
   "counts": {
     "guayama_reference_sources": {
+      "added": 47,
+      "already_registered": 0,
       "bag": 1,
       "datum_placeholders": 4,
       "multibeam": 13,
@@ -31,6 +33,7 @@
       "skipped_without_coordinates": 0,
       "skipped_without_subtype": 81
     },
+    "live_discovery": null,
     "offshore": {
       "derived_geometries": 0,
       "features": 6,

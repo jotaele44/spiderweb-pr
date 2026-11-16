@@ -251,6 +251,57 @@ layers are therefore 2D only, and the panel says so in 3D mode. [FACT]
 **Coverage limit.** The map camera is clamped to a Puerto Rico envelope. A
 record far off shore could not be brought into view; none exists yet. [FACT]
 
+## Source discovery runs
+
+A discovery run asks public catalogues which surveys they list for a set of
+search boxes, keeps the exact answers, and writes one sealed catalogue of what
+it saw. It is planned, bounded and off unless explicitly granted.
+
+**Search areas are not positions.** A run has two kinds of target:
+
+| Target | Where the box comes from | Class |
+|---|---|---|
+| Analyst corridor | Drawn from a locality name in `configs/access_point_discovery_corridors.yaml`, one per off-shore seed | ASSUMPTION |
+| Point box | Computed around a point a registry already holds, with the half-width stated in the same file | COMPUTED |
+
+A corridor says where to look. It never gives a seed a coordinate, a depth or
+an extent: the corridor file is refused if an entry states a position, a depth
+or a feature, the registry builder does not read it, and no corridor can be
+certified. The Guayama corridor is the existing one, unchanged, so a run can be
+compared with the August source-denominator receipt.
+
+**Three commands**, all in `scripts/discover_access_point_sources.py`:
+
+| Command | Network | Effect |
+|---|---|---|
+| no option | None | Prints the plan: every target and the first request each provider would make |
+| `--execute --run-id <date>` | Metadata requests only | Writes the run under `evidence/access_points/source_discovery/<date>/` |
+| `--verify <date>` | None | Replays the kept bytes and fails if they no longer reproduce the receipts |
+
+A live run needs
+`SPIDERWEB_ACCESS_POINT_ACQUISITION=metadata:<requests per target>:<who granted it>`.
+That number bounds one target; `--max-total-requests` bounds the run. A provider
+stopped by either ceiling is reported NOT_AUTHORIZED, never empty. Requests go
+out with a generic user agent, only an allow-list of response headers is kept,
+and a redirect is refused.
+
+**What a run writes.** One receipt per target, the exact response bytes, and
+`source_catalogue.json`: every source once, the targets and registries that
+listed it, the datum string the inventory published (placeholders counted, not
+accepted), and review flags for registered points that fall inside a listed
+footprint envelope. `CURRENT.json` names the catalogue the registry builder
+reads, with its hash. A run directory is never overwritten.
+
+**What a run establishes.** That a catalogue listed a survey for a box on a
+date. [FACT] It does not establish that the survey covers a particular place in
+the box, what it measured there, or anything about a feature. Sources it adds to
+a registry are REFERENCED_ONLY with unknown coverage; registering them changes
+no feature, observation, geometry or status (tested). A survey the Guayama
+receipt already names is not registered a second time.
+
+**State.** The tooling is implemented and tested offline. No live run has been
+executed: it waits for an explicit grant from the repository owner. [FACT]
+
 ## What this change deliberately does not do
 
 | Not done | Why |
@@ -277,7 +328,8 @@ record far off shore could not be brought into view; none exists yet. [FACT]
 
 The API is read-only, bounds every parameter, never builds a file path from
 input, and verifies a registry document before answering from it. Metadata
-discovery is denied by default and bounded when granted.
+discovery is denied by default and bounded when granted, per target and per
+run; it sends a generic user agent and records no cookie or server header.
 
 The change is additive. To roll back, revert the branch commits. No database,
 external service or sibling repository was modified.
@@ -295,6 +347,7 @@ external service or sibling repository was modified.
 | `vertical.py`, `raster.py`, `detection.py`, `controls.py` | Datum contract, shared surface processing, candidate discovery, synthetic controls |
 | `transects.py`, `coastal.py` | Cross-sections; coastline versions |
 | `acquisition.py`, `monitoring.py` | Metadata discovery; source change detection |
+| `discovery.py` | Planned, bounded discovery runs over declared search areas; the sealed source catalogue; offline replay |
 | `federation_context.py` | Read-only context from other producers' packages |
 | `seeding.py`, `service.py` | Deterministic registry build; read-only queries |
 

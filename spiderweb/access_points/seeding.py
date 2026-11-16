@@ -5,10 +5,13 @@ Inputs are files that already live in this repository:
 * ``configs/access_point_seeds.yaml`` -- operator-supplied provisional labels;
 * ``configs/access_point_legacy_crosswalk.yaml`` -- explicit rules for reading
   the legacy node registry (which is never modified);
-* the Guayama-Punta Tuna source-denominator receipt under ``evidence/marine``.
+* the Guayama-Punta Tuna source-denominator receipt under ``evidence/marine``;
+* the source catalogue of the current metadata-discovery run, if one is
+  committed under ``evidence/access_points/source_discovery``.
 
 Nothing is fetched, nothing is inferred from a name, and no coordinate is
-produced that an input file does not state.
+produced that an input file does not state.  A discovery catalogue adds
+sources that can be cited; it never adds or changes a feature.
 """
 
 from __future__ import annotations
@@ -23,6 +26,14 @@ import yaml
 
 from gebco.marine_evidence import CoverageState, ProductStage, SensorType
 
+from .acquisition import PROVIDERS, to_source_manifestation
+from .discovery import (
+    DISCOVERY_DIR,
+    POINTER_NAME,
+    catalogue_rows,
+    current_catalogue_path,
+    load_catalogue,
+)
 from .models import (
     HORIZONTAL_INTERCHANGE_CRS,
     EvidenceAssertion,
@@ -308,6 +319,45 @@ def crosswalk_legacy(
     return result
 
 
+def register_discovered_sources(
+    registries: Mapping[Namespace, AccessPointRegistry], catalogue: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Register what a metadata-discovery run listed, as references only.
+
+    A source goes into a registry only if a search box of that registry listed
+    it.  Every one is ``REFERENCED_ONLY`` with unknown coverage: it can be
+    cited, it cannot satisfy a direct-observation gate, and registering it
+    touches no feature.
+    """
+
+    counts = {namespace.value: 0 for namespace in sorted(registries)}
+    for provider_id, namespaces, row in catalogue_rows(catalogue):
+        spec = PROVIDERS[provider_id]
+        manifestation = to_source_manifestation(spec, row)
+        for namespace in namespaces:
+            if namespace not in registries:
+                raise SeedingError(
+                    f"catalogue names a registry that is not being built: {namespace}"
+                )
+            if namespace not in spec.serves:
+                raise SeedingError(
+                    f"{provider_id} does not serve {namespace.value}; catalogue is inconsistent"
+                )
+            if registries[namespace].add_source(manifestation):
+                counts[namespace.value] += 1
+    stated = catalogue["totals"]["sources_by_namespace"]
+    if {k: v for k, v in counts.items() if v} != dict(stated):
+        raise SeedingError(
+            "discovery catalogue totals do not match the sources it lists"
+        )
+    return {
+        "run_id": catalogue["run_id"],
+        "discovered_utc": catalogue["discovered_utc"],
+        "catalogue_content_sha256": catalogue["content_sha256"],
+        "registered": counts,
+    }
+
+
 _GUAYAMA_TITLE = "listed in the Guayama-Punta Tuna v0.1 source-denominator receipt"
 
 
@@ -319,6 +369,10 @@ def register_guayama_sources(
     These are catalogue and inventory listings.  Their data products are not
     held, so every one is ``REFERENCED_ONLY`` with unknown coverage.  The
     vertical-datum strings the inventory published are counted as stated.
+
+    A survey the registry already holds from a later discovery run (same
+    provider, same native identifier) is counted as ``already_registered`` and
+    not added a second time, so one survey never appears as two sources.
     """
 
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
@@ -328,7 +382,10 @@ def register_guayama_sources(
         "bag": 0,
         "topobathy_lidar": 0,
         "datum_placeholders": 0,
+        "already_registered": 0,
+        "added": 0,
     }
+    held = {(s.provider, s.native_identifier) for s in registry.sources.values()}
 
     def add(
         provider: str,
@@ -337,6 +394,10 @@ def register_guayama_sources(
         sensor: SensorType,
         survey: str | None = None,
     ) -> None:
+        if (provider, native) in held:
+            counts["already_registered"] += 1
+            return
+        counts["added"] += 1
         registry.add_source(
             SourceManifestation(
                 source_id=source_id(provider, native, None, None),
@@ -446,6 +507,7 @@ class BuildResult:
     seeded: tuple[str, ...]
     guayama: Mapping[str, int]
     input_hashes: Mapping[str, str]
+    discovery: Mapping[str, Any] | None = None
 
 
 def build_all(repo_root: str | Path) -> BuildResult:
@@ -467,6 +529,21 @@ def build_all(repo_root: str | Path) -> BuildResult:
         crosswalk_cfg,
         root,
     )
+    discovery = None
+    discovery_inputs: list[str] = []
+    catalogue_path = current_catalogue_path(root / DISCOVERY_DIR)
+    if catalogue_path is not None:
+        discovery = register_discovered_sources(
+            {
+                Namespace.ACCESS_POINT_INLAND: inland,
+                Namespace.ACCESS_POINT_OFFSHORE: offshore,
+            },
+            load_catalogue(catalogue_path),
+        )
+        discovery_inputs = [
+            f"{DISCOVERY_DIR}/{POINTER_NAME}",
+            catalogue_path.relative_to(root).as_posix(),
+        ]
     guayama = register_guayama_sources(offshore, root / GUAYAMA_RECEIPT_PATH)
     ledger = adjacency_ledger(inland, offshore, threshold_m=ADJACENCY_THRESHOLD_M)
     inputs = {
@@ -476,10 +553,11 @@ def build_all(repo_root: str | Path) -> BuildResult:
             CROSSWALK_PATH,
             str(crosswalk_cfg["legacy_file"]),
             GUAYAMA_RECEIPT_PATH,
+            *discovery_inputs,
         )
     }
     return BuildResult(
-        inland, offshore, ledger, crosswalk, tuple(seeded), guayama, inputs
+        inland, offshore, ledger, crosswalk, tuple(seeded), guayama, inputs, discovery
     )
 
 
@@ -523,6 +601,9 @@ def write_documents(result: BuildResult, repo_root: str | Path) -> dict[str, str
             },
             "provisional_seeds": len(result.seeded),
             "guayama_reference_sources": dict(result.guayama),
+            "live_discovery": (
+                None if result.discovery is None else dict(result.discovery)
+            ),
         },
     }
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"

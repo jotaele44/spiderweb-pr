@@ -26,13 +26,16 @@ can never satisfy a direct-observation gate.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
+from urllib.request import Request, urlopen
 
 from federation.spatial_core import canonical_json_sha256
 from gebco.marine_evidence import CoverageState, ProductStage, SensorType
@@ -291,6 +294,72 @@ def with_rate_limit(
     return call
 
 
+class UnexpectedRedirect(RuntimeError):
+    """A catalogue endpoint answered from a different URL than the one asked."""
+
+
+# Response headers worth keeping as evidence.  Everything else -- cookies,
+# load-balancer tokens, server banners -- is dropped before a response is
+# frozen, so nothing session-specific is ever written next to the bytes.
+RECORDED_RESPONSE_HEADERS = frozenset(
+    {
+        "content-type",
+        "content-length",
+        "content-encoding",
+        "date",
+        "etag",
+        "last-modified",
+    }
+)
+GENERIC_USER_AGENT = "metadata-discovery-client/1.0"
+
+
+def live_transport(
+    *, user_agent: str = GENERIC_USER_AGENT, timeout: float = 60.0
+) -> Transport:
+    """A real HTTPS transport for metadata discovery.
+
+    It differs from ``pipeline.marine_sources.default_transport`` in three
+    ways that matter for a run whose bytes are kept: the user agent is generic
+    (no repository or operator name leaves the machine), only an allow-list of
+    response headers is recorded, and a redirect is refused instead of being
+    followed silently, so the recorded URL is always the URL that was asked
+    and a frozen response can be replayed by it.
+
+    Nothing here grants anything: wrap it in :func:`budgeted` before use.
+    """
+
+    if not user_agent.strip():
+        raise ValueError("a user agent is required")
+
+    def call(url: str) -> FrozenHttpResponse:
+        if not url.startswith("https://"):
+            raise ValueError(f"only https catalogue endpoints are allowed: {url}")
+        request = Request(url, headers={"User-Agent": user_agent})
+        with urlopen(request, timeout=timeout) as response:  # noqa: S310 - https only
+            body = response.read()
+            status = int(response.status)
+            headers = {
+                str(k): str(v)
+                for k, v in response.headers.items()
+                if str(k).lower() in RECORDED_RESPONSE_HEADERS
+            }
+            final_url = response.geturl()
+        if final_url != url:
+            raise UnexpectedRedirect(f"{url} answered from {final_url}")
+        return FrozenHttpResponse(
+            request_url=url,
+            status=status,
+            retrieved_utc=datetime.now(timezone.utc).isoformat(),
+            response_sha256=hashlib.sha256(body).hexdigest(),
+            response_size=len(body),
+            headers=headers,
+            body=body,
+        )
+
+    return call
+
+
 class Recorder:
     """Keeps every frozen response a run produced, in request order."""
 
@@ -329,8 +398,6 @@ def replay_transport(directory: Path) -> Transport:
     is refused.  An unknown URL raises -- it is never answered with an empty
     success.
     """
-
-    import hashlib
 
     table: dict[str, FrozenHttpResponse] = {}
     for manifest_path in sorted(Path(directory).glob("*.manifest.json")):

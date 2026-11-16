@@ -113,10 +113,12 @@ lists terrestrial LiDAR as well as bathymetric surveys.
 | Four dates kept apart (discovered, published, surveyed, retrieved) | Implemented | FACT |
 | Licence class recorded | Recorded; not enforced | FACT |
 | Offline fixtures | Replay implemented and tested with synthetic payloads; no real frozen responses committed | FACT |
+| Planned runs over declared search areas | Implemented (`spiderweb/access_points/discovery.py`): offline plan, per-target and per-run request ceilings, sealed source catalogue, offline replay check | FACT |
+| Search areas kept apart from feature positions | Implemented, tested: a corridor that states a position, depth or feature is refused | FACT |
 | Data-product download | **Not implemented.** Discovery is metadata only | FACT |
 | Temporal query, resume of large downloads | Not implemented | FACT |
 | Terrestrial sources beyond the elevation inventory (3DEP tiles, geology, karst inventories, parcels, roads) | Not integrated | FACT |
-| Live run | Not executed in this work: no network grant was given | FACT |
+| Live run | Not executed: the run is prepared (10 targets, 48 first requests, three public catalogue hosts) and waits for an explicit grant from the repository owner | FACT |
 
 ## 5. Cross-repository dependency matrix
 
