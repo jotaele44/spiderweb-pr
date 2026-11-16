@@ -15,7 +15,10 @@ doesn't drift back into split authority with the hub.
 - The **federation producer**: `federation/export_writer.py` + `federation/envelope.py`
   emit a validated evidence envelope; `scripts/federation_export.py` projects it to the
   Hub's canonical `{entities, sources, relationships}` (geometry carried on entities).
-  Validated by `scripts/validate_export.py`; declared in `federation.json`.
+  Validated by `scripts/validate_export.py`; declared in `federation.json`. The same
+  package carries `source_monitors` (thehub-pr ADR 0013): one row per source in
+  `manifests/pr_hydrography/source_registry.csv` and
+  `configs/missing_persons_sources.yaml`, never one marked `federation_eligible: false`.
 - **Site imagery observations** (implemented offline; live acquisition is a fail-closed
   stub): provisional dated-scene timelines for sites that another producer registers,
   built by `spiderweb/site_timeline/` and exported as hub `observations` rows only when
@@ -27,6 +30,14 @@ doesn't drift back into split authority with the hub.
   credentials and caching into `thehub-pr`, and it names `thehub-pr` and `skywatcher-pr`,
   not this repo. `spiderweb/site_timeline/adapters.py` is the single seam to replace
   when the hub acquisition runtime ships.
+- **NOAA aerial imagery display** (diagnostic app only): `server/backend/eri_imagery.py`
+  renders map tiles and image footprints from the public, credential-free NOAA
+  Emergency Response Imagery bucket for the flights registered in
+  `configs/eri_imagery_sources.yaml`, and the Spatial map shows them. It is a viewing
+  aid: nothing is acquired into the repository, cached beyond a key listing, or exported
+  to the hub. It sits in the same tension as the item above — ADR 0001 makes this app
+  diagnostic and hub ADR 0006 places imagery-provider access in `thehub-pr` — and is the
+  second seam to move if the hub's viewer takes over imagery display.
 
 ## Retired airspace surface (2026-07-29)
 The FR24/RLSM **ingestion** subsystem migrated to skywatcher-pr in 2026-06, but
