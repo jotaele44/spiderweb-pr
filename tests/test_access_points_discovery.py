@@ -23,7 +23,7 @@ from spiderweb.access_points import discovery as disc
 from spiderweb.access_points import seeding
 from spiderweb.access_points import vocabulary as v
 from tests import access_points_support as sup
-from tests.test_access_points_integration import FakeNoaa, lidar_row
+from tests.test_access_points_integration import FakeNoaa, frozen, lidar_row
 
 REPO = Path(__file__).resolve().parents[1]
 OFFSHORE, INLAND = sup.OFFSHORE, sup.INLAND
@@ -319,14 +319,12 @@ def test_placeholder_datums_are_counted_not_accepted(targets):
     assert totals["vertical_datum_placeholders"] == 3
 
 
-def test_a_row_that_differs_between_boxes_is_reported(targets):
+def test_a_survey_described_differently_by_two_boxes_is_reported(targets):
     seen = {"n": 0}
 
     def shifting(url, query):
         seen["n"] += 1
         rows = [lidar_row("{TEST-TB-1}", name=f"project as seen in call {seen['n']}")]
-        from tests.test_access_points_integration import frozen
-
         return frozen(url, {"features": rows, "exceededTransferLimit": False})
 
     catalogue = disc.build_catalogue(run(targets, transport=FakeNoaa(usiei0=shifting)))
@@ -334,6 +332,36 @@ def test_a_row_that_differs_between_boxes_is_reported(targets):
     assert {r["native_identifier"] for r in catalogue["inconsistent_rows"]} == {
         "USIEI:GlobalID:{TEST-TB-1}"
     }
+
+
+def test_a_value_that_depends_on_the_box_is_kept_per_box_not_as_a_conflict(targets):
+    seen = {"n": 0}
+
+    def per_box(url, query):
+        # Like the multibeam catalogue, which reports how many of a survey's
+        # files fall inside the box that was asked about.
+        seen["n"] += 1
+        items = [
+            {"surveyId": "TEST-SURVEY-001", "platform": "Ship", "fileCount": seen["n"]},
+            {"surveyId": "TEST-SURVEY-002", "platform": "Ship", "fileCount": 7},
+        ]
+        return frozen(url, {"items": items, "count": 2})
+
+    catalogue = disc.build_catalogue(
+        run(targets, transport=FakeNoaa(multibeam=per_box))
+    )
+    assert catalogue["totals"]["inconsistent_rows_within_run"] == 0
+    assert catalogue["totals"]["query_scoped_attribute_keys"] == ["fileCount"]
+    assert catalogue["totals"]["sources_with_query_scoped_attributes"] == 1
+    by_native = {s["native_identifier"]: s for s in catalogue["sources"]}
+    varying = by_native["NCEI:multibeam:TEST-SURVEY-001"]
+    scoped = varying["query_scoped_attributes"]["fileCount"]
+    assert sorted(scoped.values()) == [1, 2, 3, 4, 5, 6]
+    assert set(scoped) == set(varying["targets"])
+    assert len(set(varying["row_sha256_by_target"].values())) == 6
+    steady = by_native["NCEI:multibeam:TEST-SURVEY-002"]
+    assert steady["query_scoped_attributes"] == {}
+    assert len(set(steady["row_sha256_by_target"].values())) == 1
 
 
 def test_review_flags_point_at_features_and_change_nothing(build, targets):
@@ -421,6 +449,90 @@ def test_a_run_kept_without_bytes_cannot_be_replayed(targets, tmp_path):
     disc.write_run(run(targets), tmp_path, keep_raw=False)
     problems = disc.verify_run(tmp_path / "test-run")
     assert problems and "no kept bytes" in problems[0]
+
+
+def test_a_catalogue_can_be_rebuilt_only_from_bytes_that_still_match(
+    build, targets, tmp_path
+):
+    disc.write_run(run(targets), tmp_path, feature_points=points_of(build))
+    run_dir = tmp_path / "test-run"
+    before = (run_dir / disc.CATALOGUE_NAME).read_bytes()
+    rebuilt = disc.recatalogue(run_dir, feature_points=points_of(build))
+    assert (run_dir / disc.CATALOGUE_NAME).read_bytes() == before
+    assert disc.load_catalogue(disc.current_catalogue_path(tmp_path)) == rebuilt
+    receipt = run_dir / f"{targets[0].target_id}.receipt.json"
+    document = json.loads(receipt.read_text(encoding="utf-8"))
+    document["state"] = "ZERO"
+    receipt.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(disc.DiscoveryEvidenceError, match="was not rebuilt"):
+        disc.recatalogue(run_dir)
+    assert (run_dir / disc.CATALOGUE_NAME).read_bytes() == before
+
+
+# ── The committed run ────────────────────────────────────────────────────────
+
+
+def _committed_run() -> Path | None:
+    path = disc.current_catalogue_path(REPO / disc.DISCOVERY_DIR)
+    return None if path is None else path.parent
+
+
+def test_the_committed_run_reproduces_from_its_kept_bytes():
+    run_dir = _committed_run()
+    if run_dir is None:
+        pytest.skip("no discovery run is committed")
+    assert disc.verify_run(run_dir) == []
+
+
+def test_the_committed_run_stayed_inside_its_grant_and_downloaded_nothing():
+    run_dir = _committed_run()
+    if run_dir is None:
+        pytest.skip("no discovery run is committed")
+    catalogue = disc.load_catalogue(run_dir / disc.CATALOGUE_NAME)
+    grant = catalogue["authorization"]
+    assert grant["level"] == "METADATA_DISCOVERY" and grant["granted_by"].strip()
+    assert catalogue["totals"]["requests"] <= grant["max_total_requests"]
+    for target in catalogue["targets"]:
+        used = sum(p["request_count"] for p in target["providers"])
+        assert used <= grant["max_requests_per_target"]
+        assert target["certified"] is False
+    assert catalogue["data_products_downloaded"] == 0
+    assert catalogue["automatic_promotions"] == 0
+    assert catalogue["totals"]["inconsistent_rows_within_run"] == 0
+    hosts = set()
+    for manifest in (run_dir / disc.RAW_DIR).glob("*/*.manifest.json"):
+        document = json.loads(manifest.read_text(encoding="utf-8"))
+        url = urlparse(document["request_url"])
+        assert url.scheme == "https" and "f=" not in url.path
+        hosts.add(url.hostname)
+        assert {h.lower() for h in document["headers"]} <= acq.RECORDED_RESPONSE_HEADERS
+    assert hosts <= ALLOWED_HOSTS
+
+
+def test_the_committed_run_left_every_feature_as_it_was(build):
+    if build.discovery is None:
+        pytest.skip("no discovery run is committed")
+    statuses = build.offshore.counts()["features_by_status"]
+    assert statuses["PROVISIONAL_DISCOVERY"] == 5 and statuses["VERIFIED"] == 0
+    assert build.inland.counts()["features_by_status"]["CANDIDATE"] == 4
+    for feature in build.offshore.features.values():
+        if feature.provisional_labels:
+            assert feature.geometry_id is None
+            for oid in feature.observation_ids:
+                assert build.offshore.observations[oid].geometry is None
+    for registry in (build.inland, build.offshore):
+        assert not any(s.is_direct_measurement for s in registry.sources.values())
+        cited = {
+            sid
+            for f in registry.features.values()
+            for a in f.assertions
+            for sid in a.source_ids
+        }
+        discovered = {
+            sid for sid, s in registry.sources.items() if s.provider in acq.PROVIDERS
+        }
+        # A listed survey is available to cite; discovery itself cites none.
+        assert not cited & discovered
 
 
 # ── Comparison with an earlier listing ───────────────────────────────────────
@@ -562,6 +674,69 @@ def test_a_catalogue_that_misplaces_a_provider_is_refused(build, targets):
         seeding.register_discovered_sources(
             {INLAND: fresh.inland, OFFSHORE: fresh.offshore}, catalogue
         )
+
+
+# ── Inventory "link" fields ──────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "published, expected",
+    [
+        ("https://example.invalid/item/1", "https://example.invalid/item/1"),
+        (
+            '<u><font color="#0000FF"><a href="https://example.invalid/item/48212" '
+            'target="_blank">InPort Metadata</a></font></u>',
+            "https://example.invalid/item/48212",
+        ),
+        (
+            '<a href="https://example.invalid/a?x=1&amp;y=2">A</a> OR '
+            '<a href="http://example.invalid/b">B</a>',
+            "https://example.invalid/a?x=1&y=2",
+        ),
+        ("Will be available from the NOAA Digital Coast", None),
+        ('<a href="javascript:alert(1)">x</a>', None),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_only_a_real_address_becomes_a_source_uri(published, expected):
+    assert acq.first_link(published) == expected
+
+
+def test_an_inventory_row_keeps_what_was_published_and_cites_only_the_address(
+    targets,
+):
+    fragment = (
+        '<u><font color="#0000FF"><a href="https://example.invalid/item/7" '
+        'target="_blank">Metadata</a></font></u>'
+    )
+    rows = [
+        lidar_row("{TEST-TB-1}", MetadataLink=fragment, DataAccess="Will be available")
+    ]
+    done = run(targets[:1], transport=FakeNoaa(usiei0=rows))
+    (row,) = [
+        r
+        for p in done.results[0].receipt.runs
+        if p.provider_id == "USIEI_TOPOBATHY_LIDAR"
+        for r in p.rows
+    ]
+    assert row.metadata_uri == "https://example.invalid/item/7"
+    assert row.data_access_uri is None
+    assert row.attributes["MetadataLink"] == fragment
+    (source,) = [
+        s
+        for s in done.results[0].receipt.sources()
+        if s.provider == "USIEI_TOPOBATHY_LIDAR"
+    ]
+    assert source.source_uri == "https://example.invalid/item/7"
+
+
+def test_no_registered_source_uri_carries_markup(build):
+    for registry in (build.inland, build.offshore):
+        for source in registry.sources.values():
+            if source.source_uri is not None:
+                assert source.source_uri.startswith(("https://", "http://"))
+                assert "<" not in source.source_uri and " " not in source.source_uri
 
 
 # ── The live transport and the command ───────────────────────────────────────

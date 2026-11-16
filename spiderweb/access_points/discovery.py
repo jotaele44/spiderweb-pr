@@ -487,6 +487,43 @@ def _envelope(row: DiscoveredRow) -> list[float] | None:
     return [box.min_lon, box.min_lat, box.max_lon, box.max_lat]
 
 
+def _described(row: DiscoveredRow) -> dict[str, Any]:
+    """What an inventory says a survey is, independent of the box asked about."""
+
+    return {
+        "title": row.title,
+        "metadata_uri": row.metadata_uri,
+        "data_access_uri": row.data_access_uri,
+        "surveyed": row.surveyed,
+        "published": row.published,
+        "vertical_datum_raw": row.vertical_datum_raw,
+        "horizontal_datum_raw": row.horizontal_datum_raw,
+    }
+
+
+def _query_scoped(
+    by_target: Mapping[str, Mapping[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Attributes whose value depends on the box that was asked about.
+
+    Some catalogues answer with figures for the query box rather than for the
+    survey -- for example how many of a survey's files fall inside it.  Such a
+    value is true of (survey, box), not of the survey, so it is kept per
+    target and never folded into the survey's own description.
+    """
+
+    if len(by_target) < 2:
+        return {}
+    keys = sorted({str(k) for attrs in by_target.values() for k in attrs})
+    scoped: dict[str, dict[str, Any]] = {}
+    for key in keys:
+        values = {target: attrs.get(key) for target, attrs in by_target.items()}
+        distinct = {json.dumps(v, sort_keys=True, default=str) for v in values.values()}
+        if len(distinct) > 1:
+            scoped[key] = dict(sorted(values.items()))
+    return scoped
+
+
 def _review_flags(
     run: DiscoveryRun, feature_points: Mapping[Namespace, Mapping[str, tuple]]
 ) -> list[dict[str, Any]]:
@@ -520,6 +557,7 @@ def build_catalogue(
     """Every source the run saw, once, with the targets that listed it."""
 
     sources: dict[tuple[str, str], dict[str, Any]] = {}
+    seen_attributes: dict[tuple[str, str], dict[str, Mapping[str, Any]]] = {}
     inconsistent: list[dict[str, str]] = []
     targets = []
     for result in run.results:
@@ -549,7 +587,7 @@ def build_catalogue(
             spec = PROVIDERS[provider_run.provider_id]
             for row in provider_run.rows:
                 key = (spec.provider_id, row.native_identifier)
-                digest = row_sha256(row)
+                described = _described(row)
                 entry = sources.get(key)
                 if entry is None:
                     datum = row.vertical_datum_raw
@@ -559,22 +597,19 @@ def build_catalogue(
                         "family": spec.family.value,
                         "native_identifier": row.native_identifier,
                         "identifier_is_stable": row.identifier_is_stable,
-                        "title": row.title,
-                        "metadata_uri": row.metadata_uri,
-                        "data_access_uri": row.data_access_uri,
-                        "surveyed": row.surveyed,
-                        "published": row.published,
-                        "vertical_datum_raw": datum,
+                        **described,
                         "vertical_datum_is_placeholder": (
                             None if datum is None else is_placeholder(datum)
                         ),
-                        "horizontal_datum_raw": row.horizontal_datum_raw,
                         "envelope": _envelope(row),
-                        "row_sha256": digest,
+                        "row_sha256_by_target": {},
                         "namespaces": set(),
                         "targets": set(),
                     }
-                elif entry["row_sha256"] != digest:
+                elif any(entry[field] != value for field, value in described.items()):
+                    # What the inventory says the survey *is* differs between
+                    # two boxes asked in the same run.  That is an inconsistency
+                    # in the source and is reported, not resolved.
                     inconsistent.append(
                         {
                             "provider_id": spec.provider_id,
@@ -582,14 +617,22 @@ def build_catalogue(
                             "target_id": target.target_id,
                         }
                     )
+                entry["row_sha256_by_target"][target.target_id] = row_sha256(row)
                 entry["namespaces"].add(target.namespace.value)
                 entry["targets"].add(target.target_id)
+                seen_attributes.setdefault(key, {})[target.target_id] = row.attributes
 
     rows = []
+    scoped_keys: set[str] = set()
     for key in sorted(sources):
         entry = dict(sources[key])
         entry["namespaces"] = sorted(entry["namespaces"])
         entry["targets"] = sorted(entry["targets"])
+        entry["row_sha256_by_target"] = dict(
+            sorted(entry["row_sha256_by_target"].items())
+        )
+        entry["query_scoped_attributes"] = _query_scoped(seen_attributes[key])
+        scoped_keys.update(entry["query_scoped_attributes"])
         rows.append(entry)
 
     by_provider: dict[str, int] = {}
@@ -640,6 +683,10 @@ def build_catalogue(
             "sources_with_data_access_uri": sum(
                 1 for e in rows if e["data_access_uri"]
             ),
+            "sources_with_query_scoped_attributes": sum(
+                1 for e in rows if e["query_scoped_attributes"]
+            ),
+            "query_scoped_attribute_keys": sorted(scoped_keys),
             "inconsistent_rows_within_run": len(inconsistent),
         },
         "inconsistent_rows": inconsistent,
@@ -650,6 +697,7 @@ def build_catalogue(
             "a target is a search area; it is never the geometry of a feature",
             "an analyst corridor is drawn from a locality name and is an assumption",
             "being listed for a box does not show that a survey covers a place in it",
+            "a query-scoped attribute is true of (survey, box), not of the survey",
             "inventory coverage is not a depth or elevation measurement",
             "a failed provider says nothing about coverage",
             "a review flag never changes a feature's status",
@@ -758,6 +806,39 @@ def write_run(
                 "raw_bytes_kept": keep_raw,
             },
         )
+    return catalogue
+
+
+def recatalogue(
+    run_dir: str | Path,
+    *,
+    feature_points: Mapping[Namespace, Mapping[str, tuple]] | None = None,
+) -> dict[str, Any]:
+    """Rebuild a run's catalogue from its kept bytes and update the pointer.
+
+    The receipts and the response bytes are the record and are not touched.
+    The catalogue is derived from them, so it may be rebuilt -- but only when
+    the kept bytes still reproduce every receipt exactly.
+    """
+
+    directory = Path(run_dir)
+    replayed = replay_run(directory)
+    for result in replayed.results:
+        receipt_path = directory / f"{result.target.target_id}.receipt.json"
+        committed = json.loads(receipt_path.read_text(encoding="utf-8"))
+        if committed != result.receipt.to_document():
+            raise DiscoveryEvidenceError(
+                f"{result.target.target_id}: kept bytes do not reproduce the receipt; "
+                "the catalogue was not rebuilt"
+            )
+    catalogue = build_catalogue(replayed, feature_points=feature_points)
+    catalogue_sha = _write_json(directory / CATALOGUE_NAME, catalogue)
+    pointer_path = directory.parent / POINTER_NAME
+    if pointer_path.is_file():
+        pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+        if pointer.get("run_id") == replayed.run_id:
+            pointer["catalogue_sha256"] = catalogue_sha
+            _write_json(pointer_path, pointer)
     return catalogue
 
 

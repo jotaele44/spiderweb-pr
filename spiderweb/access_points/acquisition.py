@@ -27,8 +27,10 @@ can never satisfy a direct-observation gate.
 from __future__ import annotations
 
 import hashlib
+import html
 import json
 import os
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -493,6 +495,31 @@ def _text(value: Any) -> str | None:
     return text or None
 
 
+_HREF = re.compile(r"""href\s*=\s*["']([^"']+)["']""", re.IGNORECASE)
+_BARE_LINK = re.compile(r"""https?://[^\s<>"']+""", re.IGNORECASE)
+
+
+def first_link(value: Any) -> str | None:
+    """The first web address an inventory field actually contains, or ``None``.
+
+    Inventories publish "link" fields as whatever their own viewer renders:
+    a bare address, an HTML fragment with one or several anchors, or a
+    sentence such as "Will be available from ...".  Only a real address is
+    usable as a source URI; the field itself stays verbatim in the row's
+    attributes, so nothing the inventory said is lost.
+    """
+
+    text = _text(value)
+    if text is None:
+        return None
+    candidates = _HREF.findall(text) or _BARE_LINK.findall(text)
+    for candidate in candidates:
+        link = html.unescape(candidate).strip()
+        if link.lower().startswith(("https://", "http://")):
+            return link
+    return None
+
+
 def _usiei_rows(
     layer: LidarInventoryLayer,
 ) -> Callable[[BoundingBox, Transport], list[DiscoveredRow]]:
@@ -525,8 +552,8 @@ def _usiei_rows(
                         or "(untitled inventory record)",
                         attributes={str(k): v for k, v in attrs.items()},
                         envelope=esri_feature_envelope(feature),
-                        metadata_uri=_text(attrs.get("MetadataLink")),
-                        data_access_uri=_text(attrs.get("DataAccess")),
+                        metadata_uri=first_link(attrs.get("MetadataLink")),
+                        data_access_uri=first_link(attrs.get("DataAccess")),
                         surveyed=_text(attrs.get("CollectionDate")),
                         published=None,
                         vertical_datum_raw=_text(attrs.get("VerticalDatum")),
@@ -593,7 +620,7 @@ def _nos_bag_rows(bbox: BoundingBox, transport: Transport) -> list[DiscoveredRow
                     attributes={str(k): v for k, v in attrs.items()},
                     envelope=esri_feature_envelope(feature),
                     metadata_uri=None,
-                    data_access_uri=_text(attrs.get("DOWNLOAD_URL")),
+                    data_access_uri=first_link(attrs.get("DOWNLOAD_URL")),
                     surveyed=_text(attrs.get("SURVEY_YEAR")),
                     published=None,
                     vertical_datum_raw=None,

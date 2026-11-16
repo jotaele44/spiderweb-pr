@@ -1,8 +1,8 @@
 {
   "counts": {
     "guayama_reference_sources": {
-      "added": 47,
-      "already_registered": 0,
+      "added": 0,
+      "already_registered": 47,
       "bag": 1,
       "datum_placeholders": 4,
       "multibeam": 13,
@@ -23,7 +23,7 @@
       "observations": 4,
       "observations_bound": 4,
       "observations_unbound": 0,
-      "sources": 2
+      "sources": 5
     },
     "legacy_crosswalk": {
       "closes": true,
@@ -33,7 +33,15 @@
       "skipped_without_coordinates": 0,
       "skipped_without_subtype": 81
     },
-    "live_discovery": null,
+    "live_discovery": {
+      "catalogue_content_sha256": "7a5d418ae74cab2e8b816cf3e4d76a458dc0cf361ad2466f6153a7024f63d3c3",
+      "discovered_utc": "2026-11-16T23:20:38+00:00",
+      "registered": {
+        "access_point.inland": 3,
+        "access_point.offshore": 177
+      },
+      "run_id": "2026-11-16"
+    },
     "offshore": {
       "derived_geometries": 0,
       "features": 6,
@@ -48,7 +56,7 @@
       "observations": 6,
       "observations_bound": 6,
       "observations_unbound": 0,
-      "sources": 54
+      "sources": 184
     },
     "provisional_seeds": 5,
     "relationships": 0
@@ -57,16 +65,18 @@
     "configs/access_point_legacy_crosswalk.yaml": "c2ae580230038e5aa621cc398d49ed74a1e87c19718d4025207f5e8939cea290",
     "configs/access_point_seeds.yaml": "e9cb8d7181a1ab4f0f05d6931064748ea32896e383aa2ee8ed5980beecc71e46",
     "configs/ilap_registry.yaml": "71991b9f2c66b07902963c77fc264751a6d07be4b1b068a272f5a356072ffd21",
+    "evidence/access_points/source_discovery/2026-11-16/source_catalogue.json": "280d9635f2c9a9094acefe2b11b7109ba0f421ee1f1a69b29a234714cea8ef26",
+    "evidence/access_points/source_discovery/CURRENT.json": "afb9f4719f5f9a743ba99edfbbff9b44d1252107d24c81c3d65fb6261abab718",
     "evidence/marine/guayama_punta_tuna_v0_1/source_denominator_receipt.json": "ea05431e7a351535bdf04a53f115a0c7dd4083384bba1f7f778d5962fab28290"
   },
   "outputs": {
     "inland.json": {
-      "content_sha256": "6461f3c561a02444f7aedd7150d60aac0d8fca1a07f1b66b0ec042a782c26e90",
-      "sha256": "3662b74e68336674dbab1ef43a929ad349dc5b58f7c2e690189134a620d323f1"
+      "content_sha256": "a8797c23027d5aaf6d6c10e1fdeca3cad5641298b80f66de2b750ab1808269df",
+      "sha256": "0849bed8ad24f8d9cd8ee7637de70d721d198897260d9e2e1c457276b5fed9be"
     },
     "offshore.json": {
-      "content_sha256": "ab4dfe40867d39a7553ff874dcbe3492d77290dcec4ca004d7237a2ff0264789",
-      "sha256": "2655ac1c2644b71a76cda3e317b37378e2190adf1aab071f1daf51b24ccea33d"
+      "content_sha256": "72871b06b88d5f84cbf16675e1065b1240a9a2748adf2c94fe50e6eac2a20e1f",
+      "sha256": "fee8df22cd21483ab83338f944adb3d3f1ff64ca69ba8c1f299bd5af008ead7a"
     },
     "relationships.json": {
       "content_sha256": "7c6695a503adb66a33f9a64b691fc03e7df227b4d743da002ed584c07867acdf",

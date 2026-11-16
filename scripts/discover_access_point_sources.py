@@ -7,6 +7,7 @@ With no option this prints the plan and touches nothing: no network, no file.
     python scripts/discover_access_point_sources.py --execute \\
         --run-id 2026-11-16                                          # live run
     python scripts/discover_access_point_sources.py --verify 2026-11-16
+    python scripts/discover_access_point_sources.py --recatalogue 2026-11-16
 
 A live run needs an explicit grant in the environment, and the grant bounds it:
 
@@ -16,6 +17,8 @@ It asks public catalogues which surveys they list for each search box and keeps
 the exact answers.  It downloads no data product, changes no feature, and gives
 no off-shore seed a position.  ``--verify`` replays the kept bytes offline and
 fails if they no longer reproduce the committed receipts.
+``--recatalogue`` rebuilds a run's catalogue offline from the same bytes; the
+receipts and the bytes themselves are never edited.
 """
 
 from __future__ import annotations
@@ -93,6 +96,11 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument(
         "--verify", metavar="RUN_ID", help="replay a kept run offline and compare"
     )
+    mode.add_argument(
+        "--recatalogue",
+        metavar="RUN_ID",
+        help="rebuild a kept run's catalogue offline from its exact bytes",
+    )
     parser.add_argument("--run-id", help="directory name for a live run (a date)")
     parser.add_argument("--max-total-requests", type=int, default=150)
     parser.add_argument("--min-interval-s", type=float, default=1.0)
@@ -114,6 +122,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     registries = _registries()
+    if args.recatalogue:
+        catalogue = discovery.recatalogue(
+            root / args.recatalogue,
+            feature_points={
+                registry.namespace: discovery.registered_points(registry)
+                for registry in registries
+            },
+        )
+        print(json.dumps(catalogue["totals"], indent=2, sort_keys=True))
+        return 0
     config = discovery.load_corridor_config(REPO_ROOT / discovery.CORRIDORS_PATH)
     targets = discovery.build_targets(config, registries)
 
