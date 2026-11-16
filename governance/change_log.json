@@ -35,6 +35,20 @@
         ".federation/docs-sync.json",
         "governance/change_log.json"
       ]
+    },
+    {
+      "date": "2026-11-15",
+      "summary": "Added the Inland and Off-Shore Access Point registries (spiderweb/access_points), their read-only /v1/access-points API and map workspace, three JSON schemas, the committed registry documents and their deterministic builder. Hardened three pre-existing gates so that a placeholder vertical datum no longer counts as a stated datum, a rootless direct observation no longer outranks a rooted one, and an undeclared datum no longer passes datum policy. No record is exported to the hub, no tile source is registered, no write endpoint exists and federation.json is unchanged. The acronyms ILAP and OSAP keep their existing meanings; the new registries use the namespaces access_point.inland and access_point.offshore (docs/ACCESS_POINT_TERMINOLOGY_DECISION.md). Release state is recorded in evidence/access_points/certification_report_v1.json: software tested, science exploratory, production not authorised.",
+      "files": [
+        "spiderweb/access_points/",
+        "server/backend/access_points_api.py",
+        "server/frontend/src/spatial/accessPoints/",
+        "schemas/access_point_registry.schema.json",
+        "registry/access_points/",
+        "gebco/marine_evidence.py",
+        "source_adapters/ncei_coastal_dem/datum_policy.py",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
     }
   ]
 }

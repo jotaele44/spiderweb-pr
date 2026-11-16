@@ -12,6 +12,18 @@ status.
 | `integration/aasb_airspace_bridge.py` | `../skywatcher-pr/aasb_airspace_bridge.py` | **split — each repo owns its own copy** | resolved (per-repo adaptation) | Same as above. |
 | `imagery/` (package) | `../skywatcher-pr/imagery/` | **split — each repo owns its own copy** | temporary (registered 2026-11-07; previously unlisted) | Removal condition: the hub acquisition runtime ships (hub ADR 0006). See "Satellite imagery package and the site timeline" below. |
 | `spiderweb/site_timeline/epoch.py`, `spiderweb/site_timeline/score.py` | `../skywatcher-pr/satim_temporal_change.py` | **skywatcher-pr owns the SATIM spec** | temporary (spec-derived re-implementation) | Re-implemented from the spec because cross-repo imports are forbidden. Removal condition: the hub or a shared contract carries the epoch and score logic. See below. |
+| `gebco/` (package) | `../skywatcher-pr/gebco/` | **split — each repo owns its own copy; unresolved** | open (registered 2026-11-15; previously unlisted) | The two copies have diverged: only this repository's copy has `gebco/marine_evidence.py` (vertical reference, lineage and depth-comparison gates); the sibling's adds point sampling and contour helpers. `spiderweb/access_points/` builds on this repository's copy. Removal condition: the owners name one authoritative copy. See "Bathymetry package" below. |
+
+## Bathymetry package — two diverged copies (registered 2026-11-15)
+
+Found by the audit recorded in
+[`ACCESS_POINT_CAPABILITY_INVENTORY.md`](ACCESS_POINT_CAPABILITY_INVENTORY.md).
+Neither repository's documents name an authoritative copy. The access-point
+registries import this repository's `gebco/terrain.py` and
+`gebco/marine_evidence.py` and nothing from the sibling. `spiderweb/access_points/`
+itself duplicates nothing: it imports the existing spatial-state, evidence-tier,
+non-promotion, cardinality, sensor and relation vocabularies rather than
+redeclaring them.
 
 ## ILAP/AASB airspace bridges — ownership split (resolved 2026-06-11)
 

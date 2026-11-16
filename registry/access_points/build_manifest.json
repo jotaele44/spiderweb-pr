@@ -1,0 +1,75 @@
+{
+  "counts": {
+    "guayama_reference_sources": {
+      "bag": 1,
+      "datum_placeholders": 4,
+      "multibeam": 13,
+      "sounding": 29,
+      "topobathy_lidar": 4
+    },
+    "inland": {
+      "derived_geometries": 0,
+      "features": 4,
+      "features_by_status": {
+        "CANDIDATE": 4,
+        "PROVISIONAL_DISCOVERY": 0,
+        "REJECTED": 0,
+        "SUPERSEDED": 0,
+        "UNDER_REVIEW": 0,
+        "VERIFIED": 0
+      },
+      "observations": 4,
+      "observations_bound": 4,
+      "observations_unbound": 0,
+      "sources": 2
+    },
+    "legacy_crosswalk": {
+      "closes": true,
+      "legacy_nodes_read": 103,
+      "matched": 5,
+      "skipped_unmatched": 17,
+      "skipped_without_coordinates": 0,
+      "skipped_without_subtype": 81
+    },
+    "offshore": {
+      "derived_geometries": 0,
+      "features": 6,
+      "features_by_status": {
+        "CANDIDATE": 1,
+        "PROVISIONAL_DISCOVERY": 5,
+        "REJECTED": 0,
+        "SUPERSEDED": 0,
+        "UNDER_REVIEW": 0,
+        "VERIFIED": 0
+      },
+      "observations": 6,
+      "observations_bound": 6,
+      "observations_unbound": 0,
+      "sources": 54
+    },
+    "provisional_seeds": 5,
+    "relationships": 0
+  },
+  "inputs": {
+    "configs/access_point_legacy_crosswalk.yaml": "c2ae580230038e5aa621cc398d49ed74a1e87c19718d4025207f5e8939cea290",
+    "configs/access_point_seeds.yaml": "e9cb8d7181a1ab4f0f05d6931064748ea32896e383aa2ee8ed5980beecc71e46",
+    "configs/ilap_registry.yaml": "71991b9f2c66b07902963c77fc264751a6d07be4b1b068a272f5a356072ffd21",
+    "evidence/marine/guayama_punta_tuna_v0_1/source_denominator_receipt.json": "ea05431e7a351535bdf04a53f115a0c7dd4083384bba1f7f778d5962fab28290"
+  },
+  "outputs": {
+    "inland.json": {
+      "content_sha256": "6461f3c561a02444f7aedd7150d60aac0d8fca1a07f1b66b0ec042a782c26e90",
+      "sha256": "3662b74e68336674dbab1ef43a929ad349dc5b58f7c2e690189134a620d323f1"
+    },
+    "offshore.json": {
+      "content_sha256": "ab4dfe40867d39a7553ff874dcbe3492d77290dcec4ca004d7237a2ff0264789",
+      "sha256": "2655ac1c2644b71a76cda3e317b37378e2190adf1aab071f1daf51b24ccea33d"
+    },
+    "relationships.json": {
+      "content_sha256": "7c6695a503adb66a33f9a64b691fc03e7df227b4d743da002ed584c07867acdf",
+      "sha256": "ae241ecf2ff315f4d195fce1b8c1a324f9603358ac6916aa7f61f395ace277f5"
+    }
+  },
+  "producer_identity": "spiderweb-pr:spiderweb.access_points.seeding",
+  "schema": "access_point_registry_build/1.0"
+}
