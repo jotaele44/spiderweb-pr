@@ -26,9 +26,10 @@ try {
       localStorage.setItem("priis_spatial_mode", "cesium");
       localStorage.setItem("priis_left_collapsed", "true");
       localStorage.setItem("priis_right_collapsed", "true");
+      localStorage.setItem("spiderweb_layer_collapsed", "true");
     });
     await page.goto(baseUrl, { waitUntil: "networkidle" });
-    await page.getByRole("button", { name: "Spatial" }).click();
+    await page.getByRole("tab", { name: "Spatial", exact: true }).click();
     await page.getByRole("button", { name: "Recenter map on Puerto Rico" }).waitFor();
     const spatialHost = page.locator("[data-spatial-basemap]").first();
     await spatialHost.waitFor();
