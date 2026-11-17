@@ -24,6 +24,7 @@ export type Unsubscribe = () => void;
 export interface SpatialRuntime {
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void>;
   destroy(): void;
+  resetView(options?: { animate?: boolean }): void;
   setView(view: CameraView, options?: { animate?: boolean; speed?: number }): void;
   getView(): CameraView;
   resize(): void;
