@@ -49,6 +49,22 @@
         "source_adapters/ncei_coastal_dem/datum_policy.py",
         "docs/ACCESS_POINT_REGISTRIES.md"
       ]
+    },
+    {
+      "date": "2026-11-16",
+      "summary": "Added planned, bounded, metadata-only source-discovery runs for the access-point registries (spiderweb/access_points/discovery.py, scripts/discover_access_point_sources.py) and the search boxes they use (configs/access_point_discovery_corridors.yaml). A search box is never a feature position: the corridor file is refused if it states a coordinate, a depth or a feature, and the five off-shore seeds stay without geometry. The registry builder now reads the sealed source catalogue of the current run, when one is committed, and registers its surveys as references only. A live transport with a generic user agent, a response-header allow-list and redirect refusal was added. One run was executed on 2026-11-16 under an explicit grant from the repository owner (48 metadata requests to three public NOAA catalogue hosts, 180 surveys listed, exact response bytes kept under evidence/access_points/source_discovery/2026-11-16); the registries now hold those surveys as references and no feature, status or coordinate changed. The elevation-inventory adapter now cites only a real address where the inventory publishes an HTML fragment. No data product is downloaded by any code path, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v2.json.",
+      "files": [
+        "spiderweb/access_points/discovery.py",
+        "spiderweb/access_points/acquisition.py",
+        "spiderweb/access_points/seeding.py",
+        "spiderweb/access_points/monitoring.py",
+        "scripts/discover_access_point_sources.py",
+        "configs/access_point_discovery_corridors.yaml",
+        "docs/ACCESS_POINT_REGISTRIES.md",
+        "evidence/access_points/source_discovery/",
+        "evidence/access_points/certification_report_v2.json",
+        "registry/access_points/"
+      ]
     }
   ]
 }

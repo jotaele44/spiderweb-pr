@@ -30,12 +30,17 @@ Built from committed inputs by `scripts/build_access_point_registries.py`:
 | Relationships | 0 | — | No inland and off-shore record lie within 2 km of each other | COMPUTED |
 
 No record is VERIFIED. No record's evidence reaches beyond the lowest rung of
-the ladder described below. The Off-Shore registry also holds 47 reference
-sources (13 multibeam surveys, 29 sounding surveys, 1 gridded survey, 4
-topobathymetric LiDAR projects) listed by the committed Guayama–Punta Tuna
-receipt; they are citations, not measurements. The five provisional records
-cannot advance until the screenshots they came from are registered with their
-exact bytes and hash.
+the ladder described below.
+
+The registries also hold reference sources listed by the metadata-discovery run
+of 2026-11-16 (see "Source discovery runs"): 177 in the Off-Shore registry (40
+multibeam surveys, 105 sounding surveys, 25 gridded surveys, 6 topobathymetric
+and 1 bathymetric LiDAR project) and 3 terrestrial LiDAR projects in the Inland
+registry. All 47 surveys named by the earlier Guayama–Punta Tuna receipt were
+listed again and are held once. They are citations, not measurements: no survey
+product is held, and no record cites one. The five provisional records cannot
+advance until the screenshots they came from are registered with their exact
+bytes and hash.
 
 ## Six identities, kept apart
 
@@ -251,6 +256,102 @@ layers are therefore 2D only, and the panel says so in 3D mode. [FACT]
 **Coverage limit.** The map camera is clamped to a Puerto Rico envelope. A
 record far off shore could not be brought into view; none exists yet. [FACT]
 
+## Source discovery runs
+
+A discovery run asks public catalogues which surveys they list for a set of
+search boxes, keeps the exact answers, and writes one sealed catalogue of what
+it saw. It is planned, bounded and off unless explicitly granted.
+
+**Search areas are not positions.** A run has two kinds of target:
+
+| Target | Where the box comes from | Class |
+|---|---|---|
+| Analyst corridor | Drawn from a locality name in `configs/access_point_discovery_corridors.yaml`, one per off-shore seed | ASSUMPTION |
+| Point box | Computed around a point a registry already holds, with the half-width stated in the same file | COMPUTED |
+
+A corridor says where to look. It never gives a seed a coordinate, a depth or
+an extent: the corridor file is refused if an entry states a position, a depth
+or a feature, the registry builder does not read it, and no corridor can be
+certified. The Guayama corridor is the existing one, unchanged, so a run can be
+compared with the August source-denominator receipt.
+
+**Three commands**, all in `scripts/discover_access_point_sources.py`:
+
+| Command | Network | Effect |
+|---|---|---|
+| no option | None | Prints the plan: every target and the first request each provider would make |
+| `--execute --run-id <date>` | Metadata requests only | Writes the run under `evidence/access_points/source_discovery/<date>/` |
+| `--verify <date>` | None | Replays the kept bytes and fails if they no longer reproduce the receipts |
+
+A live run needs
+`SPIDERWEB_ACCESS_POINT_ACQUISITION=metadata:<requests per target>:<who granted it>`.
+That number bounds one target; `--max-total-requests` bounds the run. A provider
+stopped by either ceiling is reported NOT_AUTHORIZED, never empty. Requests go
+out with a generic user agent, only an allow-list of response headers is kept,
+and a redirect is refused.
+
+**What a run writes.** One receipt per target, the exact response bytes, and
+`source_catalogue.json`: every source once, the targets and registries that
+listed it, the datum string the inventory published (placeholders counted, not
+accepted), and review flags for registered points that fall inside a listed
+footprint envelope. `CURRENT.json` names the catalogue the registry builder
+reads, with its hash. A run directory is never overwritten.
+
+**What a run establishes.** That a catalogue listed a survey for a box on a
+date. [FACT] It does not establish that the survey covers a particular place in
+the box, what it measured there, or anything about a feature. Sources it adds to
+a registry are REFERENCED_ONLY with unknown coverage; registering them changes
+no feature, observation, geometry or status (tested). A survey the Guayama
+receipt already names is not registered a second time.
+
+**Rebuilding a catalogue.** The receipts and the kept bytes are the record and
+are never edited. The catalogue is derived from them, so
+`--recatalogue <date>` may rebuild it offline — and refuses if the kept bytes no
+longer reproduce every receipt.
+
+### The run of 2026-11-16
+
+Executed under an explicit grant from the repository owner: at most 15 requests
+per search box and 150 in total. It used 48. Every one of the 48 provider
+queries answered cleanly; 29 returned rows and 19 returned none. 3.15 MB of
+responses are kept under
+`evidence/access_points/source_discovery/2026-11-16/raw/`, and replaying them
+offline reproduces every receipt and the catalogue. [FACT]
+
+| Search box | Basis | Topobathy LiDAR | Bathy LiDAR | Multibeam | Sounding | Gridded (BAG) | Terrestrial LiDAR |
+|---|---|---|---|---|---|---|---|
+| North-west of Aguadilla (`OSAP-SEED-001`) | Analyst corridor | 4 | 0 | 21 | 9 | 2 | — |
+| Desecheo (`OSAP-SEED-002`) | Analyst corridor | 1 | 0 | 17 | 5 | 1 | — |
+| South-western shelf (`OSAP-SEED-003`) | Analyst corridor | 4 | 1 | 14 | 38 | 13 | — |
+| Guayama–Punta Tuna (`OSAP-SEED-004`) | Analyst corridor | 4 | 0 | 14 | 29 | 4 | — |
+| South of Vieques (`OSAP-SEED-005`) | Analyst corridor | 2 | 0 | 13 | 36 | 7 | — |
+| Around `OFAP-PR-000006` | Point box | 5 | 0 | 4 | 7 | 1 | — |
+| Around `INAP-PR-000001` | Point box | 0 | — | — | — | — | 2 |
+| Around `INAP-PR-000002`, `-000003`, `-000004` | Point boxes | 0 | — | — | — | — | 3 each |
+
+The counts are what each catalogue listed for the box [FACT]; 180 distinct
+sources once repeats across boxes are removed [COMPUTED]. The "other
+bathymetric survey" layer listed nothing in any off-shore box and the IfSAR
+layer nothing in any inland box; because those queries ran cleanly, "none
+listed" may be said for those layers and those boxes, and for nothing wider.
+
+What the run found beyond the counts:
+
+| Finding | Class |
+|---|---|
+| The Guayama box lists everything the August receipt named (47 of 47) plus one more multibeam survey (`NF-13-02`) and three more gridded surveys (`F00729`, `H12935`, `H13147`); nothing was withdrawn | COMPUTED |
+| Those three gridded surveys were already in the August sounding list, so they read as newly published grids of known surveys, not new surveys | INFERENCE |
+| Of the 10 LiDAR projects that carry a vertical-datum field, 8 hold a placeholder ("User Specified" ×6, "Not Provided" ×2). They are counted and not accepted as a datum | FACT |
+| The other 2, both terrestrial, say NAVD88. An inventory datum string describes a project; it binds no product. It must be checked against each product's own metadata before any vertical join, the more so because Puerto Rico's own vertical datum is PRVD02 | FACT, with an open check |
+| The multibeam catalogue reports file counts and sizes **for the box asked about**, not for the survey. Those values are kept per box (`query_scoped_attributes`) and are not treated as a conflict. Per box they sum to between 5 GB and 64 GB of raw multibeam files | FACT |
+| The elevation inventory publishes its metadata and data-access "links" as HTML fragments or as prose ("Will be available from …"). The adapter now keeps the field verbatim and cites only a real address; two projects therefore have no address yet | FACT (defect found by the run, fixed) |
+| 18 review flags: registered points that fall inside a listed footprint envelope. Every envelope is project-wide, so a flag says "look here", not "this place was surveyed". No status changed | COMPUTED |
+
+What the run does not show: that any listed survey covers the place a seed
+refers to (the seeds have no position); what any survey measured anywhere; or
+anything about an opening, a passage or a connection. No data product was
+downloaded.
+
 ## What this change deliberately does not do
 
 | Not done | Why |
@@ -277,7 +378,8 @@ record far off shore could not be brought into view; none exists yet. [FACT]
 
 The API is read-only, bounds every parameter, never builds a file path from
 input, and verifies a registry document before answering from it. Metadata
-discovery is denied by default and bounded when granted.
+discovery is denied by default and bounded when granted, per target and per
+run; it sends a generic user agent and records no cookie or server header.
 
 The change is additive. To roll back, revert the branch commits. No database,
 external service or sibling repository was modified.
@@ -295,6 +397,7 @@ external service or sibling repository was modified.
 | `vertical.py`, `raster.py`, `detection.py`, `controls.py` | Datum contract, shared surface processing, candidate discovery, synthetic controls |
 | `transects.py`, `coastal.py` | Cross-sections; coastline versions |
 | `acquisition.py`, `monitoring.py` | Metadata discovery; source change detection |
+| `discovery.py` | Planned, bounded discovery runs over declared search areas; the sealed source catalogue; offline replay |
 | `federation_context.py` | Read-only context from other producers' packages |
 | `seeding.py`, `service.py` | Deterministic registry build; read-only queries |
 

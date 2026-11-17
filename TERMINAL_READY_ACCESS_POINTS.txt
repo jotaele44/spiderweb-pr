@@ -2,11 +2,12 @@ TERMINAL_READY — Inland and Off-Shore Access Point Registries
 REPOSITORY: spiderweb-pr
 STATE: DEVELOPMENT_COMPLETE / SOFTWARE_TESTED / NOT_CERTIFIED / PRODUCTION_NOT_AUTHORIZED
 BASE COMMIT: cb5aa8eb726ba882b410bcfe0a402799af86ed5a (audited); main merged in at b2c532fb2c4674a8d838423dc4d832dd5ca91369
+SOURCE-DISCOVERY WORK: based on main at 9c37b42926e6d401e80598221162a4664f2202d0
 NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
 IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
 RECORDS EXPORTED TO THE HUB: NONE
 INDEPENDENT REVIEW: NOT PERFORMED
-MACHINE-READABLE REPORT: evidence/access_points/certification_report_v1.json
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v2.json
 
 PURPOSE
 
@@ -72,6 +73,7 @@ EXPECTED REGISTRY CONTENTS
    offshore:  6 features: 5 PROVISIONAL_DISCOVERY (no coordinates), 1 CANDIDATE
    relationships: 0
    verified features: 0
+   sources:   inland 5, offshore 184; every survey source is a reference, none a measurement
 
 BENCHMARK (optional; software performance on synthetic surfaces)
 
@@ -79,8 +81,19 @@ BENCHMARK (optional; software performance on synthetic surfaces)
 
 SOURCE DISCOVERY (off by default)
 
-   Metadata discovery makes no request unless a grant is set:
-   SPIDERWEB_ACCESS_POINT_ACQUISITION=metadata:<max requests>:<who authorised>
+   Plan (no network, no file written):
+   python scripts/discover_access_point_sources.py
+
+   Live run (metadata only; needs an explicit grant, which bounds each target):
+   SPIDERWEB_ACCESS_POINT_ACQUISITION="metadata:15:<who authorised>" \
+     python scripts/discover_access_point_sources.py --execute --run-id <YYYY-MM-DD>
+
+   Re-check a kept run offline, then rebuild the registries from it:
+   python scripts/discover_access_point_sources.py --verify <YYYY-MM-DD>
+   python scripts/build_access_point_registries.py
+
+   Search boxes: configs/access_point_discovery_corridors.yaml. A box is where
+   to look, never where a feature is; the seeds stay without coordinates.
    No data product is downloaded by any code path in this package.
 
 OPEN BEFORE ANY RELEASE
@@ -88,7 +101,8 @@ OPEN BEFORE ANY RELEASE
    - Independent review has not been performed. The producer cannot certify itself.
    - No method has been scored against independent field truth.
    - No real survey has been processed; the five seed screenshots are not registered.
-   - Live source discovery has not been executed.
+   - Live source discovery ran once (2026-11-16, 180 sources listed). It lists
+     surveys; it downloaded none, and no record cites one yet.
    - aguayluz-pr has no committed export package to read.
    - Nothing is exported to the hub; export was not authorised.
    - Three naming questions for the owners are open (see the terminology decision).
