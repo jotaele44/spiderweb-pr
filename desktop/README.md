@@ -55,9 +55,9 @@ restarts on the page.
 Guest mode keeps a shared desktop tidy. It does not stop someone who can already
 run programs under your account.
 
-The Launch Pad appears once `requirements-desktop.txt` pins a `prii-desktop`
-that includes it (0.3.0 or later). With an older runtime the declaration is
-ignored and the app opens straight into the Command Center, as before.
+`requirements-desktop.txt` pins a `prii-desktop` that includes the Launch Pad
+(0.3.0). If you set the app up before that pin moved, run
+`python desktop/setup.py --force` once to install the newer runtime.
 
 ## How it works
 

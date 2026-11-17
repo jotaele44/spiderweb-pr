@@ -8,4 +8,4 @@ sse-starlette>=2.1,<4
 aiosqlite>=0.20,<1
 # Shared federation runtime pinned to an immutable TheHub commit so this
 # repository installs from an isolated clone.
-prii-desktop @ git+https://github.com/jotaele44/thehub-pr.git@f2b81769924689b4d959554928810b1d7b7ef3d6#subdirectory=packages/prii_desktop
+prii-desktop @ git+https://github.com/jotaele44/thehub-pr.git@dc79dc003815432b3f8bfc8f9bff532f6c47e622#subdirectory=packages/prii_desktop
