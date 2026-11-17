@@ -32,6 +32,33 @@ First launch also creates a writable workspace and prepares `server/priis.db`
 for the live backend. It seeds the diagnostic dataset only when the database
 is absent; existing user state is left untouched.
 
+## The Launch Pad
+
+`desktop/config.py` declares a **Launch Pad**: a screen the shared desktop
+runtime shows after setup and before Spiderweb starts. On it you choose:
+
+- **Guest or Operator.** Guest is read-only: you can explore every module and
+  ask questions in Query, and the app refuses starting or stopping pipeline
+  and indexing jobs. Operator allows them from this computer and can be
+  protected with a passphrase.
+- **Launch option**: an optional Hugging Face token for the Query module's
+  local language model. It is used for that session and never saved, and only
+  matters in a source checkout with the RAG extras installed.
+
+There is one starting page, the Command Center: the six modules are tabs, not
+separate addresses. The Launch Pad also reports readiness: how many contracts,
+sites and anomalies are in the workspace database (a fresh workspace holds the
+diagnostic seed dataset), and whether the map layer catalog is present. Use the
+**Launch Pad** button beside the gear to come back and change the mode; the app
+restarts on the page.
+
+Guest mode keeps a shared desktop tidy. It does not stop someone who can already
+run programs under your account.
+
+The Launch Pad appears once `requirements-desktop.txt` pins a `prii-desktop`
+that includes it (0.3.0 or later). With an older runtime the declaration is
+ignored and the app opens straight into the Command Center, as before.
+
 ## How it works
 
 - `desktop/config.py` — the only per-repo file (window title, branding,

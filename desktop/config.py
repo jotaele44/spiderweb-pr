@@ -10,6 +10,8 @@ resolve without CORS.
 from __future__ import annotations
 
 import os
+import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -67,3 +69,121 @@ EXTRA_BUILD_ENV = {
 
 # Health endpoint used to detect that the server is up.
 HEALTH_PATH = "/health"
+
+
+def _launchpad_status() -> list[dict[str, str]]:
+    """Readiness rows for the Launch Pad. Runs before the backend exists, so it
+    opens the database desktop/app_server.py will bind, read-only.
+    """
+    data_home = os.environ.get(DATA_ENV_VAR, "").strip()
+    db_path = (Path(data_home) if data_home else REPO_ROOT) / "server" / "priis.db"
+    counts: dict[str, int] = {}
+    problem = ""
+    if db_path.is_file():
+        try:
+            # mode=ro: a readiness check must never create or migrate the store.
+            with closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as conn:
+                for table in ("contracts", "sites", "anomalies"):
+                    counts[table] = int(
+                        conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]  # noqa: S608
+                    )
+        except sqlite3.Error as exc:
+            problem = str(exc)
+    total = sum(counts.values())
+    if problem:
+        database = {
+            "label": "Database",
+            "value": "Unreadable",
+            "status": "fail",
+            "detail": (
+                f"{db_path}: {problem}. Open Setup & Diagnostics and choose Repair."
+            ),
+        }
+    elif not db_path.is_file():
+        database = {
+            "label": "Database",
+            "value": "Missing",
+            "status": "warn",
+            "detail": (
+                f"{db_path} does not exist yet, so the app would show built-in "
+                "sample data. Open Setup & Diagnostics and choose Repair to seed it."
+            ),
+        }
+    else:
+        database = {
+            "label": "Database",
+            "value": "Empty" if not total else f"{total:,} records",
+            "status": "pass" if total else "info",
+            "detail": (
+                f"{counts['contracts']:,} contracts, {counts['sites']:,} sites and "
+                f"{counts['anomalies']:,} anomalies in {db_path}. A fresh workspace "
+                "holds the diagnostic seed dataset until the pipeline is run."
+            ),
+        }
+    layers = REPO_ROOT / "configs" / "layer_catalog.yaml"
+    return [
+        database,
+        {
+            "label": "Map layer catalog",
+            "value": "Present" if layers.is_file() else "Missing",
+            "status": "pass" if layers.is_file() else "fail",
+            "detail": "configs/layer_catalog.yaml drives the Spatial module's layers.",
+        },
+    ]
+
+
+# Pre-launch screen shown by the shared runtime (prii_desktop.launchpad).
+#
+# The API has no auth of its own. Guest refuses the routes that start or stop
+# background jobs; Operator leaves the API exactly as it was. The app has no URL
+# router (the six modules are in-memory tabs that always open on Command), so
+# there is one start page.
+LAUNCHPAD = {
+    "tagline": "Spatial and operational intelligence for Puerto Rico",
+    "summary": (
+        "Spiderweb is the federation's spatial and operational producer: it "
+        "links contracts, sites and anomalies to places and prepares the "
+        "GIS-backed records TheHub aggregates. This is its diagnostic console."
+    ),
+    "highlights": ["Command", "Finance", "Spatial", "Anomaly", "Graph", "Query"],
+    "status": _launchpad_status,
+    "start_pages": [
+        {
+            "route": "/",
+            "label": "Command Center",
+            "description": (
+                "Finance, Spatial, Anomaly, Graph and Query are tabs from here."
+            ),
+        },
+    ],
+    "guest": {
+        "label": "Guest",
+        "description": (
+            "Read-only. Explore every module and ask questions in Query. "
+            "Starting or stopping pipeline and indexing jobs is refused."
+        ),
+    },
+    "operator": {
+        "label": "Operator",
+        "description": (
+            "Full access from this computer, including running the data "
+            "pipeline and rebuilding the query index."
+        ),
+    },
+    # POST /rag/query answers a question and changes nothing, so a guest may use
+    # it. The other three non-GET routes start or stop background jobs.
+    "guest_guard": {"allow": ["POST /rag/query"]},
+    "options": [
+        {
+            "id": "hf_token",
+            "label": "Hugging Face token",
+            "kind": "secret",
+            "env": "HF_TOKEN",
+            "help": (
+                "Optional. Only used by the Query module, and only in a source "
+                "checkout that has the RAG extras installed: it lets the local "
+                "language model download a gated model from Hugging Face."
+            ),
+        },
+    ],
+}
