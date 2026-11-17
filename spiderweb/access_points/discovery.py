@@ -25,6 +25,7 @@ the box, what it measured there, or anything about a feature.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 from dataclasses import dataclass
@@ -334,10 +335,10 @@ def _first_request_url(provider_id: str, bbox: BoundingBox) -> str:
         seen.append(url)
         raise _PlanOnly
 
-    try:
+    # The planning transport raises after recording the first address, which
+    # is how a provider is stopped before it can reach the network.
+    with contextlib.suppress(_PlanOnly):
         PROVIDERS[provider_id].discover(bbox, capture)
-    except _PlanOnly:
-        pass
     if len(seen) != 1:
         raise RuntimeError(f"{provider_id} did not issue exactly one first request")
     return seen[0]

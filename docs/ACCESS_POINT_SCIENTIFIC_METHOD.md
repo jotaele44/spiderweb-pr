@@ -217,6 +217,29 @@ only, outside, empty, unresolved). A point that is sea on a mean-high-water
 shoreline and land on a lower-water one is reported as exactly that; it is not
 assigned to a registry by geometry.
 
+### A stated datum that cannot be true where the data lie
+
+Real products showed a case the contract did not cover: a datum that is stated,
+is not a placeholder, and is still not usable as stated. Both elevation tiles
+processed on 2026-11-17 say NAVD88, in a programme-wide sentence written for the
+North American mainland; their own metadata files have no structured vertical
+element, and NAVD88 is not realised in Puerto Rico (the datum there is PRVD02).
+The elevation inventory says NAVD88 for the same projects.
+
+The rule now is:
+
+| Step | Behaviour | Class |
+|---|---|---|
+| Record | The datum is kept exactly as stated, with where the statement was found | BINDING |
+| Check | `regional_plausibility` says whether that datum is realised at the location | COMPUTED |
+| Single-surface analysis | Allowed: closed-basin shape does not depend on the datum | FACT |
+| Join to a surface on another reference | Refused while the statement is implausible for the region | BINDING |
+| Two surfaces with the same implausible statement | Compared cell by cell; agreement is reported as measured, never assumed | COMPUTED |
+
+The check is a coarse box test on a stated orthometric datum. It is a sanity
+check, not a geodetic definition, and it never replaces the stated datum with
+another one.
+
 ### Failure behaviour
 
 | Input | Result |
@@ -247,5 +270,7 @@ Stated so that nobody assumes it exists: point-cloud reading (LAS, LAZ, COPC),
 ground classification, bare-earth extraction, contour extraction and contour
 trees, flow routing, local relief models beyond a windowed range, interpretation
 of side-scan, backscatter or sub-bottom data, multibeam artefact filtering
-beyond grid-aligned seams, reading of gridded survey files into this pipeline,
-and any labelled truth set.
+beyond grid-aligned seams, reading of gridded bathymetric survey files (BAG) into
+this pipeline, reprojection of geographic grids inside this package, per-cell
+uncertainty for elevation tiles, and any labelled truth set. A projected GeoTIFF
+elevation tile can be read (`survey.py`); one has been.

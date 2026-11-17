@@ -33,8 +33,8 @@ numpy 2.4.6, scipy 1.17.1, shapely 2.1.2, rasterio 1.5.2):
 
 The 52 skips are optional dependencies, absent local services and
 operator-local data. Results after the change are in
-`evidence/access_points/certification_report_v2.json` (version 1 is the report
-as it stood when the registries were first merged).
+`evidence/access_points/certification_report_v3.json` (versions 1 and 2 are the
+report as it stood at the two earlier merges).
 
 ## 2. What existed in this repository
 
@@ -116,7 +116,7 @@ lists terrestrial LiDAR as well as bathymetric surveys.
 | Offline fixtures | Replay implemented and tested with synthetic payloads and against the kept responses of the 2026-11-16 run | FACT |
 | Planned runs over declared search areas | Implemented (`spiderweb/access_points/discovery.py`): offline plan, per-target and per-run request ceilings, sealed source catalogue, offline replay check | FACT |
 | Search areas kept apart from feature positions | Implemented, tested: a corridor that states a position, depth or feature is refused | FACT |
-| Data-product download | **Not implemented.** Discovery is metadata only | FACT |
+| Data-product download | Implemented for named files only, under a separate grant that bounds files and bytes (`spiderweb/access_points/products.py`); used once, for two elevation tiles (716 MB of an 800 MB ceiling). No bulk path | FACT |
 | Temporal query, resume of large downloads | Not implemented | FACT |
 | Terrestrial sources beyond the elevation inventory (3DEP tiles, geology, karst inventories, parcels, roads) | Not integrated | FACT |
 | Live run | Executed once, on 2026-11-16, under an explicit grant from the repository owner: 10 search boxes, 48 requests, 180 sources listed, no failure. See "Source discovery runs" in `ACCESS_POINT_REGISTRIES.md` | FACT |
@@ -185,7 +185,7 @@ and tested:
 | Candidate records | 4 | 1, plus 5 provisional | — | COMPUTED |
 | Submerged karst, cave entrance, landslide, lineament, engineered structure classification | — | Classes exist; no detector | — | FACT |
 | Sediment artefacts, multibeam artefact filtering | — | Absent beyond seams | — | FACT |
-| Real surveys processed | 0 | 0 | — | FACT |
+| Real surveys processed | 2 elevation tiles over one 1 km window (two independent surveys of the same ground), 2026-11-17 | 0 | Shared reader and detector | FACT |
 
 Neither registry was simplified to match the other: the processing core is
 shared and the interpretation rules differ.
