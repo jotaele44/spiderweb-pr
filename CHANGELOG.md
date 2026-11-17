@@ -15,6 +15,18 @@ GitHub Release using the matching section below (T6-53).
   keeps the published field verbatim (`spiderweb/access_points/acquisition.py`).
 
 ### Added
+- **Real-survey processing for the access-point registries.** A named survey
+  product can now be fetched under its own grant that bounds files and bytes
+  (`spiderweb/access_points/products.py`), read, bound to the vertical datum it
+  states, and searched for closed basins (`survey.py`, `survey_run.py`,
+  `scripts/process_access_point_survey.py`). One run is committed: two
+  independent 1 m LiDAR elevation tiles over the registered point of
+  `INAP-PR-000003`, fetched under an explicit owner grant (716 MB of an 800 MB
+  ceiling; the tiles stay outside the repository, their hashes and a 1 km window
+  are committed). 13 of 17 closed basins are seen by both surveys. A stated
+  vertical datum is now checked for regional plausibility: both tiles say
+  NAVD88, which is not realised in Puerto Rico. No registry record changed. See
+  "Real-survey processing" in `docs/ACCESS_POINT_REGISTRIES.md`.
 - **Planned source-discovery runs for the access-point registries.**
   `scripts/discover_access_point_sources.py` plans (offline), runs (only under
   an explicit grant) and re-checks (offline) a metadata-only query of the public

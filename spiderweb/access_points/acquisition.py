@@ -11,8 +11,9 @@ serves the inland and the off-shore registry.
 What it adds
 ------------
 * a default-deny authorisation gate: nothing touches the network unless the
-  caller holds an explicit grant, and the only grant implemented here is
-  metadata discovery.  There is no bulk-download path in this module;
+  caller holds an explicit grant.  This module spends metadata grants only.
+  Fetching a data product is a separate grant, for named files inside a byte
+  ceiling, and lives in :mod:`.products`; there is no bulk-download path;
 * retry and rate-limit wrappers around the shared transport;
 * an offline replay transport over frozen ``.bin`` + ``.manifest.json`` pairs;
 * the adapter lifecycle as a declared vocabulary with allowed transitions;
@@ -155,6 +156,8 @@ class LifecycleLog:
 class AuthorizationLevel(StrEnum):
     NONE = "NONE"
     METADATA_DISCOVERY = "METADATA_DISCOVERY"
+    # Named files only, inside a byte ceiling.  See :mod:`.products`.
+    PRODUCT_DOWNLOAD = "PRODUCT_DOWNLOAD"
 
 
 class AcquisitionNotAuthorized(PermissionError):
@@ -163,11 +166,18 @@ class AcquisitionNotAuthorized(PermissionError):
 
 @dataclass(frozen=True, slots=True)
 class Authorization:
-    """An explicit, bounded grant.  The default grants nothing."""
+    """An explicit, bounded grant.  The default grants nothing.
+
+    A grant is for one level only.  A metadata grant cannot download a
+    product, and a product grant cannot be spent on catalogue queries.
+    ``max_requests`` bounds requests (metadata) or files (products);
+    ``max_bytes`` bounds the bytes of a product grant.
+    """
 
     level: AuthorizationLevel = AuthorizationLevel.NONE
     granted_by: str = ""
     max_requests: int = 0
+    max_bytes: int = 0
 
     def __post_init__(self) -> None:
         if self.level is not AuthorizationLevel.NONE:
@@ -175,29 +185,47 @@ class Authorization:
                 raise ValueError("a grant must name who authorised it")
             if self.max_requests < 1:
                 raise ValueError("a grant must bound the number of requests")
+        if self.level is AuthorizationLevel.PRODUCT_DOWNLOAD and self.max_bytes < 1:
+            raise ValueError("a product grant must bound the number of bytes")
+        if self.level is not AuthorizationLevel.PRODUCT_DOWNLOAD and self.max_bytes:
+            raise ValueError("only a product grant carries a byte ceiling")
 
     @classmethod
     def from_environment(
         cls, environ: Mapping[str, str] | None = None
     ) -> "Authorization":
-        """``SPIDERWEB_ACCESS_POINT_ACQUISITION=metadata:<max_requests>:<granted_by>``.
+        """Read the grant from ``SPIDERWEB_ACCESS_POINT_ACQUISITION``.
 
-        Anything else, including an unset variable, grants nothing.
+        ``metadata:<max_requests>:<granted_by>`` or
+        ``product:<max_files>:<max_bytes>:<granted_by>``.  Anything else,
+        including an unset variable, grants nothing.
         """
 
         raw = (environ if environ is not None else os.environ).get(
             AUTHORIZATION_ENV, ""
         )
-        parts = raw.split(":", 2)
-        if len(parts) != 3 or parts[0] != "metadata":
-            return cls()
+        kind = raw.split(":", 1)[0]
         try:
-            limit = int(parts[1])
+            if kind == "metadata":
+                _, limit, who = raw.split(":", 2)
+                if int(limit) < 1 or not who.strip():
+                    return cls()
+                return cls(
+                    AuthorizationLevel.METADATA_DISCOVERY, who.strip(), int(limit)
+                )
+            if kind == "product":
+                _, files, ceiling, who = raw.split(":", 3)
+                if int(files) < 1 or int(ceiling) < 1 or not who.strip():
+                    return cls()
+                return cls(
+                    AuthorizationLevel.PRODUCT_DOWNLOAD,
+                    who.strip(),
+                    int(files),
+                    int(ceiling),
+                )
         except ValueError:
             return cls()
-        if limit < 1 or not parts[2].strip():
-            return cls()
-        return cls(AuthorizationLevel.METADATA_DISCOVERY, parts[2].strip(), limit)
+        return cls()
 
     def require(self, level: AuthorizationLevel) -> None:
         if self.level is not level:

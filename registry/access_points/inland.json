@@ -1,5 +1,5 @@
 {
-  "content_sha256": "a8797c23027d5aaf6d6c10e1fdeca3cad5641298b80f66de2b750ab1808269df",
+  "content_sha256": "28bb5134ae11b99738edc91bf3a796946ef16eea10dd8ac30c24bf6c5302718d",
   "contract_version": "access-point-registry/1.0",
   "counts": {
     "derived_geometries": 0,
@@ -15,7 +15,7 @@
     "observations": 4,
     "observations_bound": 4,
     "observations_unbound": 0,
-    "sources": 5
+    "sources": 7
   },
   "derived_geometries": [],
   "features": [
@@ -399,6 +399,24 @@
       "title": "2004 USACE Lidar: Puerto Rico"
     },
     {
+      "coverage_state": "INTERPOLATED",
+      "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
+      "lineage_root_id": "USIEI:GlobalID:{933E88E7-A131-40E5-8BAA-C9575216E040}",
+      "manifestation_sha256": "a798473f09726437e9641bfed2c1cb584c176888595bba46348cda7caf83c9c5",
+      "native_identifier": "TNM:5eb61d7d82ce25b5135ae912",
+      "parent_source_ids": [],
+      "product_stage": "GRID",
+      "provenance_state": "REGISTERED",
+      "provider": "USGS_TNM_ELEVATION_PRODUCTS",
+      "published_date": "2020-05-06",
+      "retrieved_utc": "2026-11-17T13:50:35+00:00",
+      "sensor_type": null,
+      "source_id": "APSRC-3b3ad6e4d294703e",
+      "source_uri": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_F_2018/TIFF/USGS_1m_x72y204_PR_PRVI_F_2018.tif",
+      "survey_date": "2018-04-17/2019-04-19",
+      "title": "USGS one meter x72y204 PR PRVI F 2018"
+    },
+    {
       "coverage_state": "UNKNOWN",
       "license_note": null,
       "lineage_root_id": null,
@@ -471,6 +489,24 @@
       "source_uri": "https://www.fisheries.noaa.gov/inport/item/54852",
       "survey_date": "Sep 19, 2015 - Mar 16, 2017",
       "title": "2016 Commonwealth of Puerto Rico Project Lidar"
+    },
+    {
+      "coverage_state": "INTERPOLATED",
+      "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
+      "lineage_root_id": "TNM:6a753f0e1ba49b79d0c347d8",
+      "manifestation_sha256": "a5a8e6091415d88d991c4248a877b65e6020f0f7af810109063413c23d3be63c",
+      "native_identifier": "TNM:6a753f0e1ba49b79d0c347d8",
+      "parent_source_ids": [],
+      "product_stage": "GRID",
+      "provenance_state": "REGISTERED",
+      "provider": "USGS_TNM_ELEVATION_PRODUCTS",
+      "published_date": "2026-06-24",
+      "retrieved_utc": "2026-11-17T13:51:52+00:00",
+      "sensor_type": null,
+      "source_id": "APSRC-cd2b7cf792cf01c2",
+      "source_uri": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.tif",
+      "survey_date": "2023-12-27/2025-03-20",
+      "title": "USGS 1 Meter 19 x72y204 PR_PuertoRicoUSVI_D24"
     }
   ]
 }
