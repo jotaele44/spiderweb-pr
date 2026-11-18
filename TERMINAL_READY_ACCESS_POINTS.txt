@@ -7,7 +7,7 @@ NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
 IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
 RECORDS EXPORTED TO THE HUB: NONE
 INDEPENDENT REVIEW: NOT PERFORMED
-MACHINE-READABLE REPORT: evidence/access_points/certification_report_v3.json
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v4.json
 
 PURPOSE
 
@@ -73,8 +73,9 @@ EXPECTED REGISTRY CONTENTS
    offshore:  6 features: 5 PROVISIONAL_DISCOVERY (no coordinates), 1 CANDIDATE
    relationships: 0
    verified features: 0
-   sources:   inland 7, offshore 184. Two inland sources are held and hashed elevation
-              tiles (grids, not direct measurements); every other survey source is a reference
+   sources:   inland 10, offshore 184. Held and hashed inland sources: two elevation
+              tiles (grids) and three published reference maps. None is a direct
+              measurement; every other survey source is a reference
 
 BENCHMARK (optional; software performance on synthetic surfaces)
 
@@ -108,10 +109,20 @@ REAL-SURVEY PROCESSING
    and are kept outside the repository; only their hashes and a small window are
    committed. Runs are declared in configs/access_point_survey_runs.yaml.
 
+COMPARISON WITH A PUBLISHED SINKHOLE MAP
+
+   Re-check the committed comparison offline:
+   python scripts/validate_access_point_detector.py --run-id 2026-11-17-karst-map --check
+
+   Reference maps are declared in configs/access_point_reference_sets.yaml, each with
+   the hash of its bytes and the coordinate system bound to it. The result is a
+   comparison with another interpretation (REFERENCE_COMPARED), not field accuracy.
+
 OPEN BEFORE ANY RELEASE
 
    - Independent review has not been performed. The producer cannot certify itself.
-   - No method has been scored against independent field truth.
+   - No method has been scored against field truth. The detector has been compared
+     with one published map on one tile; it under-reports nested sinkholes.
    - One real survey window has been processed (two elevation tiles, 2026-11-17). It
      shows closed basins, which are shapes; it verifies no record.
    - The five seed screenshots are not registered.

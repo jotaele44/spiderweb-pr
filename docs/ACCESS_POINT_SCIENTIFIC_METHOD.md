@@ -135,16 +135,58 @@ probability, and is listed among the bases that can never support a claim.
 |---|---|---|
 | SOFTWARE_CONTROL | Scored against synthetic surfaces | The software finds planted shapes |
 | EXPLORATORY | No reference labels | Nothing about accuracy |
+| REFERENCE_COMPARED | Compared with a published map | Agreement with another interpretation, against a displaced control. Not accuracy |
 | MEASURED | Scored against independent field truth | Class-wise precision and recall |
 
 Matching is one-to-one and nearest-first: one detection cannot satisfy two
-labels, and one label cannot excuse two detections. Synthetic and field truth
-cannot be mixed in one score.
+labels, and one label cannot excuse two detections. Synthetic controls, map
+references and field truth cannot be mixed in one score.
 
-**Current state: SOFTWARE_CONTROL only.** A labelled set could be assembled
-from published sinkhole and cave layers, with quarries, graded urban ground and
-reservoirs as negative controls, and a small frozen raster. That is the next
-scientific step and has not been done. [OPEN]
+**Current state: SOFTWARE_CONTROL, and REFERENCE_COMPARED on one tile.** No
+field truth exists, so nothing is MEASURED.
+
+### Comparison with the USGS karst map (2026-11-17)
+
+The reference is the U.S. Geological Survey *Karst Map of Puerto Rico* (2010, a
+digital update of Monroe 1976): outlines of 1,173 individual sinkholes the map
+calls deeper than 30 m. It was digitised from paper maps with a 50 m contour
+interval, and its own metadata says outlines may be offset by as much as 100 m.
+It is a published interpretation, not a field survey. 139 of the outlines lie
+inside the 10 km elevation tile already held (137 where the 2018 survey has
+data).
+
+Two measures are taken, because they answer different questions, each at
+several depths and each against a **displaced control** — the same outlines
+moved 1 km east, where any agreement is chance. Karst ground is full of
+hollows, so a figure means something only by how far it stands above its
+control.
+
+| Measure, 2024 survey, 5 m cells | ≥ 10 m | ≥ 20 m | ≥ 30 m | Class |
+|---|---|---|---|---|
+| Surface: a closed depression inside the outline as drawn | 72% (control 57%) | 57% (28%) | 37% (16%) | COMPUTED |
+| Surface: the same, within the map's stated 100 m offset | 99% (97%) | 98% (84%) | 88% (51%) | COMPUTED |
+| Detector: reports the mapped sinkhole as its own object | 41% (43%) | 40% (31%) | 32% (16%) | COMPUTED |
+
+What this shows:
+
+| Finding | Class |
+|---|---|
+| The surface and the map agree where the map is most specific: at 30 m, within the map's own tolerance, 88% of mapped sinkholes are closed depressions that deep, against 51% by chance | COMPUTED |
+| Below about 10 m neither measure separates the map from chance on this ground. A shallow basin near a mapped sinkhole is not evidence of anything | COMPUTED |
+| The detector under-reports nested sinkholes. Of the 77 mapped sinkholes it does not report as an object, 73 lie inside a larger closed basin: filling raises a whole compound depression to one spill level, and only the outermost basin is reported | COMPUTED |
+| The two surveys give the same figures to within one outline, as in the replication test | COMPUTED |
+| The gap between "as drawn" and "within 100 m" says the map's positional error matters as much as the method does | INFERENCE |
+| Precision is not stated: the map lists only sinkholes deeper than 30 m, so a shallower basin it does not list is not an error | FACT |
+
+No threshold was changed. The result is for one tile of one karst terrain and
+does not transfer to other ground or to the seabed. The comparison is recomputed
+by `scripts/validate_access_point_detector.py`; the whole-tile figures need the
+held tiles, and one 1 km window (eight outlines, too few to conclude from) is
+committed so the computation itself can be re-run from the repository.
+
+Two things remain to be done before anything here could be called validated: a
+detector that resolves nested basins, and ground that someone has visited.
+[OPEN]
 
 Controls run in `tests/test_access_points_science.py`:
 
@@ -272,5 +314,6 @@ trees, flow routing, local relief models beyond a windowed range, interpretation
 of side-scan, backscatter or sub-bottom data, multibeam artefact filtering
 beyond grid-aligned seams, reading of gridded bathymetric survey files (BAG) into
 this pipeline, reprojection of geographic grids inside this package, per-cell
-uncertainty for elevation tiles, and any labelled truth set. A projected GeoTIFF
+uncertainty for elevation tiles, a basin hierarchy that separates a sinkhole
+nested inside a larger closed depression, and any field-visited truth set. A projected GeoTIFF
 elevation tile can be read (`survey.py`); one has been.

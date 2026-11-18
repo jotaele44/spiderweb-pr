@@ -523,13 +523,35 @@ def detect_escarpments(
 
 class TruthKind(StrEnum):
     SYNTHETIC_CONTROL = "SYNTHETIC_CONTROL"
+    # A published map or inventory compiled by someone else.  Independent of
+    # this method, but itself an interpretation with its own positional error;
+    # it is a reference to compare with, not ground that was visited.
+    PUBLISHED_MAP_REFERENCE = "PUBLISHED_MAP_REFERENCE"
     INDEPENDENT_FIELD_TRUTH = "INDEPENDENT_FIELD_TRUTH"
 
 
 class EvaluationState(StrEnum):
     SOFTWARE_CONTROL = "SOFTWARE_CONTROL"  # synthetic surfaces: verifies code only
     EXPLORATORY = "EXPLORATORY"  # no independent truth: no accuracy claim
+    REFERENCE_COMPARED = "REFERENCE_COMPARED"  # compared with a published map
     MEASURED = "MEASURED"  # scored against independent field truth
+
+
+_EVALUATION_OUTCOME: dict[TruthKind, tuple[EvaluationState, str]] = {
+    TruthKind.SYNTHETIC_CONTROL: (
+        EvaluationState.SOFTWARE_CONTROL,
+        "scored against synthetic controls: verifies the software, not field accuracy",
+    ),
+    TruthKind.PUBLISHED_MAP_REFERENCE: (
+        EvaluationState.REFERENCE_COMPARED,
+        "compared with a published map: agreement with another interpretation, "
+        "not field-verified accuracy",
+    ),
+    TruthKind.INDEPENDENT_FIELD_TRUTH: (
+        EvaluationState.MEASURED,
+        "scored against independent field truth",
+    ),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -599,7 +621,9 @@ def evaluate(
         )
     kinds = {label.truth_kind for label in labels}
     if len(kinds) != 1:
-        raise ValueError("synthetic controls and field truth must be scored separately")
+        raise ValueError(
+            "synthetic controls, map references and field truth must be scored separately"
+        )
     ids = [label.label_id for label in labels]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate reference label id")
@@ -650,11 +674,9 @@ def evaluate(
             if label.feature_class == name and j not in used_l
         )
         scores.append(ClassScore(name, tp, fp, fn))
-    synthetic = kinds == {TruthKind.SYNTHETIC_CONTROL}
+    state, statement = _EVALUATION_OUTCOME[next(iter(kinds))]
     return EvaluationReport(
-        state=(
-            EvaluationState.SOFTWARE_CONTROL if synthetic else EvaluationState.MEASURED
-        ),
+        state=state,
         scores=tuple(scores),
         matched=tuple(matched),
         unmatched_detections=tuple(
@@ -663,9 +685,5 @@ def evaluate(
         unmatched_labels=tuple(
             label.label_id for j, label in enumerate(labels) if j not in used_l
         ),
-        statement=(
-            "scored against synthetic controls: verifies the software, not field accuracy"
-            if synthetic
-            else "scored against independent field truth"
-        ),
+        statement=statement,
     )

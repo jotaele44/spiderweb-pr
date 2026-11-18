@@ -1,0 +1,6 @@
+{
+  "report": "2026-11-17-karst-map/validation_report.json",
+  "report_sha256": "8963d96257a50cb312cb2d1c3cda9c4c6ba66cfe861f4fe227e55be666dfae08",
+  "run_id": "2026-11-17-karst-map",
+  "schema": "access_point_validation_pointer/1.0"
+}

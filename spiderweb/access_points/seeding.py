@@ -26,6 +26,7 @@ import yaml
 
 from gebco.marine_evidence import CoverageState, ProductStage, SensorType
 
+from . import reference as reference_sets
 from .acquisition import PROVIDERS, to_source_manifestation
 from .discovery import (
     DISCOVERY_DIR,
@@ -396,6 +397,31 @@ def register_survey_sources(
     }
 
 
+def register_reference_sets(
+    registry: AccessPointRegistry, repo_root: Path
+) -> dict[str, Any] | None:
+    """Register the held reference maps as hashed sources.
+
+    A reference map is a published interpretation: registered, never a direct
+    measurement, and registering it touches no feature.  Each file's bytes are
+    checked against its declared hash before it is registered.
+    """
+
+    config = repo_root / reference_sets.REFERENCE_PATH
+    if not config.is_file():
+        return None
+    added = []
+    for ref in reference_sets.load_sets(config).values():
+        if not ref.held:
+            continue
+        assert ref.path is not None
+        if _sha256(repo_root / ref.path) != ref.sha256:
+            raise SeedingError(f"{ref.set_id}: file does not match its declared hash")
+        if registry.add_source(reference_sets.to_source(ref)):
+            added.append(ref.set_id)
+    return {"registered": len(added), "sets": sorted(added)}
+
+
 _GUAYAMA_TITLE = "listed in the Guayama-Punta Tuna v0.1 source-denominator receipt"
 
 
@@ -547,6 +573,7 @@ class BuildResult:
     input_hashes: Mapping[str, str]
     discovery: Mapping[str, Any] | None = None
     survey: Mapping[str, Any] | None = None
+    reference: Mapping[str, Any] | None = None
 
 
 def build_all(repo_root: str | Path) -> BuildResult:
@@ -599,6 +626,16 @@ def build_all(repo_root: str | Path) -> BuildResult:
             f"{SURVEY_DIR}/{SURVEY_POINTER_NAME}",
             f"{SURVEY_DIR}/{survey_report['run_id']}/processing_report.json",
         ]
+    reference = register_reference_sets(inland, root)
+    reference_inputs: list[str] = []
+    if reference is not None:
+        reference_inputs = [reference_sets.REFERENCE_PATH] + [
+            str(ref.path)
+            for ref in reference_sets.load_sets(
+                root / reference_sets.REFERENCE_PATH
+            ).values()
+            if ref.held
+        ]
     ledger = adjacency_ledger(inland, offshore, threshold_m=ADJACENCY_THRESHOLD_M)
     inputs = {
         rel: _sha256(root / rel)
@@ -609,6 +646,7 @@ def build_all(repo_root: str | Path) -> BuildResult:
             GUAYAMA_RECEIPT_PATH,
             *discovery_inputs,
             *survey_inputs,
+            *reference_inputs,
         )
     }
     return BuildResult(
@@ -621,6 +659,7 @@ def build_all(repo_root: str | Path) -> BuildResult:
         inputs,
         discovery,
         survey,
+        reference,
     )
 
 
@@ -668,6 +707,9 @@ def write_documents(result: BuildResult, repo_root: str | Path) -> dict[str, str
                 None if result.discovery is None else dict(result.discovery)
             ),
             "survey_products": None if result.survey is None else dict(result.survey),
+            "reference_sets": (
+                None if result.reference is None else dict(result.reference)
+            ),
         },
     }
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"

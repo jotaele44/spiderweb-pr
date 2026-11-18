@@ -15,6 +15,21 @@ GitHub Release using the matching section below (T6-53).
   keeps the published field verbatim (`spiderweb/access_points/acquisition.py`).
 
 ### Added
+- **Comparison of the access-point detector with a published sinkhole map.**
+  Reference maps are now held by the hash of their exact bytes and read only
+  with a coordinate reference system bound to them
+  (`spiderweb/access_points/reference.py`,
+  `configs/access_point_reference_sets.yaml`); three were supplied by the
+  repository owner and are committed. `validation.py` and
+  `scripts/validate_access_point_detector.py` compare the closed-basin detector
+  with 139 sinkholes the USGS Karst Map of Puerto Rico places inside the held
+  elevation tile, at several depths and against a displaced control. The result
+  is labelled REFERENCE_COMPARED, a new evaluation state that is never field
+  accuracy: within the map's stated 100 m tolerance, 88% of mapped sinkholes
+  are closed depressions at least 30 m deep (51% by chance), and the detector
+  reports 32% of them as separate objects because it does not resolve basins
+  nested inside a larger one. No threshold and no registry record changed. See
+  section 6 of `docs/ACCESS_POINT_SCIENTIFIC_METHOD.md`.
 - **Real-survey processing for the access-point registries.** A named survey
   product can now be fetched under its own grant that bounds files and bytes
   (`spiderweb/access_points/products.py`), read, bound to the vertical datum it

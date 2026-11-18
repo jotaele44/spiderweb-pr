@@ -82,6 +82,22 @@
         "registry/access_points/",
         "docs/ACCESS_POINT_REGISTRIES.md"
       ]
+    },
+    {
+      "date": "2026-11-18",
+      "summary": "Added published reference maps to the access-point registries and compared the closed-basin detector with one. A reference set is held by the SHA-256 of its exact bytes and read only with a bound coordinate reference system (spiderweb/access_points/reference.py, configs/access_point_reference_sets.yaml); three sets supplied by the repository owner are committed (USGS Karst Map sinkhole outlines and sinkhole areas, PR Planning Board northern karst limit) and registered in the Inland registry as held sources that are not direct measurements. A new evaluation state, REFERENCE_COMPARED, labels a comparison with a published map and is distinct from MEASURED, which stays reserved for field truth. The comparison (spiderweb/access_points/validation.py) used the elevation tiles already held; nothing was downloaded. No detection threshold, feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v4.json.",
+      "files": [
+        "spiderweb/access_points/reference.py",
+        "spiderweb/access_points/validation.py",
+        "spiderweb/access_points/detection.py",
+        "spiderweb/access_points/seeding.py",
+        "scripts/validate_access_point_detector.py",
+        "configs/access_point_reference_sets.yaml",
+        "evidence/access_points/reference/",
+        "evidence/access_points/validation/",
+        "registry/access_points/",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
+      ]
     }
   ]
 }

@@ -23,7 +23,7 @@
       "observations": 4,
       "observations_bound": 4,
       "observations_unbound": 0,
-      "sources": 7
+      "sources": 10
     },
     "legacy_crosswalk": {
       "closes": true,
@@ -59,6 +59,14 @@
       "sources": 184
     },
     "provisional_seeds": 5,
+    "reference_sets": {
+      "registered": 3,
+      "sets": [
+        "pr_planning_board_northern_karst_limit",
+        "usgs_karst_sinkhole_areas_5_to_30m",
+        "usgs_karst_sinkholes_over_30m"
+      ]
+    },
     "relationships": 0,
     "survey_products": {
       "registered": 2,
@@ -69,18 +77,22 @@
   },
   "inputs": {
     "configs/access_point_legacy_crosswalk.yaml": "c2ae580230038e5aa621cc398d49ed74a1e87c19718d4025207f5e8939cea290",
+    "configs/access_point_reference_sets.yaml": "7e5537802f0df686dc57b3f4c8faaacb10778c31322fddca18186ad7059d827c",
     "configs/access_point_seeds.yaml": "e9cb8d7181a1ab4f0f05d6931064748ea32896e383aa2ee8ed5980beecc71e46",
     "configs/ilap_registry.yaml": "71991b9f2c66b07902963c77fc264751a6d07be4b1b068a272f5a356072ffd21",
     "evidence/access_points/real_survey/2026-11-17/processing_report.json": "4daf4398df659bb018b36c2bf40d8e95b29acf0431596e78a0890e64decf234a",
     "evidence/access_points/real_survey/CURRENT.json": "901a65728571d7e3e7f992d9c11492949d67f3c752ce459af73700a3601fb0bf",
+    "evidence/access_points/reference/pr_planning_board/g15_geologia_carso_limite.zip": "877fddfaac5d148dff055c11bffaab16deff3fb7a5ae14154708d030023df5a6",
+    "evidence/access_points/reference/usgs_karst_map/sinkholes_30m.geojson": "d2b4bdc8131af836aba05e7ee34fdf9128badb954e7a4b486a206b7992973ca4",
+    "evidence/access_points/reference/usgs_karst_map/sinkholes_5_30m.geojson": "fec19a28001a72def117f9699790da372fee80c64d02f455475d8f960d7b0396",
     "evidence/access_points/source_discovery/2026-11-16/source_catalogue.json": "280d9635f2c9a9094acefe2b11b7109ba0f421ee1f1a69b29a234714cea8ef26",
     "evidence/access_points/source_discovery/CURRENT.json": "afb9f4719f5f9a743ba99edfbbff9b44d1252107d24c81c3d65fb6261abab718",
     "evidence/marine/guayama_punta_tuna_v0_1/source_denominator_receipt.json": "ea05431e7a351535bdf04a53f115a0c7dd4083384bba1f7f778d5962fab28290"
   },
   "outputs": {
     "inland.json": {
-      "content_sha256": "28bb5134ae11b99738edc91bf3a796946ef16eea10dd8ac30c24bf6c5302718d",
-      "sha256": "9b2859222e09ff7fe6f597886e7619183058cc137cd436b44632a0eb816ed678"
+      "content_sha256": "57ef047c9e4a206fcdcecb2c6128692290d64275b0691210acb06a714d3a35b2",
+      "sha256": "11e6e8cd8c12daf3b8f11af85c5964fe952df5903125020dde739340cb5f07b3"
     },
     "offshore.json": {
       "content_sha256": "72871b06b88d5f84cbf16675e1065b1240a9a2748adf2c94fe50e6eac2a20e1f",

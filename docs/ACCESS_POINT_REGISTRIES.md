@@ -45,6 +45,12 @@ held: two 1 m LiDAR elevation tiles, each registered with the SHA-256 of the
 full file (see "Real-survey processing"). They are grids, so they are
 registered but are not direct measurements, and no record cites them either.
 
+It also holds three published reference maps supplied by the repository owner,
+each by the hash of its exact bytes: the USGS outlines of sinkholes deeper than
+30 m, the USGS areas of sinkholes 5 to 30 m deep, and the Planning Board's
+northern karst limit (see "Reference maps and the comparison with them"). They
+are published interpretations, not measurements, and no record cites them.
+
 The five provisional records cannot advance until the screenshots they came
 from are registered with their exact bytes and hash.
 
@@ -429,6 +435,41 @@ What this does and does not show:
 No feature, observation or status changed. A detection is a shape. It was not
 attached to the record: distance is discovery, not identity.
 
+## Reference maps and the comparison with them
+
+A reference set is somebody else's map. It is declared in
+`configs/access_point_reference_sets.yaml` with the hash of its exact bytes, the
+coordinate reference system **bound** to it and where that binding was read, and
+the publisher's own statement of positional accuracy
+(`spiderweb/access_points/reference.py`). The loader refuses a file whose bytes
+differ from the declaration, refuses coordinates that cannot belong to the bound
+system, and refuses a shapefile whose projection file names a different one. A
+set that is not held is recorded by hash for lineage and never parsed.
+
+| Set | Held | Role | Note |
+|---|---|---|---|
+| USGS Karst Map: sinkholes deeper than 30 m (1,173 outlines) | Yes, 1.0 MB | Labels | The export declares no coordinate system; bound to EPSG:32161 from the parent database, confirmed by 1,171 of 1,173 outlines falling inside the karst limit |
+| USGS Karst Map: areas of sinkholes 5–30 m deep (31 polygons) | Yes, 0.2 MB | Context | Areas, not individual sinkholes |
+| PR Planning Board northern karst limit (1 polygon) | Yes, 43 KB | Karst limit | EPSG:6566, from the archive's own projection file |
+| USGS Karst Map: rock units (805 polygons) | Hash only | Lithology | Used once, from the owner's upload |
+| The parent geodatabase; a network link to the government map server | Hash only | Lineage | Not parsed; the link is never fetched |
+
+`scripts/validate_access_point_detector.py` compares the closed-basin detector
+with the label set on the held elevation tiles. The result is
+**REFERENCE_COMPARED**, never MEASURED: within the map's stated 100 m tolerance,
+88% of mapped sinkholes are closed depressions at least 30 m deep in the 2024
+survey, against 51% for a displaced control; the detector reports only 32% of
+them as separate objects, because it reports the outermost basin of a compound
+depression. The figures, their limits and what they do not show are in
+`docs/ACCESS_POINT_SCIENTIFIC_METHOD.md`, section 6.
+
+What the maps say about `INAP-PR-000003` [COMPUTED]: its registered point is
+inside the karst limit, on ground mapped 90% as chalk and marl; it is not in an
+area of sinkholes 5–30 m deep; no mapped sinkhole deeper than 30 m lies in the
+surveyed window, and the nearest is 2.6 km away. That agrees with the two
+surveys, which found only shallow basins there. Nothing was attached to the
+record.
+
 ## What this change deliberately does not do
 
 | Not done | Why |
@@ -479,6 +520,7 @@ external service or sibling repository was modified.
 | `discovery.py` | Planned, bounded discovery runs over declared search areas; the sealed source catalogue; offline replay |
 | `products.py` | Fetching a named product inside a byte ceiling; the elevation product catalogue |
 | `survey.py`, `survey_run.py` | Reading a real gridded product, binding its stated datum, detection, two-survey replication; the declared, reproducible run |
+| `reference.py`, `validation.py` | Published reference maps held by hash and read with a bound CRS; the comparison of the detector with a published sinkhole map |
 | `federation_context.py` | Read-only context from other producers' packages |
 | `seeding.py`, `service.py` | Deterministic registry build; read-only queries |
 

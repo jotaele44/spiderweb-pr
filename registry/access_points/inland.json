@@ -1,5 +1,5 @@
 {
-  "content_sha256": "28bb5134ae11b99738edc91bf3a796946ef16eea10dd8ac30c24bf6c5302718d",
+  "content_sha256": "57ef047c9e4a206fcdcecb2c6128692290d64275b0691210acb06a714d3a35b2",
   "contract_version": "access-point-registry/1.0",
   "counts": {
     "derived_geometries": 0,
@@ -15,7 +15,7 @@
     "observations": 4,
     "observations_bound": 4,
     "observations_unbound": 0,
-    "sources": 7
+    "sources": 10
   },
   "derived_geometries": [],
   "features": [
@@ -381,6 +381,24 @@
   "schema": "access_point_registry/1.0",
   "sources": [
     {
+      "coverage_state": "GENERALIZED",
+      "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
+      "lineage_root_id": "usgs_karst_sinkhole_areas_5_to_30m",
+      "manifestation_sha256": "fec19a28001a72def117f9699790da372fee80c64d02f455475d8f960d7b0396",
+      "native_identifier": "usgs_karst_sinkhole_areas_5_to_30m",
+      "parent_source_ids": [],
+      "product_stage": "DERIVED_PRODUCT",
+      "provenance_state": "REGISTERED",
+      "provider": "USGS_KARST_MAP_OF_PUERTO_RICO",
+      "published_date": "2010",
+      "retrieved_utc": "2026-11-17T23:23:00Z",
+      "sensor_type": null,
+      "source_id": "APSRC-0044cf456604cda6",
+      "source_uri": null,
+      "survey_date": null,
+      "title": "Karst Map of Puerto Rico (U.S. Geological Survey Open-File Report, 2010): feature class sinkholes_5_30m"
+    },
+    {
       "coverage_state": "UNKNOWN",
       "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
       "lineage_root_id": "USIEI:GlobalID:{FDF80EC1-0960-48F9-9D01-17834E0A701D}",
@@ -507,6 +525,42 @@
       "source_uri": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.tif",
       "survey_date": "2023-12-27/2025-03-20",
       "title": "USGS 1 Meter 19 x72y204 PR_PuertoRicoUSVI_D24"
+    },
+    {
+      "coverage_state": "GENERALIZED",
+      "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
+      "lineage_root_id": "usgs_karst_sinkholes_over_30m",
+      "manifestation_sha256": "d2b4bdc8131af836aba05e7ee34fdf9128badb954e7a4b486a206b7992973ca4",
+      "native_identifier": "usgs_karst_sinkholes_over_30m",
+      "parent_source_ids": [],
+      "product_stage": "DERIVED_PRODUCT",
+      "provenance_state": "REGISTERED",
+      "provider": "USGS_KARST_MAP_OF_PUERTO_RICO",
+      "published_date": "2010",
+      "retrieved_utc": "2026-11-17T23:23:00Z",
+      "sensor_type": null,
+      "source_id": "APSRC-d1b75c5b86dc81d0",
+      "source_uri": null,
+      "survey_date": null,
+      "title": "Karst Map of Puerto Rico (U.S. Geological Survey Open-File Report, 2010): feature class sinkholes_30m"
+    },
+    {
+      "coverage_state": "GENERALIZED",
+      "license_note": "Government of Puerto Rico open geodata; exported from its map server",
+      "lineage_root_id": "pr_planning_board_northern_karst_limit",
+      "manifestation_sha256": "877fddfaac5d148dff055c11bffaab16deff3fb7a5ae14154708d030023df5a6",
+      "native_identifier": "pr_planning_board_northern_karst_limit",
+      "parent_source_ids": [],
+      "product_stage": "DERIVED_PRODUCT",
+      "provenance_state": "REGISTERED",
+      "provider": "PR_PLANNING_BOARD_GEODATA",
+      "published_date": "2010",
+      "retrieved_utc": "2026-11-17T23:12:00Z",
+      "sensor_type": null,
+      "source_id": "APSRC-effa9089c03baa3a",
+      "source_uri": null,
+      "survey_date": null,
+      "title": "Northern karst topography limit, layer g15_geologia_carso_limite (Puerto Rico Planning Board, 2010)"
     }
   ]
 }
