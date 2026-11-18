@@ -33,8 +33,8 @@ numpy 2.4.6, scipy 1.17.1, shapely 2.1.2, rasterio 1.5.2):
 
 The 52 skips are optional dependencies, absent local services and
 operator-local data. Results after the change are in
-`evidence/access_points/certification_report_v4.json` (versions 1 to 3 are the
-report as it stood at the earlier merges).
+`evidence/access_points/certification_report_v5.json` (versions 1 to 4 are the
+report as it stood at earlier points).
 
 ## 2. What existed in this repository
 
@@ -187,6 +187,7 @@ and tested:
 | Sediment artefacts, multibeam artefact filtering | — | Absent beyond seams | — | FACT |
 | Real surveys processed | 2 elevation tiles over one 1 km window (two independent surveys of the same ground), 2026-11-17 | 0 | Shared reader and detector | FACT |
 | Compared with a published reference | Closed-basin detector against 139 USGS-mapped sinkholes on one tile; REFERENCE_COMPARED, not field-validated | None | Shared evaluation | COMPUTED |
+| Basins nested inside a larger closed basin | Opt-in; measured against the same reference | Same code path, tested on a synthetic seabed; no real survey | Shared delineation | FACT |
 
 Neither registry was simplified to match the other: the processing core is
 shared and the interpretation rules differ.

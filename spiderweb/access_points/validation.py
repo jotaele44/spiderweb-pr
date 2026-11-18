@@ -118,6 +118,23 @@ def load_validation_run(config_path: str | Path, run_id: str) -> dict[str, Any]:
         or sorted(thresholds) != thresholds
     ):
         raise ValidationError("depth_thresholds_m must be increasing positive numbers")
+    detector = run.get("detector")
+    if detector is not None:
+        if not isinstance(detector, Mapping) or set(detector) - {
+            "nested",
+            "nested_level_step_m",
+        }:
+            raise ValidationError(
+                "detector may set only nested and nested_level_step_m"
+            )
+        step = detector.get("nested_level_step_m", 0.5)
+        if not isinstance(step, (int, float)) or step <= 0:
+            raise ValidationError("nested_level_step_m must be a positive number")
+    owner = run.get("window_subset_run")
+    if owner is not None and (
+        not str(owner).strip() or "/" in str(owner) or str(owner).startswith(".")
+    ):
+        raise ValidationError("window_subset_run must be a plain run id")
     return run
 
 
@@ -482,11 +499,135 @@ def score(
 # -- the two halves --------------------------------------------------------
 
 
-def _parameters(run: Mapping[str, Any], cell_size_m: float) -> DetectionParameters:
+def _nested(run: Mapping[str, Any]) -> bool:
+    return bool((run.get("detector") or {}).get("nested"))
+
+
+def _parameters(
+    run: Mapping[str, Any], cell_size_m: float, *, nested: bool = False
+) -> DetectionParameters:
+    detector = run.get("detector") or {}
     return DetectionParameters(
         min_depth_m=float(run["depth_thresholds_m"][0]),
         min_area_m2=max(100.0, 4.0 * cell_size_m * cell_size_m),
+        nested=nested,
+        nested_level_step_m=float(detector.get("nested_level_step_m", 0.5)),
     )
+
+
+def nesting_effect(
+    before: Mapping[str, Any], after: Mapping[str, Any]
+) -> dict[str, Any]:
+    """What reporting nested basins changes, read against the displaced control.
+
+    More objects always means more chance matches.  Nesting therefore counts
+    as an improvement at a depth only where the found fraction rises by more
+    than the displaced-control fraction does.  The rule is fixed here, before
+    any figure is looked at.
+    """
+
+    rows = []
+    for a, b in zip(
+        before["object_detection_by_depth_threshold"],
+        after["object_detection_by_depth_threshold"],
+    ):
+        gain = None
+        chance_gain = None
+        if a["found_fraction"] is not None and b["found_fraction"] is not None:
+            gain = round(b["found_fraction"] - a["found_fraction"], 4)
+        if a["displaced_fraction"] is not None and b["displaced_fraction"] is not None:
+            chance_gain = round(b["displaced_fraction"] - a["displaced_fraction"], 4)
+        rows.append(
+            {
+                "min_depth_m": a["min_depth_m"],
+                "found_fraction_outer_only": a["found_fraction"],
+                "found_fraction_with_nested": b["found_fraction"],
+                "displaced_fraction_outer_only": a["displaced_fraction"],
+                "displaced_fraction_with_nested": b["displaced_fraction"],
+                "gain_in_found": gain,
+                "gain_in_displaced": chance_gain,
+                "counts_as_improvement": (
+                    None
+                    if gain is None or chance_gain is None
+                    else bool(gain > 0 and gain > chance_gain)
+                ),
+            }
+        )
+    inside_before = {
+        row["label_id"]
+        for row in before["labels_missed"]
+        if row["reason"] == "INSIDE_A_LARGER_BASIN"
+    }
+    missed_after = {row["label_id"]: row["reason"] for row in after["labels_missed"]}
+    still_inside = sorted(
+        label
+        for label in inside_before
+        if missed_after.get(label) == "INSIDE_A_LARGER_BASIN"
+    )
+    return {
+        "reading_rule": (
+            "an improvement at a depth only where the found fraction rises by more "
+            "than the displaced-control fraction"
+        ),
+        "by_depth_threshold": rows,
+        "outlines_inside_a_larger_basin_before": len(inside_before),
+        "of_which_now_reported_as_objects": len(inside_before - set(missed_after)),
+        "of_which_still_inside_a_larger_basin": len(still_inside),
+        "still_inside_note": (
+            "one deep pit in a broad bowl does not separate the water body and is "
+            "not reported apart from the bowl"
+        ),
+    }
+
+
+def score_modes(
+    grid: SurfaceGrid,
+    source: Any,
+    layer: refsets.ReferenceLayer,
+    run: Mapping[str, Any],
+    *,
+    label_source_id: str,
+    displaced_offset_m: float,
+) -> tuple[list[GridLabel], dict[str, int], dict[str, Any]]:
+    """Score the detector as it is, and with nested basins if the run asks."""
+
+    labels, counts = labels_for_grid(layer, grid)
+    common = dict(
+        grid=grid,
+        source_id=label_source_id,
+        thresholds=run["depth_thresholds_m"],
+        displaced_offset_m=displaced_offset_m,
+    )
+    cell = grid.cell_size_m[0]
+    result = score(
+        detect_inland(grid, source, _parameters(run, cell)), labels, layer.ref, **common
+    )
+    if not _nested(run):
+        return labels, counts, result
+    parameters = _parameters(run, cell, nested=True)
+    detections = detect_inland(grid, source, parameters)
+    nested = score(detections, labels, layer.ref, **common)
+    levels: dict[str, int] = {}
+    for detection in detections:
+        key = str(detection.hierarchy_level)
+        levels[key] = levels.get(key, 0) + 1
+    result = {
+        **result,
+        "with_nested_basins": {
+            "nested_level_step_m": parameters.nested_level_step_m,
+            "detections_total": len(detections),
+            "detections_by_hierarchy_level": dict(sorted(levels.items())),
+            "object_detection_by_depth_threshold": nested[
+                "object_detection_by_depth_threshold"
+            ],
+            "matched_basin_depth_m": nested["matched_basin_depth_m"],
+            "labels_missed_by_reason": nested["labels_missed_by_reason"],
+            "labels_missed": nested["labels_missed"],
+            "deep_detections_not_in_the_map": nested["deep_detections_not_in_the_map"],
+        },
+        "nesting_effect": nesting_effect(result, nested),
+    }
+    return labels, counts, result
 
 
 def _run_dir(repo_root: Path, run: Mapping[str, Any]) -> Path:
@@ -495,6 +636,13 @@ def _run_dir(repo_root: Path, run: Mapping[str, Any]) -> Path:
 
 def _subset_name(epoch: str) -> str:
     return f"window_{epoch}.tif"
+
+
+def _subset_path(repo_root: Path, run: Mapping[str, Any], epoch: str) -> Path:
+    """The committed window: this run's own, or the one another run committed."""
+
+    owner = str(run.get("window_subset_run") or run["run_id"])
+    return repo_root / VALIDATION_DIR / owner / "subsets" / _subset_name(epoch)
 
 
 def _layers(
@@ -652,17 +800,12 @@ def extract(
         fine = _surface(tile, product, source, point)
         coarse = coarsen(fine, factor)
         del fine
-        detections = detect_inland(
-            coarse, source, _parameters(run, coarse.cell_size_m[0])
-        )
-        labels, counts = labels_for_grid(layers["label_set"], coarse)
-        result = score(
-            detections,
-            labels,
-            label_ref,
-            grid=coarse,
-            source_id=label_source.source_id,
-            thresholds=run["depth_thresholds_m"],
+        labels, counts, result = score_modes(
+            coarse,
+            source,
+            layers["label_set"],
+            run,
+            label_source_id=label_source.source_id,
             displaced_offset_m=float(run["displaced_control_offset_m"]),
         )
         epochs[epoch] = {
@@ -681,15 +824,18 @@ def extract(
                 half_size_m=float(run["window_half_size_m"]),
                 cluster_radius_m=float(run["cluster_radius_m"]),
             )
-            lon, lat = refsets.to_lonlat(centre, tile.crs)
-            window = survey.read_window(
-                held.path,
-                center_lonlat=(lon, lat),
-                half_size_m=float(run["window_half_size_m"]),
-            )
-            survey.write_subset(
-                window, _run_dir(root, run) / "subsets" / _subset_name(epoch)
-            )
+            if run.get("window_subset_run"):
+                # The window is the one another run already committed; it is
+                # read, not cut again, and build_report checks it fits the rule.
+                window = survey.read_raster(_subset_path(root, run, epoch))
+            else:
+                lon, lat = refsets.to_lonlat(centre, tile.crs)
+                window = survey.read_window(
+                    held.path,
+                    center_lonlat=(lon, lat),
+                    half_size_m=float(run["window_half_size_m"]),
+                )
+                survey.write_subset(window, _subset_path(root, run, epoch))
             validation_window = box(*window.bounds())
             tile_crs = tile.crs
         del tile
@@ -823,7 +969,7 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
         manifest["retrieved_utc"],
     )
     run_dir = _run_dir(root, run)
-    subset_path = run_dir / "subsets" / _subset_name(epoch)
+    subset_path = _subset_path(root, run, epoch)
     if not subset_path.is_file():
         raise ValidationError("the committed window subset is missing")
     tile_eval = _sealed(run_dir / TILE_NAME, TILE_SCHEMA)
@@ -841,15 +987,12 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
     ):
         raise ValidationError("the committed window is not the one the rule selects")
 
-    detections = detect_inland(grid, source, _parameters(run, grid.cell_size_m[0]))
-    labels, counts = labels_for_grid(layers["label_set"], grid)
-    result = score(
-        detections,
-        labels,
-        label_ref,
-        grid=grid,
-        source_id=label_source.source_id,
-        thresholds=run["depth_thresholds_m"],
+    _, counts, result = score_modes(
+        grid,
+        source,
+        layers["label_set"],
+        run,
+        label_source_id=label_source.source_id,
         displaced_offset_m=min(
             float(run["displaced_control_offset_m"]), float(run["window_half_size_m"])
         ),
@@ -871,11 +1014,28 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
             "displaced_control_offset_m": run["displaced_control_offset_m"],
             "min_label_coverage": MIN_COVERAGE,
             "thresholds_changed_by_this_run": False,
+            **(
+                {
+                    "detector": {
+                        "nested": True,
+                        "nested_level_step_m": _parameters(
+                            run, 1.0, nested=True
+                        ).nested_level_step_m,
+                        "nested_is_the_default": False,
+                    }
+                }
+                if _nested(run)
+                else {}
+            ),
         },
         "window": {
             "epoch": epoch,
             "source_id": source.source_id,
-            "subset_file": f"subsets/{_subset_name(epoch)}",
+            "subset_file": (
+                f"../{run['window_subset_run']}/subsets/{_subset_name(epoch)}"
+                if run.get("window_subset_run")
+                else f"subsets/{_subset_name(epoch)}"
+            ),
             "subset_sha256": survey.sha256_file(subset_path),
             "parent_sha256": manifest["response_sha256"],
             "bounds": [round(v, 6) for v in window.bounds()],

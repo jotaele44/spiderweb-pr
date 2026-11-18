@@ -98,6 +98,20 @@
         "registry/access_points/",
         "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
       ]
+    },
+    {
+      "date": "2026-11-18",
+      "summary": "Added an opt-in nested-basin mode to the shared closed-basin delineation of the access-point registries (spiderweb/access_points/raster.py, detection.py). It reports basins inside a compound depression, each with its hierarchy level, its parent and a lower-bound depth; containment is recorded on the detection and is never written to the relationship ledger. The mode is off by default: outer basins, their measurements, their identifiers and every committed report are unchanged, which tests and the two earlier reproducibility checks confirm. A second declared validation run compared both modes against the USGS karst map on the tiles already held, with the reading rule fixed in advance; nothing was downloaded. No detection threshold, feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v5.json.",
+      "files": [
+        "spiderweb/access_points/raster.py",
+        "spiderweb/access_points/detection.py",
+        "spiderweb/access_points/validation.py",
+        "configs/access_point_reference_sets.yaml",
+        "scripts/benchmark_access_points.py",
+        "evidence/access_points/validation/",
+        "evidence/access_points/benchmark_v2.json",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
+      ]
     }
   ]
 }

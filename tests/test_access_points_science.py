@@ -1215,3 +1215,203 @@ def test_undeclared_datum_no_longer_passes_datum_policy():
         evaluate_datum_policy(declared[:1] + undeclared[:1]).review_status
         == "review_required"
     )
+
+
+# ── Basins nested inside a larger closed basin ───────────────────────────────
+
+
+def _compound(extra=()):
+    """A broad shallow bowl with two deep pits in it, on a gentle slope."""
+
+    surface = controls.tilted_plane(400, 400, base_m=200.0, slope_x=0.01, slope_y=0.005)
+    surface = controls.add_gaussian_basin(
+        surface, 200, 200, depth_m=3.0, sigma_cells=60.0
+    )
+    for row, col, depth, sigma in ((190, 150, 8.0, 6.0), (210, 250, 8.0, 6.0), *extra):
+        surface = controls.add_gaussian_basin(
+            surface, row, col, depth_m=depth, sigma_cells=sigma
+        )
+    return surface
+
+
+def _nested_regions(surface, **kw):
+    grid = _terrain(surface)
+    return grid, R.delineate_depressions(
+        grid, min_depth_m=1.0, min_area_m2=50.0, nested=True, **kw
+    )
+
+
+def _terrain(surface):
+    return R.make_grid(
+        surface,
+        cell_size_m=(1.0, 1.0),
+        origin=(722000.0, 2033000.0),
+        crs="EPSG:26919",
+        kind=R.SurfaceKind.TERRAIN_BARE_EARTH,
+        vertical_reference=VerticalReference("EPSG:26919", None, "PRVD02", None, "up"),
+        uncertainty_m=0.05,
+    )
+
+
+def test_pits_sharing_one_rim_are_reported_inside_the_basin_that_holds_them():
+    grid, regions = _nested_regions(_compound())
+    outer = [r for r in regions if r.hierarchy_level == 0]
+    inner = [r for r in regions if r.hierarchy_level == 1]
+    assert len(outer) == 1 and len(inner) == 2 and len(regions) == 3
+    for region in inner:
+        assert region.parent_deepest_xy == outer[0].deepest_xy
+        assert region.depth_resolution_m == 0.5
+        # Depth is a lower bound: never more than the basin that holds it.
+        assert 1.0 <= region.max_depth_m <= outer[0].max_depth_m
+        assert region.area_m2 < outer[0].area_m2
+        assert region.spill_elevation_m < outer[0].spill_elevation_m
+    planted = {(722150.5, 2032809.5), (722250.5, 2032789.5)}
+    found = {min(planted, key=lambda p: math.dist(p, r.deepest_xy)) for r in inner}
+    assert found == planted
+    for region in inner:
+        assert min(math.dist(p, region.deepest_xy) for p in planted) <= 3.0
+
+
+def test_the_outer_basins_are_the_same_with_and_without_nesting():
+    grid = _terrain(_compound())
+    plain = R.delineate_depressions(grid, min_depth_m=1.0, min_area_m2=50.0)
+    _, nested = _nested_regions(_compound())
+    assert [r for r in nested if r.hierarchy_level == 0] == plain
+    assert all(
+        r.depth_resolution_m is None and r.parent_deepest_xy is None for r in plain
+    )
+
+
+def test_a_single_basin_noise_and_small_bumps_make_no_nested_basin():
+    lone = controls.add_gaussian_basin(
+        controls.tilted_plane(300, 300, base_m=200.0),
+        150,
+        150,
+        depth_m=6.0,
+        sigma_cells=20.0,
+    )
+    _, regions = _nested_regions(controls.add_noise(lone, sigma_m=0.05, seed=3))
+    assert [r.hierarchy_level for r in regions] == [0]
+    # A second hollow too shallow to be a basin on its own is a bump, not a split.
+    _, bumped = _nested_regions(_compound(extra=((230, 200, 0.6, 4.0),)))
+    assert sum(1 for r in bumped if r.hierarchy_level > 0) == 2
+    # One deep pit in a broad bowl does not separate the water body: the stated limit.
+    one_pit = controls.add_gaussian_basin(
+        controls.add_gaussian_basin(
+            controls.tilted_plane(400, 400, base_m=200.0),
+            200,
+            200,
+            depth_m=3.0,
+            sigma_cells=60.0,
+        ),
+        200,
+        200,
+        depth_m=9.0,
+        sigma_cells=6.0,
+    )
+    _, single = _nested_regions(one_pit)
+    assert [r.hierarchy_level for r in single] == [0]
+
+
+def test_nesting_goes_as_deep_as_the_ground_does():
+    # Two pits inside one of two sub-bowls inside one bowl.
+    surface = controls.tilted_plane(
+        500, 500, base_m=200.0, slope_x=0.004, slope_y=0.002
+    )
+    surface = controls.add_gaussian_basin(
+        surface, 250, 250, depth_m=3.0, sigma_cells=90.0
+    )
+    surface = controls.add_gaussian_basin(
+        surface, 250, 170, depth_m=4.0, sigma_cells=22.0
+    )
+    surface = controls.add_gaussian_basin(
+        surface, 250, 330, depth_m=4.0, sigma_cells=22.0
+    )
+    surface = controls.add_gaussian_basin(
+        surface, 250, 160, depth_m=6.0, sigma_cells=4.0
+    )
+    surface = controls.add_gaussian_basin(
+        surface, 250, 182, depth_m=6.0, sigma_cells=4.0
+    )
+    _, regions = _nested_regions(surface)
+    levels = sorted(r.hierarchy_level for r in regions)
+    assert levels == [0, 1, 1, 2, 2]
+    by_level = {
+        level: [r for r in regions if r.hierarchy_level == level] for level in (1, 2)
+    }
+    parents = {r.deepest_xy for r in by_level[1]}
+    assert {r.parent_deepest_xy for r in by_level[2]} <= parents
+    assert len({r.label for r in regions}) == len(regions)
+
+
+def test_the_level_step_is_validated_and_never_overstates_depth():
+    with pytest.raises(ValueError, match="nested_level_step_m"):
+        _nested_regions(_compound(), nested_level_step_m=0)
+    _, fine = _nested_regions(_compound(), nested_level_step_m=0.1)
+    _, coarse = _nested_regions(_compound(), nested_level_step_m=1.0)
+    deep = lambda regions: sorted(  # noqa: E731
+        r.max_depth_m for r in regions if r.hierarchy_level == 1
+    )
+    assert len(deep(fine)) == len(deep(coarse)) == 2
+    # A coarser step sees the split later, so it measures a shallower basin.
+    assert all(c <= f + 1e-9 for c, f in zip(deep(coarse), deep(fine)))
+    assert all(f - c <= 1.0 + 1e-9 for c, f in zip(deep(coarse), deep(fine)))
+
+
+def test_nested_detections_are_flagged_identified_and_still_only_shapes():
+    grid = _terrain(_compound())
+    source = sup.direct_source("TEST-NESTED-1")
+    plain = detection.detect_inland(
+        grid, source, detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0)
+    )
+    nested = detection.detect_inland(
+        grid,
+        source,
+        detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0, nested=True),
+    )
+    assert [d.native_record_id for d in plain] == [
+        d.native_record_id for d in nested if d.hierarchy_level == 0
+    ]
+    ids = [d.native_record_id for d in nested]
+    assert len(ids) == len(set(ids)) == 3
+    (outer,) = [d for d in nested if d.hierarchy_level == 0]
+    inner = [d for d in nested if d.hierarchy_level == 1]
+    assert outer.parent_native_record_id is None and "/n" not in outer.native_record_id
+    for item in inner:
+        assert item.native_record_id.endswith("/n1")
+        assert item.parent_native_record_id == outer.native_record_id
+        assert detection.DetectionFlag.NESTED in item.flags
+        assert not item.possible_artifact
+        assert item.measurements["depth_resolution_m"] == 0.5
+        # The flag is informational: it lowers nothing and adds no claim.
+        assert {a.tier for a in item.assertions} == {v.EvidenceTier.SUPPORTING}
+        dims = {a.dimension for a in item.assertions}
+        assert v.EvidenceDimension.PHYSICAL_OPENING not in dims
+        assert v.EvidenceDimension.CONNECTIVITY not in dims
+    with pytest.raises(ValueError, match="nested_level_step_m"):
+        detection.DetectionParameters(
+            min_depth_m=1.0, min_area_m2=50.0, nested_level_step_m=0
+        )
+
+
+def test_the_seabed_detector_reports_nested_basins_the_same_way():
+    depth = -(_compound() - 150.0)  # the same shapes, as depths below a datum
+    grid = R.make_grid(
+        -depth - 400.0,
+        cell_size_m=(1.0, 1.0),
+        origin=(722000.0, 2033000.0),
+        crs="EPSG:26919",
+        kind=R.SurfaceKind.BATHYMETRY,
+        vertical_reference=VerticalReference("EPSG:26919", None, "MLLW", None, "up"),
+        uncertainty_m=0.05,
+    )
+    source = sup.direct_source("TEST-NESTED-SEA")
+    params = detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0)
+    plain = detection.detect_offshore(grid, source, params)
+    nested = detection.detect_offshore(
+        grid,
+        source,
+        detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0, nested=True),
+    )
+    assert len(plain) == 1 and sorted(d.hierarchy_level for d in nested) == [0, 1, 1]
+    assert all(d.namespace is sup.OFFSHORE for d in nested)

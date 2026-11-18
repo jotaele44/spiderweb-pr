@@ -460,7 +460,9 @@ with the label set on the held elevation tiles. The result is
 88% of mapped sinkholes are closed depressions at least 30 m deep in the 2024
 survey, against 51% for a displaced control; the detector reports only 32% of
 them as separate objects, because it reports the outermost basin of a compound
-depression. The figures, their limits and what they do not show are in
+depression. With the opt-in nested-basin mode that rises to 61% (control 28%),
+and 70 of the 73 sinkholes that lay inside a larger basin are reported as their
+own object. Nesting is off by default. The figures, their limits and what they do not show are in
 `docs/ACCESS_POINT_SCIENTIFIC_METHOD.md`, section 6.
 
 What the maps say about `INAP-PR-000003` [COMPUTED]: its registered point is

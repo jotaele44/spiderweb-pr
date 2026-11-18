@@ -88,6 +88,26 @@ for axis-aligned straight edges. [COMPUTED] For that reason rectangular cuts
 are recognised by rectangularity — how much of its bounding box a shape fills —
 not by circularity.
 
+### Basins nested inside a larger one (opt-in)
+
+Filling raises a compound depression — several hollows sharing one rim — to a
+single spill level, so it comes out as one basin and the hollows inside it are
+never reported. With `nested=True` the delineation also lowers the water level
+inside each basin in fixed steps and reports what separates:
+
+| Rule | Why | Class |
+|---|---|---|
+| A split needs **two or more** parts that each still meet the depth and area thresholds | A part below threshold is a bump in the floor, not a basin | BINDING |
+| The same rule is applied inside each nested basin | Nesting goes as deep as the ground does | BINDING |
+| A nested basin's depth is measured from the level at which it is seen to be separate | Its true rim lies less than one step higher, so the depth is a lower bound (0.5 m by default) and is never overstated | BINDING |
+| One deep pit in a broad shallow bowl is **not** reported apart from the bowl | It does not separate the water body. A stated limit of this rule | FACT |
+| The outer basins, their measurements and their identifiers are the same with or without it | Existing results do not move | FACT (tested) |
+
+A nested basin carries its level, the identifier of the basin it lies inside,
+and an informational `NESTED` flag that lowers no tier. Containment of one
+shape in another is not a connection and is never written to the relationship
+ledger. The option is **off by default**; both detectors accept it.
+
 ## 4. Survey seams
 
 Where two surveys with a vertical bias meet, the surface steps by nearly the
@@ -178,15 +198,39 @@ What this shows:
 | The gap between "as drawn" and "within 100 m" says the map's positional error matters as much as the method does | INFERENCE |
 | Precision is not stated: the map lists only sinkholes deeper than 30 m, so a shallower basin it does not list is not an error | FACT |
 
+**With nested basins reported** (run `2026-11-18-karst-map-nested`: same
+labels, tiles, thresholds and window; only the detector option differs). The
+reading rule was fixed before any figure was looked at: nesting counts as an
+improvement at a depth only where the found fraction rises by more than the
+displaced-control fraction does, because more objects always means more chance
+matches.
+
+| Detector reports the mapped sinkhole as an object, 2024 survey | ≥ 10 m | ≥ 20 m | ≥ 30 m | Class |
+|---|---|---|---|---|
+| Outer basins only | 41% (control 43%) | 40% (31%) | 32% (16%) | COMPUTED |
+| With nested basins | 92% (74%) | 81% (52%) | 61% (28%) | COMPUTED |
+| Gain in found, against gain in control | +51 against +31 points | +42 against +20 | +30 against +13 | COMPUTED |
+
+| Finding | Class |
+|---|---|
+| By the rule fixed in advance, nesting is an improvement at every depth tested | COMPUTED |
+| Of the 73 mapped sinkholes that lay inside a larger basin, 70 are now reported as their own object; 3 remain, the single-pit case above | COMPUTED |
+| The margin over chance at 30 m roughly doubles (16 to 33 points). The ratio to chance barely moves (2.0 to 2.2 times): nesting finds more real sinkholes and more chance ones | COMPUTED |
+| The object count rises from 1,258 to 3,214 on the tile, with nesting up to 22 levels deep. At shallow depths the control reaches 91%, so a shallow nested basin near a mapped sinkhole still means nothing | COMPUTED |
+| The 2018 survey gives the same picture: 32% to 63% at 30 m, control 15% to 28% | COMPUTED |
+
+Nesting stays off by default. Whether to make it the default is a separate
+decision: it triples the number of objects, and nothing here says how many of
+the extra ones are sinkholes.
+
 No threshold was changed. The result is for one tile of one karst terrain and
 does not transfer to other ground or to the seabed. The comparison is recomputed
 by `scripts/validate_access_point_detector.py`; the whole-tile figures need the
 held tiles, and one 1 km window (eight outlines, too few to conclude from) is
 committed so the computation itself can be re-run from the repository.
 
-Two things remain to be done before anything here could be called validated: a
-detector that resolves nested basins, and ground that someone has visited.
-[OPEN]
+Two things remain before anything here could be called validated: a rule for
+the single pit in a broad bowl, and ground that someone has visited. [OPEN]
 
 Controls run in `tests/test_access_points_science.py`:
 
@@ -314,6 +358,6 @@ trees, flow routing, local relief models beyond a windowed range, interpretation
 of side-scan, backscatter or sub-bottom data, multibeam artefact filtering
 beyond grid-aligned seams, reading of gridded bathymetric survey files (BAG) into
 this pipeline, reprojection of geographic grids inside this package, per-cell
-uncertainty for elevation tiles, a basin hierarchy that separates a sinkhole
-nested inside a larger closed depression, and any field-visited truth set. A projected GeoTIFF
+uncertainty for elevation tiles, a rule that separates a single pit from the
+broad bowl it sits in, and any field-visited truth set. A projected GeoTIFF
 elevation tile can be read (`survey.py`); one has been.

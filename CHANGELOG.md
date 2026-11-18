@@ -15,6 +15,17 @@ GitHub Release using the matching section below (T6-53).
   keeps the published field verbatim (`spiderweb/access_points/acquisition.py`).
 
 ### Added
+- **Nested basins in the access-point detector (opt-in).** A compound
+  depression — several hollows sharing one rim — was reported as one basin. With
+  `nested=True` the shared delineation (`spiderweb/access_points/raster.py`) also
+  reports the basins inside it, each with its level, its parent and a depth that
+  is a lower bound good to one step. Off by default: outer basins, identifiers
+  and every committed report are unchanged. Compared against the USGS karst map
+  on the same tile, with the reading rule fixed in advance, the share of mapped
+  sinkholes reported as objects at 30 m rises from 32% to 61% while the
+  displaced control rises from 16% to 28%; 70 of the 73 sinkholes that lay
+  inside a larger basin are now reported. The object count triples. See
+  sections 3 and 6 of `docs/ACCESS_POINT_SCIENTIFIC_METHOD.md`.
 - **Comparison of the access-point detector with a published sinkhole map.**
   Reference maps are now held by the hash of their exact bytes and read only
   with a coordinate reference system bound to them

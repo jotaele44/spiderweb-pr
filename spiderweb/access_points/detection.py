@@ -66,6 +66,9 @@ class DetectionFlag(StrEnum):
     BELOW_UNCERTAINTY = "BELOW_UNCERTAINTY"
     UNCERTAINTY_UNKNOWN = "UNCERTAINTY_UNKNOWN"
     ADJOINS_EDGE = "ADJOINS_EDGE"
+    # Informational: the basin lies inside a larger closed basin.  It says
+    # nothing about quality and never lowers a tier.
+    NESTED = "NESTED"
 
 
 ARTIFACT_FLAGS = frozenset(
@@ -80,6 +83,11 @@ class DetectionParameters:
     significance_floor: float = 3.0
     interpolated_artifact_fraction: float = 0.5
     max_regions: int | None = None
+    # Also report basins nested inside a larger closed basin.  Off by default:
+    # the outer basins, their identifiers and every existing result are the
+    # same with or without it.
+    nested: bool = False
+    nested_level_step_m: float = 0.5
 
     def __post_init__(self) -> None:
         if self.min_depth_m <= 0 or self.min_area_m2 <= 0:
@@ -88,6 +96,8 @@ class DetectionParameters:
             raise ValueError("significance_floor must be positive")
         if not 0 < self.interpolated_artifact_fraction <= 1:
             raise ValueError("interpolated_artifact_fraction must be within (0, 1]")
+        if self.nested_level_step_m <= 0:
+            raise ValueError("nested_level_step_m must be positive")
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +130,14 @@ class Detection:
     method: str
     method_version: str
     measurements: Mapping[str, float | None] = field(default_factory=dict)
+    # For a nested basin, the identifier of the basin it lies inside.  This is
+    # containment of one shape in another.  It is not a connection and is
+    # never written to the relationship ledger.
+    parent_native_record_id: str | None = None
+
+    @property
+    def hierarchy_level(self) -> int:
+        return 0 if self.region is None else self.region.hierarchy_level
 
     @property
     def possible_artifact(self) -> bool:
@@ -143,6 +161,8 @@ def _flags(
         flags.append(DetectionFlag.BELOW_UNCERTAINTY)
     if region.adjoins_edge:
         flags.append(DetectionFlag.ADJOINS_EDGE)
+    if region.hierarchy_level > 0:
+        flags.append(DetectionFlag.NESTED)
     return tuple(flags)
 
 
@@ -202,14 +222,34 @@ def _measurements(region: DepressionRegion) -> dict[str, float | None]:
         "significance": region.significance,
         "spill_elevation_m": region.spill_elevation_m,
         "floor_elevation_m": region.floor_elevation_m,
+        **(
+            {
+                "hierarchy_level": float(region.hierarchy_level),
+                "depth_resolution_m": region.depth_resolution_m,
+            }
+            if region.hierarchy_level > 0
+            else {}
+        ),
     }
 
 
-def _native_id(grid: SurfaceGrid, region: DepressionRegion) -> str:
+def _basin_id(xy: tuple[float, float], level: int) -> str:
     # Stable for a given source grid: derived from the deepest cell, not from
-    # the order regions happened to be labelled in.
-    x, y = region.deepest_xy
-    return f"{DETECTION_METHOD}@{x:.6f},{y:.6f}"
+    # the order regions happened to be labelled in.  A nested basin can share
+    # its deepest cell with the basin around it, so it carries its level; an
+    # outer basin's identifier is exactly what it always was.
+    base = f"{DETECTION_METHOD}@{xy[0]:.6f},{xy[1]:.6f}"
+    return base if level == 0 else f"{base}/n{level}"
+
+
+def _native_id(grid: SurfaceGrid, region: DepressionRegion) -> str:
+    return _basin_id(region.deepest_xy, region.hierarchy_level)
+
+
+def _parent_id(region: DepressionRegion) -> str | None:
+    if region.hierarchy_level == 0 or region.parent_deepest_xy is None:
+        return None
+    return _basin_id(region.parent_deepest_xy, region.hierarchy_level - 1)
 
 
 def _shape_assertions(
@@ -276,6 +316,8 @@ def detect_inland(
         min_depth_m=params.min_depth_m,
         min_area_m2=params.min_area_m2,
         max_regions=params.max_regions,
+        nested=params.nested,
+        nested_level_step_m=params.nested_level_step_m,
     ):
         hit = bool(on_seam is not None and on_seam[region.slices].any())
         flags = _flags(region, hit, params)
@@ -352,6 +394,7 @@ def detect_inland(
                 method=DETECTION_METHOD,
                 method_version=DETECTION_VERSION,
                 measurements=_measurements(region),
+                parent_native_record_id=_parent_id(region),
             )
         )
     return detections
@@ -376,6 +419,8 @@ def detect_offshore(
         min_depth_m=params.min_depth_m,
         min_area_m2=params.min_area_m2,
         max_regions=params.max_regions,
+        nested=params.nested,
+        nested_level_step_m=params.nested_level_step_m,
     ):
         hit = bool(on_seam is not None and on_seam[region.slices].any())
         flags = _flags(region, hit, params)
@@ -418,6 +463,7 @@ def detect_offshore(
                 method=DETECTION_METHOD,
                 method_version=DETECTION_VERSION,
                 measurements=_measurements(region),
+                parent_native_record_id=_parent_id(region),
             )
         )
     return detections

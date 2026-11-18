@@ -453,6 +453,88 @@ def test_a_validation_run_must_be_fully_declared(tmp_path):
         validation.load_validation_run(REPO / refsets.REFERENCE_PATH, "missing")
 
 
+# ── Nested basins, read against the displaced control ────────────────────────
+
+
+def _nested_run(**detector):
+    return {
+        "depth_thresholds_m": [1, 3, 10],
+        "detector": {"nested": True, **detector},
+    }
+
+
+def test_pits_in_one_bowl_are_found_as_objects_once_nesting_is_on():
+    grid = surface([(200, 200, 3.0, 60.0), (190, 150, 8.0, 6.0), (210, 250, 8.0, 6.0)])
+    layer = layer_at([(190, 150), (210, 250)], radius=10.0)
+    common = dict(label_source_id="APSRC-" + "b" * 16, displaced_offset_m=150.0)
+    _, _, plain = validation.score_modes(
+        grid, sup_source(), layer, {"depth_thresholds_m": [1, 3, 10]}, **common
+    )
+    assert "with_nested_basins" not in plain and "nesting_effect" not in plain
+    assert plain["object_detection_by_depth_threshold"][0]["labels_found"] < 2
+
+    _, _, both = validation.score_modes(
+        grid, sup_source(), layer, _nested_run(), **common
+    )
+    # The outer-only figures are exactly those of a run without nesting.
+    assert (
+        both["object_detection_by_depth_threshold"]
+        == plain["object_detection_by_depth_threshold"]
+    )
+    nested = both["with_nested_basins"]
+    assert nested["object_detection_by_depth_threshold"][0]["labels_found"] == 2
+    assert nested["detections_by_hierarchy_level"] == {"0": 1, "1": 2}
+    assert nested["labels_missed"] == []
+    effect = both["nesting_effect"]
+    assert effect["of_which_now_reported_as_objects"] >= 1
+    assert effect["of_which_still_inside_a_larger_basin"] == 0
+    first = effect["by_depth_threshold"][0]
+    assert first["gain_in_found"] > 0 and first["counts_as_improvement"] is True
+
+
+def test_more_objects_alone_are_not_an_improvement():
+    def table(found, chance):
+        return {
+            "object_detection_by_depth_threshold": [
+                {
+                    "min_depth_m": 1,
+                    "found_fraction": found,
+                    "displaced_fraction": chance,
+                }
+            ],
+            "labels_missed": [],
+        }
+
+    def verdict(before, after):
+        effect = validation.nesting_effect(table(*before), table(*after))
+        return effect["by_depth_threshold"][0]["counts_as_improvement"]
+
+    assert verdict((0.30, 0.15), (0.60, 0.28)) is True  # found rises more than chance
+    assert verdict((0.30, 0.15), (0.50, 0.40)) is False  # chance rises more
+    assert verdict((0.30, 0.15), (0.50, 0.35)) is False  # a tie is not a gain
+    assert verdict((0.30, 0.15), (0.30, 0.15)) is False  # nothing changed
+    assert verdict((0.30, None), (0.60, None)) is None  # no control, no verdict
+
+
+def test_the_detector_block_of_a_run_is_validated(tmp_path):
+    data = yaml.safe_load((REPO / refsets.REFERENCE_PATH).read_text(encoding="utf-8"))
+    run_id = "2026-11-18-karst-map-nested"
+    good = validation.load_validation_run(REPO / refsets.REFERENCE_PATH, run_id)
+    assert good["detector"] == {"nested": True, "nested_level_step_m": 0.5}
+    assert good["window_subset_run"] == "2026-11-17-karst-map"
+    for change, message in (
+        ({"detector": {"nested": True, "min_depth_m": 0.1}}, "may set only"),
+        ({"detector": {"nested": True, "nested_level_step_m": 0}}, "positive number"),
+        ({"window_subset_run": "../elsewhere"}, "plain run id"),
+    ):
+        bad = json.loads(json.dumps(data))
+        next(r for r in bad["validation_runs"] if r["run_id"] == run_id).update(change)
+        path = tmp_path / "bad.yaml"
+        path.write_text(yaml.safe_dump(bad), encoding="utf-8")
+        with pytest.raises(validation.ValidationError, match=message):
+            validation.load_validation_run(path, run_id)
+
+
 # ── The committed reference sets and the committed comparison ────────────────
 
 
@@ -515,6 +597,40 @@ def test_the_committed_comparison_is_reproduced_and_claims_no_field_accuracy(com
     assert context["mapped_sinkholes_over_30m_in_the_survey_window"] == 0
 
 
+def test_both_committed_runs_reproduce_and_nesting_left_the_first_untouched():
+    reports = {}
+    for run_id in ("2026-11-17-karst-map", "2026-11-18-karst-map-nested"):
+        run = validation.load_validation_run(REPO / refsets.REFERENCE_PATH, run_id)
+        assert validation.check_report(run, repo_root=REPO) == []
+        path = REPO / validation.VALIDATION_DIR / run_id / validation.REPORT_NAME
+        reports[run_id] = json.loads(path.read_text(encoding="utf-8"))
+    first, second = reports.values()
+    assert "detector" not in first["method"]
+    assert second["method"]["detector"]["nested_is_the_default"] is False
+    assert second["method"]["thresholds_changed_by_this_run"] is False
+    for epoch, before in first["whole_tile"]["epochs"].items():
+        after = second["whole_tile"]["epochs"][epoch]
+        # Same tiles, same labels, same outer basins: the baseline is unchanged.
+        assert after["parent_sha256"] == before["parent_sha256"]
+        assert after["label_counts"] == before["label_counts"]
+        assert (
+            after["object_detection_by_depth_threshold"]
+            == before["object_detection_by_depth_threshold"]
+        )
+        assert after["surface_agreement"] == before["surface_agreement"]
+        nested = after["with_nested_basins"]
+        assert (
+            nested["detections_by_hierarchy_level"]["0"] == before["detections_total"]
+        )
+        for row in after["nesting_effect"]["by_depth_threshold"]:
+            assert row["counts_as_improvement"] == (
+                row["gain_in_found"] > 0
+                and row["gain_in_found"] > row["gain_in_displaced"]
+            )
+    assert second["window"]["subset_sha256"] == first["window"]["subset_sha256"]
+    assert second["registry_changes"] == 0
+
+
 def test_reference_maps_are_registered_and_change_no_record(committed):
     build = seeding.build_all(REPO)
     assert build.reference["registered"] == 3
@@ -550,7 +666,7 @@ def test_a_changed_label_file_stops_the_comparison(committed, tmp_path):
         shutil.copy(REPO / rel, tmp_path / rel)
     for rel in (
         "evidence/access_points/reference",
-        f"{validation.VALIDATION_DIR}/{committed['run_id']}",
+        validation.VALIDATION_DIR,
         f"{survey_run.SURVEY_DIR}/{committed['survey_run']}",
     ):
         shutil.copytree(REPO / rel, tmp_path / rel)
