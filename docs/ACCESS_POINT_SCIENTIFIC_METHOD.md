@@ -88,25 +88,42 @@ for axis-aligned straight edges. [COMPUTED] For that reason rectangular cuts
 are recognised by rectangularity — how much of its bounding box a shape fills —
 not by circularity.
 
-### Basins nested inside a larger one (opt-in)
+### Basins nested inside a larger one
 
 Filling raises a compound depression — several hollows sharing one rim — to a
 single spill level, so it comes out as one basin and the hollows inside it are
-never reported. With `nested=True` the delineation also lowers the water level
-inside each basin in fixed steps and reports what separates:
+never reported. The delineation therefore also lowers the water level inside
+each basin in fixed steps and reports what separates:
 
 | Rule | Why | Class |
 |---|---|---|
 | A split needs **two or more** parts that each still meet the depth and area thresholds | A part below threshold is a bump in the floor, not a basin | BINDING |
 | The same rule is applied inside each nested basin | Nesting goes as deep as the ground does | BINDING |
 | A nested basin's depth is measured from the level at which it is seen to be separate | Its true rim lies less than one step higher, so the depth is a lower bound (0.5 m by default) and is never overstated | BINDING |
-| One deep pit in a broad shallow bowl is **not** reported apart from the bowl | It does not separate the water body. A stated limit of this rule | FACT |
+| One deep pit in a broad shallow bowl is **not** reported apart from the bowl | It does not separate the water body. A stated limit of this rule; see the second rule below | FACT |
+| A cell is under water at a level only where its depth below that level can be told from zero | The same floor an outer basin's outline uses, so numerical residue on a rim is not water | BINDING |
 | The outer basins, their measurements and their identifiers are the same with or without it | Existing results do not move | FACT (tested) |
 
 A nested basin carries its level, the identifier of the basin it lies inside,
 and an informational `NESTED` flag that lowers no tier. Containment of one
 shape in another is not a connection and is never written to the relationship
-ledger. The option is **off by default**; both detectors accept it.
+ledger.
+
+**Default.** Both detectors report nested basins by default since 2026-11-18,
+by the owner's decision after the comparison in section 6. The low-level
+delineation function still nests only when asked, a declared run must state the
+mode it uses, and a run made before the change is pinned to outer basins only,
+so its report still reproduces.
+
+**A second rule for the single pit, measured and left off.** `pit_area_jump`
+reports a nested basin where the wet area falls by at least a stated factor in
+one level step, which is what happens when water drains off a bowl's floor into
+a pit. A smooth bowl, cone or funnel never triggers it (tested). On the karst
+tile, with a factor of 3, it added 80 objects, recovered none of the three
+outlines the splitting rule leaves, and raised only the displaced control, so
+by the rule fixed in advance it is not an improvement (run
+`2026-11-18-karst-map-pit-rule`). The factor was not tuned against the map. The
+rule stays in the code, switched off.
 
 ## 4. Survey seams
 
@@ -219,9 +236,9 @@ matches.
 | The object count rises from 1,258 to 3,214 on the tile, with nesting up to 22 levels deep. At shallow depths the control reaches 91%, so a shallow nested basin near a mapped sinkhole still means nothing | COMPUTED |
 | The 2018 survey gives the same picture: 32% to 63% at 30 m, control 15% to 28% | COMPUTED |
 
-Nesting stays off by default. Whether to make it the default is a separate
-decision: it triples the number of objects, and nothing here says how many of
-the extra ones are sinkholes.
+Nesting is the detectors' default since 2026-11-18, by the owner's decision.
+It triples the number of objects, and nothing here says how many of the extra
+ones are sinkholes.
 
 No threshold was changed. The result is for one tile of one karst terrain and
 does not transfer to other ground or to the seabed. The comparison is recomputed
@@ -230,7 +247,8 @@ held tiles, and one 1 km window (eight outlines, too few to conclude from) is
 committed so the computation itself can be re-run from the repository.
 
 Two things remain before anything here could be called validated: a rule for
-the single pit in a broad bowl, and ground that someone has visited. [OPEN]
+the single pit in a broad bowl that earns its place (the one tried did not),
+and ground that someone has visited. [OPEN]
 
 Controls run in `tests/test_access_points_science.py`:
 
@@ -359,5 +377,5 @@ of side-scan, backscatter or sub-bottom data, multibeam artefact filtering
 beyond grid-aligned seams, reading of gridded bathymetric survey files (BAG) into
 this pipeline, reprojection of geographic grids inside this package, per-cell
 uncertainty for elevation tiles, a rule that separates a single pit from the
-broad bowl it sits in, and any field-visited truth set. A projected GeoTIFF
+broad bowl it sits in and is shown to help, and any field-visited truth set. A projected GeoTIFF
 elevation tile can be read (`survey.py`); one has been.

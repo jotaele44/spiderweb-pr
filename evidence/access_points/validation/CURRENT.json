@@ -1,6 +1,6 @@
 {
-  "report": "2026-11-18-karst-map-nested/validation_report.json",
-  "report_sha256": "8f9f702479a31357ef266bd09623047f7145de5c15ef0faa0520a77da628eebf",
-  "run_id": "2026-11-18-karst-map-nested",
+  "report": "2026-11-18-karst-map-pit-rule/validation_report.json",
+  "report_sha256": "7eae24ac90eafc466965f5d0437caa0cd308db8819c3d753c3e02c1eb4650ada",
+  "run_id": "2026-11-18-karst-map-pit-rule",
   "schema": "access_point_validation_pointer/1.0"
 }

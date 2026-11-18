@@ -1,6 +1,6 @@
 {
   "coarsen_factor": 5,
-  "content_sha256": "e1e4f6ae4085427dc63ca8c7ebf3a7501d2e3128e6e8a5764a8c80afd8a9963f",
+  "content_sha256": "34466cc614bd6c9868486b03acb27f05481e2a11ec2a0909bb98ea35237382a9",
   "epochs": {
     "2018": {
       "cell_size_m": 5.0,
@@ -508,10 +508,10 @@
           {
             "counts_as_improvement": true,
             "displaced_fraction_outer_only": 0.3095,
-            "displaced_fraction_with_nested": 0.5079,
+            "displaced_fraction_with_nested": 0.5159,
             "found_fraction_outer_only": 0.4015,
             "found_fraction_with_nested": 0.8102,
-            "gain_in_displaced": 0.1984,
+            "gain_in_displaced": 0.2064,
             "gain_in_found": 0.4087,
             "min_depth_m": 20
           },
@@ -682,7 +682,7 @@
       "valid_cell_fraction": 0.8514,
       "with_nested_basins": {
         "deep_detections_not_in_the_map": {
-          "count": 131,
+          "count": 133,
           "deepest": [
             {
               "area_m2": 1147800.0,
@@ -690,29 +690,24 @@
               "native_record_id": "closed-basin-delineation@723496.500000,2036023.500000"
             },
             {
-              "area_m2": 144375.0,
+              "area_m2": 144025.0,
               "max_depth_m": 56.82,
               "native_record_id": "closed-basin-delineation@725121.500000,2034983.500000/n2"
             },
             {
-              "area_m2": 940475.0,
+              "area_m2": 937175.0,
               "max_depth_m": 55.92,
               "native_record_id": "closed-basin-delineation@723496.500000,2036023.500000/n1"
             },
             {
-              "area_m2": 920650.0,
+              "area_m2": 916925.0,
               "max_depth_m": 55.42,
               "native_record_id": "closed-basin-delineation@723496.500000,2036023.500000/n2"
             },
             {
-              "area_m2": 137250.0,
+              "area_m2": 137050.0,
               "max_depth_m": 55.32,
               "native_record_id": "closed-basin-delineation@725121.500000,2034983.500000/n3"
-            },
-            {
-              "area_m2": 166375.0,
-              "max_depth_m": 54.92,
-              "native_record_id": "closed-basin-delineation@723496.500000,2036023.500000/n3"
             },
             {
               "area_m2": 551050.0,
@@ -730,39 +725,43 @@
               "native_record_id": "closed-basin-delineation@724741.500000,2038043.500000"
             },
             {
-              "area_m2": 515625.0,
+              "area_m2": 512000.0,
               "max_depth_m": 52.1,
               "native_record_id": "closed-basin-delineation@723731.500000,2037858.500000/n1"
+            },
+            {
+              "area_m2": 131800.0,
+              "max_depth_m": 51.64,
+              "native_record_id": "closed-basin-delineation@724741.500000,2038043.500000/n1"
             }
           ],
           "stated_depth_m": 30
         },
         "detections_by_hierarchy_level": {
           "0": 974,
-          "1": 497,
+          "1": 501,
           "10": 50,
-          "11": 39,
+          "11": 49,
           "12": 34,
-          "13": 25,
-          "14": 21,
-          "15": 8,
-          "16": 6,
-          "17": 6,
+          "13": 26,
+          "14": 20,
+          "15": 16,
+          "16": 9,
+          "17": 13,
           "18": 6,
-          "19": 3,
-          "2": 279,
+          "19": 4,
+          "2": 294,
           "20": 4,
-          "21": 4,
-          "22": 2,
-          "3": 192,
-          "4": 153,
-          "5": 118,
-          "6": 106,
-          "7": 73,
-          "8": 80,
-          "9": 68
+          "21": 2,
+          "3": 207,
+          "4": 152,
+          "5": 113,
+          "6": 97,
+          "7": 75,
+          "8": 83,
+          "9": 71
         },
-        "detections_total": 2748,
+        "detections_total": 2800,
         "labels_missed": [
           {
             "enclosing_basin_depth_m": null,
@@ -795,16 +794,16 @@
           "NO_BASIN_WITHIN_MATCH_RADIUS": 2
         },
         "matched_basin_depth_m": {
-          "at_least_stated_depth": 33,
+          "at_least_stated_depth": 35,
           "count": 132,
           "max": 62.14,
-          "median": 14.86,
+          "median": 15.42,
           "min": 1.08
         },
         "nested_level_step_m": 0.5,
         "object_detection_by_depth_threshold": [
           {
-            "detections": 2748,
+            "detections": 2800,
             "displaced_found": 115,
             "displaced_fraction": 0.9127,
             "displaced_labels": 126,
@@ -814,7 +813,7 @@
             "min_depth_m": 1
           },
           {
-            "detections": 2344,
+            "detections": 2391,
             "displaced_found": 112,
             "displaced_fraction": 0.8889,
             "displaced_labels": 126,
@@ -824,7 +823,7 @@
             "min_depth_m": 2
           },
           {
-            "detections": 1752,
+            "detections": 1780,
             "displaced_found": 106,
             "displaced_fraction": 0.8413,
             "displaced_labels": 126,
@@ -834,7 +833,7 @@
             "min_depth_m": 5
           },
           {
-            "detections": 1247,
+            "detections": 1261,
             "displaced_found": 94,
             "displaced_fraction": 0.746,
             "displaced_labels": 126,
@@ -844,9 +843,9 @@
             "min_depth_m": 10
           },
           {
-            "detections": 645,
-            "displaced_found": 64,
-            "displaced_fraction": 0.5079,
+            "detections": 647,
+            "displaced_found": 65,
+            "displaced_fraction": 0.5159,
             "displaced_labels": 126,
             "found_fraction": 0.8102,
             "labels": 137,
@@ -854,7 +853,7 @@
             "min_depth_m": 20
           },
           {
-            "detections": 304,
+            "detections": 306,
             "displaced_found": 35,
             "displaced_fraction": 0.2778,
             "displaced_labels": 126,

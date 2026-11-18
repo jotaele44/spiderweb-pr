@@ -112,6 +112,20 @@
         "evidence/access_points/benchmark_v2.json",
         "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
       ]
+    },
+    {
+      "date": "2026-11-18",
+      "summary": "Made nested basins the default of the access-point detectors (spiderweb/access_points/detection.py), by the repository owner's decision after the comparison with the USGS karst map. The low-level delineation keeps nesting off unless asked; a declared survey run must state parameters.nested, and the committed run of 2026-11-17 is pinned to outer basins only so its report still reproduces; validation runs state both their baseline and their candidate detector, so a comparison does not move when a default does. Nested basins now apply the same depth floor as outer basins. Added an optional single-pit rule (pit_area_jump), measured it against the nested detector on the held tiles with the reading rule fixed in advance, found no gain, and left it off. Nothing was downloaded. No detection threshold, feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v6.json.",
+      "files": [
+        "spiderweb/access_points/detection.py",
+        "spiderweb/access_points/raster.py",
+        "spiderweb/access_points/validation.py",
+        "spiderweb/access_points/survey_run.py",
+        "configs/access_point_survey_runs.yaml",
+        "configs/access_point_reference_sets.yaml",
+        "evidence/access_points/validation/",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
+      ]
     }
   ]
 }

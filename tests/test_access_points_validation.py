@@ -95,8 +95,11 @@ def layer_at(cells, radius=12.0, **changes):
 
 def detect(grid):
     source = sup_source()
+    # Outer basins only: these tests are about the comparison, and say so.
     return det.detect_inland(
-        grid, source, det.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0)
+        grid,
+        source,
+        det.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0, nested=False),
     )
 
 
@@ -525,6 +528,9 @@ def test_the_detector_block_of_a_run_is_validated(tmp_path):
     for change, message in (
         ({"detector": {"nested": True, "min_depth_m": 0.1}}, "may set only"),
         ({"detector": {"nested": True, "nested_level_step_m": 0}}, "positive number"),
+        ({"detector": {"nested": True, "pit_area_jump": 1}}, "greater than 1"),
+        ({"detector": {"nested": False, "pit_area_jump": 3}}, "only with nested"),
+        ({"baseline_detector": {"nested": True}, "detector": None}, "needs a detector"),
         ({"window_subset_run": "../elsewhere"}, "plain run id"),
     ):
         bad = json.loads(json.dumps(data))
@@ -606,7 +612,8 @@ def test_both_committed_runs_reproduce_and_nesting_left_the_first_untouched():
         reports[run_id] = json.loads(path.read_text(encoding="utf-8"))
     first, second = reports.values()
     assert "detector" not in first["method"]
-    assert second["method"]["detector"]["nested_is_the_default"] is False
+    assert second["method"]["baseline_detector"] == {"nested": False}
+    assert second["method"]["detector"]["nested"] is True
     assert second["method"]["thresholds_changed_by_this_run"] is False
     for epoch, before in first["whole_tile"]["epochs"].items():
         after = second["whole_tile"]["epochs"][epoch]
@@ -629,6 +636,30 @@ def test_both_committed_runs_reproduce_and_nesting_left_the_first_untouched():
             )
     assert second["window"]["subset_sha256"] == first["window"]["subset_sha256"]
     assert second["registry_changes"] == 0
+
+
+def test_the_single_pit_rule_was_measured_and_did_not_earn_its_place():
+    run_id = "2026-11-18-karst-map-pit-rule"
+    run = validation.load_validation_run(REPO / refsets.REFERENCE_PATH, run_id)
+    assert run["baseline_detector"]["nested"] is True  # measured on top of nesting
+    assert validation.check_report(run, repo_root=REPO) == []
+    path = REPO / validation.VALIDATION_DIR / run_id / validation.REPORT_NAME
+    report = json.loads(path.read_text(encoding="utf-8"))
+    for section in report["whole_tile"]["epochs"].values():
+        effect = section["nesting_effect"]
+        # By the rule fixed in advance: no gain in found at any depth.
+        assert not any(
+            row["counts_as_improvement"] for row in effect["by_depth_threshold"]
+        )
+        assert effect["of_which_now_reported_as_objects"] == 0
+        assert (
+            section["with_nested_basins"]["detections_total"]
+            > section["detections_total"]
+        )
+    # So it is not switched on anywhere by default.
+    assert (
+        det.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0).pit_area_jump is None
+    )
 
 
 def test_reference_maps_are_registered_and_change_no_record(committed):

@@ -14,7 +14,19 @@ GitHub Release using the matching section below (T6-53).
   and prose as if they were addresses. It now cites only a real address and
   keeps the published field verbatim (`spiderweb/access_points/acquisition.py`).
 
+### Changed
+- **Nested basins are now the access-point detectors' default**, by the
+  repository owner's decision after the comparison with the USGS karst map.
+  The low-level delineation still nests only when asked; a declared survey run
+  must now state `parameters.nested`; the run of 2026-11-17 is pinned to outer
+  basins only and still reproduces. Nested basins now use the same depth floor
+  as outer ones, so numerical residue on a rim is not counted as water.
+
 ### Added
+- **A second, optional rule for a single pit under a broad bowl**
+  (`pit_area_jump`). It was measured on the same tile against the nested
+  detector and did not help: 80 more objects, none of the three remaining
+  mapped sinkholes recovered. It is off by default.
 - **Nested basins in the access-point detector (opt-in).** A compound
   depression — several hollows sharing one rim — was reported as one basin. With
   `nested=True` the shared delineation (`spiderweb/access_points/raster.py`) also

@@ -83,11 +83,15 @@ class DetectionParameters:
     significance_floor: float = 3.0
     interpolated_artifact_fraction: float = 0.5
     max_regions: int | None = None
-    # Also report basins nested inside a larger closed basin.  Off by default:
-    # the outer basins, their identifiers and every existing result are the
-    # same with or without it.
-    nested: bool = False
+    # Also report basins nested inside a larger closed basin.  On by default
+    # since 2026-11-18, by the owner's decision after it was measured against
+    # a published map.  The outer basins and their identifiers are the same
+    # with or without it; a run made before the change pins ``nested: false``.
+    nested: bool = True
     nested_level_step_m: float = 0.5
+    # Optional second rule for one pit under a broad bowl: the factor by which
+    # the wet area must fall in a single level step.  ``None`` leaves it off.
+    pit_area_jump: float | None = None
 
     def __post_init__(self) -> None:
         if self.min_depth_m <= 0 or self.min_area_m2 <= 0:
@@ -98,6 +102,11 @@ class DetectionParameters:
             raise ValueError("interpolated_artifact_fraction must be within (0, 1]")
         if self.nested_level_step_m <= 0:
             raise ValueError("nested_level_step_m must be positive")
+        if self.pit_area_jump is not None:
+            if not self.nested:
+                raise ValueError("pit_area_jump applies only with nested basins on")
+            if self.pit_area_jump <= 1:
+                raise ValueError("pit_area_jump must be greater than 1")
 
 
 @dataclass(frozen=True, slots=True)
@@ -318,6 +327,7 @@ def detect_inland(
         max_regions=params.max_regions,
         nested=params.nested,
         nested_level_step_m=params.nested_level_step_m,
+        pit_area_jump=params.pit_area_jump,
     ):
         hit = bool(on_seam is not None and on_seam[region.slices].any())
         flags = _flags(region, hit, params)
@@ -421,6 +431,7 @@ def detect_offshore(
         max_regions=params.max_regions,
         nested=params.nested,
         nested_level_step_m=params.nested_level_step_m,
+        pit_area_jump=params.pit_area_jump,
     ):
         hit = bool(on_seam is not None and on_seam[region.slices].any())
         flags = _flags(region, hit, params)

@@ -1362,7 +1362,9 @@ def test_nested_detections_are_flagged_identified_and_still_only_shapes():
     grid = _terrain(_compound())
     source = sup.direct_source("TEST-NESTED-1")
     plain = detection.detect_inland(
-        grid, source, detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0)
+        grid,
+        source,
+        detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0, nested=False),
     )
     nested = detection.detect_inland(
         grid,
@@ -1406,7 +1408,9 @@ def test_the_seabed_detector_reports_nested_basins_the_same_way():
         uncertainty_m=0.05,
     )
     source = sup.direct_source("TEST-NESTED-SEA")
-    params = detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0)
+    params = detection.DetectionParameters(
+        min_depth_m=1.0, min_area_m2=50.0, nested=False
+    )
     plain = detection.detect_offshore(grid, source, params)
     nested = detection.detect_offshore(
         grid,
@@ -1415,3 +1419,92 @@ def test_the_seabed_detector_reports_nested_basins_the_same_way():
     )
     assert len(plain) == 1 and sorted(d.hierarchy_level for d in nested) == [0, 1, 1]
     assert all(d.namespace is sup.OFFSHORE for d in nested)
+
+
+def test_nested_basins_are_reported_unless_a_run_says_otherwise():
+    assert (
+        detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0).nested is True
+    )
+    grid = _terrain(_compound())
+    source = sup.direct_source("TEST-NESTED-DEFAULT")
+    by_default = detection.detect_inland(
+        grid, source, detection.DetectionParameters(min_depth_m=1.0, min_area_m2=50.0)
+    )
+    assert sorted(d.hierarchy_level for d in by_default) == [0, 1, 1]
+    # The low-level delineation stays explicit: nothing is nested unless asked.
+    assert all(
+        r.hierarchy_level == 0
+        for r in R.delineate_depressions(grid, min_depth_m=1.0, min_area_m2=50.0)
+    )
+
+
+def _pit_under_a_bowl():
+    """A flat-floored bowl with one steep pit in its floor."""
+
+    surface = controls.tilted_plane(400, 400, base_m=200.0, slope_x=0.0, slope_y=0.0)
+    surface = controls.add_rectangular_cut(surface, 120, 120, 280, 280, floor_m=197.0)
+    return controls.add_gaussian_basin(surface, 200, 200, depth_m=9.0, sigma_cells=5.0)
+
+
+def test_one_pit_under_a_bowl_needs_the_second_rule_and_gets_it():
+    grid = _terrain(_pit_under_a_bowl())
+    common = dict(min_depth_m=1.0, min_area_m2=50.0, nested=True)
+    assert [r.hierarchy_level for r in R.delineate_depressions(grid, **common)] == [0]
+    regions = R.delineate_depressions(grid, pit_area_jump=3.0, **common)
+    assert sorted(r.hierarchy_level for r in regions) == [0, 1]
+    outer, pit = sorted(regions, key=lambda r: r.hierarchy_level)
+    assert pit.parent_deepest_xy == outer.deepest_xy
+    assert pit.area_m2 * 3.0 <= outer.area_m2
+    assert 1.0 <= pit.max_depth_m <= outer.max_depth_m
+    assert math.dist(pit.deepest_xy, (722200.5, 2032799.5)) <= 3.0
+
+
+def test_a_smooth_basin_never_triggers_the_pit_rule():
+    plane = controls.tilted_plane(400, 400, base_m=200.0)
+    yy, xx = np.mgrid[0:400, 0:400].astype(float)
+    radius = np.hypot(xx - 200, yy - 200)
+    shapes = {
+        "gaussian": controls.add_gaussian_basin(
+            plane, 200, 200, depth_m=10.0, sigma_cells=25.0
+        ),
+        "cone": plane - np.clip(12.0 - 0.15 * radius, 0.0, None),
+        "paraboloid": plane - np.clip(12.0 - (radius / 22.0) ** 2, 0.0, None),
+    }
+    for name, surface in shapes.items():
+        regions = R.delineate_depressions(
+            _terrain(surface),
+            min_depth_m=1.0,
+            min_area_m2=50.0,
+            nested=True,
+            pit_area_jump=3.0,
+        )
+        assert [r.hierarchy_level for r in regions] == [0], name
+    # The compound basin is unaffected: its pits are found by the split rule.
+    with_rule = R.delineate_depressions(
+        _terrain(_compound()),
+        min_depth_m=1.0,
+        min_area_m2=50.0,
+        nested=True,
+        pit_area_jump=3.0,
+    )
+    assert sorted(r.hierarchy_level for r in with_rule)[:3] == [0, 1, 1]
+
+
+def test_the_pit_rule_is_validated():
+    grid = _terrain(_pit_under_a_bowl())
+    with pytest.raises(ValueError, match="only with nested"):
+        R.delineate_depressions(
+            grid, min_depth_m=1.0, min_area_m2=50.0, pit_area_jump=3.0
+        )
+    with pytest.raises(ValueError, match="greater than 1"):
+        R.delineate_depressions(
+            grid, min_depth_m=1.0, min_area_m2=50.0, nested=True, pit_area_jump=1.0
+        )
+    with pytest.raises(ValueError, match="only with nested"):
+        detection.DetectionParameters(
+            min_depth_m=1.0, min_area_m2=50.0, nested=False, pit_area_jump=3.0
+        )
+    with pytest.raises(ValueError, match="greater than 1"):
+        detection.DetectionParameters(
+            min_depth_m=1.0, min_area_m2=50.0, pit_area_jump=0.5
+        )

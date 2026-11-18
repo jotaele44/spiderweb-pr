@@ -118,18 +118,24 @@ def load_validation_run(config_path: str | Path, run_id: str) -> dict[str, Any]:
         or sorted(thresholds) != thresholds
     ):
         raise ValidationError("depth_thresholds_m must be increasing positive numbers")
-    detector = run.get("detector")
-    if detector is not None:
-        if not isinstance(detector, Mapping) or set(detector) - {
-            "nested",
-            "nested_level_step_m",
-        }:
+    for key in ("detector", "baseline_detector"):
+        block = run.get(key)
+        if block is None:
+            continue
+        if not isinstance(block, Mapping) or set(block) - _DETECTOR_KEYS:
             raise ValidationError(
-                "detector may set only nested and nested_level_step_m"
+                f"{key} may set only nested, nested_level_step_m and pit_area_jump"
             )
-        step = detector.get("nested_level_step_m", 0.5)
+        step = block.get("nested_level_step_m", 0.5)
         if not isinstance(step, (int, float)) or step <= 0:
             raise ValidationError("nested_level_step_m must be a positive number")
+        jump = block.get("pit_area_jump")
+        if jump is not None and (not isinstance(jump, (int, float)) or jump <= 1):
+            raise ValidationError("pit_area_jump must be a number greater than 1")
+        if jump is not None and not block.get("nested"):
+            raise ValidationError("pit_area_jump applies only with nested basins on")
+    if run.get("baseline_detector") is not None and run.get("detector") is None:
+        raise ValidationError("a baseline_detector needs a detector to compare")
     owner = run.get("window_subset_run")
     if owner is not None and (
         not str(owner).strip() or "/" in str(owner) or str(owner).startswith(".")
@@ -499,19 +505,33 @@ def score(
 # -- the two halves --------------------------------------------------------
 
 
-def _nested(run: Mapping[str, Any]) -> bool:
-    return bool((run.get("detector") or {}).get("nested"))
+_DETECTOR_KEYS = frozenset({"nested", "nested_level_step_m", "pit_area_jump"})
+_OUTER_ONLY: Mapping[str, Any] = {"nested": False}
+
+
+def _candidate(run: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    """The detector a run measures, or ``None`` if it only scores the baseline."""
+
+    return run.get("detector")
+
+
+def _baseline(run: Mapping[str, Any]) -> Mapping[str, Any]:
+    """What the candidate is compared with.  Outer basins only unless stated."""
+
+    return run.get("baseline_detector") or _OUTER_ONLY
 
 
 def _parameters(
-    run: Mapping[str, Any], cell_size_m: float, *, nested: bool = False
+    run: Mapping[str, Any], cell_size_m: float, detector: Mapping[str, Any]
 ) -> DetectionParameters:
-    detector = run.get("detector") or {}
+    # Every mode is stated explicitly: a comparison must not move when the
+    # detector's default does.
     return DetectionParameters(
         min_depth_m=float(run["depth_thresholds_m"][0]),
         min_area_m2=max(100.0, 4.0 * cell_size_m * cell_size_m),
-        nested=nested,
+        nested=bool(detector.get("nested", False)),
         nested_level_step_m=float(detector.get("nested_level_step_m", 0.5)),
+        pit_area_jump=detector.get("pit_area_jump"),
     )
 
 
@@ -600,11 +620,15 @@ def score_modes(
     )
     cell = grid.cell_size_m[0]
     result = score(
-        detect_inland(grid, source, _parameters(run, cell)), labels, layer.ref, **common
+        detect_inland(grid, source, _parameters(run, cell, _baseline(run))),
+        labels,
+        layer.ref,
+        **common,
     )
-    if not _nested(run):
+    candidate = _candidate(run)
+    if candidate is None:
         return labels, counts, result
-    parameters = _parameters(run, cell, nested=True)
+    parameters = _parameters(run, cell, candidate)
     detections = detect_inland(grid, source, parameters)
     nested = score(detections, labels, layer.ref, **common)
     levels: dict[str, int] = {}
@@ -1016,15 +1040,10 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
             "thresholds_changed_by_this_run": False,
             **(
                 {
-                    "detector": {
-                        "nested": True,
-                        "nested_level_step_m": _parameters(
-                            run, 1.0, nested=True
-                        ).nested_level_step_m,
-                        "nested_is_the_default": False,
-                    }
+                    "baseline_detector": dict(_baseline(run)),
+                    "detector": dict(_candidate(run) or {}),
                 }
-                if _nested(run)
+                if _candidate(run) is not None
                 else {}
             ),
         },

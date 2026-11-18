@@ -462,7 +462,8 @@ survey, against 51% for a displaced control; the detector reports only 32% of
 them as separate objects, because it reports the outermost basin of a compound
 depression. With the opt-in nested-basin mode that rises to 61% (control 28%),
 and 70 of the 73 sinkholes that lay inside a larger basin are reported as their
-own object. Nesting is off by default. The figures, their limits and what they do not show are in
+own object. Nested basins are the detectors' default since 2026-11-18; a second
+rule for a single pit under a bowl was measured, did not help, and is off. The figures, their limits and what they do not show are in
 `docs/ACCESS_POINT_SCIENTIFIC_METHOD.md`, section 6.
 
 What the maps say about `INAP-PR-000003` [COMPUTED]: its registered point is

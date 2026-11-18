@@ -96,9 +96,14 @@ def _validated(run: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(run.get(key), (int, float)) or run[key] <= 0:
             raise SurveyRunError(f"{key} must be a positive number")
     parameters = run.get("parameters") or {}
+    if "nested" not in parameters:
+        raise SurveyRunError(
+            "a run must say whether nested basins are reported (parameters.nested)"
+        )
     run["parameters"] = DetectionParameters(
         min_depth_m=float(parameters["min_depth_m"]),
         min_area_m2=float(parameters["min_area_m2"]),
+        nested=bool(parameters["nested"]),
     )
     products = run.get("products")
     if not isinstance(products, list) or not products:

@@ -77,7 +77,7 @@
   },
   "inputs": {
     "configs/access_point_legacy_crosswalk.yaml": "c2ae580230038e5aa621cc398d49ed74a1e87c19718d4025207f5e8939cea290",
-    "configs/access_point_reference_sets.yaml": "15f5ff63f55f7d82b584b079cc029ff1d9b517d14f8107d45b13eefce9100df5",
+    "configs/access_point_reference_sets.yaml": "6f6ad55d94014b6e5e7e8f805b1ac7ee80b90298a136ed824c32b288764c90b6",
     "configs/access_point_seeds.yaml": "e9cb8d7181a1ab4f0f05d6931064748ea32896e383aa2ee8ed5980beecc71e46",
     "configs/ilap_registry.yaml": "71991b9f2c66b07902963c77fc264751a6d07be4b1b068a272f5a356072ffd21",
     "evidence/access_points/real_survey/2026-11-17/processing_report.json": "4daf4398df659bb018b36c2bf40d8e95b29acf0431596e78a0890e64decf234a",

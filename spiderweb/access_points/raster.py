@@ -459,6 +459,9 @@ class _MeasureContext:
     slope: np.ndarray
     uncertainty: np.ndarray | None
     valid: np.ndarray
+    # The depth below which a cell cannot be told apart from its rim: the same
+    # floor for an outer basin's outline and for a nested one's.
+    depth_floor: float | np.ndarray = NUMERICAL_DEPTH_FLOOR_M
 
 
 _STRUCTURE8 = np.ones((3, 3), dtype=bool)
@@ -577,6 +580,7 @@ def _nested_within(
     min_area_m2: float,
     step_m: float,
     first_label: int,
+    pit_area_jump: float | None = None,
 ) -> list[DepressionRegion]:
     """Basins nested inside one basin, found by lowering the water level.
 
@@ -588,9 +592,14 @@ def _nested_within(
 
     * A part that falls below the thresholds is a bump in the floor, not a
       basin, and does not make a split.
-    * One deep pit in a broad shallow bowl does not separate the water body
-      and is therefore not reported apart from the bowl.  That is a stated
-      limit of this rule, not an oversight.
+    * One deep pit in a broad shallow bowl does not separate the water body,
+      so the splitting rule alone does not report it apart from the bowl.
+      ``pit_area_jump`` adds a second rule for that case: as the level drops
+      by one step, water that drains off a bowl's floor into a pit loses most
+      of its area at once.  Where the wet area falls by at least that factor
+      in a single step, and what remains still meets the depth and area
+      thresholds, the remainder is a nested basin.  A smooth bowl, cone or
+      funnel loses area gradually and never triggers it.
     * A nested basin's depth is measured from the level at which it is seen
       to be separate.  Its true rim lies less than one step higher, so the
       depth is a lower bound and is never overstated.
@@ -604,58 +613,68 @@ def _nested_within(
     while pending:
         mask, win, top, owner = pending.pop()
         z = grid.values[win]
+        margin = (
+            context.depth_floor[win]
+            if isinstance(context.depth_floor, np.ndarray)
+            else context.depth_floor
+        )
         floor = float(z[mask].min())
         span = top - floor
         if span < min_depth_m:
             continue
         step = max(step_m, span / _MAX_NESTED_LEVELS)
         level = top - step
+        area_above = int(mask.sum())
         while level - floor >= min_depth_m:
-            wet = mask & (z < level)
+            # Wet only where the depth below this level can be told from zero.
+            wet = mask & (level - z > margin)
             parts, count = ndimage.label(wet, structure=_STRUCTURE8)
             if count == 0:
                 break
-            if count >= 2:
-                index = np.arange(1, count + 1)
-                floors = np.asarray(ndimage.minimum(z, parts, index), dtype=np.float64)
-                cells = np.bincount(parts.ravel(), minlength=count + 1)[1:]
-                keep = (level - floors >= min_depth_m) & (
-                    cells * grid.cell_area_m2 >= min_area_m2
-                )
-                if int(keep.sum()) >= 2:
-                    boxes = ndimage.find_objects(parts)
-                    for part in index[keep]:
-                        box = boxes[int(part) - 1]
-                        sub = (
-                            slice(
-                                win[0].start + box[0].start, win[0].start + box[0].stop
-                            ),
-                            slice(
-                                win[1].start + box[1].start, win[1].start + box[1].stop
-                            ),
-                        )
-                        sub_mask = parts[box] == part
-                        depth_here = np.where(sub_mask, level - grid.values[sub], 0.0)
-                        child = _measure_region(
-                            context,
-                            sub_mask,
-                            sub,
-                            depth_here,
-                            spill_elevation_m=level,
-                            label=label,
-                            hierarchy_level=owner.hierarchy_level + 1,
-                            parent_deepest_xy=owner.deepest_xy,
-                            depth_resolution_m=step,
-                        )
-                        label += 1
-                        out.append(child)
-                        pending.append((sub_mask, sub, level, child))
-                    break
-                if int(keep.sum()) == 1:
-                    # The other parts are bumps; carry on inside the one basin.
-                    mask = parts == index[keep][0]
-                else:
-                    break
+            index = np.arange(1, count + 1)
+            floors = np.asarray(ndimage.minimum(z, parts, index), dtype=np.float64)
+            cells = np.bincount(parts.ravel(), minlength=count + 1)[1:]
+            keep = (level - floors >= min_depth_m) & (
+                cells * grid.cell_area_m2 >= min_area_m2
+            )
+            kept = index[keep]
+            if kept.size == 0:
+                break
+            # Two or more basins: a split.  One basin whose area fell by the
+            # stated factor in this single step: a pit under a bowl.
+            is_pit = (
+                kept.size == 1
+                and pit_area_jump is not None
+                and area_above >= pit_area_jump * int(cells[kept[0] - 1])
+            )
+            if kept.size >= 2 or is_pit:
+                boxes = ndimage.find_objects(parts)
+                for part in kept:
+                    box = boxes[int(part) - 1]
+                    sub = (
+                        slice(win[0].start + box[0].start, win[0].start + box[0].stop),
+                        slice(win[1].start + box[1].start, win[1].start + box[1].stop),
+                    )
+                    sub_mask = parts[box] == part
+                    depth_here = np.where(sub_mask, level - grid.values[sub], 0.0)
+                    child = _measure_region(
+                        context,
+                        sub_mask,
+                        sub,
+                        depth_here,
+                        spill_elevation_m=level,
+                        label=label,
+                        hierarchy_level=owner.hierarchy_level + 1,
+                        parent_deepest_xy=owner.deepest_xy,
+                        depth_resolution_m=step,
+                    )
+                    label += 1
+                    out.append(child)
+                    pending.append((sub_mask, sub, level, child))
+                break
+            # The other parts, if any, are bumps; carry on inside the one basin.
+            mask = parts == kept[0]
+            area_above = int(cells[kept[0] - 1])
             level -= step
     return out
 
@@ -669,6 +688,7 @@ def delineate_depressions(
     footprint_min_depth_m: float | None = None,
     nested: bool = False,
     nested_level_step_m: float = 0.5,
+    pit_area_jump: float | None = None,
 ) -> list[DepressionRegion]:
     """Find closed basins and measure them.  Ordered deepest first, then by label.
 
@@ -689,6 +709,11 @@ def delineate_depressions(
         raise ValueError("min_depth_m and min_area_m2 must be positive")
     if nested and not (math.isfinite(nested_level_step_m) and nested_level_step_m > 0):
         raise ValueError("nested_level_step_m must be positive")
+    if pit_area_jump is not None:
+        if not nested:
+            raise ValueError("pit_area_jump applies only with nested=True")
+        if not (math.isfinite(pit_area_jump) and pit_area_jump > 1.0):
+            raise ValueError("pit_area_jump must be greater than 1")
     filled = fill_depressions(grid)
     depth = np.where(grid.valid, np.maximum(filled - grid.values, 0.0), 0.0)
     if footprint_min_depth_m is not None:
@@ -730,6 +755,7 @@ def delineate_depressions(
         slope=slope_degrees(grid),
         uncertainty=grid.uncertainty_array(),
         valid=grid.valid,
+        depth_floor=floor,
     )
     regions: list[DepressionRegion] = []
     next_label = label_count + 1
@@ -761,6 +787,7 @@ def delineate_depressions(
                 min_area_m2=min_area_m2,
                 step_m=nested_level_step_m,
                 first_label=next_label,
+                pit_area_jump=pit_area_jump,
             ):
                 regions.append(child)
                 next_label = max(next_label, child.label + 1)

@@ -152,3 +152,25 @@ validation_runs:
     detector:
       nested: true
       nested_level_step_m: 0.5
+
+  # The single-pit rule, measured on top of nested basins: the baseline here is
+  # the nested detector, so the table shows what the second rule adds.
+  - run_id: "2026-11-18-karst-map-pit-rule"
+    label_set: usgs_karst_sinkholes_over_30m
+    context_area_set: usgs_karst_sinkhole_areas_5_to_30m
+    karst_limit_set: pr_planning_board_northern_karst_limit
+    survey_run: "2026-11-17"
+    reproducible_epoch: "2024"
+    window_subset_run: "2026-11-17-karst-map"
+    window_half_size_m: 500
+    cluster_radius_m: 500
+    tile_coarsen_factor: 5
+    depth_thresholds_m: [1, 2, 5, 10, 20, 30]
+    displaced_control_offset_m: 1000
+    baseline_detector:
+      nested: true
+      nested_level_step_m: 0.5
+    detector:
+      nested: true
+      nested_level_step_m: 0.5
+      pit_area_jump: 3.0
