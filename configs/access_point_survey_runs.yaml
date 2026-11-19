@@ -104,3 +104,58 @@ seabed_runs:
       # An earlier receipt for the same file, made by different code in
       # August 2026.  The report compares itself with it.
       prior_receipt: evidence/marine/w00247_bag_v0_1/w00247_bag_receipt.json
+  # The same file read again, this time from its finer grids, resampled to
+  # 8 m cells.  Each cell holds the mean elevation of the finer-grid nodes
+  # inside it and the largest of their uncertainties; a cell with no node is
+  # empty.  Same soundings, so agreement with the base-grid run is a
+  # consistency check, not replication.  No download: the file is already held.
+  - run_id: "2026-11-19-offshore-8m"
+    registry: access_point.offshore
+    search_area: guayama_punta_tuna_discovery_v0_1
+    resolution_m: 8
+    # The frozen landing page and the download manifest are those of the
+    # base-grid run; they are not copied.
+    evidence_run: "2026-11-18-offshore"
+    compare_with: "2026-11-18-offshore"
+    parameters:
+      # The base-grid run's thresholds, unchanged, so that only resolution
+      # differs between the two runs.
+      min_depth_m: 2.0
+      min_area_m2: 16384.0
+      nested: true
+    product: &w00247_3of4
+      filename: W00247_MB_VR_MLLW_3of4.bag
+      native_identifier: "NOS:BAG:W00247:3of4"
+      landing_page: "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html"
+      sha256: b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8
+      survey_date: "2013"
+      survey_date_basis: >-
+        The survey year the NOS BAG inventory gives for W00247, as frozen in
+        the source-discovery catalogue of 2026-11-16. The file itself is dated
+        2021-12-07, which is when the grid was produced, not when the seabed
+        was surveyed.
+      stated_vertical_datum: MLLW
+      vertical_statement_basis: >-
+        A structured vertical-datum element in the product's own metadata
+        (VERT_DATUM["MLLW"]), and the name of its coordinate system
+        ("NAD83 / UTM zone 20N + MLLW depth"). The file name says the same.
+      vertical_uncertainty_basis: >-
+        The product's own uncertainty, node by node in its finer grids; each
+        8 m cell carries the largest uncertainty of the nodes inside it. It is
+        not a single project figure.
+      lineage_root_id: "NOS:BAG:W00247"
+  # The same 8 m reading with a smaller area floor (16 cells of 8 m), declared
+  # before the run and not tuned afterwards: the pass that can see features
+  # smaller than one base cell.  It reads the 8 m run's subset.
+  - run_id: "2026-11-19-offshore-8m-small"
+    registry: access_point.offshore
+    search_area: guayama_punta_tuna_discovery_v0_1
+    resolution_m: 8
+    evidence_run: "2026-11-18-offshore"
+    subset_run: "2026-11-19-offshore-8m"
+    compare_with: "2026-11-18-offshore"
+    parameters:
+      min_depth_m: 2.0
+      min_area_m2: 1024.0
+      nested: true
+    product: *w00247_3of4

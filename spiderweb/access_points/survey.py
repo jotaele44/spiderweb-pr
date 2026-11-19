@@ -801,19 +801,48 @@ def _two_bands(src: Any) -> tuple[np.ndarray, np.ndarray, str, tuple[float, floa
     return elevation, uncertainty, crs, (float(transform.a), float(-transform.e))
 
 
-def read_depth_grid(path: str | Path) -> DepthGrid:
-    """Read the base grid of a hydrographic product (or a subset written from one).
+RESAMPLE_POPULATION = "MEAN"
+
+
+def read_depth_grid(path: str | Path, resolution_m: float | None = None) -> DepthGrid:
+    """Read a hydrographic product (or a subset written from one).
 
     Values come out exactly as the product holds them: elevation in metres,
-    positive up, so the seabed is negative.  For a variable-resolution product
-    this is its low-resolution base layer; finer refinement grids, if the
-    product has them, are not read and are reported as not read.
+    positive up, so the seabed is negative.
+
+    Without ``resolution_m`` this is the product's base grid; for a
+    variable-resolution product that is its low-resolution layer, and its
+    finer grids are not read.
+
+    With ``resolution_m`` the finer grids of a variable-resolution survey file
+    (BAG) are read onto a regular grid of that cell size by GDAL's resampled
+    mode: each cell holds the mean elevation of the finer-grid nodes that fall
+    inside it and the *largest* of their uncertainties, and a cell with no node
+    stays empty.  Nothing is interpolated.  Any other kind of file is refused.
+    (GDAL's behaviour was checked against the nodes; see
+    :func:`verify_resampled`.)
     """
 
     rasterio = _rasterio()
     import re  # noqa: PLC0415
 
-    with rasterio.open(path) as src:
+    options: dict[str, Any] = {}
+    if resolution_m is not None:
+        if not (math.isfinite(resolution_m) and resolution_m > 0):
+            raise SurveyReadError("resolution_m must be a positive number")
+        with rasterio.open(path) as probe:
+            if probe.driver != "BAG":
+                raise SurveyReadError(
+                    "only a variable-resolution bathymetric survey file (BAG) has "
+                    "finer grids to read at another resolution"
+                )
+        options = {
+            "MODE": "RESAMPLED_GRID",
+            "RESX": float(resolution_m),
+            "RESY": float(resolution_m),
+            "VALUE_POPULATION": RESAMPLE_POPULATION,
+        }
+    with rasterio.open(path, **options) as src:
         elevation, uncertainty, crs, cell = _two_bands(src)
         tags = src.tags()
         metadata = (
@@ -844,7 +873,368 @@ def read_depth_grid(path: str | Path) -> DepthGrid:
                 else None
             ),
         }
+        if resolution_m is not None:
+            facts["grid_read"] = "finer grids, resampled"
+            facts["resampled_cell_m"] = float(resolution_m)
+            facts["value_population"] = RESAMPLE_POPULATION
+            facts["population_meaning"] = (
+                "each cell holds the mean elevation of the finer-grid nodes inside "
+                "it and the largest of their uncertainties; a cell with no node is "
+                "empty; nothing is interpolated"
+            )
     return DepthGrid(window, uncertainty, facts)
+
+
+# -- the finer grids of a variable-resolution survey file -----------------
+
+
+def _supergrids(path: str | Path) -> list[str]:
+    rasterio = _rasterio()
+    with rasterio.open(path, MODE="LIST_SUPERGRIDS") as src:
+        return sorted(src.subdatasets)
+
+
+def finer_grid_spacing(path: str | Path) -> RasterWindow:
+    """Node spacing of the finer grid under each base cell, as a base-aligned grid.
+
+    A variable-resolution survey file holds, for each covered cell of its base
+    grid, one finer grid with its own node spacing.  This returns a grid of
+    the base grid's shape whose value is that spacing in metres, and NaN where
+    the base cell has no finer grid.
+    """
+
+    rasterio = _rasterio()
+    with rasterio.open(path) as base:
+        if base.driver != "BAG":
+            raise SurveyReadError("only a BAG file has finer grids")
+        crs = horizontal_crs(base.crs)
+        west, north = float(base.transform.c), float(base.transform.f)
+        cell = float(base.transform.a)
+        shape = (base.height, base.width)
+        nodata = base.nodatavals[0]
+    spacing = np.full(shape, np.nan)
+    for name in _supergrids(path):
+        with rasterio.open(name) as sub:
+            t = sub.transform
+            cx = t.c + sub.width * t.a / 2.0
+            cy = t.f + sub.height * t.e / 2.0
+            row = int((north - cy) // cell)
+            col = int((cx - west) // cell)
+            if not (0 <= row < shape[0] and 0 <= col < shape[1]):
+                raise SurveyReadError(
+                    f"a finer grid lies outside the base grid: {name}"
+                )
+            if np.isfinite(spacing[row, col]):
+                raise SurveyReadError("two finer grids claim one base cell")
+            spacing[row, col] = float(t.a)
+    return RasterWindow(
+        values=spacing,
+        crs=crs,
+        origin=(west, north),
+        cell_size=(cell, cell),
+        row_off=0,
+        col_off=0,
+        source_shape=shape,
+        source_nodata=nodata,
+    )
+
+
+def verify_resampled(path: str | Path, grid: DepthGrid) -> dict[str, Any]:
+    """Recompute every cell of a resampled grid from the finer-grid nodes.
+
+    Every node of every finer grid is put in the cell its position falls in
+    (a finer grid may reach past its own base cell, so a cell can receive
+    nodes from two of them).  Each cell's mean elevation and largest
+    uncertainty are recomputed and compared with the grid GDAL produced; a
+    cell that receives no node must be empty there, and the reverse.
+
+    A node lying exactly on a cell edge may be put on either side by the two
+    computations; such cells are counted separately rather than hidden.
+    """
+
+    rasterio = _rasterio()
+    window = grid.window
+    fine = window.cell_size[0]
+    west, north = window.origin
+    rows_n, cols_n = window.shape
+    z_sum = np.zeros(window.shape)
+    u_max = np.full(window.shape, -np.inf)
+    count = np.zeros(window.shape, dtype=np.int64)
+    on_edge = np.zeros(window.shape, dtype=bool)
+    nodes = outside = 0
+    for name in _supergrids(path):
+        with rasterio.open(name) as sub:
+            t = sub.transform
+            nd = sub.nodatavals[0]
+            elevation = sub.read(1).astype(np.float64)
+            uncertainty = sub.read(2).astype(np.float64)
+        rr, cc = np.nonzero((elevation != nd) & np.isfinite(elevation))
+        if not rr.size:
+            continue
+        x = t.c + (cc + 0.5) * t.a
+        y = t.f + (rr + 0.5) * t.e
+        fr = (north - y) / fine
+        fc = (x - west) / fine
+        r = np.floor(fr).astype(np.int64)
+        c = np.floor(fc).astype(np.int64)
+        inside = (r >= 0) & (r < rows_n) & (c >= 0) & (c < cols_n)
+        outside += int((~inside).sum())
+        r, c = r[inside], c[inside]
+        z = elevation[rr[inside], cc[inside]]
+        u = uncertainty[rr[inside], cc[inside]]
+        edge = (np.abs(fr[inside] - np.round(fr[inside])) < 1e-6) | (
+            np.abs(fc[inside] - np.round(fc[inside])) < 1e-6
+        )
+        np.add.at(z_sum, (r, c), z)
+        np.maximum.at(u_max, (r, c), u)
+        np.add.at(count, (r, c), 1)
+        on_edge[r[edge], c[edge]] = True
+        nodes += int(inside.sum())
+    mine = count > 0
+    theirs = np.isfinite(window.values)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        mean = np.where(mine, z_sum / np.maximum(count, 1), np.nan)
+    both = mine & theirs
+    differs = both & (
+        (np.abs(window.values - mean) > 1e-3)
+        | (np.abs(grid.uncertainty - np.where(mine, u_max, np.nan)) > 1e-3)
+    )
+    presence = mine != theirs
+    unexplained = (differs | presence) & ~on_edge
+    near_edge = (differs | presence) & on_edge
+    return {
+        "nodes_placed": nodes,
+        "nodes_outside_grid": outside,
+        "cells_with_nodes": int(mine.sum()),
+        "cells_with_values_in_resampled_grid": int(theirs.sum()),
+        "cells_holding_several_nodes": int((count > 1).sum()),
+        "cells_agreeing": int((both & ~differs).sum()),
+        "cells_disagreeing_with_a_node_on_a_cell_edge": int(near_edge.sum()),
+        "cells_disagreeing_otherwise": int(unexplained.sum()),
+        "all_agree_except_edge_nodes": int(unexplained.sum()) == 0 and nodes > 0,
+        "method": (
+            "every node of every finer grid is put in the cell its position falls "
+            "in; each cell's mean elevation and largest uncertainty are recomputed "
+            "and must match the resampled grid to 1 mm, and a cell with no node "
+            "must be empty there; a node exactly on a cell edge may fall on either "
+            "side, and such cells are counted apart"
+        ),
+    }
+
+
+def _base_cells(
+    window: RasterWindow, spacing: RasterWindow, rows: slice, cols: slice
+) -> tuple[slice, slice]:
+    ratio = spacing.cell_size[0] / window.cell_size[0]
+    return (
+        slice(int(rows.start // ratio), int((rows.stop - 1) // ratio) + 1),
+        slice(int(cols.start // ratio), int((cols.stop - 1) // ratio) + 1),
+    )
+
+
+def check_alignment(window: RasterWindow, spacing: RasterWindow) -> None:
+    ratio = spacing.cell_size[0] / window.cell_size[0]
+    if (
+        window.origin != spacing.origin
+        or abs(ratio - round(ratio)) > 1e-9
+        or window.shape[0] != spacing.shape[0] * round(ratio)
+        or window.shape[1] != spacing.shape[1] * round(ratio)
+    ):
+        raise SurveyReadError(
+            "the resampled grid does not nest exactly inside the base grid"
+        )
+
+
+def empty_within_covered(window: RasterWindow, spacing: RasterWindow) -> dict[str, Any]:
+    """How many resampled cells inside covered base cells received no node.
+
+    Such a cell is empty, and an empty cell is an outlet: it can only stop a
+    depression from being closed, never make one.
+    """
+
+    check_alignment(window, spacing)
+    ratio = round(spacing.cell_size[0] / window.cell_size[0])
+    covered = np.kron(np.isfinite(spacing.values), np.ones((ratio, ratio), bool))
+    inside = int(covered.sum())
+    empty = int((covered & ~np.isfinite(window.values)).sum())
+    return {
+        "cells_inside_covered_base_cells": inside,
+        "empty_cells_inside_covered_base_cells": empty,
+        "empty_fraction": round(empty / inside, 4) if inside else None,
+        "meaning": (
+            "an empty cell is an outlet: it can only stop a depression from being "
+            "closed, never make one"
+        ),
+    }
+
+
+def spacing_summary(spacing: RasterWindow) -> dict[str, Any]:
+    values = spacing.values[np.isfinite(spacing.values)]
+    bins = [0.0, 4.0, 8.0, 16.0, 32.0, math.inf]
+    labels = ["under 4 m", "4 to 8 m", "8 to 16 m", "16 to 32 m", "32 m or more"]
+    counts, _ = np.histogram(values, bins=bins)
+    return {
+        "finer_grids": int(values.size),
+        "node_spacing_m": _summary(values),
+        "finer_grids_by_node_spacing": dict(zip(labels, (int(c) for c in counts))),
+    }
+
+
+def finer_grid_context(
+    rows: list[dict[str, Any]],
+    window: RasterWindow,
+    spacing: RasterWindow,
+) -> list[dict[str, Any]]:
+    """For each detection, the finer grids it was read from.
+
+    A depression smaller than one base cell that sits on a single finer grid,
+    or on the boundary between two finer grids of different node spacing, is
+    where a gridding seam would show.  It is flagged as a possible artefact.
+    The flag is informational and lowers no tier.
+
+    Node spacing differs between almost every pair of finer grids, so in
+    practice every depression smaller than one base cell is flagged.  The
+    region it is read from is its bounding box.
+    """
+
+    check_alignment(window, spacing)
+    west, north = window.origin
+    fine = window.cell_size[0]
+    base_area = spacing.cell_size[0] * spacing.cell_size[1]
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        bw, bs, be, bn = row["bbox_xy"]
+        r0 = int(round((north - bn) / fine))
+        r1 = int(round((north - bs) / fine))
+        c0 = int(round((bw - west) / fine))
+        c1 = int(round((be - west) / fine))
+        rs, cs = _base_cells(window, spacing, slice(r0, r1), slice(c0, c1))
+        under = spacing.values[rs, cs]
+        found = sorted({round(float(v), 2) for v in under[np.isfinite(under)]})
+        spanned = int(np.isfinite(under).sum())
+        change = len(found) > 1
+        small = row["area_m2"] < base_area
+        out.append(
+            {
+                "finer_grid_node_spacing_m": (
+                    {"min": found[0], "max": found[-1]} if found else None
+                ),
+                "distinct_node_spacings": len(found),
+                "base_cells_spanned": spanned,
+                "spans_node_spacing_change": change,
+                "smaller_than_one_base_cell": small,
+                "possible_refinement_artefact": bool(
+                    small and (spanned <= 1 or change)
+                ),
+            }
+        )
+    return out
+
+
+def persistence(
+    earlier: list[dict[str, Any]],
+    later: list[dict[str, Any]],
+    *,
+    distance_m: float,
+) -> dict[str, Any]:
+    """Does each earlier depression appear again on a finer reading?
+
+    The rule, fixed before the finer reading was run:
+
+    * SPLIT: two or more later outer depressions have their deepest point
+      inside the earlier one's bounding box;
+    * PERSISTED: otherwise, a later depression's deepest point lies within
+      ``distance_m`` of the earlier one's and their depths agree within the
+      combined depth uncertainty;
+    * SAME_PLACE_DEPTH_DIFFERS: a later deepest point lies that close, but
+      the depths do not agree;
+    * NOT_FOUND: no later deepest point lies that close.
+
+    Both readings come from the same soundings, so this is a consistency
+    check, not replication.
+    """
+
+    def distance(a: list[float], b: list[float]) -> float:
+        return math.hypot(a[0] - b[0], a[1] - b[1])
+
+    matched_later: set[str] = set()
+    rows = []
+    for old in earlier:
+        bw, bs, be, bn = old["bbox_xy"]
+        inside = [
+            new
+            for new in later
+            if new.get("hierarchy_level", 0) == 0
+            and bw <= new["deepest_xy"][0] <= be
+            and bs <= new["deepest_xy"][1] <= bn
+        ]
+        near = [
+            new
+            for new in later
+            if distance(old["deepest_xy"], new["deepest_xy"]) <= distance_m
+        ]
+        agreeing = []
+        for new in near:
+            u_old = old.get("depth_uncertainty_m")
+            u_new = new.get("depth_uncertainty_m")
+            if u_old is None or u_new is None:
+                continue
+            if abs(new["max_depth_m"] - old["max_depth_m"]) <= math.hypot(u_old, u_new):
+                agreeing.append(new)
+        if len(inside) >= 2:
+            status = "SPLIT"
+            linked = inside
+        elif agreeing:
+            status = "PERSISTED"
+            linked = agreeing
+        elif near:
+            status = "SAME_PLACE_DEPTH_DIFFERS"
+            linked = near
+        else:
+            status = "NOT_FOUND"
+            linked = []
+        matched_later.update(new["native_record_id"] for new in linked)
+        rows.append(
+            {
+                "earlier": old["native_record_id"],
+                "earlier_max_depth_m": old["max_depth_m"],
+                "status": status,
+                "later": [
+                    {
+                        "native_record_id": new["native_record_id"],
+                        "max_depth_m": new["max_depth_m"],
+                        "distance_between_deepest_points_m": round(
+                            distance(old["deepest_xy"], new["deepest_xy"]), 1
+                        ),
+                    }
+                    for new in sorted(linked, key=lambda n: -n["max_depth_m"])
+                ],
+            }
+        )
+    statuses: dict[str, int] = {}
+    for row in rows:
+        statuses[row["status"]] = statuses.get(row["status"], 0) + 1
+    new_rows = [new for new in later if new["native_record_id"] not in matched_later]
+    return {
+        "rule": (
+            "SPLIT if two or more later outer depressions have their deepest point "
+            "inside the earlier bounding box; else PERSISTED if a later deepest "
+            f"point lies within {distance_m:g} m and the depths agree within the "
+            "combined depth uncertainty; else SAME_PLACE_DEPTH_DIFFERS if one lies "
+            "that close; else NOT_FOUND"
+        ),
+        "distance_m": distance_m,
+        "by_status": dict(sorted(statuses.items())),
+        "earlier": rows,
+        "later_not_linked_to_any_earlier": len(new_rows),
+        "later_not_linked_deepest_m": (
+            round(max(n["max_depth_m"] for n in new_rows), 3) if new_rows else None
+        ),
+        "limit": (
+            "both readings come from the same soundings: a consistency check, "
+            "not replication"
+        ),
+    }
 
 
 def write_depth_subset(grid: DepthGrid, path: str | Path) -> str:

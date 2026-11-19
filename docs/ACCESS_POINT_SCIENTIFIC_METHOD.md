@@ -92,6 +92,19 @@ minimum depth could not be reported. It also delineates the same surface with
 the uncertainty ignored and lists what the rule withheld — a check on the
 detector, not evidence.
 
+**A variable-resolution survey file can be read at a finer resolution**
+(`survey.read_depth_grid(path, resolution_m)`). Its finer grids are resampled
+to the stated cell size: mean elevation of the nodes in each cell, largest of
+their uncertainties, empty where no node falls. Nothing is interpolated. The
+extract step recomputes every cell from the nodes and stops if any disagrees
+(`survey.verify_resampled`). Empty cells are outlets, so a coarse finer grid can
+hide a depression but not create one; the report counts them. A depression
+smaller than one base cell is flagged as a possible refinement artefact
+(informational; no tier is lowered). A reading at another resolution of the
+same file is compared with the earlier one by a rule fixed in advance
+(`survey.persistence`), and that comparison is a consistency check, never
+replication.
+
 Measured for each basin: area, maximum and mean depth, volume, spill and floor
 elevation, centroid and deepest point, equivalent diameter, depth-to-diameter
 ratio, circularity, elongation, solidity, rectangularity, mean wall slope,
@@ -407,12 +420,13 @@ Stated so that nobody assumes it exists: point-cloud reading (LAS, LAZ, COPC),
 ground classification, bare-earth extraction, contour extraction and contour
 trees, flow routing, local relief models beyond a windowed range, interpretation
 of side-scan, backscatter or sub-bottom data, multibeam artefact filtering
-beyond grid-aligned seams, reading of the finer refinement grids inside a
-variable-resolution bathymetric survey file (only its base grid is read), a
-second seabed survey or epoch to replicate the first, a certified transform
+beyond grid-aligned seams, a test that tells a seam between the finer grids of
+a variable-resolution file from a real narrow feature (a small depression on
+them is only flagged), a second seabed survey or epoch to replicate the first, a certified transform
 between a tidal datum and an orthometric one, reprojection of geographic grids
 inside this package, per-cell uncertainty for elevation tiles, a rule that separates a single pit from the
 broad bowl it sits in and is shown to help, and any field-visited truth set. A projected GeoTIFF
 elevation tile can be read (`survey.py`); one has been. The base grid of a
-gridded bathymetric survey file (BAG) can be read, with its uncertainty band;
-one has been.
+gridded bathymetric survey file (BAG) can be read, with its uncertainty band,
+and so can its finer grids at a stated resolution; one file has been read both
+ways.

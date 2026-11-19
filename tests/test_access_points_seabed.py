@@ -618,3 +618,432 @@ def test_the_committed_seabed_run_changed_no_record(committed):
         assert seeding._point_of(registry, feature_id) is None
     # The inland pointer and report are untouched by the off-shore run.
     assert build.survey["registry"] == "access_point.inland"
+
+
+# ── Reading the finer grids (V10) ────────────────────────────────────────────
+
+FINE = 8.0
+RATIO = int(CELL / FINE)
+
+
+def test_only_a_variable_resolution_file_can_be_read_at_another_resolution(tmp_path):
+    path = tmp_path / "base.tif"
+    survey.write_depth_subset(depth_grid(*seabed()), path)
+    assert survey.read_depth_grid(path).facts["driver"] == "GTiff"
+    with pytest.raises(survey.SurveyReadError, match="variable-resolution"):
+        survey.read_depth_grid(path, 8.0)
+    for bad in (0.0, -8.0, float("nan")):
+        with pytest.raises(survey.SurveyReadError, match="positive"):
+            survey.read_depth_grid(path, bad)
+
+
+def a_row(rid, deepest, depth, unc, *, bbox=None, level=0, area=20000.0):
+    x, y = deepest
+    return {
+        "native_record_id": rid,
+        "deepest_xy": [x, y],
+        "bbox_xy": bbox or [x - 100, y - 100, x + 100, y + 100],
+        "max_depth_m": depth,
+        "depth_uncertainty_m": unc,
+        "hierarchy_level": level,
+        "area_m2": area,
+    }
+
+
+def test_persistence_is_judged_by_a_rule_fixed_in_advance():
+    earlier = [
+        a_row("same", (1000, 1000), 5.0, 1.0),
+        a_row("deeper", (3000, 1000), 3.0, 0.2),
+        a_row("gone", (5000, 1000), 4.0, 1.0),
+        a_row("split", (7000, 1000), 4.0, 1.0, bbox=[6800, 900, 7200, 1100]),
+    ]
+    later = [
+        a_row("same'", (1030, 1020), 5.8, 1.0),  # 36 m away, depths agree
+        a_row("deeper'", (3010, 1000), 6.0, 0.2),  # close, depths disagree
+        a_row("far", (5200, 1000), 4.0, 1.0),  # more than one base cell away
+        a_row("split-a", (6850, 1000), 3.0, 1.0),
+        a_row("split-b", (7150, 1000), 3.5, 1.0),
+        a_row("nested", (6990, 1000), 2.5, 1.0, level=1),  # not counted for a split
+        a_row("new", (9000, 1000), 2.5, 1.0),
+    ]
+    result = survey.persistence(earlier, later, distance_m=CELL)
+    status = {row["earlier"]: row["status"] for row in result["earlier"]}
+    assert status == {
+        "same": "PERSISTED",
+        "deeper": "SAME_PLACE_DEPTH_DIFFERS",
+        "gone": "NOT_FOUND",
+        "split": "SPLIT",
+    }
+    assert result["by_status"] == {
+        "NOT_FOUND": 1,
+        "PERSISTED": 1,
+        "SAME_PLACE_DEPTH_DIFFERS": 1,
+        "SPLIT": 1,
+    }
+    split = next(row for row in result["earlier"] if row["earlier"] == "split")
+    assert [n["native_record_id"] for n in split["later"]] == ["split-b", "split-a"]
+    # "far", "nested" and "new" belong to no earlier depression.
+    assert result["later_not_linked_to_any_earlier"] == 3
+    assert "not replication" in result["limit"]
+
+
+def fine_seabed():
+    """The synthetic seabed at 8 m, with a base-aligned spacing grid at 64 m."""
+
+    values, uncertainty = seabed()
+    fine_values = np.kron(values, np.ones((RATIO, RATIO)))
+    fine_unc = np.kron(uncertainty, np.ones((RATIO, RATIO)))
+    window = survey.RasterWindow(
+        fine_values,
+        "EPSG:26920",
+        (WEST, NORTH),
+        (FINE, FINE),
+        0,
+        0,
+        fine_values.shape,
+        None,
+    )
+    spacing_values = np.where(np.isfinite(values), 4.0, np.nan)
+    spacing_values[:, 45:] = 6.0  # a change of node spacing half way across
+    spacing_values[np.isnan(values)] = np.nan
+    spacing = survey.RasterWindow(
+        spacing_values,
+        "EPSG:26920",
+        (WEST, NORTH),
+        (CELL, CELL),
+        0,
+        0,
+        values.shape,
+        None,
+    )
+    return survey.DepthGrid(window, fine_unc, {}), spacing
+
+
+def test_empty_cells_are_counted_and_can_only_remove_a_depression():
+    grid, spacing = fine_seabed()
+    full, _ = processed(grid)
+    assert full.report["detection_count"] >= 1
+    deepest = max(full.report["detections"], key=lambda r: r["max_depth_m"])
+    empty = survey.empty_within_covered(grid.window, spacing)
+    assert empty["empty_cells_inside_covered_base_cells"] == 0
+
+    # A one-cell-wide gap cut from the deepest point out through the rim is
+    # an outlet: that depression can no longer be closed.
+    holed = grid.window.values.copy()
+    west, north = grid.window.origin
+    r = int((north - deepest["deepest_xy"][1]) // FINE)
+    c = int((deepest["deepest_xy"][0] - west) // FINE)
+    holed[r, c:] = np.nan
+    holed_grid = survey.DepthGrid(
+        survey.RasterWindow(
+            holed,
+            grid.window.crs,
+            grid.window.origin,
+            grid.window.cell_size,
+            0,
+            0,
+            holed.shape,
+            None,
+        ),
+        np.where(np.isfinite(holed), grid.uncertainty, np.nan),
+        {},
+    )
+    cut, _ = processed(holed_grid)
+    assert deepest["deepest_xy"] not in [
+        d["deepest_xy"] for d in cut.report["detections"]
+    ]
+    assert cut.report["detection_count"] < full.report["detection_count"] + 1
+    counted = survey.empty_within_covered(holed_grid.window, spacing)
+    assert counted["empty_cells_inside_covered_base_cells"] == int(
+        np.isnan(holed[r, c:]).sum()
+    )
+    assert "never make one" in counted["meaning"]
+
+    # Holes in flat ground create nothing.
+    plane = controls.tilted_plane(160, 160, base_m=-80.0, slope_x=-0.05, slope_y=-0.02)
+    plane[40:42, :] = np.nan
+    plane[:, 90:92] = np.nan
+    flat, _ = processed(depth_grid(plane, np.full(plane.shape, 0.3)))
+    assert flat.report["detection_count"] == 0
+
+
+def test_a_small_depression_on_one_finer_grid_is_flagged_and_a_broad_one_is_not():
+    grid, spacing = fine_seabed()
+    west, north = grid.window.origin
+    broad = {
+        "bbox_xy": [west + 64, north - 640, west + 640, north - 64],
+        "area_m2": 200000.0,
+    }
+    # Inside one base cell (row 2, column 2): smaller than a base cell.
+    one_cell = {
+        "bbox_xy": [west + 136, north - 184, west + 176, north - 144],
+        "area_m2": 1600.0,
+    }
+    # Small, across the change of node spacing at base column 45.
+    seam = {
+        "bbox_xy": [
+            west + 44 * CELL + 40,
+            north - 640,
+            west + 45 * CELL + 24,
+            north - 600,
+        ],
+        "area_m2": 1600.0,
+    }
+    flat_area = {
+        "bbox_xy": [west + 64, north - 640, west + 256, north - 576],
+        "area_m2": 12000.0,
+    }
+    rows = survey.finer_grid_context(
+        [broad, one_cell, seam, flat_area], grid.window, spacing
+    )
+    assert [r["possible_refinement_artefact"] for r in rows] == [
+        False,
+        True,
+        True,
+        False,
+    ]
+    assert rows[1]["base_cells_spanned"] == 1
+    assert rows[2]["spans_node_spacing_change"] is True
+    assert rows[2]["finer_grid_node_spacing_m"] == {"min": 4.0, "max": 6.0}
+    assert rows[0]["smaller_than_one_base_cell"] is False
+
+
+def test_a_grid_that_does_not_nest_in_the_base_grid_is_refused():
+    grid, spacing = fine_seabed()
+    shifted = survey.RasterWindow(
+        spacing.values,
+        spacing.crs,
+        (WEST + 4.0, NORTH),
+        spacing.cell_size,
+        0,
+        0,
+        spacing.shape,
+        None,
+    )
+    with pytest.raises(survey.SurveyReadError, match="nest exactly"):
+        survey.empty_within_covered(grid.window, shifted)
+    with pytest.raises(survey.SurveyReadError, match="nest exactly"):
+        survey.finer_grid_context([], grid.window, shifted)
+    summary = survey.spacing_summary(spacing)
+    assert summary["finer_grids"] == int(np.isfinite(spacing.values).sum())
+    assert summary["finer_grids_by_node_spacing"]["4 to 8 m"] == summary["finer_grids"]
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda r: r.update(resolution_m=0), "resolution_m must be a positive"),
+        (lambda r: r.update(resolution_m="8"), "resolution_m must be a positive"),
+        (lambda r: r.update(compare_with=r["run_id"]), "compared with itself"),
+        (lambda r: r.update(evidence_run="../elsewhere"), "must name a declared run"),
+        (
+            lambda r: r.update(resolution_m=8),
+            "prior receipt describes the base grid",
+        ),
+    ],
+)
+def test_a_run_at_another_resolution_is_declared_properly(tmp_path, mutate, message):
+    with pytest.raises(bath.SeabedRunError, match=message):
+        bath.load_run(_config(tmp_path, mutate), RUN_ID)
+
+
+FINE_ID = "synthetic-seabed-8m"
+SMALL_ID = "synthetic-seabed-8m-small"
+
+
+def resampled_runs(tmp_path):
+    """The synthetic base run, reported, plus two resampled runs written by hand.
+
+    CI holds no BAG file, so the resampled subset is written from a synthetic
+    grid through the same function extract uses.
+    """
+
+    root, held, base = synthetic_run(tmp_path)
+    bath.extract(base, repo_root=root, product_dir=held)
+    bath.write_report(bath.build_report(base, repo_root=root), repo_root=root)
+    data = yaml.safe_load((root / RUNS_PATH).read_text())
+    product = dict(data[bath.RUNS_KEY][0]["product"])
+    common = {
+        "registry": "access_point.offshore",
+        "search_area": "guayama_punta_tuna_discovery_v0_1",
+        "resolution_m": FINE,
+        "evidence_run": SYNTH_ID,
+        "compare_with": SYNTH_ID,
+        "product": product,
+    }
+    data[bath.RUNS_KEY] += [
+        {
+            "run_id": FINE_ID,
+            **common,
+            "parameters": {
+                "min_depth_m": 2.0,
+                "min_area_m2": 4 * CELL * CELL,
+                "nested": True,
+            },
+        },
+        {
+            "run_id": SMALL_ID,
+            **common,
+            "subset_run": FINE_ID,
+            "parameters": {"min_depth_m": 2.0, "min_area_m2": 1024.0, "nested": True},
+        },
+    ]
+    (root / RUNS_PATH).write_text(yaml.safe_dump(data))
+    fine = bath.load_run(root / RUNS_PATH, FINE_ID)
+    small = bath.load_run(root / RUNS_PATH, SMALL_ID)
+    grid, spacing = fine_seabed()
+    run_dir = root / SURVEY_DIR / FINE_ID
+    check = {"all_agree_except_edge_nodes": True, "cells_disagreeing_otherwise": 0}
+    bath.write_extracted(
+        fine,
+        run_dir=run_dir,
+        parent_sha256=product["sha256"],
+        grid=grid,
+        extra={
+            "resolution_m": FINE,
+            "resampling_check": check,
+            "spacing_file": bath.SPACING_NAME,
+            "spacing_sha256": survey.write_subset(spacing, run_dir / bath.SPACING_NAME),
+        },
+    )
+    return root, held, base, fine, small
+
+
+def test_a_resampled_run_reports_from_committed_evidence_and_compares(tmp_path):
+    root, held, base, fine, small = resampled_runs(tmp_path)
+    pointer = (root / SURVEY_DIR / bath.POINTER_NAME).read_bytes()
+    for run in (fine, small):
+        report = bath.build_report(run, repo_root=root)
+        bath.write_report(report, repo_root=root, set_current=False)
+        assert bath.check_report(run, repo_root=root) == []
+        product = report["products"][0]
+        finer = product["finer_grids"]
+        assert finer["resampling"]["cell_m"] == FINE
+        assert finer["empty_cells"]["empty_cells_inside_covered_base_cells"] == 0
+        assert all("finer_grid" in row for row in product["result"]["detections"])
+        assert product["prior_receipt"] is None
+        assert product["layers_read"].startswith("the finer grids, resampled to 8 m")
+        assert any("not replication" in limit for limit in report["limits"])
+        assert not any(
+            "only the product's base grid" in limit for limit in report["limits"]
+        )
+        comparison = report["comparison_with_earlier_run"]
+        assert comparison["earlier_run"] == SYNTH_ID
+        # The same synthetic seabed read finer: both depressions persist.
+        assert comparison["by_status"] == {"PERSISTED": 2}
+    small_report = bath.build_report(small, repo_root=root)
+    assert small_report["products"][0]["subset"]["file"] == (
+        f"../{FINE_ID}/{bath._subset_name(fine)}"
+    )
+    # The registry pointer still names the base run.
+    assert (root / SURVEY_DIR / bath.POINTER_NAME).read_bytes() == pointer
+
+    # Extract is refused for a run that reads another run's subset, and for a
+    # resolution on a file that has no finer grids.
+    with pytest.raises(bath.SeabedRunError, match="extract that run instead"):
+        bath.extract(small, repo_root=root, product_dir=held)
+    with pytest.raises(survey.SurveyReadError, match="variable-resolution"):
+        bath.extract(fine, repo_root=root, product_dir=held)
+
+
+def test_a_resampled_run_detects_changed_evidence(tmp_path):
+    root, _, _, fine, small = resampled_runs(tmp_path)
+    for run in (fine, small):
+        bath.write_report(
+            bath.build_report(run, repo_root=root), repo_root=root, set_current=False
+        )
+
+    def problems(run):
+        return " ".join(bath.check_report(run, repo_root=root))
+
+    run_dir = root / SURVEY_DIR / FINE_ID
+    spacing_path = run_dir / bath.SPACING_NAME
+    kept = spacing_path.read_bytes()
+    spacing = survey.read_raster(spacing_path)
+    changed = spacing.values.copy()
+    changed[0, 0] = 32.0
+    survey.write_subset(
+        survey.RasterWindow(
+            changed,
+            spacing.crs,
+            spacing.origin,
+            spacing.cell_size,
+            0,
+            0,
+            spacing.shape,
+            None,
+        ),
+        spacing_path,
+    )
+    assert "spacing grid is missing or does not match" in problems(fine)
+    assert "spacing grid is missing or does not match" in problems(small)
+    spacing_path.write_bytes(kept)
+    assert problems(fine) == "" and problems(small) == ""
+
+    # Facts read at another resolution are refused.
+    facts_path = run_dir / bath.FACTS_NAME
+    kept_facts = facts_path.read_text()
+    facts = json.loads(kept_facts)
+    facts["resolution_m"] = 16.0
+    del facts["content_sha256"]
+    from federation.spatial_core import canonical_json_sha256
+
+    facts["content_sha256"] = canonical_json_sha256(facts)
+    facts_path.write_text(json.dumps(facts))
+    assert "different resolution" in problems(fine)
+    facts_path.write_text(kept_facts)
+    assert problems(fine) == "" and problems(small) == ""
+
+    # An earlier report that no longer matches its seal stops the comparison.
+    earlier = root / SURVEY_DIR / SYNTH_ID / bath.REPORT_NAME
+    report = json.loads(earlier.read_text())
+    report["products"][0]["result"]["detection_count"] = 99
+    earlier.write_text(json.dumps(report))
+    assert "does not match its content hash" in problems(small)
+
+
+# ── The committed 8 m runs of 2026-11-19 ─────────────────────────────────────
+
+FINE_RUNS = ("2026-11-19-offshore-8m", "2026-11-19-offshore-8m-small")
+
+
+@pytest.mark.parametrize("run_id", FINE_RUNS)
+def test_the_committed_8m_reports_are_reproduced(run_id):
+    if not (REPO / SURVEY_DIR / run_id / bath.REPORT_NAME).is_file():
+        pytest.skip("no 8 m run is committed")
+    run = bath.load_run(REPO / RUNS_PATH, run_id)
+    assert bath.check_report(run, repo_root=REPO) == []
+
+
+@pytest.mark.parametrize("run_id", FINE_RUNS)
+def test_the_committed_8m_runs_overstate_nothing(run_id):
+    path = REPO / SURVEY_DIR / run_id / bath.REPORT_NAME
+    if not path.is_file():
+        pytest.skip("no 8 m run is committed")
+    report = json.loads(path.read_text())
+    product = report["products"][0]
+    result = product["result"]
+    finer = product["finer_grids"]
+    assert report["registry_changes"] == 0 and report["target_feature"] is None
+    assert report["evaluation_state"] == "EXPLORATORY"
+    assert (
+        product["download"]["sha256"]
+        == bath.load_run(REPO / RUNS_PATH, run_id)["product"]["sha256"]
+    )
+    check = finer["resampling"]["check_against_nodes"]
+    assert check["all_agree_except_edge_nodes"] is True
+    assert check["cells_disagreeing_otherwise"] == 0
+    assert check["cells_with_nodes"] == result["surface"]["valid_cells"]
+    assert set(result["assertions_by_tier"]) <= {"CANDIDATE", "SUPPORTING"}
+    for row in result["detections"]:
+        if "BELOW_UNCERTAINTY" in row["flags"]:
+            assert {a["tier"] for a in row["assertions"]} == {"CANDIDATE"}
+        if row["finer_grid"]["smaller_than_one_base_cell"]:
+            assert row["finer_grid"]["possible_refinement_artefact"] is True
+    comparison = report["comparison_with_earlier_run"]
+    assert comparison["earlier_run"] == RUN_ID
+    assert sum(comparison["by_status"].values()) == 3
+    assert "not replication" in comparison["limit"]
+    # The registry still points at the base-grid run.
+    pointer = json.loads((REPO / SURVEY_DIR / bath.POINTER_NAME).read_text())
+    assert pointer["run_id"] == RUN_ID

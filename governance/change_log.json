@@ -142,6 +142,20 @@
         "tests/test_access_points_seabed.py",
         "docs/ACCESS_POINT_REGISTRIES.md"
       ]
+    },
+    {
+      "date": "2026-11-19",
+      "summary": "Read the finer grids of the held seabed survey file (NOS W00247, file 3 of 4) at 8 m cells, with no download and no network request (spiderweb/access_points/survey.py, bathymetry_run.py; two runs under seabed_runs in configs/access_point_survey_runs.yaml). GDAL's resampled mode fills each cell with the mean elevation and the largest uncertainty of the finer-grid nodes in it; every one of 319,157 cells was recomputed from all 809,925 nodes and agrees. The three depressions of the base-grid run persist by a rule fixed in advance; the comparison is labelled a consistency check on the same soundings, not replication. One small steep object found with the smaller declared area floor is flagged as a possible refinement artefact; node-level examination points to a seam between finer grids. The seabed pointer, the base-grid report and the registries are unchanged; no feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v8.json.",
+      "files": [
+        "spiderweb/access_points/survey.py",
+        "spiderweb/access_points/bathymetry_run.py",
+        "scripts/process_access_point_seabed.py",
+        "configs/access_point_survey_runs.yaml",
+        "evidence/access_points/real_survey/2026-11-19-offshore-8m/",
+        "evidence/access_points/real_survey/2026-11-19-offshore-8m-small/",
+        "tests/test_access_points_seabed.py",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
     }
   ]
 }

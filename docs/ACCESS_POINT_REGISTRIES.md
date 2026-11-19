@@ -517,6 +517,92 @@ No feature, observation or status changed. The off-shore run has its own
 pointer (`CURRENT_SEABED.json`), so the inland pointer and report are
 byte-identical to before.
 
+### The same file read from its finer grids (2026-11-19)
+
+The survey file carries, under each of its 7,910 covered base cells, one finer
+grid with its own node spacing: 2.4 to 32 m, median 8.7 m. Two further runs read
+those grids from the file already held — **no download, no network request** —
+resampled to 8 m cells (`resolution_m: 8`):
+
+- `2026-11-19-offshore-8m` keeps the base-grid run's thresholds (2 m, 16,384 m²),
+  so only the resolution changes.
+- `2026-11-19-offshore-8m-small` lowers the area floor to 1,024 m² (16 cells of
+  8 m). The floor was declared before the run and not tuned afterwards.
+
+Both runs share one committed 8 m subset (2.4 MB) and a 10 KB grid of the
+finer-grid node spacing. They reuse the base-grid run's frozen landing page and
+download manifest. The seabed pointer still names the base-grid run, and the
+registry is unchanged.
+
+**How a cell is filled** [FACT, checked]. GDAL's resampled mode puts in each
+8 m cell the **mean elevation** of the finer-grid nodes inside it and the
+**largest** of their uncertainties. A cell with no node stays empty. Nothing is
+interpolated. The plan expected the mean for both bands; the check below showed
+otherwise, and the largest is the cautious choice. At extract time, every cell
+was recomputed from all 809,925 nodes: all 319,157 cells agree to 1 mm, and
+cells with no node are empty in both.
+
+| | Base grid (V9) | Finer grids at 8 m | Class |
+|---|---|---|---|
+| Covered cells | 7,910 of 64 m | 319,157 of 8 m | COMPUTED |
+| Cells with no node, inside covered base cells | — | 187,087 of 506,240 (37%) | COMPUTED |
+| Median cell uncertainty | 2.0 m | 0.48 m | COMPUTED |
+| Covered cells where a 2 m depression cannot be reported | 56% | 32% | COMPUTED |
+| Closed depressions at the V9 thresholds | 3 | 8 (2 nested) | COMPUTED |
+| Of these SUPPORTING | 2 | 2 | COMPUTED |
+
+An empty cell is an outlet, so empty ground can lose depressions but never gain
+one. Where a finer grid's nodes are further apart than 8 m, some cells receive
+no node.
+
+**Do the V9 depressions persist?** The rule was fixed before the runs: SPLIT if
+two or more finer outer depressions have their deepest point inside the earlier
+outline's box; otherwise PERSISTED if a finer deepest point lies within one base
+cell (64 m) and the depths agree within the combined uncertainty. **All three
+persisted** [COMPUTED]:
+
+| V9 (64 m) | At 8 m | Distance between deepest points | Tier at 8 m |
+|---|---|---|---|
+| 6.5 m, CANDIDATE | 7.1 m | 6 m | CANDIDATE |
+| 4.8 m, SUPPORTING | 5.3 m, with a 3.3 m basin nested inside | 17 m | CANDIDATE |
+| 2.8 m, SUPPORTING | 4.0 m | 13 m | SUPPORTING |
+
+The 4.8 m depression falls to CANDIDATE at 8 m: its depth uncertainty is now
+the largest node uncertainty over many more cells, so it no longer clears three
+times its uncertainty. Beside the 2.8 m one, 200 m east and outside its V9
+outline, a second depression 4.6 m deep appears (SUPPORTING). Both readings
+come from the same soundings, so persistence is a consistency check, not
+replication.
+
+**The small-area run** finds two depressions more. One is 3.7 m deep and
+14,600 m² (SUPPORTING). The other is about 15 m deep, about 2,900 m² and has
+13° walls, at the shelf edge (floor −101.5 m). It is smaller than one base cell
+and so carries the possible-artefact flag; under the stated rule every
+depression smaller than one base cell does. Examining the finer-grid nodes
+under it in the held file points to an artefact rather than a pit [COMPUTED
+from the held file; INFERENCE as to cause]:
+
+- it is a line about 160 m long west to east and one or two nodes (4 to 8 m)
+  wide, lying exactly along the grid rows;
+- only 13 nodes lie more than 10 m below its rim;
+- a south-to-north profile across it is smooth on both sides, but the north
+  side sits about 8 m lower than the south side would continue — the signature
+  of two finer grids meeting at different levels.
+
+A narrow natural trough at the foot of a step cannot be excluded from this
+file alone. With the uncertainty ignored, the small-area run sees two further
+closed lows, 8.9 and 6.4 m deep, that the uncertainty rule withheld.
+
+| Statement | Class |
+|---|---|
+| The finer grids were read exactly as the file holds them (every cell recomputed from the nodes) | COMPUTED |
+| The three base-grid depressions are present in the finer grids, in the same places | COMPUTED |
+| Finer reading of the same soundings is not a second survey | FACT about the method |
+| The 15 m linear object is more likely a seam between finer grids than a seabed feature | INFERENCE |
+| Whether any of the depressions is a landform rather than a sediment low or a gridding effect | UNKNOWN |
+
+No feature, observation or status changed, and nothing was registered.
+
 ## Reference maps and the comparison with them
 
 A reference set is somebody else's map. It is declared in
@@ -605,7 +691,7 @@ external service or sibling repository was modified.
 | `discovery.py` | Planned, bounded discovery runs over declared search areas; the sealed source catalogue; offline replay |
 | `products.py` | Fetching a named product inside a byte ceiling; the elevation product catalogue |
 | `survey.py`, `survey_run.py` | Reading a real gridded product, binding its stated datum, detection, two-survey replication; the declared, reproducible run |
-| `bathymetry_run.py` | The declared, reproducible run over one gridded seabed survey: no target record, the product's own per-cell uncertainty, and what the survey cannot show |
+| `bathymetry_run.py` | The declared, reproducible run over one gridded seabed survey: no target record, the product's own per-cell uncertainty, and what the survey cannot show; a run may read the file's finer grids at a stated resolution and is compared with an earlier run |
 | `reference.py`, `validation.py` | Published reference maps held by hash and read with a bound CRS; the comparison of the detector with a published sinkhole map |
 | `federation_context.py` | Read-only context from other producers' packages |
 | `seeding.py`, `service.py` | Deterministic registry build; read-only queries |

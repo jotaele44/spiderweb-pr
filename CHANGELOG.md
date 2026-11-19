@@ -23,6 +23,18 @@ GitHub Release using the matching section below (T6-53).
   as outer ones, so numerical residue on a rim is not counted as water.
 
 ### Added
+- **The seabed survey file read again from its finer grids.** A run may now
+  state `resolution_m`; a variable-resolution survey file is then read from its
+  finer grids resampled to that cell size (mean elevation and largest
+  uncertainty of the nodes in each cell; empty where none; nothing
+  interpolated). Every cell is recomputed from the nodes at extract time, and
+  extract stops on any disagreement. Two runs at 8 m read the file already held
+  (no download): all three base-grid depressions persist by a rule fixed in
+  advance; 8 and 10 depressions are reported at the two declared area floors;
+  one small steep object is flagged as a possible artefact and, examined node by
+  node, looks like a seam between finer grids. Runs can reuse another run's
+  evidence and subset, and are compared with an earlier run; only
+  `--set-current` moves the seabed pointer. No registry change.
 - **First seabed survey through the access-point pipeline.** One gridded
   multibeam survey file (NOS W00247, file 3 of 4; 6.9 MB, fetched under an
   explicit grant of one file and held outside the repository) is read, bound to

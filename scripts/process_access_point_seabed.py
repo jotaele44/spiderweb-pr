@@ -19,6 +19,11 @@ a product is a separate, explicitly granted step
 Runs are declared under ``seabed_runs`` in
 ``configs/access_point_survey_runs.yaml``.  A run changes no registry record
 and gives no record a position.
+
+The seabed pointer (``CURRENT_SEABED.json``), which the registry build reads,
+is moved only with ``--set-current``, or kept in step when it already names
+the run being rebuilt, or written when there is none.  Rebuilding any other
+run leaves it alone.
 """
 
 from __future__ import annotations
@@ -39,8 +44,8 @@ from spiderweb.access_points.survey_run import RUNS_PATH  # noqa: E402
 def _headline(report: dict) -> dict:
     product = report["products"][0]
     result = product["result"]
-    prior = product["prior_receipt"]
-    return {
+    prior = product.get("prior_receipt")
+    out = {
         "run_id": report["run_id"],
         "evaluation_state": report["evaluation_state"],
         "valid_cells": result["surface"]["valid_cells"],
@@ -58,6 +63,16 @@ def _headline(report: dict) -> dict:
         "prior_receipt_agrees": None if prior is None else prior["all_agree"],
         "registry_changes": report["registry_changes"],
     }
+    if "finer_grids" in product:
+        finer = product["finer_grids"]
+        out["resampling_check_all_agree"] = finer["resampling"]["check_against_nodes"][
+            "all_agree_except_edge_nodes"
+        ]
+        out["empty_fraction"] = finer["empty_cells"]["empty_fraction"]
+        out["possible_refinement_artefacts"] = finer["possible_refinement_artefacts"]
+    if "comparison_with_earlier_run" in report:
+        out["comparison"] = report["comparison_with_earlier_run"]["by_status"]
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,6 +87,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--product-dir", help="where the held product is (with --extract)"
+    )
+    parser.add_argument(
+        "--set-current",
+        action="store_true",
+        help="point the registry build at this run's report",
     )
     args = parser.parse_args(argv)
 
@@ -100,7 +120,17 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"subset_sha256": extracted["subset_sha256"]}, indent=2))
 
     report = bathymetry_run.build_report(run, repo_root=REPO_ROOT)
-    bathymetry_run.write_report(report, repo_root=REPO_ROOT)
+    pointer = REPO_ROOT / bathymetry_run.SURVEY_DIR / bathymetry_run.POINTER_NAME
+    named = (
+        json.loads(pointer.read_text(encoding="utf-8")).get("run_id")
+        if pointer.is_file()
+        else None
+    )
+    bathymetry_run.write_report(
+        report,
+        repo_root=REPO_ROOT,
+        set_current=args.set_current or named in (None, args.run_id),
+    )
     print(json.dumps(_headline(report), indent=2, sort_keys=True))
     return 0
 

@@ -7,7 +7,7 @@ NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
 IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
 RECORDS EXPORTED TO THE HUB: NONE
 INDEPENDENT REVIEW: NOT PERFORMED
-MACHINE-READABLE REPORT: evidence/access_points/certification_report_v7.json
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v8.json
 
 PURPOSE
 
@@ -114,12 +114,16 @@ SEABED-SURVEY PROCESSING
 
    Re-check the committed off-shore run offline (needs the 'dem' extra):
    python scripts/process_access_point_seabed.py --run-id 2026-11-18-offshore --check
+   python scripts/process_access_point_seabed.py --run-id 2026-11-19-offshore-8m --check
+   python scripts/process_access_point_seabed.py --run-id 2026-11-19-offshore-8m-small --check
 
    Runs are declared under seabed_runs in configs/access_point_survey_runs.yaml.
    A seabed run names no target record and states no position; it names a search
    area, which is where to look and never where a feature is. The held product
    (6.9 MB) is outside the repository; its hash, its download manifest and a
-   58 KB copy of its base grid are committed.
+   58 KB copy of its base grid are committed, with a 2.4 MB copy of its finer
+   grids resampled to 8 m. Only --set-current moves the seabed pointer the
+   registry build reads; it names the base-grid run.
 
 COMPARISON WITH A PUBLISHED SINKHOLE MAP
 
@@ -141,10 +145,12 @@ OPEN BEFORE ANY RELEASE
      count. A second rule for a single pit under a bowl was measured and did not help.
    - One real survey window has been processed (two elevation tiles, 2026-11-17). It
      shows closed basins, which are shapes; it verifies no record.
-   - One seabed survey has been processed (one multibeam grid file, base grid
-     only, 2026-11-18). It shows three shallow closed depressions, which are
-     shapes; over 56% of its covered cells its own uncertainty is too large to
-     show a 2 m depression at all. It is not replicated and verifies no record.
+   - One seabed survey has been processed (one multibeam grid file, 2026-11-18),
+     from its base grid and again from its finer grids at 8 m (2026-11-19). Its
+     three shallow closed depressions persist at 8 m, which is a consistency
+     check on the same soundings, not replication. Over 32% of its covered cells
+     at 8 m a 2 m depression cannot be shown. One small steep object found at
+     8 m looks like a seam between finer grids. It verifies no record.
    - The five seed screenshots are not registered.
    - Live source discovery ran once (2026-11-16, 180 sources listed). It lists
      surveys; it downloaded none, and no record cites one yet.

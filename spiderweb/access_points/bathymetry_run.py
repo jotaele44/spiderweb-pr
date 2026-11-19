@@ -57,6 +57,8 @@ REPORT_SCHEMA = "access_point_seabed_report/1.0"
 FACTS_NAME = "product_facts.json"
 FACTS_SCHEMA = "access_point_seabed_product_facts/1.0"
 SUBSET_NAME = "subsets/base_grid.tif"
+SPACING_NAME = "subsets/finer_grid_spacing.tif"
+_RUN_ID = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 _HEX = set("0123456789abcdef")
 
 
@@ -134,18 +136,57 @@ def _validated(run: dict[str, Any]) -> dict[str, Any]:
             raise SeabedRunError(f"product: {key} must say where the value was read")
         product[key] = text
     run["product"] = product
+    resolution = run.get("resolution_m")
+    if resolution is not None and (
+        not isinstance(resolution, (int, float)) or not resolution > 0
+    ):
+        raise SeabedRunError("resolution_m must be a positive number")
+    for key in ("evidence_run", "subset_run", "compare_with"):
+        value = run.get(key)
+        if value is None:
+            continue
+        value = str(value)
+        if not value or not set(value) <= _RUN_ID:
+            raise SeabedRunError(f"{key} must name a declared run")
+        run[key] = value
+    if run.get("compare_with") == run["run_id"]:
+        raise SeabedRunError("a run cannot be compared with itself")
+    if resolution is not None and product.get("prior_receipt"):
+        raise SeabedRunError(
+            "the prior receipt describes the base grid; it cannot be checked "
+            "against a reading at another resolution"
+        )
     return run
+
+
+def _subset_name(run: Mapping[str, Any]) -> str:
+    resolution = run.get("resolution_m")
+    if resolution is None:
+        return SUBSET_NAME
+    return f"subsets/grid_{float(resolution):g}m.tif"
 
 
 def _run_dir(repo_root: Path, run: Mapping[str, Any]) -> Path:
     return repo_root / SURVEY_DIR / str(run["run_id"])
 
 
+def _evidence_dir(repo_root: Path, run: Mapping[str, Any]) -> Path:
+    """Where the frozen landing page and the download manifest are kept."""
+
+    return repo_root / SURVEY_DIR / str(run.get("evidence_run") or run["run_id"])
+
+
+def _subset_dir(repo_root: Path, run: Mapping[str, Any]) -> Path:
+    """Where the product facts and the subset are kept."""
+
+    return repo_root / SURVEY_DIR / str(run.get("subset_run") or run["run_id"])
+
+
 def _request(repo_root: Path, run: Mapping[str, Any]) -> ProductRequest:
     """The product as the survey's frozen landing page lists it.  No network."""
 
     product = run["product"]
-    transport = replay_transport(_run_dir(repo_root, run) / "catalogue")
+    transport = replay_transport(_evidence_dir(repo_root, run) / "catalogue")
     page = parse_nos_product_links(transport(product["landing_page"]))
     for link in page.assets:
         url = str(link["url"])
@@ -204,6 +245,11 @@ def extract(
 
     root = Path(repo_root)
     run_dir = _run_dir(root, run)
+    if _subset_dir(root, run) != run_dir:
+        raise SeabedRunError(
+            f"run {run['run_id']} reads the subset of run {run['subset_run']}; "
+            "extract that run instead"
+        )
     product = run["product"]
     request = _request(root, run)
     held = held_product(request, product_dir)
@@ -213,22 +259,75 @@ def extract(
         raise SeabedRunError(
             f"{product['filename']} is held, but its hash is not the one the run declares"
         )
-    (run_dir / "products").mkdir(parents=True, exist_ok=True)
-    shutil.copy(
-        Path(product_dir) / (product["filename"] + ".manifest.json"),
-        run_dir / "products" / (product["filename"] + ".manifest.json"),
+    if _evidence_dir(root, run) == run_dir:
+        (run_dir / "products").mkdir(parents=True, exist_ok=True)
+        shutil.copy(
+            Path(product_dir) / (product["filename"] + ".manifest.json"),
+            run_dir / "products" / (product["filename"] + ".manifest.json"),
+        )
+    elif not (
+        _evidence_dir(root, run) / "products" / (product["filename"] + ".manifest.json")
+    ).is_file():
+        raise SeabedRunError("the run named as holding the evidence has no manifest")
+    resolution = run.get("resolution_m")
+    grid = survey.read_depth_grid(
+        held.path, None if resolution is None else float(resolution)
     )
-    grid = survey.read_depth_grid(held.path)
-    subset_sha256 = survey.write_depth_subset(grid, run_dir / SUBSET_NAME)
+    extra: dict[str, Any] = {}
+    if resolution is not None:
+        check = survey.verify_resampled(held.path, grid)
+        if not check["all_agree_except_edge_nodes"]:
+            raise SeabedRunError(
+                "the resampled grid does not agree with the finer-grid nodes: "
+                + json.dumps(check)
+            )
+        spacing = survey.finer_grid_spacing(held.path)
+        survey.check_alignment(grid.window, spacing)
+        extra = {
+            "resolution_m": float(resolution),
+            "resampling_check": check,
+            "spacing_file": SPACING_NAME,
+            "spacing_sha256": survey.write_subset(spacing, run_dir / SPACING_NAME),
+        }
+    return write_extracted(
+        run,
+        run_dir=run_dir,
+        parent_sha256=held.sha256,
+        grid=grid,
+        extra=extra,
+    )
+
+
+def write_extracted(
+    run: Mapping[str, Any],
+    *,
+    run_dir: Path,
+    parent_sha256: str,
+    grid: survey.DepthGrid,
+    extra: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Write the subset and the sealed product facts for a run."""
+
+    name = _subset_name(run)
+    subset_sha256 = survey.write_depth_subset(grid, run_dir / name)
+    layers = (
+        "the base grid only (elevation and uncertainty)"
+        if run.get("resolution_m") is None
+        else (
+            f"the finer grids, resampled to {float(run['resolution_m']):g} m cells "
+            "(elevation and uncertainty)"
+        )
+    )
     body: dict[str, Any] = {
         "schema": FACTS_SCHEMA,
         "run_id": run["run_id"],
-        "parent_sha256": held.sha256,
-        "subset_file": SUBSET_NAME,
+        "parent_sha256": parent_sha256,
+        "subset_file": name,
         "subset_sha256": subset_sha256,
         "read_from": "the held product's own metadata; not recomputable from the subset",
         "facts": grid.facts,
-        "layers_read": "the base grid only (elevation and uncertainty)",
+        "layers_read": layers,
+        **extra,
     }
     body = json.loads(json.dumps(body))
     body["content_sha256"] = canonical_json_sha256(body)
@@ -356,9 +455,10 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
 
     root = Path(repo_root)
     run_dir = _run_dir(root, run)
+    subset_dir = _subset_dir(root, run)
     product = run["product"]
     request = _request(root, run)
-    manifest = _manifest(run_dir, product["filename"])
+    manifest = _manifest(_evidence_dir(root, run), product["filename"])
     if manifest["request"]["url"] != request.url:
         raise SeabedRunError(
             "the download manifest names a different address than the landing page"
@@ -367,18 +467,33 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
         raise SeabedRunError(
             "the download manifest's hash is not the one the run declares"
         )
-    facts = _sealed(run_dir / FACTS_NAME, FACTS_SCHEMA)
+    facts = _sealed(subset_dir / FACTS_NAME, FACTS_SCHEMA)
     if facts["parent_sha256"] != product["sha256"]:
         raise SeabedRunError("the product facts were read from a different file")
-    subset_path = run_dir / SUBSET_NAME
-    if not subset_path.is_file():
-        raise SeabedRunError("the base-grid subset is missing")
+    resolution = run.get("resolution_m")
+    if facts.get("resolution_m") != (None if resolution is None else float(resolution)):
+        raise SeabedRunError("the product facts were read at a different resolution")
+    name = _subset_name(run)
+    subset_path = subset_dir / name
+    if facts["subset_file"] != name or not subset_path.is_file():
+        raise SeabedRunError("the subset is missing")
     subset_sha256 = survey.sha256_file(subset_path)
     if subset_sha256 != facts["subset_sha256"]:
         raise SeabedRunError(
-            "the base-grid subset does not match the hash recorded when it was written"
+            "the subset does not match the hash recorded when it was written"
         )
     grid = survey.read_depth_grid(subset_path)
+    spacing = None
+    if resolution is not None:
+        spacing_path = subset_dir / SPACING_NAME
+        if not spacing_path.is_file() or (
+            survey.sha256_file(spacing_path) != facts.get("spacing_sha256")
+        ):
+            raise SeabedRunError(
+                "the finer-grid spacing grid is missing or does not match its hash"
+            )
+        spacing = survey.read_raster(spacing_path)
+        survey.check_alignment(grid.window, spacing)
     extent = survey.lonlat_extent(grid)
     box = extent["covered_bbox_lonlat"] or extent["grid_bbox_lonlat"]
     centre = ((box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0)
@@ -406,6 +521,45 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
     result = survey.process_seabed(
         grid, source, vertical_reference=reference, parameters=run["parameters"]
     )
+    finer = None
+    if spacing is not None:
+        rows = result.report["detections"]
+        for row, context in zip(
+            rows, survey.finer_grid_context(rows, grid.window, spacing)
+        ):
+            row["finer_grid"] = context
+        finer = {
+            **survey.spacing_summary(spacing),
+            "resampling": {
+                "cell_m": float(resolution),
+                "population": facts["facts"].get("population_meaning"),
+                "check_against_nodes": facts["resampling_check"],
+            },
+            "empty_cells": survey.empty_within_covered(grid.window, spacing),
+            "possible_refinement_artefacts": sum(
+                1 for row in rows if row["finer_grid"]["possible_refinement_artefact"]
+            ),
+            "artefact_rule": (
+                "a depression smaller than one base cell that lies on a single "
+                "finer grid, or across finer grids of different node spacing, is "
+                "flagged; node spacing differs between almost every pair of finer "
+                "grids, so in practice every depression smaller than one base cell "
+                "is flagged; the flag is informational and lowers no tier"
+            ),
+        }
+    if subset_dir == run_dir:
+        subset_file = name
+    else:
+        subset_file = f"../{run['subset_run']}/{name}"
+    derivation = (
+        "the product's whole base grid, both bands, written losslessly"
+        if resolution is None
+        else (
+            f"the product's finer grids resampled to {float(resolution):g} m cells "
+            "(mean elevation and largest uncertainty of the nodes in each cell; "
+            "empty where none), both bands, written losslessly"
+        )
+    )
     body: dict[str, Any] = {
         "schema": REPORT_SCHEMA,
         "contract_version": CONTRACT_VERSION,
@@ -430,12 +584,10 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
                     "headers": manifest["headers"],
                 },
                 "subset": {
-                    "file": SUBSET_NAME,
+                    "file": subset_file,
                     "sha256": subset_sha256,
                     "parent_sha256": manifest["response_sha256"],
-                    "derivation": (
-                        "the product's whole base grid, both bands, written losslessly"
-                    ),
+                    "derivation": derivation,
                 },
                 "product_facts": facts["facts"],
                 "product_facts_basis": facts["read_from"],
@@ -476,9 +628,44 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
             "no feature, observation or status in a committed registry was changed by this run",
         ],
     }
+    if finer is not None:
+        body["products"][0]["finer_grids"] = finer
+        body["limits"][2] = (
+            f"the product's finer grids were read at {float(resolution):g} m cells; "
+            "where a finer grid's nodes are further apart than that, cells receive "
+            "no node and stay empty, and an empty cell is an outlet, so such ground "
+            "can lose depressions but never gain one"
+        )
+        body["limits"].insert(
+            3,
+            "a reading at another resolution of the same file uses the same "
+            "soundings: agreement with it is a consistency check, not replication",
+        )
+    if run.get("compare_with"):
+        earlier = _earlier_report(root, run["compare_with"])
+        earlier_rows = earlier["products"][0]["result"]["detections"]
+        earlier_cell = earlier["products"][0]["result"]["surface"]["cell_size_m"][0]
+        body["comparison_with_earlier_run"] = {
+            "earlier_run": run["compare_with"],
+            "earlier_report_content_sha256": earlier["content_sha256"],
+            "earlier_cell_m": earlier_cell,
+            **survey.persistence(
+                earlier_rows,
+                result.report["detections"],
+                distance_m=float(earlier_cell),
+            ),
+        }
     body = json.loads(json.dumps(body))
     body["content_sha256"] = canonical_json_sha256(body)
     return body
+
+
+def _earlier_report(repo_root: Path, run_id: str) -> dict[str, Any]:
+    path = repo_root / SURVEY_DIR / run_id / REPORT_NAME
+    report = _sealed(path, REPORT_SCHEMA)
+    if report.get("run_id") != run_id:
+        raise SeabedRunError(f"{path} is not the report of run {run_id}")
+    return report
 
 
 def write_report(
