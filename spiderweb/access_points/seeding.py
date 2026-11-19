@@ -26,6 +26,7 @@ import yaml
 
 from gebco.marine_evidence import CoverageState, ProductStage, SensorType
 
+from . import bathymetry_run
 from . import reference as reference_sets
 from .acquisition import PROVIDERS, to_source_manifestation
 from .discovery import (
@@ -574,6 +575,7 @@ class BuildResult:
     discovery: Mapping[str, Any] | None = None
     survey: Mapping[str, Any] | None = None
     reference: Mapping[str, Any] | None = None
+    seabed: Mapping[str, Any] | None = None
 
 
 def build_all(repo_root: str | Path) -> BuildResult:
@@ -626,6 +628,16 @@ def build_all(repo_root: str | Path) -> BuildResult:
             f"{SURVEY_DIR}/{SURVEY_POINTER_NAME}",
             f"{SURVEY_DIR}/{survey_report['run_id']}/processing_report.json",
         ]
+    seabed = None
+    seabed_report = bathymetry_run.current_report(root)
+    if seabed_report is not None:
+        seabed = register_survey_sources(
+            {Namespace.ACCESS_POINT_OFFSHORE: offshore}, seabed_report
+        )
+        survey_inputs += [
+            f"{SURVEY_DIR}/{bathymetry_run.POINTER_NAME}",
+            f"{SURVEY_DIR}/{seabed_report['run_id']}/{bathymetry_run.REPORT_NAME}",
+        ]
     reference = register_reference_sets(inland, root)
     reference_inputs: list[str] = []
     if reference is not None:
@@ -660,6 +672,7 @@ def build_all(repo_root: str | Path) -> BuildResult:
         discovery,
         survey,
         reference,
+        seabed,
     )
 
 
@@ -707,6 +720,7 @@ def write_documents(result: BuildResult, repo_root: str | Path) -> dict[str, str
                 None if result.discovery is None else dict(result.discovery)
             ),
             "survey_products": None if result.survey is None else dict(result.survey),
+            "seabed_products": None if result.seabed is None else dict(result.seabed),
             "reference_sets": (
                 None if result.reference is None else dict(result.reference)
             ),

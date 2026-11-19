@@ -23,6 +23,22 @@ GitHub Release using the matching section below (T6-53).
   as outer ones, so numerical residue on a rim is not counted as water.
 
 ### Added
+- **First seabed survey through the access-point pipeline.** One gridded
+  multibeam survey file (NOS W00247, file 3 of 4; 6.9 MB, fetched under an
+  explicit grant of one file and held outside the repository) is read, bound to
+  the tidal datum it states and searched for closed depressions
+  (`spiderweb/access_points/bathymetry_run.py`,
+  `scripts/process_access_point_seabed.py`, `seabed_runs` in
+  `configs/access_point_survey_runs.yaml`). Its hash and statistics equal the
+  August 2026 receipt for the same file. The run names no target record and
+  states no position. It uses the product's own uncertainty for every cell and
+  reports what that hides: over 56% of the covered cells a 2 m depression could
+  not be reported. Three shallow, flat-floored depressions (2.8 to 6.5 m) were
+  found in the 64 m base grid; they are shapes, classed EXPLORATORY, and none
+  is attached to a record. Only the base grid is read; the file's finer grids
+  are not. The file is registered in the Off-Shore registry as a held, hashed
+  grid. No feature, observation or status changed and no seed gained a
+  coordinate.
 - **A second, optional rule for a single pit under a broad bowl**
   (`pit_area_jump`). It was measured on the same tile against the nested
   detector and did not help: 80 more objects, none of the three remaining

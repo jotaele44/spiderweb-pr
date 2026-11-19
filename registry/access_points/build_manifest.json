@@ -56,7 +56,7 @@
       "observations": 6,
       "observations_bound": 6,
       "observations_unbound": 0,
-      "sources": 184
+      "sources": 185
     },
     "provisional_seeds": 5,
     "reference_sets": {
@@ -68,6 +68,12 @@
       ]
     },
     "relationships": 0,
+    "seabed_products": {
+      "registered": 1,
+      "registry": "access_point.offshore",
+      "report_content_sha256": "85bad38b3aba751a1d4bb7748fdb9075e082e114af75505cbcc30aca0218f731",
+      "run_id": "2026-11-18-offshore"
+    },
     "survey_products": {
       "registered": 2,
       "registry": "access_point.inland",
@@ -81,7 +87,9 @@
     "configs/access_point_seeds.yaml": "e9cb8d7181a1ab4f0f05d6931064748ea32896e383aa2ee8ed5980beecc71e46",
     "configs/ilap_registry.yaml": "71991b9f2c66b07902963c77fc264751a6d07be4b1b068a272f5a356072ffd21",
     "evidence/access_points/real_survey/2026-11-17/processing_report.json": "4daf4398df659bb018b36c2bf40d8e95b29acf0431596e78a0890e64decf234a",
+    "evidence/access_points/real_survey/2026-11-18-offshore/seabed_report.json": "61aa79dc0abaa226643294283ea638053df4906a688d34760d0f15afc3ddb741",
     "evidence/access_points/real_survey/CURRENT.json": "901a65728571d7e3e7f992d9c11492949d67f3c752ce459af73700a3601fb0bf",
+    "evidence/access_points/real_survey/CURRENT_SEABED.json": "03a3d3d8e81d88f23689a90243ecb7236b4f611315c20438ef2afee2629608e8",
     "evidence/access_points/reference/pr_planning_board/g15_geologia_carso_limite.zip": "877fddfaac5d148dff055c11bffaab16deff3fb7a5ae14154708d030023df5a6",
     "evidence/access_points/reference/usgs_karst_map/sinkholes_30m.geojson": "d2b4bdc8131af836aba05e7ee34fdf9128badb954e7a4b486a206b7992973ca4",
     "evidence/access_points/reference/usgs_karst_map/sinkholes_5_30m.geojson": "fec19a28001a72def117f9699790da372fee80c64d02f455475d8f960d7b0396",
@@ -95,8 +103,8 @@
       "sha256": "11e6e8cd8c12daf3b8f11af85c5964fe952df5903125020dde739340cb5f07b3"
     },
     "offshore.json": {
-      "content_sha256": "72871b06b88d5f84cbf16675e1065b1240a9a2748adf2c94fe50e6eac2a20e1f",
-      "sha256": "fee8df22cd21483ab83338f944adb3d3f1ff64ca69ba8c1f299bd5af008ead7a"
+      "content_sha256": "f68e6915dd4c5b9a3cc0d860af78fc735d739ea59af2c121a87aab32aaefbf90",
+      "sha256": "9309886059e86ce68f80a71e4a1c5870a9aeb26361482778b4413be0be6555a8"
     },
     "relationships.json": {
       "content_sha256": "7c6695a503adb66a33f9a64b691fc03e7df227b4d743da002ed584c07867acdf",

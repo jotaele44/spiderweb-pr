@@ -22,8 +22,14 @@ What a result means
   implausible statement does not stop single-surface analysis; it does stop
   any join to a surface on a different reference.
 
-``rasterio`` is needed to read and write GeoTIFFs (the ``dem`` extra).  It is
-imported lazily so the rest of the package does not depend on it.
+A gridded seabed survey enters the same way (:func:`read_depth_grid`,
+:func:`process_seabed`), with two differences: the uncertainty is the
+product's own, one value per cell, and the report says how much of the survey
+that uncertainty leaves unable to show a depression of the minimum depth.
+
+``rasterio`` is needed to read and write GeoTIFFs and to read gridded
+bathymetric survey files (the ``dem`` extra).  It is imported lazily so the
+rest of the package does not depend on it.
 """
 
 from __future__ import annotations
@@ -38,9 +44,20 @@ import numpy as np
 
 from gebco.marine_evidence import VerticalReference
 
-from .detection import Detection, DetectionParameters, detect_inland
+from .detection import (
+    Detection,
+    DetectionParameters,
+    detect_inland,
+    detect_offshore,
+)
 from .models import HORIZONTAL_INTERCHANGE_CRS, SourceManifestation
-from .raster import SurfaceGrid, SurfaceKind, coverage, make_grid
+from .raster import (
+    SurfaceGrid,
+    SurfaceKind,
+    coverage,
+    delineate_depressions,
+    make_grid,
+)
 from .vertical import bind, regional_plausibility
 
 SURVEY_VERSION = "access-point-survey-processing/1.0"
@@ -582,9 +599,15 @@ def nearest_detections(
 
 
 def dry_registration(
-    result: SurveyResult, source: SourceManifestation, *, created_utc: str
+    result: SurveyResult,
+    source: SourceManifestation,
+    *,
+    created_utc: str,
+    namespace: Any = None,
 ) -> dict[str, Any]:
-    """What a scratch inland registry would hold if these detections were filed.
+    """What a scratch registry would hold if these detections were filed.
+
+    The registry is the inland one unless ``namespace`` says otherwise.
 
     Nothing is written anywhere.  The point is to show that a real survey's
     detections pass the registry's own rules and where its ladder puts them.
@@ -596,9 +619,8 @@ def dry_registration(
     from .rules import assertion_rung  # noqa: PLC0415
     from .vocabulary import GeometryBasis  # noqa: PLC0415
 
-    registry = AccessPointRegistry(
-        Namespace.ACCESS_POINT_INLAND, producer_identity="dry-run:survey"
-    )
+    target = Namespace.ACCESS_POINT_INLAND if namespace is None else namespace
+    registry = AccessPointRegistry(target, producer_identity="dry-run:survey")
     registry.add_source(source)
     rungs: dict[str, int] = {}
     statuses: dict[str, int] = {}
@@ -608,13 +630,11 @@ def dry_registration(
         [d.centroid_xy[1] for d in result.detections],
     )
     for detection, (lon, lat) in zip(result.detections, lonlats):
-        oid = observation_id(
-            Namespace.ACCESS_POINT_INLAND, source.source_id, detection.native_record_id
-        )
+        oid = observation_id(target, source.source_id, detection.native_record_id)
         registry.add_observation(
             Observation(
                 observation_id=oid,
-                namespace=Namespace.ACCESS_POINT_INLAND,
+                namespace=target,
                 source_id=source.source_id,
                 native_record_id=detection.native_record_id,
                 geometry={"type": "Point", "coordinates": [lon, lat]},
@@ -652,6 +672,7 @@ def gridded_source(
     survey_date: str | None,
     lineage_root_id: str | None,
     parent_source_ids: tuple[str, ...] = (),
+    sensor_type: Any = None,
 ) -> SourceManifestation:
     """A held, hashed gridded elevation product as a registered source.
 
@@ -676,7 +697,7 @@ def gridded_source(
         lineage_root_id=lineage_root_id,
         parent_source_ids=parent_source_ids,
         product_stage=ProductStage.GRID,
-        sensor_type=None,
+        sensor_type=sensor_type,
         coverage_state=CoverageState.INTERPOLATED,
         provenance_state=ProvenanceState.REGISTERED,
         license_note="US_GOVERNMENT_PUBLIC_DOMAIN",
@@ -726,3 +747,373 @@ def wide_summary(
             "here is absence of a basin closed within the covered part"
         ),
     }
+
+
+# -- gridded bathymetry ----------------------------------------------------
+
+
+def horizontal_crs(crs: Any) -> str:
+    """The horizontal part of a product's CRS, as an EPSG string.
+
+    Hydrographic grids often carry a compound system -- a projected CRS plus a
+    vertical one.  Only the horizontal part is used to place cells; the
+    vertical part is bound separately, from what the product states.
+    """
+
+    import re  # noqa: PLC0415
+
+    code = crs.to_epsg()
+    if code is not None:
+        return f"EPSG:{code}"
+    match = re.search(
+        r'PROJCS\[.*?AUTHORITY\["EPSG","(\d+)"\]\]\s*,\s*VERT_CS', crs.to_wkt(), re.S
+    )
+    if match is None:
+        raise SurveyReadError("the product's horizontal CRS cannot be determined")
+    return f"EPSG:{match.group(1)}"
+
+
+@dataclass(frozen=True)
+class DepthGrid:
+    """A gridded seabed surface with the uncertainty the product publishes."""
+
+    window: RasterWindow  # elevation, metres, positive up (negative below datum)
+    uncertainty: np.ndarray  # metres, per cell; NaN where not published
+    facts: dict[str, Any]
+
+
+def _two_bands(src: Any) -> tuple[np.ndarray, np.ndarray, str, tuple[float, float]]:
+    rasterio = _rasterio()
+    if src.count != 2:
+        raise SurveyReadError(
+            "a depth grid must hold an elevation and an uncertainty band"
+        )
+    crs = horizontal_crs(src.crs)
+    plane = rasterio.crs.CRS.from_string(crs)
+    transform = src.transform
+    if not plane.is_projected or abs(plane.linear_units_factor[1] - 1.0) > 1e-9:
+        raise SurveyReadError("the depth grid must be on a projected CRS in metres")
+    if transform.b != 0 or transform.d != 0 or transform.e >= 0 or transform.a <= 0:
+        raise SurveyReadError("the depth grid must be north-up with no rotation")
+    elevation = _to_array(src.read(1), src.nodatavals[0])
+    uncertainty = _to_array(src.read(2), src.nodatavals[1])
+    uncertainty[~np.isfinite(elevation)] = np.nan
+    return elevation, uncertainty, crs, (float(transform.a), float(-transform.e))
+
+
+def read_depth_grid(path: str | Path) -> DepthGrid:
+    """Read the base grid of a hydrographic product (or a subset written from one).
+
+    Values come out exactly as the product holds them: elevation in metres,
+    positive up, so the seabed is negative.  For a variable-resolution product
+    this is its low-resolution base layer; finer refinement grids, if the
+    product has them, are not read and are reported as not read.
+    """
+
+    rasterio = _rasterio()
+    import re  # noqa: PLC0415
+
+    with rasterio.open(path) as src:
+        elevation, uncertainty, crs, cell = _two_bands(src)
+        tags = src.tags()
+        metadata = (
+            " ".join(src.tags(ns="xml:BAG").values()) if src.driver == "BAG" else ""
+        )
+        window = RasterWindow(
+            values=elevation,
+            crs=crs,
+            origin=(float(src.transform.c), float(src.transform.f)),
+            cell_size=cell,
+            row_off=0,
+            col_off=0,
+            source_shape=(src.height, src.width),
+            source_nodata=src.nodatavals[0],
+        )
+        facts = {
+            "driver": src.driver,
+            "band_descriptions": list(src.descriptions),
+            "compound_crs_name": (src.crs.to_wkt().split('"')[1] if src.crs else None),
+            "vertical_statements_in_metadata": sorted(
+                set(re.findall(r'VERT_DATUM\["([^"]+)"', metadata))
+            ),
+            "format_version": tags.get("BagVersion"),
+            "product_datetime": tags.get("BAG_DATETIME"),
+            "refinement_resolution_m": (
+                [float(tags["MIN_RESOLUTION_X"]), float(tags["MAX_RESOLUTION_X"])]
+                if "MIN_RESOLUTION_X" in tags and "MAX_RESOLUTION_X" in tags
+                else None
+            ),
+        }
+    return DepthGrid(window, uncertainty, facts)
+
+
+def write_depth_subset(grid: DepthGrid, path: str | Path) -> str:
+    """Write a depth grid as a lossless two-band GeoTIFF; return its SHA-256."""
+
+    rasterio = _rasterio()
+    from rasterio.transform import from_origin  # noqa: PLC0415
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    nodata = 1000000.0
+    window = grid.window
+    bands = [
+        np.where(np.isfinite(band), band, nodata).astype(np.float32)
+        for band in (window.values, grid.uncertainty)
+    ]
+    rows, cols = bands[0].shape
+    with rasterio.open(
+        target,
+        "w",
+        driver="GTiff",
+        height=rows,
+        width=cols,
+        count=2,
+        dtype="float32",
+        crs=window.crs,
+        transform=from_origin(
+            window.origin[0], window.origin[1], window.cell_size[0], window.cell_size[1]
+        ),
+        nodata=nodata,
+        compress="deflate",
+        predictor=3,
+        zlevel=9,
+    ) as dst:
+        dst.write(bands[0], 1)
+        dst.write(bands[1], 2)
+        dst.set_band_description(1, "elevation")
+        dst.set_band_description(2, "uncertainty")
+    return sha256_file(target)
+
+
+def to_seabed(
+    grid: DepthGrid, *, vertical_reference: VerticalReference, source_id: str
+) -> SurfaceGrid:
+    """A measured seabed surface with its per-cell uncertainty.
+
+    Fails closed if the values are not overwhelmingly below their datum: a
+    grid declared submerged that sits above it has its sign wrong.
+    """
+
+    window = grid.window
+    return make_grid(
+        window.values,
+        cell_size_m=window.cell_size,
+        origin=window.origin,
+        crs=window.crs,
+        kind=SurfaceKind.BATHYMETRY,
+        vertical_reference=vertical_reference,
+        uncertainty_m=np.where(np.isfinite(grid.uncertainty), grid.uncertainty, np.nan),
+        source_id=source_id,
+        expect="submerged",
+    )
+
+
+def _summary(values: np.ndarray) -> dict[str, Any] | None:
+    finite = values[np.isfinite(values)]
+    if not finite.size:
+        return None
+    return {
+        "min": round(float(finite.min()), 3),
+        "median": round(float(np.median(finite)), 3),
+        "p90": round(float(np.percentile(finite, 90)), 3),
+        "max": round(float(finite.max()), 3),
+    }
+
+
+def lonlat_extent(grid: DepthGrid) -> dict[str, Any]:
+    """Where the grid and its covered cells lie, as longitude/latitude boxes.
+
+    The boxes are envelopes of cell corners.  They describe the *survey*, not
+    any feature: they say where the product has data.
+    """
+
+    window = grid.window
+    west, south, east, north = window.bounds()
+    corners = _lonlat(
+        window.crs, [west, east, east, west], [south, south, north, north]
+    )
+    out: dict[str, Any] = {
+        "grid_bbox_lonlat": [
+            min(c[0] for c in corners),
+            min(c[1] for c in corners),
+            max(c[0] for c in corners),
+            max(c[1] for c in corners),
+        ],
+        "covered_bbox_lonlat": None,
+    }
+    rows, cols = np.nonzero(np.isfinite(window.values))
+    if rows.size:
+        dx, dy = window.cell_size
+        x0 = west + float(cols.min()) * dx
+        x1 = west + float(cols.max() + 1) * dx
+        y1 = north - float(rows.min()) * dy
+        y0 = north - float(rows.max() + 1) * dy
+        covered = _lonlat(window.crs, [x0, x1, x1, x0], [y0, y0, y1, y1])
+        out["covered_bbox_lonlat"] = [
+            min(c[0] for c in covered),
+            min(c[1] for c in covered),
+            max(c[0] for c in covered),
+            max(c[1] for c in covered),
+        ]
+    return out
+
+
+def process_seabed(
+    grid: DepthGrid,
+    source: SourceManifestation,
+    *,
+    vertical_reference: VerticalReference,
+    parameters: DetectionParameters,
+) -> SurveyResult:
+    """Delineate and describe closed depressions in one gridded seabed surface.
+
+    The uncertainty used is the product's own, cell by cell, and it sets what
+    can be seen.  A cell counts as part of a depression only where the water
+    depth above it exceeds the uncertainty of a difference of two of its
+    heights (the square root of two times its own uncertainty), so:
+
+    * a depression that nowhere exceeds that floor is **not reported at all**;
+    * one that exceeds it, but by less than the significance floor, is flagged
+      and stays a candidate;
+    * the reported area is the part above the floor, so it is a lower bound.
+
+    Where the product's uncertainty is large, the absence of a detection is
+    therefore not the absence of a depression.  ``sensitivity`` in the report
+    says how much of the survey that applies to.
+    """
+
+    surface = to_seabed(
+        grid, vertical_reference=vertical_reference, source_id=source.source_id
+    )
+    detections = detect_offshore(surface, source, parameters)
+    lonlats = _lonlat(
+        surface.crs,
+        [d.centroid_xy[0] for d in detections],
+        [d.centroid_xy[1] for d in detections],
+    )
+    cover = coverage(surface)
+    tiers: dict[str, int] = {}
+    for detection in detections:
+        for assertion in detection.assertions:
+            tiers[assertion.tier.name] = tiers.get(assertion.tier.name, 0) + 1
+    rows = []
+    for detection, lonlat in zip(detections, lonlats):
+        row = _detection_row(detection, lonlat)
+        row["hierarchy_level"] = detection.hierarchy_level
+        row["parent_native_record_id"] = detection.parent_native_record_id
+        region = detection.region
+        assert region is not None
+        row["depth_to_diameter"] = round(region.depth_to_diameter, 5)
+        row["mean_wall_slope_deg"] = (
+            None
+            if region.mean_wall_slope_deg is None
+            else round(region.mean_wall_slope_deg, 3)
+        )
+        row["flat_floor_fraction"] = (
+            None
+            if region.flat_floor_fraction is None
+            else round(region.flat_floor_fraction, 3)
+        )
+        rows.append(row)
+    # The same surface with its uncertainty ignored: every closed low of the
+    # minimum depth and area, whether or not it can be told apart from noise.
+    # It is a check on the detector, not evidence: it shows what the
+    # uncertainty rule withheld, and that the reported depressions are not an
+    # effect of that rule.
+    reported = {
+        tuple(round(v, 3) for v in d.region.deepest_xy)
+        for d in detections
+        if d.region is not None
+    }
+    unfloored = delineate_depressions(
+        surface,
+        min_depth_m=parameters.min_depth_m,
+        min_area_m2=parameters.min_area_m2,
+        max_regions=parameters.max_regions,
+        nested=parameters.nested,
+        nested_level_step_m=parameters.nested_level_step_m,
+        footprint_min_depth_m=0.0,
+    )
+    withheld = [
+        {
+            "deepest_xy": [round(v, 3) for v in region.deepest_xy],
+            "max_depth_m": round(region.max_depth_m, 3),
+            "area_m2": round(region.area_m2, 1),
+            "depth_uncertainty_m": (
+                None
+                if region.depth_uncertainty_m is None
+                else round(region.depth_uncertainty_m, 4)
+            ),
+        }
+        for region in unfloored
+        if tuple(round(v, 3) for v in region.deepest_xy) not in reported
+    ]
+    ignoring = {
+        "closed_depressions": len(unfloored),
+        "also_reported_by_the_detector": len(unfloored) - len(withheld),
+        "withheld_by_the_uncertainty_rule": withheld,
+        "meaning": (
+            "closed lows of the minimum depth and area when the product's "
+            "uncertainty is ignored; a check on the detector, not evidence"
+        ),
+    }
+    elevation = _summary(surface.values)
+    floor = math.sqrt(2.0) * grid.uncertainty
+    known = np.isfinite(floor)
+    covered = int(np.isfinite(surface.values).sum())
+    sensitivity = {
+        "cell_depth_floor_m": _summary(floor),
+        "floor_is": (
+            "the square root of two times a cell's own uncertainty: the least "
+            "water depth at which the cell counts as part of a depression"
+        ),
+        "covered_cells": covered,
+        "cells_with_published_uncertainty": int(known.sum()),
+        "cells_where_min_depth_is_resolvable": int(
+            (floor[known] <= parameters.min_depth_m).sum()
+        ),
+        "cells_where_floor_exceeds_min_depth": int(
+            (floor[known] > parameters.min_depth_m).sum()
+        ),
+        "meaning": (
+            "where the floor exceeds the minimum depth, a depression of the "
+            "minimum depth cannot be reported; absence of a detection there "
+            "is not absence of a depression"
+        ),
+    }
+    report = {
+        "source_id": source.source_id,
+        "surface": {
+            "kind": surface.kind.value,
+            "crs": surface.crs,
+            "shape": list(surface.shape),
+            "cell_size_m": list(surface.cell_size_m),
+            "origin": [round(v, 6) for v in surface.origin],
+            "bounds": [round(v, 6) for v in grid.window.bounds()],
+            "valid_cells": cover.valid_cells,
+            "nodata_cells": cover.nodata_cells,
+            "elevation_min_m": None if elevation is None else elevation["min"],
+            "elevation_max_m": None if elevation is None else elevation["max"],
+            "elevation_median_m": None if elevation is None else elevation["median"],
+            "cell_uncertainty_m": _summary(grid.uncertainty),
+            "uncertainty_basis": "the product's own per-cell uncertainty band",
+        },
+        "parameters": {
+            "min_depth_m": parameters.min_depth_m,
+            "min_area_m2": parameters.min_area_m2,
+            "significance_floor": parameters.significance_floor,
+            "nested": parameters.nested,
+            "nested_level_step_m": parameters.nested_level_step_m,
+        },
+        "sensitivity": sensitivity,
+        "ignoring_uncertainty": ignoring,
+        "detection_count": len(detections),
+        "below_uncertainty": sum(
+            1 for row in rows if "BELOW_UNCERTAINTY" in row["flags"]
+        ),
+        "possible_artifacts": sum(1 for d in detections if d.possible_artifact),
+        "assertions_by_tier": dict(sorted(tiers.items())),
+        "detections": rows,
+    }
+    return SurveyResult(surface, tuple(detections), report)

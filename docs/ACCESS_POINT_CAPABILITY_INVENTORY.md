@@ -33,7 +33,7 @@ numpy 2.4.6, scipy 1.17.1, shapely 2.1.2, rasterio 1.5.2):
 
 The 52 skips are optional dependencies, absent local services and
 operator-local data. Results after the change are in
-`evidence/access_points/certification_report_v6.json` (versions 1 to 5 are the
+`evidence/access_points/certification_report_v7.json` (versions 1 to 6 are the
 report as it stood at earlier points).
 
 ## 2. What existed in this repository
@@ -185,9 +185,11 @@ and tested:
 | Candidate records | 4 | 1, plus 5 provisional | — | COMPUTED |
 | Submerged karst, cave entrance, landslide, lineament, engineered structure classification | — | Classes exist; no detector | — | FACT |
 | Sediment artefacts, multibeam artefact filtering | — | Absent beyond seams | — | FACT |
-| Real surveys processed | 2 elevation tiles over one 1 km window (two independent surveys of the same ground), 2026-11-17 | 0 | Shared reader and detector | FACT |
+| Real surveys processed | 2 elevation tiles over one 1 km window (two independent surveys of the same ground), 2026-11-17 | 1 gridded multibeam survey file, base grid only (64 m), one epoch, 2026-11-18 | Shared detector; a reader for each kind of file | FACT |
+| Vertical uncertainty used | One project figure per tile, or none | The product's own value for every cell; the report counts the cells where the minimum depth cannot be resolved (56% of that survey) | Shared rule | COMPUTED |
+| Held, hashed survey products registered | 2 | 1 | Shared | COMPUTED |
 | Compared with a published reference | Closed-basin detector against 139 USGS-mapped sinkholes on one tile; REFERENCE_COMPARED, not field-validated | None | Shared evaluation | COMPUTED |
-| Basins nested inside a larger closed basin | Default in the detector; measured against the same reference | Default; same code path, tested on a synthetic seabed; no real survey | Shared delineation | FACT |
+| Basins nested inside a larger closed basin | Default in the detector; measured against the same reference | Default; same code path, tested on a synthetic seabed; run on one real survey, which showed none | Shared delineation | FACT |
 
 Neither registry was simplified to match the other: the processing core is
 shared and the interpretation rules differ.

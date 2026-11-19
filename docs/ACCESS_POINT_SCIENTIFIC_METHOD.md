@@ -74,6 +74,24 @@ numerical residue on a level rim spreads a basin's outline far beyond the
 ground that is measurably lower. (The control suite found exactly this defect
 in the first implementation; it is fixed and tested.)
 
+**Where the uncertainty is published cell by cell, the floor is cell by
+cell.** A gridded hydrographic survey carries its own uncertainty band, and it
+is used as published (`survey.process_seabed`). Three things follow, and each
+is stated in the report rather than left to be inferred:
+
+| Depth of a depression against the floor of its own cells | Result |
+|---|---|
+| Nowhere above the floor | Not reported at all |
+| Above the floor, by less than the significance floor (3) | Reported, flagged, CANDIDATE |
+| Above the significance floor | Reported, SUPPORTING at most (a grid is never a direct measurement) |
+
+The reported area is the part above the floor, so it is a lower bound. Where
+the uncertainty is large, the absence of a detection is not the absence of a
+depression: the report counts the covered cells at which a depression of the
+minimum depth could not be reported. It also delineates the same surface with
+the uncertainty ignored and lists what the rule withheld — a check on the
+detector, not evidence.
+
 Measured for each basin: area, maximum and mean depth, volume, spill and floor
 elevation, centroid and deepest point, equivalent diameter, depth-to-diameter
 ratio, circularity, elongation, solidity, rectangularity, mean wall slope,
@@ -344,6 +362,21 @@ The check is a coarse box test on a stated orthometric datum. It is a sanity
 check, not a geodetic definition, and it never replaces the stated datum with
 another one.
 
+### A tidal datum, and a depth name on elevation values
+
+The first seabed product read (2026-11-18) states MLLW, in a structured
+metadata element and in the name of its coordinate system. Two things were
+recorded rather than resolved:
+
+| Finding | Behaviour | Class |
+|---|---|---|
+| MLLW is a tidal datum. It has no regional extent to test a statement against | `regional_plausibility` returns NOT_ASSESSED. It is never reported as plausible, so the surface is not joinable to a land surface | COMPUTED |
+| The coordinate system is named "MLLW depth" with a downward axis, while the stored values are elevations, all negative | The values are used as stored, bound positive-up, and not re-signed; the product's own name is kept beside them. A grid declared submerged whose values lie above its datum is refused (`SignConventionError`) | BINDING |
+| Depths relative to MLLW are not heights on PRVD02 or any orthometric datum | Nothing is converted. No certified transform is held | FACT |
+
+Closed-depression shape does not depend on the datum, so neither finding stops
+single-surface analysis.
+
 ### Failure behaviour
 
 | Input | Result |
@@ -374,8 +407,12 @@ Stated so that nobody assumes it exists: point-cloud reading (LAS, LAZ, COPC),
 ground classification, bare-earth extraction, contour extraction and contour
 trees, flow routing, local relief models beyond a windowed range, interpretation
 of side-scan, backscatter or sub-bottom data, multibeam artefact filtering
-beyond grid-aligned seams, reading of gridded bathymetric survey files (BAG) into
-this pipeline, reprojection of geographic grids inside this package, per-cell
-uncertainty for elevation tiles, a rule that separates a single pit from the
+beyond grid-aligned seams, reading of the finer refinement grids inside a
+variable-resolution bathymetric survey file (only its base grid is read), a
+second seabed survey or epoch to replicate the first, a certified transform
+between a tidal datum and an orthometric one, reprojection of geographic grids
+inside this package, per-cell uncertainty for elevation tiles, a rule that separates a single pit from the
 broad bowl it sits in and is shown to help, and any field-visited truth set. A projected GeoTIFF
-elevation tile can be read (`survey.py`); one has been.
+elevation tile can be read (`survey.py`); one has been. The base grid of a
+gridded bathymetric survey file (BAG) can be read, with its uncertainty band;
+one has been.

@@ -7,7 +7,7 @@ NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
 IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
 RECORDS EXPORTED TO THE HUB: NONE
 INDEPENDENT REVIEW: NOT PERFORMED
-MACHINE-READABLE REPORT: evidence/access_points/certification_report_v6.json
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v7.json
 
 PURPOSE
 
@@ -73,9 +73,10 @@ EXPECTED REGISTRY CONTENTS
    offshore:  6 features: 5 PROVISIONAL_DISCOVERY (no coordinates), 1 CANDIDATE
    relationships: 0
    verified features: 0
-   sources:   inland 10, offshore 184. Held and hashed inland sources: two elevation
-              tiles (grids) and three published reference maps. None is a direct
-              measurement; every other survey source is a reference
+   sources:   inland 10, offshore 185. Held and hashed inland sources: two elevation
+              tiles (grids) and three published reference maps. Held and hashed
+              off-shore survey product: one gridded multibeam survey file. None is
+              a direct measurement; every other survey source is a reference
 
 BENCHMARK (optional; software performance on synthetic surfaces)
 
@@ -109,6 +110,17 @@ REAL-SURVEY PROCESSING
    and are kept outside the repository; only their hashes and a small window are
    committed. Runs are declared in configs/access_point_survey_runs.yaml.
 
+SEABED-SURVEY PROCESSING
+
+   Re-check the committed off-shore run offline (needs the 'dem' extra):
+   python scripts/process_access_point_seabed.py --run-id 2026-11-18-offshore --check
+
+   Runs are declared under seabed_runs in configs/access_point_survey_runs.yaml.
+   A seabed run names no target record and states no position; it names a search
+   area, which is where to look and never where a feature is. The held product
+   (6.9 MB) is outside the repository; its hash, its download manifest and a
+   58 KB copy of its base grid are committed.
+
 COMPARISON WITH A PUBLISHED SINKHOLE MAP
 
    Re-check the committed comparison offline:
@@ -129,6 +141,10 @@ OPEN BEFORE ANY RELEASE
      count. A second rule for a single pit under a bowl was measured and did not help.
    - One real survey window has been processed (two elevation tiles, 2026-11-17). It
      shows closed basins, which are shapes; it verifies no record.
+   - One seabed survey has been processed (one multibeam grid file, base grid
+     only, 2026-11-18). It shows three shallow closed depressions, which are
+     shapes; over 56% of its covered cells its own uncertainty is too large to
+     show a 2 m depression at all. It is not replicated and verifies no record.
    - The five seed screenshots are not registered.
    - Live source discovery ran once (2026-11-16, 180 sources listed). It lists
      surveys; it downloaded none, and no record cites one yet.

@@ -45,7 +45,13 @@ held: two 1 m LiDAR elevation tiles, each registered with the SHA-256 of the
 full file (see "Real-survey processing"). They are grids, so they are
 registered but are not direct measurements, and no record cites them either.
 
-It also holds three published reference maps supplied by the repository owner,
+The Off-Shore registry holds its first survey product whose exact bytes were
+held: one gridded multibeam survey file, `W00247_MB_VR_MLLW_3of4.bag`,
+registered with the SHA-256 of the full file under the lineage of the survey
+it belongs to (see "The off-shore run of 2026-11-18"). It is a grid, so it is
+registered but is not a direct measurement, and no record cites it.
+
+The Inland registry also holds three published reference maps supplied by the repository owner,
 each by the hash of its exact bytes: the USGS outlines of sinkholes deeper than
 30 m, the USGS areas of sinkholes 5 to 30 m deep, and the Planning Board's
 northern karst limit (see "Reference maps and the comparison with them"). They
@@ -435,6 +441,82 @@ What this does and does not show:
 No feature, observation or status changed. A detection is a shape. It was not
 attached to the record: distance is discovery, not identity.
 
+### The off-shore run of 2026-11-18
+
+The first seabed survey taken through the same path
+(`spiderweb/access_points/bathymetry_run.py`,
+`scripts/process_access_point_seabed.py`; declared under `seabed_runs` in
+`configs/access_point_survey_runs.yaml`). It has the same two halves as an
+inland run, and differs in two ways, both on purpose:
+
+- **It names no target record and states no position.** No off-shore record
+  holds one. The only place it names is a declared search area, and a run that
+  states a position, a box or a target record is refused.
+- **The vertical uncertainty is the product's own, cell by cell**, not one
+  figure for a whole project.
+
+The product is file 3 of 4 of NOS hydrographic survey W00247, the one grid of
+that survey which the August 2026 receipt
+(`evidence/marine/w00247_bag_v0_1/w00247_bag_receipt.json`) found inside the
+Guayama–Punta Tuna search area. One metadata request froze the survey's landing
+page; one file was fetched under an explicit grant of one file and 8 MB
+(6.9 MB used). The file is not in the repository; its hash, its download
+manifest and a 58 KB lossless copy of its base grid are.
+
+| | W00247, file 3 of 4 | Class |
+|---|---|---|
+| Product | `W00247_MB_VR_MLLW_3of4.bag`, 6,935,533 bytes, SHA-256 `b0daca03…65e8` | FACT |
+| Same bytes as the August receipt | Yes: hash, size, covered cells, elevation range and uncertainty range all agree | COMPUTED |
+| Surveyed | 2013 (survey inventory); the grid file is dated 2021-12-07 | FACT |
+| Grid read | Base grid only: 256 × 256 cells of 64 m, 7,910 with data (12%) | FACT |
+| Not read | The file's finer refinement grids (2.4 to 32 m) | FACT |
+| Seabed elevation | −1,026.3 to −58.8 m, median −217.2 m | COMPUTED |
+| Vertical datum as stated | MLLW, in a structured metadata element and in the coordinate system's name | FACT |
+| Can that datum be checked for the region? | Not assessed: a tidal datum has no regional extent to test against. It is never called plausible, so the surface is not joinable to a land surface | COMPUTED |
+| Sign | The coordinate system is named as a depth; the stored values are elevations (all negative). Used as stored, not re-signed | FACT |
+| Published uncertainty, per cell | 0.18 to 17.6 m, median 2.0 m, 90th percentile 5.6 m | FACT |
+| Covered extent against the search area | Fully within. The search area is an analyst's box, not a position | COMPUTED |
+| Closed depressions ≥ 2 m deep and ≥ 4 cells | 3; none nested | COMPUTED |
+
+The three depressions [COMPUTED]:
+
+| Depth | Area (lower bound) | Depth uncertainty | Depth ÷ uncertainty | Tier reached | Floor |
+|---|---|---|---|---|---|
+| 6.5 m | 0.66 km² | 2.6 m | 2.5 | CANDIDATE (below the significance floor of 3) | −78.3 m |
+| 4.8 m | 0.67 km² | 1.1 m | 4.5 | SUPPORTING | −78.5 m |
+| 2.8 m | 0.05 km² | 0.7 m | 4.1 | SUPPORTING | −78.4 m |
+
+All three are broad and nearly flat: depth is about one hundredth of their
+width or less, mean wall slopes are 1 to 1.6 degrees, and 75 to 93% of each is
+flat floor. They lie within about 1.5 km of one another on the shallow edge of
+the survey, with floors at the same level to within 0.2 m and spill levels 2 m
+apart. None meets the rule for a steep-walled pit. Each was classed as a
+seafloor depression, which is a shape.
+
+**What the survey cannot show** [COMPUTED]. A cell counts as part of a
+depression only where the water above it is deeper than the uncertainty of a
+difference of two of its heights. Over 4,426 of the 7,910 covered cells (56%)
+that floor is above the 2 m minimum depth, so a 2 m depression there could not
+be reported; the median floor is 2.8 m and the highest 24.8 m. **Over more than
+half of this survey, no detection is not no depression.** The report carries
+its own check: with the uncertainty ignored the surface shows four closed lows,
+the three reported and one more (2.1 m deep, four cells) that the rule
+withheld. So the three are not an effect of the rule.
+
+| Statement | Class |
+|---|---|
+| Three closed seabed depressions 2.8 to 6.5 m deep exist in the 64 m base grid of this survey | COMPUTED |
+| Two of them exceed their own uncertainty by a factor of four; one does not reach three | COMPUTED |
+| A scratch registry would file all three as CANDIDATE: one at the ANOMALY rung, two at FEATURE | COMPUTED |
+| Whether they are landforms, sediment lows or gridding artefacts is not established: one survey, one epoch, base grid only | UNKNOWN |
+| Nothing in a 64 m grid can show an opening, a shaft or a cave | FACT about the method |
+| The survey lying inside the search area places no seed. No off-shore seed gained a coordinate | FACT |
+| Thresholds (2 m, four cells) are working values, not calibrated | FACT |
+
+No feature, observation or status changed. The off-shore run has its own
+pointer (`CURRENT_SEABED.json`), so the inland pointer and report are
+byte-identical to before.
+
 ## Reference maps and the comparison with them
 
 A reference set is somebody else's map. It is declared in
@@ -523,6 +605,7 @@ external service or sibling repository was modified.
 | `discovery.py` | Planned, bounded discovery runs over declared search areas; the sealed source catalogue; offline replay |
 | `products.py` | Fetching a named product inside a byte ceiling; the elevation product catalogue |
 | `survey.py`, `survey_run.py` | Reading a real gridded product, binding its stated datum, detection, two-survey replication; the declared, reproducible run |
+| `bathymetry_run.py` | The declared, reproducible run over one gridded seabed survey: no target record, the product's own per-cell uncertainty, and what the survey cannot show |
 | `reference.py`, `validation.py` | Published reference maps held by hash and read with a bound CRS; the comparison of the detector with a published sinkhole map |
 | `federation_context.py` | Read-only context from other producers' packages |
 | `seeding.py`, `service.py` | Deterministic registry build; read-only queries |

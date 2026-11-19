@@ -60,3 +60,47 @@ runs:
           None published: the tile metadata states no accuracy and the
           elevation inventory did not list this project on 2026-11-16.
         lineage_root_id: null
+
+# Gridded seabed surveys processed for the Off-Shore Access Point registry.
+#
+# A seabed run reads ONE held, hashed hydrographic product.  It names no
+# target record and states no position: no off-shore record holds one.  The
+# only place it names is a declared search area, which is an analyst-drawn box
+# for finding sources and never the position of a feature or a seed.
+#
+# The vertical uncertainty is the product's own, cell by cell, so no single
+# figure is stated here.
+seabed_runs:
+  - run_id: "2026-11-18-offshore"
+    registry: access_point.offshore
+    search_area: guayama_punta_tuna_discovery_v0_1
+    parameters:
+      # Working values, not calibrated against field truth.  The depth floor is
+      # the median of the product's own cell uncertainty (2.0 m); the area
+      # floor is four base cells of 64 m.
+      min_depth_m: 2.0
+      min_area_m2: 16384.0
+      nested: true
+    product:
+      filename: W00247_MB_VR_MLLW_3of4.bag
+      native_identifier: "NOS:BAG:W00247:3of4"
+      landing_page: "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html"
+      sha256: b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8
+      survey_date: "2013"
+      survey_date_basis: >-
+        The survey year the NOS BAG inventory gives for W00247, as frozen in
+        the source-discovery catalogue of 2026-11-16. The file itself is dated
+        2021-12-07, which is when the grid was produced, not when the seabed
+        was surveyed.
+      stated_vertical_datum: MLLW
+      vertical_statement_basis: >-
+        A structured vertical-datum element in the product's own metadata
+        (VERT_DATUM["MLLW"]), and the name of its coordinate system
+        ("NAD83 / UTM zone 20N + MLLW depth"). The file name says the same.
+      vertical_uncertainty_basis: >-
+        The product's own uncertainty band, one value per cell, used as
+        published. It is not a single project figure.
+      lineage_root_id: "NOS:BAG:W00247"
+      # An earlier receipt for the same file, made by different code in
+      # August 2026.  The report compares itself with it.
+      prior_receipt: evidence/marine/w00247_bag_v0_1/w00247_bag_receipt.json

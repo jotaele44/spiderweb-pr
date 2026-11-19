@@ -20,6 +20,7 @@ Slope and curvature are the existing :mod:`gebco.terrain` implementations.
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Callable, Iterator, Sequence
@@ -296,13 +297,19 @@ def coverage(grid: SurfaceGrid) -> CoverageSummary:
 
 def slope_degrees(grid: SurfaceGrid) -> np.ndarray:
     _require_elevation(grid, "slope")
-    slope, _, _ = compute_slope(grid.values, grid.cell_size_m[0], grid.cell_size_m[1])
+    with np.errstate(invalid="ignore", divide="ignore"):
+        slope, _, _ = compute_slope(
+            grid.values, grid.cell_size_m[0], grid.cell_size_m[1]
+        )
     return slope
 
 
 def curvatures(grid: SurfaceGrid) -> dict[str, np.ndarray]:
     _require_elevation(grid, "curvature")
-    result = compute_curvatures(grid.values, grid.cell_size_m[0], grid.cell_size_m[1])
+    with np.errstate(invalid="ignore", divide="ignore"):
+        result = compute_curvatures(
+            grid.values, grid.cell_size_m[0], grid.cell_size_m[1]
+        )
     if isinstance(result, dict):
         return result
     names = ("profile", "plan", "general")
@@ -831,7 +838,10 @@ def detect_seams(
         other = 0 if axis == 1 else 1
         count = np.isfinite(step).sum(axis=other)
         length = step.shape[other]
-        with np.errstate(all="ignore"):
+        with np.errstate(all="ignore"), warnings.catch_warnings():
+            # A line with no covered cells has no median; that is expected on
+            # a survey that covers only part of its grid, and is handled below.
+            warnings.simplefilter("ignore", RuntimeWarning)
             med = np.nanmedian(step, axis=other)
             positive = np.nansum(step > 0, axis=other)
             negative = np.nansum(step < 0, axis=other)

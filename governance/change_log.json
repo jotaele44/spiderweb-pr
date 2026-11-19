@@ -126,6 +126,22 @@
         "evidence/access_points/validation/",
         "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
       ]
+    },
+    {
+      "date": "2026-11-19",
+      "summary": "Processed the first seabed survey for the Off-Shore Access Point registry (spiderweb/access_points/bathymetry_run.py, survey.py; scripts/process_access_point_seabed.py; seabed_runs in configs/access_point_survey_runs.yaml). One metadata request froze the landing page of NOS survey W00247 and one gridded survey file (6,935,533 bytes) was fetched under an explicit product grant of one file and 8 MB; it is held outside the repository and its SHA-256 equals the August 2026 receipt for the same file. Only its 64 m base grid is read. The run names no target record and states no position; the product's own per-cell uncertainty is used and the report counts the cells where the minimum depth cannot be resolved (56%). Three closed seabed depressions were found and are reported as shapes at EXPLORATORY state; none is attached to a record. The file is registered in the Off-Shore registry as a held, hashed grid, not a direct measurement. No feature, observation or status changed, no seed gained a coordinate, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v7.json.",
+      "files": [
+        "spiderweb/access_points/bathymetry_run.py",
+        "spiderweb/access_points/survey.py",
+        "spiderweb/access_points/seeding.py",
+        "spiderweb/access_points/raster.py",
+        "scripts/process_access_point_seabed.py",
+        "configs/access_point_survey_runs.yaml",
+        "evidence/access_points/real_survey/2026-11-18-offshore/",
+        "registry/access_points/",
+        "tests/test_access_points_seabed.py",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
     }
   ]
 }

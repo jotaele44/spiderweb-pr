@@ -1,5 +1,5 @@
 {
-  "content_sha256": "72871b06b88d5f84cbf16675e1065b1240a9a2748adf2c94fe50e6eac2a20e1f",
+  "content_sha256": "f68e6915dd4c5b9a3cc0d860af78fc735d739ea59af2c121a87aab32aaefbf90",
   "contract_version": "access-point-registry/1.0",
   "counts": {
     "derived_geometries": 0,
@@ -15,7 +15,7 @@
     "observations": 6,
     "observations_bound": 6,
     "observations_unbound": 0,
-    "sources": 184
+    "sources": 185
   },
   "derived_geometries": [],
   "features": [
@@ -2692,6 +2692,24 @@
       "source_uri": null,
       "survey_date": null,
       "title": "H03005"
+    },
+    {
+      "coverage_state": "INTERPOLATED",
+      "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
+      "lineage_root_id": "NOS:BAG:W00247",
+      "manifestation_sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+      "native_identifier": "NOS:BAG:W00247:3of4",
+      "parent_source_ids": [],
+      "product_stage": "GRID",
+      "provenance_state": "REGISTERED",
+      "provider": "NOS_BAG_PRODUCT",
+      "published_date": null,
+      "retrieved_utc": "2026-11-18T15:00:55+00:00",
+      "sensor_type": "MULTIBEAM_ECHOSOUNDER",
+      "source_id": "APSRC-b6b20e5ef75b4e3e",
+      "source_uri": "https://data.ngdc.noaa.gov/platforms/ocean/nos/coast/W00001-W02000/W00247/BAG/W00247_MB_VR_MLLW_3of4.bag",
+      "survey_date": "2013",
+      "title": "W00247_MB_VR_MLLW_3of4.bag"
     },
     {
       "coverage_state": "UNKNOWN",
