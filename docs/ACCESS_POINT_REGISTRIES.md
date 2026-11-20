@@ -618,7 +618,7 @@ set that is not held is recorded by hash for lineage and never parsed.
 |---|---|---|---|
 | USGS Karst Map: sinkholes deeper than 30 m (1,173 outlines) | Yes, 1.0 MB | Labels | The export declares no coordinate system; bound to EPSG:32161 from the parent database, confirmed by 1,171 of 1,173 outlines falling inside the karst limit |
 | USGS Karst Map: areas of sinkholes 5–30 m deep (31 polygons) | Yes, 0.2 MB | Context | Areas, not individual sinkholes |
-| PR Planning Board northern karst limit (1 polygon) | Yes, 43 KB | Karst limit | EPSG:6566, from the archive's own projection file |
+| PR Planning Board northern karst limit (1 polygon) | Yes, 43 KB | Karst limit | EPSG:6566, from the archive's own projection file. Kept in the repository by the owner's decision of 2026-11-20; no separate licence text came with the layer |
 | USGS Karst Map: rock units (805 polygons) | Hash only | Lithology | Used once, from the owner's upload |
 | The parent geodatabase; a network link to the government map server | Hash only | Lineage | Not parsed; the link is never fetched |
 

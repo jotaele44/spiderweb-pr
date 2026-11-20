@@ -87,7 +87,10 @@ sets:
       to Rio Grande (northeast) municipalities. Source: PR Planning Board, 2010.
     bound_crs: "EPSG:6566"
     crs_basis: The projection file inside the archive names EPSG:6566.
-    note: Government of Puerto Rico open geodata; exported from its map server
+    note: >-
+      Government of Puerto Rico open geodata; exported from its map server.
+      Kept in the repository by the repository owner's decision of 2026-11-20;
+      no separate licence text was supplied with the layer.
 
   - set_id: usgs_karst_lithology
     role: LITHOLOGY

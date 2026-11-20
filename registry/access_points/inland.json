@@ -1,5 +1,5 @@
 {
-  "content_sha256": "57ef047c9e4a206fcdcecb2c6128692290d64275b0691210acb06a714d3a35b2",
+  "content_sha256": "085e9f0c2ea1b025727cadf18118b687f876388fa3f9c3fc24ad061e856a73c0",
   "contract_version": "access-point-registry/1.0",
   "counts": {
     "derived_geometries": 0,
@@ -546,7 +546,7 @@
     },
     {
       "coverage_state": "GENERALIZED",
-      "license_note": "Government of Puerto Rico open geodata; exported from its map server",
+      "license_note": "Government of Puerto Rico open geodata; exported from its map server. Kept in the repository by the repository owner's decision of 2026-11-20; no separate licence text was supplied with the layer.",
       "lineage_root_id": "pr_planning_board_northern_karst_limit",
       "manifestation_sha256": "877fddfaac5d148dff055c11bffaab16deff3fb7a5ae14154708d030023df5a6",
       "native_identifier": "pr_planning_board_northern_karst_limit",
