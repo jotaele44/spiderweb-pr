@@ -23,6 +23,16 @@ GitHub Release using the matching section below (T6-53).
   as outer ones, so numerical residue on a rim is not counted as water.
 
 ### Added
+- **A search for an independent second seabed survey**
+  (`spiderweb/access_points/replication.py`,
+  `scripts/search_access_point_replication.py`). Two metadata requests and one
+  37.8 MB download under the owner's grant. The one gridded survey whose
+  catalogue box overlapped the depressions (NOS H12935, 2016) has no soundings
+  within 11 km of them; the independent cruises whose footprints cross them hold
+  raw pings only; the one processed grid nearby reaches nothing shallower than
+  448 m. Outcome BLOCKED, recorded in a sealed report. A horizontal coordinate
+  system with no EPSG code is now matched by its parameters, and the basis is
+  recorded.
 - **A seam test for depressions read from finer grids** (`survey.seam_test`),
   written before it was applied: narrow and grid-aligned, a level step across
   the axis along most of the length, and the step continuing past both ends.

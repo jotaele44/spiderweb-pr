@@ -170,6 +170,19 @@
         "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md",
         "docs/ACCESS_POINT_REGISTRIES.md"
       ]
+    },
+    {
+      "date": "2026-11-20",
+      "summary": "Searched for an independent second survey of the seabed depressions found in NOS W00247 (spiderweb/access_points/replication.py, scripts/search_access_point_replication.py, replication_searches in configs/access_point_survey_runs.yaml), under the repository owner's grant of 2026-11-20: two metadata requests (the H12935 landing page and one NCEI multibeam-footprint query) and one download (H12935_MB_VR_MLLW.bag, 37,801,093 bytes, held outside the repository). H12935 has no soundings within 11 km of the depressions; the independent cruises whose footprints contain them hold raw pings only; the one processed grid crossing W00247 reaches nothing shallower than 448 m. The sealed report's outcome is BLOCKED; no raw soundings were processed. Added parameter matching for a horizontal CRS that a file gives without an EPSG code, with the basis recorded. No feature, observation or status changed; nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v10.json.",
+      "files": [
+        "spiderweb/access_points/replication.py",
+        "spiderweb/access_points/survey.py",
+        "scripts/search_access_point_replication.py",
+        "configs/access_point_survey_runs.yaml",
+        "evidence/access_points/real_survey/2026-11-20-offshore-replication/",
+        "tests/test_access_points_replication.py",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
     }
   ]
 }

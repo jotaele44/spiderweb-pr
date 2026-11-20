@@ -618,6 +618,33 @@ stated in the report.
 
 No feature, observation or status changed, and nothing was registered.
 
+### A search for an independent second survey (2026-11-20)
+
+The depressions above come from one survey. A finer reading of the same file is
+not replication; another cruise, another year and other soundings would be. A
+declared search (`spiderweb/access_points/replication.py`,
+`scripts/search_access_point_replication.py`; `replication_searches` in
+`configs/access_point_survey_runs.yaml`) recorded what is available. It made
+**two metadata requests and one download**, each under a grant from the
+repository owner's in-session decision of 2026-11-20. Its sealed report is
+rebuilt from committed evidence.
+
+| Step | Result | Class |
+|---|---|---|
+| NOS survey H12935 (NOAA Ship Nancy Foster, 7–18 April 2016): the only gridded survey whose catalogue box overlapped the depressions | Fetched under a grant of one file and 40 MB: 37,801,093 bytes, SHA-256 `58ba678b…1df41`, held outside the repository. **Its own grid has no soundings within 11 to 17 km of any depression**; the survey's bounding box is not its coverage | FACT |
+| Its coordinate system | The file gives no EPSG code for the horizontal part; matched by its parameters to EPSG:26920 and recorded as matched, not stated | COMPUTED |
+| One query of the NCEI multibeam footprint service around the depressions' deepest points | Six cruises; the footprint polygons of RB0604 (2006), NF-14-01T (2014) and NF2202 (2022) contain five to eight of the eight outer depressions | COMPUTED |
+| Is a cruise the same acquisition as W00247? | NF-13-02 has the same ship, year and an instrument model in common with W00247, so it is probably the same soundings; the others are independent | INFERENCE |
+| What NCEI holds for each independent cruise that crosses the depressions | Raw pings only | FACT (discovery catalogue of 2026-11-16) |
+| The one processed grid crossing W00247 (EX1502L3, 50 m) | Its receipt of August 2026 shows nothing shallower than 448 m over W00247's covered cells; the depressions' floors are at 72 to 101 m | FACT |
+
+**Outcome: BLOCKED.** Every independent cruise that crosses the depressions is
+held only as raw multibeam pings. A grid made from raw pings needs the cruise's
+own sound-speed, tide and attitude corrections. A grid improvised here would not
+be evidence, so none was made, and the depressions stay unreplicated. Footprint
+polygons are where a cruise ran its sonar, generalised; they are not coverage
+of any one point.
+
 ## Reference maps and the comparison with them
 
 A reference set is somebody else's map. It is declared in
@@ -706,6 +733,7 @@ external service or sibling repository was modified.
 | `discovery.py` | Planned, bounded discovery runs over declared search areas; the sealed source catalogue; offline replay |
 | `products.py` | Fetching a named product inside a byte ceiling; the elevation product catalogue |
 | `survey.py`, `survey_run.py` | Reading a real gridded product, binding its stated datum, detection, two-survey replication; the declared, reproducible run |
+| `replication.py` | A declared search for an independent second survey: footprints, independence of cruises, what NCEI holds, a candidate product's actual coverage |
 | `bathymetry_run.py` | The declared, reproducible run over one gridded seabed survey: no target record, the product's own per-cell uncertainty, and what the survey cannot show; a run may read the file's finer grids at a stated resolution and is compared with an earlier run |
 | `reference.py`, `validation.py` | Published reference maps held by hash and read with a bound CRS; the comparison of the detector with a published sinkhole map |
 | `federation_context.py` | Read-only context from other producers' packages |

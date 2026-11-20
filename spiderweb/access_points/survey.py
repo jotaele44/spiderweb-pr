@@ -762,15 +762,50 @@ def horizontal_crs(crs: Any) -> str:
 
     import re  # noqa: PLC0415
 
+    return horizontal_crs_with_basis(crs)[0]
+
+
+def horizontal_crs_with_basis(crs: Any) -> tuple[str, str]:
+    """The horizontal EPSG code and how it was found.
+
+    In order: the CRS's own code; the code the file writes on the horizontal
+    part of a compound system; or, when the file names no code at all, the
+    EPSG system whose definition matches the horizontal part's parameters
+    (datum, projection, zone, units).  The basis is reported so a matched code
+    is never read as a stated one.
+    """
+
+    import re  # noqa: PLC0415
+
     code = crs.to_epsg()
     if code is not None:
-        return f"EPSG:{code}"
+        return f"EPSG:{code}", "STATED_BY_THE_FILE"
+    wkt = crs.to_wkt()
     match = re.search(
-        r'PROJCS\[.*?AUTHORITY\["EPSG","(\d+)"\]\]\s*,\s*VERT_CS', crs.to_wkt(), re.S
+        r'PROJCS\[.*?AUTHORITY\["EPSG","(\d+)"\]\]\s*,\s*VERT_CS', wkt, re.S
     )
-    if match is None:
-        raise SurveyReadError("the product's horizontal CRS cannot be determined")
-    return f"EPSG:{match.group(1)}"
+    if match is not None:
+        return f"EPSG:{match.group(1)}", "STATED_BY_THE_FILE_ON_ITS_HORIZONTAL_PART"
+    start = wkt.find("PROJCS[")
+    if start >= 0:
+        depth = 0
+        for end in range(start, len(wkt)):
+            if wkt[end] == "[":
+                depth += 1
+            elif wkt[end] == "]":
+                depth -= 1
+                if depth == 0:
+                    break
+        rasterio = _rasterio()
+        try:
+            matched = rasterio.crs.CRS.from_wkt(wkt[start : end + 1]).to_epsg(
+                confidence_threshold=70
+            )
+        except Exception:  # noqa: BLE001 - an unreadable part is simply not matched
+            matched = None
+        if matched is not None:
+            return f"EPSG:{matched}", "MATCHED_BY_PARAMETERS_NO_CODE_IN_FILE"
+    raise SurveyReadError("the product's horizontal CRS cannot be determined")
 
 
 @dataclass(frozen=True)

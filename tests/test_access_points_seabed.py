@@ -1138,3 +1138,24 @@ def test_a_column_with_too_few_cells_beside_it_is_not_measured():
         result.grid, [max(rows, key=lambda r: r["max_depth_m"])]
     )
     assert seam["classification"] == "INSUFFICIENT_DATA"
+
+
+def test_a_horizontal_crs_without_a_code_is_matched_by_its_parameters():
+    unnamed = (
+        'COMPD_CS["UTM-20N-Nad83 + MLLW depth",PROJCS["UTM-20N-Nad83",GEOGCS["NAD83",'
+        'DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.257222101004]],'
+        'PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]],'
+        'PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],'
+        'PARAMETER["central_meridian",-63],PARAMETER["scale_factor",0.9996],'
+        'PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1]],'
+        'VERT_CS["MLLW depth",VERT_DATUM["Mean Lower Low Water",2005],UNIT["metre",1],'
+        'AXIS["Depth",DOWN]]]'
+    )
+    crs = rasterio.crs.CRS.from_wkt(unnamed)
+    assert survey.horizontal_crs_with_basis(crs) == (
+        "EPSG:26920",
+        "MATCHED_BY_PARAMETERS_NO_CODE_IN_FILE",
+    )
+    stated = rasterio.crs.CRS.from_wkt(COMPOUND_WKT)
+    assert survey.horizontal_crs_with_basis(stated)[1].startswith("STATED_BY_THE_FILE")
+    assert survey.horizontal_crs(rasterio.crs.CRS.from_epsg(26920)) == "EPSG:26920"

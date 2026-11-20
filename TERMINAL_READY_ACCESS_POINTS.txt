@@ -7,7 +7,7 @@ NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
 IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
 RECORDS EXPORTED TO THE HUB: NONE
 INDEPENDENT REVIEW: NOT PERFORMED
-MACHINE-READABLE REPORT: evidence/access_points/certification_report_v9.json
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v10.json
 
 PURPOSE
 
@@ -116,6 +116,7 @@ SEABED-SURVEY PROCESSING
    python scripts/process_access_point_seabed.py --run-id 2026-11-18-offshore --check
    python scripts/process_access_point_seabed.py --run-id 2026-11-19-offshore-8m --check
    python scripts/process_access_point_seabed.py --run-id 2026-11-19-offshore-8m-small --check
+   python scripts/search_access_point_replication.py --search-id 2026-11-20-offshore-replication --check
 
    Runs are declared under seabed_runs in configs/access_point_survey_runs.yaml.
    A seabed run names no target record and states no position; it names a search
@@ -151,7 +152,8 @@ OPEN BEFORE ANY RELEASE
      check on the same soundings, not replication. Over 32% of its covered cells
      at 8 m a 2 m depression cannot be shown. One small steep object found at
      8 m is flagged and unexplained: a declared seam test says it is not a
-     seam between finer grids. It verifies no record.
+     seam between finer grids. It verifies no record. An independent second
+     survey was searched for: none exists in gridded form (raw pings only).
    - The five seed screenshots are not registered.
    - Live source discovery ran once (2026-11-16, 180 sources listed). It lists
      surveys; it downloaded none, and no record cites one yet.

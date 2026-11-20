@@ -159,3 +159,34 @@ seabed_runs:
       min_area_m2: 1024.0
       nested: true
     product: *w00247_3of4
+
+# Searches for an independent second survey of depressions a seabed run found.
+#
+# Replication needs a different acquisition: another cruise, another year,
+# other soundings.  A search names the run whose depressions it tests (their
+# deepest points are read from that run's report, never typed here), the
+# survey they came from, one frozen footprint query, and at most one gridded
+# candidate product that was fetched to check.  Its report says what was
+# found; it attaches nothing to any record.
+replication_searches:
+  - search_id: "2026-11-20-offshore-replication"
+    registry: access_point.offshore
+    earlier_run: "2026-11-19-offshore-8m-small"
+    reference_run: "2026-11-18-offshore"
+    reference_landing_page: "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html"
+    # One NCEI multibeam-footprint query over a small box drawn around the
+    # depressions' deepest points (as the 8 m report gives them), frozen on
+    # 2026-11-20.  The box is a query, not a feature position.
+    footprint_query: "https://gis.ngdc.noaa.gov/arcgis/rest/services/multibeam_footprints/MapServer/0/query?f=json&where=1%3D1&geometry=-65.94%2C17.785%2C-65.86%2C17.82&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultRecordCount=2000"
+    discovery_target: guayama_punta_tuna_discovery_v0_1
+    # The earlier receipt that examined the only processed multibeam grid
+    # crossing W00247 (EX1502L3, 50 m).
+    prior_receipt: evidence/marine/GUAYAMA_SECOND_SENSOR_v0_5_RECEIPT.json
+    # The one gridded survey whose catalogue box overlapped the depressions.
+    # Fetched on 2026-11-20 under a grant of one file and 40 MB.
+    candidate_product:
+      filename: H12935_MB_VR_MLLW.bag
+      native_identifier: "NOS:BAG:H12935"
+      url: "https://data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/BAG/H12935_MB_VR_MLLW.bag"
+      landing_page: "https://www.ngdc.noaa.gov/nos/H12001-H14000/H12935.html"
+      sha256: 58ba678b7468411b6ff56ab5ce958bf942b1ec8badf642efe770915ee3d1df41

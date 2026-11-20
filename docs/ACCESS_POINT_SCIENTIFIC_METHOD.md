@@ -432,7 +432,9 @@ trees, flow routing, local relief models beyond a windowed range, interpretation
 of side-scan, backscatter or sub-bottom data, multibeam artefact filtering
 beyond grid-aligned seams and the seam test above, a way to say what a small
 depression that is neither seam-like nor a resolved pit actually is, a second
-seabed survey or epoch to replicate the first, a certified transform
+seabed survey or epoch to replicate the first (a declared search found only raw
+pings from the independent cruises that cross the depressions), processing of
+raw multibeam soundings, a certified transform
 between a tidal datum and an orthometric one, reprojection of geographic grids
 inside this package, per-cell uncertainty for elevation tiles, a rule that separates a single pit from the
 broad bowl it sits in and is shown to help, and any field-visited truth set. A projected GeoTIFF
