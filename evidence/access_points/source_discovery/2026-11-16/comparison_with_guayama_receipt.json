@@ -1,0 +1,61 @@
+{
+  "earlier_record": "evidence/marine/guayama_punta_tuna_v0_1/source_denominator_receipt.json",
+  "note": "identifier sets for the same box at two dates; a difference is a change in what the catalogue lists, not a change at sea",
+  "providers": {
+    "NCEI_MULTIBEAM_CATALOG": {
+      "comparable": true,
+      "in_both": 13,
+      "listed_before": 13,
+      "listed_now": 14,
+      "only_before": [],
+      "only_now": [
+        "NCEI:multibeam:NF-13-02"
+      ]
+    },
+    "NCEI_SOUNDING_CATALOG": {
+      "comparable": true,
+      "in_both": 29,
+      "listed_before": 29,
+      "listed_now": 29,
+      "only_before": [],
+      "only_now": []
+    },
+    "NOS_BAG_INVENTORY": {
+      "comparable": true,
+      "in_both": 1,
+      "listed_before": 1,
+      "listed_now": 4,
+      "only_before": [],
+      "only_now": [
+        "NOS:BAG:F00729",
+        "NOS:BAG:H12935",
+        "NOS:BAG:H13147"
+      ]
+    },
+    "USIEI_BATHYMETRIC_LIDAR": {
+      "comparable": true,
+      "in_both": 0,
+      "listed_before": 0,
+      "listed_now": 0,
+      "only_before": [],
+      "only_now": []
+    },
+    "USIEI_OTHER_BATHYMETRIC": {
+      "comparable": true,
+      "in_both": 0,
+      "listed_before": 0,
+      "listed_now": 0,
+      "only_before": [],
+      "only_now": []
+    },
+    "USIEI_TOPOBATHY_LIDAR": {
+      "comparable": true,
+      "in_both": 4,
+      "listed_before": 4,
+      "listed_now": 4,
+      "only_before": [],
+      "only_now": []
+    }
+  },
+  "target_id": "guayama_punta_tuna_discovery_v0_1"
+}

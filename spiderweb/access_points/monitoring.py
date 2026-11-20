@@ -121,6 +121,12 @@ def _row_hash(row: DiscoveredRow) -> str:
     )
 
 
+def row_sha256(row: DiscoveredRow) -> str:
+    """Hash of everything an inventory published about one record."""
+
+    return _row_hash(row)
+
+
 def _retrieved(run: ProviderRun) -> str | None:
     return run.responses[-1].retrieved_utc if run.responses else None
 

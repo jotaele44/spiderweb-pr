@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint src vite.config.ts vitest.config.ts",
     "lint:fix": "eslint src vite.config.ts vitest.config.ts --fix",
+    "visual:iphone": "node scripts/capture-spatial-iphone-baselines.mjs",
     "postinstall": "node scripts/copy-cesium-assets.mjs"
   },
   "dependencies": {

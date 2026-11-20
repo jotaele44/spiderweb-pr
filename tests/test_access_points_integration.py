@@ -1070,19 +1070,30 @@ def test_legacy_crosswalk_is_exact_closed_and_read_only():
 
 def test_guayama_reference_sources_match_the_receipt_and_are_not_measurements():
     build = seeding.build_all(REPO)
-    assert build.guayama == {
+    listed = {
         "multibeam": 13,
         "sounding": 29,
         "bag": 1,
         "topobathy_lidar": 4,
         "datum_placeholders": 4,
     }
+    assert {key: build.guayama[key] for key in listed} == listed
+    # Every survey the receipt names is held exactly once: either added from the
+    # receipt or already registered by a later discovery run.
+    assert build.guayama["added"] + build.guayama["already_registered"] == 47
     referenced = [
         s
         for s in build.offshore.sources.values()
         if s.provenance_state is v.ProvenanceState.REFERENCED_ONLY
     ]
-    assert len(referenced) == 47
+    held = [(s.provider, s.native_identifier) for s in referenced]
+    assert len(held) == len(set(held))
+    if build.discovery is None:
+        assert len(referenced) == 47
+    else:
+        assert len(referenced) == 47 - build.guayama["already_registered"] + (
+            build.discovery["registered"]["access_point.offshore"]
+        )
     assert not any(s.is_direct_measurement for s in build.offshore.sources.values())
     assert len(build.ledger.relationships) == 0
 
@@ -1212,7 +1223,10 @@ def test_evidence_shows_what_each_assertion_is_worth(service):
     assert evidence["sources"][0]["provenance_state"] == "UNREGISTERED"
     coverage = service.source_coverage("offshore")
     assert coverage["direct_measurement_sources"] == 0
-    assert coverage["by_provider"]["NCEI_SOUNDING_CATALOG"] == {"REFERENCED_ONLY": 29}
+    # Every catalogue listing is a reference and nothing else; the count is at
+    # least the 29 sounding surveys the Guayama receipt names.
+    soundings = coverage["by_provider"]["NCEI_SOUNDING_CATALOG"]
+    assert set(soundings) == {"REFERENCED_ONLY"} and soundings["REFERENCED_ONLY"] >= 29
 
 
 def test_one_registry_failing_does_not_hide_the_other(tmp_path):

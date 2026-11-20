@@ -11,8 +11,9 @@ serves the inland and the off-shore registry.
 What it adds
 ------------
 * a default-deny authorisation gate: nothing touches the network unless the
-  caller holds an explicit grant, and the only grant implemented here is
-  metadata discovery.  There is no bulk-download path in this module;
+  caller holds an explicit grant.  This module spends metadata grants only.
+  Fetching a data product is a separate grant, for named files inside a byte
+  ceiling, and lives in :mod:`.products`; there is no bulk-download path;
 * retry and rate-limit wrappers around the shared transport;
 * an offline replay transport over frozen ``.bin`` + ``.manifest.json`` pairs;
 * the adapter lifecycle as a declared vocabulary with allowed transitions;
@@ -26,13 +27,18 @@ can never satisfy a direct-observation gate.
 
 from __future__ import annotations
 
+import hashlib
+import html
 import json
 import os
+import re
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
+from urllib.request import Request, urlopen
 
 from federation.spatial_core import canonical_json_sha256
 from gebco.marine_evidence import CoverageState, ProductStage, SensorType
@@ -150,6 +156,8 @@ class LifecycleLog:
 class AuthorizationLevel(StrEnum):
     NONE = "NONE"
     METADATA_DISCOVERY = "METADATA_DISCOVERY"
+    # Named files only, inside a byte ceiling.  See :mod:`.products`.
+    PRODUCT_DOWNLOAD = "PRODUCT_DOWNLOAD"
 
 
 class AcquisitionNotAuthorized(PermissionError):
@@ -158,11 +166,18 @@ class AcquisitionNotAuthorized(PermissionError):
 
 @dataclass(frozen=True, slots=True)
 class Authorization:
-    """An explicit, bounded grant.  The default grants nothing."""
+    """An explicit, bounded grant.  The default grants nothing.
+
+    A grant is for one level only.  A metadata grant cannot download a
+    product, and a product grant cannot be spent on catalogue queries.
+    ``max_requests`` bounds requests (metadata) or files (products);
+    ``max_bytes`` bounds the bytes of a product grant.
+    """
 
     level: AuthorizationLevel = AuthorizationLevel.NONE
     granted_by: str = ""
     max_requests: int = 0
+    max_bytes: int = 0
 
     def __post_init__(self) -> None:
         if self.level is not AuthorizationLevel.NONE:
@@ -170,29 +185,47 @@ class Authorization:
                 raise ValueError("a grant must name who authorised it")
             if self.max_requests < 1:
                 raise ValueError("a grant must bound the number of requests")
+        if self.level is AuthorizationLevel.PRODUCT_DOWNLOAD and self.max_bytes < 1:
+            raise ValueError("a product grant must bound the number of bytes")
+        if self.level is not AuthorizationLevel.PRODUCT_DOWNLOAD and self.max_bytes:
+            raise ValueError("only a product grant carries a byte ceiling")
 
     @classmethod
     def from_environment(
         cls, environ: Mapping[str, str] | None = None
     ) -> "Authorization":
-        """``SPIDERWEB_ACCESS_POINT_ACQUISITION=metadata:<max_requests>:<granted_by>``.
+        """Read the grant from ``SPIDERWEB_ACCESS_POINT_ACQUISITION``.
 
-        Anything else, including an unset variable, grants nothing.
+        ``metadata:<max_requests>:<granted_by>`` or
+        ``product:<max_files>:<max_bytes>:<granted_by>``.  Anything else,
+        including an unset variable, grants nothing.
         """
 
         raw = (environ if environ is not None else os.environ).get(
             AUTHORIZATION_ENV, ""
         )
-        parts = raw.split(":", 2)
-        if len(parts) != 3 or parts[0] != "metadata":
-            return cls()
+        kind = raw.split(":", 1)[0]
         try:
-            limit = int(parts[1])
+            if kind == "metadata":
+                _, limit, who = raw.split(":", 2)
+                if int(limit) < 1 or not who.strip():
+                    return cls()
+                return cls(
+                    AuthorizationLevel.METADATA_DISCOVERY, who.strip(), int(limit)
+                )
+            if kind == "product":
+                _, files, ceiling, who = raw.split(":", 3)
+                if int(files) < 1 or int(ceiling) < 1 or not who.strip():
+                    return cls()
+                return cls(
+                    AuthorizationLevel.PRODUCT_DOWNLOAD,
+                    who.strip(),
+                    int(files),
+                    int(ceiling),
+                )
         except ValueError:
             return cls()
-        if limit < 1 or not parts[2].strip():
-            return cls()
-        return cls(AuthorizationLevel.METADATA_DISCOVERY, parts[2].strip(), limit)
+        return cls()
 
     def require(self, level: AuthorizationLevel) -> None:
         if self.level is not level:
@@ -291,6 +324,72 @@ def with_rate_limit(
     return call
 
 
+class UnexpectedRedirect(RuntimeError):
+    """A catalogue endpoint answered from a different URL than the one asked."""
+
+
+# Response headers worth keeping as evidence.  Everything else -- cookies,
+# load-balancer tokens, server banners -- is dropped before a response is
+# frozen, so nothing session-specific is ever written next to the bytes.
+RECORDED_RESPONSE_HEADERS = frozenset(
+    {
+        "content-type",
+        "content-length",
+        "content-encoding",
+        "date",
+        "etag",
+        "last-modified",
+    }
+)
+GENERIC_USER_AGENT = "metadata-discovery-client/1.0"
+
+
+def live_transport(
+    *, user_agent: str = GENERIC_USER_AGENT, timeout: float = 60.0
+) -> Transport:
+    """A real HTTPS transport for metadata discovery.
+
+    It differs from ``pipeline.marine_sources.default_transport`` in three
+    ways that matter for a run whose bytes are kept: the user agent is generic
+    (no repository or operator name leaves the machine), only an allow-list of
+    response headers is recorded, and a redirect is refused instead of being
+    followed silently, so the recorded URL is always the URL that was asked
+    and a frozen response can be replayed by it.
+
+    Nothing here grants anything: wrap it in :func:`budgeted` before use.
+    """
+
+    if not user_agent.strip():
+        raise ValueError("a user agent is required")
+
+    def call(url: str) -> FrozenHttpResponse:
+        if not url.startswith("https://"):
+            raise ValueError(f"only https catalogue endpoints are allowed: {url}")
+        request = Request(url, headers={"User-Agent": user_agent})
+        with urlopen(request, timeout=timeout) as response:  # noqa: S310 - https only
+            body = response.read()
+            status = int(response.status)
+            headers = {
+                str(k): str(v)
+                for k, v in response.headers.items()
+                if str(k).lower() in RECORDED_RESPONSE_HEADERS
+            }
+            final_url = response.geturl()
+        if final_url != url:
+            raise UnexpectedRedirect(f"{url} answered from {final_url}")
+        return FrozenHttpResponse(
+            request_url=url,
+            status=status,
+            retrieved_utc=datetime.now(timezone.utc).isoformat(),
+            response_sha256=hashlib.sha256(body).hexdigest(),
+            response_size=len(body),
+            headers=headers,
+            body=body,
+        )
+
+    return call
+
+
 class Recorder:
     """Keeps every frozen response a run produced, in request order."""
 
@@ -329,8 +428,6 @@ def replay_transport(directory: Path) -> Transport:
     is refused.  An unknown URL raises -- it is never answered with an empty
     success.
     """
-
-    import hashlib
 
     table: dict[str, FrozenHttpResponse] = {}
     for manifest_path in sorted(Path(directory).glob("*.manifest.json")):
@@ -426,6 +523,31 @@ def _text(value: Any) -> str | None:
     return text or None
 
 
+_HREF = re.compile(r"""href\s*=\s*["']([^"']+)["']""", re.IGNORECASE)
+_BARE_LINK = re.compile(r"""https?://[^\s<>"']+""", re.IGNORECASE)
+
+
+def first_link(value: Any) -> str | None:
+    """The first web address an inventory field actually contains, or ``None``.
+
+    Inventories publish "link" fields as whatever their own viewer renders:
+    a bare address, an HTML fragment with one or several anchors, or a
+    sentence such as "Will be available from ...".  Only a real address is
+    usable as a source URI; the field itself stays verbatim in the row's
+    attributes, so nothing the inventory said is lost.
+    """
+
+    text = _text(value)
+    if text is None:
+        return None
+    candidates = _HREF.findall(text) or _BARE_LINK.findall(text)
+    for candidate in candidates:
+        link = html.unescape(candidate).strip()
+        if link.lower().startswith(("https://", "http://")):
+            return link
+    return None
+
+
 def _usiei_rows(
     layer: LidarInventoryLayer,
 ) -> Callable[[BoundingBox, Transport], list[DiscoveredRow]]:
@@ -458,8 +580,8 @@ def _usiei_rows(
                         or "(untitled inventory record)",
                         attributes={str(k): v for k, v in attrs.items()},
                         envelope=esri_feature_envelope(feature),
-                        metadata_uri=_text(attrs.get("MetadataLink")),
-                        data_access_uri=_text(attrs.get("DataAccess")),
+                        metadata_uri=first_link(attrs.get("MetadataLink")),
+                        data_access_uri=first_link(attrs.get("DataAccess")),
                         surveyed=_text(attrs.get("CollectionDate")),
                         published=None,
                         vertical_datum_raw=_text(attrs.get("VerticalDatum")),
@@ -526,7 +648,7 @@ def _nos_bag_rows(bbox: BoundingBox, transport: Transport) -> list[DiscoveredRow
                     attributes={str(k): v for k, v in attrs.items()},
                     envelope=esri_feature_envelope(feature),
                     metadata_uri=None,
-                    data_access_uri=_text(attrs.get("DOWNLOAD_URL")),
+                    data_access_uri=first_link(attrs.get("DOWNLOAD_URL")),
                     surveyed=_text(attrs.get("SURVEY_YEAR")),
                     published=None,
                     vertical_datum_raw=None,
