@@ -26,6 +26,7 @@
 | cross-domain spatial relations | v1 typed relations | publishes candidates | publishes candidates | publishes candidates | Spiderweb consumption; hub correlation boundary preserved |
 | PostGIS durable plane | v1 migration | v1 migration | v1 migration | v1 migration | repo-local ownership |
 | vector tiles | planned v1 extension | producer | producer | producer | shared serving contract |
+| aerial imagery display | NOAA ERI tiles + footprints rendered by the backend, shown on the diagnostic map (added after the pinned baseline above) | not assessed | not assessed | not assessed | repo-local for now; hub ADR 0006 places imagery-provider access in `thehub-pr` |
 | offline package | `fedgeopack/1.0` | `fedgeopack/1.0` | `fedgeopack/1.0` | `fedgeopack/1.0` | shared contract |
 
 ## Duplication rules

@@ -1,0 +1,650 @@
+{
+  "schema": "access_point_certification_report/1.0",
+  "generated_utc": "2026-11-16T11:50:00Z",
+  "statement": "Software tested; science exploratory; not certified; production not authorised. A passing test suite is not a certification.",
+  "repositories": [
+    {
+      "repo": "spiderweb-pr",
+      "head_sha": "cb5aa8eb726ba882b410bcfe0a402799af86ed5a",
+      "tree_sha": "2cc93ed0fec2c47700ab9c29f5e560cd9955a466",
+      "role": "changed by this work (base commit shown)"
+    },
+    {
+      "repo": "aguayluz-pr",
+      "head_sha": "e29bfbc55df5e9ea1724fd77837f0ee064ca6d31",
+      "tree_sha": "a1c8e9a2e1a9da828c954d8345b2868a6974b1e6",
+      "role": "audited, unchanged"
+    },
+    {
+      "repo": "thehub-pr",
+      "head_sha": "70b74c7e71a6f380a45fd374332e60eef174e9b8",
+      "tree_sha": "5884b50efd72dee7425bfcd53b1a75e0c8118632",
+      "role": "audited, unchanged"
+    },
+    {
+      "repo": "skywatcher-pr",
+      "head_sha": "0c0b5c8b075e64797777cdaa5d6518ca7823aaf5",
+      "tree_sha": "8dd837d4fdf678ff3ef343aa69c2f77c45dfd90a",
+      "role": "audited, unchanged"
+    },
+    {
+      "repo": "moneysweep-pr",
+      "head_sha": "08e1bb2ee7e92c786ba7eb60397fe10703f2ce53",
+      "tree_sha": "8256d5abb8fa49ebca177d11e6729220edf410e4",
+      "role": "audited, unchanged"
+    }
+  ],
+  "gates": [
+    {
+      "gate_id": "BASELINE_FREEZE",
+      "title": "Repository heads, dependencies and tests frozen before any change",
+      "state": "PASS",
+      "claim_class": "FACT",
+      "evidence": [
+        "evidence/access_points/baseline_manifest_v1.json"
+      ],
+      "detail": "All five heads equalled origin/main; spiderweb-pr was at the commit named in the proposal. 2109 core tests, 50 grid tests and 148 frontend tests passed before the change. main later advanced to b2c532f and was merged into the branch; one textual conflict in CHANGELOG.md."
+    },
+    {
+      "gate_id": "TERMINOLOGY_COLLISION",
+      "title": "New registries cannot collide with existing meanings of ILAP and OSAP",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "docs/ACCESS_POINT_TERMINOLOGY_DECISION.md",
+        "tests/test_access_points_core.py"
+      ],
+      "detail": "Every legacy spelling classifies to its own namespace; bare acronyms are refused; no new identifier contains a reserved token; nothing existing was renamed."
+    },
+    {
+      "gate_id": "TERMINOLOGY_OWNERSHIP",
+      "title": "Owners agree on the canonical meaning of ILAP and the expansion of FIC/OSAP",
+      "state": "OPEN",
+      "claim_class": "UNKNOWN",
+      "evidence": [
+        "docs/ACCESS_POINT_TERMINOLOGY_DECISION.md"
+      ],
+      "detail": "Three questions for the repository owners are unanswered; the sibling repository claims a different canonical expansion."
+    },
+    {
+      "gate_id": "SOFTWARE_TESTS",
+      "title": "Full repository test suite",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/"
+      ],
+      "detail": "2484 passed, 51 skipped, 0 failed on the tree with main merged in; total coverage 75.57% against a floor of 62. 350 of the tests are new in this change; 24 arrived from main."
+    },
+    {
+      "gate_id": "SCHEMA_TESTS",
+      "title": "Registry, ledger and certification schemas",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/test_access_points_schemas.py",
+        "schemas/access_point_registry.schema.json"
+      ],
+      "detail": "29 tests; committed documents conform; schema vocabularies are asserted equal to the code."
+    },
+    {
+      "gate_id": "IDENTITY_BOUNDARIES",
+      "title": "Identity is never derived from name, distance, category or count",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/test_access_points_core.py"
+      ],
+      "detail": "Correspondence cardinalities preserved; cross-namespace identity refused; identity binding needs an authoritative basis and an independent reviewer."
+    },
+    {
+      "gate_id": "EVIDENCE_LADDER",
+      "title": "Anomaly, feature, opening, passage and connection are kept apart",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "spiderweb/access_points/rules.py",
+        "tests/test_access_points_core.py"
+      ],
+      "detail": "Shape alone cannot establish an opening; rungs cannot be skipped; contradictions are preserved; no automatic promotion; the producer cannot verify its own evidence."
+    },
+    {
+      "gate_id": "CRS_AND_VERTICAL_DATUM_CONTROLS",
+      "title": "Missing CRS, unknown datum and wrong sign fail closed",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "spiderweb/access_points/vertical.py",
+        "tests/test_access_points_science.py"
+      ],
+      "detail": "Verified in software. No certified datum transform for Puerto Rico is registered, so no real land and sea surface can yet share a vertical axis."
+    },
+    {
+      "gate_id": "SCIENTIFIC_CONTROLS_SYNTHETIC",
+      "title": "Positive and negative controls on synthetic surfaces",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/test_access_points_science.py"
+      ],
+      "detail": "Planted shapes are found once at the planted place; planes, domes and noise yield nothing; two defects in the first implementation were found by these controls and fixed."
+    },
+    {
+      "gate_id": "SCIENTIFIC_VALIDATION_FIELD",
+      "title": "Methods scored against independent field truth",
+      "state": "OPEN",
+      "claim_class": "FACT",
+      "evidence": [
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
+      ],
+      "detail": "No labelled truth set exists in the repository. No precision or recall is claimed for real terrain or seabed. Thresholds are uncalibrated defaults."
+    },
+    {
+      "gate_id": "REAL_SURVEY_PROCESSING",
+      "title": "A real terrain or bathymetric survey processed end to end",
+      "state": "OPEN",
+      "claim_class": "FACT",
+      "evidence": [],
+      "detail": "None processed. No gridded survey reader is part of the pipeline and no survey product was downloaded."
+    },
+    {
+      "gate_id": "RECORD_COUNT_CLOSURE",
+      "title": "Record counts close in every document and in the legacy crosswalk",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "registry/access_points/build_manifest.json"
+      ],
+      "detail": "103 legacy nodes read: 5 matched, 81 without subtype, 17 unmatched, 0 without coordinates."
+    },
+    {
+      "gate_id": "SOURCE_PROVENANCE",
+      "title": "Sources behind registry records are registered with exact bytes",
+      "state": "PROVISIONAL",
+      "claim_class": "FACT",
+      "evidence": [
+        "registry/access_points/offshore.json"
+      ],
+      "detail": "The legacy node file is registered with its hash. 47 survey sources are references only. The five seed screenshots are not attached."
+    },
+    {
+      "gate_id": "SEED_PROVENANCE",
+      "title": "Annotated screenshots behind the five off-shore seeds are registered",
+      "state": "BLOCKED",
+      "claim_class": "FACT",
+      "evidence": [
+        "configs/access_point_seeds.yaml"
+      ],
+      "detail": "No file, hash or control point has been supplied. The seeds remain provisional with no coordinates."
+    },
+    {
+      "gate_id": "LIVE_SOURCE_DISCOVERY",
+      "title": "Metadata discovery executed against live catalogues",
+      "state": "BLOCKED",
+      "claim_class": "FACT",
+      "evidence": [
+        "spiderweb/access_points/acquisition.py"
+      ],
+      "detail": "Not executed: no network grant was given. Verified offline with injected transports only."
+    },
+    {
+      "gate_id": "API_COMPATIBILITY",
+      "title": "New read-only routes; no existing route changed",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/test_access_points_api.py"
+      ],
+      "detail": "51 tests; route inventory asserted; every method other than GET answers 405."
+    },
+    {
+      "gate_id": "GUI_UNIT_TESTS",
+      "title": "Frontend lint, type check, unit and accessibility tests, production build",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "server/frontend/src/spatial/accessPoints/accessPoints.test.tsx"
+      ],
+      "detail": "183 tests (148 before); lint and type check clean; build succeeds."
+    },
+    {
+      "gate_id": "GUI_BROWSER_CHECK",
+      "title": "Workbench driven in a real browser against the live backend",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [],
+      "detail": "Chromium: inland 4 drawn, off-shore 1 drawn, 5 records listed as having no coordinates, evidence view, synthetic banner on the control section, empty relationship ledger. One layout defect found and fixed."
+    },
+    {
+      "gate_id": "GUI_RUNTIME_MATRIX",
+      "title": "Existing six-module, three-browser runtime matrix",
+      "state": "OPEN",
+      "claim_class": "FACT",
+      "evidence": [
+        "server/frontend/tests/gui-runtime-matrix.mjs"
+      ],
+      "detail": "Not run locally; it runs in CI on the pull request."
+    },
+    {
+      "gate_id": "GUI_3D",
+      "title": "Access-point layers in the 3D runtime",
+      "state": "OPEN",
+      "claim_class": "FACT",
+      "evidence": [
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ],
+      "detail": "Not built. The 3D runtime has no data-layer contract, no terrain and no tests."
+    },
+    {
+      "gate_id": "CROSS_REPOSITORY_CONTEXT",
+      "title": "Other producers' packages verified as context sources",
+      "state": "PROVISIONAL",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "evidence/access_points/cross_repository_verification_v1.json"
+      ],
+      "detail": "aguayluz-pr: BLOCKED; moneysweep-pr: PASS; skywatcher-pr: PASS. moneysweep-pr yields 15 documentary records, none placeable."
+    },
+    {
+      "gate_id": "FEDERATION_EXPORT",
+      "title": "Access-point records exported to the hub",
+      "state": "BLOCKED",
+      "claim_class": "FACT",
+      "evidence": [
+        "reports/federation_spatial_impact_access_points_v1.json"
+      ],
+      "detail": "Not authorised and not implemented. The export script, its schemas and golden files are untouched."
+    },
+    {
+      "gate_id": "PERFORMANCE_BENCHMARKS",
+      "title": "Measured runtime, memory and query latency",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "evidence/access_points/benchmark_v1.json",
+        "evidence/access_points/benchmark_comparison_v1.json"
+      ],
+      "detail": "Measured on synthetic surfaces. Two measures regressed and are reported with the gains."
+    },
+    {
+      "gate_id": "SECURITY_REVIEW",
+      "title": "Security assessment",
+      "state": "PROVISIONAL",
+      "claim_class": "INFERENCE",
+      "evidence": [
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ],
+      "detail": "Self-assessed only: read-only API, bounded parameters, no path built from input, documents verified on load, discovery denied by default. The backend has no authentication; no independent review."
+    },
+    {
+      "gate_id": "ROLLBACK",
+      "title": "Rollback verified",
+      "state": "PROVISIONAL",
+      "claim_class": "INFERENCE",
+      "evidence": [
+        "TERMINAL_READY_ACCESS_POINTS.txt"
+      ],
+      "detail": "The change is additive and confined to one branch; rollback is a revert. It has not been exercised."
+    },
+    {
+      "gate_id": "INDEPENDENT_QA",
+      "title": "Qualified independent review",
+      "state": "OPEN",
+      "claim_class": "FACT",
+      "evidence": [],
+      "detail": "Not performed. This report was produced by the same process that produced the code and cannot stand in for it."
+    },
+    {
+      "gate_id": "PRODUCTION_AUTHORIZATION",
+      "title": "Explicit authorisation to release",
+      "state": "BLOCKED",
+      "claim_class": "FACT",
+      "evidence": [],
+      "detail": "Not given. Nothing was deployed and no production data store was written."
+    },
+    {
+      "gate_id": "CI_ON_PULL_REQUEST",
+      "title": "Continuous integration on the pull request",
+      "state": "PROVISIONAL",
+      "claim_class": "FACT",
+      "evidence": [
+        "https://github.com/jotaele44/spiderweb-pr/pull/458"
+      ],
+      "detail": "All 17 check runs passed on the pre-merge head 955f9f9 (tests on Python 3.11 and 3.12, lint, frontend, lockfile, install matrix, release check, data policy, template drift, spatial index gates). They must pass again on the merge commit."
+    }
+  ],
+  "readiness": {
+    "engineering": {
+      "state": "PROVISIONAL",
+      "statement": "Implemented and tested: 2460 tests pass with none failing. Not independently reviewed."
+    },
+    "science": {
+      "state": "OPEN",
+      "statement": "Verified on synthetic controls only. No field truth, no real survey processed, thresholds uncalibrated. Every registry record is a candidate or provisional; none is verified."
+    },
+    "gui": {
+      "state": "PROVISIONAL",
+      "statement": "Unit, accessibility and one-browser checks pass. Three-browser matrix not run locally; no 3D view."
+    },
+    "federation": {
+      "state": "BLOCKED",
+      "statement": "Nothing is exported. One of three producer packages is absent. Hub-side registration is not started."
+    },
+    "production": {
+      "state": "BLOCKED",
+      "statement": "No independent review and no authorisation."
+    }
+  },
+  "scores": [
+    {
+      "dimension": "Inland Access Points modernisation",
+      "verified": 35,
+      "projected": 60,
+      "basis": "Verified: registry, basin delineation, morphology and datum control are implemented and control-tested; 4 candidate records. Missing: field validation, real LiDAR, cave/mine/tunnel detectors, point-cloud handling."
+    },
+    {
+      "dimension": "Off-Shore Access Points maturity",
+      "verified": 30,
+      "projected": 55,
+      "basis": "Verified: same core as inland plus seabed interpretation rules; 47 reference sources; 6 records of which 5 are provisional with no coordinates. Missing: any processed survey, registered seed provenance, gridded-survey reading."
+    },
+    {
+      "dimension": "Shared geospatial infrastructure",
+      "verified": 60,
+      "projected": 75,
+      "basis": "Verified: one processing core, datum contract, typed relationships, cross-sections and coastline versions, all tested. Missing: certified datum transforms, reprojection, a spatial index."
+    },
+    {
+      "dimension": "Acquisition capability",
+      "verified": 30,
+      "projected": 55,
+      "basis": "Verified offline: default-deny metadata discovery over existing fetchers with retry, rate limit and replay. Missing: a live run, product download, terrestrial sources beyond the elevation inventory."
+    },
+    {
+      "dimension": "Cross-repository integration",
+      "verified": 30,
+      "projected": 50,
+      "basis": "Verified: one real package read and closed; non-inference rules tested. Missing: an aguayluz-pr package, any export, hub registration."
+    },
+    {
+      "dimension": "Scientific validation",
+      "verified": 20,
+      "projected": 45,
+      "basis": "Verified: software controls with known answers, which found and fixed two defects. Missing: any independent truth set, so no accuracy figure exists."
+    },
+    {
+      "dimension": "GUI and frontend",
+      "verified": 55,
+      "projected": 70,
+      "basis": "Verified: layer group, evidence view, relationship and cross-section explorers; 183 tests; one browser. Missing: three-browser matrix result, 3D, measured-surface display."
+    },
+    {
+      "dimension": "Performance hardening",
+      "verified": 45,
+      "projected": 60,
+      "basis": "Verified: measured before and after; delineation, ingest and page queries faster; tiled processing bounds memory for local operators. Missing: tiling for basin filling (555 MB peak at 4 million cells), a spatial index."
+    },
+    {
+      "dimension": "Overall implementation",
+      "verified": 38,
+      "projected": 58,
+      "basis": "Verified scores count only what was executed here. Projected scores assume the open gates listed in this report close as designed, with no new invention; they are estimates, not measurements."
+    }
+  ],
+  "measurements": {
+    "tests": {
+      "core_passed": 2484,
+      "core_failed": 0,
+      "core_skipped": 51,
+      "coverage_percent": 75.57,
+      "coverage_floor": 62,
+      "grid_suite_passed": 50,
+      "frontend_passed": 183,
+      "new_python_tests": 350,
+      "new_frontend_tests": 35,
+      "baseline_core_passed": 2109,
+      "baseline_frontend_passed": 148,
+      "tests_arrived_from_main": 24
+    },
+    "registry": {
+      "guayama_reference_sources": {
+        "bag": 1,
+        "datum_placeholders": 4,
+        "multibeam": 13,
+        "sounding": 29,
+        "topobathy_lidar": 4
+      },
+      "inland": {
+        "derived_geometries": 0,
+        "features": 4,
+        "features_by_status": {
+          "CANDIDATE": 4,
+          "PROVISIONAL_DISCOVERY": 0,
+          "REJECTED": 0,
+          "SUPERSEDED": 0,
+          "UNDER_REVIEW": 0,
+          "VERIFIED": 0
+        },
+        "observations": 4,
+        "observations_bound": 4,
+        "observations_unbound": 0,
+        "sources": 2
+      },
+      "legacy_crosswalk": {
+        "closes": true,
+        "legacy_nodes_read": 103,
+        "matched": 5,
+        "skipped_unmatched": 17,
+        "skipped_without_coordinates": 0,
+        "skipped_without_subtype": 81
+      },
+      "offshore": {
+        "derived_geometries": 0,
+        "features": 6,
+        "features_by_status": {
+          "CANDIDATE": 1,
+          "PROVISIONAL_DISCOVERY": 5,
+          "REJECTED": 0,
+          "SUPERSEDED": 0,
+          "UNDER_REVIEW": 0,
+          "VERIFIED": 0
+        },
+        "observations": 6,
+        "observations_bound": 6,
+        "observations_unbound": 0,
+        "sources": 54
+      },
+      "provisional_seeds": 5,
+      "relationships": 0
+    },
+    "benchmark_environment": {
+      "numpy": "2.4.6",
+      "platform": "Linux-6.18.44-fc-v470-x86_64-with-glibc2.39",
+      "processor_count": 4,
+      "python": "3.12.3",
+      "scikit_image": "0.26.0",
+      "scipy": "1.17.1"
+    },
+    "basin_delineation": [
+      {
+        "cells": 262144,
+        "best_seconds": 0.2394,
+        "cells_per_second": 1095004,
+        "peak_traced_mb": 35.11
+      },
+      {
+        "cells": 1048576,
+        "best_seconds": 0.779,
+        "cells_per_second": 1346054,
+        "peak_traced_mb": 139.36
+      },
+      {
+        "cells": 4194304,
+        "best_seconds": 2.7366,
+        "cells_per_second": 1532670,
+        "peak_traced_mb": 555.47
+      }
+    ],
+    "tiling": {
+      "operation": "position_index(radius=8 cells)",
+      "peak_memory_ratio_tiled_over_untiled": 0.23,
+      "results_identical": true,
+      "shape": [
+        2048,
+        2048
+      ],
+      "tiled_512_halo_9": {
+        "best_s": 1.4244,
+        "median_s": 1.5768,
+        "peak_traced_mb": 47.33,
+        "repeats": 2
+      },
+      "untiled": {
+        "best_s": 1.8322,
+        "median_s": 1.8707,
+        "peak_traced_mb": 205.53,
+        "repeats": 2
+      }
+    },
+    "registry_ingest_features_per_second": 8159,
+    "query_latency_ms_5000_features": {
+      "bbox_100": {
+        "median_ms": 31.74,
+        "p95_ms": 33.41,
+        "samples": 30
+      },
+      "evidence": {
+        "median_ms": 3.16,
+        "p95_ms": 3.35,
+        "samples": 30
+      },
+      "page_100": {
+        "median_ms": 15.21,
+        "p95_ms": 16.41,
+        "samples": 30
+      }
+    },
+    "before_after": [
+      {
+        "measure": "delineate_depressions, 262,144 cells (best of 3)",
+        "before": 0.3833,
+        "after": 0.3242,
+        "unit": "s",
+        "improvement_factor": 1.18
+      },
+      {
+        "measure": "detect_inland, 262,144 cells (best of 3)",
+        "before": 0.3668,
+        "after": 0.2758,
+        "unit": "s",
+        "improvement_factor": 1.33
+      },
+      {
+        "measure": "delineate_depressions, 1,048,576 cells (best of 3)",
+        "before": 2.0531,
+        "after": 0.8163,
+        "unit": "s",
+        "improvement_factor": 2.52
+      },
+      {
+        "measure": "detect_inland, 1,048,576 cells (best of 3)",
+        "before": 1.8806,
+        "after": 0.7155,
+        "unit": "s",
+        "improvement_factor": 2.63
+      },
+      {
+        "measure": "registry ingest with rule checks, 2,000 features",
+        "before": 1938,
+        "after": 8323,
+        "unit": "features/s",
+        "improvement_factor": 4.29
+      },
+      {
+        "measure": "service query: feature page of 100 (median), 2,000 features",
+        "before": 52.34,
+        "after": 6.1,
+        "unit": "ms",
+        "improvement_factor": 8.58
+      },
+      {
+        "measure": "service query: bounding-box page of 100 (median), 2,000 features",
+        "before": 56.48,
+        "after": 12.06,
+        "unit": "ms",
+        "improvement_factor": 4.68
+      },
+      {
+        "measure": "service query: evidence for one feature (median), 2,000 features",
+        "before": 0.77,
+        "after": 1.25,
+        "unit": "ms",
+        "improvement_factor": 0.62
+      },
+      {
+        "measure": "load and verify registry document, 2,000 features",
+        "before": 0.1796,
+        "after": 0.2514,
+        "unit": "s",
+        "improvement_factor": 0.71
+      }
+    ],
+    "schema_files": 87
+  },
+  "artifacts": [
+    {
+      "path": "registry/access_points/inland.json",
+      "sha256": "3662b74e68336674dbab1ef43a929ad349dc5b58f7c2e690189134a620d323f1"
+    },
+    {
+      "path": "registry/access_points/offshore.json",
+      "sha256": "2655ac1c2644b71a76cda3e317b37378e2190adf1aab071f1daf51b24ccea33d"
+    },
+    {
+      "path": "registry/access_points/relationships.json",
+      "sha256": "ae241ecf2ff315f4d195fce1b8c1a324f9603358ac6916aa7f61f395ace277f5"
+    },
+    {
+      "path": "registry/access_points/build_manifest.json",
+      "sha256": "48db71cee8400d4268ae5170cd6d8c6c511aadc914837b1cd5d06bfe654c7e29"
+    },
+    {
+      "path": "evidence/access_points/baseline_manifest_v1.json",
+      "sha256": "b17ec07fa2dff19e3e49089fd11154f8906364eccb7db2c1a8dd4b3d953ff98a"
+    },
+    {
+      "path": "evidence/access_points/artifact_manifest_v1.json",
+      "sha256": "75f8af6b8a5cab3d6ce8dacca8098fe3e7bd9c1f09b7eac4547283563e1f31cc"
+    },
+    {
+      "path": "evidence/access_points/benchmark_v1.json",
+      "sha256": "85924c958af9b7065e2faff4f0c7588c557d472ac4ef48cf7179292da4685afc"
+    },
+    {
+      "path": "evidence/access_points/benchmark_comparison_v1.json",
+      "sha256": "2d5eba27086b6a9631c7606ff4bb3fdf26657ba211d45bfbbeaa83912ac584a4"
+    },
+    {
+      "path": "evidence/access_points/cross_repository_verification_v1.json",
+      "sha256": "faa4b02b9d237f550ec524647366246c53e0e7a75696a59dd4f565487eebe6c2"
+    },
+    {
+      "path": "schemas/access_point_registry.schema.json",
+      "sha256": "1b5f209f59fc3d1867395c5f21f13638519ab78d9dca54d43528f581b9054751"
+    },
+    {
+      "path": "schemas/access_point_relationship_ledger.schema.json",
+      "sha256": "970beab065f054d05ad9a4b03dfd53e39b57157a607bed55f35511189ec64867"
+    },
+    {
+      "path": "schemas/access_point_certification_report.schema.json",
+      "sha256": "0e2eecf9040d403d23ee3990c07ce67d7ff9bee0ebca70c38e0c3973e893a1b9"
+    }
+  ],
+  "independent_review": {
+    "performed": false,
+    "reviewer": null,
+    "statement": "No independent review has been performed. The author of the code produced this report and cannot certify it."
+  },
+  "production_authorized": false
+}

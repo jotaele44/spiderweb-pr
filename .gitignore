@@ -357,6 +357,7 @@ reports/maintenance/
 
 # Desktop wrapper (see desktop/README.md)
 .venv/
+.node/
 desktop/.setup-complete
 desktop/.running
 
