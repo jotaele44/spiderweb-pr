@@ -5,6 +5,10 @@ FastAPI orchestration layer for the Puerto Rico Integrated Intelligence System.
 Provides REST endpoints for all PRIIS entities (SQLite-backed), SSE streaming
 for pipeline jobs and RAG queries, and GeoJSON endpoints for spatial layers.
 
+The read-only access-point registry routes (``/v1/access-points/*``) live in
+``server/backend/access_points_api.py`` and are included below. They are the
+only versioned routes in this API; every other route is unversioned.
+
 Start: uvicorn server.backend.main:app --reload --port 8000
 (run from the repo root so relative paths resolve correctly)
 """
@@ -91,6 +95,15 @@ try:
     app.include_router(_eri_router)
 except Exception as exc:  # noqa: BLE001 — log and keep serving
     log.warning("ERI imagery routes unavailable: %s", exc)
+
+# Inland and Off-Shore Access Point registries (/v1/access-points/*), read-only.
+# Guarded the same way: these routes must never take the rest of the API down.
+try:
+    from server.backend.access_points_api import router as _access_points_router
+
+    app.include_router(_access_points_router)
+except Exception as exc:  # noqa: BLE001 — log and keep serving
+    log.warning("access point registry routes unavailable: %s", exc)
 
 # In-memory job registry: job_id → subprocess.Popen
 _jobs: dict = {}

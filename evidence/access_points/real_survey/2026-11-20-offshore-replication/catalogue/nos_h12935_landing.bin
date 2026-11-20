@@ -1,0 +1,1027 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <p><!-- BEGIN HYDRO HEADER -->
+      <table xmlns=""
+             width="100%"
+             cellpadding="0"
+             cellspacing="0"
+             summary="layout table">
+         <tr>
+            <td>
+               <table width="100%"
+                      align="center"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      summary="layout table">
+                  <tbody>
+                     <tr>
+                        <td colspan="2">
+                           <div id="header">
+                              <div id="ngdcheader">
+                                 <a href="//www.ngdc.noaa.gov/ngdc.html"
+                                    target="_top"
+                                    title="go to the National Centers for Environmental Information (formerly the National Geophysical Data Center) home">
+                                    <img src="//www.ngdc.noaa.gov/image/nesdisngdcleft.gif"
+                                         alt="NCEI (formerly NGDC)"
+                                         border="0"/>
+                                 </a>
+                              </div>
+                              <div id="imageright">
+                                 <a href="http://nauticalcharts.noaa.gov/"
+                                    title="link to NOAA/NOS Office of Coast Survey"
+                                    target="_top">
+                                    <img src="//www.ngdc.noaa.gov/mgg/image/nosright.gif"
+                                         width="230"
+                                         height="50"
+                                         border="0"
+                                         alt="Office of Coast Survey, NOAA National Ocean Service"/>
+                                 </a>
+                              </div>
+                           </div>
+                        </td>
+                     </tr>
+                     <tr>
+                        <td align="left" class="topnav">
+                           <div class="topnav"> 
+         <a href="http://www.noaa.gov"
+                                 title="go to National Oceanic &amp; Atmospheric Administration"
+                                 class="topnav">NOAA</a> &gt; 
+        <a href="http://www.nesdis.noaa.gov"
+                                 title="go to NOAA Satellite &amp; Information Service"
+                                 class="topnav">NESDIS</a> &gt; 
+        <a href="//www.ngdc.noaa.gov/ngdc.html"
+                                 title="go to the National Centers for Environmental Information (formerly the National Geophysical Data Center) home"
+                                 class="topnav">NCEI (formerly NGDC)</a> &gt;
+        <a href="//www.ngdc.noaa.gov/mgg/mggd.html"
+                                 title="go to Marine Geology and Geophysics Data"
+                                 class="topnav">Marine Geology and Geophysics</a> &gt;
+        <a href="//www.ngdc.noaa.gov/mgg/bathymetry/relief.html"
+                                 title="go to bathymetry, topography, and relief"
+                                 class="topnav">Bathymetry &amp; Relief</a>
+                           </div>
+                        </td>
+                        <td align="right" class="topnav">
+                           <div class="topnav">
+                              <a href="//www.ngdc.noaa.gov/ngdcinfo/privacy.html"
+                                 class="topnav"
+                                 title="go to NCEI important notices, disclaimers, and privacy policy">privacy policy</a>  
+      </div>
+                        </td>
+                     </tr>
+                  </tbody>
+               </table>
+               <table width="100%"
+                      align="center"
+                      cellpadding="0"
+                      cellspacing="0"
+                      summary="layout table">
+                  <tbody>
+                     <tr>
+                        <td align="center" class="navlink" width="12%">
+                           <a href="//www.ngdc.noaa.gov/mgg/bathymetry/relief.html"
+                              target="_top"
+                              title="go to All Bathymetry and Relief Data at NCEI"
+                              class="navlink">
+                              <strong>All Bathy/Relief</strong>
+                           </a>
+                        </td>
+                        <td align="center" class="navlink" width="12%">
+                           <a href="//www.ngdc.noaa.gov/mgg/coastal/coastal.html"
+                              target="_top"
+                              title="go to Integrated Models of Coastal Relief"
+                              class="navlink">
+                              <strong>Coastal DEMs</strong>
+                           </a>
+                        </td>
+                        <td align="center" class="navlink" width="12%">
+                           <a href="//www.ngdc.noaa.gov/mgg/bathymetry/maps/nos_intro.html"
+                              target="_top"
+                              title="go to US bathymetric and fishing maps available from NCEI"
+                              class="navlink">
+                              <strong>Fishing</strong>
+                           </a>
+                        </td>
+                        <td align="center" class="navlink" width="12%">
+                           <a href="//www.ngdc.noaa.gov/mgg/global/global.html"
+                              target="_top"
+                              title="go to global bathymetry and relief"
+                              class="navlink">
+                              <strong>Global</strong>
+                           </a>
+                        </td>
+                        <td align="center" class="navlink" width="12%">
+                           <a href="//www.ngdc.noaa.gov/mgg/greatlakes/greatlakes.html"
+                              target="_top"
+                              title="go to Great Lakes bathymetry at NCEI"
+                              class="navlink">
+                              <strong>Lakes</strong>
+                           </a>
+                        </td>
+                        <td align="center" class="navlink" width="12%">
+                           <a href="//www.ngdc.noaa.gov/mgg/bathymetry/multibeam.html"
+                              target="_top"
+                              title="go to Multibeam Bathymetry Data at NCEI"
+                              class="navlink">
+                              <strong>Multibeam</strong>
+                           </a>
+                        </td>
+                        <td align="center" class="navlink" width="12%">
+                           <a href="//www.ngdc.noaa.gov/mgg/bathymetry/hydro.html"
+                              target="_top"
+                              title="go to NOS Hydrographic Survey Data at NCEI"
+                              class="navlink">
+                              <strong>NOS</strong>
+                           </a>
+                        </td>
+                     </tr>
+                  </tbody>
+               </table>
+            </td>
+         </tr>
+      </table>
+      <!-- END HYDRO HEADER -->
+   </p>
+   <head>
+      <title>Report for H12935</title>
+      <link rel="stylesheet"
+            type="text/css"
+            href="//www.ngdc.noaa.gov/ngdcbasicstyle.css"/>
+      <link rel="stylesheet"
+            type="text/css"
+            href="//www.ngdc.noaa.gov/mgg/mggbasicstyle.css"/>
+      <meta name="questions" content="hydro.info"/>
+      <meta name="return" content="bathy"/>
+      <style type="text/css">
+                    /* --------
+                    The CSS rules offered here are just an example, you may use them as a base. 
+                    Shape your 'expand/collapse' content so that it meets the style of your site. 
+                    --------- */
+                    * {margin:0; padding:0}
+                    /* --- Page Structure  --- */
+                    html {height:100%}
+                    body {
+                    min-width:400px;
+                    width:100%;
+                    height:101%;
+                    background:#fff;
+                    color:#333;
+                    font:76%/1.6 verdana,geneva,lucida,'lucida grande',arial,helvetica,sans-serif;
+                    text-align:center
+                    }
+                    #shell{
+                    margin:0 auto;
+                    width:800px;
+                    padding:15px 8%;
+                    text-align:left
+                    }
+                    #metadatabox {
+                    max-width:70em;
+                    width:345px;
+                    height:130px;
+                    float:left;
+                    margin:0 auto;
+                    padding-bottom:10px;
+                    overflow:hidden
+                    }
+                    #metadatabox2 {
+                    max-width:70em;
+                    width:450px;
+                    height:130px;
+                    float:right;
+                    margin:0 auto;
+                    overflow:hidden
+                    }
+                    #mapview {
+                    max-width:70em;
+                    width:100%;
+                    height:500px;
+                    margin:0 auto;
+                    overflow:hidden
+                    }
+                    #dynamic_products {
+                    max-width:70em;
+                    width:100%;
+                    margin:0 auto;
+                    clear:both;
+                    overflow:hidden
+                    }
+                    #content {
+                    max-width:70em;
+                    width:100%;
+                    margin:0 auto;
+                    clear:both;
+                    padding-bottom:20px;
+                    overflow:hidden
+                    }
+                    #content2 {
+                    max-width:70em;
+                    width:100%;
+                    margin:0 auto;
+                    clear:both;
+                    padding-bottom:20px;
+                    overflow:hidden
+                    }
+                    .metadata {
+                    margin:0;
+                    padding:1.5em 1.5em 0.75em;
+                    border:1px solid #ccc;
+                    position:relative;
+                    overflow:hidden
+                    }
+                    .products {
+                    margin:0;
+                    padding:1.5em 1.5em 0.75em;
+                    border:1px solid #ccc;
+                    position:relative;
+                    overflow:hidden
+                    }
+                    .metadata {
+                    margin:0;
+                    padding:1.5em 1.5em 0.75em;
+                    border:1px solid #ccc;
+                    position:relative;
+                    overflow:hidden
+                    }
+                    .products {
+                    margin:0;
+                    padding:1.5em 1.5em 0.75em;
+                    border:1px solid #ccc;
+                    position:relative;
+                    overflow:hidden
+                    }
+                    /* --- Links  --- */
+                    a:link, a:visited {
+                    border:1px dotted #ccc;
+                    border-width:0 0 1px;
+                    text-decoration:none;
+                    color:blue
+                    }
+                    a:hover, a:active, a:focus {
+                    border-style:solid;
+                    background-color:#f0f0f0;
+                    outline:0 none
+                    }
+                    a:active, a:focus {
+                    color:red;
+                    }
+                    .collapse p {padding:0 10px 1em}
+                    
+                    #switch, .switch {margin-bottom:5px; text-align:right}
+                    
+                    /* --- Headings  --- */
+                    h1 {
+                    margin-bottom:.75em; 
+                    font-family:georgia,'times new roman',times,serif; 
+                    font-size:2.5em; 
+                    font-weight:normal; 
+                    color:#c30
+                    }
+                    h2{font-size:1em}
+                    
+                    .expand{padding-bottom:.75em}
+                    .expand a {
+                    display:block;
+                    padding:3px 10px
+                    }
+                    .expand a:link, .expand a:visited {
+                    border-width:1px;
+                    background-image:url(//ngdc.noaa.gov/metadata/published/models/hsmdb/img/arrow-down.gif);
+                    background-repeat:no-repeat;
+                    background-position:98% 50%;
+                    }
+                    .expand a:hover, .expand a:active, .expand a:focus {
+                    text-decoration:underline
+                    }
+                    .expand a.open:link, .expand a.open:visited {
+                    border-style:solid;
+                    background:#eee url(//ngdc.noaa.gov/metadata/published/models/hsmdb/img/arrow-up.gif) no-repeat 98% 50%
+                    }
+                    #reports .ui-state-default { font-weight: bold; font-size: 12; }
+                    #reports .ui-state-active { font-weight: bold; }
+                    #reports .ui-state-default, .ui-widget-header { background-color: #eeeeff; background-image: none; }
+                    
+                    #reports {
+                    margin-left: 5%;
+                    }   
+                </style>
+      <script type="text/javascript"
+              src="//ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"/>
+      <script src="//code.jquery.com/ui/1.10.0/jquery-ui.js"/>
+      <script>         
+                    $(function() {
+                    $( "#accordion" ).accordion({
+                    collapsible: true,
+                    heightStyle: "content",
+                    active: false
+                    });
+                    });
+                </script>
+      <script type="text/javascript"
+              src="//ngdc.noaa.gov/metadata/published/models/hsmdb/scripts/expand.js"/>
+      <script type="text/javascript">
+                    //&gt;&lt;!--
+                $(function() {
+                    // --- first section initially expanded:
+                    $("h2.expand").toggler({initShow: "div.collapse:first"});
+                    // --- Other options:
+                    $("#content").expandAll({trigger: "h2.expand", ref: "div.metadata",  speed: 300, oneSwitch: false});
+                    $("#dynamic_products").expandAll({trigger: "h2.expand", ref: "div.products",  speed: 300, oneSwitch: false});
+                });
+                //--&gt;&lt;!
+                </script>
+      <script type="text/javascript">
+                    //&gt;&lt;!--
+                    $(function() {
+                        // --- first section initially expanded:
+                        $("h2.expand").toggler({initShow: "div.collapse:first"});   
+                        $("#content").expandAll({trigger: "h2.expand", ref: "div.metadata",  speed: 300, oneSwitch: false});
+                        $("#content2").expandAll({trigger: "h2.expand", ref: "div.products",  speed: 300, oneSwitch: false});
+                    });
+                    //--&gt;&lt;!
+                </script>
+      <script type="text/javascript">
+                    //&gt;&lt;!--
+                    function orderData(surveyID){                
+                        
+                        //alert('Doing something with ' + surveyID);
+                        
+                        var url = '//www.ngdc.noaa.gov/next-web/orders/create';
+                        //create a new form element and submit it.
+                        var form = document.createElement("form");
+                        form.action = url;
+                        form.method = 'POST';
+                        form.target = '_blank';
+                        
+                        //JSON payload goes in "order" parameter
+                        var inputElement = document.createElement("textarea");
+                        inputElement.name = "order";
+                        //inputElement.value = JSON.stringify(postBody);
+                        inputElement.value = '{"items":[{"dataset":"nos","groupNames":"' + surveyID + '"}]}'
+                        
+                        //alert("Submitted string is: " + inputElement.value);
+                        
+                        form.appendChild(inputElement);
+                        form.style.display = 'none';
+                        document.body.appendChild(form);
+                        form.submit();
+                        
+                        //once the form is sent, it's useless to keep it.
+                        document.body.removeChild(form);
+                    }
+                    //--&gt;&lt;!
+                </script>
+   </head>
+   <body>
+      <div id="shell">
+         <table>
+            <tr>
+               <td>
+                  <h1 class="heading" align="center">Report for H12935</h1>
+                  <table width="90%" align="center" style="font-size: 1.1em;">
+                     <tr>
+                        <td align="center">
+                           <b>Original data was collected or contracted by </b>NOAA Ship Nancy Foster</td>
+                     </tr>
+                     <tr/>
+                  </table>
+               </td>
+            </tr>
+            <tr>
+               <td>
+                  <div id="metadatabox">
+                     <table width="90%">
+                        <tr>
+                           <td width="30%">
+                              <b>Locality:</b>
+                           </td>
+                           <td width="70%">Caribbean Sea</td>
+                        </tr>
+                        <tr>
+                           <td width="30%">
+                              <b>Sublocality:</b>
+                           </td>
+                           <td width="70%">Southeast Coast of Puerto Rico</td>
+                        </tr>
+                        <tr>
+                           <td width="30%">
+                              <b>State(s) or Region(s):</b>
+                           </td>
+                           <td width="70%">Puerto Rico   </td>
+                        </tr>
+                     </table>
+                     <br/>
+                     <table width="90%">
+                        <tr>
+                           <td width="30%">
+                              <b>Start Date:</b>
+                           </td>
+                           <td width="70%">2016-04-07</td>
+                        </tr>
+                        <tr>
+                           <td width="30%">
+                              <b>End Date:</b>
+                           </td>
+                           <td width="70%">2016-04-18</td>
+                        </tr>
+                     </table>
+                     <br/>
+                  </div>
+                  <div id="metadatabox2">
+                     <br/>
+                     <p align="center">
+                        <font color="red">These data are not to be used for navigation.<br/>
+                                        For navigation please refer to <a href="https://nauticalcharts.noaa.gov/">NOS Nautical Charts</a>.</font>
+                     </p>
+                     <br/>
+                     <p align="center">
+                        <span style="background-color: #dddddd">
+                           <font size="2.4em">
+                              <b>
+                                            Download 
+                                        <a href="https://www.ngdc.noaa.gov/next-web/orders/create?order=%7B%22items%22:[%7B%22dataset%22:%22nos%22,%22groupNames%22:%22H12935%22%7D]%7D#/nos"
+                                    target="_blank">
+                                    <u>All Products for H12935</u>
+                                 </a>
+                              </b>
+                           </font>
+                        </span>
+                     </p>
+                     <p align="center">
+                        <font size="1em;">Download times vary depending on file size and data transfer rates.<br/>
+                                        Individual product files may be downloaded via the links below.</font>
+                     </p>
+                     <br/>
+                  </div>
+               </td>
+            </tr>
+            <tr>
+               <td>
+                  <div id="mapview">
+                     <iframe style="padding:3px;"
+                             width="790"
+                             height="480"
+                             src="https://noaa.maps.arcgis.com/apps/instant/basic/index.html?appid=415b4585e621491f8cb2f92e016032d1&amp;survey=H12935&amp;extent=-66.69981136,17.706085364,-64.752292701,18.302809978000003">This text is here to separate the iframe open and close tags, required for proper rendering.</iframe>
+                  </div>
+               </td>
+            </tr>
+            <tr>
+               <td align="right">  
+                                        Launch this map service in <a href="https://noaa.maps.arcgis.com/apps/instant/basic/index.html?appid=415b4585e621491f8cb2f92e016032d1&amp;survey=H12935&amp;extent=-66.59981136,17.806085364,-64.852292701,18.202809978"
+                     target="_blank">full-screen view</a> | Visit the full NCEI <a href="https://www.ncei.noaa.gov/maps/bathymetry/?layers=nos_hydro&amp;multibeamAllVisible=false"
+                     target="_blank">Bathymetric Data Viewer</a>
+               </td>
+            </tr>
+         </table>
+         <div id="content2">
+            <h2>Survey Products</h2>
+            <div class="products">
+               <h2 class="expand">Descriptive Report and Metadata Documents</h2>
+               <div class="collapse">
+                  <table width="95%" align="center" style="font-size: 1em;">
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">NOAA/NOS Descriptive Reports and Metadata Documents</th>
+                     </tr>
+                     <tr>
+                        <td colspan="3">
+                           <font size="2em">Products listed in these reports may not reflect final products available through NCEI. </font>
+                        </td>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/DR/H12935_DR.pdf"
+                                 target="_blank">H12935_DR.pdf</a>
+                           </span>
+                        </td>
+                        <td width="15%">2.59MB</td>
+                        <td width="60%">
+                                                     The document may be read using a free PDF reader.
+                                                 </td>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/DR/H12935_DR.xml"
+                                 target="_blank">H12935_DR.xml</a>
+                           </span>
+                        </td>
+                        <td width="15%">3.3KB</td>
+                        <td width="60%">
+                                                    Descriptive Report in XML format.<br/>
+                                                    May be opened using a web browser or text viewer.
+                                                </td>
+                     </tr>
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">NOAA/NOS ISO metadata record</th>
+                     </tr>
+                     <tr>
+                        <td width="40%" colspan="2">
+                           <span class="indent">
+                              <a href="//www.ngdc.noaa.gov/metaview/page?xml=NOAA/NESDIS/NGDC/MGG/NOS/H12001-H14000/iso/xml/H12935.xml&amp;view=getDataView&amp;header=none"
+                                 target="_blank">H12935 View
+                                          </a>/
+                                            <a href="//www.ngdc.noaa.gov/metadata/published/NOAA/NESDIS/NGDC/MGG/NOS/H12001-H14000/iso/xml/H12935.xml"
+                                 target="_blank">
+                                              Download H12935.xml
+                                          </a>
+                           </span>
+                        </td>
+                        <td width="60%">
+                                      Usually presented as an XML document, which captures the basic characteristics of HSMDB metadata verified from H10000 (1982) to the present as well as F00200 (1965) to the present.
+                                      </td>
+                     </tr>
+                     <tr>
+                        <td colspan="3"/>
+                     </tr>
+                  </table>
+               </div>
+               <h2 class="expand">Bathymetry</h2>
+               <div class="collapse">
+                  <table width="95%" align="center" style="font-size: 1em;">
+                     <tr>
+                        <td colspan="3">
+                           <font color="red" size="2em">Survey products may use different units, datums or projections than the associated survey. Please consult product-specific metadata for additional details. </font>
+                        </td>
+                     </tr>
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">Variable Resolution Bathymetric Attributed Grid (VR BAG)</th>
+                     </tr>
+                     <td colspan="3">The Variable Resolution BAG format is a gridded, multi-dimensional, multi-resolution bathymetric data file readable with geospatial visualization software (various commercial solutions, freeware, and <a href="//www.gdal.org/"
+                           target="_blank"
+                           onclick="return confirm('This link will take you away from a U.S. Federal Government website.\n\nDo you want to proceed?')">open source</a> applications are available).</td>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/BAG/H12935_MB_VR_MLLW.bag"
+                                 target="_blank">H12935_MB_VR_MLLW.bag</a>
+                           </span>
+                        </td>
+                        <td width="15%">36.05MB</td>
+                     </tr>
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">NOAA/NOS Sounding Data</th>
+                     </tr>
+                     <tr>
+                        <td colspan="3">Download data from the Point Store database via NEXT (NCEI Extract System). Point soundings are from the survey Smooth Sheet or of similar density. Depths in meters. 
+                                            Horizontal datum is (converted to) NAD83 if possible. Vertical datum is (converted to) Mean Lower Low Water if possible.
+                                            Please check the associated metadata to confirm the correct datums. The data file format is : SurveyID, Long, Lat, Depth and delivered as .xyz.
+                                        </td>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="https://www.ngdc.noaa.gov/next-web/orders/create?order=%7B%22items%22:[%7B%22dataset%22:%22nos%22,%22groupNames%22:%22H12935%22%7D]%7D#/nos"
+                                 target="_blank">H12935</a>
+                           </span>
+                        </td>
+                        <td width="15%"/>
+                     </tr>
+                     <tr>
+                        <td colspan="3"/>
+                     </tr>
+                  </table>
+               </div>
+               <h2 class="expand">Imagery</h2>
+               <div class="collapse">
+                  <table width="95%" align="center" style="font-size: 1em;">
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">GeoImagePDF</th>
+                     </tr>
+                     <tr>
+                        <td colspan="3">Georeferenced PDF file including chart and survey layers.</td>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/GeoImagePDF/H12935_GeoImage.pdf"
+                                 target="_blank">H12935_GeoImage.pdf</a>
+                           </span>
+                        </td>
+                        <td width="15%">14.35MB</td>
+                     </tr>
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">NOAA/NOS multibeam acoustic backscatter mosaic in TIFF format</th>
+                     </tr>
+                     <tr>
+                        <td colspan="3">The multibeam acoustic backscatter mosaic is readable with geospatial visualization software (various commercial solutions, freeware, and open source applications are available).</td>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/MBAB/H12935_MBAB_4m_R352_100kHz_1of2.tiff"
+                                 target="_blank">H12935_MBAB_4m_R352_100kHz_1of2.tiff</a>
+                           </span>
+                        </td>
+                        <td width="15%">23.88MB</td>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/MBAB/H12935_MBAB_4m_R352_400kHz_2of2.tiff"
+                                 target="_blank">H12935_MBAB_4m_R352_400kHz_2of2.tiff</a>
+                           </span>
+                        </td>
+                        <td width="15%">41.7KB</td>
+                     </tr>
+                     <tr>
+                        <td colspan="3"/>
+                     </tr>
+                  </table>
+               </div>
+               <h2 class="expand">Bottom Samples and Tide Documents</h2>
+               <div class="collapse">
+                  <table width="95%" align="center" style="font-size: 1em;">
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">NOAA/NOS Tide Note in PDF Format</th>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/TIDES/H12935_tn.pdf"
+                                 target="_blank">H12935_tn.pdf</a>
+                           </span>
+                        </td>
+                        <td width="15%">77.1KB</td>
+                     </tr>
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">NOAA/NOS Tide Zone in PDF format</th>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/TIDES/H12935_tz.pdf"
+                                 target="_blank">H12935_tz.pdf</a>
+                           </span>
+                        </td>
+                        <td width="15%">295.2KB</td>
+                     </tr>
+                     <tr>
+                        <td colspan="3"/>
+                     </tr>
+                  </table>
+               </div>
+               <h2 class="expand">Project Documents</h2>
+               <div class="collapse">
+                  <table width="95%" align="center" style="font-size: 1em;">
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">Project Sketch in JPEG format</th>
+                     </tr>
+                     <tr>
+                        <td>Project sketch image with highlighted survey area.</td>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/project_sketches/H12935_ProjectSketch.jpg"
+                                 target="_blank">H12935_ProjectSketch.jpg</a>
+                           </span>
+                        </td>
+                        <td width="15%">113.3KB</td>
+                     </tr>
+                     <tr bgcolor="#dddddd">
+                        <th colspan="3" align="left">Data Acquisition and Processing Report in PDF format</th>
+                     </tr>
+                     <tr>
+                        <td width="25%">
+                           <span class="indent">
+                              <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/DAPRs/M-I907-NF-16_DAPR.pdf"
+                                 target="_blank">M-I907-NF-16_DAPR.pdf</a>
+                           </span>
+                        </td>
+                        <td width="15%">1.98MB</td>
+                     </tr>
+                     <tr>
+                        <td colspan="3"/>
+                     </tr>
+                  </table>
+               </div>
+            </div>
+         </div>
+         <div id="content">
+            <h2>Survey Metadata</h2>
+            <div class="metadata">
+               <h2 class="expand">Survey Summary</h2>
+               <div class="collapse">
+                  <table width="95%" align="center">
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th align="center">Locality</th>
+                                 <th align="center">Sublocality</th>
+                                 <th align="center">State or Region</th>
+                              </tr>
+                              <tr>
+                                 <td align="center">Caribbean Sea</td>
+                                 <td align="center">Southeast Coast of Puerto Rico</td>
+                                 <td>
+                                    <table>
+                                       <tr>
+                                          <td align="center">Puerto Rico</td>
+                                       </tr>
+                                    </table>
+                                 </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th>Start Date</th>
+                                 <th>End Date</th>
+                                 <th>Approval Date</th>
+                              </tr>
+                              <tr>
+                                 <td>2016-04-07</td>
+                                 <td>2016-04-18</td>
+                                 <td>2017-12-15</td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th>Project Number</th>
+                                 <th>Project Name</th>
+                                 <th>Purpose</th>
+                              </tr>
+                              <tr>
+                                 <td>M-I907-NF-16</td>
+                                 <td/>
+                                 <td/>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                  </table>
+               </div>
+               <h2 class="expand">Source of Original Data and License Information</h2>
+               <div class="collapse">
+                  <table width="95%" align="center">
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th align="center">Link to Original Data</th>
+                                 <th align="center">Data Source</th>
+                              </tr>
+                              <tr>
+                                 <td align="center">
+                                    <a href="https://www.ngdc.noaa.gov/ships/nancy_foster/M1907_NF_10_mb.html"
+                                       target="_blank"
+                                       onclick="return confirm('This link will take you away from a U.S. Federal Government website.\n\nDo you want to proceed?')">
+                                                            Original Data
+                                                            </a>
+                                 </td>
+                                 <td align="center">NOAA Ship Nancy Foster</td>
+                              </tr>
+                           </table>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th colspan="2" align="center">License Information</th>
+                              </tr>
+                              <tr>
+                                 <td width="75%">These data were produced by NOAA and are in the public domain within the United States. NOAA waives any potential copyright and related rights in these data worldwide through the Creative Commons Zero 1.0 Universal Public Domain Dedication (CC0-1.0).<a href="https://creativecommons.org/publicdomain/zero/1.0/"
+                                       target="_blank"
+                                       onclick="return confirm('This link will take you away from a U.S. Federal Government website.\n\nDo you want to proceed?')">  View the license deed.</a>
+                                    <a href="https://creativecommons.org/publicdomain/zero/1.0/legalcode"
+                                       target="_blank"
+                                       onclick="return confirm('This link will take you away from a U.S. Federal Government website.\n\nDo you want to proceed?')">View the legal code.</a>
+                                 </td>
+                                 <td width="20%" align="center">
+                                    <a href="https://creativecommons.org/publicdomain/zero/1.0/"
+                                       target="_blank"
+                                       onclick="return confirm('This link will take you away from a U.S. Federal Government website.\n\nDo you want to proceed?')">
+                                       <img src="//data.ngdc.noaa.gov/platforms/ocean/nos/images/lic-icons/cc.svg"
+                                            height="31px"
+                                            width="31px"/>
+                                       <img src="//data.ngdc.noaa.gov/platforms/ocean/nos/images/lic-icons/zero.svg"
+                                            height="31px"
+                                            width="31px"/>
+                                    </a>
+                                 </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                  </table>
+               </div>
+               <h2 class="expand">Reference System Information</h2>
+               <div class="collapse">
+                  <table width="95%" align="center">
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th>Vertical Datum</th>
+                                 <th>Horizontal Datum</th>
+                                 <th>Projection</th>
+                                 <th>Scale</th>
+                              </tr>
+                              <tr>
+                                 <td>Mean Lower Low Water</td>
+                                 <td>North American Datum 1983</td>
+                                 <td>Projected UTM 20</td>
+                                 <td>40000</td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th>Survey Tide Stations</th>
+                                 <th>COOPS Tide Station ID</th>
+                              </tr>
+                              <tr>
+                                 <td colspan="2">
+                                    <table width="100%">
+                                       <tr>
+                                          <td width="100%" align="left">Lime Tree Bay, Virgin Islands</td>
+                                          <td width="100%" align="center">
+                                             <a href="//tidesandcurrents.noaa.gov/noaatidepredictions.html?id=9751401"
+                                                target="_blank">9751401</a>
+                                          </td>
+                                       </tr>
+                                       <tr>
+                                          <td width="100%" align="left">San Juan, Puerto Rico</td>
+                                          <td width="100%" align="center">
+                                             <a href="//tidesandcurrents.noaa.gov/noaatidepredictions.html?id=9755370"
+                                                target="_blank">9755370</a>
+                                          </td>
+                                       </tr>
+                                       <tr>
+                                          <td width="100%" align="left">Magueyes Island, Puerto Rico</td>
+                                          <td width="100%" align="center">
+                                             <a href="//tidesandcurrents.noaa.gov/noaatidepredictions.html?id=9759110"
+                                                target="_blank">9759110</a>
+                                          </td>
+                                       </tr>
+                                       <tr>
+                                          <td width="100%" align="left">Vieques</td>
+                                          <td width="100%" align="center">
+                                             <a href="//tidesandcurrents.noaa.gov/noaatidepredictions.html?id=9752695"
+                                                target="_blank">9752695</a>
+                                          </td>
+                                       </tr>
+                                    </table>
+                                 </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                  </table>
+               </div>
+               <h2 class="expand">Affected Products</h2>
+               <div class="collapse">
+                  <table width="95%" align="center">
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th width="50%">ENCs</th>
+                                 <th width="50%">RNCs</th>
+                              </tr>
+                              <tr>
+                                 <td width="50%">
+                                    <table>
+                                       <tr>
+                                          <td>
+                                             <a href="http://www.charts.noaa.gov/ENCs/Agreement.shtml?US4PR41M"
+                                                target="_blank">US4PR41M</a>    
+                                             <a href="http://www.charts.noaa.gov/ENCs/Agreement.shtml?US4PR30M"
+                                                target="_blank">US4PR30M</a>    
+                                             <a href="http://www.charts.noaa.gov/ENCs/Agreement.shtml?US3PR10M"
+                                                target="_blank">US3PR10M</a>    
+                                          </td>
+                                       </tr>
+                                    </table>
+                                 </td>
+                                 <td width="50%">
+                                    <table>
+                                       <tr>
+                                          <td>
+                                             <a href="http://www.charts.noaa.gov/OnLineViewer/25677.shtml"
+                                                target="_blank">25677</a>    
+                                             <a href="http://www.charts.noaa.gov/OnLineViewer/25650.shtml"
+                                                target="_blank">25650</a>    
+                                          </td>
+                                       </tr>
+                                    </table>
+                                 </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <tr/>
+                  </table>
+               </div>
+               <h2 class="expand">Survey Equipment</h2>
+               <div class="collapse">
+                  <table width="95%" align="center">
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th width="40%">Vessel(s)</th>
+                                 <td rowspan="2" width="84">
+                                    <a href="//data.ngdc.noaa.gov/platforms/ocean/nos/images/NOAAShipNANCYFOSTER.jpg"
+                                       target="_blank">
+                                       <img src="//data.ngdc.noaa.gov/platforms/ocean/nos/images/NOAAShipNANCYFOSTER.jpg"
+                                            alt="Vessel Image"
+                                            height="80px"
+                                            width="80px"/>
+                                    </a>
+                                 </td>
+                                 <th width="40%">Chief(s) of Party</th>
+                              </tr>
+                              <tr>
+                                 <td>
+                                    <table>
+                                       <tr>
+                                          <td>NOAA Ship NANCY FOSTER</td>
+                                       </tr>
+                                    </table>
+                                 </td>
+                                 <td>
+                                    <table>
+                                       <tr>
+                                          <td>Timothy Battista</td>
+                                       </tr>
+                                    </table>
+                                 </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th>Manufacturer</th>
+                                 <th>Model</th>
+                                 <th>Instrument Type</th>
+                              </tr>
+                              <tr>
+                                 <td>Kongsberg Maritime</td>
+                                 <td>EM 710</td>
+                                 <td>MBES</td>
+                              </tr>
+                              <tr>
+                                 <td>Reson</td>
+                                 <td>7125-SV2</td>
+                                 <td>MBES</td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                  </table>
+               </div>
+               <h2 class="expand">Source Data at NCEI</h2>
+               <div class="collapse">
+                  <table width="95%" align="center">
+                     <tr>
+                        <td>
+                           <table border="1" width="100%">
+                              <tr>
+                                 <th>Data in Archive</th>
+                                 <th>Size (in GB)</th>
+                                 <th>Date Archived</th>
+                                 <th>Data Types Surveyed</th>
+                              </tr>
+                              <tr>
+                                 <td>
+                                                                Raw and Processed
+                                                            </td>
+                                 <td>133.727</td>
+                                 <td>2018-03-06 12:03:40.0</td>
+                                 <td align="center">BATHYMETRY</td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                  </table>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div align="center" class="footltbg">
+         <script type="text/javascript"
+                 src="//www.ngdc.noaa.gov/bin/ngdcdynamicmetafooter.js"/>
+         <noscript>
+            <div align="center">
+               <a href="//www.ngdc.noaa.gov/ngdc.html">NCEI home</a> | <a href="//www.ngdc.noaa.gov/ngdcinfo/privacy.html">disclaimers</a> | <a href="mailto:hydro.info@noaa.gov">questions</a>
+               <hr/>
+                            Website of the US Dept of Commerce/NOAA/NESDIS/NCEI
+                            <br/>
+            </div>
+         </noscript>
+      </div>
+   <script id="_fed_an_ua_tag" type="text/javascript" src="/scripts/federated-analytics.js?agency=DOC&subagency=NOAA&pua=UA-44375312-1"></script></body>
+</html>

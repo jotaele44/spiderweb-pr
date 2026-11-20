@@ -1,0 +1,12 @@
+{
+  "headers": {
+    "content-type": "application/json;charset=UTF-8",
+    "date": "Fri, 20 Nov 2026 00:22:05 GMT",
+    "etag": "\"1721699369\""
+  },
+  "request_url": "https://gis.ngdc.noaa.gov/arcgis/rest/services/multibeam_footprints/MapServer/0/query?f=json&where=1%3D1&geometry=-65.94%2C17.785%2C-65.86%2C17.82&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultRecordCount=2000",
+  "response_sha256": "51310c920c7d2f09d40ddc2621aa89e4bfa8a1158fb2e1eaf89220669162f613",
+  "response_size": 107038,
+  "retrieved_utc": "2026-11-20T00:22:05.640246+00:00",
+  "status": 200
+}
