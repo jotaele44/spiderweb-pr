@@ -50,7 +50,9 @@ separate addresses. The Launch Pad also reports readiness: how many contracts,
 sites and anomalies are in the workspace database (a fresh workspace holds the
 diagnostic seed dataset), and whether the map layer catalog is present. Use the
 **Launch Pad** button beside the gear to come back and change the mode; the app
-restarts on the page.
+restarts on the page. "Don't show this again" on the Launch Pad, or starting
+with `--skip-launchpad`, opens straight into the Command Center with the last
+choices; `--launchpad` shows it again.
 
 Guest mode keeps a shared desktop tidy. It does not stop someone who can already
 run programs under your account.
