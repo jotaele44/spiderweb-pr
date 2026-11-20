@@ -89,6 +89,28 @@ def test_status_counts_the_workspace_database(tmp_path, monkeypatch):
     assert "2 contracts, 1 sites and 0 anomalies" in loaded["detail"]
 
 
+@pytest.mark.parametrize("name", ["workspace#1", "what?ws", "with space"])
+def test_status_reads_a_workspace_whose_path_has_uri_characters(
+    tmp_path, monkeypatch, name
+):
+    home = tmp_path / name
+    (home / "server").mkdir(parents=True)
+    monkeypatch.setenv(config.DATA_ENV_VAR, str(home))
+    conn = sqlite3.connect(home / "server" / "priis.db")
+    for table in ("contracts", "sites", "anomalies"):
+        conn.execute(f"CREATE TABLE {table} (id INTEGER)")
+    conn.execute("INSERT INTO contracts VALUES (1)")
+    conn.commit()
+    conn.close()
+    before = sorted(p.relative_to(tmp_path) for p in tmp_path.rglob("*"))
+
+    row = config._launchpad_status()[0]
+
+    assert row["value"] == "1 records" and row["status"] == "pass"
+    # Read-only, at the right file: nothing appears anywhere under tmp_path.
+    assert sorted(p.relative_to(tmp_path) for p in tmp_path.rglob("*")) == before
+
+
 def test_status_reports_an_unreadable_database(tmp_path, monkeypatch):
     monkeypatch.setenv(config.DATA_ENV_VAR, str(tmp_path))
     (tmp_path / "server").mkdir()

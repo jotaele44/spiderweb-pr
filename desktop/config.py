@@ -82,7 +82,11 @@ def _launchpad_status() -> list[dict[str, str]]:
     if db_path.is_file():
         try:
             # mode=ro: a readiness check must never create or migrate the store.
-            with closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as conn:
+            # as_uri() percent-encodes the path, so a "#" or "?" in a workspace
+            # directory name is part of the file name, not URI syntax that would
+            # cut off mode=ro and open some other file.
+            uri = f"{db_path.resolve().as_uri()}?mode=ro"
+            with closing(sqlite3.connect(uri, uri=True)) as conn:
                 for table in ("contracts", "sites", "anomalies"):
                     counts[table] = int(
                         conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]  # noqa: S608
