@@ -58,11 +58,10 @@ function makeFakeRuntime() {
     once: vi.fn(),
     getSource: () => undefined,
     getStyle: () => undefined,
-    // GisViewerControls binds a scale bar and records the starting extent.
+    // GisViewerControls binds a scale bar; getCenter/getZoom below also
+    // serve its starting-extent record.
     addControl: vi.fn(),
     removeControl: vi.fn(),
-    getCenter: () => ({ lng: -66.5, lat: 18.2 }),
-    getZoom: () => 8,
     // Read by the coordinate readout and the URL-fragment writer.
     getLayer: () => undefined,
     getZoom: () => 8.4,
