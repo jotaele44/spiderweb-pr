@@ -1,0 +1,6 @@
+{
+  "report": "2026-11-18-offshore/seabed_report.json",
+  "report_sha256": "61aa79dc0abaa226643294283ea638053df4906a688d34760d0f15afc3ddb741",
+  "run_id": "2026-11-18-offshore",
+  "schema": "access_point_seabed_pointer/1.0"
+}

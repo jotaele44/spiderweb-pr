@@ -39,7 +39,7 @@
       ],
       "metrics": {
         "anisotropy": 0.5214285714285707,
-        "cell_count": 794.0,
+        "cell_count": 794,
         "implied_lat_span_deg": 0.2965625000000003,
         "implied_lon_span_deg": 1.7937499999999886,
         "lat_span_error": 0.5315175632041544,
@@ -55,7 +55,11 @@
     "note": "Authored/documented bounds, retained as provenance only. Applied to the 1536x1024 canvas they imply 1.918x anisotropic pixels and compress the archipelago to roughly half its true north-south extent, so geometry is not derived from them. Recorded so the claim stays auditable.",
     "south": 17.92,
     "status": "DOCUMENTED_UNVERIFIED",
-    "west": -67.3
+    "west": -67.3,
+    "provenance_adjudication": {
+      "state": "UNRESOLVED_SCOPE_AMBIGUITY",
+      "note": "The same numeric extent is used elsewhere in the federation as a Puerto Rico GEBCO/OpenTopography acquisition AOI. Numeric equality does not bind this tuple to the grid authoring process, so these values remain provenance-only and cannot certify the transform."
+    }
   },
   "geometry_version": "pr_grid_geometry_v0_1",
   "grid": {
@@ -69,8 +73,8 @@
   },
   "grid_version": "pr_grid_full_cell_index_saturated_v1",
   "metrics": {
-    "anisotropy": 1.0,
-    "cell_count": 794.0,
+    "anisotropy": 1,
+    "cell_count": 794,
     "implied_lat_span_deg": 0.6317422481007142,
     "implied_lon_span_deg": 1.992417859394564,
     "lat_span_error": 0.0020311137884663237,
@@ -82,12 +86,28 @@
     "residual_trimmed_km": 1.8545486004831477
   },
   "model": "plate_carree_wgs84_to_scale",
-  "model_note": "Source image authored to scale on WGS84; uniform degrees-per-pixel, no rotation. Confirmed independently: fitted anisotropy is ~1.02.",
+  "model_note": "Historical authoring description says to-scale WGS84 with uniform degrees-per-pixel and no rotation. The current fitted transform enforces that model; the authoring parameters themselves have not been independently recovered or verified.",
   "parameter_provenance": "FITTED",
   "transform": {
     "deg_per_px_x": 0.001518611173319026,
     "deg_per_px_y": 0.001518611173319026,
     "lat0": 18.91298820580336,
     "lon0": -67.338850438199
+  },
+  "provenance_evidence": {
+    "bounded_exhaustion_receipt": "evidence/federation/grid_transform_provenance_exhaustion_2026-09-27.json",
+    "independent_reconstruction_receipt": "evidence/federation/grid_transform_independent_spike_2026-09-27.json",
+    "authoritative_parameters_recovered": false,
+    "independent_spike_state": "FAIL_KILL_CRITERIA"
+  },
+  "uncertainty_policy": {
+    "state": "PROVISIONAL",
+    "exact_cell_claims_permitted": false,
+    "cell_set_required": true,
+    "discovery_radius_km": 22.4996762572509,
+    "radius_basis": "FITTED_CONTROL_P90_DISCOVERY_ENVELOPE",
+    "radius_semantics": "CONSERVATIVE_DISCOVERY_ENVELOPE_NOT_CONFIDENCE_INTERVAL",
+    "independent_validation_state": "FAIL_KILL_CRITERIA",
+    "note": "The radius is derived from the current circular fitted-control p90 only to prevent false cell precision. It is not a calibrated probability or confidence bound. Consumers must retain the full candidate Cell_Set and certification state until authoritative authoring parameters or an independently validated transform closes the georeference."
   }
 }

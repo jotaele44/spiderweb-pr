@@ -1,0 +1,989 @@
+{
+  "comparison_with_earlier_run": {
+    "by_status": {
+      "PERSISTED": 3
+    },
+    "distance_m": 64.0,
+    "earlier": [
+      {
+        "earlier": "closed-basin-delineation@189298.240000,1970856.070000",
+        "earlier_max_depth_m": 6.499,
+        "later": [
+          {
+            "distance_between_deepest_points_m": 5.7,
+            "max_depth_m": 7.132,
+            "native_record_id": "closed-basin-delineation@189302.240000,1970852.070000"
+          }
+        ],
+        "status": "PERSISTED"
+      },
+      {
+        "earlier": "closed-basin-delineation@189938.240000,1971752.070000",
+        "earlier_max_depth_m": 4.782,
+        "later": [
+          {
+            "distance_between_deepest_points_m": 17.0,
+            "max_depth_m": 5.302,
+            "native_record_id": "closed-basin-delineation@189950.240000,1971740.070000"
+          },
+          {
+            "distance_between_deepest_points_m": 17.0,
+            "max_depth_m": 3.302,
+            "native_record_id": "closed-basin-delineation@189950.240000,1971740.070000/n1"
+          }
+        ],
+        "status": "PERSISTED"
+      },
+      {
+        "earlier": "closed-basin-delineation@189170.240000,1972200.070000",
+        "earlier_max_depth_m": 2.78,
+        "later": [
+          {
+            "distance_between_deepest_points_m": 12.6,
+            "max_depth_m": 4.006,
+            "native_record_id": "closed-basin-delineation@189166.240000,1972188.070000"
+          }
+        ],
+        "status": "PERSISTED"
+      }
+    ],
+    "earlier_cell_m": 64.0,
+    "earlier_report_content_sha256": "85bad38b3aba751a1d4bb7748fdb9075e082e114af75505cbcc30aca0218f731",
+    "earlier_run": "2026-11-18-offshore",
+    "later_not_linked_deepest_m": 4.604,
+    "later_not_linked_to_any_earlier": 4,
+    "limit": "both readings come from the same soundings: a consistency check, not replication",
+    "rule": "SPLIT if two or more later outer depressions have their deepest point inside the earlier bounding box; else PERSISTED if a later deepest point lies within 64 m and the depths agree within the combined depth uncertainty; else SAME_PLACE_DEPTH_DIFFERS if one lies that close; else NOT_FOUND"
+  },
+  "content_sha256": "3e2dd4184f3cb5a100a99cc2eccb7f014091bef9735e27fc0110c56cbb79bb9e",
+  "contract_version": "access-point-registry/1.0",
+  "evaluation_state": "EXPLORATORY",
+  "limits": [
+    "a detection is a closed depression in a gridded seabed surface: a shape, not an opening, a passage or an identity",
+    "a gridded bathymetric surface is a derived product; evidence from it cannot rise above SUPPORTING",
+    "the product's finer grids were read at 8 m cells; where a finer grid's nodes are further apart than that, cells receive no node and stay empty, and an empty cell is an outlet, so such ground can lose depressions but never gain one",
+    "a reading at another resolution of the same file uses the same soundings: agreement with it is a consistency check, not replication",
+    "a depression that nowhere exceeds the uncertainty of its own cells is not reported at all; one that exceeds it by less than the significance floor stays a candidate",
+    "where the product's uncertainty is large, the absence of a detection is not the absence of a depression; the report says how much of the survey that is",
+    "a reported area is the part of a depression above its cells' uncertainty, so it is a lower bound",
+    "a depression cut by the edge of coverage is not closed inside the survey and is not reported",
+    "depth and area thresholds are working values and are not calibrated against field truth",
+    "one survey of one epoch: nothing here is replicated, seen by a second sensor or checked in the field",
+    "depths are relative to the tidal datum the product states; nothing was converted to another datum or joined to a land surface",
+    "the search area is an analyst-drawn box; a survey lying inside it places no seed and no feature",
+    "no feature, observation or status in a committed registry was changed by this run"
+  ],
+  "products": [
+    {
+      "catalogue": {
+        "metadata_uri": "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html",
+        "native_identifier": "NOS:BAG:W00247:3of4",
+        "provider": "NOS_BAG_PRODUCT",
+        "published": null,
+        "size_bytes": null,
+        "title": "W00247_MB_VR_MLLW_3of4.bag",
+        "url": "https://data.ngdc.noaa.gov/platforms/ocean/nos/coast/W00001-W02000/W00247/BAG/W00247_MB_VR_MLLW_3of4.bag"
+      },
+      "download": {
+        "headers": {
+          "content-length": "6935533",
+          "date": "Wed, 18 Nov 2026 15:00:54 GMT",
+          "last-modified": "Wed, 13 Jul 2022 18:38:28 GMT"
+        },
+        "retrieved_utc": "2026-11-18T15:00:55+00:00",
+        "sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+        "size_bytes": 6935533
+      },
+      "dry_registration": {
+        "by_assertion_rung": {
+          "ANOMALY": 6,
+          "FEATURE": 2
+        },
+        "by_status": {
+          "CANDIDATE": 8
+        },
+        "features_that_would_be_filed": 8,
+        "verified": 0,
+        "written_to_committed_registry": false
+      },
+      "epoch": "2013",
+      "finer_grids": {
+        "artefact_rule": "a depression smaller than one base cell that lies on a single finer grid, or across finer grids of different node spacing, is flagged; node spacing differs between almost every pair of finer grids, so in practice every depression smaller than one base cell is flagged; the flag is informational and lowers no tier",
+        "empty_cells": {
+          "cells_inside_covered_base_cells": 506240,
+          "empty_cells_inside_covered_base_cells": 187087,
+          "empty_fraction": 0.3696,
+          "meaning": "an empty cell is an outlet: it can only stop a depression from being closed, never make one"
+        },
+        "finer_grids": 7910,
+        "finer_grids_by_node_spacing": {
+          "16 to 32 m": 2174,
+          "32 m or more": 214,
+          "4 to 8 m": 2806,
+          "8 to 16 m": 1726,
+          "under 4 m": 990
+        },
+        "node_spacing_m": {
+          "max": 32.0,
+          "median": 8.701,
+          "min": 2.357,
+          "p90": 24.366
+        },
+        "possible_refinement_artefacts": 0,
+        "resampling": {
+          "cell_m": 8.0,
+          "check_against_nodes": {
+            "all_agree_except_edge_nodes": true,
+            "cells_agreeing": 319157,
+            "cells_disagreeing_otherwise": 0,
+            "cells_disagreeing_with_a_node_on_a_cell_edge": 0,
+            "cells_holding_several_nodes": 177867,
+            "cells_with_nodes": 319157,
+            "cells_with_values_in_resampled_grid": 319157,
+            "method": "every node of every finer grid is put in the cell its position falls in; each cell's mean elevation and largest uncertainty are recomputed and must match the resampled grid to 1 mm, and a cell with no node must be empty there; a node exactly on a cell edge may fall on either side, and such cells are counted apart",
+            "nodes_outside_grid": 0,
+            "nodes_placed": 809925
+          },
+          "population": "each cell holds the mean elevation of the finer-grid nodes inside it and the largest of their uncertainties; a cell with no node is empty; nothing is interpolated"
+        },
+        "seam_test": {
+          "by_classification": {
+            "NOT_SEAM_LIKE": 6,
+            "NOT_TESTED": 2
+          },
+          "effect": "informational: no tier is lowered and no detection removed",
+          "rule": "SEAM_LIKELY when all three hold: (1) narrow and grid-aligned: median width at most 2 cells and long axis within 5 degrees of a grid axis; (2) a level step across the axis, found by fitting a line to a band of 4 cells on each side and extrapolating both to the axis, larger than 2 times the combined uncertainty of the bands, with one sign, along at least 80% of the length; (3) the same step, with the same sign, continues past both ends along at least 50% of an equal length. STEP_WITHOUT_CONTINUATION when (1) and (2) hold but not (3): indeterminate. NOT_SEAM_LIKE otherwise. INSUFFICIENT_DATA when too few covered cells lie beside the depression to measure a step",
+          "rule_origin": "written before it was applied to any detection; its shape was suggested by one south-to-north profile through the small steep object first flagged at 8 m"
+        }
+      },
+      "layers_read": "the finer grids, resampled to 8 m cells (elevation and uncertainty)",
+      "prior_receipt": null,
+      "product_facts": {
+        "band_descriptions": [
+          "elevation",
+          "uncertainty"
+        ],
+        "compound_crs_name": "NAD83 / UTM zone 20N + MLLW depth",
+        "driver": "BAG",
+        "format_version": "1.6.0",
+        "grid_read": "finer grids, resampled",
+        "population_meaning": "each cell holds the mean elevation of the finer-grid nodes inside it and the largest of their uncertainties; a cell with no node is empty; nothing is interpolated",
+        "product_datetime": "2021-12-07T21:44:15",
+        "refinement_resolution_m": null,
+        "resampled_cell_m": 8.0,
+        "value_population": "MEAN",
+        "vertical_statements_in_metadata": [
+          "MLLW"
+        ]
+      },
+      "product_facts_basis": "the held product's own metadata; not recomputable from the subset",
+      "result": {
+        "assertions_by_tier": {
+          "CANDIDATE": 12,
+          "SUPPORTING": 4
+        },
+        "below_uncertainty": 6,
+        "detection_count": 8,
+        "detections": [
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 714048.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 7.13 m deep over 714048 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed seabed basin, circularity 0.06, depth/diameter 0.007",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              188122.24,
+              1970376.07,
+              190274.24,
+              1971128.07
+            ],
+            "centroid_lonlat": [
+              -65.9317715,
+              17.8024811
+            ],
+            "centroid_xy": [
+              189180.251,
+              1970765.825
+            ],
+            "circularity": 0.064,
+            "deepest_xy": [
+              189302.24,
+              1970852.07
+            ],
+            "depth_to_diameter": 0.00748,
+            "depth_uncertainty_m": 2.6632,
+            "discovery_score": 26.32,
+            "equivalent_diameter_m": 953.5,
+            "finer_grid": {
+              "base_cells_spanned": 408,
+              "distinct_node_spacings": 107,
+              "finer_grid_node_spacing_m": {
+                "max": 6.11,
+                "min": 2.36
+              },
+              "possible_refinement_artefact": false,
+              "smaller_than_one_base_cell": false,
+              "spans_node_spacing_change": true
+            },
+            "flags": [
+              "BELOW_UNCERTAINTY"
+            ],
+            "flat_floor_fraction": 0.837,
+            "floor_elevation_m": -78.756,
+            "hierarchy_level": 0,
+            "max_depth_m": 7.132,
+            "mean_depth_m": 2.508,
+            "mean_wall_slope_deg": 1.29,
+            "native_record_id": "closed-basin-delineation@189302.240000,1970852.070000",
+            "parent_native_record_id": null,
+            "possible_artifact": false,
+            "proposed_class": "SEAFLOOR_DEPRESSION",
+            "rectangularity": 0.441,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 1.61,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 269,
+              "continuation_columns_measured": 415,
+              "continuation_significant_fraction": 0.022,
+              "length_cells": 269,
+              "median_step_m": -4.336,
+              "median_width_cells": 51.0,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.625,
+              "tested": true
+            },
+            "significance": 2.68,
+            "spill_elevation_m": -71.624,
+            "volume_m3": 1791150.7
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 646720.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 5.30 m deep over 646720 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed seabed basin, circularity 0.10, depth/diameter 0.006",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              189346.24,
+              1971040.07,
+              191146.24,
+              1971976.07
+            ],
+            "centroid_lonlat": [
+              -65.9218562,
+              17.8093366
+            ],
+            "centroid_xy": [
+              190244.049,
+              1971508.642
+            ],
+            "circularity": 0.104,
+            "deepest_xy": [
+              189950.24,
+              1971740.07
+            ],
+            "depth_to_diameter": 0.00584,
+            "depth_uncertainty_m": 2.0011,
+            "discovery_score": 26.76,
+            "equivalent_diameter_m": 907.43,
+            "finer_grid": {
+              "base_cells_spanned": 435,
+              "distinct_node_spacings": 103,
+              "finer_grid_node_spacing_m": {
+                "max": 22.06,
+                "min": 2.75
+              },
+              "possible_refinement_artefact": false,
+              "smaller_than_one_base_cell": false,
+              "spans_node_spacing_change": true
+            },
+            "flags": [
+              "BELOW_UNCERTAINTY"
+            ],
+            "flat_floor_fraction": 0.734,
+            "floor_elevation_m": -79.081,
+            "hierarchy_level": 0,
+            "max_depth_m": 5.302,
+            "mean_depth_m": 2.119,
+            "mean_wall_slope_deg": 1.55,
+            "native_record_id": "closed-basin-delineation@189950.240000,1971740.070000",
+            "parent_native_record_id": null,
+            "possible_artifact": false,
+            "proposed_class": "SEAFLOOR_DEPRESSION",
+            "rectangularity": 0.384,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 26.32,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 225,
+              "continuation_columns_measured": 392,
+              "continuation_significant_fraction": 0.015,
+              "length_cells": 225,
+              "median_step_m": -2.322,
+              "median_width_cells": 50.0,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.564,
+              "tested": true
+            },
+            "significance": 2.65,
+            "spill_elevation_m": -73.78,
+            "volume_m3": 1370672.4
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 26432.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 4.60 m deep over 26432 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed seabed basin, circularity 0.34, depth/diameter 0.025",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              189322.24,
+              1972088.07,
+              189658.24,
+              1972232.07
+            ],
+            "centroid_lonlat": [
+              -65.9292374,
+              17.8151012
+            ],
+            "centroid_xy": [
+              189470.976,
+              1972159.324
+            ],
+            "circularity": 0.34,
+            "deepest_xy": [
+              189374.24,
+              1972180.07
+            ],
+            "depth_to_diameter": 0.0251,
+            "depth_uncertainty_m": 1.1772,
+            "discovery_score": 36.83,
+            "equivalent_diameter_m": 183.45,
+            "finer_grid": {
+              "base_cells_spanned": 21,
+              "distinct_node_spacings": 8,
+              "finer_grid_node_spacing_m": {
+                "max": 5.74,
+                "min": 3.65
+              },
+              "possible_refinement_artefact": false,
+              "smaller_than_one_base_cell": false,
+              "spans_node_spacing_change": true
+            },
+            "flags": [],
+            "flat_floor_fraction": 0.266,
+            "floor_elevation_m": -80.302,
+            "hierarchy_level": 0,
+            "max_depth_m": 4.604,
+            "mean_depth_m": 1.886,
+            "mean_wall_slope_deg": 3.288,
+            "native_record_id": "closed-basin-delineation@189374.240000,1972180.070000",
+            "parent_native_record_id": null,
+            "possible_artifact": false,
+            "proposed_class": "SEAFLOOR_DEPRESSION",
+            "rectangularity": 0.546,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 5.72,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 42,
+              "continuation_columns_measured": 84,
+              "continuation_significant_fraction": 0.0,
+              "length_cells": 42,
+              "median_step_m": 4.157,
+              "median_width_cells": 10.5,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.667,
+              "tested": true
+            },
+            "significance": 3.91,
+            "spill_elevation_m": -75.698,
+            "volume_m3": 49859.2
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 44608.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 4.01 m deep over 44608 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed seabed basin, circularity 0.22, depth/diameter 0.017",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              188874.24,
+              1972040.07,
+              189306.24,
+              1972272.07
+            ],
+            "centroid_lonlat": [
+              -65.9326085,
+              17.8150541
+            ],
+            "centroid_xy": [
+              189113.27,
+              1972159.708
+            ],
+            "circularity": 0.216,
+            "deepest_xy": [
+              189166.24,
+              1972188.07
+            ],
+            "depth_to_diameter": 0.01681,
+            "depth_uncertainty_m": 1.212,
+            "discovery_score": 31.87,
+            "equivalent_diameter_m": 238.32,
+            "finer_grid": {
+              "base_cells_spanned": 32,
+              "distinct_node_spacings": 8,
+              "finer_grid_node_spacing_m": {
+                "max": 6.48,
+                "min": 4.51
+              },
+              "possible_refinement_artefact": false,
+              "smaller_than_one_base_cell": false,
+              "spans_node_spacing_change": true
+            },
+            "flags": [],
+            "flat_floor_fraction": 0.506,
+            "floor_elevation_m": -79.685,
+            "hierarchy_level": 0,
+            "max_depth_m": 4.006,
+            "mean_depth_m": 1.633,
+            "mean_wall_slope_deg": 2.324,
+            "native_record_id": "closed-basin-delineation@189166.240000,1972188.070000",
+            "parent_native_record_id": null,
+            "possible_artifact": false,
+            "proposed_class": "SEAFLOOR_DEPRESSION",
+            "rectangularity": 0.445,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 7.19,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 54,
+              "continuation_columns_measured": 108,
+              "continuation_significant_fraction": 0.065,
+              "length_cells": 54,
+              "median_step_m": -0.727,
+              "median_width_cells": 13.0,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.37,
+              "tested": true
+            },
+            "significance": 3.31,
+            "spill_elevation_m": -75.679,
+            "volume_m3": 72840.3
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 141056.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 3.30 m deep over 141056 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed seabed basin, circularity 0.14, depth/diameter 0.008",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              189554.24,
+              1971528.07,
+              190418.24,
+              1971968.07
+            ],
+            "centroid_lonlat": [
+              -65.9246024,
+              17.8112099
+            ],
+            "centroid_xy": [
+              189955.946,
+              1971720.665
+            ],
+            "circularity": 0.136,
+            "deepest_xy": [
+              189950.24,
+              1971740.07
+            ],
+            "depth_to_diameter": 0.00779,
+            "depth_uncertainty_m": 2.0011,
+            "discovery_score": 23.85,
+            "equivalent_diameter_m": 423.79,
+            "finer_grid": {
+              "base_cells_spanned": 98,
+              "distinct_node_spacings": 35,
+              "finer_grid_node_spacing_m": {
+                "max": 6.51,
+                "min": 2.89
+              },
+              "possible_refinement_artefact": false,
+              "smaller_than_one_base_cell": false,
+              "spans_node_spacing_change": true
+            },
+            "flags": [
+              "BELOW_UNCERTAINTY",
+              "NESTED"
+            ],
+            "flat_floor_fraction": 0.784,
+            "floor_elevation_m": -79.081,
+            "hierarchy_level": 1,
+            "max_depth_m": 3.302,
+            "mean_depth_m": 1.299,
+            "mean_wall_slope_deg": 1.36,
+            "native_record_id": "closed-basin-delineation@189950.240000,1971740.070000/n1",
+            "parent_native_record_id": "closed-basin-delineation@189950.240000,1971740.070000",
+            "possible_artifact": false,
+            "proposed_class": "SEAFLOOR_DEPRESSION",
+            "rectangularity": 0.371,
+            "seam_test": {
+              "reason": "nested; tested through its outer depression",
+              "tested": false
+            },
+            "significance": 1.65,
+            "spill_elevation_m": -75.78,
+            "volume_m3": 183283.1
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 66880.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.77 m deep over 66880 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed seabed basin, circularity 0.27, depth/diameter 0.009",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              190554.24,
+              1971120.07,
+              191090.24,
+              1971336.07
+            ],
+            "centroid_lonlat": [
+              -65.9165569,
+              17.8068317
+            ],
+            "centroid_xy": [
+              190801.915,
+              1971222.451
+            ],
+            "circularity": 0.271,
+            "deepest_xy": [
+              190990.24,
+              1971228.07
+            ],
+            "depth_to_diameter": 0.0095,
+            "depth_uncertainty_m": 1.5135,
+            "discovery_score": 26.67,
+            "equivalent_diameter_m": 291.81,
+            "finer_grid": {
+              "base_cells_spanned": 36,
+              "distinct_node_spacings": 14,
+              "finer_grid_node_spacing_m": {
+                "max": 6.41,
+                "min": 4.97
+              },
+              "possible_refinement_artefact": false,
+              "smaller_than_one_base_cell": false,
+              "spans_node_spacing_change": true
+            },
+            "flags": [
+              "BELOW_UNCERTAINTY",
+              "NESTED"
+            ],
+            "flat_floor_fraction": 0.786,
+            "floor_elevation_m": -78.551,
+            "hierarchy_level": 1,
+            "max_depth_m": 2.771,
+            "mean_depth_m": 1.267,
+            "mean_wall_slope_deg": 1.403,
+            "native_record_id": "closed-basin-delineation@190990.240000,1971228.070000/n1",
+            "parent_native_record_id": "closed-basin-delineation@189950.240000,1971740.070000",
+            "possible_artifact": false,
+            "proposed_class": "SEAFLOOR_DEPRESSION",
+            "rectangularity": 0.578,
+            "seam_test": {
+              "reason": "nested; tested through its outer depression",
+              "tested": false
+            },
+            "significance": 1.83,
+            "spill_elevation_m": -75.78,
+            "volume_m3": 84733.8
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 32320.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.70 m deep over 32320 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed seabed basin, circularity 0.32, depth/diameter 0.013",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              187674.24,
+              1971784.07,
+              188010.24,
+              1971928.07
+            ],
+            "centroid_lonlat": [
+              -65.944496,
+              17.8121721
+            ],
+            "centroid_xy": [
+              187847.143,
+              1971860.323
+            ],
+            "circularity": 0.319,
+            "deepest_xy": [
+              187814.24,
+              1971900.07
+            ],
+            "depth_to_diameter": 0.01333,
+            "depth_uncertainty_m": 1.6227,
+            "discovery_score": 27.14,
+            "equivalent_diameter_m": 202.86,
+            "finer_grid": {
+              "base_cells_spanned": 18,
+              "distinct_node_spacings": 6,
+              "finer_grid_node_spacing_m": {
+                "max": 5.18,
+                "min": 3.27
+              },
+              "possible_refinement_artefact": false,
+              "smaller_than_one_base_cell": false,
+              "spans_node_spacing_change": true
+            },
+            "flags": [
+              "BELOW_UNCERTAINTY"
+            ],
+            "flat_floor_fraction": 0.814,
+            "floor_elevation_m": -82.652,
+            "hierarchy_level": 0,
+            "max_depth_m": 2.703,
+            "mean_depth_m": 1.434,
+            "mean_wall_slope_deg": 1.43,
+            "native_record_id": "closed-basin-delineation@187814.240000,1971900.070000",
+            "parent_native_record_id": null,
+            "possible_artifact": false,
+            "proposed_class": "SEAFLOOR_DEPRESSION",
+            "rectangularity": 0.668,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 5.74,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 42,
+              "continuation_columns_measured": 75,
+              "continuation_significant_fraction": 0.013,
+              "length_cells": 42,
+              "median_step_m": -0.904,
+              "median_width_cells": 15.0,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.262,
+              "tested": true
+            },
+            "significance": 1.67,
+            "spill_elevation_m": -79.948,
+            "volume_m3": 46352.2
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 16576.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.22 m deep over 16576 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed seabed basin, circularity 0.29, depth/diameter 0.015",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              191866.24,
+              1970360.07,
+              192090.24,
+              1970552.07
+            ],
+            "centroid_lonlat": [
+              -65.9052969,
+              17.7999285
+            ],
+            "centroid_xy": [
+              191984.618,
+              1970439.344
+            ],
+            "circularity": 0.286,
+            "deepest_xy": [
+              191934.24,
+              1970436.07
+            ],
+            "depth_to_diameter": 0.01529,
+            "depth_uncertainty_m": 1.1083,
+            "discovery_score": 28.17,
+            "equivalent_diameter_m": 145.28,
+            "finer_grid": {
+              "base_cells_spanned": 20,
+              "distinct_node_spacings": 8,
+              "finer_grid_node_spacing_m": {
+                "max": 5.94,
+                "min": 5.15
+              },
+              "possible_refinement_artefact": false,
+              "smaller_than_one_base_cell": false,
+              "spans_node_spacing_change": true
+            },
+            "flags": [
+              "BELOW_UNCERTAINTY"
+            ],
+            "flat_floor_fraction": 0.452,
+            "floor_elevation_m": -72.056,
+            "hierarchy_level": 0,
+            "max_depth_m": 2.222,
+            "mean_depth_m": 1.169,
+            "mean_wall_slope_deg": 2.057,
+            "native_record_id": "closed-basin-delineation@191934.240000,1970436.070000",
+            "parent_native_record_id": null,
+            "possible_artifact": false,
+            "proposed_class": "SEAFLOOR_DEPRESSION",
+            "rectangularity": 0.385,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 22.72,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 28,
+              "continuation_columns_measured": 56,
+              "continuation_significant_fraction": 0.0,
+              "length_cells": 28,
+              "median_step_m": 2.395,
+              "median_width_cells": 10.5,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.607,
+              "tested": true
+            },
+            "significance": 2.0,
+            "spill_elevation_m": -69.834,
+            "volume_m3": 19385.0
+          }
+        ],
+        "ignoring_uncertainty": {
+          "also_reported_by_the_detector": 8,
+          "closed_depressions": 9,
+          "meaning": "closed lows of the minimum depth and area when the product's uncertainty is ignored; a check on the detector, not evidence",
+          "withheld_by_the_uncertainty_rule": [
+            {
+              "area_m2": 20672.0,
+              "deepest_xy": [
+                191798.24,
+                1970900.07
+              ],
+              "depth_uncertainty_m": 1.2015,
+              "max_depth_m": 3.73
+            }
+          ]
+        },
+        "parameters": {
+          "min_area_m2": 16384.0,
+          "min_depth_m": 2.0,
+          "nested": true,
+          "nested_level_step_m": 0.5,
+          "significance_floor": 3.0
+        },
+        "possible_artifacts": 0,
+        "sensitivity": {
+          "cell_depth_floor_m": {
+            "max": 27.685,
+            "median": 0.675,
+            "min": 0.207,
+            "p90": 5.403
+          },
+          "cells_where_floor_exceeds_min_depth": 102854,
+          "cells_where_min_depth_is_resolvable": 216303,
+          "cells_with_published_uncertainty": 319157,
+          "covered_cells": 319157,
+          "floor_is": "the square root of two times a cell's own uncertainty: the least water depth at which the cell counts as part of a depression",
+          "meaning": "where the floor exceeds the minimum depth, a depression of the minimum depth cannot be reported; absence of a detection there is not absence of a depression"
+        },
+        "source_id": "APSRC-b6b20e5ef75b4e3e",
+        "surface": {
+          "bounds": [
+            183826.24,
+            1962056.07,
+            200210.24,
+            1978440.07
+          ],
+          "cell_size_m": [
+            8.0,
+            8.0
+          ],
+          "cell_uncertainty_m": {
+            "max": 19.576,
+            "median": 0.477,
+            "min": 0.146,
+            "p90": 3.82
+          },
+          "crs": "EPSG:26920",
+          "elevation_max_m": -58.621,
+          "elevation_median_m": -75.583,
+          "elevation_min_m": -1026.303,
+          "kind": "BATHYMETRY",
+          "nodata_cells": 3875147,
+          "origin": [
+            183826.24,
+            1978440.07
+          ],
+          "shape": [
+            2048,
+            2048
+          ],
+          "uncertainty_basis": "the product's own per-cell uncertainty band",
+          "valid_cells": 319157
+        }
+      },
+      "search_area": {
+        "covered_bbox_lonlat": [
+          -65.9574036,
+          17.7707798,
+          -65.8483647,
+          17.8254658
+        ],
+        "grid_bbox_lonlat": [
+          -65.9833773,
+          17.7230988,
+          -65.8265904,
+          17.8732935
+        ],
+        "relation": "FULLY_WITHIN",
+        "search_area": "guayama_punta_tuna_discovery_v0_1",
+        "search_area_bbox_lonlat": [
+          -66.2,
+          17.5,
+          -65.8,
+          18.05
+        ],
+        "search_area_is": "an analyst-drawn box for finding sources; not the position of any feature or seed"
+      },
+      "source": {
+        "coverage_state": "INTERPOLATED",
+        "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
+        "lineage_root_id": "NOS:BAG:W00247",
+        "manifestation_sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+        "native_identifier": "NOS:BAG:W00247:3of4",
+        "parent_source_ids": [],
+        "product_stage": "GRID",
+        "provenance_state": "REGISTERED",
+        "provider": "NOS_BAG_PRODUCT",
+        "published_date": null,
+        "retrieved_utc": "2026-11-18T15:00:55+00:00",
+        "sensor_type": "MULTIBEAM_ECHOSOUNDER",
+        "source_id": "APSRC-b6b20e5ef75b4e3e",
+        "source_uri": "https://data.ngdc.noaa.gov/platforms/ocean/nos/coast/W00001-W02000/W00247/BAG/W00247_MB_VR_MLLW_3of4.bag",
+        "survey_date": "2013",
+        "title": "W00247_MB_VR_MLLW_3of4.bag"
+      },
+      "subset": {
+        "derivation": "the product's finer grids resampled to 8 m cells (mean elevation and largest uncertainty of the nodes in each cell; empty where none), both bands, written losslessly",
+        "file": "subsets/grid_8m.tif",
+        "parent_sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+        "sha256": "9ceb13650c01756188d4b557b7de49af3cf38cd2758a03afacc1be719532289e"
+      },
+      "vertical": {
+        "cells_at_or_above_datum": 0,
+        "converted_to_another_datum": false,
+        "joinable_to_other_references": false,
+        "positive": "up",
+        "product_crs_name": "NAD83 / UTM zone 20N + MLLW depth",
+        "regional_plausibility": "NOT_ASSESSED",
+        "regional_plausibility_reason": "MLLW is not an orthometric datum with a regional extent here",
+        "resolved_datum": "MLLW",
+        "sign_note": "the product's coordinate system is named as a depth; its stored values are elevations. The values are used as stored and are not re-signed.",
+        "stated_datum": "MLLW",
+        "statement_basis": "A structured vertical-datum element in the product's own metadata (VERT_DATUM[\"MLLW\"]), and the name of its coordinate system (\"NAD83 / UTM zone 20N + MLLW depth\"). The file name says the same.",
+        "values_are": "elevations, positive up: the seabed is stored as negative numbers below the datum"
+      },
+      "vertical_uncertainty": {
+        "basis": "The product's own uncertainty, node by node in its finer grids; each 8 m cell carries the largest uncertainty of the nodes inside it. It is not a single project figure.",
+        "per_cell": true,
+        "value_m": null
+      }
+    }
+  ],
+  "registry": "access_point.offshore",
+  "registry_changes": 0,
+  "replication": null,
+  "run_id": "2026-11-19-offshore-8m",
+  "schema": "access_point_seabed_report/1.0",
+  "survey_version": "access-point-survey-processing/1.0",
+  "target_feature": null,
+  "target_feature_note": "none: no off-shore record holds a position, so the run is centred on nothing and attaches nothing"
+}

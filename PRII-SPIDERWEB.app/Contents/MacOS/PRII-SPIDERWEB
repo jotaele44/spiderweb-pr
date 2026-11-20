@@ -1,6 +1,8 @@
 #!/bin/bash
 # macOS .app launcher for the PRII desktop wrapper. Self-locating: resolves the
-# repo root from this bundle's own path, runs one-time setup, then opens the app.
+# repo root from this bundle's own path. Once setup is complete it opens the
+# app directly; until then it hands over to a Terminal window that runs the
+# one-time setup and reopens this app when it is done.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../../.." && pwd)"
@@ -10,8 +12,7 @@ notify() { osascript -e "display dialog \"$1\" buttons {\"OK\"} with title \"Spi
 # Gatekeeper "App Translocation": when a quarantined .app is opened from where
 # it was unzipped, macOS runs it from a read-only disk image under a random
 # /private/var/folders/…/AppTranslocation/ path. Only the bundle is copied
-# there, so the checkout next to it is gone and setup cannot write a .venv. The
-# generic setup failure below would blame the network, so name the real cause.
+# there, so the checkout next to it is gone and setup cannot write a .venv.
 # Note that "Open Anyway" permits one launch without clearing the quarantine
 # flag, so it leaves the bundle translocated and lands people here.
 case "$HERE" in
@@ -28,23 +29,20 @@ fi
 
 cd "$REPO"
 
-# Finder launches .app bundles with a minimal PATH that omits python.org
-# (/usr/local/bin) and Homebrew (/opt/homebrew/bin, Apple silicon). Restore
-# them so python3 and npm resolve the same way they do in a normal shell.
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-
-PY="$(command -v python3 || true)"
-if [ -z "$PY" ]; then
-  notify "Python 3 is required. Install it from https://www.python.org/downloads/ and open this app again."
-  exit 1
+# Same three things desktop/setup.py's is_complete() checks. Testing them here
+# means a set-up checkout starts without needing a system Python at all.
+if [ -f desktop/.setup-complete ] && [ -x .venv/bin/python ] \
+  && [ -f server/frontend/dist/index.html ]; then
+  exec .venv/bin/python desktop/launch.py
 fi
 
-# Finder discards the launcher's output, so keep a log the failure text can point
-# at. It lives in the temp dir because the folder itself may not be writable.
-LOG="$(mktemp "${TMPDIR:-/tmp}/prii-spiderweb-pr-setup.XXXXXX")"
-if ! "$PY" desktop/setup.py --ensure >"$LOG" 2>&1; then
-  notify "First-run setup could not finish. It needs internet the first time (and Node.js for the dashboard build).\n\nDetails: $LOG\n\nOpen Terminal in $REPO and run: python3 desktop/setup.py"
+# Not set up yet (or setup was left half-done). Finder discards this launcher's
+# output and gives it a minimal PATH, so run setup where the person can watch
+# it: a Terminal window, which also loads their normal shell environment.
+# `open -a Terminal <file>` needs no Automation permission.
+SETUP="$HERE/../Resources/first-run-setup.command"
+chmod +x "$SETUP" 2>/dev/null || true
+if ! open -a Terminal "$SETUP"; then
+  notify "Could not open a Terminal window to finish first-run setup.\n\nDouble-click PRII-SPIDERWEB.command in $REPO instead."
   exit 1
 fi
-rm -f "$LOG"
-exec .venv/bin/python desktop/launch.py

@@ -1,0 +1,7 @@
+{
+  "catalogue": "2026-11-16/source_catalogue.json",
+  "catalogue_sha256": "280d9635f2c9a9094acefe2b11b7109ba0f421ee1f1a69b29a234714cea8ef26",
+  "raw_bytes_kept": true,
+  "run_id": "2026-11-16",
+  "schema": "access_point_source_discovery_pointer/1.0"
+}

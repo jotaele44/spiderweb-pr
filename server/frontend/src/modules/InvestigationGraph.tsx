@@ -1,6 +1,7 @@
 import type { PriisData, Selection } from "../types/priis";
 import { byId } from "../lib/format";
 import { downloadJson } from "../export/download";
+import { AccessPointRelationships } from "../spatial/accessPoints/AccessPointRelationships";
 
 interface GraphNode { id: string; label: string; kind: Selection["kind"]; x: number; y: number }
 
@@ -11,6 +12,7 @@ export function InvestigationGraph({ data, setSelection }: { data: PriisData; se
       <section className="panel">
         <div className="panel-head"><div><h1>Investigation Graph</h1><span className="subtle">Entity graph scaffold · vendor / agency / site / anomaly</span></div></div>
         <div className="empty-state">No anomalies in the current dataset to graph.</div>
+        <AccessPointRelationships />
       </section>
     );
   }
@@ -60,6 +62,7 @@ export function InvestigationGraph({ data, setSelection }: { data: PriisData; se
         </svg>
         {nodes.map((node) => <button key={node.id} className="graph-node" style={{ left: `${node.x}%`, top: `${node.y}%` }} onClick={() => setSelection({ kind: node.kind, id: node.id })}><b>{node.kind}</b><br />{node.label}</button>)}
       </div>
+      <AccessPointRelationships />
     </section>
   );
 }

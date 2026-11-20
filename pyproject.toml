@@ -28,7 +28,7 @@ dependencies = [
 
 [tool.uv.sources]
 prii-maintenance = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_maintenance" }
-prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_export_utils" }
+prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "0f62e4bdde10b5ac82787a329d6f15481ab9c7f0", subdirectory = "packages/prii_export_utils" }
 
 # Per-subsystem extras. The shared scientific stack lives in `dependencies` above;
 # each extra adds only what that subsystem needs on top. Install e.g.
@@ -88,6 +88,11 @@ server = [
     "sse-starlette>=2.1,<4",
     "aiosqlite>=0.20,<1",
     "pydantic>=2.7,<3",
+    # NOAA ERI imagery tiles (server/backend/eri_imagery.py): PyYAML reads the
+    # flight registry, rasterio warps the remote GeoTIFFs onto the tile grid.
+    # Same ranges as the `airspace` and `dem` extras.
+    "PyYAML>=6.0,<7",
+    "rasterio>=1.4,<2",
 ]
 # Cross-repo federation hub.
 federation = [
@@ -157,7 +162,7 @@ include = [
     "earthgpt*",
     "llm*",
     "imagery*",
-    "spiderweb.subsurface*",
+    "spiderweb*",
 ]
 
 # ---------------------------------------------------------------------------
@@ -206,7 +211,8 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["integration", "pipeline", "readiness", "federation", "llm",
-          "earthgpt", "imagery", "spiderweb.subsurface", "provenance_utils", "run_modes", "release_check"]
+          "earthgpt", "imagery", "spiderweb.subsurface", "spiderweb.access_points",
+          "provenance_utils", "run_modes", "release_check"]
 omit = [
     "tests/*",
     "scripts/*",

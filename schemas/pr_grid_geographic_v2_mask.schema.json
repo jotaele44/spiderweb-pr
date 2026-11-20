@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/pr_grid_geographic_v2_mask.schema.json",
+  "title": "PR Grid Geographic V2 Domain Mask Membership",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["Grid_ID", "Grid_Version", "Grid_Level", "Cell_ID", "Mask_Type", "Mask_Version", "Membership_State"],
+  "properties": {
+    "Grid_ID": {"const": "PR_GRID_GEOGRAPHIC_V2"},
+    "Grid_Version": {"const": "2.0.0-rc1"},
+    "Grid_Level": {"enum": ["L0", "L1", "L2", "L3"]},
+    "Cell_ID": {"type": "string", "pattern": "^PRG2:L[0-3]:R[0-9]{3}:C[0-9]{4}$"},
+    "Mask_Type": {"enum": ["LAND", "ADMIN", "HYDRO", "AVIATION", "EEZ", "RESEARCH"]},
+    "Mask_Version": {"type": "string", "minLength": 1},
+    "Membership_State": {"enum": ["IN", "OUT", "PARTIAL", "UNKNOWN"]},
+    "Overlap_Area_m2": {"type": ["number", "null"], "minimum": 0},
+    "Cell_Coverage_Fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "Source_Manifestation_ID": {"type": ["string", "null"]}
+  }
+}
