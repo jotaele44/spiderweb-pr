@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -73,6 +74,9 @@ class GridTransform:
     certification_state: str
     geometry_version: str
     grid_version: str
+    discovery_radius_km: float = 0.0
+    uncertainty_basis: str = ""
+    exact_cell_claims_permitted: bool = True
 
     @classmethod
     def load(cls, path: Path = TRANSFORM_PATH) -> "GridTransform":
@@ -81,6 +85,7 @@ class GridTransform:
         except (OSError, ValueError) as exc:
             raise SpatialResolverError(f"no usable grid transform at {path}: {exc}") from exc
         transform = record["transform"]
+        uncertainty = record.get("uncertainty_policy") or {}
         return cls(
             lon0=float(transform["lon0"]),
             lat0=float(transform["lat0"]),
@@ -89,6 +94,11 @@ class GridTransform:
             certification_state=str(record.get("certification_state", "PROVISIONAL")),
             geometry_version=str(record.get("geometry_version", "")),
             grid_version=str(record.get("grid_version", "")),
+            discovery_radius_km=float(uncertainty.get("discovery_radius_km") or 0.0),
+            uncertainty_basis=str(uncertainty.get("radius_basis") or ""),
+            exact_cell_claims_permitted=bool(
+                uncertainty.get("exact_cell_claims_permitted", record.get("certification_state") == "VERIFIED")
+            ),
         )
 
     @property
@@ -125,6 +135,26 @@ class GridTransform:
             return row_index, column_index
         return None
 
+    @property
+    def requires_uncertainty_cell_set(self) -> bool:
+        return (
+            self.certification_state != "VERIFIED"
+            and not self.exact_cell_claims_permitted
+            and self.discovery_radius_km > 0.0
+        )
+
+    def uncertainty_cell_radius(self, lat: float) -> tuple[int, int]:
+        """Conservative row/column search radii for the provisional discovery envelope."""
+        if not self.requires_uncertainty_cell_set:
+            return (0, 0)
+        km_per_degree = 111.32
+        north_south_km = self.deg_per_cell_y * km_per_degree
+        east_west_km = self.deg_per_cell_x * km_per_degree * max(0.01, abs(math.cos(math.radians(lat))))
+        return (
+            int(math.ceil(self.discovery_radius_km / north_south_km)),
+            int(math.ceil(self.discovery_radius_km / east_west_km)),
+        )
+
 
 def cell_set_sha256(cell_ids: Iterable[str]) -> str:
     """Content address of a cell set: sha256 over the sorted, canonical members."""
@@ -140,6 +170,10 @@ class CellSet:
     boundary_cells: tuple[str, ...]
     interior_cells: tuple[str, ...]
     certification_state: str
+    resolution_state: str
+    uncertainty_radius_km: float
+    uncertainty_basis: str
+    anchor_cell_id: str | None = None
     identity_default: str = IDENTITY_DEFAULT
 
     @property
@@ -159,12 +193,19 @@ class CellSet:
             "boundary_cells": list(self.boundary_cells),
             "interior_cells": list(self.interior_cells),
             "certification_state": self.certification_state,
+            "resolution_state": self.resolution_state,
+            "uncertainty_radius_km": self.uncertainty_radius_km,
+            "uncertainty_basis": self.uncertainty_basis,
+            "anchor_cell_id": self.anchor_cell_id,
             "identity_default": self.identity_default,
         }
 
 
 def _build_cell_set(
-    members: Sequence[tuple[int, int]], transform: GridTransform
+    members: Sequence[tuple[int, int]],
+    transform: GridTransform,
+    *,
+    anchor_cell_id: str | None = None,
 ) -> CellSet:
     member_lookup = set(members)
     boundary: list[str] = []
@@ -186,13 +227,47 @@ def _build_cell_set(
         boundary_cells=tuple(boundary),
         interior_cells=tuple(interior),
         certification_state=transform.certification_state,
+        resolution_state=(
+            "VERIFIED_CELL_SET"
+            if transform.certification_state == "VERIFIED"
+            else "PROVISIONAL_UNCERTAINTY_CELL_SET"
+        ),
+        uncertainty_radius_km=(
+            transform.discovery_radius_km if transform.requires_uncertainty_cell_set else 0.0
+        ),
+        uncertainty_basis=(
+            transform.uncertainty_basis if transform.requires_uncertainty_cell_set else ""
+        ),
+        anchor_cell_id=anchor_cell_id,
     )
+
+
+def _expand_for_uncertainty(
+    members: Sequence[tuple[int, int]], transform: GridTransform, *, lat: float
+) -> list[tuple[int, int]]:
+    """Expand nominal candidates into a conservative Cell_Set while transform is provisional."""
+    if not members or not transform.requires_uncertainty_cell_set:
+        return list(members)
+    row_radius, column_radius = transform.uncertainty_cell_radius(lat)
+    expanded: set[tuple[int, int]] = set()
+    for row_index, column_index in members:
+        for row in range(max(0, row_index - row_radius), min(GRID_ROWS - 1, row_index + row_radius) + 1):
+            for column in range(
+                max(0, column_index - column_radius),
+                min(GRID_COLUMNS - 1, column_index + column_radius) + 1,
+            ):
+                expanded.add((row, column))
+    return sorted(expanded)
 
 
 def resolve_point(lon: float, lat: float, transform: GridTransform | None = None) -> CellSet:
     transform = transform or GridTransform.load()
     located = transform.locate(lon, lat)
-    return _build_cell_set([located] if located else [], transform)
+    if not located:
+        return _build_cell_set([], transform)
+    anchor = cell_id(*located)
+    members = _expand_for_uncertainty([located], transform, lat=lat)
+    return _build_cell_set(members, transform, anchor_cell_id=anchor)
 
 
 def resolve_bbox(
@@ -214,6 +289,7 @@ def resolve_bbox(
         for row_index in range(max(0, first_row), min(GRID_ROWS - 1, last_row) + 1)
         for column_index in range(max(0, first_column), min(GRID_COLUMNS - 1, last_column) + 1)
     ]
+    members = _expand_for_uncertainty(members, transform, lat=(south + north) / 2.0)
     return _build_cell_set(members, transform)
 
 
@@ -258,6 +334,11 @@ def resolve_polygon(geometry: dict, transform: GridTransform | None = None) -> C
         lon, lat = transform.cell_centroid(row_index, column_index)
         if sum(_point_in_ring(lon, lat, ring) for ring in outer_rings) % 2 == 1:
             members.append((row_index, column_index))
+    members = _expand_for_uncertainty(
+        members,
+        transform,
+        lat=sum(ys) / len(ys),
+    )
     return _build_cell_set(members, transform)
 
 

@@ -12,26 +12,26 @@
         "filename": "sources.jsonl",
         "record_count": 1,
         "schema_id": "federation_source.schema.json",
-        "sha256": "f96de0930698c8ef3441889710672f879cece18b11e0ead374fcc30d866b2dd8",
+        "sha256": "cba20f8944f7752b5e740573438d62e3e21d469ea8e26654ba88c4fecfbfcdc5",
         "stream": "sources"
       },
       {
         "filename": "entities.jsonl",
         "record_count": 5,
         "schema_id": "federation_entity.schema.json",
-        "sha256": "49f596c72fd4c7e54051c0da8d6fa5d481067514a3a965a0346add9df9493bfb",
+        "sha256": "1ca313d228983a083d6775359eb81df5a8b2ce1b46cbbdb3703bfc9d1ea00261",
         "stream": "entities"
       },
       {
         "filename": "relationships.jsonl",
         "record_count": 4,
         "schema_id": "federation_relationship.schema.json",
-        "sha256": "670ab8432bcf9924849cb04642c8e31e49e2347bcc09a74de432a478e81b09e2",
+        "sha256": "49e4c634a1bac7de5b0b7a332fde0b43549473076bba250e12ed543896ab856f",
         "stream": "relationships"
       }
     ],
     "mode": "test",
-    "package_id": "pkg_e120ab0652a490fe2b883671be08c4a9",
+    "package_id": "pkg_5cbfea4335ec73091c87af40afb17802",
     "producer": "spiderweb-pr"
   },
   "mode": "test",
@@ -43,6 +43,11 @@
         "created_at": "2023-03-20T00:00:00Z",
         "entity_id": "ent_f8efbd6a297535222dfcc936253efa59",
         "entity_type": "sensor_source",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL",
+          "epistemic_class": "CURATED"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "jurisdiction": "PR",
         "lineage": {
@@ -63,6 +68,10 @@
         "created_at": "2023-03-20T12:00:00Z",
         "entity_id": "ent_2e06623c5f844bda70a75af502b38c5c",
         "entity_type": "airspace_event",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "jurisdiction": "PR",
         "lineage": {
@@ -87,6 +96,11 @@
         "created_at": "2023-03-20T12:00:00Z",
         "entity_id": "ent_2766b5ff365a509a2eebee7b84971603",
         "entity_type": "aircraft",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL",
+          "identity_state": "CANDIDATE"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "jurisdiction": "PR",
         "lineage": {
@@ -107,6 +121,10 @@
         "created_at": "2023-03-20T12:05:00Z",
         "entity_id": "ent_ea50819465a9e40c014f4b072ecbc9e4",
         "entity_type": "airspace_observation",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "jurisdiction": "PR",
         "lineage": {
@@ -131,6 +149,12 @@
         "created_at": "2023-03-20T12:10:00Z",
         "entity_id": "ent_63952ee65be2611529d6f9f467e3d8ad",
         "entity_type": "airspace_track",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "coordinate_method": "FIRST_VERTEX",
+          "data_stage": "CANONICAL",
+          "geometry_precision": "REPRESENTATIVE_POINT"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "jurisdiction": "PR",
         "lineage": {
@@ -157,6 +181,11 @@
         "confidence": 0.8,
         "created_at": "2023-03-20T12:00:00Z",
         "evidence_source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL",
+          "epistemic_class": "CURATED"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "lineage": {
           "extraction_method": "deterministic_envelope_projection",
@@ -177,6 +206,10 @@
         "confidence": 0.8,
         "created_at": "2023-03-20T12:00:00Z",
         "evidence_source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "lineage": {
           "extraction_method": "deterministic_envelope_projection",
@@ -197,6 +230,11 @@
         "confidence": 0.7,
         "created_at": "2023-03-20T12:05:00Z",
         "evidence_source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL",
+          "epistemic_class": "CURATED"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "lineage": {
           "extraction_method": "deterministic_envelope_projection",
@@ -217,6 +255,11 @@
         "confidence": 0.9,
         "created_at": "2023-03-20T12:10:00Z",
         "evidence_source_id": "src_b0e1b499cf92070474211ad0d73df24a",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL",
+          "epistemic_class": "CURATED"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "lineage": {
           "extraction_method": "deterministic_envelope_projection",
@@ -238,6 +281,11 @@
       {
         "confidence": 1.0,
         "created_at": "2023-03-20T00:00:00Z",
+        "evidence_state": {
+          "contract": "federation-evidence-state-v1",
+          "data_stage": "CANONICAL",
+          "epistemic_class": "CURATED"
+        },
         "extracted_at": "2023-03-20T00:00:00Z",
         "lineage": {
           "extraction_method": "deterministic_envelope_projection",

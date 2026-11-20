@@ -1,0 +1,2544 @@
+{
+  "content_sha256": "9ce35e4eaa5db8a427d069cfef86674310f9a0a0ac19f339619a3f9a6f3060b5",
+  "contract_version": "access-point-registry/1.0",
+  "limits": [
+    "a detection is a closed basin in a gridded surface: a shape, not an opening, a passage or an identity",
+    "a gridded elevation model is a derived product; evidence from it cannot rise above SUPPORTING",
+    "a basin cut by the window edge is not closed inside the window and is not reported",
+    "depth and area thresholds are working values and are not calibrated against field truth",
+    "distance from a registered point to a basin is discovery; it attaches nothing to the record",
+    "the stated vertical datum is recorded as stated; where it is regionally implausible the surface is not joined to another reference",
+    "no feature, observation or status in a committed registry was changed by this run"
+  ],
+  "products": [
+    {
+      "catalogue": {
+        "metadata_uri": "https://www.sciencebase.gov/catalog/item/5eb61d7d82ce25b5135ae912",
+        "native_identifier": "TNM:5eb61d7d82ce25b5135ae912",
+        "provider": "USGS_TNM_ELEVATION_PRODUCTS",
+        "published": "2020-05-06",
+        "size_bytes": 332533267,
+        "title": "USGS one meter x72y204 PR PRVI F 2018",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_F_2018/TIFF/USGS_1m_x72y204_PR_PRVI_F_2018.tif"
+      },
+      "download": {
+        "headers": {
+          "Content-Length": "332533267",
+          "Content-Type": "image/tiff",
+          "Date": "Tue, 17 Nov 2026 13:50:19 GMT",
+          "ETag": "\"9ebb574c0df4cc0add908933b1a98c0f-64\"",
+          "Last-Modified": "Sat, 14 Feb 2026 05:31:32 GMT"
+        },
+        "retrieved_utc": "2026-11-17T13:50:35+00:00",
+        "sha256": "a798473f09726437e9641bfed2c1cb584c176888595bba46348cda7caf83c9c5",
+        "size_bytes": 332533267
+      },
+      "dry_registration": {
+        "by_assertion_rung": {
+          "FEATURE": 17
+        },
+        "by_status": {
+          "CANDIDATE": 17
+        },
+        "features_that_would_be_filed": 17,
+        "verified": 0,
+        "written_to_committed_registry": false
+      },
+      "epoch": "2018",
+      "relation_to_target": {
+        "basis": "DISTANCE_ONLY_DISCOVERY",
+        "inside_any_basin_bbox": true,
+        "nearest": [
+          {
+            "area_m2": 4235.0,
+            "distance_to_deepest_point_m": 74.7,
+            "max_depth_m": 1.132,
+            "native_record_id": "closed-basin-delineation@723061.500000,2032213.500000",
+            "point_inside_basin_bbox": true
+          },
+          {
+            "area_m2": 1156.0,
+            "distance_to_deepest_point_m": 109.1,
+            "max_depth_m": 1.531,
+            "native_record_id": "closed-basin-delineation@722945.500000,2032189.500000",
+            "point_inside_basin_bbox": false
+          },
+          {
+            "area_m2": 796.0,
+            "distance_to_deepest_point_m": 239.2,
+            "max_depth_m": 1.081,
+            "native_record_id": "closed-basin-delineation@723224.500000,2032155.500000",
+            "point_inside_basin_bbox": false
+          }
+        ],
+        "point_inside_window": true,
+        "point_xy": [
+          723015.97,
+          2032272.77
+        ]
+      },
+      "result": {
+        "assertions_by_tier": {
+          "SUPPORTING": 34
+        },
+        "detection_count": 17,
+        "detections": [
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 1999.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 3.01 m deep over 1999 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.31, depth/diameter 0.060",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723420.0,
+              2032569.0,
+              723469.0,
+              2032689.0
+            ],
+            "centroid_lonlat": [
+              -66.8852022,
+              18.37171
+            ],
+            "centroid_xy": [
+              723445.225,
+              2032611.018
+            ],
+            "circularity": 0.309,
+            "deepest_xy": [
+              723430.5,
+              2032573.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 62.69,
+            "equivalent_diameter_m": 50.45,
+            "flags": [],
+            "floor_elevation_m": 230.755,
+            "max_depth_m": 3.012,
+            "mean_depth_m": 0.948,
+            "native_record_id": "closed-basin-delineation@723430.500000,2032573.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.34,
+            "significance": 29.58,
+            "spill_elevation_m": 233.767,
+            "volume_m3": 1894.8
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 2929.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.90 m deep over 2929 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.37, depth/diameter 0.048",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              722542.0,
+              2032202.0,
+              722604.0,
+              2032282.0
+            ],
+            "centroid_lonlat": [
+              -66.893485,
+              18.3684289
+            ],
+            "centroid_xy": [
+              722573.971,
+              2032237.629
+            ],
+            "circularity": 0.371,
+            "deepest_xy": [
+              722587.5,
+              2032227.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 61.14,
+            "equivalent_diameter_m": 61.07,
+            "flags": [],
+            "floor_elevation_m": 198.266,
+            "max_depth_m": 2.902,
+            "mean_depth_m": 0.701,
+            "native_record_id": "closed-basin-delineation@722587.500000,2032227.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.591,
+            "significance": 28.5,
+            "spill_elevation_m": 201.168,
+            "volume_m3": 2053.3
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 7649.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.75 m deep over 7649 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.27, depth/diameter 0.028",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              722674.0,
+              2032229.0,
+              722776.0,
+              2032400.0
+            ],
+            "centroid_lonlat": [
+              -66.892042,
+              18.3690456
+            ],
+            "centroid_xy": [
+              722725.698,
+              2032307.668
+            ],
+            "circularity": 0.269,
+            "deepest_xy": [
+              722728.5,
+              2032246.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 57.97,
+            "equivalent_diameter_m": 98.69,
+            "flags": [],
+            "floor_elevation_m": 197.238,
+            "max_depth_m": 2.753,
+            "mean_depth_m": 0.781,
+            "native_record_id": "closed-basin-delineation@722728.500000,2032246.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.439,
+            "significance": 27.04,
+            "spill_elevation_m": 199.992,
+            "volume_m3": 5970.9
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 7307.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.63 m deep over 7307 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.03, depth/diameter 0.027",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              722590.0,
+              2032076.0,
+              722951.0,
+              2032241.0
+            ],
+            "centroid_lonlat": [
+              -66.8923221,
+              18.3675761
+            ],
+            "centroid_xy": [
+              722697.98,
+              2032144.646
+            ],
+            "circularity": 0.03,
+            "deepest_xy": [
+              722643.5,
+              2032143.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 57.23,
+            "equivalent_diameter_m": 96.45,
+            "flags": [],
+            "floor_elevation_m": 194.91,
+            "max_depth_m": 2.634,
+            "mean_depth_m": 0.855,
+            "native_record_id": "closed-basin-delineation@722643.500000,2032143.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.123,
+            "significance": 25.87,
+            "spill_elevation_m": 197.544,
+            "volume_m3": 6245.8
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 1860.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.33 m deep over 1860 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.19, depth/diameter 0.048",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723356.0,
+              2032206.0,
+              723490.0,
+              2032258.0
+            ],
+            "centroid_lonlat": [
+              -66.8854261,
+              18.3682525
+            ],
+            "centroid_xy": [
+              723426.005,
+              2032227.987
+            ],
+            "circularity": 0.19,
+            "deepest_xy": [
+              723397.5,
+              2032222.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 59.9,
+            "equivalent_diameter_m": 48.66,
+            "flags": [],
+            "floor_elevation_m": 202.99,
+            "max_depth_m": 2.329,
+            "mean_depth_m": 0.711,
+            "native_record_id": "closed-basin-delineation@723397.500000,2032222.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.267,
+            "significance": 22.87,
+            "spill_elevation_m": 205.319,
+            "volume_m3": 1322.1
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 658.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.10 m deep over 658 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.13, depth/diameter 0.072",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723243.0,
+              2032214.0,
+              723288.0,
+              2032286.0
+            ],
+            "centroid_lonlat": [
+              -66.8870334,
+              18.3683739
+            ],
+            "centroid_xy": [
+              723255.965,
+              2032239.459
+            ],
+            "circularity": 0.133,
+            "deepest_xy": [
+              723252.5,
+              2032219.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 62.29,
+            "equivalent_diameter_m": 28.94,
+            "flags": [],
+            "floor_elevation_m": 202.869,
+            "max_depth_m": 2.098,
+            "mean_depth_m": 0.664,
+            "native_record_id": "closed-basin-delineation@723252.500000,2032219.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.203,
+            "significance": 20.61,
+            "spill_elevation_m": 204.968,
+            "volume_m3": 436.7
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 883.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.92 m deep over 883 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.09, depth/diameter 0.057",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723291.0,
+              2032075.0,
+              723380.0,
+              2032161.0
+            ],
+            "centroid_lonlat": [
+              -66.8863824,
+              18.3671535
+            ],
+            "centroid_xy": [
+              723326.343,
+              2032105.149
+            ],
+            "circularity": 0.091,
+            "deepest_xy": [
+              723306.5,
+              2032119.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 62.05,
+            "equivalent_diameter_m": 33.53,
+            "flags": [],
+            "floor_elevation_m": 199.522,
+            "max_depth_m": 1.924,
+            "mean_depth_m": 0.919,
+            "native_record_id": "closed-basin-delineation@723306.500000,2032119.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.115,
+            "significance": 18.89,
+            "spill_elevation_m": 201.446,
+            "volume_m3": 811.6
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 714.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.84 m deep over 714 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.45, depth/diameter 0.061",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723447.0,
+              2032196.0,
+              723511.0,
+              2032214.0
+            ],
+            "centroid_lonlat": [
+              -66.8849613,
+              18.3680332
+            ],
+            "centroid_xy": [
+              723475.423,
+              2032204.289
+            ],
+            "circularity": 0.445,
+            "deepest_xy": [
+              723452.5,
+              2032207.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 64.49,
+            "equivalent_diameter_m": 30.15,
+            "flags": [],
+            "floor_elevation_m": 204.286,
+            "max_depth_m": 1.839,
+            "mean_depth_m": 0.551,
+            "native_record_id": "closed-basin-delineation@723452.500000,2032207.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.62,
+            "significance": 18.06,
+            "spill_elevation_m": 206.125,
+            "volume_m3": 393.2
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 154.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.61 m deep over 154 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.21, depth/diameter 0.115",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              722732.0,
+              2032184.0,
+              722746.0,
+              2032221.0
+            ],
+            "centroid_lonlat": [
+              -66.8919347,
+              18.3680824
+            ],
+            "centroid_xy": [
+              722738.279,
+              2032201.169
+            ],
+            "circularity": 0.209,
+            "deepest_xy": [
+              722743.5,
+              2032187.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 68.54,
+            "equivalent_diameter_m": 14.0,
+            "flags": [],
+            "floor_elevation_m": 196.235,
+            "max_depth_m": 1.61,
+            "mean_depth_m": 0.626,
+            "native_record_id": "closed-basin-delineation@722743.500000,2032187.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.297,
+            "significance": 15.81,
+            "spill_elevation_m": 197.845,
+            "volume_m3": 96.4
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 1156.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.53 m deep over 1156 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.05, depth/diameter 0.040",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              722933.0,
+              2032129.0,
+              723112.0,
+              2032226.0
+            ],
+            "centroid_lonlat": [
+              -66.8895748,
+              18.3679507
+            ],
+            "centroid_xy": [
+              722987.883,
+              2032189.484
+            ],
+            "circularity": 0.051,
+            "deepest_xy": [
+              722945.5,
+              2032189.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 59.21,
+            "equivalent_diameter_m": 38.36,
+            "flags": [],
+            "floor_elevation_m": 196.928,
+            "max_depth_m": 1.531,
+            "mean_depth_m": 0.635,
+            "native_record_id": "closed-basin-delineation@722945.500000,2032189.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.067,
+            "significance": 15.04,
+            "spill_elevation_m": 198.459,
+            "volume_m3": 734.2
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 744.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.52 m deep over 744 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.09, depth/diameter 0.049",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723379.0,
+              2032045.0,
+              723447.0,
+              2032133.0
+            ],
+            "centroid_lonlat": [
+              -66.8854885,
+              18.3671327
+            ],
+            "centroid_xy": [
+              723420.856,
+              2032103.948
+            ],
+            "circularity": 0.086,
+            "deepest_xy": [
+              723397.5,
+              2032106.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 60.21,
+            "equivalent_diameter_m": 30.78,
+            "flags": [],
+            "floor_elevation_m": 200.213,
+            "max_depth_m": 1.523,
+            "mean_depth_m": 0.655,
+            "native_record_id": "closed-basin-delineation@723397.500000,2032106.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.124,
+            "significance": 14.96,
+            "spill_elevation_m": 201.736,
+            "volume_m3": 487.0
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 218.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.41 m deep over 218 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.19, depth/diameter 0.085",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723246.0,
+              2032162.0,
+              723264.0,
+              2032207.0
+            ],
+            "centroid_lonlat": [
+              -66.8870569,
+              18.3678715
+            ],
+            "centroid_xy": [
+              723254.124,
+              2032183.812
+            ],
+            "circularity": 0.195,
+            "deepest_xy": [
+              723248.5,
+              2032165.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 65.11,
+            "equivalent_diameter_m": 16.66,
+            "flags": [],
+            "floor_elevation_m": 199.459,
+            "max_depth_m": 1.412,
+            "mean_depth_m": 0.538,
+            "native_record_id": "closed-basin-delineation@723248.500000,2032165.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.269,
+            "significance": 13.87,
+            "spill_elevation_m": 200.871,
+            "volume_m3": 117.2
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 165.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.20 m deep over 165 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.57, depth/diameter 0.082",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              722537.0,
+              2032399.0,
+              722563.0,
+              2032409.0
+            ],
+            "centroid_lonlat": [
+              -66.893703,
+              18.3699348
+            ],
+            "centroid_xy": [
+              722548.991,
+              2032404.058
+            ],
+            "circularity": 0.567,
+            "deepest_xy": [
+              722547.5,
+              2032405.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 69.54,
+            "equivalent_diameter_m": 14.49,
+            "flags": [],
+            "floor_elevation_m": 205.184,
+            "max_depth_m": 1.195,
+            "mean_depth_m": 0.652,
+            "native_record_id": "closed-basin-delineation@722547.500000,2032405.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.635,
+            "significance": 11.74,
+            "spill_elevation_m": 206.379,
+            "volume_m3": 107.5
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 4235.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.13 m deep over 4235 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.34, depth/diameter 0.015",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              722962.0,
+              2032194.0,
+              723120.0,
+              2032277.0
+            ],
+            "centroid_lonlat": [
+              -66.8890009,
+              18.368313
+            ],
+            "centroid_xy": [
+              723048.08,
+              2032230.29
+            ],
+            "circularity": 0.339,
+            "deepest_xy": [
+              723061.5,
+              2032213.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 57.56,
+            "equivalent_diameter_m": 73.43,
+            "flags": [],
+            "floor_elevation_m": 199.991,
+            "max_depth_m": 1.132,
+            "mean_depth_m": 0.773,
+            "native_record_id": "closed-basin-delineation@723061.500000,2032213.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.323,
+            "significance": 11.12,
+            "spill_elevation_m": 201.123,
+            "volume_m3": 3275.5
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 274.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.10 m deep over 274 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.59, depth/diameter 0.059",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723167.0,
+              2032509.0,
+              723188.0,
+              2032532.0
+            ],
+            "centroid_lonlat": [
+              -66.8877591,
+              18.3709101
+            ],
+            "centroid_xy": [
+              723176.0,
+              2032519.325
+            ],
+            "circularity": 0.587,
+            "deepest_xy": [
+              723176.5,
+              2032512.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 65.65,
+            "equivalent_diameter_m": 18.68,
+            "flags": [],
+            "floor_elevation_m": 222.812,
+            "max_depth_m": 1.103,
+            "mean_depth_m": 0.422,
+            "native_record_id": "closed-basin-delineation@723176.500000,2032512.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.567,
+            "significance": 10.83,
+            "spill_elevation_m": 223.915,
+            "volume_m3": 115.6
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 796.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.08 m deep over 796 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.05, depth/diameter 0.034",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              723173.0,
+              2032074.0,
+              723275.0,
+              2032171.0
+            ],
+            "centroid_lonlat": [
+              -66.8874033,
+              18.367404
+            ],
+            "centroid_xy": [
+              723218.116,
+              2032131.627
+            ],
+            "circularity": 0.045,
+            "deepest_xy": [
+              723224.5,
+              2032155.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 58.68,
+            "equivalent_diameter_m": 31.84,
+            "flags": [],
+            "floor_elevation_m": 198.504,
+            "max_depth_m": 1.081,
+            "mean_depth_m": 0.57,
+            "native_record_id": "closed-basin-delineation@723224.500000,2032155.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.08,
+            "significance": 10.61,
+            "spill_elevation_m": 199.584,
+            "volume_m3": 453.6
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 179.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.06 m deep over 179 m2 in the source surface",
+                "tier": "SUPPORTING"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.54, depth/diameter 0.070",
+                "tier": "SUPPORTING"
+              }
+            ],
+            "bbox_xy": [
+              722584.0,
+              2031778.0,
+              722600.0,
+              2031801.0
+            ],
+            "centroid_lonlat": [
+              -66.8933612,
+              18.364397
+            ],
+            "centroid_xy": [
+              722592.226,
+              2031791.439
+            ],
+            "circularity": 0.542,
+            "deepest_xy": [
+              722589.5,
+              2031797.5
+            ],
+            "depth_uncertainty_m": 0.1018,
+            "discovery_score": 65.92,
+            "equivalent_diameter_m": 15.1,
+            "flags": [],
+            "floor_elevation_m": 200.238,
+            "max_depth_m": 1.056,
+            "mean_depth_m": 0.342,
+            "native_record_id": "closed-basin-delineation@722589.500000,2031797.500000",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.486,
+            "significance": 10.37,
+            "spill_elevation_m": 201.294,
+            "volume_m3": 61.2
+          }
+        ],
+        "parameters": {
+          "min_area_m2": 100.0,
+          "min_depth_m": 1.0,
+          "significance_floor": 3.0
+        },
+        "possible_artifacts": 0,
+        "source_id": "APSRC-3b3ad6e4d294703e",
+        "surface": {
+          "bounds": [
+            722515.0,
+            2031773.0,
+            723515.0,
+            2032773.0
+          ],
+          "cell_size_m": [
+            1.0,
+            1.0
+          ],
+          "crs": "EPSG:26919",
+          "elevation_max_m": 276.945,
+          "elevation_min_m": 194.357,
+          "kind": "TERRAIN_BARE_EARTH",
+          "nodata_cells": 0,
+          "origin": [
+            722515.0,
+            2032773.0
+          ],
+          "shape": [
+            1000,
+            1000
+          ],
+          "stated_uncertainty_m": 0.072,
+          "valid_cells": 1000000
+        }
+      },
+      "source": {
+        "coverage_state": "INTERPOLATED",
+        "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
+        "lineage_root_id": "USIEI:GlobalID:{933E88E7-A131-40E5-8BAA-C9575216E040}",
+        "manifestation_sha256": "a798473f09726437e9641bfed2c1cb584c176888595bba46348cda7caf83c9c5",
+        "native_identifier": "TNM:5eb61d7d82ce25b5135ae912",
+        "parent_source_ids": [],
+        "product_stage": "GRID",
+        "provenance_state": "REGISTERED",
+        "provider": "USGS_TNM_ELEVATION_PRODUCTS",
+        "published_date": "2020-05-06",
+        "retrieved_utc": "2026-11-17T13:50:35+00:00",
+        "sensor_type": null,
+        "source_id": "APSRC-3b3ad6e4d294703e",
+        "source_uri": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_F_2018/TIFF/USGS_1m_x72y204_PR_PRVI_F_2018.tif",
+        "survey_date": "2018-04-17/2019-04-19",
+        "title": "USGS one meter x72y204 PR PRVI F 2018"
+      },
+      "subset": {
+        "derivation": "square window of the product's own cells, written losslessly",
+        "file": "subsets/window_2018.tif",
+        "parent_sha256": "a798473f09726437e9641bfed2c1cb584c176888595bba46348cda7caf83c9c5",
+        "sha256": "be767ba0c14ca86fe1dfc8daec609e9472a16be1ee10baaad24ea4ef2a71cf8d"
+      },
+      "vertical": {
+        "joinable_to_other_references": false,
+        "positive": "up",
+        "regional_plausibility": "IMPLAUSIBLE_FOR_REGION",
+        "regional_plausibility_reason": "NAVD88 is not realised at this location; the datum in use there is PRVD02",
+        "resolved_datum": "NAVD88",
+        "stated_datum": "NAVD88",
+        "statement_basis": "One sentence in the product abstract (\"All bare earth elevation values are in meters and are referenced to the North American Vertical Datum of 1988\"), identical across the programme. The tile's own metadata file has no structured vertical-datum element and the GeoTIFF carries no vertical reference."
+      },
+      "vertical_uncertainty": {
+        "basis": "Project-level RMSEz (7.2 cm) published by the US Interagency Elevation Inventory for \"2018 Hurricane Maria PR and USVI Lidar\", whose distributor list names this project (PR_PRVI_F_2018). It is a project figure for open ground, not a per-cell uncertainty.",
+        "value_m": 0.072
+      }
+    },
+    {
+      "catalogue": {
+        "metadata_uri": "https://www.sciencebase.gov/catalog/item/6a753f0e1ba49b79d0c347d8",
+        "native_identifier": "TNM:6a753f0e1ba49b79d0c347d8",
+        "provider": "USGS_TNM_ELEVATION_PRODUCTS",
+        "published": "2026-06-24",
+        "size_bytes": 383650591,
+        "title": "USGS 1 Meter 19 x72y204 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.tif"
+      },
+      "download": {
+        "headers": {
+          "Content-Length": "383650591",
+          "Content-Type": "image/tiff",
+          "Date": "Tue, 17 Nov 2026 13:50:36 GMT",
+          "ETag": "\"a9968e0111b7a39d85e5aa5c7fa4fd71-74\"",
+          "Last-Modified": "Thu, 06 Aug 2026 19:52:04 GMT"
+        },
+        "retrieved_utc": "2026-11-17T13:51:52+00:00",
+        "sha256": "a5a8e6091415d88d991c4248a877b65e6020f0f7af810109063413c23d3be63c",
+        "size_bytes": 383650591
+      },
+      "dry_registration": {
+        "by_assertion_rung": {
+          "ANOMALY": 19
+        },
+        "by_status": {
+          "CANDIDATE": 19
+        },
+        "features_that_would_be_filed": 19,
+        "verified": 0,
+        "written_to_committed_registry": false
+      },
+      "epoch": "2024",
+      "relation_to_target": {
+        "basis": "DISTANCE_ONLY_DISCOVERY",
+        "inside_any_basin_bbox": true,
+        "nearest": [
+          {
+            "area_m2": 4295.0,
+            "distance_to_deepest_point_m": 43.5,
+            "max_depth_m": 1.322,
+            "native_record_id": "closed-basin-delineation@723020.500033,2032229.500024",
+            "point_inside_basin_bbox": true
+          },
+          {
+            "area_m2": 535.0,
+            "distance_to_deepest_point_m": 138.1,
+            "max_depth_m": 1.131,
+            "native_record_id": "closed-basin-delineation@722906.500033,2032188.500024",
+            "point_inside_basin_bbox": false
+          },
+          {
+            "area_m2": 363.0,
+            "distance_to_deepest_point_m": 143.4,
+            "max_depth_m": 1.194,
+            "native_record_id": "closed-basin-delineation@723087.500033,2032148.500024",
+            "point_inside_basin_bbox": false
+          }
+        ],
+        "point_inside_window": true,
+        "point_xy": [
+          723015.97,
+          2032272.77
+        ]
+      },
+      "result": {
+        "assertions_by_tier": {
+          "CANDIDATE": 38
+        },
+        "detection_count": 19,
+        "detections": [
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 2170.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 3.08 m deep over 2170 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.35, depth/diameter 0.059",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723419.0,
+              2032564.0,
+              723469.0,
+              2032676.0
+            ],
+            "centroid_lonlat": [
+              -66.885207,
+              18.3717067
+            ],
+            "centroid_xy": [
+              723444.72,
+              2032610.645
+            ],
+            "circularity": 0.351,
+            "deepest_xy": [
+              723430.5,
+              2032573.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 28.07,
+            "equivalent_diameter_m": 52.56,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 230.673,
+            "max_depth_m": 3.078,
+            "mean_depth_m": 0.859,
+            "native_record_id": "closed-basin-delineation@723430.500033,2032573.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.388,
+            "significance": null,
+            "spill_elevation_m": 233.751,
+            "volume_m3": 1863.3
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 6864.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.84 m deep over 6864 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.17, depth/diameter 0.030",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              722680.0,
+              2032228.0,
+              722777.0,
+              2032400.0
+            ],
+            "centroid_lonlat": [
+              -66.8920062,
+              18.3690102
+            ],
+            "centroid_xy": [
+              722729.525,
+              2032303.789
+            ],
+            "circularity": 0.171,
+            "deepest_xy": [
+              722728.5,
+              2032246.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 22.12,
+            "equivalent_diameter_m": 93.49,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 197.103,
+            "max_depth_m": 2.839,
+            "mean_depth_m": 0.77,
+            "native_record_id": "closed-basin-delineation@722728.500033,2032246.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.411,
+            "significance": null,
+            "spill_elevation_m": 199.942,
+            "volume_m3": 5283.5
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 2829.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.80 m deep over 2829 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.27, depth/diameter 0.047",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              722540.0,
+              2032192.0,
+              722604.0,
+              2032292.0
+            ],
+            "centroid_lonlat": [
+              -66.8934663,
+              18.3683873
+            ],
+            "centroid_xy": [
+              722576.0,
+              2032233.041
+            ],
+            "circularity": 0.268,
+            "deepest_xy": [
+              722591.5,
+              2032227.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 24.61,
+            "equivalent_diameter_m": 60.02,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 198.33,
+            "max_depth_m": 2.798,
+            "mean_depth_m": 0.652,
+            "native_record_id": "closed-basin-delineation@722591.500033,2032227.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.442,
+            "significance": null,
+            "spill_elevation_m": 201.128,
+            "volume_m3": 1843.3
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 3663.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.38 m deep over 3663 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.04, depth/diameter 0.035",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              722624.0,
+              2032117.0,
+              722917.0,
+              2032240.0
+            ],
+            "centroid_lonlat": [
+              -66.8918975,
+              18.367809
+            ],
+            "centroid_xy": [
+              722742.557,
+              2032170.944
+            ],
+            "circularity": 0.035,
+            "deepest_xy": [
+              722665.5,
+              2032152.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 24.5,
+            "equivalent_diameter_m": 68.29,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 194.924,
+            "max_depth_m": 2.38,
+            "mean_depth_m": 0.903,
+            "native_record_id": "closed-basin-delineation@722665.500033,2032152.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.102,
+            "significance": null,
+            "spill_elevation_m": 197.304,
+            "volume_m3": 3307.2
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 1878.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 2.24 m deep over 1878 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.17, depth/diameter 0.046",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723353.0,
+              2032206.0,
+              723490.0,
+              2032259.0
+            ],
+            "centroid_lonlat": [
+              -66.8854344,
+              18.3682538
+            ],
+            "centroid_xy": [
+              723425.135,
+              2032228.122
+            ],
+            "circularity": 0.174,
+            "deepest_xy": [
+              723399.5,
+              2032223.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 24.47,
+            "equivalent_diameter_m": 48.9,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 202.974,
+            "max_depth_m": 2.236,
+            "mean_depth_m": 0.612,
+            "native_record_id": "closed-basin-delineation@723399.500033,2032223.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.259,
+            "significance": null,
+            "spill_elevation_m": 205.21,
+            "volume_m3": 1148.8
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 764.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.95 m deep over 764 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.16, depth/diameter 0.062",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723242.0,
+              2032213.0,
+              723282.0,
+              2032280.0
+            ],
+            "centroid_lonlat": [
+              -66.8870267,
+              18.3683542
+            ],
+            "centroid_xy": [
+              723256.702,
+              2032237.284
+            ],
+            "circularity": 0.162,
+            "deepest_xy": [
+              723253.5,
+              2032220.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 26.13,
+            "equivalent_diameter_m": 31.19,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 202.936,
+            "max_depth_m": 1.949,
+            "mean_depth_m": 0.491,
+            "native_record_id": "closed-basin-delineation@723253.500033,2032220.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.285,
+            "significance": null,
+            "spill_elevation_m": 204.885,
+            "volume_m3": 375.4
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 209.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.89 m deep over 209 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.35, depth/diameter 0.116",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723303.0,
+              2032478.0,
+              723341.0,
+              2032492.0
+            ],
+            "centroid_lonlat": [
+              -66.8864128,
+              18.3705787
+            ],
+            "centroid_xy": [
+              723318.725,
+              2032484.285
+            ],
+            "circularity": 0.353,
+            "deepest_xy": [
+              723309.5,
+              2032481.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 34.64,
+            "equivalent_diameter_m": 16.31,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 225.342,
+            "max_depth_m": 1.891,
+            "mean_depth_m": 0.558,
+            "native_record_id": "closed-basin-delineation@723309.500033,2032481.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.393,
+            "significance": null,
+            "spill_elevation_m": 227.233,
+            "volume_m3": 116.7
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 819.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.80 m deep over 819 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.35, depth/diameter 0.056",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723445.0,
+              2032195.0,
+              723514.0,
+              2032214.0
+            ],
+            "centroid_lonlat": [
+              -66.8849323,
+              18.368034
+            ],
+            "centroid_xy": [
+              723478.484,
+              2032204.411
+            ],
+            "circularity": 0.345,
+            "deepest_xy": [
+              723452.5,
+              2032207.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 27.63,
+            "equivalent_diameter_m": 32.29,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 204.403,
+            "max_depth_m": 1.796,
+            "mean_depth_m": 0.485,
+            "native_record_id": "closed-basin-delineation@723452.500033,2032207.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.625,
+            "significance": null,
+            "spill_elevation_m": 206.198,
+            "volume_m3": 397.1
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 1116.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.75 m deep over 1116 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.08, depth/diameter 0.047",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723195.0,
+              2032044.0,
+              723303.0,
+              2032134.0
+            ],
+            "centroid_lonlat": [
+              -66.8871811,
+              18.367028
+            ],
+            "centroid_xy": [
+              723242.083,
+              2032090.282
+            ],
+            "circularity": 0.077,
+            "deepest_xy": [
+              723199.5,
+              2032128.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 25.54,
+            "equivalent_diameter_m": 37.7,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 198.647,
+            "max_depth_m": 1.753,
+            "mean_depth_m": 0.686,
+            "native_record_id": "closed-basin-delineation@723199.500033,2032128.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.115,
+            "significance": null,
+            "spill_elevation_m": 200.4,
+            "volume_m3": 766.0
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 571.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.49 m deep over 571 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.19, depth/diameter 0.055",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723297.0,
+              2032082.0,
+              723345.0,
+              2032128.0
+            ],
+            "centroid_lonlat": [
+              -66.8864521,
+              18.3671686
+            ],
+            "centroid_xy": [
+              723318.955,
+              2032106.736
+            ],
+            "circularity": 0.193,
+            "deepest_xy": [
+              723312.5,
+              2032105.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 27.93,
+            "equivalent_diameter_m": 26.96,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 199.573,
+            "max_depth_m": 1.486,
+            "mean_depth_m": 0.759,
+            "native_record_id": "closed-basin-delineation@723312.500033,2032105.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.259,
+            "significance": null,
+            "spill_elevation_m": 201.059,
+            "volume_m3": 433.3
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 4295.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.32 m deep over 4295 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.27, depth/diameter 0.018",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              722971.0,
+              2032193.0,
+              723121.0,
+              2032282.0
+            ],
+            "centroid_lonlat": [
+              -66.8889993,
+              18.3683094
+            ],
+            "centroid_xy": [
+              723048.256,
+              2032229.895
+            ],
+            "circularity": 0.268,
+            "deepest_xy": [
+              723020.5,
+              2032229.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 22.36,
+            "equivalent_diameter_m": 73.95,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 199.823,
+            "max_depth_m": 1.322,
+            "mean_depth_m": 0.656,
+            "native_record_id": "closed-basin-delineation@723020.500033,2032229.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.322,
+            "significance": null,
+            "spill_elevation_m": 201.145,
+            "volume_m3": 2818.5
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 615.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.28 m deep over 615 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.23, depth/diameter 0.046",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              722583.0,
+              2031775.0,
+              722635.0,
+              2031803.0
+            ],
+            "centroid_lonlat": [
+              -66.8932828,
+              18.3643655
+            ],
+            "centroid_xy": [
+              722600.559,
+              2031788.048
+            ],
+            "circularity": 0.231,
+            "deepest_xy": [
+              722589.5,
+              2031798.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 24.02,
+            "equivalent_diameter_m": 27.98,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 199.937,
+            "max_depth_m": 1.284,
+            "mean_depth_m": 0.267,
+            "native_record_id": "closed-basin-delineation@722589.500033,2031798.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.422,
+            "significance": null,
+            "spill_elevation_m": 201.221,
+            "volume_m3": 163.9
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 363.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.19 m deep over 363 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.09, depth/diameter 0.056",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723076.0,
+              2032128.0,
+              723158.0,
+              2032169.0
+            ],
+            "centroid_lonlat": [
+              -66.8883701,
+              18.3675412
+            ],
+            "centroid_xy": [
+              723115.742,
+              2032145.632
+            ],
+            "circularity": 0.091,
+            "deepest_xy": [
+              723087.5,
+              2032148.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 25.73,
+            "equivalent_diameter_m": 21.5,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 197.541,
+            "max_depth_m": 1.194,
+            "mean_depth_m": 0.371,
+            "native_record_id": "closed-basin-delineation@723087.500033,2032148.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.108,
+            "significance": null,
+            "spill_elevation_m": 198.735,
+            "volume_m3": 134.6
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 351.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.18 m deep over 351 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.18, depth/diameter 0.056",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723450.0,
+              2031958.0,
+              723494.0,
+              2032003.0
+            ],
+            "centroid_lonlat": [
+              -66.8850674,
+              18.3660015
+            ],
+            "centroid_xy": [
+              723466.825,
+              2031979.246
+            ],
+            "circularity": 0.18,
+            "deepest_xy": [
+              723452.5,
+              2031988.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 27.0,
+            "equivalent_diameter_m": 21.14,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 201.093,
+            "max_depth_m": 1.177,
+            "mean_depth_m": 0.514,
+            "native_record_id": "closed-basin-delineation@723452.500033,2031988.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.177,
+            "significance": null,
+            "spill_elevation_m": 202.27,
+            "volume_m3": 180.6
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 229.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.16 m deep over 229 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.54, depth/diameter 0.068",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              722534.0,
+              2032397.0,
+              722564.0,
+              2032410.0
+            ],
+            "centroid_lonlat": [
+              -66.893706,
+              18.3699306
+            ],
+            "centroid_xy": [
+              722548.683,
+              2032403.592
+            ],
+            "circularity": 0.543,
+            "deepest_xy": [
+              722545.5,
+              2032404.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 32.5,
+            "equivalent_diameter_m": 17.08,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 205.278,
+            "max_depth_m": 1.158,
+            "mean_depth_m": 0.56,
+            "native_record_id": "closed-basin-delineation@722545.500033,2032404.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.587,
+            "significance": null,
+            "spill_elevation_m": 206.436,
+            "volume_m3": 128.2
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 535.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.13 m deep over 535 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.11, depth/diameter 0.043",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              722904.0,
+              2032169.0,
+              722950.0,
+              2032220.0
+            ],
+            "centroid_lonlat": [
+              -66.8901192,
+              18.3679213
+            ],
+            "centroid_xy": [
+              722930.384,
+              2032185.562
+            ],
+            "circularity": 0.11,
+            "deepest_xy": [
+              722906.5,
+              2032188.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 24.82,
+            "equivalent_diameter_m": 26.1,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 196.488,
+            "max_depth_m": 1.131,
+            "mean_depth_m": 0.489,
+            "native_record_id": "closed-basin-delineation@722906.500033,2032188.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.228,
+            "significance": null,
+            "spill_elevation_m": 197.619,
+            "volume_m3": 261.6
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 186.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.05 m deep over 186 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.57, depth/diameter 0.069",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723271.0,
+              2032094.0,
+              723294.0,
+              2032109.0
+            ],
+            "centroid_lonlat": [
+              -66.8868166,
+              18.3671291
+            ],
+            "centroid_xy": [
+              723280.479,
+              2032101.919
+            ],
+            "circularity": 0.569,
+            "deepest_xy": [
+              723272.5,
+              2032103.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 32.88,
+            "equivalent_diameter_m": 15.39,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 199.522,
+            "max_depth_m": 1.054,
+            "mean_depth_m": 0.492,
+            "native_record_id": "closed-basin-delineation@723272.500033,2032103.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.539,
+            "significance": null,
+            "spill_elevation_m": 200.577,
+            "volume_m3": 91.4
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 665.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.04 m deep over 665 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.09, depth/diameter 0.036",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723346.0,
+              2032075.0,
+              723438.0,
+              2032133.0
+            ],
+            "centroid_lonlat": [
+              -66.8857081,
+              18.3671207
+            ],
+            "centroid_xy": [
+              723397.658,
+              2032102.354
+            ],
+            "circularity": 0.089,
+            "deepest_xy": [
+              723369.5,
+              2032076.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 23.63,
+            "equivalent_diameter_m": 29.1,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 200.02,
+            "max_depth_m": 1.043,
+            "mean_depth_m": 0.429,
+            "native_record_id": "closed-basin-delineation@723369.500033,2032076.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.125,
+            "significance": null,
+            "spill_elevation_m": 201.063,
+            "volume_m3": 285.4
+          },
+          {
+            "adjoins_edge": false,
+            "adjoins_nodata": false,
+            "area_m2": 528.0,
+            "assertions": [
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "EXISTENCE",
+                "statement": "closed basin 1.02 m deep over 528 m2 in the source surface",
+                "tier": "CANDIDATE"
+              },
+              {
+                "claim_class": "COMPUTED",
+                "dimension": "MORPHOLOGY",
+                "statement": "closed basin, circularity 0.14, depth/diameter 0.039",
+                "tier": "CANDIDATE"
+              }
+            ],
+            "bbox_xy": [
+              723163.0,
+              2032145.0,
+              723254.0,
+              2032171.0
+            ],
+            "centroid_lonlat": [
+              -66.887517,
+              18.3676486
+            ],
+            "centroid_xy": [
+              723205.782,
+              2032158.563
+            ],
+            "circularity": 0.139,
+            "deepest_xy": [
+              723213.5,
+              2032156.5
+            ],
+            "depth_uncertainty_m": null,
+            "discovery_score": 24.89,
+            "equivalent_diameter_m": 25.93,
+            "flags": [
+              "UNCERTAINTY_UNKNOWN"
+            ],
+            "floor_elevation_m": 198.538,
+            "max_depth_m": 1.023,
+            "mean_depth_m": 0.555,
+            "native_record_id": "closed-basin-delineation@723213.500033,2032156.500024",
+            "possible_artifact": false,
+            "proposed_class": "CLOSED_DEPRESSION",
+            "rectangularity": 0.223,
+            "significance": null,
+            "spill_elevation_m": 199.561,
+            "volume_m3": 292.9
+          }
+        ],
+        "parameters": {
+          "min_area_m2": 100.0,
+          "min_depth_m": 1.0,
+          "significance_floor": 3.0
+        },
+        "possible_artifacts": 0,
+        "source_id": "APSRC-cd2b7cf792cf01c2",
+        "surface": {
+          "bounds": [
+            722515.000033,
+            2031773.000024,
+            723515.000033,
+            2032773.000024
+          ],
+          "cell_size_m": [
+            1.0,
+            1.0
+          ],
+          "crs": "EPSG:26919",
+          "elevation_max_m": 277.782,
+          "elevation_min_m": 194.451,
+          "kind": "TERRAIN_BARE_EARTH",
+          "nodata_cells": 0,
+          "origin": [
+            722515.000033,
+            2032773.000024
+          ],
+          "shape": [
+            1000,
+            1000
+          ],
+          "stated_uncertainty_m": null,
+          "valid_cells": 1000000
+        }
+      },
+      "source": {
+        "coverage_state": "INTERPOLATED",
+        "license_note": "US_GOVERNMENT_PUBLIC_DOMAIN",
+        "lineage_root_id": "TNM:6a753f0e1ba49b79d0c347d8",
+        "manifestation_sha256": "a5a8e6091415d88d991c4248a877b65e6020f0f7af810109063413c23d3be63c",
+        "native_identifier": "TNM:6a753f0e1ba49b79d0c347d8",
+        "parent_source_ids": [],
+        "product_stage": "GRID",
+        "provenance_state": "REGISTERED",
+        "provider": "USGS_TNM_ELEVATION_PRODUCTS",
+        "published_date": "2026-06-24",
+        "retrieved_utc": "2026-11-17T13:51:52+00:00",
+        "sensor_type": null,
+        "source_id": "APSRC-cd2b7cf792cf01c2",
+        "source_uri": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.tif",
+        "survey_date": "2023-12-27/2025-03-20",
+        "title": "USGS 1 Meter 19 x72y204 PR_PuertoRicoUSVI_D24"
+      },
+      "subset": {
+        "derivation": "square window of the product's own cells, written losslessly",
+        "file": "subsets/window_2024.tif",
+        "parent_sha256": "a5a8e6091415d88d991c4248a877b65e6020f0f7af810109063413c23d3be63c",
+        "sha256": "2159ae6a6a4d71e67ad696cde1e376007def53889a347b92a258c50945430716"
+      },
+      "vertical": {
+        "joinable_to_other_references": false,
+        "positive": "up",
+        "regional_plausibility": "IMPLAUSIBLE_FOR_REGION",
+        "regional_plausibility_reason": "NAVD88 is not realised at this location; the datum in use there is PRVD02",
+        "resolved_datum": "NAVD88",
+        "stated_datum": "NAVD88",
+        "statement_basis": "The same programme sentence in the product abstract. The tile's own metadata file has no structured vertical-datum element and the GeoTIFF carries no vertical reference."
+      },
+      "vertical_uncertainty": {
+        "basis": "None published: the tile metadata states no accuracy and the elevation inventory did not list this project on 2026-11-16.",
+        "value_m": null
+      }
+    }
+  ],
+  "registry": "access_point.inland",
+  "registry_changes": 0,
+  "replication": {
+    "earlier": "2018",
+    "earlier_detections": 17,
+    "elevation_difference_later_minus_earlier": {
+      "cells_compared": 1000000,
+      "max_absolute_m": 3.425,
+      "mean_m": 0.0076,
+      "median_absolute_m": 0.077,
+      "median_m": -0.0103,
+      "p95_absolute_m": 0.4356,
+      "within_0_3_m_fraction": 0.8869
+    },
+    "later": "2024",
+    "later_detections": 19,
+    "meaning": "a replicated basin is seen by two independent surveys and is unlikely to be an artefact of either; it is a shape, not an identity",
+    "method": "bounding-box overlap of closed basins on a shared cell grid",
+    "min_overlap": 0.5,
+    "only_in_earlier": [
+      "closed-basin-delineation@722743.500000,2032187.500000",
+      "closed-basin-delineation@722945.500000,2032189.500000",
+      "closed-basin-delineation@723248.500000,2032165.500000",
+      "closed-basin-delineation@723176.500000,2032512.500000"
+    ],
+    "only_in_later": [
+      "closed-basin-delineation@723309.500033,2032481.500024",
+      "closed-basin-delineation@723199.500033,2032128.500024",
+      "closed-basin-delineation@723087.500033,2032148.500024",
+      "closed-basin-delineation@723452.500033,2031988.500024",
+      "closed-basin-delineation@722906.500033,2032188.500024",
+      "closed-basin-delineation@723272.500033,2032103.500024"
+    ],
+    "pairs": [
+      {
+        "area_m2": [
+          1999.0,
+          2170.0
+        ],
+        "bbox_overlap": 0.936,
+        "deepest_point_separation_m": 0.0,
+        "earlier": "closed-basin-delineation@723430.500000,2032573.500000",
+        "later": "closed-basin-delineation@723430.500033,2032573.500024",
+        "max_depth_m": [
+          3.012,
+          3.078
+        ]
+      },
+      {
+        "area_m2": [
+          2929.0,
+          2829.0
+        ],
+        "bbox_overlap": 1.0,
+        "deepest_point_separation_m": 4.0,
+        "earlier": "closed-basin-delineation@722587.500000,2032227.500000",
+        "later": "closed-basin-delineation@722591.500033,2032227.500024",
+        "max_depth_m": [
+          2.902,
+          2.798
+        ]
+      },
+      {
+        "area_m2": [
+          7649.0,
+          6864.0
+        ],
+        "bbox_overlap": 0.984,
+        "deepest_point_separation_m": 0.0,
+        "earlier": "closed-basin-delineation@722728.500000,2032246.500000",
+        "later": "closed-basin-delineation@722728.500033,2032246.500024",
+        "max_depth_m": [
+          2.753,
+          2.839
+        ]
+      },
+      {
+        "area_m2": [
+          7307.0,
+          3663.0
+        ],
+        "bbox_overlap": 1.0,
+        "deepest_point_separation_m": 23.77,
+        "earlier": "closed-basin-delineation@722643.500000,2032143.500000",
+        "later": "closed-basin-delineation@722665.500033,2032152.500024",
+        "max_depth_m": [
+          2.634,
+          2.38
+        ]
+      },
+      {
+        "area_m2": [
+          1860.0,
+          1878.0
+        ],
+        "bbox_overlap": 1.0,
+        "deepest_point_separation_m": 2.24,
+        "earlier": "closed-basin-delineation@723397.500000,2032222.500000",
+        "later": "closed-basin-delineation@723399.500033,2032223.500024",
+        "max_depth_m": [
+          2.329,
+          2.236
+        ]
+      },
+      {
+        "area_m2": [
+          658.0,
+          764.0
+        ],
+        "bbox_overlap": 0.96,
+        "deepest_point_separation_m": 1.41,
+        "earlier": "closed-basin-delineation@723252.500000,2032219.500000",
+        "later": "closed-basin-delineation@723253.500033,2032220.500024",
+        "max_depth_m": [
+          2.098,
+          1.949
+        ]
+      },
+      {
+        "area_m2": [
+          883.0,
+          571.0
+        ],
+        "bbox_overlap": 1.0,
+        "deepest_point_separation_m": 15.23,
+        "earlier": "closed-basin-delineation@723306.500000,2032119.500000",
+        "later": "closed-basin-delineation@723312.500033,2032105.500024",
+        "max_depth_m": [
+          1.924,
+          1.486
+        ]
+      },
+      {
+        "area_m2": [
+          714.0,
+          819.0
+        ],
+        "bbox_overlap": 1.0,
+        "deepest_point_separation_m": 0.0,
+        "earlier": "closed-basin-delineation@723452.500000,2032207.500000",
+        "later": "closed-basin-delineation@723452.500033,2032207.500024",
+        "max_depth_m": [
+          1.839,
+          1.796
+        ]
+      },
+      {
+        "area_m2": [
+          744.0,
+          665.0
+        ],
+        "bbox_overlap": 0.641,
+        "deepest_point_separation_m": 41.04,
+        "earlier": "closed-basin-delineation@723397.500000,2032106.500000",
+        "later": "closed-basin-delineation@723369.500033,2032076.500024",
+        "max_depth_m": [
+          1.523,
+          1.043
+        ]
+      },
+      {
+        "area_m2": [
+          165.0,
+          229.0
+        ],
+        "bbox_overlap": 1.0,
+        "deepest_point_separation_m": 2.24,
+        "earlier": "closed-basin-delineation@722547.500000,2032405.500000",
+        "later": "closed-basin-delineation@722545.500033,2032404.500024",
+        "max_depth_m": [
+          1.195,
+          1.158
+        ]
+      },
+      {
+        "area_m2": [
+          4235.0,
+          4295.0
+        ],
+        "bbox_overlap": 0.943,
+        "deepest_point_separation_m": 44.01,
+        "earlier": "closed-basin-delineation@723061.500000,2032213.500000",
+        "later": "closed-basin-delineation@723020.500033,2032229.500024",
+        "max_depth_m": [
+          1.132,
+          1.322
+        ]
+      },
+      {
+        "area_m2": [
+          796.0,
+          528.0
+        ],
+        "bbox_overlap": 0.89,
+        "deepest_point_separation_m": 11.05,
+        "earlier": "closed-basin-delineation@723224.500000,2032155.500000",
+        "later": "closed-basin-delineation@723213.500033,2032156.500024",
+        "max_depth_m": [
+          1.081,
+          1.023
+        ]
+      },
+      {
+        "area_m2": [
+          179.0,
+          615.0
+        ],
+        "bbox_overlap": 1.0,
+        "deepest_point_separation_m": 1.0,
+        "earlier": "closed-basin-delineation@722589.500000,2031797.500000",
+        "later": "closed-basin-delineation@722589.500033,2031798.500024",
+        "max_depth_m": [
+          1.056,
+          1.284
+        ]
+      }
+    ],
+    "replicated": 13,
+    "replicated_fraction_of_earlier": 0.7647
+  },
+  "run_id": "2026-11-17",
+  "schema": "access_point_survey_report/1.0",
+  "survey_version": "access-point-survey-processing/1.0",
+  "target_feature": "INAP-PR-000003",
+  "target_point_basis": "read from the committed registry document; not typed into the run",
+  "target_point_lonlat": [
+    -66.8893,
+    18.3687
+  ],
+  "wide_window": {
+    "content_sha256": "9385d93844895da7d59dab162bb153791657b01e49e963f598c3adca8a67baf6",
+    "epochs": {
+      "2018": {
+        "deep_basins": 3,
+        "deep_threshold_m": 10.0,
+        "deepest_m": 12.03,
+        "detection_count": 60,
+        "nearest_deep_basins": [
+          {
+            "adjoins_edge": false,
+            "area_m2": 32548.0,
+            "distance_to_point_m": 1369.8,
+            "max_depth_m": 11.06,
+            "native_record_id": "closed-basin-delineation@723544.500000,2033536.500000"
+          },
+          {
+            "adjoins_edge": false,
+            "area_m2": 48614.0,
+            "distance_to_point_m": 1702.4,
+            "max_depth_m": 12.03,
+            "native_record_id": "closed-basin-delineation@724025.500000,2033643.500000"
+          },
+          {
+            "adjoins_edge": false,
+            "area_m2": 14266.0,
+            "distance_to_point_m": 1737.1,
+            "max_depth_m": 10.05,
+            "native_record_id": "closed-basin-delineation@724264.500000,2033480.500000"
+          }
+        ],
+        "note": "a basin cut by the window edge or by an area the product does not cover is not closed inside the window and is not reported; absence here is absence of a basin closed within the covered part",
+        "parent_sha256": "a798473f09726437e9641bfed2c1cb584c176888595bba46348cda7caf83c9c5",
+        "point_inside_any_basin_bbox": true,
+        "shape": [
+          3000,
+          3000
+        ],
+        "valid_cell_fraction": 0.7719
+      },
+      "2024": {
+        "deep_basins": 5,
+        "deep_threshold_m": 10.0,
+        "deepest_m": 16.54,
+        "detection_count": 118,
+        "nearest_deep_basins": [
+          {
+            "adjoins_edge": false,
+            "area_m2": 4078.0,
+            "distance_to_point_m": 1274.0,
+            "max_depth_m": 10.92,
+            "native_record_id": "closed-basin-delineation@723202.500033,2031012.500024"
+          },
+          {
+            "adjoins_edge": false,
+            "area_m2": 12181.0,
+            "distance_to_point_m": 1358.9,
+            "max_depth_m": 11.86,
+            "native_record_id": "closed-basin-delineation@723662.500033,2031077.500024"
+          },
+          {
+            "adjoins_edge": false,
+            "area_m2": 32699.0,
+            "distance_to_point_m": 1370.3,
+            "max_depth_m": 11.03,
+            "native_record_id": "closed-basin-delineation@723543.500033,2033537.500024"
+          },
+          {
+            "adjoins_edge": false,
+            "area_m2": 6663.0,
+            "distance_to_point_m": 1521.8,
+            "max_depth_m": 16.54,
+            "native_record_id": "closed-basin-delineation@722167.500033,2031009.500024"
+          },
+          {
+            "adjoins_edge": false,
+            "area_m2": 49379.0,
+            "distance_to_point_m": 1704.3,
+            "max_depth_m": 12.87,
+            "native_record_id": "closed-basin-delineation@724031.500033,2033641.500024"
+          }
+        ],
+        "note": "a basin cut by the window edge or by an area the product does not cover is not closed inside the window and is not reported; absence here is absence of a basin closed within the covered part",
+        "parent_sha256": "a5a8e6091415d88d991c4248a877b65e6020f0f7af810109063413c23d3be63c",
+        "point_inside_any_basin_bbox": true,
+        "shape": [
+          3000,
+          3000
+        ],
+        "valid_cell_fraction": 1.0
+      }
+    },
+    "half_size_m": 1500,
+    "reproducible_from": "the held products named by parent_sha256; not from the repository alone",
+    "run_id": "2026-11-17",
+    "schema": "access_point_survey_wide_window/1.0"
+  },
+  "window_half_size_m": 500
+}

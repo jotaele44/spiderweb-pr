@@ -1,0 +1,24 @@
+{
+  "filename": "USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.tif",
+  "headers": {
+    "Content-Length": "383650591",
+    "Content-Type": "image/tiff",
+    "Date": "Tue, 17 Nov 2026 13:50:36 GMT",
+    "ETag": "\"a9968e0111b7a39d85e5aa5c7fa4fd71-74\"",
+    "Last-Modified": "Thu, 06 Aug 2026 19:52:04 GMT"
+  },
+  "products_version": "access-point-products/1.0",
+  "request": {
+    "metadata_uri": "https://www.sciencebase.gov/catalog/item/6a753f0e1ba49b79d0c347d8",
+    "native_identifier": "TNM:6a753f0e1ba49b79d0c347d8",
+    "provider": "USGS_TNM_ELEVATION_PRODUCTS",
+    "published": "2026-06-24",
+    "size_bytes": 383650591,
+    "title": "USGS 1 Meter 19 x72y204 PR_PuertoRicoUSVI_D24",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.tif"
+  },
+  "response_sha256": "a5a8e6091415d88d991c4248a877b65e6020f0f7af810109063413c23d3be63c",
+  "response_size": 383650591,
+  "retrieved_utc": "2026-11-17T13:51:52+00:00",
+  "schema": "access_point_product_manifest/1.0"
+}

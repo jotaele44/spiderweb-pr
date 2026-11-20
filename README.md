@@ -48,13 +48,16 @@ Cross-producer correlation is owned by the Hub and downstream consumers. Spiderw
 | FR24 ingestion and airspace observations | `skywatcher-pr` |
 | Public-money and procurement records | `moneysweep-pr` / `moneysweep-pr` |
 | Water, wastewater, power, outage, and recovery records | `aguayluz-pr` |
+| Solid-waste (vertedero/landfill) site registry (proposed, aguayluz-pr ADR-0004) | `aguayluz-pr` |
+| Satellite imagery observations for registered sites (implemented offline, interim; live acquisition not wired; hub ADR 0006) | `spiderweb-pr` |
 | Puerto Rico historical case corpus | `OVNIS` / `ovnis-pr` |
 | Producer discovery, validation, aggregation, and cross-producer correlation | `thehub-pr` |
 
 ## Desktop app
 
 Double-click launchers at the repo root start the local desktop app (first run
-installs dependencies, later runs work offline). This is the diagnostic
+installs dependencies by itself — on macOS the app opens a Terminal window for
+that step and then reopens — and later runs work offline). This is the diagnostic
 dashboard described above (ADR 0001, Phase 2), not the federation's supported
 product surface:
 
@@ -114,3 +117,13 @@ Normalized lightweight derivative:
 - `data/usgs_ofr_98_038/derived/usgs_ofr_98_038_metallic_occurrences_wgs84.geojson`
 
 Raw ARC/INFO `.e00`, GeoPackage, ZIP, and shapefile binaries remain local/ignored unless explicitly force-added for release packaging.
+
+<!-- PROJECT-OPERATING-CONTRACT:START -->
+## Current development and certification contract
+
+Spiderweb is the federation's Puerto Rico spatial-analysis producer and geometry substrate for land/ocean work. Airspace remains ceded to Skywatcher. Current priority is authoritative spatial/source closure rather than rebuilding removed aviation functionality.
+
+**Spatial rules:** preserve CRS, geometry type, Z/M dimensions, and any transformation loss. Discovery by search/bbox/buffer/fuzzy/nearest is not exhaustive identity evidence. For material comparisons use stable IDs, exact/topological equality where appropriate, Hausdorff/symmetric-difference measures, attribute deltas, and explicit FULLY_WITHIN/PARTIAL/TOUCH_ONLY/OUTSIDE/NULL_EMPTY/UNRESOLVED classification. Archive↔WFS equivalence requires frozen manifestations, complete candidate sets, stable-ID cardinality, source/retained/excluded arithmetic, and geometry/schema comparison; equal counts alone prove nothing.
+
+Certification requires current regression, source, geometry, rendered desktop+iPhone, and federation-consumer evidence with frozen hashes and zero material in-scope residue. Keep acquisition controls closed when their source/coverage gates are not actually satisfied.
+<!-- PROJECT-OPERATING-CONTRACT:END -->
