@@ -1,0 +1,35 @@
+{
+  "content_sha256": "60a1fff9e14492d8721233825d1221bc446c1863fdf8ee17407ccfdc5f6bbf54",
+  "coverage": {
+    "base_cell_m": 106.567197,
+    "base_grid_shape": [
+      2048,
+      2048
+    ],
+    "covered_base_cells": 30264,
+    "covered_cell_centres_lonlat_bbox": [
+      -66.5991211,
+      17.8023763,
+      -64.8513241,
+      18.2041808
+    ],
+    "horizontal_crs": "EPSG:26920",
+    "horizontal_crs_basis": "MATCHED_BY_PARAMETERS_NO_CODE_IN_FILE",
+    "nearest_covered_cell_centre_m": {
+      "closed-basin-delineation@187814.240000,1971900.070000": 11321.6,
+      "closed-basin-delineation@189166.240000,1972188.070000": 11352.1,
+      "closed-basin-delineation@189302.240000,1970852.070000": 12687.7,
+      "closed-basin-delineation@189374.240000,1972180.070000": 11405.5,
+      "closed-basin-delineation@189950.240000,1971740.070000": 11974.0,
+      "closed-basin-delineation@191798.240000,1970900.070000": 13365.1,
+      "closed-basin-delineation@191934.240000,1970436.070000": 13846.3,
+      "closed-basin-delineation@195678.240000,1969084.070000": 16761.1
+    },
+    "points_within_one_base_cell": []
+  },
+  "earlier_report_content_sha256": "ffd5a33f81c5955f4c3aaf55050e9dea04948ef711f14d1c51ca886842182d73",
+  "parent_sha256": "58ba678b7468411b6ff56ab5ce958bf942b1ec8badf642efe770915ee3d1df41",
+  "read_from": "the held product's base grid; not recomputable from the repository alone",
+  "schema": "access_point_replication_candidate_facts/1.0",
+  "search_id": "2026-11-20-offshore-replication"
+}

@@ -154,6 +154,11 @@ def bench_processing(sizes: list[int]) -> list[dict[str, Any]]:
             )
         )
         detect = measure(lambda: detection.detect_inland(grid, source, params))
+        nested = measure(
+            lambda: raster.delineate_depressions(
+                grid, min_depth_m=1.0, min_area_m2=40.0, nested=True
+            )
+        )
         seams = measure(lambda: raster.detect_seams(grid))
         slope = measure(lambda: raster.slope_degrees(grid))
         rows.append(
@@ -170,6 +175,14 @@ def bench_processing(sizes: list[int]) -> list[dict[str, Any]]:
                 "detect_inland": {
                     **_strip(detect),
                     "detections": len(detect["_result"]),
+                },
+                # Opt-in: the default path above does not run this.
+                "delineate_depressions_nested": {
+                    **_strip(nested),
+                    "regions_found": len(nested["_result"]),
+                    "nested_regions": sum(
+                        1 for r in nested["_result"] if r.hierarchy_level > 0
+                    ),
                 },
                 "detect_seams": _strip(seams),
                 "slope_degrees": _strip(slope),

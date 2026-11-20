@@ -1,0 +1,22 @@
+{
+  "filename": "H12935_MB_VR_MLLW.bag",
+  "headers": {
+    "content-length": "37801093",
+    "date": "Fri, 20 Nov 2026 00:19:39 GMT",
+    "last-modified": "Fri, 10 Dec 2021 15:32:18 GMT"
+  },
+  "products_version": "access-point-products/1.0",
+  "request": {
+    "metadata_uri": "https://www.ngdc.noaa.gov/nos/H12001-H14000/H12935.html",
+    "native_identifier": "NOS:BAG:H12935",
+    "provider": "NOS_BAG_PRODUCT",
+    "published": null,
+    "size_bytes": null,
+    "title": "H12935_MB_VR_MLLW.bag (NOS hydrographic survey H12935, multibeam, variable resolution, MLLW)",
+    "url": "https://data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/BAG/H12935_MB_VR_MLLW.bag"
+  },
+  "response_sha256": "58ba678b7468411b6ff56ab5ce958bf942b1ec8badf642efe770915ee3d1df41",
+  "response_size": 37801093,
+  "retrieved_utc": "2026-11-20T00:19:43+00:00",
+  "schema": "access_point_product_manifest/1.0"
+}

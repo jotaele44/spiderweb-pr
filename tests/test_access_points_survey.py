@@ -544,6 +544,14 @@ def test_a_run_may_not_state_a_position_or_leave_a_basis_blank(tmp_path):
             ),
             run_id,
         )
+    with pytest.raises(survey_run.SurveyRunError, match="nested basins are reported"):
+        survey_run.load_run(
+            _run_config(tmp_path, lambda r: r["parameters"].pop("nested")), run_id
+        )
+    assert (
+        survey_run.load_run(REPO / survey_run.RUNS_PATH, run_id)["parameters"].nested
+        is False
+    )
     with pytest.raises(survey_run.SurveyRunError, match="no survey run"):
         survey_run.load_run(REPO / survey_run.RUNS_PATH, "1999-01-01")
 
