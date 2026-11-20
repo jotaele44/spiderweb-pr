@@ -57,12 +57,17 @@ def test_committed_documents_conform():
         (REPO / "registry" / "access_points" / "relationships.json").read_text()
     )
     assert errors("access_point_relationship_ledger", ledger) == []
-    report = REPO / "evidence" / "access_points" / "certification_report_v1.json"
-    if report.is_file():
+    reports = sorted(
+        (REPO / "evidence" / "access_points").glob("certification_report_v*.json")
+    )
+    assert reports, "no certification report is committed"
+    for report in reports:
         instance = json.loads(report.read_text())
         assert errors("access_point_certification_report", instance) == []
         assert instance["production_authorized"] is False
         assert instance["independent_review"]["performed"] is False
+        for artifact in instance["artifacts"]:
+            assert (REPO / artifact["path"]).is_file(), artifact["path"]
 
 
 def _rich_registry_document() -> dict:

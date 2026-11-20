@@ -66,6 +66,9 @@ class DetectionFlag(StrEnum):
     BELOW_UNCERTAINTY = "BELOW_UNCERTAINTY"
     UNCERTAINTY_UNKNOWN = "UNCERTAINTY_UNKNOWN"
     ADJOINS_EDGE = "ADJOINS_EDGE"
+    # Informational: the basin lies inside a larger closed basin.  It says
+    # nothing about quality and never lowers a tier.
+    NESTED = "NESTED"
 
 
 ARTIFACT_FLAGS = frozenset(
@@ -80,6 +83,15 @@ class DetectionParameters:
     significance_floor: float = 3.0
     interpolated_artifact_fraction: float = 0.5
     max_regions: int | None = None
+    # Also report basins nested inside a larger closed basin.  On by default
+    # since 2026-11-18, by the owner's decision after it was measured against
+    # a published map.  The outer basins and their identifiers are the same
+    # with or without it; a run made before the change pins ``nested: false``.
+    nested: bool = True
+    nested_level_step_m: float = 0.5
+    # Optional second rule for one pit under a broad bowl: the factor by which
+    # the wet area must fall in a single level step.  ``None`` leaves it off.
+    pit_area_jump: float | None = None
 
     def __post_init__(self) -> None:
         if self.min_depth_m <= 0 or self.min_area_m2 <= 0:
@@ -88,6 +100,13 @@ class DetectionParameters:
             raise ValueError("significance_floor must be positive")
         if not 0 < self.interpolated_artifact_fraction <= 1:
             raise ValueError("interpolated_artifact_fraction must be within (0, 1]")
+        if self.nested_level_step_m <= 0:
+            raise ValueError("nested_level_step_m must be positive")
+        if self.pit_area_jump is not None:
+            if not self.nested:
+                raise ValueError("pit_area_jump applies only with nested basins on")
+            if self.pit_area_jump <= 1:
+                raise ValueError("pit_area_jump must be greater than 1")
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +139,14 @@ class Detection:
     method: str
     method_version: str
     measurements: Mapping[str, float | None] = field(default_factory=dict)
+    # For a nested basin, the identifier of the basin it lies inside.  This is
+    # containment of one shape in another.  It is not a connection and is
+    # never written to the relationship ledger.
+    parent_native_record_id: str | None = None
+
+    @property
+    def hierarchy_level(self) -> int:
+        return 0 if self.region is None else self.region.hierarchy_level
 
     @property
     def possible_artifact(self) -> bool:
@@ -143,6 +170,8 @@ def _flags(
         flags.append(DetectionFlag.BELOW_UNCERTAINTY)
     if region.adjoins_edge:
         flags.append(DetectionFlag.ADJOINS_EDGE)
+    if region.hierarchy_level > 0:
+        flags.append(DetectionFlag.NESTED)
     return tuple(flags)
 
 
@@ -202,14 +231,34 @@ def _measurements(region: DepressionRegion) -> dict[str, float | None]:
         "significance": region.significance,
         "spill_elevation_m": region.spill_elevation_m,
         "floor_elevation_m": region.floor_elevation_m,
+        **(
+            {
+                "hierarchy_level": float(region.hierarchy_level),
+                "depth_resolution_m": region.depth_resolution_m,
+            }
+            if region.hierarchy_level > 0
+            else {}
+        ),
     }
 
 
-def _native_id(grid: SurfaceGrid, region: DepressionRegion) -> str:
+def _basin_id(xy: tuple[float, float], level: int) -> str:
     # Stable for a given source grid: derived from the deepest cell, not from
-    # the order regions happened to be labelled in.
-    x, y = region.deepest_xy
-    return f"{DETECTION_METHOD}@{x:.6f},{y:.6f}"
+    # the order regions happened to be labelled in.  A nested basin can share
+    # its deepest cell with the basin around it, so it carries its level; an
+    # outer basin's identifier is exactly what it always was.
+    base = f"{DETECTION_METHOD}@{xy[0]:.6f},{xy[1]:.6f}"
+    return base if level == 0 else f"{base}/n{level}"
+
+
+def _native_id(grid: SurfaceGrid, region: DepressionRegion) -> str:
+    return _basin_id(region.deepest_xy, region.hierarchy_level)
+
+
+def _parent_id(region: DepressionRegion) -> str | None:
+    if region.hierarchy_level == 0 or region.parent_deepest_xy is None:
+        return None
+    return _basin_id(region.parent_deepest_xy, region.hierarchy_level - 1)
 
 
 def _shape_assertions(
@@ -276,6 +325,9 @@ def detect_inland(
         min_depth_m=params.min_depth_m,
         min_area_m2=params.min_area_m2,
         max_regions=params.max_regions,
+        nested=params.nested,
+        nested_level_step_m=params.nested_level_step_m,
+        pit_area_jump=params.pit_area_jump,
     ):
         hit = bool(on_seam is not None and on_seam[region.slices].any())
         flags = _flags(region, hit, params)
@@ -352,6 +404,7 @@ def detect_inland(
                 method=DETECTION_METHOD,
                 method_version=DETECTION_VERSION,
                 measurements=_measurements(region),
+                parent_native_record_id=_parent_id(region),
             )
         )
     return detections
@@ -376,6 +429,9 @@ def detect_offshore(
         min_depth_m=params.min_depth_m,
         min_area_m2=params.min_area_m2,
         max_regions=params.max_regions,
+        nested=params.nested,
+        nested_level_step_m=params.nested_level_step_m,
+        pit_area_jump=params.pit_area_jump,
     ):
         hit = bool(on_seam is not None and on_seam[region.slices].any())
         flags = _flags(region, hit, params)
@@ -418,6 +474,7 @@ def detect_offshore(
                 method=DETECTION_METHOD,
                 method_version=DETECTION_VERSION,
                 measurements=_measurements(region),
+                parent_native_record_id=_parent_id(region),
             )
         )
     return detections
@@ -523,13 +580,35 @@ def detect_escarpments(
 
 class TruthKind(StrEnum):
     SYNTHETIC_CONTROL = "SYNTHETIC_CONTROL"
+    # A published map or inventory compiled by someone else.  Independent of
+    # this method, but itself an interpretation with its own positional error;
+    # it is a reference to compare with, not ground that was visited.
+    PUBLISHED_MAP_REFERENCE = "PUBLISHED_MAP_REFERENCE"
     INDEPENDENT_FIELD_TRUTH = "INDEPENDENT_FIELD_TRUTH"
 
 
 class EvaluationState(StrEnum):
     SOFTWARE_CONTROL = "SOFTWARE_CONTROL"  # synthetic surfaces: verifies code only
     EXPLORATORY = "EXPLORATORY"  # no independent truth: no accuracy claim
+    REFERENCE_COMPARED = "REFERENCE_COMPARED"  # compared with a published map
     MEASURED = "MEASURED"  # scored against independent field truth
+
+
+_EVALUATION_OUTCOME: dict[TruthKind, tuple[EvaluationState, str]] = {
+    TruthKind.SYNTHETIC_CONTROL: (
+        EvaluationState.SOFTWARE_CONTROL,
+        "scored against synthetic controls: verifies the software, not field accuracy",
+    ),
+    TruthKind.PUBLISHED_MAP_REFERENCE: (
+        EvaluationState.REFERENCE_COMPARED,
+        "compared with a published map: agreement with another interpretation, "
+        "not field-verified accuracy",
+    ),
+    TruthKind.INDEPENDENT_FIELD_TRUTH: (
+        EvaluationState.MEASURED,
+        "scored against independent field truth",
+    ),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -599,7 +678,9 @@ def evaluate(
         )
     kinds = {label.truth_kind for label in labels}
     if len(kinds) != 1:
-        raise ValueError("synthetic controls and field truth must be scored separately")
+        raise ValueError(
+            "synthetic controls, map references and field truth must be scored separately"
+        )
     ids = [label.label_id for label in labels]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate reference label id")
@@ -650,11 +731,9 @@ def evaluate(
             if label.feature_class == name and j not in used_l
         )
         scores.append(ClassScore(name, tp, fp, fn))
-    synthetic = kinds == {TruthKind.SYNTHETIC_CONTROL}
+    state, statement = _EVALUATION_OUTCOME[next(iter(kinds))]
     return EvaluationReport(
-        state=(
-            EvaluationState.SOFTWARE_CONTROL if synthetic else EvaluationState.MEASURED
-        ),
+        state=state,
         scores=tuple(scores),
         matched=tuple(matched),
         unmatched_detections=tuple(
@@ -663,9 +742,5 @@ def evaluate(
         unmatched_labels=tuple(
             label.label_id for j, label in enumerate(labels) if j not in used_l
         ),
-        statement=(
-            "scored against synthetic controls: verifies the software, not field accuracy"
-            if synthetic
-            else "scored against independent field truth"
-        ),
+        statement=statement,
     )

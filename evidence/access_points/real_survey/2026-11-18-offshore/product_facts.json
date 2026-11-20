@@ -1,0 +1,27 @@
+{
+  "content_sha256": "45cc899609c82c711a38aafb01c574161fb722882b291e4d42b0316302065497",
+  "facts": {
+    "band_descriptions": [
+      "elevation",
+      "uncertainty"
+    ],
+    "compound_crs_name": "NAD83 / UTM zone 20N + MLLW depth",
+    "driver": "BAG",
+    "format_version": "1.6.0",
+    "product_datetime": "2021-12-07T21:44:15",
+    "refinement_resolution_m": [
+      2.357107,
+      32.0
+    ],
+    "vertical_statements_in_metadata": [
+      "MLLW"
+    ]
+  },
+  "layers_read": "the base grid only (elevation and uncertainty)",
+  "parent_sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+  "read_from": "the held product's own metadata; not recomputable from the subset",
+  "run_id": "2026-11-18-offshore",
+  "schema": "access_point_seabed_product_facts/1.0",
+  "subset_file": "subsets/base_grid.tif",
+  "subset_sha256": "b8cf8aad62fe006714806a6c43a550ced0ad927e65766eb26b385a2f430ca615"
+}
