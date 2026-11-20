@@ -5,10 +5,13 @@ Inputs are files that already live in this repository:
 * ``configs/access_point_seeds.yaml`` -- operator-supplied provisional labels;
 * ``configs/access_point_legacy_crosswalk.yaml`` -- explicit rules for reading
   the legacy node registry (which is never modified);
-* the Guayama-Punta Tuna source-denominator receipt under ``evidence/marine``.
+* the Guayama-Punta Tuna source-denominator receipt under ``evidence/marine``;
+* the source catalogue of the current metadata-discovery run, if one is
+  committed under ``evidence/access_points/source_discovery``.
 
 Nothing is fetched, nothing is inferred from a name, and no coordinate is
-produced that an input file does not state.
+produced that an input file does not state.  A discovery catalogue adds
+sources that can be cited; it never adds or changes a feature.
 """
 
 from __future__ import annotations
@@ -23,6 +26,16 @@ import yaml
 
 from gebco.marine_evidence import CoverageState, ProductStage, SensorType
 
+from . import bathymetry_run
+from . import reference as reference_sets
+from .acquisition import PROVIDERS, to_source_manifestation
+from .discovery import (
+    DISCOVERY_DIR,
+    POINTER_NAME,
+    catalogue_rows,
+    current_catalogue_path,
+    load_catalogue,
+)
 from .models import (
     HORIZONTAL_INTERCHANGE_CRS,
     EvidenceAssertion,
@@ -37,8 +50,10 @@ from .namespaces import (
     observation_id,
     source_id,
 )
-from .registry import AccessPointRegistry
+from .registry import AccessPointRegistry, source_from_dict
 from .relationships import RelationshipLedger, spatial_adjacency
+from .survey_run import POINTER_NAME as SURVEY_POINTER_NAME
+from .survey_run import SURVEY_DIR, current_report
 from .vertical import is_placeholder
 from .vocabulary import (
     ClaimClass,
@@ -308,6 +323,106 @@ def crosswalk_legacy(
     return result
 
 
+def register_discovered_sources(
+    registries: Mapping[Namespace, AccessPointRegistry], catalogue: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Register what a metadata-discovery run listed, as references only.
+
+    A source goes into a registry only if a search box of that registry listed
+    it.  Every one is ``REFERENCED_ONLY`` with unknown coverage: it can be
+    cited, it cannot satisfy a direct-observation gate, and registering it
+    touches no feature.
+    """
+
+    counts = {namespace.value: 0 for namespace in sorted(registries)}
+    for provider_id, namespaces, row in catalogue_rows(catalogue):
+        spec = PROVIDERS[provider_id]
+        manifestation = to_source_manifestation(spec, row)
+        for namespace in namespaces:
+            if namespace not in registries:
+                raise SeedingError(
+                    f"catalogue names a registry that is not being built: {namespace}"
+                )
+            if namespace not in spec.serves:
+                raise SeedingError(
+                    f"{provider_id} does not serve {namespace.value}; catalogue is inconsistent"
+                )
+            if registries[namespace].add_source(manifestation):
+                counts[namespace.value] += 1
+    stated = catalogue["totals"]["sources_by_namespace"]
+    if {k: v for k, v in counts.items() if v} != dict(stated):
+        raise SeedingError(
+            "discovery catalogue totals do not match the sources it lists"
+        )
+    return {
+        "run_id": catalogue["run_id"],
+        "discovered_utc": catalogue["discovered_utc"],
+        "catalogue_content_sha256": catalogue["content_sha256"],
+        "registered": counts,
+    }
+
+
+def register_survey_sources(
+    registries: Mapping[Namespace, AccessPointRegistry], report: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Register the held, hashed products a survey run processed.
+
+    These are the first sources whose exact bytes were held: each carries the
+    SHA-256 of the full product.  They are grids, so they are registered but
+    are not direct measurements, and registering them touches no feature.
+    """
+
+    namespace = Namespace(report["registry"])
+    if namespace not in registries:
+        raise SeedingError(
+            f"survey report names a registry not being built: {namespace}"
+        )
+    added = 0
+    for product in report["products"]:
+        source = source_from_dict(product["source"])
+        if source.provenance_state is not ProvenanceState.REGISTERED or not (
+            source.manifestation_sha256
+        ):
+            raise SeedingError("a processed survey product must be held and hashed")
+        if source.manifestation_sha256 != product["download"]["sha256"]:
+            raise SeedingError(
+                "survey report disagrees with itself about a product hash"
+            )
+        if registries[namespace].add_source(source):
+            added += 1
+    return {
+        "run_id": report["run_id"],
+        "registry": namespace.value,
+        "report_content_sha256": report["content_sha256"],
+        "registered": added,
+    }
+
+
+def register_reference_sets(
+    registry: AccessPointRegistry, repo_root: Path
+) -> dict[str, Any] | None:
+    """Register the held reference maps as hashed sources.
+
+    A reference map is a published interpretation: registered, never a direct
+    measurement, and registering it touches no feature.  Each file's bytes are
+    checked against its declared hash before it is registered.
+    """
+
+    config = repo_root / reference_sets.REFERENCE_PATH
+    if not config.is_file():
+        return None
+    added = []
+    for ref in reference_sets.load_sets(config).values():
+        if not ref.held:
+            continue
+        assert ref.path is not None
+        if _sha256(repo_root / ref.path) != ref.sha256:
+            raise SeedingError(f"{ref.set_id}: file does not match its declared hash")
+        if registry.add_source(reference_sets.to_source(ref)):
+            added.append(ref.set_id)
+    return {"registered": len(added), "sets": sorted(added)}
+
+
 _GUAYAMA_TITLE = "listed in the Guayama-Punta Tuna v0.1 source-denominator receipt"
 
 
@@ -319,6 +434,10 @@ def register_guayama_sources(
     These are catalogue and inventory listings.  Their data products are not
     held, so every one is ``REFERENCED_ONLY`` with unknown coverage.  The
     vertical-datum strings the inventory published are counted as stated.
+
+    A survey the registry already holds from a later discovery run (same
+    provider, same native identifier) is counted as ``already_registered`` and
+    not added a second time, so one survey never appears as two sources.
     """
 
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
@@ -328,7 +447,10 @@ def register_guayama_sources(
         "bag": 0,
         "topobathy_lidar": 0,
         "datum_placeholders": 0,
+        "already_registered": 0,
+        "added": 0,
     }
+    held = {(s.provider, s.native_identifier) for s in registry.sources.values()}
 
     def add(
         provider: str,
@@ -337,6 +459,10 @@ def register_guayama_sources(
         sensor: SensorType,
         survey: str | None = None,
     ) -> None:
+        if (provider, native) in held:
+            counts["already_registered"] += 1
+            return
+        counts["added"] += 1
         registry.add_source(
             SourceManifestation(
                 source_id=source_id(provider, native, None, None),
@@ -446,6 +572,10 @@ class BuildResult:
     seeded: tuple[str, ...]
     guayama: Mapping[str, int]
     input_hashes: Mapping[str, str]
+    discovery: Mapping[str, Any] | None = None
+    survey: Mapping[str, Any] | None = None
+    reference: Mapping[str, Any] | None = None
+    seabed: Mapping[str, Any] | None = None
 
 
 def build_all(repo_root: str | Path) -> BuildResult:
@@ -467,7 +597,57 @@ def build_all(repo_root: str | Path) -> BuildResult:
         crosswalk_cfg,
         root,
     )
+    discovery = None
+    discovery_inputs: list[str] = []
+    catalogue_path = current_catalogue_path(root / DISCOVERY_DIR)
+    if catalogue_path is not None:
+        discovery = register_discovered_sources(
+            {
+                Namespace.ACCESS_POINT_INLAND: inland,
+                Namespace.ACCESS_POINT_OFFSHORE: offshore,
+            },
+            load_catalogue(catalogue_path),
+        )
+        discovery_inputs = [
+            f"{DISCOVERY_DIR}/{POINTER_NAME}",
+            catalogue_path.relative_to(root).as_posix(),
+        ]
     guayama = register_guayama_sources(offshore, root / GUAYAMA_RECEIPT_PATH)
+    survey = None
+    survey_inputs: list[str] = []
+    survey_report = current_report(root)
+    if survey_report is not None:
+        survey = register_survey_sources(
+            {
+                Namespace.ACCESS_POINT_INLAND: inland,
+                Namespace.ACCESS_POINT_OFFSHORE: offshore,
+            },
+            survey_report,
+        )
+        survey_inputs = [
+            f"{SURVEY_DIR}/{SURVEY_POINTER_NAME}",
+            f"{SURVEY_DIR}/{survey_report['run_id']}/processing_report.json",
+        ]
+    seabed = None
+    seabed_report = bathymetry_run.current_report(root)
+    if seabed_report is not None:
+        seabed = register_survey_sources(
+            {Namespace.ACCESS_POINT_OFFSHORE: offshore}, seabed_report
+        )
+        survey_inputs += [
+            f"{SURVEY_DIR}/{bathymetry_run.POINTER_NAME}",
+            f"{SURVEY_DIR}/{seabed_report['run_id']}/{bathymetry_run.REPORT_NAME}",
+        ]
+    reference = register_reference_sets(inland, root)
+    reference_inputs: list[str] = []
+    if reference is not None:
+        reference_inputs = [reference_sets.REFERENCE_PATH] + [
+            str(ref.path)
+            for ref in reference_sets.load_sets(
+                root / reference_sets.REFERENCE_PATH
+            ).values()
+            if ref.held
+        ]
     ledger = adjacency_ledger(inland, offshore, threshold_m=ADJACENCY_THRESHOLD_M)
     inputs = {
         rel: _sha256(root / rel)
@@ -476,10 +656,23 @@ def build_all(repo_root: str | Path) -> BuildResult:
             CROSSWALK_PATH,
             str(crosswalk_cfg["legacy_file"]),
             GUAYAMA_RECEIPT_PATH,
+            *discovery_inputs,
+            *survey_inputs,
+            *reference_inputs,
         )
     }
     return BuildResult(
-        inland, offshore, ledger, crosswalk, tuple(seeded), guayama, inputs
+        inland,
+        offshore,
+        ledger,
+        crosswalk,
+        tuple(seeded),
+        guayama,
+        inputs,
+        discovery,
+        survey,
+        reference,
+        seabed,
     )
 
 
@@ -523,6 +716,14 @@ def write_documents(result: BuildResult, repo_root: str | Path) -> dict[str, str
             },
             "provisional_seeds": len(result.seeded),
             "guayama_reference_sources": dict(result.guayama),
+            "live_discovery": (
+                None if result.discovery is None else dict(result.discovery)
+            ),
+            "survey_products": None if result.survey is None else dict(result.survey),
+            "seabed_products": None if result.seabed is None else dict(result.seabed),
+            "reference_sets": (
+                None if result.reference is None else dict(result.reference)
+            ),
         },
     }
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"

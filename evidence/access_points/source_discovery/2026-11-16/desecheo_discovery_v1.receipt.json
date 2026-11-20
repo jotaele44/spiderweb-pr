@@ -1,0 +1,474 @@
+{
+  "acquisition_version": "access-point-acquisition/1.0",
+  "authorization": {
+    "granted_by": "repository owner, explicit in-session authorisation of 2026-11-16",
+    "level": "METADATA_DISCOVERY",
+    "max_requests": 15
+  },
+  "bbox": [
+    -67.62,
+    18.27,
+    -67.34,
+    18.5
+  ],
+  "content_sha256": "56e6f29266cd405ba626b8f3503c99dfeec68cf56d943ebb62c7f82abe101026",
+  "contract_version": "access-point-registry/1.0",
+  "coverage": [
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:AT18-13",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "AT18-13",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EW0103",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EW0103",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EW0105",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EW0105",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EW0404",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EW0404",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EW9605",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EW9605",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EX1502L3",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EX1502L3",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EX1503L1",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EX1503L1",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EX1811",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EX1811",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EX2203",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EX2203",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:HLY03TB",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "HLY03TB",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF-07-04-PMEL",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF-07-04-PMEL",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF-14-01T",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF-14-01T",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF1501",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF1501",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF1804",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF1804",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF2201",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF2201",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:PD18PR03",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "PD18PR03",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:RB0604",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "RB0604",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H01514",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H01514",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H01532",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H01532",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02640",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02640",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H03005",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H03005",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H09587",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H09587",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:W00184",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2007",
+      "title": "W00184",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "TOPOBATHYMETRIC_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{6FB322A3-E4DC-4AB0-BCC0-7D8B54555A5B}",
+      "provider_id": "USIEI_TOPOBATHY_LIDAR",
+      "surveyed": null,
+      "title": "2019 NOAA NGS Topobathy Lidar: PR1801-TB-C (Isla Desecheo)",
+      "vertical_datum_raw": "Not Provided"
+    }
+  ],
+  "dates": {
+    "discovered_utc": "2026-11-16T23:20:38+00:00",
+    "note": "published, surveyed and retrieved dates are recorded per source"
+  },
+  "invariants": [
+    "inventory coverage is not a depth or elevation measurement",
+    "a failed provider says nothing about coverage",
+    "envelope relations are planning-only",
+    "no data product was downloaded by this run"
+  ],
+  "lifecycle": [
+    {
+      "detail": "6 providers queried, 24 rows, failed: none",
+      "outcome": "PASS",
+      "state": "DISCOVER"
+    },
+    {
+      "detail": "inventory attributes kept verbatim",
+      "outcome": "PASS",
+      "state": "INSPECT_METADATA"
+    },
+    {
+      "detail": "24 stable identifiers, 0 layer-local only",
+      "outcome": "PASS",
+      "state": "IDENTIFY_SOURCE"
+    },
+    {
+      "detail": "footprint envelopes classified against the query box (planning only)",
+      "outcome": "PASS",
+      "state": "VALIDATE_SCOPE"
+    },
+    {
+      "detail": "public catalogue endpoints answered",
+      "outcome": "PASS",
+      "state": "VERIFY_ACCESS"
+    },
+    {
+      "detail": "candidate products listed; nothing scheduled",
+      "outcome": "PASS",
+      "state": "PLAN_ACQUISITION"
+    },
+    {
+      "detail": "data-product download is outside this module's grant",
+      "outcome": "NOT_AUTHORIZED",
+      "state": "ACQUIRE_IF_AUTHORIZED"
+    }
+  ],
+  "namespace": "access_point.offshore",
+  "providers": [
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "TOPOBATHYMETRIC_LIDAR_INVENTORY",
+      "provider_id": "USIEI_TOPOBATHY_LIDAR",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Length": "5135",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:07 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/0/query?f=json&where=1%3D1&geometry=-67.62%2C18.27%2C-67.34%2C18.5&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "609c77a4afdd5fa46789249de3bf2e42c213a79e2d3a4b2fea988f3ee1156f4b",
+          "response_size": 5135,
+          "retrieved_utc": "2026-11-16T23:21:07.080633+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 1,
+      "state": "PASS"
+    },
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "BATHYMETRIC_LIDAR_INVENTORY",
+      "provider_id": "USIEI_BATHYMETRIC_LIDAR",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Length": "3482",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:07 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/2/query?f=json&where=1%3D1&geometry=-67.62%2C18.27%2C-67.34%2C18.5&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "4b4d8a9dc2a5b72406deccf18832ba3335ec6de23cc8f7af52852cec9d8fb528",
+          "response_size": 3482,
+          "retrieved_utc": "2026-11-16T23:21:08.008989+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 0,
+      "state": "ZERO"
+    },
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "OTHER_BATHYMETRIC_SURVEY_INVENTORY",
+      "provider_id": "USIEI_OTHER_BATHYMETRIC",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Length": "3482",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:09 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/4/query?f=json&where=1%3D1&geometry=-67.62%2C18.27%2C-67.34%2C18.5&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "4b4d8a9dc2a5b72406deccf18832ba3335ec6de23cc8f7af52852cec9d8fb528",
+          "response_size": 3482,
+          "retrieved_utc": "2026-11-16T23:21:09.139714+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 0,
+      "state": "ZERO"
+    },
+    {
+      "completeness": "COUNT_CLOSED",
+      "error": null,
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "content-type": "application/json;charset=UTF-8",
+            "date": "Mon, 16 Nov 2026 23:21:10 GMT"
+          },
+          "request_url": "https://www.ngdc.noaa.gov/next-catalogs/rest/multibeam/catalog/survey?geometry=-67.62%2C18.27%2C-67.34%2C18.5&max=100&offset=0",
+          "response_sha256": "ba30b0c10cec066b842ebd6bd35475f01d1646b08cd137259f1f829e53d91081",
+          "response_size": 8268,
+          "retrieved_utc": "2026-11-16T23:21:12.844330+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 17,
+      "state": "PASS"
+    },
+    {
+      "completeness": "COUNT_CLOSED",
+      "error": null,
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "content-type": "application/json;charset=UTF-8",
+            "date": "Mon, 16 Nov 2026 23:21:13 GMT"
+          },
+          "request_url": "https://www.ngdc.noaa.gov/next-catalogs/rest/sounding/catalog/survey?geometry=-67.62%2C18.27%2C-67.34%2C18.5&max=100&offset=0",
+          "response_sha256": "6e62bc9b0db70aed36489acedf28beec8b137dacb5deb32ad199cffe7c3ee70a",
+          "response_size": 13721,
+          "retrieved_utc": "2026-11-16T23:21:14.923768+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 5,
+      "state": "PASS"
+    },
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "content-type": "application/json;charset=UTF-8",
+            "date": "Mon, 16 Nov 2026 23:21:15 GMT",
+            "etag": "\"1794812455\""
+          },
+          "request_url": "https://gis.ngdc.noaa.gov/arcgis/rest/services/web_mercator/nos_hydro_dynamic/MapServer/0/query?f=json&where=1%3D1&geometry=-67.62%2C18.27%2C-67.34%2C18.5&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=1000&orderByFields=SURVEY_ID+ASC",
+          "response_sha256": "904c25527be7c83461bbf38dd1003ba5c97705003e744f34cf4bbe3a23dac6fc",
+          "response_size": 4276,
+          "retrieved_utc": "2026-11-16T23:21:15.528235+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 1,
+      "state": "PASS"
+    }
+  ],
+  "schema": "access_point_source_discovery_receipt/1.0",
+  "state": "PASS",
+  "zero_result_claim_permitted": false
+}
