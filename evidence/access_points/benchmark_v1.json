@@ -1,0 +1,207 @@
+{
+  "claim_class": "COMPUTED",
+  "environment": {
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.44-fc-v470-x86_64-with-glibc2.39",
+    "processor_count": 4,
+    "python": "3.12.3",
+    "scikit_image": "0.26.0",
+    "scipy": "1.17.1"
+  },
+  "generated_utc": "2026-11-15T13:46:33Z",
+  "processing": [
+    {
+      "cells": 262144,
+      "delineate_depressions": {
+        "best_s": 0.2394,
+        "cells_per_second": 1095004,
+        "median_s": 0.2405,
+        "peak_traced_mb": 35.11,
+        "regions_found": 112,
+        "repeats": 3
+      },
+      "detect_inland": {
+        "best_s": 0.2665,
+        "detections": 112,
+        "median_s": 0.3381,
+        "peak_traced_mb": 35.11,
+        "repeats": 3
+      },
+      "detect_seams": {
+        "best_s": 0.016,
+        "median_s": 0.0189,
+        "peak_traced_mb": 9.25,
+        "repeats": 3
+      },
+      "fill_depressions": {
+        "best_s": 0.0628,
+        "median_s": 0.0675,
+        "peak_traced_mb": 35.11,
+        "repeats": 3
+      },
+      "input_mb": 2.1,
+      "shape": [
+        512,
+        512
+      ],
+      "slope_degrees": {
+        "best_s": 0.0092,
+        "median_s": 0.0095,
+        "peak_traced_mb": 8.39,
+        "repeats": 3
+      }
+    },
+    {
+      "cells": 1048576,
+      "delineate_depressions": {
+        "best_s": 0.779,
+        "cells_per_second": 1346054,
+        "median_s": 0.8221,
+        "peak_traced_mb": 139.36,
+        "regions_found": 121,
+        "repeats": 3
+      },
+      "detect_inland": {
+        "best_s": 0.7393,
+        "detections": 121,
+        "median_s": 0.7692,
+        "peak_traced_mb": 139.36,
+        "repeats": 3
+      },
+      "detect_seams": {
+        "best_s": 0.0782,
+        "median_s": 0.0788,
+        "peak_traced_mb": 16.8,
+        "repeats": 3
+      },
+      "fill_depressions": {
+        "best_s": 0.3615,
+        "median_s": 0.3747,
+        "peak_traced_mb": 139.36,
+        "repeats": 3
+      },
+      "input_mb": 8.39,
+      "shape": [
+        1024,
+        1024
+      ],
+      "slope_degrees": {
+        "best_s": 0.0611,
+        "median_s": 0.065,
+        "peak_traced_mb": 33.56,
+        "repeats": 3
+      }
+    },
+    {
+      "cells": 4194304,
+      "delineate_depressions": {
+        "best_s": 2.7366,
+        "cells_per_second": 1532670,
+        "median_s": 2.9925,
+        "peak_traced_mb": 555.47,
+        "regions_found": 121,
+        "repeats": 3
+      },
+      "detect_inland": {
+        "best_s": 3.2862,
+        "detections": 121,
+        "median_s": 3.4233,
+        "peak_traced_mb": 555.47,
+        "repeats": 3
+      },
+      "detect_seams": {
+        "best_s": 0.2978,
+        "median_s": 0.3022,
+        "peak_traced_mb": 67.15,
+        "repeats": 3
+      },
+      "fill_depressions": {
+        "best_s": 1.5282,
+        "median_s": 1.6887,
+        "peak_traced_mb": 555.47,
+        "repeats": 3
+      },
+      "input_mb": 33.55,
+      "shape": [
+        2048,
+        2048
+      ],
+      "slope_degrees": {
+        "best_s": 0.2704,
+        "median_s": 0.2878,
+        "peak_traced_mb": 134.22,
+        "repeats": 3
+      }
+    }
+  ],
+  "registry_and_service": {
+    "committed_registry_build": {
+      "best_s": 0.085,
+      "median_s": 0.0884,
+      "peak_traced_mb": 2.2,
+      "repeats": 3
+    },
+    "document_size_mb": 9.15,
+    "ingest_with_rule_checks": {
+      "best_s": 0.6128,
+      "features_per_second": 8159,
+      "median_s": 0.6128,
+      "peak_traced_mb": 6.72,
+      "repeats": 1
+    },
+    "load_and_verify_document": {
+      "best_s": 0.4277,
+      "median_s": 0.498,
+      "peak_traced_mb": 30.12,
+      "repeats": 2
+    },
+    "note": "in-process service calls; HTTP serialisation and network are not included. Queries scan all features: no spatial index is used at this size.",
+    "query_latency_in_process": {
+      "bbox_100": {
+        "median_ms": 31.74,
+        "p95_ms": 33.41,
+        "samples": 30
+      },
+      "evidence": {
+        "median_ms": 3.16,
+        "p95_ms": 3.35,
+        "samples": 30
+      },
+      "page_100": {
+        "median_ms": 15.21,
+        "p95_ms": 16.41,
+        "samples": 30
+      }
+    },
+    "save_document": {
+      "best_s": 0.7472,
+      "median_s": 0.7598,
+      "peak_traced_mb": 55.8,
+      "repeats": 2
+    },
+    "synthetic_registry_features": 5000
+  },
+  "schema": "access_point_benchmark/1.0",
+  "statement": "Measured on synthetic control surfaces in the run that wrote this file. Software performance only; not detection accuracy. There is no earlier implementation of closed-basin delineation in this repository to compare against.",
+  "tiling": {
+    "operation": "position_index(radius=8 cells)",
+    "peak_memory_ratio_tiled_over_untiled": 0.23,
+    "results_identical": true,
+    "shape": [
+      2048,
+      2048
+    ],
+    "tiled_512_halo_9": {
+      "best_s": 1.4244,
+      "median_s": 1.5768,
+      "peak_traced_mb": 47.33,
+      "repeats": 2
+    },
+    "untiled": {
+      "best_s": 1.8322,
+      "median_s": 1.8707,
+      "peak_traced_mb": 205.53,
+      "repeats": 2
+    }
+  }
+}

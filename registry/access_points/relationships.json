@@ -1,0 +1,12 @@
+{
+  "content_sha256": "7c6695a503adb66a33f9a64b691fc03e7df227b4d743da002ed584c07867acdf",
+  "contract_version": "access-point-registry/1.0",
+  "counts": {
+    "relationships": 0,
+    "sources": 0
+  },
+  "producer_identity": "spiderweb-pr:spiderweb.access_points.seeding",
+  "relationships": [],
+  "schema": "access_point_relationships/1.0",
+  "sources": []
+}

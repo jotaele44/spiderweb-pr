@@ -1,0 +1,11 @@
+{
+  "headers": {
+    "content-type": "application/json;charset=UTF-8",
+    "date": "Mon, 16 Nov 2026 23:21:40 GMT"
+  },
+  "request_url": "https://www.ngdc.noaa.gov/next-catalogs/rest/sounding/catalog/survey?geometry=-65.65%2C17.85%2C-65.2%2C18.15&max=100&offset=0",
+  "response_sha256": "8a50065962a4094fcfa94c38ac7ba16e2d3acb19aa788ce72dd3dda32a92b00c",
+  "response_size": 88416,
+  "retrieved_utc": "2026-11-16T23:21:44.039609+00:00",
+  "status": 200
+}
