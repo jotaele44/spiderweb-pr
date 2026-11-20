@@ -55,6 +55,8 @@
     "export_canonical": "python3 scripts/federation_export.py --package exports/real --mode production",
     "maintenance": "python3 scripts/run_maintenance.py --repo spiderweb-pr --mode audit",
     "export_usgs_native_reference": "python3 scripts/export_usgs_native.py --input-manifest <path> --source-root <hub_root> --out <new_empty_package> --mode test"
+    "export_canonical": "python3 scripts/federation_export.py --package exports/real --mode production --access-point-registries registry/access_points",
+    "maintenance": "python3 scripts/run_maintenance.py --repo spiderweb-pr --mode audit"
   },
   "canonical_outputs": {
     "export_sample_manifest": "exports/samples/manifest.sample.json",

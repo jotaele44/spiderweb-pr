@@ -1,0 +1,175 @@
+{
+  "acquisition_version": "access-point-acquisition/1.0",
+  "authorization": {
+    "granted_by": "repository owner, explicit in-session authorisation of 2026-11-16",
+    "level": "METADATA_DISCOVERY",
+    "max_requests": 15
+  },
+  "bbox": [
+    -66.9393,
+    18.3187,
+    -66.8393,
+    18.4187
+  ],
+  "content_sha256": "0ca6bd2a084038fdd9e14f87ff0c20a81e6d4f5341612dbba469d37ddc659b0a",
+  "contract_version": "access-point-registry/1.0",
+  "coverage": [
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "TERRESTRIAL_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{5D816592-6817-452A-B5D6-EFF421B3434C}",
+      "provider_id": "USIEI_TOPOGRAPHIC_LIDAR",
+      "surveyed": "Sep 19, 2015 - Mar 16, 2017",
+      "title": "2016 Commonwealth of Puerto Rico Project Lidar",
+      "vertical_datum_raw": "NAVD88"
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "TERRESTRIAL_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{933E88E7-A131-40E5-8BAA-C9575216E040}",
+      "provider_id": "USIEI_TOPOGRAPHIC_LIDAR",
+      "surveyed": "Apr 17, 2018 - Apr 19, 2019",
+      "title": "2018 Hurricane Maria PR and USVI Lidar",
+      "vertical_datum_raw": "NAVD88"
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "TERRESTRIAL_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{FDF80EC1-0960-48F9-9D01-17834E0A701D}",
+      "provider_id": "USIEI_TOPOGRAPHIC_LIDAR",
+      "surveyed": "Jan 10 - Feb 8, 2004",
+      "title": "2004 USACE Lidar: Puerto Rico",
+      "vertical_datum_raw": "User Specified"
+    }
+  ],
+  "dates": {
+    "discovered_utc": "2026-11-16T23:20:38+00:00",
+    "note": "published, surveyed and retrieved dates are recorded per source"
+  },
+  "invariants": [
+    "inventory coverage is not a depth or elevation measurement",
+    "a failed provider says nothing about coverage",
+    "envelope relations are planning-only",
+    "no data product was downloaded by this run"
+  ],
+  "lifecycle": [
+    {
+      "detail": "3 providers queried, 3 rows, failed: none",
+      "outcome": "PASS",
+      "state": "DISCOVER"
+    },
+    {
+      "detail": "inventory attributes kept verbatim",
+      "outcome": "PASS",
+      "state": "INSPECT_METADATA"
+    },
+    {
+      "detail": "3 stable identifiers, 0 layer-local only",
+      "outcome": "PASS",
+      "state": "IDENTIFY_SOURCE"
+    },
+    {
+      "detail": "footprint envelopes classified against the query box (planning only)",
+      "outcome": "PASS",
+      "state": "VALIDATE_SCOPE"
+    },
+    {
+      "detail": "public catalogue endpoints answered",
+      "outcome": "PASS",
+      "state": "VERIFY_ACCESS"
+    },
+    {
+      "detail": "candidate products listed; nothing scheduled",
+      "outcome": "PASS",
+      "state": "PLAN_ACQUISITION"
+    },
+    {
+      "detail": "data-product download is outside this module's grant",
+      "outcome": "NOT_AUTHORIZED",
+      "state": "ACQUIRE_IF_AUTHORIZED"
+    }
+  ],
+  "namespace": "access_point.inland",
+  "providers": [
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "TERRESTRIAL_LIDAR_INVENTORY",
+      "provider_id": "USIEI_TOPOGRAPHIC_LIDAR",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:51 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/1/query?f=json&where=1%3D1&geometry=-66.9393%2C18.3187%2C-66.8393%2C18.4187&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "5c3cb40265c12c1bcc84146dca21de2acbdb84e37f18119772f4f2c251254c54",
+          "response_size": 175273,
+          "retrieved_utc": "2026-11-16T23:21:51.342545+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 3,
+      "state": "PASS"
+    },
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "TOPOBATHYMETRIC_LIDAR_INVENTORY",
+      "provider_id": "USIEI_TOPOBATHY_LIDAR",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Length": "3482",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:52 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/0/query?f=json&where=1%3D1&geometry=-66.9393%2C18.3187%2C-66.8393%2C18.4187&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "4b4d8a9dc2a5b72406deccf18832ba3335ec6de23cc8f7af52852cec9d8fb528",
+          "response_size": 3482,
+          "retrieved_utc": "2026-11-16T23:21:52.245816+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 0,
+      "state": "ZERO"
+    },
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "IFSAR_INVENTORY",
+      "provider_id": "USIEI_IFSAR",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Length": "3482",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:53 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/3/query?f=json&where=1%3D1&geometry=-66.9393%2C18.3187%2C-66.8393%2C18.4187&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "4b4d8a9dc2a5b72406deccf18832ba3335ec6de23cc8f7af52852cec9d8fb528",
+          "response_size": 3482,
+          "retrieved_utc": "2026-11-16T23:21:53.228647+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 0,
+      "state": "ZERO"
+    }
+  ],
+  "schema": "access_point_source_discovery_receipt/1.0",
+  "state": "PASS",
+  "zero_result_claim_permitted": false
+}

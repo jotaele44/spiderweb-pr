@@ -5,6 +5,11 @@ imagery providers behind MCP tools and routes fetched-tile metadata into the
 repository's satellite-manifest ingest pipeline (so imagery is indexed alongside
 other spatial records).
 
+This server is separate from the map's NOAA aerial imagery layer. That layer is
+served by the FastAPI backend (`server/backend/eri_imagery.py`, routes under
+`/imagery/eri/`), reads the public `noaa-eri-pds` bucket, needs no credentials,
+and does not go through MCP or the satellite-manifest pipeline.
+
 ## Tools
 
 | Tool | Signature | Notes |

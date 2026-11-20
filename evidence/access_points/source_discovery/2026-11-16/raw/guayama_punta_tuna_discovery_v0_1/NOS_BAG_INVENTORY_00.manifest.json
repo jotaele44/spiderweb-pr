@@ -1,0 +1,12 @@
+{
+  "headers": {
+    "content-type": "application/json;charset=UTF-8",
+    "date": "Mon, 16 Nov 2026 23:21:34 GMT",
+    "etag": "\"1794812455\""
+  },
+  "request_url": "https://gis.ngdc.noaa.gov/arcgis/rest/services/web_mercator/nos_hydro_dynamic/MapServer/0/query?f=json&where=1%3D1&geometry=-66.2%2C17.5%2C-65.8%2C18.05&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=1000&orderByFields=SURVEY_ID+ASC",
+  "response_sha256": "bc853e110cb5a9f0da8fd8077ed62a40938e682961ac41b73f4a5c58156c1ce8",
+  "response_size": 31738,
+  "retrieved_utc": "2026-11-16T23:21:34.161709+00:00",
+  "status": 200
+}
