@@ -1,0 +1,50 @@
+{
+  "Artifacts": {
+    "binding_input.jsonl": {
+      "bytes": 54001,
+      "sha256": "a9ddd63ab37253c48150775315577e9dc1d421fc87e7b41e36718565874bbdf8"
+    },
+    "binding_receipt.json": {
+      "bytes": 1208,
+      "sha256": "22c7d80de63d683e5cfe42095c9de9a9ceadc8a22f2c6c6cba17a5c9fbd9789b"
+    },
+    "bindings.jsonl": {
+      "bytes": 57702,
+      "sha256": "b7ae12e2d70145c945ef838998f39f3179ff67294875f7382b066e4696abba56"
+    },
+    "export_receipt.json": {
+      "bytes": 899,
+      "sha256": "ebc022859cc1c56b4b329684b7513d09ae06ef8486fd01a35873e6c90ec7ee70"
+    },
+    "profile_receipt.json": {
+      "bytes": 1303,
+      "sha256": "f6c38ce92194b61feca14142b698ff15e0a29c716b9e8c9d90a62d4fecaa6233"
+    },
+    "profile_records.jsonl": {
+      "bytes": 44827,
+      "sha256": "74dbc6426f3c8c5337dcdad33eb36a11002fc24417d9d4e75edff01df6b81ea5"
+    },
+    "profiles.jsonl": {
+      "bytes": 114305,
+      "sha256": "6bfd1fe2ac7025dcf1fe6969f31d0a827240400176db7ec1ba7852778fd3745f"
+    },
+    "projection_audit.jsonl": {
+      "bytes": 107597,
+      "sha256": "81b6377d767f78bd9816ba294652a0f783ea76f56ce8c8d865b0bd980cb67176"
+    }
+  },
+  "Binding_Row_Count": 118,
+  "Contract": "aguayluz-nwps-pr-grid-v2-certification/1.0",
+  "Geometry_Copied": false,
+  "Grid_Level": "L1",
+  "Input_Record_Count": 118,
+  "Profile_Count": 111,
+  "Repository": "aguayluz-pr",
+  "Source_Commit": "459c0777365786419da5c62db20abfdec21aa092",
+  "Source_Git_Blob_SHA1": "e79f4526c8f6128f6e312ce3592f5518332ecd2f",
+  "Source_SHA256": "232569ad1465a6b89e3e3625fe237dc8a18fa5547cf81bc3dd3e7f5f5d8c2363",
+  "State": "PASS",
+  "State_Counts": {
+    "INTERIOR": 118
+  }
+}

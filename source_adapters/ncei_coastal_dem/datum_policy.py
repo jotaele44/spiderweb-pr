@@ -19,6 +19,11 @@ class DatumPolicyResult:
     notes: str
 
 
+_UNDECLARED_VERTICAL = frozenset(
+    {"source dependent", "unknown", "not provided", "user specified", "various", "mixed", "other"}
+)
+
+
 def evaluate_datum_policy(records: Iterable[DatasetRecord]) -> DatumPolicyResult:
     selected = tuple(records)
     if not selected:
@@ -41,6 +46,29 @@ def evaluate_datum_policy(records: Iterable[DatasetRecord]) -> DatumPolicyResult
     vertical_datums = tuple(sorted({record.vertical_datum for record in selected}))
     horizontal_datums = tuple(sorted({record.horizontal_datum for record in selected}))
     dataset_ids = tuple(record.dataset_id for record in selected)
+
+    undeclared = sorted(
+        record.dataset_id
+        for record in selected
+        if record.vertical_datum.strip().lower().replace("_", " ") in _UNDECLARED_VERTICAL
+    )
+    if undeclared:
+        # "source_dependent" and similar are placeholders: the registry row
+        # does not say which datum the product is on, so sameness cannot be
+        # established even when every selected row carries the same word.
+        return DatumPolicyResult(
+            dataset_ids=dataset_ids,
+            vertical_datums=vertical_datums,
+            horizontal_datums=horizontal_datums,
+            datum_merge_policy="separate_layers_until_vertical_transform_metadata_exists",
+            requires_vertical_normalization=True,
+            review_status="review_required",
+            notes=(
+                "vertical datum is not declared for: "
+                + ", ".join(undeclared)
+                + "; resolve each product's datum from its own metadata before merging"
+            ),
+        )
 
     if len(vertical_datums) == 1:
         return DatumPolicyResult(

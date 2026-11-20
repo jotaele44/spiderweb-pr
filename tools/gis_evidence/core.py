@@ -6,6 +6,10 @@ import math
 from pathlib import Path
 from typing import Any
 
+# Default headless-browser viewport used across delivery_benchmark and
+# viewport_parity when a spec omits viewport_pixels.
+DEFAULT_VIEWPORT_PIXELS = {"width": 1280, "height": 800}
+
 
 def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()

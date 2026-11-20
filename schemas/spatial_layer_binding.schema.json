@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "spatial_layer_binding",
   "title": "Spiderweb-PR Spatial Layer Binding Registry",
-  "description": "Rendering/spatial metadata for layers already named in configs/layer_catalog.yaml (the labels-only catalog). Kept as a separate file so the labels catalog's tested invariant — no geometry/coordinates bound, every layer status=deferred — is never touched by this registry. Each entry's layer_id must exist in layer_catalog.yaml (enforced by tests/test_spatial_layer_bindings.py, not by this schema, since cross-file references aren't expressible in JSON Schema alone).",
+  "description": "Rendering/spatial metadata for layers already named in configs/layer_catalog.yaml (the labels-only catalog). Kept as a separate file so the labels catalog's tested invariant — no geometry/coordinates bound, every layer status=deferred — is never touched by this registry. Each entry's layer_id must exist in layer_catalog.yaml (enforced by tests/test_spatial_registry.py, not by this schema, since cross-file references aren't expressible in JSON Schema alone).",
   "type": "object",
   "required": ["version", "bindings"],
   "properties": {
