@@ -1,0 +1,31 @@
+# Provisional discovery labels for the Off-Shore Access Points registry.
+#
+# These are operator-supplied labels taken from annotated screenshots.  The
+# screenshots themselves have NOT been attached or registered: no file, no
+# hash, no control points.  Each label is therefore recorded as a provisional
+# discovery observation and nothing more.
+#
+#   * No coordinates, depths, openings or connections are stated, because no
+#     registered source states them.  Do not add any here by hand.
+#   * A label is a raw source label, not an identity.  The registry assigns its
+#     own opaque feature identifier.
+#   * A seed cannot leave PROVISIONAL_DISCOVERY until a source is registered
+#     with verifiable provenance (exact bytes and SHA-256).
+version: access_point_seeds_v1
+registry: access_point.offshore
+generated_utc: "2026-11-15T00:00:00Z"
+source:
+  provider: OPERATOR_SCREENSHOT
+  provenance_state: UNREGISTERED
+  note: annotated screenshot described by the operator; file not attached
+seeds:
+  - label: OSAP-SEED-001
+    locality: Northwest Aguadilla
+  - label: OSAP-SEED-002
+    locality: Desecheo
+  - label: OSAP-SEED-003
+    locality: Southwestern offshore PR
+  - label: OSAP-SEED-004
+    locality: Guayama / southeastern PR
+  - label: OSAP-SEED-005
+    locality: Southern Vieques

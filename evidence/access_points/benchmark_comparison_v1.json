@@ -1,0 +1,81 @@
+{
+  "schema": "access_point_benchmark_comparison/1.0",
+  "claim_class": "COMPUTED",
+  "statement": "Before and after are two runs of scripts/benchmark_access_points.py on the same machine with the same arguments (--sizes 512 1024 --tiling-size 1024 --registry-features 2000). 'Before' is the first working implementation; 'after' is the committed code. Between the two runs the basin footprint definition and the perimeter estimator were also corrected, so the delineation workload is not byte-identical; the optimisation itself (discarding sub-threshold basins before measuring shape) was verified to give identical output on the control scenes before those corrections were made.",
+  "environment": {
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.44-fc-v470-x86_64-with-glibc2.39",
+    "processor_count": 4,
+    "python": "3.12.3",
+    "scikit_image": "0.26.0",
+    "scipy": "1.17.1"
+  },
+  "before_generated_utc": "2026-11-15T01:43:28Z",
+  "after_generated_utc": "2026-11-15T13:47:55Z",
+  "comparison": [
+    {
+      "measure": "delineate_depressions, 262,144 cells (best of 3)",
+      "before": 0.3833,
+      "after": 0.3242,
+      "unit": "s",
+      "improvement_factor": 1.18
+    },
+    {
+      "measure": "detect_inland, 262,144 cells (best of 3)",
+      "before": 0.3668,
+      "after": 0.2758,
+      "unit": "s",
+      "improvement_factor": 1.33
+    },
+    {
+      "measure": "delineate_depressions, 1,048,576 cells (best of 3)",
+      "before": 2.0531,
+      "after": 0.8163,
+      "unit": "s",
+      "improvement_factor": 2.52
+    },
+    {
+      "measure": "detect_inland, 1,048,576 cells (best of 3)",
+      "before": 1.8806,
+      "after": 0.7155,
+      "unit": "s",
+      "improvement_factor": 2.63
+    },
+    {
+      "measure": "registry ingest with rule checks, 2,000 features",
+      "before": 1938,
+      "after": 8323,
+      "unit": "features/s",
+      "improvement_factor": 4.29
+    },
+    {
+      "measure": "service query: feature page of 100 (median), 2,000 features",
+      "before": 52.34,
+      "after": 6.1,
+      "unit": "ms",
+      "improvement_factor": 8.58
+    },
+    {
+      "measure": "service query: bounding-box page of 100 (median), 2,000 features",
+      "before": 56.48,
+      "after": 12.06,
+      "unit": "ms",
+      "improvement_factor": 4.68
+    },
+    {
+      "measure": "service query: evidence for one feature (median), 2,000 features",
+      "before": 0.77,
+      "after": 1.25,
+      "unit": "ms",
+      "improvement_factor": 0.62
+    },
+    {
+      "measure": "load and verify registry document, 2,000 features",
+      "before": 0.1796,
+      "after": 0.2514,
+      "unit": "s",
+      "improvement_factor": 0.71
+    }
+  ],
+  "not_compared": "There is no earlier implementation of closed-basin delineation, of the registries or of the query service in this repository, so there is no pre-existing baseline to compare against."
+}

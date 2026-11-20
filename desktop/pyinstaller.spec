@@ -38,6 +38,8 @@ datas = [
     (str(DIST_DIR), "server/frontend/dist"),
     (str(BRANDING / "icon-256.png"), "assets/branding"),
     (str(REPO_ROOT / "configs" / "layer_catalog.yaml"), "configs"),
+    # Flight registry for the NOAA ERI imagery routes (server/backend/eri_imagery.py).
+    (str(REPO_ROOT / "configs" / "eri_imagery_sources.yaml"), "configs"),
     (
         str(REPO_ROOT / "server" / "database" / "schema_sqlite.sql"),
         "server/database",

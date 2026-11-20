@@ -1,0 +1,12 @@
+{
+  "headers": {
+    "Content-Type": "application/json;charset=UTF-8",
+    "Date": "Tue, 17 Nov 2026 13:52:19 GMT",
+    "last-modified": "Thu, 01 Jan 1970 00:00:00 GMT"
+  },
+  "request_url": "https://www.sciencebase.gov/catalog/item/6a753f0e1ba49b79d0c347d8?format=json",
+  "response_sha256": "1598deba1a47ec99af65d06d3a8676153b388b6b737b816ced0470376b6db797",
+  "response_size": 10936,
+  "retrieved_utc": "2026-11-17T13:52:19.502820+00:00",
+  "status": 200
+}

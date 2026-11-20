@@ -16,6 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # main requires status checks, so a bot push to it is rejected (GH013).
+      # Receipts and the assertion stream live on the unprotected
+      # federation-data/centinelas-handoffs branch; restore them first so duplicate
+      # detection and the assertion builder see every earlier handoff.
+      - name: Restore persisted handoff evidence
+        run: scripts/persist_to_data_branch.sh restore federation-data/centinelas-handoffs data/centinelas_handoffs exports/federation
       - id: ingest
         continue-on-error: true
         env:
@@ -27,9 +33,8 @@ jobs:
         run: |
           git config user.name centinelas-handoff-bot
           git config user.email actions@users.noreply.github.com
-          git add data/centinelas_handoffs
-          git diff --cached --quiet || git commit -m "data: preserve Centinelas handoff evidence [skip ci]"
-          git push
+          scripts/persist_to_data_branch.sh push federation-data/centinelas-handoffs \
+            "data: preserve Centinelas handoff evidence" data/centinelas_handoffs
       - name: Reject collision/fork after evidence preservation
         if: ${{ steps.ingest.outcome != 'success' }}
         run: |
@@ -43,9 +48,8 @@ jobs:
         run: |
           git config user.name centinelas-handoff-bot
           git config user.email actions@users.noreply.github.com
-          git add exports/federation
-          git diff --cached --quiet || git commit -m "data: federate Centinelas project assertion [skip ci]"
-          git push
+          scripts/persist_to_data_branch.sh push federation-data/centinelas-handoffs \
+            "data: federate Centinelas project assertion" exports/federation
       - name: Acknowledge
         if: ${{ steps.ingest.outcome == 'success' }}
         env:

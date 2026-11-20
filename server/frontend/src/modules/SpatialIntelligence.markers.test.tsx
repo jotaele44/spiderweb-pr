@@ -63,6 +63,12 @@ function makeFakeRuntime() {
     removeControl: vi.fn(),
     getCenter: () => ({ lng: -66.5, lat: 18.2 }),
     getZoom: () => 8,
+    // Read by the coordinate readout and the URL-fragment writer.
+    getLayer: () => undefined,
+    getZoom: () => 8.4,
+    getCenter: () => ({ lng: -66.35, lat: 18.22 }),
+    // A remount re-reads the fragment the previous mount wrote and restores it.
+    jumpTo: vi.fn(),
   };
   return {
     initialize: vi.fn(() => Promise.resolve()),

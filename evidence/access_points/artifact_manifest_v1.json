@@ -1,0 +1,384 @@
+{
+  "schema": "access_point_artifact_manifest/1.0",
+  "generated_utc": "2026-11-16T11:50:00Z",
+  "base_sha": "b2c532fb2c4674a8d838423dc4d832dd5ca91369",
+  "statement": "SHA-256 of every file this change adds or modifies relative to main at the base commit shown, taken from the working tree after main was merged in. The certification report and this manifest are excluded because they reference it.",
+  "file_count": 75,
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "eea8359f73272cc389878d2863b7d2ff5dd92e3eb08d70ea7ca902edd9d171f5",
+      "bytes": 14500
+    },
+    {
+      "path": "TERMINAL_READY_ACCESS_POINTS.txt",
+      "sha256": "ca8e1b101a62b82351fe571114374b413502a4f799ecb51bec21d65bb940d116",
+      "bytes": 3915
+    },
+    {
+      "path": "configs/access_point_legacy_crosswalk.yaml",
+      "sha256": "c2ae580230038e5aa621cc398d49ed74a1e87c19718d4025207f5e8939cea290",
+      "bytes": 1835
+    },
+    {
+      "path": "configs/access_point_seeds.yaml",
+      "sha256": "e9cb8d7181a1ab4f0f05d6931064748ea32896e383aa2ee8ed5980beecc71e46",
+      "bytes": 1293
+    },
+    {
+      "path": "configs/project_language_bridge.yaml",
+      "sha256": "da595cb9d58acb4bf0e1f23aeab93dc92164ae1929957771d889f3cc8c832ab5",
+      "bytes": 6887
+    },
+    {
+      "path": "docs/ACCESS_POINT_CAPABILITY_INVENTORY.md",
+      "sha256": "44a4509de8bac92b35474da2fbf3ef49745ae73400c76c61e6c00453c415048a",
+      "bytes": 15438
+    },
+    {
+      "path": "docs/ACCESS_POINT_REGISTRIES.md",
+      "sha256": "f55e8272b410e732301c167533b08077fd32602fe702c40c8be88075071d9635",
+      "bytes": 16200
+    },
+    {
+      "path": "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md",
+      "sha256": "d237f66113d4d43bd0a5895d616aac5b8ad93c17f5ba6c19a707ff83ba866092",
+      "bytes": 13463
+    },
+    {
+      "path": "docs/ACCESS_POINT_TERMINOLOGY_DECISION.md",
+      "sha256": "6b4cd29c177d19ebeae7ab606c15b0d2993c7185637b77224f87338b6b7442c8",
+      "bytes": 8005
+    },
+    {
+      "path": "docs/DUPLICATION_REGISTER.md",
+      "sha256": "818c1e3936f75cb85ca0a86d170fbe060baf5d8d5f0ffe1d3a3ad10a14def9a3",
+      "bytes": 8841
+    },
+    {
+      "path": "docs/README.md",
+      "sha256": "085b25c0faaa93fd11a30412eac457359bf6eeaca4c7d6ddd472ef044126c7a5",
+      "bytes": 5152
+    },
+    {
+      "path": "docs/SPIDERWEB_LANGUAGE_BRIDGE.md",
+      "sha256": "c5dcdd30590af5723979811eb97956cedc108c7b28c740154d8714852127b16b",
+      "bytes": 10732
+    },
+    {
+      "path": "evidence/access_points/baseline_manifest_v1.json",
+      "sha256": "b17ec07fa2dff19e3e49089fd11154f8906364eccb7db2c1a8dd4b3d953ff98a",
+      "bytes": 5705
+    },
+    {
+      "path": "evidence/access_points/benchmark_comparison_v1.json",
+      "sha256": "2d5eba27086b6a9631c7606ff4bb3fdf26657ba211d45bfbbeaa83912ac584a4",
+      "bytes": 2880
+    },
+    {
+      "path": "evidence/access_points/benchmark_v1.json",
+      "sha256": "85924c958af9b7065e2faff4f0c7588c557d472ac4ef48cf7179292da4685afc",
+      "bytes": 5015
+    },
+    {
+      "path": "evidence/access_points/cross_repository_verification_v1.json",
+      "sha256": "faa4b02b9d237f550ec524647366246c53e0e7a75696a59dd4f565487eebe6c2",
+      "bytes": 4108
+    },
+    {
+      "path": "gebco/marine_evidence.py",
+      "sha256": "23d4c9eeffe8475bf550ecca0e62cf0447218e0e6d4aa17b44c92d882d8e2d2f",
+      "bytes": 13946
+    },
+    {
+      "path": "governance/change_log.json",
+      "sha256": "1ac8f4e3ba435d786247401f736bf1afa0a63f47f359e841ceb2a024309c14fd",
+      "bytes": 3980
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "51c2766540a0ede2b42aafd92af5188ed6235d143283ffefc4676b9799e22f46",
+      "bytes": 9223
+    },
+    {
+      "path": "registry/access_points/build_manifest.json",
+      "sha256": "48db71cee8400d4268ae5170cd6d8c6c511aadc914837b1cd5d06bfe654c7e29",
+      "bytes": 2456
+    },
+    {
+      "path": "registry/access_points/inland.json",
+      "sha256": "3662b74e68336674dbab1ef43a929ad349dc5b58f7c2e690189134a620d323f1",
+      "bytes": 14090
+    },
+    {
+      "path": "registry/access_points/offshore.json",
+      "sha256": "2655ac1c2644b71a76cda3e317b37378e2190adf1aab071f1daf51b24ccea33d",
+      "bytes": 52142
+    },
+    {
+      "path": "registry/access_points/relationships.json",
+      "sha256": "ae241ecf2ff315f4d195fce1b8c1a324f9603358ac6916aa7f61f395ace277f5",
+      "bytes": 359
+    },
+    {
+      "path": "reports/federation_spatial_impact_access_points_v1.json",
+      "sha256": "d9054310584a490f6d43d5c53cd70e48433497241eb3d01bb66691186e2c8fad",
+      "bytes": 2329
+    },
+    {
+      "path": "schemas/access_point_certification_report.schema.json",
+      "sha256": "0e2eecf9040d403d23ee3990c07ce67d7ff9bee0ebca70c38e0c3973e893a1b9",
+      "bytes": 8362
+    },
+    {
+      "path": "schemas/access_point_registry.schema.json",
+      "sha256": "1b5f209f59fc3d1867395c5f21f13638519ab78d9dca54d43528f581b9054751",
+      "bytes": 27416
+    },
+    {
+      "path": "schemas/access_point_relationship_ledger.schema.json",
+      "sha256": "970beab065f054d05ad9a4b03dfd53e39b57157a607bed55f35511189ec64867",
+      "bytes": 11411
+    },
+    {
+      "path": "scripts/benchmark_access_points.py",
+      "sha256": "2541d775d845993f58383099f5764faac047031fb2f63a21888eff1d6341f25f",
+      "bytes": 13049
+    },
+    {
+      "path": "scripts/build_access_point_registries.py",
+      "sha256": "4dc1ca451276bebc7a4825c1c6fcc541f3d3b7ebc1a8897472d1b8392f115435",
+      "bytes": 2174
+    },
+    {
+      "path": "scripts/verify_access_point_federation_context.py",
+      "sha256": "48b7e7f356cd785a2bc3d09609f205a144857a7bcf364cf9ab205ed88847f2c2",
+      "bytes": 5517
+    },
+    {
+      "path": "server/backend/access_points_api.py",
+      "sha256": "38cc25c2914bce9d224d9220f40c9742aac397fdfd7c8dd1ac5cf91c60cb38b9",
+      "bytes": 16853
+    },
+    {
+      "path": "server/backend/main.py",
+      "sha256": "c84380deff36ace47cbc7304c5ebb005710b3209282cb171e0dfe6a215e3f645",
+      "bytes": 28199
+    },
+    {
+      "path": "server/frontend/src/a11y.test.tsx",
+      "sha256": "26d23cd6827fa1aadaf31eeac2e5f54673c45fb7d48b153b457f4aa40c3d51ab",
+      "bytes": 5428
+    },
+    {
+      "path": "server/frontend/src/components/RelationshipGraph.tsx",
+      "sha256": "a687e16104896639fdb18460e228ed0d9a1c5035ff1d0ad847a28128cf3547b0",
+      "bytes": 5769
+    },
+    {
+      "path": "server/frontend/src/modules/InvestigationGraph.tsx",
+      "sha256": "498348cae0f4c6c062870da58b8835f318bbc940ad63e4ab329f1df18773244f",
+      "bytes": 3393
+    },
+    {
+      "path": "server/frontend/src/modules/SpatialIntelligence.tsx",
+      "sha256": "f5584246f3e42b7e459b3e3db3020eedae02c1dbeef1b00f0e135712ec773a7f",
+      "bytes": 36523
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/AccessPointDetail.tsx",
+      "sha256": "9f6e6c789de37717696ddcbab488fec9ad40a591a33c5e7520350beede7c68cc",
+      "bytes": 8308
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/AccessPointRelationships.tsx",
+      "sha256": "93b3df913c0dad33a724a5d6b72982bb94045ac44c8491f12905e34063857c4a",
+      "bytes": 2829
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/AccessPointsPanel.tsx",
+      "sha256": "a3ada0086381f73252f38502fd9bfc74d1ffd5e1fa672d27eb1bdd4830997dda",
+      "bytes": 6453
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/SourceCoveragePanel.tsx",
+      "sha256": "3dfac7cbff61344b61bc2fac6f7f2e8ef29675a8f313b91c9c77e433c3d98e46",
+      "bytes": 2182
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/accessPointLayers.ts",
+      "sha256": "cab3644a54faeaeb047d614ea0241e5808901ca4b615ccc908e0a4c3213477ab",
+      "bytes": 11491
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/accessPoints.test.tsx",
+      "sha256": "9d8aadeb1e822fd405e26095b22b497aae220670103d38b196044c0a5dd8c0be",
+      "bytes": 20006
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/accessPointsApi.ts",
+      "sha256": "818dc414e5a74fc43d795f3d700d1cf15418645c0d21add77408e67430d63f55",
+      "bytes": 18186
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/fixtures.ts",
+      "sha256": "ea6338a2c41055ad04f146bd9851c185156dc98be59aef6def8158828d0719c6",
+      "bytes": 7550
+    },
+    {
+      "path": "server/frontend/src/spatial/accessPoints/useAccessPointsController.ts",
+      "sha256": "5168d53f34fc011801943ae92371b063d8f880321b0f39b917a8e8d2ea884449",
+      "bytes": 9189
+    },
+    {
+      "path": "server/frontend/src/spatial/transect/ControlCrossSection.tsx",
+      "sha256": "6db3437885e0549d6a3582840b4111d37b7e76f40a8785990931db6330c6f4aa",
+      "bytes": 1810
+    },
+    {
+      "path": "server/frontend/src/spatial/transect/TransectProfile.tsx",
+      "sha256": "ea1c394a9bcc931207f7c0c7e3167025108ebde3d0fbc32477c8f511a9e96be3",
+      "bytes": 6104
+    },
+    {
+      "path": "server/frontend/src/spatial/transect/transectApi.ts",
+      "sha256": "8317b474efd9774849cdd6ceac50b3e7da0d407dabf43fe8d48226cc6a216201",
+      "bytes": 2225
+    },
+    {
+      "path": "server/frontend/src/styles/app.css",
+      "sha256": "cafac7f12a3716384f6b71de99680b3338dc7563e6abbc05c40a9e2b256a3785",
+      "bytes": 23214
+    },
+    {
+      "path": "source_adapters/ncei_coastal_dem/datum_policy.py",
+      "sha256": "0dd71670378658a3002781a686dbbe5cbe10fd4abab5cc8d1bb6b3348a7edbdd",
+      "bytes": 3308
+    },
+    {
+      "path": "spiderweb/access_points/__init__.py",
+      "sha256": "9ca965ea977b712170a49d51adef4106af76c044d837ad1e7f4e13309b7d1c10",
+      "bytes": 513
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "sha256": "b2ab251e7d569fe4c0510c55f15ff427984da05ca00430d2e4055b246e27c027",
+      "bytes": 34005
+    },
+    {
+      "path": "spiderweb/access_points/coastal.py",
+      "sha256": "248d2b0021da5ce723e60e39a1513b82921fdfc0d3e7cb705c0771eca00800c2",
+      "bytes": 5236
+    },
+    {
+      "path": "spiderweb/access_points/controls.py",
+      "sha256": "619b8bcc39d318a55f4f512643d9b0fb33f6c5a1c3de9f733425a009cbf4a796",
+      "bytes": 5174
+    },
+    {
+      "path": "spiderweb/access_points/detection.py",
+      "sha256": "c2590829cc3ce0bebb39ccd71e072255c00c6826b3e71df58ec083b226edf8fe",
+      "bytes": 24398
+    },
+    {
+      "path": "spiderweb/access_points/federation_context.py",
+      "sha256": "849601d34e98bcc16f55d300a6fb5491866855c00326502d65c5bd5cc1674473",
+      "bytes": 18506
+    },
+    {
+      "path": "spiderweb/access_points/identity.py",
+      "sha256": "cc15cb6dd97d2533c29c29e88c0d77569dd93adb038bf7939bde990292ead5ab",
+      "bytes": 7615
+    },
+    {
+      "path": "spiderweb/access_points/models.py",
+      "sha256": "a7eb234000230f3f1b22da013d3b7ad6bbbeaad4049eaca1b88fd5a6854747a8",
+      "bytes": 19131
+    },
+    {
+      "path": "spiderweb/access_points/monitoring.py",
+      "sha256": "b42c376b831d1571454b40be3a6662626e84f134b5cfdaca18bff5f2af4f576b",
+      "bytes": 12249
+    },
+    {
+      "path": "spiderweb/access_points/namespaces.py",
+      "sha256": "beb9c5e59a050909846ee84a84e3ec75e5002875c090f3c641737bedefdd98e7",
+      "bytes": 15409
+    },
+    {
+      "path": "spiderweb/access_points/raster.py",
+      "sha256": "1621564e526be0046beb2615270203912debd1a1c0c00f8c46ae8782b22dca1b",
+      "bytes": 33024
+    },
+    {
+      "path": "spiderweb/access_points/registry.py",
+      "sha256": "8b585b6cad9959365980336573d122477549b5248d393bf545c832447c7fce22",
+      "bytes": 24783
+    },
+    {
+      "path": "spiderweb/access_points/relationships.py",
+      "sha256": "b60579823d7d5474afc5966f8ecc9f4ddf1481114a09908b7591c486a911d9f3",
+      "bytes": 22177
+    },
+    {
+      "path": "spiderweb/access_points/rules.py",
+      "sha256": "74463314f3796ff51cfdcb02c7a2c1071c3dad81595494bf82bdb194316f50c7",
+      "bytes": 10762
+    },
+    {
+      "path": "spiderweb/access_points/seeding.py",
+      "sha256": "444322e519a26ddb6d80e5f9c9fda5f32ab04867761a9323c215a0cdb9ec49fc",
+      "bytes": 19715
+    },
+    {
+      "path": "spiderweb/access_points/service.py",
+      "sha256": "b4af4e8177aa7874b0b1deb6b293c3476a1f25ad220de19aeab0e091be77bc31",
+      "bytes": 25323
+    },
+    {
+      "path": "spiderweb/access_points/transects.py",
+      "sha256": "b0f56e6ffd51d0dca3779b9eb61eba9677a91f1bdae9e210623272c82e942199",
+      "bytes": 11728
+    },
+    {
+      "path": "spiderweb/access_points/vertical.py",
+      "sha256": "80e84a31d495844d6daec3d2e48664b693f548f92dc5beddc702e216f5b77dc3",
+      "bytes": 17291
+    },
+    {
+      "path": "spiderweb/access_points/vocabulary.py",
+      "sha256": "e0696c7d8fa3c0aa5d29b48491bf7a5b86a9d602486cce57a56f538b5391daeb",
+      "bytes": 10592
+    },
+    {
+      "path": "tests/access_points_support.py",
+      "sha256": "2d6ae22ebeab2c7aac293b8d1f3caf618264eeb231a09033487e319452d93c73",
+      "bytes": 5801
+    },
+    {
+      "path": "tests/test_access_points_api.py",
+      "sha256": "925521125b7ec272e0e4f29ef00c4ed4a515f06ccee928e0850041ef2994cba9",
+      "bytes": 9501
+    },
+    {
+      "path": "tests/test_access_points_core.py",
+      "sha256": "9509132753c8cbd509a65e1b5a3e0ea199ced9b05b437ee873fefc380d7e5b31",
+      "bytes": 45358
+    },
+    {
+      "path": "tests/test_access_points_integration.py",
+      "sha256": "e0b7640e3ce92c85b46f32bbf8003de586af93ca976ebc6fe01025e4a5ceddca",
+      "bytes": 48013
+    },
+    {
+      "path": "tests/test_access_points_schemas.py",
+      "sha256": "ace69b79d935d76b2a4502fc34e82feca6e8bbcc7567e2dff899099c2133bd04",
+      "bytes": 12079
+    },
+    {
+      "path": "tests/test_access_points_science.py",
+      "sha256": "8eb5f40387613bb1d5c55f3244689ab3edbb25a6037b366c43afd19fe39cdd54",
+      "bytes": 45805
+    }
+  ]
+}
