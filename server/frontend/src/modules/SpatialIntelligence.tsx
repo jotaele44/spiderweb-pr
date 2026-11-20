@@ -13,7 +13,15 @@ import {
   martinTileUrlTemplate,
 } from "../config";
 import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
-import { DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
+import { readSpatialMode, writeSpatialMode } from "../spatial/config/spatialModePreference";
+import { BASEMAP_ID, DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
+import { CompareOverlay } from "../spatial/imagery/CompareOverlay";
+import { CoordinateReadout } from "../spatial/imagery/CoordinateReadout";
+import { ImageryPanel } from "../spatial/imagery/ImageryPanel";
+import { useImageryController } from "../spatial/imagery/useImageryController";
+import { AccessPointsPanel } from "../spatial/accessPoints/AccessPointsPanel";
+import { useAccessPointsController } from "../spatial/accessPoints/useAccessPointsController";
+import { ControlCrossSection } from "../spatial/transect/ControlCrossSection";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 import { useSpatialTools, SpatialToolsPanel } from "./SpatialToolsPanel";
 
@@ -414,9 +422,7 @@ export function SpatialIntelligence({
   leftCollapsed?: boolean;
   rightCollapsed?: boolean;
 }) {
-  const [spatialMode, setSpatialMode] = useState<SpatialRuntimeMode>(
-    () => (localStorage.getItem("priis_spatial_mode") === "cesium" ? "cesium" : "maplibre"),
-  );
+  const [spatialMode, setSpatialMode] = useState<SpatialRuntimeMode>(readSpatialMode);
   const {
     hostRef,
     mapRef,
@@ -426,9 +432,24 @@ export function SpatialIntelligence({
     setTilesFailed,
     activeMode,
     fallbackReason,
+    graphicsUnavailableReason,
   } = useSpatialRuntime(DEFAULT_REGIONAL_SCENE_CONFIG, spatialMode);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const spatialToolActiveRef = useRef(false);
+  // NOAA emergency-response imagery, base-map toggle and the shareable URL
+  // fragment. MapLibre-only: in 3D mode mapRef is null and this stays idle.
+  const imagery = useImageryController({
+    mapRef,
+    ready: mapReady && activeMode === "maplibre",
+    basemapLayerId: BASEMAP_ID,
+    clickSuppressedRef: spatialToolActiveRef,
+  });
+  // Inland and Off-Shore Access Point registries. MapLibre-only, like imagery:
+  // in 3D mode mapRef is null, nothing is drawn, and the panel says so.
+  const accessPoints = useAccessPointsController({
+    mapRef,
+    ready: mapReady && activeMode === "maplibre",
+  });
   const densityGeoidsRef = useRef<Set<string>>(new Set());
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
   const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(
@@ -484,18 +505,15 @@ export function SpatialIntelligence({
     setStatus("gazetteer_pr_domestic_names"),
   );
 
-  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime now;
-  // this effect only handles the marker-specific part of unmount cleanup.
-  useEffect(() => {
-    return () => {
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-    };
-  }, []);
-
+  // Map lifecycle (init/destroy/basemap-error) lives in useSpatialRuntime; this
+  // effect owns the markers, including their teardown. `mapReady` is in the
+  // deps on purpose: a 2D/3D switch swaps mapRef.current behind the same ref
+  // object, which would not re-trigger this effect on its own — markers would
+  // be missing on the rebuilt MapLibre map until some unrelated state changed,
+  // and the ones bound to the destroyed map would leak.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapReady) return;
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
     data.sites.forEach((site) => {
@@ -536,7 +554,12 @@ export function SpatialIntelligence({
         .addTo(map);
       markersRef.current.push(marker);
     });
-  }, [data, layers, setSelection, mapRef]);
+
+    return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+    };
+  }, [data, layers, setSelection, mapRef, mapReady]);
 
   useEffect(() => {
     const runtime = runtimeRef.current;
@@ -646,20 +669,25 @@ export function SpatialIntelligence({
         densityGeoidsRef.current.add(geoid);
       }
       if (!map.getLayer(densityLayerId)) {
-        map.addLayer({
-          id: densityLayerId,
-          type: "fill",
-          source: municipiosSourceId,
-          ...(municipiosViaMartin ? { "source-layer": "municipios" } : {}),
-          paint: {
-            "fill-color": [
-              "interpolate", ["linear"], ["coalesce", ["feature-state", "density"], 0],
-              0, "rgba(94, 234, 212, 0.05)",
-              1, "rgba(94, 234, 212, 0.75)",
-            ],
-            "fill-opacity": 1,
+        const gazetteerCircleLayerId = "geo-gazetteer_pr_domestic_names-circle";
+        const beforeLayerId = map.getLayer(gazetteerCircleLayerId) ? gazetteerCircleLayerId : undefined;
+        map.addLayer(
+          {
+            id: densityLayerId,
+            type: "fill",
+            source: municipiosSourceId,
+            ...(municipiosViaMartin ? { "source-layer": "municipios" } : {}),
+            paint: {
+              "fill-color": [
+                "interpolate", ["linear"], ["coalesce", ["feature-state", "density"], 0],
+                0, "rgba(94, 234, 212, 0.05)",
+                1, "rgba(94, 234, 212, 0.75)",
+              ],
+              "fill-opacity": 1,
+            },
           },
-        });
+          beforeLayerId,
+        );
       }
     }
     const onSourceData = (event: maplibregl.MapSourceDataEvent) => {
@@ -723,7 +751,7 @@ export function SpatialIntelligence({
   // falls back to MapLibre, we still remember "cesium" was requested so the
   // next visit retries it rather than silently sticking on the fallback.
   useEffect(() => {
-    localStorage.setItem("priis_spatial_mode", spatialMode);
+    writeSpatialMode(spatialMode);
   }, [spatialMode]);
 
   // "L" toggles the layer panel. Ignore while typing in an input/textarea.
@@ -752,9 +780,17 @@ export function SpatialIntelligence({
       <div className="panel-head">
         <div>
           <h1>Spatial Intelligence</h1>
-          <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence</span>
+          <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence · NOAA aerial imagery</span>
         </div>
         <div className="row">
+          <button
+            className="act"
+            onClick={() => runtimeRef.current?.resetView({ animate: true })}
+            title="Recenter on Puerto Rico"
+            aria-label="Recenter map on Puerto Rico"
+          >
+            Recenter PR
+          </button>
           <button
             className="act"
             data-on={!layerPanelCollapsed}
@@ -791,6 +827,11 @@ export function SpatialIntelligence({
           <span>3D scene unavailable ({fallbackReason}) — showing 2D instead.</span>
         </div>
       )}
+      {graphicsUnavailableReason && (
+        <div className="map-error" role="alert">
+          <span>Spatial graphics unavailable — {graphicsUnavailableReason}. Data and non-map analysis remain available.</span>
+        </div>
+      )}
       <div
         className="map-shell"
         data-layer-collapsed={layerPanelCollapsed}
@@ -798,6 +839,19 @@ export function SpatialIntelligence({
       >
         <div className="map-col">
           <div ref={hostRef} className="map-host" />
+          {activeMode === "maplibre" && mapReady && imagery.dataset && imagery.compareDataset && (
+            <CompareOverlay
+              mapRef={mapRef}
+              basemapStyle={DEFAULT_REGIONAL_SCENE_CONFIG.basemapStyle}
+              basemapLayerId={BASEMAP_ID}
+              basemapVisible={imagery.basemapVisible}
+              dataset={imagery.compareDataset}
+              attribution={imagery.attribution}
+              opacity={imagery.opacity}
+              leftLabel={imagery.dataset.label}
+            />
+          )}
+          {activeMode === "maplibre" && <CoordinateReadout mapRef={mapRef} ready={mapReady} />}
           {activeMode === "maplibre" && failedLayers.length > 0 && (
             <div className="map-error" role="alert">
               <span>Layer data unavailable — backend offline: {failedLayers.map(layerLabel).join(", ")}</span>
@@ -862,6 +916,21 @@ export function SpatialIntelligence({
               <div className="density-legend-bar" />
               <div className="density-legend-labels"><span>Low</span><span>High</span></div>
             </div>
+          )}
+          {activeMode === "maplibre" && (
+            <>
+              <div className="hr" />
+              <ImageryPanel {...imagery.panelProps} />
+              <div className="hr" />
+              <AccessPointsPanel controller={accessPoints} />
+              <div className="hr" />
+              <ControlCrossSection />
+            </>
+          )}
+          {activeMode !== "maplibre" && (
+            <p className="ap-note" role="note">
+              Access-point layers are drawn in the 2D map only. Switch to 2D to see them.
+            </p>
           )}
           <div className="hr" />
           <h2>Top spatial anomalies</h2>

@@ -1,0 +1,43 @@
+{
+  "content_sha256": "81f1ee3a12d20d4f97c03c269b9bfa731950572f193542f0bcd7771c3c05dfc8",
+  "facts": {
+    "band_descriptions": [
+      "elevation",
+      "uncertainty"
+    ],
+    "compound_crs_name": "NAD83 / UTM zone 20N + MLLW depth",
+    "driver": "BAG",
+    "format_version": "1.6.0",
+    "grid_read": "finer grids, resampled",
+    "population_meaning": "each cell holds the mean elevation of the finer-grid nodes inside it and the largest of their uncertainties; a cell with no node is empty; nothing is interpolated",
+    "product_datetime": "2021-12-07T21:44:15",
+    "refinement_resolution_m": null,
+    "resampled_cell_m": 8.0,
+    "value_population": "MEAN",
+    "vertical_statements_in_metadata": [
+      "MLLW"
+    ]
+  },
+  "layers_read": "the finer grids, resampled to 8 m cells (elevation and uncertainty)",
+  "parent_sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+  "read_from": "the held product's own metadata; not recomputable from the subset",
+  "resampling_check": {
+    "all_agree_except_edge_nodes": true,
+    "cells_agreeing": 319157,
+    "cells_disagreeing_otherwise": 0,
+    "cells_disagreeing_with_a_node_on_a_cell_edge": 0,
+    "cells_holding_several_nodes": 177867,
+    "cells_with_nodes": 319157,
+    "cells_with_values_in_resampled_grid": 319157,
+    "method": "every node of every finer grid is put in the cell its position falls in; each cell's mean elevation and largest uncertainty are recomputed and must match the resampled grid to 1 mm, and a cell with no node must be empty there; a node exactly on a cell edge may fall on either side, and such cells are counted apart",
+    "nodes_outside_grid": 0,
+    "nodes_placed": 809925
+  },
+  "resolution_m": 8.0,
+  "run_id": "2026-11-19-offshore-8m",
+  "schema": "access_point_seabed_product_facts/1.0",
+  "spacing_file": "subsets/finer_grid_spacing.tif",
+  "spacing_sha256": "bf8ca4d7f290ef8a3f9bdce8f938c87252095875c3b55857d9b7d8df87e8fefc",
+  "subset_file": "subsets/grid_8m.tif",
+  "subset_sha256": "9ceb13650c01756188d4b557b7de49af3cf38cd2758a03afacc1be719532289e"
+}

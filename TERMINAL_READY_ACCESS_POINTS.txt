@@ -1,0 +1,168 @@
+TERMINAL_READY — Inland and Off-Shore Access Point Registries
+REPOSITORY: spiderweb-pr
+STATE: DEVELOPMENT_COMPLETE / SOFTWARE_TESTED / NOT_CERTIFIED / PRODUCTION_NOT_AUTHORIZED
+BASE COMMIT: cb5aa8eb726ba882b410bcfe0a402799af86ed5a (audited); main merged in at b2c532fb2c4674a8d838423dc4d832dd5ca91369
+SOURCE-DISCOVERY WORK: based on main at 9c37b42926e6d401e80598221162a4664f2202d0
+NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
+IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
+RECORDS EXPORTED TO THE HUB: CANDIDATE RECORDS ONLY, ONCE MERGED (4 INLAND, 1 OFF-SHORE)
+INDEPENDENT REVIEW: NOT PERFORMED
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v11.json
+
+PURPOSE
+
+Two independent registries of candidate geographic features on one shared
+evidence foundation. "ILAP" and "OSAP" already name other things in this
+repository; the registries do not use those acronyms as identifiers. See
+docs/ACCESS_POINT_TERMINOLOGY_DECISION.md.
+
+WHAT A PASSING RUN MEANS
+
+The software behaves as specified on synthetic controls and on the committed
+registry documents. It does not mean any record is a real access point, that
+any method has been validated on real terrain or seabed, or that anything is
+ready for production.
+
+SETUP (from the repository root)
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install uv
+uv pip install -c constraints.txt -e ".[airspace,earthgpt,server,dev]"
+
+VERIFY
+
+1. Registry documents are current and deterministic:
+
+   python scripts/build_access_point_registries.py --check
+   expected: registry documents are current
+
+2. Access-point test suites (350 tests):
+
+   python -m pytest -q tests/test_access_points_core.py tests/test_access_points_science.py tests/test_access_points_integration.py tests/test_access_points_api.py tests/test_access_points_schemas.py
+   expected: 350 passed
+
+3. Full repository suite with the coverage floor:
+
+   python -m pytest tests/ -q --ignore=tests/test_io.py --ignore=tests/test_terrain.py --cov --cov-fail-under=62
+   expected at the certified commit: 2484 passed, 0 failed, total coverage 75.57%
+
+4. Frontend (from server/frontend, after npm ci):
+
+   npm run lint && npm run typecheck && npm run test && npm run build
+   expected: 183 tests passed; lint, typecheck and build clean
+
+5. Documentation and data policy:
+
+   python3 tools/check_docs_sync.py --base origin/main
+   python scripts/check_data_policy.py
+
+RUN
+
+   uvicorn server.backend.main:app --port 8000
+   curl http://127.0.0.1:8000/v1/access-points
+   curl "http://127.0.0.1:8000/v1/access-points/offshore/features"
+   curl http://127.0.0.1:8000/v1/access-points/offshore/features/OFAP-PR-000004/evidence
+
+   The five provisional off-shore records return "geometry": null. That is
+   correct: no registered source gives them a position.
+
+EXPECTED REGISTRY CONTENTS
+
+   inland:    4 features, all CANDIDATE
+   offshore:  6 features: 5 PROVISIONAL_DISCOVERY (no coordinates), 1 CANDIDATE
+   relationships: 0
+   verified features: 0
+   sources:   inland 10, offshore 185. Held and hashed inland sources: two elevation
+              tiles (grids) and three published reference maps. Held and hashed
+              off-shore survey product: one gridded multibeam survey file. None is
+              a direct measurement; every other survey source is a reference
+
+BENCHMARK (optional; software performance on synthetic surfaces)
+
+   python scripts/benchmark_access_points.py --output /tmp/access_point_benchmark.json
+
+SOURCE DISCOVERY (off by default)
+
+   Plan (no network, no file written):
+   python scripts/discover_access_point_sources.py
+
+   Live run (metadata only; needs an explicit grant, which bounds each target):
+   SPIDERWEB_ACCESS_POINT_ACQUISITION="metadata:15:<who authorised>" \
+     python scripts/discover_access_point_sources.py --execute --run-id <YYYY-MM-DD>
+
+   Re-check a kept run offline, then rebuild the registries from it:
+   python scripts/discover_access_point_sources.py --verify <YYYY-MM-DD>
+   python scripts/build_access_point_registries.py
+
+   Search boxes: configs/access_point_discovery_corridors.yaml. A box is where
+   to look, never where a feature is; the seeds stay without coordinates.
+   Discovery downloads no data product. Fetching one is a separate step, below.
+
+REAL-SURVEY PROCESSING
+
+   Re-check the committed run offline (needs the 'dem' extra for GeoTIFF reading):
+   python scripts/process_access_point_survey.py --run-id 2026-11-17 --check
+
+   Fetching a product needs its own grant, which bounds files and bytes:
+   SPIDERWEB_ACCESS_POINT_ACQUISITION="product:<files>:<bytes>:<who authorised>"
+   Products are fetched by exact address only (spiderweb/access_points/products.py)
+   and are kept outside the repository; only their hashes and a small window are
+   committed. Runs are declared in configs/access_point_survey_runs.yaml.
+
+SEABED-SURVEY PROCESSING
+
+   Re-check the committed off-shore run offline (needs the 'dem' extra):
+   python scripts/process_access_point_seabed.py --run-id 2026-11-18-offshore --check
+   python scripts/process_access_point_seabed.py --run-id 2026-11-19-offshore-8m --check
+   python scripts/process_access_point_seabed.py --run-id 2026-11-19-offshore-8m-small --check
+   python scripts/search_access_point_replication.py --search-id 2026-11-20-offshore-replication --check
+
+   Runs are declared under seabed_runs in configs/access_point_survey_runs.yaml.
+   A seabed run names no target record and states no position; it names a search
+   area, which is where to look and never where a feature is. The held product
+   (6.9 MB) is outside the repository; its hash, its download manifest and a
+   58 KB copy of its base grid are committed, with a 2.4 MB copy of its finer
+   grids resampled to 8 m. Only --set-current moves the seabed pointer the
+   registry build reads; it names the base-grid run.
+
+COMPARISON WITH A PUBLISHED SINKHOLE MAP
+
+   Re-check the committed comparison offline:
+   python scripts/validate_access_point_detector.py --run-id 2026-11-17-karst-map --check
+   python scripts/validate_access_point_detector.py --run-id 2026-11-18-karst-map-nested --check
+   python scripts/validate_access_point_detector.py --run-id 2026-11-18-karst-map-pit-rule --check
+
+   Reference maps are declared in configs/access_point_reference_sets.yaml, each with
+   the hash of its bytes and the coordinate system bound to it. The result is a
+   comparison with another interpretation (REFERENCE_COMPARED), not field accuracy.
+
+OPEN BEFORE ANY RELEASE
+
+   - Independent review has not been performed. The producer cannot certify itself.
+   - No method has been scored against field truth. The detector has been compared
+     with one published map on one tile. Reporting nested basins (the default
+     since 2026-11-18) roughly doubles what it finds there and triples the object
+     count. A second rule for a single pit under a bowl was measured and did not help.
+   - One real survey window has been processed (two elevation tiles, 2026-11-17). It
+     shows closed basins, which are shapes; it verifies no record.
+   - One seabed survey has been processed (one multibeam grid file, 2026-11-18),
+     from its base grid and again from its finer grids at 8 m (2026-11-19). Its
+     three shallow closed depressions persist at 8 m, which is a consistency
+     check on the same soundings, not replication. Over 32% of its covered cells
+     at 8 m a 2 m depression cannot be shown. One small steep object found at
+     8 m is flagged and unexplained: a declared seam test says it is not a
+     seam between finer grids. It verifies no record. An independent second
+     survey was searched for: none exists in gridded form (raw pings only).
+   - The five seed screenshots are not registered.
+   - Live source discovery ran once (2026-11-16, 180 sources listed). It lists
+     surveys; it downloaded none, and no record cites one yet.
+   - aguayluz-pr has no committed export package to read.
+   - Export to the hub is authorised (2026-11-20) and implemented: candidate records
+     only, each a candidate identity. It reaches the hub only after this is merged.
+   - Three naming questions for the owners are open (see the terminology decision).
+
+ROLLBACK
+
+   Revert the branch commits. The change is additive; no database, external
+   service or sibling repository was modified.

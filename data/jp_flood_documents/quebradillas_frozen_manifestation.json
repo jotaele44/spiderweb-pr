@@ -1,0 +1,25 @@
+{
+  "manifest_version": "1.0",
+  "municipality": "Quebradillas",
+  "operational_role": "authoritative_fallback_not_equivalent",
+  "document_class": "hazard_mitigation_plan",
+  "source_series_state": "LISTED_BUT_MISSING",
+  "remote_source_url": "https://jp.pr.gov/wp-content/uploads/2022/01/Queb-Approved-HMP.pdf",
+  "remote_source_access_state": "REMOTE_FORBIDDEN_OR_UNRELIABLE",
+  "frozen_manifestation": {
+    "filename": "Quebradillas.pdf",
+    "byte_size": 51199142,
+    "sha256": "a1a2ccbfe0097da6f531e78f834d01be5a1555700b809d8f68b162db83d23e7a",
+    "identity_scope": "byte_manifestation"
+  },
+  "operational_policy": {
+    "mode": "frozen_local_manifestation",
+    "remote_fetch_required": false,
+    "verify_before_use": ["byte_size", "sha256"],
+    "fail_closed_on_mismatch": true
+  },
+  "notes": [
+    "The frozen HMP is an operational fallback, not the missing Sectores en Zona Inundables canonical product.",
+    "The dead/missing flood-zone-map URL and the HMP source URL remain separate provenance observations."
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "claim_class": "COMPUTED",
+  "environment": {
+    "numpy": "2.4.6",
+    "platform": "Linux-6.18.44-fc-v595-x86_64-with-glibc2.39",
+    "processor_count": 4,
+    "python": "3.12.3",
+    "scikit_image": "0.26.0",
+    "scipy": "1.17.1"
+  },
+  "generated_utc": "2026-11-18T14:35:57Z",
+  "processing": [
+    {
+      "cells": 262144,
+      "delineate_depressions": {
+        "best_s": 0.2531,
+        "cells_per_second": 1035733,
+        "median_s": 0.2552,
+        "peak_traced_mb": 35.11,
+        "regions_found": 112,
+        "repeats": 3
+      },
+      "delineate_depressions_nested": {
+        "best_s": 0.3155,
+        "median_s": 0.3406,
+        "nested_regions": 17,
+        "peak_traced_mb": 35.11,
+        "regions_found": 129,
+        "repeats": 3
+      },
+      "detect_inland": {
+        "best_s": 0.2625,
+        "detections": 112,
+        "median_s": 0.2652,
+        "peak_traced_mb": 35.11,
+        "repeats": 3
+      },
+      "detect_seams": {
+        "best_s": 0.0172,
+        "median_s": 0.0188,
+        "peak_traced_mb": 9.25,
+        "repeats": 3
+      },
+      "fill_depressions": {
+        "best_s": 0.0619,
+        "median_s": 0.078,
+        "peak_traced_mb": 35.11,
+        "repeats": 3
+      },
+      "input_mb": 2.1,
+      "shape": [
+        512,
+        512
+      ],
+      "slope_degrees": {
+        "best_s": 0.0102,
+        "median_s": 0.0103,
+        "peak_traced_mb": 8.39,
+        "repeats": 3
+      }
+    },
+    {
+      "cells": 1048576,
+      "delineate_depressions": {
+        "best_s": 0.579,
+        "cells_per_second": 1811012,
+        "median_s": 0.5872,
+        "peak_traced_mb": 139.36,
+        "regions_found": 121,
+        "repeats": 3
+      },
+      "delineate_depressions_nested": {
+        "best_s": 0.6259,
+        "median_s": 0.641,
+        "nested_regions": 0,
+        "peak_traced_mb": 139.36,
+        "regions_found": 121,
+        "repeats": 3
+      },
+      "detect_inland": {
+        "best_s": 0.6816,
+        "detections": 121,
+        "median_s": 0.6963,
+        "peak_traced_mb": 139.36,
+        "repeats": 3
+      },
+      "detect_seams": {
+        "best_s": 0.078,
+        "median_s": 0.079,
+        "peak_traced_mb": 16.8,
+        "repeats": 3
+      },
+      "fill_depressions": {
+        "best_s": 0.257,
+        "median_s": 0.2603,
+        "peak_traced_mb": 139.36,
+        "repeats": 3
+      },
+      "input_mb": 8.39,
+      "shape": [
+        1024,
+        1024
+      ],
+      "slope_degrees": {
+        "best_s": 0.0482,
+        "median_s": 0.0522,
+        "peak_traced_mb": 33.56,
+        "repeats": 3
+      }
+    },
+    {
+      "cells": 4194304,
+      "delineate_depressions": {
+        "best_s": 2.1684,
+        "cells_per_second": 1934285,
+        "median_s": 2.2102,
+        "peak_traced_mb": 555.47,
+        "regions_found": 121,
+        "repeats": 3
+      },
+      "delineate_depressions_nested": {
+        "best_s": 2.0964,
+        "median_s": 2.1165,
+        "nested_regions": 0,
+        "peak_traced_mb": 555.47,
+        "regions_found": 121,
+        "repeats": 3
+      },
+      "detect_inland": {
+        "best_s": 2.3275,
+        "detections": 121,
+        "median_s": 2.3987,
+        "peak_traced_mb": 555.47,
+        "repeats": 3
+      },
+      "detect_seams": {
+        "best_s": 0.2525,
+        "median_s": 0.2642,
+        "peak_traced_mb": 67.15,
+        "repeats": 3
+      },
+      "fill_depressions": {
+        "best_s": 1.1908,
+        "median_s": 1.1989,
+        "peak_traced_mb": 555.47,
+        "repeats": 3
+      },
+      "input_mb": 33.55,
+      "shape": [
+        2048,
+        2048
+      ],
+      "slope_degrees": {
+        "best_s": 0.2007,
+        "median_s": 0.2039,
+        "peak_traced_mb": 134.22,
+        "repeats": 3
+      }
+    }
+  ],
+  "registry_and_service": {
+    "committed_registry_build": {
+      "best_s": 0.1153,
+      "median_s": 0.1203,
+      "peak_traced_mb": 2.2,
+      "repeats": 3
+    },
+    "document_size_mb": 9.15,
+    "ingest_with_rule_checks": {
+      "best_s": 0.4932,
+      "features_per_second": 10138,
+      "median_s": 0.4932,
+      "peak_traced_mb": 6.72,
+      "repeats": 1
+    },
+    "load_and_verify_document": {
+      "best_s": 0.4122,
+      "median_s": 0.4197,
+      "peak_traced_mb": 30.12,
+      "repeats": 2
+    },
+    "note": "in-process service calls; HTTP serialisation and network are not included. Queries scan all features: no spatial index is used at this size.",
+    "query_latency_in_process": {
+      "bbox_100": {
+        "median_ms": 17.36,
+        "p95_ms": 19.01,
+        "samples": 30
+      },
+      "evidence": {
+        "median_ms": 1.72,
+        "p95_ms": 2.17,
+        "samples": 30
+      },
+      "page_100": {
+        "median_ms": 8.33,
+        "p95_ms": 9.06,
+        "samples": 30
+      }
+    },
+    "save_document": {
+      "best_s": 0.5736,
+      "median_s": 0.5862,
+      "peak_traced_mb": 55.8,
+      "repeats": 2
+    },
+    "synthetic_registry_features": 5000
+  },
+  "schema": "access_point_benchmark/1.0",
+  "statement": "Measured on synthetic control surfaces in the run that wrote this file. Software performance only; not detection accuracy. There is no earlier implementation of closed-basin delineation in this repository to compare against.",
+  "tiling": {
+    "operation": "position_index(radius=8 cells)",
+    "peak_memory_ratio_tiled_over_untiled": 0.23,
+    "results_identical": true,
+    "shape": [
+      2048,
+      2048
+    ],
+    "tiled_512_halo_9": {
+      "best_s": 1.2027,
+      "median_s": 1.2577,
+      "peak_traced_mb": 47.33,
+      "repeats": 2
+    },
+    "untiled": {
+      "best_s": 1.2937,
+      "median_s": 1.3236,
+      "peak_traced_mb": 205.53,
+      "repeats": 2
+    }
+  }
+}

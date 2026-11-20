@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, Sequence, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
+from .envelope import CONTRACT_VERSION
 from .namespace import PREFIX
 
 REQUIRED_KEYS = (
@@ -166,18 +167,47 @@ def _entity_ids(streams: StreamsInput) -> set:
     return ids
 
 
+def validate_manifest_contract_version(
+    manifest: Mapping[str, Any], *, expected_version: str = CONTRACT_VERSION
+) -> List[str]:
+    """Assert the package manifest's envelope contract_version, if present.
+
+    A manifest from before federation/export_writer.py started stamping
+    contract_version (or a non-conforming producer) has no such key — treated
+    as a legacy/unversioned package and accepted (ratchet, not retroactive;
+    historical packages must not start failing). A manifest that DOES declare
+    a version must match this producer's CONTRACT_VERSION exactly, or the
+    package is rejected: a mismatch means the envelope field-shape contract
+    may have changed underneath the consumer. This is the foundation a real
+    negotiation handshake (accepting a version range, not just pinning) would
+    build on; today it only pins-and-rejects.
+    """
+    declared = manifest.get("contract_version")
+    if declared is None:
+        return []
+    if declared != expected_version:
+        return [
+            f"contract_version mismatch: manifest declares {declared!r}, "
+            f"this producer expects {expected_version!r}"
+        ]
+    return []
+
+
 def validate_package(
     streams: StreamsInput,
     *,
     expected_prefix: str = PREFIX,
     require_financial: bool = True,
     reject_synthetic: bool = False,
+    manifest: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Validate a whole export package. Fail-closed.
 
     ``streams`` may be a mapping of stream-name -> records or a flat sequence.
     An empty package is INVALID (guards against the silent no-op trap).
     Relationship records must reference entity IDs present in the package.
+    ``manifest``, if given, has its contract_version checked (see
+    validate_manifest_contract_version) and any error folded into the result.
     """
     rows = list(_flatten(streams))
     if not rows:
@@ -185,6 +215,8 @@ def validate_package(
 
     entity_ids = _entity_ids(streams)
     errors: List[str] = []
+    if manifest is not None:
+        errors.extend(validate_manifest_contract_version(manifest))
 
     for name, i, rec in rows:
         loc = f"{name}[{i}]"

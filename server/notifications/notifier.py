@@ -38,7 +38,7 @@ def _default_webhook_transport(url: str, payload: bytes) -> None:
 
 def _default_email_transport(msg: EmailMessage) -> None:
     host = os.environ["ALERT_SMTP_HOST"]
-    port = int(os.environ.get("ALERT_SMTP_PORT", "25"))
+    port = int(os.environ.get("ALERT_SMTP_PORT") or "25")
     with smtplib.SMTP(host, port, timeout=10) as smtp:
         user = os.environ.get("ALERT_SMTP_USER")
         password = os.environ.get("ALERT_SMTP_PASSWORD")

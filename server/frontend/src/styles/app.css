@@ -201,6 +201,60 @@ button.source-row { width: 100%; border: 0; background: transparent; color: inhe
   background: var(--surface-2); border: 1px solid var(--line); color: var(--muted);
   padding: 4px 10px; font-size: 11px; z-index: 5;
 }
+/* Cursor position + zoom, under the zoom buttons. The bottom edge belongs to
+   MapLibre's attribution and scale bar, which grow with the active sources. */
+.map-readout {
+  position: absolute; left: 10px; top: 84px; z-index: 4;
+  display: flex; gap: 10px; pointer-events: none;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink);
+  padding: 3px 8px; font: 11px var(--font-mono);
+}
+/* Swipe comparison: a mirror map clipped to the right of the divider. Only the
+   divider takes pointer events, so the main map underneath stays interactive. */
+/* z-index 1: above the map canvas, below MapLibre's own controls (z-index 2),
+   so zoom buttons, scale bar and attribution stay visible and clickable. */
+.map-compare { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.map-compare-host { position: absolute; inset: 0; }
+.map-compare-divider {
+  position: absolute; top: 0; bottom: 0; width: 24px; margin-left: -12px;
+  display: grid; place-items: center; cursor: ew-resize; pointer-events: auto; touch-action: none;
+}
+.map-compare-divider::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 11px; width: 2px;
+  background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .55);
+}
+.map-compare-divider:focus-visible { outline: 2px solid var(--info, #4dc4d6); outline-offset: -2px; }
+.map-compare-grip {
+  position: relative; width: 14px; height: 40px; border-radius: 7px;
+  background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .55);
+}
+.map-compare-label {
+  position: absolute; top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: #fff; color: #1a1a1a; border: 1px solid rgba(0, 0, 0, .55);
+  padding: 3px 8px; font: 10px var(--font-mono); text-transform: uppercase;
+}
+.map-compare-label[data-side="left"] { left: 52px; }
+.map-compare-label[data-side="right"] { right: 10px; }
+.imagery-panel { display: grid; gap: 8px; }
+.imagery-panel > h2 { margin: 0; font-size: 12px; }
+.imagery-panel .subtle { margin: 0; font-size: 12px; }
+.imagery-field { display: grid; gap: 4px; font-size: 11px; color: var(--ink-2); }
+.imagery-field select, .imagery-field input[type="range"] { width: 100%; }
+.imagery-field select {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  padding: 5px 6px; font: inherit; font-size: 12px;
+}
+.imagery-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 10px var(--font-mono); text-transform: uppercase; color: var(--ink-2); }
+.imagery-meta > [data-status="error"] { color: var(--alert); }
+.imagery-meta > [data-status="loading"] { font-style: italic; }
+.imagery-hint, .imagery-inline-error, .imagery-identify {
+  display: grid; gap: 4px; padding: 6px 8px; font-size: 11px; line-height: 1.4;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2);
+}
+.imagery-inline-error { border-color: var(--alert); color: var(--alert); }
+.imagery-identify code { font: 11px var(--font-mono); color: var(--ink); overflow-wrap: anywhere; }
+.imagery-identify-head { display: flex; justify-content: space-between; gap: 8px; color: var(--ink); }
+.imagery-identify a, .imagery-source { color: var(--ink); text-decoration: underline; font-size: 11px; }
 .linklike { border: 0; background: transparent; color: inherit; text-decoration: underline; padding: 0; font: inherit; }
 .navbtn[data-status="error"] > span:last-child { color: var(--alert); }
 .navbtn[data-status="loading"] > span:last-child { color: var(--muted); font-style: italic; }
@@ -332,3 +386,47 @@ button.source-row { width: 100%; border: 0; background: transparent; color: inhe
     border-left: 0;
   }
 }
+
+/* ── Access-point registries ──────────────────────────────────────────────── */
+.ap-panel h2, .ap-cross-section h2 { margin: 0 0 4px; }
+.ap-registry { display: grid; gap: 4px; margin: 8px 0; }
+.ap-registry .navbtn[aria-pressed="true"], .ap-filter .navbtn[aria-pressed="true"] { background: var(--ink); color: var(--surface-2); }
+.ap-filter { display: flex; gap: 4px; margin: 6px 0; }
+.ap-filter .navbtn { width: auto; }
+.ap-list { margin: 4px 0; padding-left: 16px; display: grid; gap: 6px; font-size: 12px; }
+.ap-legend { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 4px; font-size: 12px; }
+.ap-swatch { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 50%; border: 2px solid currentColor; vertical-align: middle; }
+.ap-swatch[data-status-group="verified"] { background: currentColor; }
+.ap-swatch[data-status-group="provisional"] { width: 7px; height: 7px; border-width: 1px; opacity: 0.65; }
+.ap-swatch[data-status-group="halo"] { border-width: 1px; background: color-mix(in srgb, currentColor 14%, transparent); }
+.ap-detail { display: grid; gap: 6px; margin-top: 8px; }
+.ap-detail h3, .ap-coverage h3, .transect h3 { margin: 6px 0 2px; font-size: 13px; }
+.ap-detail-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.ap-facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; font-size: 12px; }
+.ap-facts dt { color: var(--muted); }
+.ap-facts dd { margin: 0; }
+.ap-ladder { margin: 4px 0; padding-left: 18px; display: grid; gap: 3px; font-size: 12px; }
+.ap-ladder li[data-rung-state="not-reached"] { color: var(--muted); }
+.ap-ladder li[data-rung-state="reached"] { font-weight: 600; }
+.ap-dimensions { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px; }
+.ap-dimensions li { display: flex; justify-content: space-between; gap: 8px; }
+.ap-lowered { color: var(--alert); }
+.ap-dates { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
+.ap-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ap-table th, .ap-table td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.relationship-graph { margin: 8px 0; color: var(--ink); }
+.relationship-graph svg { width: 100%; height: auto; }
+.relationship-graph text { fill: var(--ink); font-size: 11px; }
+.relationship-legend { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 3px; font-size: 12px; }
+.relationship-legend svg { width: 46px; vertical-align: middle; margin-right: 6px; }
+.transect-plot { margin: 6px 0; color: var(--ink); }
+.transect-plot figcaption { font-size: 12px; color: var(--muted); }
+.transect-plot svg { width: 100%; height: auto; }
+.transect-gap { fill: color-mix(in srgb, var(--muted) 22%, transparent); stroke: var(--muted); stroke-dasharray: 3 3; }
+.transect-gap-label, .transect-axis { fill: var(--muted); font-size: 10px; }
+.transect-band { fill: color-mix(in srgb, currentColor 16%, transparent); stroke: none; }
+/* In-flow notes for the side panel. The .map-note / .map-error classes are
+   absolutely positioned map overlays and must not be used here. */
+.ap-note { margin: 4px 0; padding: 4px 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); font-size: 12px; }
+.ap-alert { margin: 4px 0; padding: 6px 8px; border: 1px solid var(--alert); background: var(--surface); color: var(--alert); font-size: 12px; }
+.transect-banner { font-weight: 600; }

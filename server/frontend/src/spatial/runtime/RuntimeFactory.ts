@@ -3,17 +3,13 @@ import type { SpatialRuntime } from "./SpatialRuntime";
 
 export type SpatialRuntimeMode = "maplibre" | "cesium";
 
-export function createSpatialRuntime(mode: "maplibre"): MapLibreRuntime;
-export function createSpatialRuntime(mode: SpatialRuntimeMode): SpatialRuntime {
-  switch (mode) {
-    case "maplibre":
-      return new MapLibreRuntime();
-    case "cesium":
-      // Cesium is loaded eagerly here only for the (unused in practice) sync
-      // overload path — real callers should use createCesiumRuntime() below,
-      // which is what actually keeps Cesium out of the initial bundle.
-      throw new Error("use createCesiumRuntime() for the lazy-loaded Cesium path");
-  }
+// The only 2D runtime; the only real call site (useSpatialRuntime) always
+// passes "maplibre" literally. Cesium boots separately via the lazy
+// createCesiumRuntime() below, which is what actually keeps Cesium out of
+// the initial bundle — this function has no mode argument or Cesium branch
+// to avoid a misleading runtime throw for a value it can never receive.
+export function createSpatialRuntime(): MapLibreRuntime {
+  return new MapLibreRuntime();
 }
 
 /**
