@@ -38,9 +38,15 @@ multibeam surveys, 105 sounding surveys, 25 gridded surveys, 6 topobathymetric
 and 1 bathymetric LiDAR project) and 3 terrestrial LiDAR projects in the Inland
 registry. All 47 surveys named by the earlier Guayama–Punta Tuna receipt were
 listed again and are held once. They are citations, not measurements: no survey
-product is held, and no record cites one. The five provisional records cannot
-advance until the screenshots they came from are registered with their exact
-bytes and hash.
+product is held for them, and no record cites one.
+
+The Inland registry also holds the first two sources whose exact bytes were
+held: two 1 m LiDAR elevation tiles, each registered with the SHA-256 of the
+full file (see "Real-survey processing"). They are grids, so they are
+registered but are not direct measurements, and no record cites them either.
+
+The five provisional records cannot advance until the screenshots they came
+from are registered with their exact bytes and hash.
 
 ## Six identities, kept apart
 
@@ -352,6 +358,77 @@ refers to (the seeds have no position); what any survey measured anywhere; or
 anything about an opening, a passage or a connection. No data product was
 downloaded.
 
+## Real-survey processing
+
+One real survey product has been taken through the whole path: fetched under an
+explicit grant, hashed, bound to the vertical reference it states, cut to a
+window, searched for closed basins, and compared with a second, independent
+survey of the same ground.
+
+**Fetching a product** is separate from discovery and narrower
+(`spiderweb/access_points/products.py`). A product is fetched only by its exact
+address, under its own grant
+(`SPIDERWEB_ACCESS_POINT_ACQUISITION=product:<files>:<bytes>:<who granted it>`)
+that bounds both the number of files and the total bytes. The size is checked
+before any byte is read: a response with no declared length, a length over the
+remaining ceiling, or a length that disagrees with the catalogue is refused. The
+file is hashed as it is written. A metadata grant cannot be spent on a product,
+nor a product grant on a catalogue query. There is no bulk path.
+
+**A run is declared** in `configs/access_point_survey_runs.yaml` and has two
+halves. `--extract` needs the held products and writes the small pieces that are
+committed: lossless window subsets, the download manifests, and a summary of a
+wider window. The default and `--check` of
+`scripts/process_access_point_survey.py` use only what is committed and must
+reproduce the sealed report exactly. The window centre is the point the registry
+already holds for the target record; a run that states a position is refused.
+
+### The run of 2026-11-17
+
+Two tiles of the USGS 1 m elevation model that cover the registered point of
+`INAP-PR-000003`, fetched under an explicit owner grant of two named files and
+800 MB (716 MB used). They are not in the repository; their hashes are.
+
+| | 2018 survey | 2024 survey | Class |
+|---|---|---|---|
+| Product | `USGS_1m_x72y204_PR_PRVI_F_2018.tif`, 332,533,267 bytes | `USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.tif`, 383,650,591 bytes | FACT |
+| Surveyed | 2018-04-17 to 2019-04-19 | 2023-12-27 to 2025-03-20 | FACT |
+| Vertical datum as stated | NAVD88, in one programme-wide sentence of the abstract | the same sentence | FACT |
+| Can that datum be true there? | No: NAVD88 is not realised in Puerto Rico | No | COMPUTED |
+| Published vertical uncertainty | 7.2 cm RMSE (project figure, from the elevation inventory) | none published | FACT |
+| Closed basins ≥ 1 m deep and ≥ 100 m² in the 1 km window | 17, deepest 3.0 m | 19, deepest 3.1 m | COMPUTED |
+| Strongest tier the shape evidence reaches | SUPPORTING | CANDIDATE (uncertainty unknown) | COMPUTED |
+| Rung a scratch registry would give them | FEATURE | ANOMALY | COMPUTED |
+
+What the two surveys say together [COMPUTED]:
+
+- 13 of the 17 basins in the 2018 survey are also in the 2024 survey (bounding
+  boxes overlapping by at least half); their deepest points lie a median 2.2 m
+  apart. Four appear only in 2018 and six only in 2024, all near the 1 m depth
+  threshold.
+- Over the million cells of the window the two surfaces differ by a median of
+  1 cm (median absolute difference 7.7 cm; 89% of cells within 0.3 m). So the
+  two products share a vertical reference in practice, whatever it is called.
+- The registered point of `INAP-PR-000003` falls inside the bounding box of a
+  shallow basin in both surveys (1.1 m and 1.3 m deep, about 4,200 m²), 44 to
+  75 m from its deepest point.
+- In a wider 3 km window, read from the held tiles, the nearest basin deeper
+  than 10 m is about 1.3 km from the point, and the deepest closed basin is
+  12 m (2018, which covers 77% of that window) or 16.5 m (2024).
+
+What this does and does not show:
+
+| Statement | Class |
+|---|---|
+| There is a shallow closed depression at the registered point, seen by two independent surveys | COMPUTED |
+| No closed basin deeper than about 3 m lies within 500 m of the registered point | COMPUTED |
+| The legacy record calls this place a sinkhole of a cave system. Nothing in either surface shows an opening, a shaft or a cave; a 1 m elevation grid cannot | FACT about the method |
+| Whether the legacy coordinate is where the record's author meant is not established; its accuracy was never stated | UNKNOWN |
+| Thresholds (1 m, 100 m², half-overlap) are working values, not calibrated | FACT |
+
+No feature, observation or status changed. A detection is a shape. It was not
+attached to the record: distance is discovery, not identity.
+
 ## What this change deliberately does not do
 
 | Not done | Why |
@@ -359,7 +436,7 @@ downloaded.
 | Export access-point records to the federation hub | External federation activation was not authorised; the export script, its schemas and its golden files are untouched |
 | Register a vector-tile source | The tile publication contract pins the source set; records are served as GeoJSON |
 | Add a write or review API | The backend has no authentication |
-| Download any survey product | Only metadata discovery is implemented, and it is off unless explicitly granted |
+| Download survey products in bulk | A product is fetched only by its exact address, under a separate grant with a byte ceiling; two tiles have been fetched that way |
 | Correlate records across producers | That is the hub's role; other producers' records are read as context only |
 | Change production | Nothing was deployed and no data store was written |
 
@@ -380,6 +457,8 @@ The API is read-only, bounds every parameter, never builds a file path from
 input, and verifies a registry document before answering from it. Metadata
 discovery is denied by default and bounded when granted, per target and per
 run; it sends a generic user agent and records no cookie or server header.
+Fetching a product needs a separate grant that bounds files and bytes, checks
+the size before reading, follows no redirect and accepts only listed hosts.
 
 The change is additive. To roll back, revert the branch commits. No database,
 external service or sibling repository was modified.
@@ -398,6 +477,8 @@ external service or sibling repository was modified.
 | `transects.py`, `coastal.py` | Cross-sections; coastline versions |
 | `acquisition.py`, `monitoring.py` | Metadata discovery; source change detection |
 | `discovery.py` | Planned, bounded discovery runs over declared search areas; the sealed source catalogue; offline replay |
+| `products.py` | Fetching a named product inside a byte ceiling; the elevation product catalogue |
+| `survey.py`, `survey_run.py` | Reading a real gridded product, binding its stated datum, detection, two-survey replication; the declared, reproducible run |
 | `federation_context.py` | Read-only context from other producers' packages |
 | `seeding.py`, `service.py` | Deterministic registry build; read-only queries |
 

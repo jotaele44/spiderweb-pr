@@ -48,8 +48,10 @@ from .namespaces import (
     observation_id,
     source_id,
 )
-from .registry import AccessPointRegistry
+from .registry import AccessPointRegistry, source_from_dict
 from .relationships import RelationshipLedger, spatial_adjacency
+from .survey_run import POINTER_NAME as SURVEY_POINTER_NAME
+from .survey_run import SURVEY_DIR, current_report
 from .vertical import is_placeholder
 from .vocabulary import (
     ClaimClass,
@@ -358,6 +360,42 @@ def register_discovered_sources(
     }
 
 
+def register_survey_sources(
+    registries: Mapping[Namespace, AccessPointRegistry], report: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Register the held, hashed products a survey run processed.
+
+    These are the first sources whose exact bytes were held: each carries the
+    SHA-256 of the full product.  They are grids, so they are registered but
+    are not direct measurements, and registering them touches no feature.
+    """
+
+    namespace = Namespace(report["registry"])
+    if namespace not in registries:
+        raise SeedingError(
+            f"survey report names a registry not being built: {namespace}"
+        )
+    added = 0
+    for product in report["products"]:
+        source = source_from_dict(product["source"])
+        if source.provenance_state is not ProvenanceState.REGISTERED or not (
+            source.manifestation_sha256
+        ):
+            raise SeedingError("a processed survey product must be held and hashed")
+        if source.manifestation_sha256 != product["download"]["sha256"]:
+            raise SeedingError(
+                "survey report disagrees with itself about a product hash"
+            )
+        if registries[namespace].add_source(source):
+            added += 1
+    return {
+        "run_id": report["run_id"],
+        "registry": namespace.value,
+        "report_content_sha256": report["content_sha256"],
+        "registered": added,
+    }
+
+
 _GUAYAMA_TITLE = "listed in the Guayama-Punta Tuna v0.1 source-denominator receipt"
 
 
@@ -508,6 +546,7 @@ class BuildResult:
     guayama: Mapping[str, int]
     input_hashes: Mapping[str, str]
     discovery: Mapping[str, Any] | None = None
+    survey: Mapping[str, Any] | None = None
 
 
 def build_all(repo_root: str | Path) -> BuildResult:
@@ -545,6 +584,21 @@ def build_all(repo_root: str | Path) -> BuildResult:
             catalogue_path.relative_to(root).as_posix(),
         ]
     guayama = register_guayama_sources(offshore, root / GUAYAMA_RECEIPT_PATH)
+    survey = None
+    survey_inputs: list[str] = []
+    survey_report = current_report(root)
+    if survey_report is not None:
+        survey = register_survey_sources(
+            {
+                Namespace.ACCESS_POINT_INLAND: inland,
+                Namespace.ACCESS_POINT_OFFSHORE: offshore,
+            },
+            survey_report,
+        )
+        survey_inputs = [
+            f"{SURVEY_DIR}/{SURVEY_POINTER_NAME}",
+            f"{SURVEY_DIR}/{survey_report['run_id']}/processing_report.json",
+        ]
     ledger = adjacency_ledger(inland, offshore, threshold_m=ADJACENCY_THRESHOLD_M)
     inputs = {
         rel: _sha256(root / rel)
@@ -554,10 +608,19 @@ def build_all(repo_root: str | Path) -> BuildResult:
             str(crosswalk_cfg["legacy_file"]),
             GUAYAMA_RECEIPT_PATH,
             *discovery_inputs,
+            *survey_inputs,
         )
     }
     return BuildResult(
-        inland, offshore, ledger, crosswalk, tuple(seeded), guayama, inputs, discovery
+        inland,
+        offshore,
+        ledger,
+        crosswalk,
+        tuple(seeded),
+        guayama,
+        inputs,
+        discovery,
+        survey,
     )
 
 
@@ -604,6 +667,7 @@ def write_documents(result: BuildResult, repo_root: str | Path) -> dict[str, str
             "live_discovery": (
                 None if result.discovery is None else dict(result.discovery)
             ),
+            "survey_products": None if result.survey is None else dict(result.survey),
         },
     }
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"

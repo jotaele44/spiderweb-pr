@@ -65,6 +65,23 @@
         "evidence/access_points/certification_report_v2.json",
         "registry/access_points/"
       ]
+    },
+    {
+      "date": "2026-11-17",
+      "summary": "Added real-survey processing for the access-point registries. A named survey product can be fetched only by exact address under a separate PRODUCT_DOWNLOAD grant that bounds files and bytes, with the size checked before any byte is read (spiderweb/access_points/products.py); there is no bulk path. Two USGS 1 m elevation tiles were fetched under an explicit owner grant (716 MB of an 800 MB ceiling), kept outside the repository, and registered in the Inland registry by the SHA-256 of the full file; they are grids and are not direct measurements. A declared run (configs/access_point_survey_runs.yaml) cut a 1 km window around the registered point of INAP-PR-000003, found closed basins in both surveys and compared them; the committed report is reproduced from committed evidence. A stated vertical datum is now checked for regional plausibility and an implausible one blocks joins to other references. No feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v3.json.",
+      "files": [
+        "spiderweb/access_points/products.py",
+        "spiderweb/access_points/survey.py",
+        "spiderweb/access_points/survey_run.py",
+        "spiderweb/access_points/acquisition.py",
+        "spiderweb/access_points/vertical.py",
+        "spiderweb/access_points/seeding.py",
+        "scripts/process_access_point_survey.py",
+        "configs/access_point_survey_runs.yaml",
+        "evidence/access_points/real_survey/",
+        "registry/access_points/",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
     }
   ]
 }

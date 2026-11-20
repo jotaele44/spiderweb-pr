@@ -1,0 +1,13 @@
+{
+  "headers": {
+    "Content-Type": "application/xml",
+    "Date": "Tue, 17 Nov 2026 13:52:44 GMT",
+    "ETag": "\"349e-5b459304d13c0\"",
+    "Last-Modified": "Wed, 18 Nov 2020 03:27:19 GMT"
+  },
+  "request_url": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/elevation/1_meter/geotiff/PR_PRVI_F_2018/USGS_1m_x72y204_PR_PRVI_F_2018.xml",
+  "response_sha256": "bcb6c96c89dc98de99b006a0dd139a2a852f8cfdaa93a61ba07cec4ec148ebbb",
+  "response_size": 13470,
+  "retrieved_utc": "2026-11-17T13:52:44.995625+00:00",
+  "status": 200
+}
