@@ -23,6 +23,12 @@ GitHub Release using the matching section below (T6-53).
   as outer ones, so numerical residue on a rim is not counted as water.
 
 ### Added
+- **A seam test for depressions read from finer grids** (`survey.seam_test`),
+  written before it was applied: narrow and grid-aligned, a level step across
+  the axis along most of the length, and the step continuing past both ends.
+  It finds a planted seam. Applied to both 8 m runs, it calls every outer
+  depression NOT_SEAM_LIKE, including the 15 m object, whose earlier reading as
+  a seam (from one profile) is withdrawn. Informational; no tier changes.
 - **The seabed survey file read again from its finer grids.** A run may now
   state `resolution_m`; a variable-resolution survey file is then read from its
   finer grids resampled to that cell size (mean elevation and largest
@@ -31,8 +37,7 @@ GitHub Release using the matching section below (T6-53).
   extract stops on any disagreement. Two runs at 8 m read the file already held
   (no download): all three base-grid depressions persist by a rule fixed in
   advance; 8 and 10 depressions are reported at the two declared area floors;
-  one small steep object is flagged as a possible artefact and, examined node by
-  node, looks like a seam between finer grids. Runs can reuse another run's
+  one small steep object is flagged as a possible artefact. Runs can reuse another run's
   evidence and subset, and are compared with an earlier run; only
   `--set-current` moves the seabed pointer. No registry change.
 - **First seabed survey through the access-point pipeline.** One gridded

@@ -7,7 +7,7 @@ NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
 IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
 RECORDS EXPORTED TO THE HUB: NONE
 INDEPENDENT REVIEW: NOT PERFORMED
-MACHINE-READABLE REPORT: evidence/access_points/certification_report_v8.json
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v9.json
 
 PURPOSE
 
@@ -150,7 +150,8 @@ OPEN BEFORE ANY RELEASE
      three shallow closed depressions persist at 8 m, which is a consistency
      check on the same soundings, not replication. Over 32% of its covered cells
      at 8 m a 2 m depression cannot be shown. One small steep object found at
-     8 m looks like a seam between finer grids. It verifies no record.
+     8 m is flagged and unexplained: a declared seam test says it is not a
+     seam between finer grids. It verifies no record.
    - The five seed screenshots are not registered.
    - Live source discovery ran once (2026-11-16, 180 sources listed). It lists
      surveys; it downloaded none, and no record cites one yet.

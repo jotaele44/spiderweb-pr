@@ -528,6 +528,12 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
             rows, survey.finer_grid_context(rows, grid.window, spacing)
         ):
             row["finer_grid"] = context
+        for row, seam in zip(rows, survey.seam_tests(result.grid, rows)):
+            row["seam_test"] = seam
+        seams: dict[str, int] = {}
+        for row in rows:
+            key = row["seam_test"].get("classification", "NOT_TESTED")
+            seams[key] = seams.get(key, 0) + 1
         finer = {
             **survey.spacing_summary(spacing),
             "resampling": {
@@ -539,6 +545,16 @@ def build_report(run: Mapping[str, Any], *, repo_root: str | Path) -> dict[str, 
             "possible_refinement_artefacts": sum(
                 1 for row in rows if row["finer_grid"]["possible_refinement_artefact"]
             ),
+            "seam_test": {
+                "rule": survey.SEAM_RULE,
+                "by_classification": dict(sorted(seams.items())),
+                "rule_origin": (
+                    "written before it was applied to any detection; its shape "
+                    "was suggested by one south-to-north profile through the "
+                    "small steep object first flagged at 8 m"
+                ),
+                "effect": "informational: no tier is lowered and no detection removed",
+            },
             "artefact_rule": (
                 "a depression smaller than one base cell that lies on a single "
                 "finer grid, or across finer grids of different node spacing, is "

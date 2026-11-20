@@ -1047,3 +1047,94 @@ def test_the_committed_8m_runs_overstate_nothing(run_id):
     # The registry still points at the base-grid run.
     pointer = json.loads((REPO / SURVEY_DIR / bath.POINTER_NAME).read_text())
     assert pointer["run_id"] == RUN_ID
+
+
+# ── The seam test (V11) ──────────────────────────────────────────────────────
+
+
+def seam_surface(*, step=True, local_step=False, trough=True):
+    """A seabed sloping down to the north with a narrow west-east trough.
+
+    ``step``: everything north of row 50 is 8 m lower, across the whole grid,
+    as where two finer grids meet at different levels.  ``local_step``: the
+    same step only in columns 35 to 65, open to the north edge.  The trough is
+    two cells wide (rows 49 and 50) from column 40 to 60.
+    """
+
+    values = controls.tilted_plane(100, 100, base_m=-80.0, slope_x=0.0, slope_y=0.05)
+    values = values - 0.05 * 100  # stay well below the datum
+    if step:
+        values[:50, :] -= 8.0
+    if local_step:
+        values[:50, 35:66] -= 8.0
+    if trough:
+        values[49:51, 40:61] = values[49:51, 40:61].min() - 12.0
+    values = controls.add_noise(values, sigma_m=0.02, seed=7)
+    return depth_grid(values, np.full(values.shape, 0.3))
+
+
+def outer_rows(grid):
+    result, _ = processed(
+        grid, det.DetectionParameters(min_depth_m=2.0, min_area_m2=1.0)
+    )
+    return result, [r for r in result.report["detections"] if r["hierarchy_level"] == 0]
+
+
+def test_a_planted_seam_is_seam_likely():
+    result, rows = outer_rows(seam_surface())
+    trough = max(rows, key=lambda r: r["max_depth_m"])
+    (seam,) = survey.seam_tests(result.grid, [trough])
+    assert seam["classification"] == "SEAM_LIKELY", seam
+    assert seam["narrow_and_grid_aligned"] is True
+    assert seam["median_width_cells"] <= survey.SEAM_MAX_WIDTH_CELLS
+    assert seam["median_step_m"] == pytest.approx(-8.0, abs=0.5)
+    assert seam["step_significant_fraction"] >= survey.SEAM_ALONG_FRACTION
+    assert (
+        seam["continuation_significant_fraction"] >= survey.SEAM_CONTINUATION_FRACTION
+    )
+
+
+def test_a_narrow_trough_on_smooth_ground_is_not_seam_like():
+    result, rows = outer_rows(seam_surface(step=False))
+    trough = max(rows, key=lambda r: r["max_depth_m"])
+    (seam,) = survey.seam_tests(result.grid, [trough])
+    assert seam["narrow_and_grid_aligned"] is True
+    assert seam["classification"] == "NOT_SEAM_LIKE"
+    assert abs(seam["median_step_m"]) < 1.0
+
+
+def test_a_step_that_stops_at_the_trough_is_indeterminate():
+    result, rows = outer_rows(seam_surface(step=False, local_step=True))
+    trough = max(rows, key=lambda r: r["max_depth_m"])
+    (seam,) = survey.seam_tests(result.grid, [trough])
+    assert seam["classification"] == "STEP_WITHOUT_CONTINUATION", seam
+    assert seam["continuation_significant_fraction"] < survey.SEAM_CONTINUATION_FRACTION
+
+
+def test_a_broad_bowl_and_a_nested_basin_are_not_called_seams():
+    result, _ = processed(depth_grid(*seabed(second_uncertainty=0.3)))
+    rows = result.report["detections"]
+    tests = survey.seam_tests(result.grid, rows)
+    for row, seam in zip(rows, tests):
+        if row["hierarchy_level"] == 0:
+            assert seam["classification"] == "NOT_SEAM_LIKE"
+            assert seam["narrow_and_grid_aligned"] is False
+    nested = dict(rows[0], hierarchy_level=1)
+    (skipped,) = survey.seam_tests(result.grid, [nested])
+    assert skipped["tested"] is False and "nested" in skipped["reason"]
+    assert "written before it was applied" not in survey.SEAM_RULE  # the rule only
+
+
+def test_a_column_with_too_few_cells_beside_it_is_not_measured():
+    grid = seam_surface()
+    values = grid.window.values.copy()
+    values[44:49, :] = np.nan  # no north band anywhere
+    values[51:56, :] = np.nan
+    holed = depth_grid(values, np.where(np.isfinite(values), 0.3, np.nan))
+    result, rows = outer_rows(holed)
+    if not rows:
+        pytest.skip("the trough is no longer closed once its banks are removed")
+    (seam,) = survey.seam_tests(
+        result.grid, [max(rows, key=lambda r: r["max_depth_m"])]
+    )
+    assert seam["classification"] == "INSUFFICIENT_DATA"

@@ -33,7 +33,7 @@ numpy 2.4.6, scipy 1.17.1, shapely 2.1.2, rasterio 1.5.2):
 
 The 52 skips are optional dependencies, absent local services and
 operator-local data. Results after the change are in
-`evidence/access_points/certification_report_v8.json` (versions 1 to 7 are the
+`evidence/access_points/certification_report_v9.json` (versions 1 to 8 are the
 report as it stood at earlier points).
 
 ## 2. What existed in this repository

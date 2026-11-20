@@ -1507,3 +1507,198 @@ def process_seabed(
         "detections": rows,
     }
     return SurveyResult(surface, tuple(detections), report)
+
+
+# -- a test for a seam between finer grids ---------------------------------
+#
+# A depression read from the finer grids of a variable-resolution file can be
+# a join between two finer grids that meet at different levels, rather than a
+# landform.  The rule below was written before it was applied to any
+# detection.  Its shape was suggested by one south-to-north profile through
+# the one object that prompted it, and that is said wherever it is reported.
+
+SEAM_MAX_WIDTH_CELLS = 2.0
+SEAM_MAX_ANGLE_DEG = 5.0
+SEAM_BAND_CELLS = 4
+SEAM_STEP_SIGMA = 2.0
+SEAM_ALONG_FRACTION = 0.8
+SEAM_CONTINUATION_FRACTION = 0.5
+
+SEAM_RULE = (
+    "SEAM_LIKELY when all three hold: (1) narrow and grid-aligned: median "
+    f"width at most {SEAM_MAX_WIDTH_CELLS:g} cells and long axis within "
+    f"{SEAM_MAX_ANGLE_DEG:g} degrees of a grid axis; (2) a level step across "
+    "the axis, found by fitting a line to a band of "
+    f"{SEAM_BAND_CELLS} cells on each side and extrapolating both to the axis, "
+    f"larger than {SEAM_STEP_SIGMA:g} times the combined uncertainty of the "
+    f"bands, with one sign, along at least {SEAM_ALONG_FRACTION:.0%} of the "
+    "length; (3) the same step, with the same sign, continues past both ends "
+    f"along at least {SEAM_CONTINUATION_FRACTION:.0%} of an equal length. "
+    "STEP_WITHOUT_CONTINUATION when (1) and (2) hold but not (3): "
+    "indeterminate. NOT_SEAM_LIKE otherwise. INSUFFICIENT_DATA when too few "
+    "covered cells lie beside the depression to measure a step"
+)
+
+
+def _member_mask(
+    surface: SurfaceGrid, filled: np.ndarray, deepest_xy: list[float]
+) -> np.ndarray | None:
+    from scipy import ndimage  # noqa: PLC0415
+
+    west, north = surface.origin
+    dx, dy = surface.cell_size_m
+    r = int((north - deepest_xy[1]) // dy)
+    c = int((deepest_xy[0] - west) // dx)
+    sigma = surface.uncertainty_array()
+    floor = (
+        np.full(surface.shape, 1e-6)
+        if sigma is None
+        else np.where(
+            np.isfinite(sigma), np.maximum(math.sqrt(2.0) * sigma, 1e-6), 1e-6
+        )
+    )
+    with np.errstate(invalid="ignore"):
+        wet = np.isfinite(surface.values) & ((filled - surface.values) > floor)
+    if not (0 <= r < wet.shape[0] and 0 <= c < wet.shape[1]) or not wet[r, c]:
+        return None
+    labels, _ = ndimage.label(wet, structure=np.ones((3, 3), bool))
+    return labels == labels[r, c]
+
+
+def _band_offset(
+    values: np.ndarray,
+    sigma: np.ndarray,
+    col: int,
+    r_top: int,
+    r_bottom: int,
+) -> tuple[float, float] | None:
+    """Level offset across one column: the north band minus the south band.
+
+    Each band is ``SEAM_BAND_CELLS`` cells beside the depression; a line is
+    fitted to each and both are extrapolated to the axis row.  Returns the
+    offset and the threshold it must exceed, or ``None`` if a band is short.
+    """
+
+    rows_n = values.shape[0]
+    axis = (r_top + r_bottom) / 2.0
+    fits = []
+    for rows in (
+        range(max(r_top - SEAM_BAND_CELLS, 0), r_top),
+        range(r_bottom + 1, min(r_bottom + 1 + SEAM_BAND_CELLS, rows_n)),
+    ):
+        rr = np.array([r for r in rows if np.isfinite(values[r, col])], dtype=float)
+        if rr.size < 3:
+            return None
+        zz = values[rr.astype(int), col]
+        slope, intercept = np.polyfit(rr, zz, 1)
+        uu = sigma[rr.astype(int), col]
+        uu = uu[np.isfinite(uu)]
+        fits.append(
+            (intercept + slope * axis, float(np.median(uu)) if uu.size else 0.0)
+        )
+    (north, u_n), (south, u_s) = fits
+    return float(north - south), SEAM_STEP_SIGMA * math.hypot(u_n, u_s)
+
+
+def seam_test(
+    surface: SurfaceGrid, filled: np.ndarray, row: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply the seam rule to one outer depression."""
+
+    if row.get("hierarchy_level", 0) != 0:
+        return {
+            "tested": False,
+            "reason": "nested; tested through its outer depression",
+        }
+    members = _member_mask(surface, filled, row["deepest_xy"])
+    if members is None:
+        return {"tested": False, "reason": "its deepest cell is not below the floor"}
+    values = np.asarray(surface.values, dtype=np.float64)
+    sigma = surface.uncertainty_array()
+    sigma = np.zeros(values.shape) if sigma is None else np.asarray(sigma, float)
+    rr, cc = np.nonzero(members)
+    cov = np.cov(np.vstack([cc, -rr])) if rr.size > 1 else np.zeros((2, 2))
+    angle = 0.5 * math.degrees(math.atan2(2 * cov[0, 1], cov[0, 0] - cov[1, 1]))
+    off_axis = min(abs(angle), abs(90.0 - abs(angle)))
+    along_rows = abs(angle) <= 45.0
+    if not along_rows:  # work on the transpose so the axis runs along rows
+        values, sigma, members = values.T, sigma.T, members.T
+        rr, cc = cc, rr
+    cols = np.unique(cc)
+    spans = {int(c): (int(rr[cc == c].min()), int(rr[cc == c].max())) for c in cols}
+    widths = [b - a + 1 for a, b in spans.values()]
+    median_width = float(np.median(widths))
+    narrow_aligned = (
+        median_width <= SEAM_MAX_WIDTH_CELLS and off_axis <= SEAM_MAX_ANGLE_DEG
+    )
+    offsets = [
+        _band_offset(values, sigma, c, a, b) for c, (a, b) in sorted(spans.items())
+    ]
+    measured = [o for o in offsets if o is not None]
+    result: dict[str, Any] = {
+        "tested": True,
+        "axis": "along grid rows" if along_rows else "along grid columns",
+        "angle_from_nearest_grid_axis_deg": round(off_axis, 2),
+        "length_cells": int(len(cols)),
+        "median_width_cells": median_width,
+        "narrow_and_grid_aligned": bool(narrow_aligned),
+        "columns_measured": len(measured),
+    }
+    if len(measured) < max(3, 0.5 * len(cols)):
+        result["classification"] = "INSUFFICIENT_DATA"
+        return result
+    median_step = float(np.median([o for o, _ in measured]))
+    sign = 1.0 if median_step >= 0 else -1.0
+    along = sum(1 for o, t in measured if o * sign > t) / len(measured)
+    first, last = int(cols.min()), int(cols.max())
+    length = last - first + 1
+    end_rows = {
+        "before": spans[first],
+        "after": spans[last],
+    }
+    beyond = []
+    for side, span in end_rows.items():
+        axis_row = int(round((span[0] + span[1]) / 2.0))
+        steps = (
+            range(first - length, first)
+            if side == "before"
+            else range(last + 1, last + 1 + length)
+        )
+        for c in steps:
+            if 0 <= c < values.shape[1]:
+                beyond.append(_band_offset(values, sigma, c, axis_row, axis_row))
+    beyond = [o for o in beyond if o is not None]
+    continuation = (
+        sum(1 for o, t in beyond if o * sign > t) / len(beyond) if beyond else None
+    )
+    step_present = along >= SEAM_ALONG_FRACTION
+    continues = continuation is not None and continuation >= SEAM_CONTINUATION_FRACTION
+    if narrow_aligned and step_present and continues:
+        classification = "SEAM_LIKELY"
+    elif narrow_aligned and step_present:
+        classification = "STEP_WITHOUT_CONTINUATION"
+    else:
+        classification = "NOT_SEAM_LIKE"
+    result.update(
+        {
+            "median_step_m": round(median_step, 3),
+            "step_significant_fraction": round(along, 3),
+            "continuation_columns_measured": len(beyond),
+            "continuation_significant_fraction": (
+                None if continuation is None else round(continuation, 3)
+            ),
+            "classification": classification,
+        }
+    )
+    return result
+
+
+def seam_tests(
+    surface: SurfaceGrid, rows: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """The seam rule for every detection of one surface (the fill is shared)."""
+
+    from .raster import fill_depressions  # noqa: PLC0415
+
+    filled = fill_depressions(surface)
+    return [seam_test(surface, filled, row) for row in rows]

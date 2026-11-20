@@ -55,7 +55,7 @@
     "limit": "both readings come from the same soundings: a consistency check, not replication",
     "rule": "SPLIT if two or more later outer depressions have their deepest point inside the earlier bounding box; else PERSISTED if a later deepest point lies within 64 m and the depths agree within the combined depth uncertainty; else SAME_PLACE_DEPTH_DIFFERS if one lies that close; else NOT_FOUND"
   },
-  "content_sha256": "86137f0c28c31d912df0609d762162a3c99888dae9433e1a704002b2abfaf058",
+  "content_sha256": "3e2dd4184f3cb5a100a99cc2eccb7f014091bef9735e27fc0110c56cbb79bb9e",
   "contract_version": "access-point-registry/1.0",
   "evaluation_state": "EXPLORATORY",
   "limits": [
@@ -145,6 +145,15 @@
             "nodes_placed": 809925
           },
           "population": "each cell holds the mean elevation of the finer-grid nodes inside it and the largest of their uncertainties; a cell with no node is empty; nothing is interpolated"
+        },
+        "seam_test": {
+          "by_classification": {
+            "NOT_SEAM_LIKE": 6,
+            "NOT_TESTED": 2
+          },
+          "effect": "informational: no tier is lowered and no detection removed",
+          "rule": "SEAM_LIKELY when all three hold: (1) narrow and grid-aligned: median width at most 2 cells and long axis within 5 degrees of a grid axis; (2) a level step across the axis, found by fitting a line to a band of 4 cells on each side and extrapolating both to the axis, larger than 2 times the combined uncertainty of the bands, with one sign, along at least 80% of the length; (3) the same step, with the same sign, continues past both ends along at least 50% of an equal length. STEP_WITHOUT_CONTINUATION when (1) and (2) hold but not (3): indeterminate. NOT_SEAM_LIKE otherwise. INSUFFICIENT_DATA when too few covered cells lie beside the depression to measure a step",
+          "rule_origin": "written before it was applied to any detection; its shape was suggested by one south-to-north profile through the small steep object first flagged at 8 m"
         }
       },
       "layers_read": "the finer grids, resampled to 8 m cells (elevation and uncertainty)",
@@ -242,6 +251,20 @@
             "possible_artifact": false,
             "proposed_class": "SEAFLOOR_DEPRESSION",
             "rectangularity": 0.441,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 1.61,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 269,
+              "continuation_columns_measured": 415,
+              "continuation_significant_fraction": 0.022,
+              "length_cells": 269,
+              "median_step_m": -4.336,
+              "median_width_cells": 51.0,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.625,
+              "tested": true
+            },
             "significance": 2.68,
             "spill_elevation_m": -71.624,
             "volume_m3": 1791150.7
@@ -312,6 +335,20 @@
             "possible_artifact": false,
             "proposed_class": "SEAFLOOR_DEPRESSION",
             "rectangularity": 0.384,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 26.32,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 225,
+              "continuation_columns_measured": 392,
+              "continuation_significant_fraction": 0.015,
+              "length_cells": 225,
+              "median_step_m": -2.322,
+              "median_width_cells": 50.0,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.564,
+              "tested": true
+            },
             "significance": 2.65,
             "spill_elevation_m": -73.78,
             "volume_m3": 1370672.4
@@ -380,6 +417,20 @@
             "possible_artifact": false,
             "proposed_class": "SEAFLOOR_DEPRESSION",
             "rectangularity": 0.546,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 5.72,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 42,
+              "continuation_columns_measured": 84,
+              "continuation_significant_fraction": 0.0,
+              "length_cells": 42,
+              "median_step_m": 4.157,
+              "median_width_cells": 10.5,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.667,
+              "tested": true
+            },
             "significance": 3.91,
             "spill_elevation_m": -75.698,
             "volume_m3": 49859.2
@@ -448,6 +499,20 @@
             "possible_artifact": false,
             "proposed_class": "SEAFLOOR_DEPRESSION",
             "rectangularity": 0.445,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 7.19,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 54,
+              "continuation_columns_measured": 108,
+              "continuation_significant_fraction": 0.065,
+              "length_cells": 54,
+              "median_step_m": -0.727,
+              "median_width_cells": 13.0,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.37,
+              "tested": true
+            },
             "significance": 3.31,
             "spill_elevation_m": -75.679,
             "volume_m3": 72840.3
@@ -519,6 +584,10 @@
             "possible_artifact": false,
             "proposed_class": "SEAFLOOR_DEPRESSION",
             "rectangularity": 0.371,
+            "seam_test": {
+              "reason": "nested; tested through its outer depression",
+              "tested": false
+            },
             "significance": 1.65,
             "spill_elevation_m": -75.78,
             "volume_m3": 183283.1
@@ -590,6 +659,10 @@
             "possible_artifact": false,
             "proposed_class": "SEAFLOOR_DEPRESSION",
             "rectangularity": 0.578,
+            "seam_test": {
+              "reason": "nested; tested through its outer depression",
+              "tested": false
+            },
             "significance": 1.83,
             "spill_elevation_m": -75.78,
             "volume_m3": 84733.8
@@ -660,6 +733,20 @@
             "possible_artifact": false,
             "proposed_class": "SEAFLOOR_DEPRESSION",
             "rectangularity": 0.668,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 5.74,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 42,
+              "continuation_columns_measured": 75,
+              "continuation_significant_fraction": 0.013,
+              "length_cells": 42,
+              "median_step_m": -0.904,
+              "median_width_cells": 15.0,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.262,
+              "tested": true
+            },
             "significance": 1.67,
             "spill_elevation_m": -79.948,
             "volume_m3": 46352.2
@@ -730,6 +817,20 @@
             "possible_artifact": false,
             "proposed_class": "SEAFLOOR_DEPRESSION",
             "rectangularity": 0.385,
+            "seam_test": {
+              "angle_from_nearest_grid_axis_deg": 22.72,
+              "axis": "along grid rows",
+              "classification": "NOT_SEAM_LIKE",
+              "columns_measured": 28,
+              "continuation_columns_measured": 56,
+              "continuation_significant_fraction": 0.0,
+              "length_cells": 28,
+              "median_step_m": 2.395,
+              "median_width_cells": 10.5,
+              "narrow_and_grid_aligned": false,
+              "step_significant_fraction": 0.607,
+              "tested": true
+            },
             "significance": 2.0,
             "spill_elevation_m": -69.834,
             "volume_m3": 19385.0

@@ -578,27 +578,42 @@ replication.
 14,600 m² (SUPPORTING). The other is about 15 m deep, about 2,900 m² and has
 13° walls, at the shelf edge (floor −101.5 m). It is smaller than one base cell
 and so carries the possible-artefact flag; under the stated rule every
-depression smaller than one base cell does. Examining the finer-grid nodes
-under it in the held file points to an artefact rather than a pit [COMPUTED
-from the held file; INFERENCE as to cause]:
+depression smaller than one base cell does. In the finer-grid nodes it is a
+narrow west–east line about 160 m long, and only 13 nodes lie more than 10 m
+below its rim [COMPUTED from the held file]. With the uncertainty ignored, the
+small-area run sees two further closed lows, 8.9 and 6.4 m deep, that the
+uncertainty rule withheld.
 
-- it is a line about 160 m long west to east and one or two nodes (4 to 8 m)
-  wide, lying exactly along the grid rows;
-- only 13 nodes lie more than 10 m below its rim;
-- a south-to-north profile across it is smooth on both sides, but the north
-  side sits about 8 m lower than the south side would continue — the signature
-  of two finer grids meeting at different levels.
+**Is it a seam between finer grids? The declared test says no.** One
+south-to-north profile through its deepest point showed the north side about
+8 m lower than the south side would continue, and it was first read as a seam.
+A seam test was then written and fixed before it was applied to any detection
+(`survey.seam_test`; the rule is in `docs/ACCESS_POINT_SCIENTIFIC_METHOD.md`,
+section 3). It calls a depression SEAM_LIKELY only if it is narrow and
+grid-aligned, shows a level step across its axis along most of its length, and
+that step continues past both ends. Applied to every outer depression in both
+8 m runs [COMPUTED]:
 
-A narrow natural trough at the foot of a step cannot be excluded from this
-file alone. With the uncertainty ignored, the small-area run sees two further
-closed lows, 8.9 and 6.4 m deep, that the uncertainty rule withheld.
+| Depression | Width (cells) | Angle from grid axis | Step significant along its length | Step continuing past its ends | Classification |
+|---|---|---|---|---|---|
+| 15.1 m, 2,944 m² | 2.5 (limit 2) | 5.3° (limit 5°) | 40% (needs 80%) | 10% (needs 50%) | NOT_SEAM_LIKE |
+| The other seven outer depressions | 9 to 51 | 1.6° to 26° | 26% to 67% | 0% to 7% | NOT_SEAM_LIKE |
+
+The 8 m step is real at the deepest column but is not consistent along the
+object, so the seam reading over-generalised from one profile and is
+withdrawn. The test itself does find a planted seam (tested on synthetic
+surfaces), so its answer here is not a blind spot of the test. The object
+stays a flagged, unexplained small depression: neither a seam nor a pit is
+established. The shape of the rule was suggested by that one profile, which is
+stated in the report.
 
 | Statement | Class |
 |---|---|
 | The finer grids were read exactly as the file holds them (every cell recomputed from the nodes) | COMPUTED |
 | The three base-grid depressions are present in the finer grids, in the same places | COMPUTED |
 | Finer reading of the same soundings is not a second survey | FACT about the method |
-| The 15 m linear object is more likely a seam between finer grids than a seabed feature | INFERENCE |
+| The 15 m linear object is a seam between finer grids | Not supported: the declared seam test says NOT_SEAM_LIKE |
+| What the 15 m linear object is | UNKNOWN |
 | Whether any of the depressions is a landform rather than a sediment low or a gridding effect | UNKNOWN |
 
 No feature, observation or status changed, and nothing was registered.

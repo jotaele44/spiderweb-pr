@@ -156,6 +156,20 @@
         "tests/test_access_points_seabed.py",
         "docs/ACCESS_POINT_REGISTRIES.md"
       ]
+    },
+    {
+      "date": "2026-11-20",
+      "summary": "Added a seam test for depressions read from the finer grids of a variable-resolution seabed survey file (spiderweb/access_points/survey.py, bathymetry_run.py), written before it was applied, and recorded the repository owner's decision to keep the Planning Board karst-limit layer in the repository. The test finds a planted seam on synthetic surfaces. Applied to both committed 8 m seabed runs it classifies every outer depression as NOT_SEAM_LIKE, including the small steep object previously read as a probable seam from a single profile; that reading is withdrawn in the docs and the object stays flagged and unexplained. The result is informational and changes no tier. No download, no network request; the seabed pointer, the base-grid report and the registry features are unchanged; nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v9.json.",
+      "files": [
+        "spiderweb/access_points/survey.py",
+        "spiderweb/access_points/bathymetry_run.py",
+        "evidence/access_points/real_survey/2026-11-19-offshore-8m/",
+        "evidence/access_points/real_survey/2026-11-19-offshore-8m-small/",
+        "tests/test_access_points_seabed.py",
+        "configs/access_point_reference_sets.yaml",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
     }
   ]
 }
