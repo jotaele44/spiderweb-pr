@@ -1,0 +1,978 @@
+{
+  "acquisition_version": "access-point-acquisition/1.0",
+  "authorization": {
+    "granted_by": "repository owner, explicit in-session authorisation of 2026-11-16",
+    "level": "METADATA_DISCOVERY",
+    "max_requests": 15
+  },
+  "bbox": [
+    -67.5,
+    17.6,
+    -66.9,
+    18.05
+  ],
+  "content_sha256": "3824f27d9437d8496bfc2fc5c86723db269038c3816f8f72398a776e7d70499f",
+  "contract_version": "access-point-registry/1.0",
+  "coverage": [
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EW9501",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EW9501",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EX1502L3",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EX1502L3",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EX1811",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EX1811",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EX2203",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EX2203",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:EX2206",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "EX2206",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:MGL2213",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "MGL2213",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:MGL2214",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "MGL2214",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF-07-04-PMEL",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF-07-04-PMEL",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF-14-01T",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF-14-01T",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF1501",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF1501",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF1804",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF1804",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:NF2202",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "NF2202",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:PD18PR01",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "PD18PR01",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:multibeam:RB0604",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "surveyed": null,
+      "title": "RB0604",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:F00709",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "F00709",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H01514",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H01514",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02514",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02514",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02535",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02535",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02536",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02536",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02638",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02638",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02639",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02639",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02676",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02676",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02678",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02678",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02680",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02680",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02686",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02686",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02690",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02690",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H02806",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H02806",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H03005",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H03005",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H08984",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H08984",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H08985",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H08985",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H08986",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H08986",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H08987",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H08987",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H08988",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H08988",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H08989",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H08989",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H09029",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H09029",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H09033",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H09033",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H09119",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H09119",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H09120",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H09120",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H09463",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H09463",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H09587",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H09587",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11557",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11557",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11558",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11558",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11559",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11559",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11561",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11561",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11562",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11562",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11563",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11563",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11564",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11564",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11565",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11565",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11566",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11566",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:H11567",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "H11567",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:W00200",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "W00200",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "NULL_EMPTY",
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "identifier_is_stable": true,
+      "native_identifier": "NCEI:sounding:W00468",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "surveyed": null,
+      "title": "W00468",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:F00709",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2017",
+      "title": "F00709",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11557",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11557",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11558",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11558",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11559",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11559",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11561",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11561",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11562",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11562",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11563",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11563",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11564",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11564",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11565",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11565",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11566",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11566",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:H11567",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "H11567",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "FULLY_WITHIN",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:W00200",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2006",
+      "title": "W00200",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "NOS:BAG:W00468",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "surveyed": "2018",
+      "title": "W00468",
+      "vertical_datum_raw": null
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "BATHYMETRIC_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{722BB1C9-705E-44F6-A41A-4EFF5D87B380}",
+      "provider_id": "USIEI_BATHYMETRIC_LIDAR",
+      "surveyed": "Apr 7 - May 15, 2006",
+      "title": "2006 NOAA Bathymetric Lidar: Puerto Rico (Southwest)",
+      "vertical_datum_raw": "User Specified"
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "TOPOBATHYMETRIC_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{5849600C-A7D8-48EB-87D5-C775BC5BF4C6}",
+      "provider_id": "USIEI_TOPOBATHY_LIDAR",
+      "surveyed": "Nov 2, 2014 - May 20, 2015",
+      "title": "2015 NOAA NGS Topobathy Lidar: Puerto Rico",
+      "vertical_datum_raw": "User Specified"
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "TOPOBATHYMETRIC_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{6ADB97A2-22B1-48A2-AC48-6EE82B9EE3D6}",
+      "provider_id": "USIEI_TOPOBATHY_LIDAR",
+      "surveyed": "Jul 3 - 28, 2018",
+      "title": "2018 USACE FEMA Topobathy Lidar: Main Island, Culebra, and Vieques, Puerto Rico",
+      "vertical_datum_raw": "User Specified"
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "TOPOBATHYMETRIC_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{E1FAF616-B6FD-42C3-B389-A2775B12953D}",
+      "provider_id": "USIEI_TOPOBATHY_LIDAR",
+      "surveyed": null,
+      "title": "2019 NOAA NGS Topobathy Lidar: PR1801-TB-C",
+      "vertical_datum_raw": "Not Provided"
+    },
+    {
+      "basis": "ENVELOPE_ONLY_PLANNING",
+      "envelope_relation": "PARTIAL",
+      "family": "TOPOBATHYMETRIC_LIDAR_INVENTORY",
+      "identifier_is_stable": true,
+      "native_identifier": "USIEI:GlobalID:{E64B3751-437F-419F-AC8B-EAA740659FFD}",
+      "provider_id": "USIEI_TOPOBATHY_LIDAR",
+      "surveyed": "Feb 19 - Mar 31, 2016",
+      "title": "2016 NOAA NGS Topobathy Lidar: Puerto Rico",
+      "vertical_datum_raw": "User Specified"
+    }
+  ],
+  "dates": {
+    "discovered_utc": "2026-11-16T23:20:38+00:00",
+    "note": "published, surveyed and retrieved dates are recorded per source"
+  },
+  "invariants": [
+    "inventory coverage is not a depth or elevation measurement",
+    "a failed provider says nothing about coverage",
+    "envelope relations are planning-only",
+    "no data product was downloaded by this run"
+  ],
+  "lifecycle": [
+    {
+      "detail": "6 providers queried, 70 rows, failed: none",
+      "outcome": "PASS",
+      "state": "DISCOVER"
+    },
+    {
+      "detail": "inventory attributes kept verbatim",
+      "outcome": "PASS",
+      "state": "INSPECT_METADATA"
+    },
+    {
+      "detail": "70 stable identifiers, 0 layer-local only",
+      "outcome": "PASS",
+      "state": "IDENTIFY_SOURCE"
+    },
+    {
+      "detail": "footprint envelopes classified against the query box (planning only)",
+      "outcome": "PASS",
+      "state": "VALIDATE_SCOPE"
+    },
+    {
+      "detail": "public catalogue endpoints answered",
+      "outcome": "PASS",
+      "state": "VERIFY_ACCESS"
+    },
+    {
+      "detail": "candidate products listed; nothing scheduled",
+      "outcome": "PASS",
+      "state": "PLAN_ACQUISITION"
+    },
+    {
+      "detail": "data-product download is outside this module's grant",
+      "outcome": "NOT_AUTHORIZED",
+      "state": "ACQUIRE_IF_AUTHORIZED"
+    }
+  ],
+  "namespace": "access_point.offshore",
+  "providers": [
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "TOPOBATHYMETRIC_LIDAR_INVENTORY",
+      "provider_id": "USIEI_TOPOBATHY_LIDAR",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:16 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/0/query?f=json&where=1%3D1&geometry=-67.5%2C17.6%2C-66.9%2C18.05&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "53a2e9c80919002df20deef43a1ec4b3029e3e8463f82efbb6b3b41afba50a6c",
+          "response_size": 385254,
+          "retrieved_utc": "2026-11-16T23:21:16.357136+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 4,
+      "state": "PASS"
+    },
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "BATHYMETRIC_LIDAR_INVENTORY",
+      "provider_id": "USIEI_BATHYMETRIC_LIDAR",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:17 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/2/query?f=json&where=1%3D1&geometry=-67.5%2C17.6%2C-66.9%2C18.05&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "26f1a6ee6a77acbbd7c000555b15c541481ec0c6cef40c0c0a418d1afe290f38",
+          "response_size": 49182,
+          "retrieved_utc": "2026-11-16T23:21:17.177682+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 1,
+      "state": "PASS"
+    },
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "OTHER_BATHYMETRIC_SURVEY_INVENTORY",
+      "provider_id": "USIEI_OTHER_BATHYMETRIC",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "Content-Length": "3482",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Date": "Mon, 16 Nov 2026 23:21:18 GMT",
+            "ETag": "\"1607711868\""
+          },
+          "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/4/query?f=json&where=1%3D1&geometry=-67.5%2C17.6%2C-66.9%2C18.05&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+          "response_sha256": "4b4d8a9dc2a5b72406deccf18832ba3335ec6de23cc8f7af52852cec9d8fb528",
+          "response_size": 3482,
+          "retrieved_utc": "2026-11-16T23:21:18.274068+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 0,
+      "state": "ZERO"
+    },
+    {
+      "completeness": "COUNT_CLOSED",
+      "error": null,
+      "family": "MULTIBEAM_SURVEY_CATALOG",
+      "provider_id": "NCEI_MULTIBEAM_CATALOG",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "content-type": "application/json;charset=UTF-8",
+            "date": "Mon, 16 Nov 2026 23:21:19 GMT"
+          },
+          "request_url": "https://www.ngdc.noaa.gov/next-catalogs/rest/multibeam/catalog/survey?geometry=-67.5%2C17.6%2C-66.9%2C18.05&max=100&offset=0",
+          "response_sha256": "df241793a85b7bc02d7706cc54a476cd9ce2583483f398aa6c322fa84a9bb5c5",
+          "response_size": 6943,
+          "retrieved_utc": "2026-11-16T23:21:20.542216+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 14,
+      "state": "PASS"
+    },
+    {
+      "completeness": "COUNT_CLOSED",
+      "error": null,
+      "family": "SOUNDING_SURVEY_CATALOG",
+      "provider_id": "NCEI_SOUNDING_CATALOG",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "content-type": "application/json;charset=UTF-8",
+            "date": "Mon, 16 Nov 2026 23:21:20 GMT"
+          },
+          "request_url": "https://www.ngdc.noaa.gov/next-catalogs/rest/sounding/catalog/survey?geometry=-67.5%2C17.6%2C-66.9%2C18.05&max=100&offset=0",
+          "response_sha256": "cc82b60057a3d3d60f4b14c2a25a5a765aaa65583539fa2f091543275aa99a15",
+          "response_size": 66892,
+          "retrieved_utc": "2026-11-16T23:21:23.741240+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 38,
+      "state": "PASS"
+    },
+    {
+      "completeness": "TRANSFER_LIMIT_FOLLOWED",
+      "error": null,
+      "family": "HYDROGRAPHIC_BAG_INVENTORY",
+      "provider_id": "NOS_BAG_INVENTORY",
+      "request_count": 1,
+      "requests": [
+        {
+          "headers": {
+            "content-type": "application/json;charset=UTF-8",
+            "date": "Mon, 16 Nov 2026 23:21:23 GMT",
+            "etag": "\"1794812455\""
+          },
+          "request_url": "https://gis.ngdc.noaa.gov/arcgis/rest/services/web_mercator/nos_hydro_dynamic/MapServer/0/query?f=json&where=1%3D1&geometry=-67.5%2C17.6%2C-66.9%2C18.05&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=1000&orderByFields=SURVEY_ID+ASC",
+          "response_sha256": "e29f7c56b8999a2441ddaf8a5d88ea8d84db0e1e76d076f0f0e96ab336dad29f",
+          "response_size": 35409,
+          "retrieved_utc": "2026-11-16T23:21:24.047309+00:00",
+          "status": 200
+        }
+      ],
+      "row_count": 13,
+      "state": "PASS"
+    }
+  ],
+  "schema": "access_point_source_discovery_receipt/1.0",
+  "state": "PASS",
+  "zero_result_claim_permitted": false
+}

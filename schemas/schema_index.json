@@ -846,6 +846,32 @@
     },
     {
       "workstream": "federation",
+      "artifact_path": "exports/federation/source_monitors.jsonl",
+      "schema_name": "federation_source_monitor",
+      "schema_file": "schemas/federation_source_monitor.schema.json",
+      "format": "jsonl",
+      "crs": null,
+      "required_columns_summary": [
+        "monitor_id",
+        "source_ref",
+        "name",
+        "declared_status",
+        "cadence",
+        "last_success_basis",
+        "lineage",
+        "synthetic"
+      ],
+      "provenance_fields": [
+        "lineage",
+        "registry_path",
+        "last_success_basis"
+      ],
+      "dedup_key": "monitor_id",
+      "fact_status_default": null,
+      "notes": "Hub-facing source_monitors stream (thehub-pr ADR 0013) written by scripts/federation_export.py::build_source_monitors(): one row per source in manifests/pr_hydrography/source_registry.csv and configs/missing_persons_sources.yaml, never one marked federation_eligible: false. The schema is vendored byte-for-byte from thehub-pr (sha256 pinned in tests/test_federation_source_monitors.py)."
+    },
+    {
+      "workstream": "federation",
       "artifact_path": "exports/federation/manifest.json",
       "schema_name": "federation_export_manifest",
       "schema_file": "schemas/federation_export_manifest.schema.json",

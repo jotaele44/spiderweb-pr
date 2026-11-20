@@ -9,12 +9,14 @@ export class MapLibreRuntime implements SpatialRuntime {
   private map: maplibregl.Map | null = null;
   private finishInitialization: (() => void) | null = null;
   private initialized = false;
+  private initialView: CameraView | null = null;
   private basemapSourceId = "";
   private readonly basemapErrorListeners = new Set<() => void>();
 
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void> {
     this.initialized = false;
     this.basemapSourceId = config.basemapSourceId;
+    this.initialView = config.initialView;
     const map = new maplibregl.Map({
       container,
       center: config.initialView.center,
@@ -24,6 +26,7 @@ export class MapLibreRuntime implements SpatialRuntime {
       maxBounds: REGIONAL_CAMERA_CONSTRAINTS.bounds,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: "metric" }), "bottom-right");
     // Scoping to basemapSourceId keeps benign per-tile/abort noise for other
     // sources (backend GeoJSON layers report their own status separately) out
     // of the basemap-error signal.
@@ -78,7 +81,13 @@ export class MapLibreRuntime implements SpatialRuntime {
         if (!prePainterTeardown) throw error;
       }
     }
+    this.initialView = null;
     this.basemapErrorListeners.clear();
+  }
+
+  resetView(options?: { animate?: boolean }): void {
+    if (!this.initialView) return;
+    this.setView(this.initialView, { animate: options?.animate });
   }
 
   setView(view: CameraView, options?: { animate?: boolean; speed?: number }): void {
