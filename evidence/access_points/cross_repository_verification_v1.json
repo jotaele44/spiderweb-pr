@@ -1,0 +1,117 @@
+{
+  "content_sha256": "b54f1eb7f333277efb050cb2c2e83df291a26b0d6e2fc45cc88a2b95f39f0781",
+  "context_version": "access-point-federation-context/1.0",
+  "generated_utc": "2026-11-15T13:55:00Z",
+  "invariants": [
+    "foreign identifiers are referenced verbatim and never re-minted",
+    "an absent stream or package is not zero records",
+    "cross-producer correlation and identity belong to the hub, not to this repository"
+  ],
+  "method": "exported packages read from sibling checkouts; no sibling code imported",
+  "producers": [
+    {
+      "claim_class": "FACT",
+      "detail": "no exported package (manifest.json) exists at the producer's export location",
+      "package_directory_name": "federation",
+      "producer": "aguayluz-pr",
+      "producer_head_sha": "e29bfbc55df5e9ea1724fd77837f0ee064ca6d31",
+      "state": "BLOCKED"
+    },
+    {
+      "claim_class": "COMPUTED",
+      "context": {
+        "by_coordinate_basis": {
+          "MUNICIPALITY_LABEL_ONLY": 6,
+          "NONE": 9
+        },
+        "by_kind": {
+          "contract": 3,
+          "project": 8,
+          "property": 4
+        },
+        "diagnostic_only_records": 15,
+        "furthest_lifecycle_documents_can_show": "CONTRACTED",
+        "placeable_records": 0,
+        "records": 15,
+        "state": "PASS",
+        "statement": "context only: none of these records can create, locate or raise the evidence tier of an access-point feature"
+      },
+      "detail": "manifest closes: every listed file hashes and counts as stated",
+      "export_contract_version": "1.0.0",
+      "files": [
+        {
+          "filename": "sources.jsonl",
+          "record_count": 4508,
+          "sha256": "0c1800ed1a097672b6a2dc7f28455844a44f2e218aa361fbe468f523b3783f6e"
+        },
+        {
+          "filename": "entities.jsonl",
+          "record_count": 207,
+          "sha256": "a3e4bc1aa05677a925aa9ae6c46a9f6798221f2957e4a6fa5505b87502779573"
+        },
+        {
+          "filename": "relationships.jsonl",
+          "record_count": 66,
+          "sha256": "169e0737c3dba0b2e2f637f0ae5d881288dc0092a7e00a9ad1c86f2292b83b4a"
+        }
+      ],
+      "manifest_mode": "production",
+      "package_directory_name": "federation",
+      "package_id": "pkg_d1b242ef9582ae30c174aa421b466e60",
+      "producer": "moneysweep-pr",
+      "producer_head_sha": "08e1bb2ee7e92c786ba7eb60397fe10703f2ce53",
+      "state": "PASS",
+      "streams": {
+        "entities": 207,
+        "relationships": 66,
+        "sources": 4508
+      },
+      "synthetic_rows_dropped": 0
+    },
+    {
+      "claim_class": "COMPUTED",
+      "context": {
+        "detail": "package verified; no access-point context is drawn from this producer",
+        "state": "NOT_CONSUMED"
+      },
+      "detail": "manifest closes: every listed file hashes and counts as stated",
+      "export_contract_version": "1.0.0",
+      "files": [
+        {
+          "filename": "sources.jsonl",
+          "record_count": 3,
+          "sha256": "df90929a36d2cc236f5a973f1c407170dff65727660f63dba6181d33f6012525"
+        },
+        {
+          "filename": "entities.jsonl",
+          "record_count": 6,
+          "sha256": "daab62c2580671321a77f3f9089f31a50d5cb26f241cb4a519d166632304e8f2"
+        },
+        {
+          "filename": "relationships.jsonl",
+          "record_count": 3,
+          "sha256": "82f264dd92ad93fc1ee0950d17ed1ffe52dbdfba16a3dffb71492598f309a954"
+        },
+        {
+          "filename": "observations.jsonl",
+          "record_count": 3,
+          "sha256": "f2f92bf9cdc6394f30adcc712b2d999fee2d2611c2031f2e9c6c0ed3a96140c4"
+        }
+      ],
+      "manifest_mode": "production",
+      "package_directory_name": "federation",
+      "package_id": "pkg_355d276915a11fcc0087b898321acfa5",
+      "producer": "skywatcher-pr",
+      "producer_head_sha": "0c0b5c8b075e64797777cdaa5d6518ca7823aaf5",
+      "state": "PASS",
+      "streams": {
+        "entities": 6,
+        "observations": 3,
+        "relationships": 3,
+        "sources": 3
+      },
+      "synthetic_rows_dropped": 0
+    }
+  ],
+  "schema": "access_point_cross_repository_verification/1.0"
+}

@@ -1,0 +1,11 @@
+{
+  "headers": {
+    "content-type": "application/json;charset=UTF-8",
+    "date": "Mon, 16 Nov 2026 23:22:00 GMT"
+  },
+  "request_url": "https://www.ngdc.noaa.gov/next-catalogs/rest/multibeam/catalog/survey?geometry=-66.7579%2C18.4377%2C-66.6579%2C18.5377&max=100&offset=0",
+  "response_sha256": "67ae7288ffe7f627b7860c29e129a708c889ef524b9579fea0ff97321d624e84",
+  "response_size": 2135,
+  "retrieved_utc": "2026-11-16T23:22:01.503482+00:00",
+  "status": 200
+}

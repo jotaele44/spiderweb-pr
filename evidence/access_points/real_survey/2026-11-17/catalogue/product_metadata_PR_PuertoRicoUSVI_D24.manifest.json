@@ -1,0 +1,13 @@
+{
+  "headers": {
+    "Content-Type": "application/xml",
+    "Date": "Tue, 17 Nov 2026 13:52:43 GMT",
+    "ETag": "\"37b3-6586b896fe592\"",
+    "Last-Modified": "Fri, 07 Aug 2026 02:12:30 GMT"
+  },
+  "request_url": "https://thor-f5.er.usgs.gov/ngtoc/metadata/waf/elevation/1_meter/geotiff/PR_PuertoRicoUSVI_D24/USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.xml",
+  "response_sha256": "4ab72cfa2f6f5c48014d2efc9899e776f420798225b02e7a75f4af56f7d45db3",
+  "response_size": 14259,
+  "retrieved_utc": "2026-11-17T13:52:43.985593+00:00",
+  "status": 200
+}

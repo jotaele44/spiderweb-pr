@@ -31,7 +31,7 @@
       "Repository": "aguayluz-pr",
       "Default_Level": "L1",
       "Cell_Profile_Materializer_State": "IMPLEMENTED",
-      "Migration_State": "FIRST_SLICE_PIPELINE_IMPLEMENTED",
+      "Migration_State": "FIRST_SLICE_EXECUTION_FROZEN",
       "Slices": [
         {
           "Slice_ID": "NWPS_GAUGE_STATE",
@@ -43,8 +43,21 @@
           "Target_Level": "L1",
           "Workflow": ".github/workflows/pr-grid-v2-certification.yml",
           "Workflow_Job": "certify-aguayluz-nwps",
-          "Execution_Evidence_State": "CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY",
-          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+          "Execution_Evidence_State": "FROZEN_CI_ARTIFACT_PASS",
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL",
+          "Certification_Receipt_Path": "registry/spatial/v2/aguayluz_nwps_l1_migration.certification.json",
+          "Certification_SHA256": "9f6b31369b8372e64f697079b5335c769573cb0dfd1f98147af8649e13eeb5b0",
+          "Source_SHA256": "232569ad1465a6b89e3e3625fe237dc8a18fa5547cf81bc3dd3e7f5f5d8c2363",
+          "Input_Record_Count": 118,
+          "Binding_Row_Count": 118,
+          "Profile_Count": 111,
+          "Workflow_Run_ID": 41530288733,
+          "Workflow_Job_ID": 125568406973,
+          "Workflow_Head_SHA": "9c7809310aa7013c87f6b7affae213f6e96b34b5",
+          "Workflow_Artifact_ID": 13181641984,
+          "Workflow_Artifact_Bytes": 33989,
+          "Workflow_Artifact_SHA256": "432df011b706eacd6a1462201c6747d403934317ef02c9d4f3cbc8feb88c9449",
+          "Execution_Observed_UTC": "2026-11-02T21:39:24Z"
         }
       ]
     },
@@ -52,15 +65,89 @@
       "Repository": "skywatcher-pr",
       "Default_Level": "L2",
       "Cell_Profile_Materializer_State": "IMPLEMENTED",
-      "Migration_State": "NOT_YET_MIGRATED",
-      "Slices": []
+      "Migration_State": "SOURCE_QUALIFIED_LOCAL_RECOMPUTATION_PASS_CI_BLOCKED_RIGHTS",
+      "Slices": [
+        {
+          "Slice_ID": "N400AH_STRUCTURED_TRACKS_2026Q2_Q3_v1",
+          "Evidence_Commit": "7f5a3be1fed169d2521cb8c728101246ffb17b6c",
+          "Source_Recovery_Commit": "7812b0795a800e8ff02b6bf54d7313a1879f8e84",
+          "Source_Hash_Ledger_Path": "data/flight_tracks/N400AH/source_hashes.csv",
+          "Source_Hash_Ledger_Git_Blob_SHA1": "cd3a7afe618f3fe29546336aa03dedbdbab679f8",
+          "Source_Recovery_Attestation_Path": "data/flight_tracks/N400AH/source_recovery_attestation.json",
+          "Source_Recovery_Attestation_Git_Blob_SHA1": "d36ef10ef3a706f2dba252f8f9ada38f67fa16d6",
+          "Local_Recomputation_Receipt_Path": "data/flight_tracks/N400AH/grid_v2_local_recomputation_receipt.json",
+          "Local_Recomputation_Receipt_Git_Blob_SHA1": "c5b5d9a9945ba53e9ea762a2f3909d6416b13308",
+          "Local_Recomputation_Receipt_SHA256": "e3a49f4d35e269483cfeacfaca0d6fcb515353a3fc99c6023a1fdc3a675596b7",
+          "Migration_Input_Class": "EXACT_SOURCE_POINT",
+          "Migration_Provenance_Class": "RECOMPUTED_FROM_SOURCE_COORDINATE",
+          "Coordinate_Evidence_State": "VERIFIED_SOURCE_COORDINATE",
+          "Source_CRS": "EPSG:4326",
+          "Target_Level": "L2",
+          "Execution_Evidence_State": "INDEPENDENT_NUMERIC_RECOMPUTATION_PASS",
+          "Authority_Execution_State": "NOT_EXECUTED",
+          "CI_Reproducibility_State": "BLOCKED_REDISTRIBUTION_RIGHTS_UNVERIFIED",
+          "Provider_Source_Redistribution_State": "UNVERIFIED",
+          "Original_Source_Archive_Byte_Identity_State": "UNRESOLVED",
+          "Recovery_Container_Comparison_State": "DISTINCT_PAYLOADS",
+          "Frozen_Provider_Member_Count": 50,
+          "Frozen_Provider_Matched_Byte_Identical_Count": 50,
+          "Input_Record_Count": 12455,
+          "Binding_Row_Count": 10875,
+          "Interior_Record_Count": 10875,
+          "Outside_Record_Count": 1580,
+          "Edge_Shared_Record_Count": 0,
+          "Corner_Shared_Record_Count": 0,
+          "Boundary_Snap_Record_Count": 0,
+          "Unique_Bound_L2_Cell_Count": 3211,
+          "Deterministic_Local_Source_Bundle_Bytes": 941340,
+          "Deterministic_Local_Source_Bundle_SHA256": "5474176bf080b38174c1fbc2b15b9afc3ef6d0d69fb04612769ca1e7485ac504",
+          "Local_Aggregate_Bytes": 86797,
+          "Local_Aggregate_SHA256": "45662554e29a86fb6eb57eb7dd7740476e2d83430d746e594422ff43bcbb28e3",
+          "Raw_Provider_Payloads_Committed": false,
+          "Derived_Coordinate_Rows_Committed": false,
+          "Per_Cell_Aggregate_Committed": false,
+          "Profile_Execution_State": "NOT_EXECUTED",
+          "Geometry_Copied": false,
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+        }
+      ]
     },
     {
       "Repository": "ovnis-pr",
       "Default_Level": "L1",
       "Cell_Profile_Materializer_State": "IMPLEMENTED",
-      "Migration_State": "NOT_YET_MIGRATED",
-      "Slices": []
+      "Migration_State": "BLOCKED_NO_VERIFIED_SOURCE_COORDINATE_DENOMINATOR",
+      "Slices": [
+        {
+          "Slice_ID": "OVNIS_MASTER_CASE_COORDINATE_EVIDENCE_AUDIT",
+          "Slice_Type": "MIGRATION_ELIGIBILITY_AUDIT",
+          "Evidence_Commit": "2c6fc34970b1cd863821e6fdf6895ea1f454ae99",
+          "Source_Path": "data/master/master_cases.jsonl",
+          "Source_Commit": "6fcbfe58b349c59ed3ebd27ca2bca4afcad4aa22",
+          "Source_Git_Blob_SHA1": "428990a32070295f1efe7a7779e4b0e9f7200e82",
+          "Coordinate_Evidence_Denominator_Path": "data/master/pr_grid_v2_coordinate_evidence_denominator.json",
+          "Coordinate_Evidence_Denominator_Git_Blob_SHA1": "7622a8d8ba918458a8b98a24a82ea3d7754f8339",
+          "Coordinate_Evidence_Auditor_Path": "federation/spatial/audit_pr_grid_v2_coordinate_evidence.py",
+          "Coordinate_Evidence_Auditor_Git_Blob_SHA1": "9df6cd1a7fbe83567f3469bf82aa78e99eb5eda2",
+          "Migration_Input_Class": "EXACT_SOURCE_POINT",
+          "Required_Coordinate_Evidence_State": "VERIFIED_SOURCE_COORDINATE",
+          "Master_Row_Count": 470,
+          "Numeric_Coordinate_Pair_Count": 469,
+          "Missing_Or_NonNumeric_Coordinate_Pair_Count": 1,
+          "Verified_Source_Coordinate_Marker_Count": 0,
+          "Coordinate_Provenance_Field_Row_Count": 0,
+          "Exact_Source_Point_Admissible_Count": 0,
+          "Coordinate_Presence_Is_Exact_Evidence": false,
+          "Location_Confidence_Is_Exact_Evidence": false,
+          "Evidence_Tier_Is_Exact_Coordinate_Evidence": false,
+          "Source_Exporter_Geometry_Precision_State": "UNKNOWN",
+          "Generated_Federation_Exports_Committed": false,
+          "Authority_Execution_State": "NOT_EXECUTED",
+          "Execution_Evidence_State": "AUDIT_PASS_BLOCKED",
+          "Geometry_Copied": false,
+          "Promotion_State": "CANDIDATE_NOT_CANONICAL"
+        }
+      ]
     },
     {
       "Repository": "moneysweep-pr",
@@ -78,5 +165,5 @@
     }
   ],
   "Unmigrated_Domains_Are_Not_Zero": true,
-  "Notes": "Authority generation advanced to b8f5cf303ab7fc2b6ed006edce0fb12e1344a096 because that commit preserves the frozen V2 geometry manifest/schema bytes while adding the canonical binding-migration implementation. This denominator freezes migration scope and implementation state. NOT_YET_MIGRATED and CI_ARTIFACT_NOT_FROZEN_IN_REPOSITORY are explicit non-promotion states. TheHub is a control-plane/index consumer and is not a domain geometry producer."
+  "Notes": "Authority generation remains evidence-gated. AguaYLuz NWPS L1 has a frozen CI authority execution artifact. Skywatcher N400AH L2 has byte-identical source-subset recovery plus an independent numeric recomputation receipt, but Spiderweb authority execution and CI/public source-byte replay remain blocked because provider redistribution rights are unverified. OVNIS now has a frozen coordinate-evidence eligibility audit: 469/470 master cases contain numeric coordinate pairs, but zero rows carry VERIFIED_SOURCE_COORDINATE or coordinate-provenance fields, so exact-source-point migration remains blocked. Coordinate presence, confidence, and evidence tier are not promoted to exactness. CANDIDATE_NOT_CANONICAL remains in force; blocked/unmigrated states remain distinct from zero records."
 }

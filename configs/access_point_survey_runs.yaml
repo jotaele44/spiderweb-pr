@@ -1,0 +1,192 @@
+# Real gridded surveys processed for the access-point registries.
+#
+# A run cuts a window out of one or more held, hashed elevation products,
+# around the point a registry already holds for one record, and looks for
+# closed basins in it.  Nothing here gives a record a position: the window
+# centre is read from the registry, never typed in this file.
+#
+# What must be stated for every product, and where it was read:
+#   * the vertical datum THE PRODUCT states, and where that statement is
+#     (a structured metadata element is stronger than a sentence);
+#   * the vertical uncertainty, or null if no source publishes one.  A null
+#     is kept as unknown; it is never replaced by a typical value.
+#
+# Thresholds are working values.  They have not been calibrated against
+# field truth.
+version: access_point_survey_runs_v1
+runs:
+  - run_id: "2026-11-17"
+    registry: access_point.inland
+    target_feature: INAP-PR-000003
+    half_size_m: 500
+    wide_half_size_m: 1500
+    wide_deep_threshold_m: 10.0
+    parameters:
+      min_depth_m: 1.0
+      min_area_m2: 100.0
+      # This run was made before nested basins became the default, and is
+      # kept as it was run. Every run must state the mode explicitly.
+      nested: false
+    products:
+      - epoch: "2018"
+        filename: USGS_1m_x72y204_PR_PRVI_F_2018.tif
+        native_identifier: "TNM:5eb61d7d82ce25b5135ae912"
+        survey_date: "2018-04-17/2019-04-19"
+        stated_vertical_datum: NAVD88
+        vertical_statement_basis: >-
+          One sentence in the product abstract ("All bare earth elevation
+          values are in meters and are referenced to the North American
+          Vertical Datum of 1988"), identical across the programme. The tile's
+          own metadata file has no structured vertical-datum element and the
+          GeoTIFF carries no vertical reference.
+        vertical_uncertainty_m: 0.072
+        vertical_uncertainty_basis: >-
+          Project-level RMSEz (7.2 cm) published by the US Interagency
+          Elevation Inventory for "2018 Hurricane Maria PR and USVI Lidar",
+          whose distributor list names this project (PR_PRVI_F_2018). It is a
+          project figure for open ground, not a per-cell uncertainty.
+        lineage_root_id: "USIEI:GlobalID:{933E88E7-A131-40E5-8BAA-C9575216E040}"
+      - epoch: "2024"
+        filename: USGS_1M_19_x72y204_PR_PuertoRicoUSVI_D24.tif
+        native_identifier: "TNM:6a753f0e1ba49b79d0c347d8"
+        survey_date: "2023-12-27/2025-03-20"
+        stated_vertical_datum: NAVD88
+        vertical_statement_basis: >-
+          The same programme sentence in the product abstract. The tile's own
+          metadata file has no structured vertical-datum element and the
+          GeoTIFF carries no vertical reference.
+        vertical_uncertainty_m: null
+        vertical_uncertainty_basis: >-
+          None published: the tile metadata states no accuracy and the
+          elevation inventory did not list this project on 2026-11-16.
+        lineage_root_id: null
+
+# Gridded seabed surveys processed for the Off-Shore Access Point registry.
+#
+# A seabed run reads ONE held, hashed hydrographic product.  It names no
+# target record and states no position: no off-shore record holds one.  The
+# only place it names is a declared search area, which is an analyst-drawn box
+# for finding sources and never the position of a feature or a seed.
+#
+# The vertical uncertainty is the product's own, cell by cell, so no single
+# figure is stated here.
+seabed_runs:
+  - run_id: "2026-11-18-offshore"
+    registry: access_point.offshore
+    search_area: guayama_punta_tuna_discovery_v0_1
+    parameters:
+      # Working values, not calibrated against field truth.  The depth floor is
+      # the median of the product's own cell uncertainty (2.0 m); the area
+      # floor is four base cells of 64 m.
+      min_depth_m: 2.0
+      min_area_m2: 16384.0
+      nested: true
+    product:
+      filename: W00247_MB_VR_MLLW_3of4.bag
+      native_identifier: "NOS:BAG:W00247:3of4"
+      landing_page: "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html"
+      sha256: b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8
+      survey_date: "2013"
+      survey_date_basis: >-
+        The survey year the NOS BAG inventory gives for W00247, as frozen in
+        the source-discovery catalogue of 2026-11-16. The file itself is dated
+        2021-12-07, which is when the grid was produced, not when the seabed
+        was surveyed.
+      stated_vertical_datum: MLLW
+      vertical_statement_basis: >-
+        A structured vertical-datum element in the product's own metadata
+        (VERT_DATUM["MLLW"]), and the name of its coordinate system
+        ("NAD83 / UTM zone 20N + MLLW depth"). The file name says the same.
+      vertical_uncertainty_basis: >-
+        The product's own uncertainty band, one value per cell, used as
+        published. It is not a single project figure.
+      lineage_root_id: "NOS:BAG:W00247"
+      # An earlier receipt for the same file, made by different code in
+      # August 2026.  The report compares itself with it.
+      prior_receipt: evidence/marine/w00247_bag_v0_1/w00247_bag_receipt.json
+  # The same file read again, this time from its finer grids, resampled to
+  # 8 m cells.  Each cell holds the mean elevation of the finer-grid nodes
+  # inside it and the largest of their uncertainties; a cell with no node is
+  # empty.  Same soundings, so agreement with the base-grid run is a
+  # consistency check, not replication.  No download: the file is already held.
+  - run_id: "2026-11-19-offshore-8m"
+    registry: access_point.offshore
+    search_area: guayama_punta_tuna_discovery_v0_1
+    resolution_m: 8
+    # The frozen landing page and the download manifest are those of the
+    # base-grid run; they are not copied.
+    evidence_run: "2026-11-18-offshore"
+    compare_with: "2026-11-18-offshore"
+    parameters:
+      # The base-grid run's thresholds, unchanged, so that only resolution
+      # differs between the two runs.
+      min_depth_m: 2.0
+      min_area_m2: 16384.0
+      nested: true
+    product: &w00247_3of4
+      filename: W00247_MB_VR_MLLW_3of4.bag
+      native_identifier: "NOS:BAG:W00247:3of4"
+      landing_page: "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html"
+      sha256: b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8
+      survey_date: "2013"
+      survey_date_basis: >-
+        The survey year the NOS BAG inventory gives for W00247, as frozen in
+        the source-discovery catalogue of 2026-11-16. The file itself is dated
+        2021-12-07, which is when the grid was produced, not when the seabed
+        was surveyed.
+      stated_vertical_datum: MLLW
+      vertical_statement_basis: >-
+        A structured vertical-datum element in the product's own metadata
+        (VERT_DATUM["MLLW"]), and the name of its coordinate system
+        ("NAD83 / UTM zone 20N + MLLW depth"). The file name says the same.
+      vertical_uncertainty_basis: >-
+        The product's own uncertainty, node by node in its finer grids; each
+        8 m cell carries the largest uncertainty of the nodes inside it. It is
+        not a single project figure.
+      lineage_root_id: "NOS:BAG:W00247"
+  # The same 8 m reading with a smaller area floor (16 cells of 8 m), declared
+  # before the run and not tuned afterwards: the pass that can see features
+  # smaller than one base cell.  It reads the 8 m run's subset.
+  - run_id: "2026-11-19-offshore-8m-small"
+    registry: access_point.offshore
+    search_area: guayama_punta_tuna_discovery_v0_1
+    resolution_m: 8
+    evidence_run: "2026-11-18-offshore"
+    subset_run: "2026-11-19-offshore-8m"
+    compare_with: "2026-11-18-offshore"
+    parameters:
+      min_depth_m: 2.0
+      min_area_m2: 1024.0
+      nested: true
+    product: *w00247_3of4
+
+# Searches for an independent second survey of depressions a seabed run found.
+#
+# Replication needs a different acquisition: another cruise, another year,
+# other soundings.  A search names the run whose depressions it tests (their
+# deepest points are read from that run's report, never typed here), the
+# survey they came from, one frozen footprint query, and at most one gridded
+# candidate product that was fetched to check.  Its report says what was
+# found; it attaches nothing to any record.
+replication_searches:
+  - search_id: "2026-11-20-offshore-replication"
+    registry: access_point.offshore
+    earlier_run: "2026-11-19-offshore-8m-small"
+    reference_run: "2026-11-18-offshore"
+    reference_landing_page: "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html"
+    # One NCEI multibeam-footprint query over a small box drawn around the
+    # depressions' deepest points (as the 8 m report gives them), frozen on
+    # 2026-11-20.  The box is a query, not a feature position.
+    footprint_query: "https://gis.ngdc.noaa.gov/arcgis/rest/services/multibeam_footprints/MapServer/0/query?f=json&where=1%3D1&geometry=-65.94%2C17.785%2C-65.86%2C17.82&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultRecordCount=2000"
+    discovery_target: guayama_punta_tuna_discovery_v0_1
+    # The earlier receipt that examined the only processed multibeam grid
+    # crossing W00247 (EX1502L3, 50 m).
+    prior_receipt: evidence/marine/GUAYAMA_SECOND_SENSOR_v0_5_RECEIPT.json
+    # The one gridded survey whose catalogue box overlapped the depressions.
+    # Fetched on 2026-11-20 under a grant of one file and 40 MB.
+    candidate_product:
+      filename: H12935_MB_VR_MLLW.bag
+      native_identifier: "NOS:BAG:H12935"
+      url: "https://data.ngdc.noaa.gov/platforms/ocean/nos/coast/H12001-H14000/H12935/BAG/H12935_MB_VR_MLLW.bag"
+      landing_page: "https://www.ngdc.noaa.gov/nos/H12001-H14000/H12935.html"
+      sha256: 58ba678b7468411b6ff56ab5ce958bf942b1ec8badf642efe770915ee3d1df41
