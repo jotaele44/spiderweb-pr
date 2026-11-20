@@ -4,6 +4,25 @@ Canonical terminology for the Spiderweb intake layer. Operators and downstream g
 
 This is the **vocabulary contract** between the OCR/extraction layer and the downstream Spiderweb graph.
 
+## Disambiguation: "ILAP" and "OSAP"
+
+The letters ILAP name several unrelated things in this repository. In this
+document `ILAP` means only the first row. The two access-point registries are
+none of the rows above them and never use these acronyms as identifiers; see
+[`ACCESS_POINT_TERMINOLOGY_DECISION.md`](ACCESS_POINT_TERMINOLOGY_DECISION.md).
+
+| Meaning | Namespace | Example identifier |
+|---|---|---|
+| Recurring indirect flight track (this document) | `aviation.ilap_path` | `ILAP_<flight_id>`, `candidate_type` `ilap` |
+| Investigation area and cluster grouping | `investigation.ilap_area`, `investigation.ilap_cluster` | `ILAP_AREA_*`, `ILAP_CLUSTER_*` |
+| "Infrastructure-linked access point" term, its layer family and node registry | `analytic.ilap_infrastructure_linked` | `SW-ALL-0000012`, `ilap_master_nodes` |
+| Terrain screening score | `terrain.ilap_score` | `ILAP_SCORE` |
+| Rail source dataset | `source.ferrocarril_ilap` | `FERRO-0042` |
+| Enrichment hook | `enrichment.ilap_context` | `ilap_context_distance_m` |
+| Operator source layers whose acronym is never expanded | `source.fic_osap` | `fic_osap_final_set_v3`, `OSAP_to_ILAP` |
+| **Inland Access Points** registry | `access_point.inland` | `INAP-PR-000001` |
+| **Off-Shore Access Points** registry | `access_point.offshore` | `OFAP-PR-000001` |
+
 ---
 
 ## Canonical entity types

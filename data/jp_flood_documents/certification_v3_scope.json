@@ -1,0 +1,67 @@
+{
+  "schema_version": "spiderweb.jp-flood-certification-v3/1.0",
+  "certification_name": "JP_FLOOD_CERTIFICATION_V3",
+  "baseline": {
+    "certification_path": "data/jp_flood_documents/certification/2026-09-21/certification.json",
+    "byte_ledger_path": "data/jp_flood_documents/certification/2026-09-21/byte-ledger.csv",
+    "sha256sums_path": "data/jp_flood_documents/certification/2026-09-21/SHA256SUMS.txt",
+    "producer_contract_path": "data/jp_flood_documents/producer_contract_v1.json",
+    "certification_sha256": "e6832834f875900dda4c3f5f3b25444e39e9f804d1279ffb45ddecee9082c60c",
+    "sha256sums_sha256": "118fa90880747177cf0349db19ad21bcc8432110b1032dc4d3e5d420cb7fb305"
+  },
+  "certified_claim": "78/78 operational flood-document manifestations have verified byte identity for the certified acquisition snapshot.",
+  "explicit_nonclaims": [
+    "all flood data in Puerto Rico is complete",
+    "all maps are current",
+    "all municipalities have canonical JP series PDFs",
+    "fallback documents are methodologically equivalent to canonical series members",
+    "all FEMA panels are represented",
+    "all flood-risk geometry is certified"
+  ],
+  "source_state_semantics": {
+    "AVAILABLE": "canonical JP series manifestation is listed and available",
+    "LISTED_BUT_MISSING": "municipality remains a listed canonical series member but its canonical manifestation is unavailable",
+    "NOT_LISTED": "municipality is absent from the canonical series listing"
+  },
+  "fallback_rule": "authoritative_fallback_not_equivalent",
+  "expected": {
+    "municipality_denominator": 78,
+    "series_listed": 77,
+    "available": 76,
+    "listed_but_missing": 1,
+    "not_listed": 1,
+    "operational_document_count": 78,
+    "byte_verified_count": 78,
+    "failure_count": 0,
+    "total_bytes": 914381842
+  },
+  "ui_semantics": {
+    "AVAILABLE": "Available",
+    "LISTED_BUT_MISSING": "Listed · source file missing",
+    "NOT_LISTED": "Not listed in source series",
+    "byte_certification_badge": "Byte certified 78/78",
+    "invariant": "byte certification PASS never promotes source_state"
+  },
+  "gates": [
+    "SOURCE_DENOMINATOR_GATE",
+    "SOURCE_STATE_GATE",
+    "FALLBACK_IDENTITY_GATE",
+    "OPERATIONAL_COVERAGE_GATE",
+    "BYTE_IDENTITY_GATE",
+    "BYTE_LEDGER_REPLAY_GATE",
+    "ARITHMETIC_CLOSURE_GATE",
+    "CERTIFICATION_CHAIN_GATE",
+    "CROSS_REPO_CONTRACT_DRIFT_GATE",
+    "MANIFEST_FILE_BINDING_GATE",
+    "CERTIFICATION_MUTATION_GATE",
+    "SOURCE_STATE_UI_SEMANTICS_GATE",
+    "REPRODUCIBLE_ACQUISITION_GATE",
+    "SOURCE_STATE_TRANSITION_GATE",
+    "CERTIFICATION_SCOPE_GATE"
+  ],
+  "live_gate_policy": {
+    "source_state_transition": "detect only; never auto-promote; any transition requires explicit adjudication",
+    "reproducible_acquisition": "two clean replicas must agree with each other; upstream byte drift is classified and requires adjudication",
+    "transport_failure": "TRANSPORT_BLOCKED is not negative evidence and does not mutate the frozen certification"
+  }
+}

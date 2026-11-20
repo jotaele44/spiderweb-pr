@@ -1,0 +1,12 @@
+{
+  "headers": {
+    "Content-Type": "application/json; charset=UTF-8",
+    "Date": "Mon, 16 Nov 2026 23:21:57 GMT",
+    "ETag": "\"1607711868\""
+  },
+  "request_url": "https://coast.noaa.gov/arcgis/rest/services/USInteragencyElevationInventory/USInteragencyElevInventory/MapServer/0/query?f=json&where=1%3D1&geometry=-66.7579%2C18.4377%2C-66.6579%2C18.5377&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=%2A&returnGeometry=true&outSR=4326&resultOffset=0&resultRecordCount=2000&orderByFields=OBJECTID+ASC",
+  "response_sha256": "b56f120917c6dfeffa47ccec1cbae73434e0bd7f59e0cb1cb0a40c554f11d44c",
+  "response_size": 412029,
+  "retrieved_utc": "2026-11-16T23:21:57.393502+00:00",
+  "status": 200
+}

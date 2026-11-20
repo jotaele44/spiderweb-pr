@@ -1,0 +1,12 @@
+{
+  "headers": {
+    "content-type": "text/html; charset=UTF-8",
+    "date": "Wed, 18 Nov 2026 15:00:29 GMT",
+    "last-modified": "Wed, 22 Jul 2026 02:44:05 GMT"
+  },
+  "request_url": "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html",
+  "response_sha256": "542a47617d33a70fee1f5a826f7b6ff44e34dc9a735892870204525402f415c5",
+  "response_size": 49989,
+  "retrieved_utc": "2026-11-18T15:00:29.356312+00:00",
+  "status": 200
+}

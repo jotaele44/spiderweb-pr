@@ -5,6 +5,10 @@ FastAPI orchestration layer for the Puerto Rico Integrated Intelligence System.
 Provides REST endpoints for all PRIIS entities (SQLite-backed), SSE streaming
 for pipeline jobs and RAG queries, and GeoJSON endpoints for spatial layers.
 
+The read-only access-point registry routes (``/v1/access-points/*``) live in
+``server/backend/access_points_api.py`` and are included below. They are the
+only versioned routes in this API; every other route is unversioned.
+
 Start: uvicorn server.backend.main:app --reload --port 8000
 (run from the repo root so relative paths resolve correctly)
 """
@@ -27,7 +31,7 @@ import aiosqlite
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sse_starlette.sse import EventSourceResponse
 
 log = logging.getLogger("priis.backend")
@@ -80,6 +84,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# NOAA Emergency Response Imagery tiles + footprints (/imagery/eri/*). Mounted
+# here rather than in production.py so the dev server, the desktop wrapper and
+# production all serve the same imagery routes. Guarded like the YAML registries
+# below: a missing optional dependency must not take the rest of the API down.
+try:
+    from server.backend.eri_imagery import router as _eri_router
+
+    app.include_router(_eri_router)
+except Exception as exc:  # noqa: BLE001 — log and keep serving
+    log.warning("ERI imagery routes unavailable: %s", exc)
+
+# Inland and Off-Shore Access Point registries (/v1/access-points/*), read-only.
+# Guarded the same way: these routes must never take the rest of the API down.
+try:
+    from server.backend.access_points_api import router as _access_points_router
+
+    app.include_router(_access_points_router)
+except Exception as exc:  # noqa: BLE001 — log and keep serving
+    log.warning("access point registry routes unavailable: %s", exc)
 
 # In-memory job registry: job_id → subprocess.Popen
 _jobs: dict = {}
@@ -562,7 +586,7 @@ _LAYER_BINDING_REGISTRY = _load_spatial_yaml(LAYER_BINDING_REGISTRY_PATH)
 async def spatial_capabilities():
     """What the spatial runtime can actually do right now — not aspirational.
 
-    cesium is True as of Phase 2: workbench/priis-v1/app ships a lazily-loaded
+    cesium is True as of Phase 2: server/frontend ships a lazily-loaded
     CesiumRegionalRuntime behind the SpatialRuntime seam. It is a regional
     *shell* only — ellipsoid globe with no imagery and no terrain (terrain is
     Phase 4, gated on the GEBCO vertical-datum work), and it falls back to
@@ -611,15 +635,29 @@ async def spatial_boundary_geometry(boundary_id: str):
     serves it. 404 for an unknown boundary_id; 503 if geometry_ref is set but
     the file hasn't been generated yet on this deployment.
     """
-    boundaries = _BOUNDARY_REGISTRY.get("boundaries", [])
-    entry = next((b for b in boundaries if b["boundary_id"] == boundary_id), None)
+    # Read defensively, matching _load_spatial_yaml: a hand-edited or partially
+    # written registry must degrade to a 404/503 for the affected entry, never a
+    # 500. Entries that aren't mappings (or lack boundary_id) are skipped rather
+    # than raising, so one malformed entry can't take the whole route down.
+    boundaries = _BOUNDARY_REGISTRY.get("boundaries") or []
+    if not isinstance(boundaries, list):
+        raise HTTPException(503, "spatial boundary registry is malformed")
+    entry = next(
+        (
+            b
+            for b in boundaries
+            if isinstance(b, dict) and b.get("boundary_id") == boundary_id
+        ),
+        None,
+    )
     if entry is None:
         raise HTTPException(404, f"unknown boundary '{boundary_id}'")
     ref = entry.get("geometry_ref")
     if not ref:
+        status = entry.get("status", "unknown")
         raise HTTPException(
             404,
-            f"boundary '{boundary_id}' has no geometry_ref (status={entry['status']})",
+            f"boundary '{boundary_id}' has no geometry_ref (status={status})",
         )
     path = ROOT / ref
     if not path.exists():
@@ -633,15 +671,23 @@ async def spatial_boundary_geometry(boundary_id: str):
 # ─── RAG / Query ───────────────────────────────────────────────────────────────
 
 class RagQueryRequest(BaseModel):
-    query: str
-    top_k: int = 5
+    query: str = Field(min_length=1, max_length=1000)
+    top_k: int = Field(default=5, ge=1, le=20)
     no_context: bool = False
 
 
-async def _stream_rag(query: str, top_k: int, no_context: bool) -> AsyncGenerator[dict, None]:
-    cmd = ["python", str(ROOT / "query_llm.py"), query, "--top-k", str(top_k)]
-    if no_context:
+def _rag_query_command(query: str, top_k: int, no_context: bool) -> list[str]:
+    """Fixed executable and options, followed by positional-only user text."""
+    validated = RagQueryRequest(query=query, top_k=top_k, no_context=no_context)
+    cmd = [sys.executable, str(ROOT / "query_llm.py"), "--top-k", str(validated.top_k)]
+    if validated.no_context:
         cmd.append("--no-context")
+    cmd.extend(["--", validated.query])
+    return cmd
+
+
+async def _stream_rag(query: str, top_k: int, no_context: bool) -> AsyncGenerator[dict, None]:
+    cmd = _rag_query_command(query, top_k, no_context)
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,

@@ -1,0 +1,20 @@
+{
+  "contract": "pr-grid-geographic-v2-source/1.0",
+  "Grid_ID": "PR_GRID_GEOGRAPHIC_V2",
+  "Grid_Version": "2.0.0-rc1",
+  "Geometry_Authority": "spiderweb-pr",
+  "Geometry_Source": "DETERMINISTIC_PROJECTED_NUMERIC_CONTRACT",
+  "External_Geometry_Source": null,
+  "CRS": "EPSG:6566",
+  "Origin": [12000, 180000],
+  "Extent": [12000, 180000, 354000, 314000],
+  "Levels_m": {"L0": 2000, "L1": 1000, "L2": 500, "L3": 250},
+  "Full_Cell_Policy": "FULL_SQUARE",
+  "Masks_Are_Separate": true,
+  "V1_Is_Unchanged": true,
+  "D24_Provider_Invariance": {
+    "state": "PROVISIONAL_PASS_CELL_SET_EQUIVALENCE",
+    "certification_blockers": ["QA-D24-001", "QA-D24-003"],
+    "affects_grid_identity": false
+  }
+}
