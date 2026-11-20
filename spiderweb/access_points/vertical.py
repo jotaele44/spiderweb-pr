@@ -57,6 +57,8 @@ __all__ = [
     "is_placeholder",
     "normalize_datum",
     "to_common_elevation_m",
+    "RegionalPlausibility",
+    "regional_plausibility",
 ]
 
 
@@ -265,6 +267,60 @@ def bind(reference: VerticalReference | None) -> BoundVertical:
         datum=next(iter(resolved)),
         positive=reference.depth_positive,
         horizontal_crs=reference.horizontal_crs,
+    )
+
+
+class RegionalPlausibility(StrEnum):
+    PLAUSIBLE = "PLAUSIBLE"
+    IMPLAUSIBLE_FOR_REGION = "IMPLAUSIBLE_FOR_REGION"
+    NOT_ASSESSED = "NOT_ASSESSED"
+
+
+# Where each orthometric datum is realised, as plain longitude/latitude boxes.
+# Coarse on purpose: this is a sanity check on a *stated* datum, not a geodetic
+# definition.  NAVD88 is realised on the North American mainland only; Puerto
+# Rico and the US Virgin Islands have their own datums.
+_REALISED_IN: dict[VerticalDatum, tuple[tuple[float, float, float, float], ...]] = {
+    VerticalDatum.NAVD88: ((-170.0, 14.0, -52.0, 72.0),),
+    VerticalDatum.PRVD02: ((-68.1, 17.6, -65.15, 18.7),),
+    VerticalDatum.VIVD09: ((-65.2, 17.5, -64.4, 18.5),),
+}
+_ISLAND_BOXES: dict[VerticalDatum, tuple[float, float, float, float]] = {
+    VerticalDatum.PRVD02: (-68.1, 17.6, -65.15, 18.7),
+    VerticalDatum.VIVD09: (-65.2, 17.5, -64.4, 18.5),
+}
+
+
+def regional_plausibility(
+    datum: VerticalDatum, lon: float, lat: float
+) -> tuple[RegionalPlausibility, str]:
+    """Is a stated orthometric datum one that exists at this place?
+
+    Sources sometimes state a datum through programme-wide boilerplate that
+    was written for somewhere else.  The statement is kept as stated; this
+    check only says whether it can be true here, so that a surface is never
+    joined to another on the strength of a datum that is not realised where
+    the data lie.
+    """
+
+    def inside(box: tuple[float, float, float, float]) -> bool:
+        return box[0] <= lon <= box[2] and box[1] <= lat <= box[3]
+
+    if datum not in _REALISED_IN:
+        return RegionalPlausibility.NOT_ASSESSED, (
+            f"{datum.value} is not an orthometric datum with a regional extent here"
+        )
+    if datum is VerticalDatum.NAVD88:
+        for local, box in _ISLAND_BOXES.items():
+            if inside(box):
+                return RegionalPlausibility.IMPLAUSIBLE_FOR_REGION, (
+                    f"NAVD88 is not realised at this location; the datum in use "
+                    f"there is {local.value}"
+                )
+    if any(inside(box) for box in _REALISED_IN[datum]):
+        return RegionalPlausibility.PLAUSIBLE, f"{datum.value} is realised here"
+    return RegionalPlausibility.IMPLAUSIBLE_FOR_REGION, (
+        f"{datum.value} is not realised at this location"
     )
 
 

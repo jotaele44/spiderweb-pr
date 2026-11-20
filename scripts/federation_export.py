@@ -39,6 +39,14 @@ and `satellite_visible_change` observations. It is omitted unless a timeline doc
 is passed with `--site-imagery-timeline`, and an invalid document fails the export
 instead of being skipped.
 
+A sixth lane, the access-point registries (`build_access_point_lane`), adds
+one entity per inland or off-shore access point the registries hold as a
+candidate or better, one `access_point_registry` entity per registry, and a
+`reported_by` link from each record to its registry. Every record keeps a
+CANDIDATE, producer-local identity. It is omitted unless the registry folder
+is passed with `--access-point-registries`, and a registry document that does
+not match its content hash fails the export.
+
 Every package also carries `source_monitors` (thehub-pr ADR 0013, see
 `build_source_monitors`): one row per source this repo's registries say it
 monitors, with when the source last succeeded and how that is known.
@@ -596,6 +604,27 @@ def build_site_imagery_streams(
     return {"sources": [source], "entities": entities, "observations": observations}
 
 
+def build_access_point_lane(registry_dir: Path, now: str) -> dict[str, Any]:
+    """Sources/entities/relationships for the access-point registries (opt-in)."""
+    from spiderweb.access_points.hub_export import build_access_point_streams
+
+    return build_access_point_streams(
+        registry_dir, now=now, fid=_fid, norm=_norm,
+        evidence_state=_evidence_state, lineage=_lineage,
+    )
+
+
+def merge_access_points(streams: dict[str, list[dict]], lane: dict[str, Any]) -> None:
+    """Fold the access-point lane into the canonical streams, in place (idempotent)."""
+    for stream, id_field in (("sources", "source_id"), ("entities", "entity_id"),
+                             ("relationships", "relationship_id")):
+        known = {row[id_field] for row in streams.setdefault(stream, [])}
+        for row in lane[stream]:
+            if row[id_field] not in known:
+                streams[stream].append(row)
+                known.add(row[id_field])
+
+
 def merge_site_imagery(
     streams: dict[str, list[dict]], lane: dict[str, list[dict]]
 ) -> None:
@@ -902,6 +931,10 @@ def main() -> int:
                     help="explicit verified moneysweep-pr canonical export package for PPP geometry")
     ap.add_argument("--no-ppp-geometry", action="store_true",
                     help="Skip the PPP geometry lane even if a producer package is supplied.")
+    ap.add_argument("--access-point-registries", default=None,
+                    help="folder holding the committed access-point registry documents "
+                         "(inland.json, offshore.json) to export as candidate records; "
+                         "a document that fails its content hash fails the export")
     ap.add_argument("--site-imagery-timeline", default=None,
                     help="site imagery timeline document (JSON) to export as a "
                          "provisional lane; an invalid document fails the export")
@@ -910,7 +943,8 @@ def main() -> int:
     pkg = Path(args.package)
     sources_in = _read_stream(pkg, "sources")
     records = {name: _read_stream(pkg, name) for name in RECORD_STREAMS}
-    if not sources_in and not any(records.values()) and not args.site_imagery_timeline:
+    if (not sources_in and not any(records.values()) and not args.site_imagery_timeline
+            and not args.access_point_registries):
         print(f"no envelope streams found in {pkg} — nothing to export")
         return 0
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -951,6 +985,15 @@ def main() -> int:
                 print(f"  - {problem}", file=sys.stderr)
             return 2
         merge_site_imagery(streams, build_site_imagery_streams(document, now))
+
+    if args.access_point_registries:
+        try:
+            lane = build_access_point_lane(Path(args.access_point_registries), now)
+        except (OSError, ValueError) as exc:
+            print(f"FAIL — access-point registries not exportable: {exc}", file=sys.stderr)
+            return 2
+        merge_access_points(streams, lane)
+        print(f"access points: {json.dumps(lane['summary'], sort_keys=True)}", file=sys.stderr)
 
     if args.mode == "production":
         synthetic = [r for s in streams.values() for r in s if r.get("synthetic")]

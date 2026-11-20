@@ -1,0 +1,1124 @@
+{
+  "schema": "access_point_certification_report/1.0",
+  "generated_utc": "2026-11-18T00:30:00Z",
+  "statement": "Software tested; science exploratory; not certified; production not authorised. A passing test suite is not a certification.",
+  "repositories": [
+    {
+      "repo": "spiderweb-pr",
+      "head_sha": "278eb9a8a1e43b906ee0cb83ffc0aa2c9a15c8e6",
+      "tree_sha": "834261d384e02a50d12586bee73b1b84993beb44",
+      "role": "changed by this work (base commit shown)"
+    },
+    {
+      "repo": "aguayluz-pr",
+      "head_sha": "e29bfbc55df5e9ea1724fd77837f0ee064ca6d31",
+      "tree_sha": "a1c8e9a2e1a9da828c954d8345b2868a6974b1e6",
+      "role": "audited, unchanged"
+    },
+    {
+      "repo": "thehub-pr",
+      "head_sha": "70b74c7e71a6f380a45fd374332e60eef174e9b8",
+      "tree_sha": "5884b50efd72dee7425bfcd53b1a75e0c8118632",
+      "role": "audited, unchanged"
+    },
+    {
+      "repo": "skywatcher-pr",
+      "head_sha": "0c0b5c8b075e64797777cdaa5d6518ca7823aaf5",
+      "tree_sha": "8dd837d4fdf678ff3ef343aa69c2f77c45dfd90a",
+      "role": "audited, unchanged"
+    },
+    {
+      "repo": "moneysweep-pr",
+      "head_sha": "08e1bb2ee7e92c786ba7eb60397fe10703f2ce53",
+      "tree_sha": "8256d5abb8fa49ebca177d11e6729220edf410e4",
+      "role": "audited, unchanged"
+    }
+  ],
+  "gates": [
+    {
+      "gate_id": "BASELINE_FREEZE",
+      "title": "Repository heads, dependencies and tests frozen before any change",
+      "state": "PASS",
+      "claim_class": "FACT",
+      "evidence": [
+        "evidence/access_points/baseline_manifest_v1.json"
+      ],
+      "detail": "All five heads equalled origin/main; spiderweb-pr was at the commit named in the proposal. 2109 core tests, 50 grid tests and 148 frontend tests passed before the change. main later advanced to b2c532f and was merged into the branch; one textual conflict in CHANGELOG.md. That work merged as pull request 458; the source-discovery work that followed started from main at 9c37b42."
+    },
+    {
+      "gate_id": "TERMINOLOGY_COLLISION",
+      "title": "New registries cannot collide with existing meanings of ILAP and OSAP",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "docs/ACCESS_POINT_TERMINOLOGY_DECISION.md",
+        "tests/test_access_points_core.py"
+      ],
+      "detail": "Every legacy spelling classifies to its own namespace; bare acronyms are refused; no new identifier contains a reserved token; nothing existing was renamed."
+    },
+    {
+      "gate_id": "TERMINOLOGY_OWNERSHIP",
+      "title": "Owners agree on the canonical meaning of ILAP and the expansion of FIC/OSAP",
+      "state": "OPEN",
+      "claim_class": "UNKNOWN",
+      "evidence": [
+        "docs/ACCESS_POINT_TERMINOLOGY_DECISION.md"
+      ],
+      "detail": "Three questions for the repository owners are unanswered; the sibling repository claims a different canonical expansion."
+    },
+    {
+      "gate_id": "SOFTWARE_TESTS",
+      "title": "Full repository test suite",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/"
+      ],
+      "detail": "2590 passed, 51 skipped, 0 failed; total coverage 76.84% against a floor of 62. 456 of the tests belong to the access-point package, 25 of them added with the reference maps and the comparison."
+    },
+    {
+      "gate_id": "SCHEMA_TESTS",
+      "title": "Registry, ledger and certification schemas",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/test_access_points_schemas.py",
+        "schemas/access_point_registry.schema.json"
+      ],
+      "detail": "29 tests; committed documents conform; schema vocabularies are asserted equal to the code."
+    },
+    {
+      "gate_id": "IDENTITY_BOUNDARIES",
+      "title": "Identity is never derived from name, distance, category or count",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/test_access_points_core.py"
+      ],
+      "detail": "Correspondence cardinalities preserved; cross-namespace identity refused; identity binding needs an authoritative basis and an independent reviewer."
+    },
+    {
+      "gate_id": "EVIDENCE_LADDER",
+      "title": "Anomaly, feature, opening, passage and connection are kept apart",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "spiderweb/access_points/rules.py",
+        "tests/test_access_points_core.py"
+      ],
+      "detail": "Shape alone cannot establish an opening; rungs cannot be skipped; contradictions are preserved; no automatic promotion; the producer cannot verify its own evidence."
+    },
+    {
+      "gate_id": "CRS_AND_VERTICAL_DATUM_CONTROLS",
+      "title": "Missing CRS, unknown datum and wrong sign fail closed",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "spiderweb/access_points/vertical.py",
+        "tests/test_access_points_science.py"
+      ],
+      "detail": "Verified in software. No certified datum transform for Puerto Rico is registered, so no real land and sea surface can yet share a vertical axis. A stated datum is now also checked for regional plausibility: both processed tiles say NAVD88, which is not realised in Puerto Rico, so they are analysed singly and compared with each other but not joined to another reference."
+    },
+    {
+      "gate_id": "SCIENTIFIC_CONTROLS_SYNTHETIC",
+      "title": "Positive and negative controls on synthetic surfaces",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/test_access_points_science.py"
+      ],
+      "detail": "Planted shapes are found once at the planted place; planes, domes and noise yield nothing; two defects in the first implementation were found by these controls and fixed."
+    },
+    {
+      "gate_id": "SCIENTIFIC_VALIDATION_FIELD",
+      "title": "Methods scored against independent field truth",
+      "state": "PROVISIONAL",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "evidence/access_points/validation/2026-11-17-karst-map/validation_report.json",
+        "configs/access_point_reference_sets.yaml",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
+      ],
+      "detail": "No field truth exists, so nothing is MEASURED. The closed-basin detector was compared with a published map (USGS Karst Map of Puerto Rico, outlines of sinkholes deeper than 30 m; the map states offsets of as much as 100 m) on one elevation tile: 139 outlines in the 2024 survey. Within the map's stated tolerance, 88% of mapped sinkholes are closed depressions at least 30 m deep, against 51% for a displaced control; inside the outlines as drawn, 37% against 16%. The detector reports 32% of them as separate objects (16% by chance): 73 of the 77 it misses lie inside a larger closed basin, which it reports as one object. Below about 10 m neither measure separates the map from chance. This is agreement with another interpretation on one karst tile, not accuracy; no threshold was changed, and nothing transfers to other ground or to the seabed."
+    },
+    {
+      "gate_id": "REAL_SURVEY_PROCESSING",
+      "title": "A real terrain or bathymetric survey processed end to end",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "evidence/access_points/real_survey/2026-11-17/processing_report.json",
+        "configs/access_point_survey_runs.yaml",
+        "spiderweb/access_points/survey.py"
+      ],
+      "detail": "Two USGS 1 m elevation tiles (surveyed 2018-2019 and 2023-2025) were fetched under an explicit owner grant of two named files and 800 MB (716,183,858 bytes used), hashed, and processed over a 1 km window around the registered point of INAP-PR-000003. 17 and 19 closed basins were found; 13 of 17 are in both surveys; the surfaces differ by a median of 1 cm. The committed report is reproduced from committed evidence. Terrain only: no bathymetric survey has been processed. No record changed."
+    },
+    {
+      "gate_id": "RECORD_COUNT_CLOSURE",
+      "title": "Record counts close in every document and in the legacy crosswalk",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "registry/access_points/build_manifest.json"
+      ],
+      "detail": "103 legacy nodes read: 5 matched, 81 without subtype, 17 unmatched, 0 without coordinates. The discovery catalogue closes: 180 sources listed, 3 registered inland and 177 off shore; all 47 surveys of the Guayama receipt were listed again and none is held twice. The survey report names 2 products and 2 are registered. Three held reference sets are declared and 3 are registered; every label outline is counted as scored, outside the grid or not covered."
+    },
+    {
+      "gate_id": "SOURCE_PROVENANCE",
+      "title": "Sources behind registry records are registered with exact bytes",
+      "state": "PROVISIONAL",
+      "claim_class": "FACT",
+      "evidence": [
+        "registry/access_points/offshore.json",
+        "registry/access_points/inland.json",
+        "evidence/access_points/source_discovery/2026-11-16/source_catalogue.json",
+        "evidence/access_points/real_survey/2026-11-17/processing_report.json",
+        "configs/access_point_reference_sets.yaml"
+      ],
+      "detail": "The legacy node file, two elevation tiles and three published reference maps are registered with the hash of their exact bytes; the tiles are held outside the repository. 180 survey sources are references only. The five seed screenshots are not attached."
+    },
+    {
+      "gate_id": "SEED_PROVENANCE",
+      "title": "Annotated screenshots behind the five off-shore seeds are registered",
+      "state": "BLOCKED",
+      "claim_class": "FACT",
+      "evidence": [
+        "configs/access_point_seeds.yaml"
+      ],
+      "detail": "No file, hash or control point has been supplied. The seeds remain provisional with no coordinates."
+    },
+    {
+      "gate_id": "LIVE_SOURCE_DISCOVERY",
+      "title": "Metadata discovery executed against live catalogues",
+      "state": "PASS",
+      "claim_class": "FACT",
+      "evidence": [
+        "evidence/access_points/source_discovery/2026-11-16/source_catalogue.json",
+        "evidence/access_points/source_discovery/2026-11-16/comparison_with_guayama_receipt.json",
+        "spiderweb/access_points/discovery.py"
+      ],
+      "detail": "Executed on 2026-11-16 under an explicit grant from the repository owner: 10 search boxes, 48 requests against a ceiling of 150, 48 provider runs of which 29 returned rows, 19 returned none and 0 failed; 180 distinct sources; 3150503 response bytes kept. Replaying the kept bytes offline reproduces every receipt and the catalogue. Metadata only: no data product was downloaded. Five of the search boxes are analyst corridors drawn from locality names; they are assumptions about where to look and give no seed a position."
+    },
+    {
+      "gate_id": "API_COMPATIBILITY",
+      "title": "New read-only routes; no existing route changed",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "tests/test_access_points_api.py"
+      ],
+      "detail": "51 tests; route inventory asserted; every method other than GET answers 405."
+    },
+    {
+      "gate_id": "GUI_UNIT_TESTS",
+      "title": "Frontend lint, type check, unit and accessibility tests, production build",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "server/frontend/src/spatial/accessPoints/accessPoints.test.tsx"
+      ],
+      "detail": "183 tests (148 before); lint and type check clean; build succeeds."
+    },
+    {
+      "gate_id": "GUI_BROWSER_CHECK",
+      "title": "Workbench driven in a real browser against the live backend",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [],
+      "detail": "Chromium: inland 4 drawn, off-shore 1 drawn, 5 records listed as having no coordinates, evidence view, synthetic banner on the control section, empty relationship ledger. One layout defect found and fixed."
+    },
+    {
+      "gate_id": "GUI_RUNTIME_MATRIX",
+      "title": "Existing six-module, three-browser runtime matrix",
+      "state": "PASS",
+      "claim_class": "FACT",
+      "evidence": [
+        "https://github.com/jotaele44/spiderweb-pr/pull/458"
+      ],
+      "detail": "Passed in CI on pull request 458 at its final head 0d1b2a3 (workbench-matrix, frontend-ab, runtime-certification). Not run locally."
+    },
+    {
+      "gate_id": "GUI_3D",
+      "title": "Access-point layers in the 3D runtime",
+      "state": "OPEN",
+      "claim_class": "FACT",
+      "evidence": [
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ],
+      "detail": "Not built. The 3D runtime has no data-layer contract, no terrain and no tests."
+    },
+    {
+      "gate_id": "CROSS_REPOSITORY_CONTEXT",
+      "title": "Other producers' packages verified as context sources",
+      "state": "PROVISIONAL",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "evidence/access_points/cross_repository_verification_v1.json"
+      ],
+      "detail": "aguayluz-pr: BLOCKED; moneysweep-pr: PASS; skywatcher-pr: PASS. moneysweep-pr yields 15 documentary records, none placeable."
+    },
+    {
+      "gate_id": "FEDERATION_EXPORT",
+      "title": "Access-point records exported to the hub",
+      "state": "BLOCKED",
+      "claim_class": "FACT",
+      "evidence": [
+        "reports/federation_spatial_impact_access_points_v1.json"
+      ],
+      "detail": "Not authorised and not implemented. The export script, its schemas and golden files are untouched."
+    },
+    {
+      "gate_id": "PERFORMANCE_BENCHMARKS",
+      "title": "Measured runtime, memory and query latency",
+      "state": "PASS",
+      "claim_class": "COMPUTED",
+      "evidence": [
+        "evidence/access_points/benchmark_v1.json",
+        "evidence/access_points/benchmark_comparison_v1.json"
+      ],
+      "detail": "Measured on synthetic surfaces. Two measures regressed and are reported with the gains."
+    },
+    {
+      "gate_id": "SECURITY_REVIEW",
+      "title": "Security assessment",
+      "state": "PROVISIONAL",
+      "claim_class": "INFERENCE",
+      "evidence": [
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ],
+      "detail": "Self-assessed only: read-only API, bounded parameters, no path built from input, documents verified on load, discovery denied by default. The backend has no authentication; no independent review."
+    },
+    {
+      "gate_id": "ROLLBACK",
+      "title": "Rollback verified",
+      "state": "PROVISIONAL",
+      "claim_class": "INFERENCE",
+      "evidence": [
+        "TERMINAL_READY_ACCESS_POINTS.txt"
+      ],
+      "detail": "The change is additive and confined to one branch; rollback is a revert. It has not been exercised."
+    },
+    {
+      "gate_id": "INDEPENDENT_QA",
+      "title": "Qualified independent review",
+      "state": "OPEN",
+      "claim_class": "FACT",
+      "evidence": [],
+      "detail": "Not performed. This report was produced by the same process that produced the code and cannot stand in for it. The automated reviewer configured on the repository did not complete a review of pull request 458."
+    },
+    {
+      "gate_id": "PRODUCTION_AUTHORIZATION",
+      "title": "Explicit authorisation to release",
+      "state": "BLOCKED",
+      "claim_class": "FACT",
+      "evidence": [],
+      "detail": "Not given. Nothing was deployed and no production data store was written."
+    },
+    {
+      "gate_id": "CI_ON_PULL_REQUEST",
+      "title": "Continuous integration on the pull request",
+      "state": "PROVISIONAL",
+      "claim_class": "FACT",
+      "evidence": [
+        "https://github.com/jotaele44/spiderweb-pr/pull/458",
+        "https://github.com/jotaele44/spiderweb-pr/pull/461"
+      ],
+      "detail": "Pull requests 458, 461 and 465 passed all their checks and were merged by the owner. The pull request carrying the reference maps and the comparison had not been opened when this report was written."
+    }
+  ],
+  "readiness": {
+    "engineering": {
+      "state": "PROVISIONAL",
+      "statement": "Implemented and tested: 2590 tests pass with none failing. Not independently reviewed."
+    },
+    "science": {
+      "state": "OPEN",
+      "statement": "Verified on synthetic controls, on one real window seen by two independent surveys, and by comparison with one published sinkhole map on one tile. No field truth; thresholds uncalibrated; the detector under-reports nested sinkholes; no bathymetric survey processed. Every registry record is a candidate or provisional; none is verified."
+    },
+    "gui": {
+      "state": "PROVISIONAL",
+      "statement": "Unit, accessibility and one-browser checks pass locally; the three-browser matrix passed in CI. No 3D view."
+    },
+    "federation": {
+      "state": "BLOCKED",
+      "statement": "Nothing is exported. One of three producer packages is absent. Hub-side registration is not started."
+    },
+    "production": {
+      "state": "BLOCKED",
+      "statement": "No independent review and no authorisation."
+    }
+  },
+  "scores": [
+    {
+      "dimension": "Inland Access Points modernisation",
+      "verified": 45,
+      "projected": 60,
+      "basis": "Verified: registry, basin delineation, morphology and datum control are implemented, control-tested and run on real 1 m LiDAR elevation over one window, with two-survey replication; 4 candidate records; published karst maps held as context and as a comparison reference. Missing: field validation, cave/mine/tunnel detectors, point-cloud handling, calibrated thresholds."
+    },
+    {
+      "dimension": "Off-Shore Access Points maturity",
+      "verified": 32,
+      "projected": 55,
+      "basis": "Verified: same core as inland plus seabed interpretation rules; a source denominator for the search box of every seed locality (177 reference sources); 6 records of which 5 are provisional with no coordinates. Missing: any processed survey, registered seed provenance, gridded-survey reading."
+    },
+    {
+      "dimension": "Shared geospatial infrastructure",
+      "verified": 63,
+      "projected": 75,
+      "basis": "Verified: one processing core, datum contract, typed relationships, cross-sections and coastline versions, all tested; projected GeoTIFF reading and a regional plausibility check on stated datums added. Missing: certified datum transforms, reprojection, a spatial index."
+    },
+    {
+      "dimension": "Acquisition capability",
+      "verified": 52,
+      "projected": 60,
+      "basis": "Verified: default-deny metadata discovery executed live once and replayable offline; named-file product download inside a byte ceiling, executed once for two tiles. Missing: gridded bathymetric products, terrestrial sources beyond elevation, a second discovery run to exercise change detection on real data."
+    },
+    {
+      "dimension": "Cross-repository integration",
+      "verified": 30,
+      "projected": 50,
+      "basis": "Verified: one real package read and closed; non-inference rules tested. Missing: an aguayluz-pr package, any export, hub registration."
+    },
+    {
+      "dimension": "Scientific validation",
+      "verified": 32,
+      "projected": 45,
+      "basis": "Verified: software controls; agreement between two independent surveys; comparison with a published sinkhole map on one tile, against a displaced control. Missing: field truth, so no accuracy figure; a detector that resolves nested basins; any reference for the seabed."
+    },
+    {
+      "dimension": "GUI and frontend",
+      "verified": 60,
+      "projected": 70,
+      "basis": "Verified: layer group, evidence view, relationship and cross-section explorers; 183 tests; three-browser matrix passed in CI. Missing: 3D, measured-surface display."
+    },
+    {
+      "dimension": "Performance hardening",
+      "verified": 45,
+      "projected": 60,
+      "basis": "Verified: measured before and after; delineation, ingest and page queries faster; tiled processing bounds memory for local operators. Missing: tiling for basin filling (555 MB peak at 4 million cells), a spatial index."
+    },
+    {
+      "dimension": "Overall implementation",
+      "verified": 45,
+      "projected": 58,
+      "basis": "Verified scores count only what was executed here. Projected scores assume the open gates listed in this report close as designed, with no new invention; they are estimates, not measurements."
+    }
+  ],
+  "measurements": {
+    "tests": {
+      "core_passed": 2590,
+      "core_failed": 0,
+      "core_skipped": 51,
+      "coverage_percent": 76.84,
+      "coverage_floor": 62,
+      "grid_suite_passed": 50,
+      "frontend_passed": 183,
+      "new_python_tests": 456,
+      "new_frontend_tests": 35,
+      "baseline_core_passed": 2109,
+      "baseline_frontend_passed": 148,
+      "tests_arrived_from_main": 24,
+      "new_discovery_tests": 55,
+      "new_survey_tests": 26,
+      "new_validation_tests": 25
+    },
+    "registry": {
+      "guayama_reference_sources": {
+        "added": 0,
+        "already_registered": 47,
+        "bag": 1,
+        "datum_placeholders": 4,
+        "multibeam": 13,
+        "sounding": 29,
+        "topobathy_lidar": 4
+      },
+      "inland": {
+        "derived_geometries": 0,
+        "features": 4,
+        "features_by_status": {
+          "CANDIDATE": 4,
+          "PROVISIONAL_DISCOVERY": 0,
+          "REJECTED": 0,
+          "SUPERSEDED": 0,
+          "UNDER_REVIEW": 0,
+          "VERIFIED": 0
+        },
+        "observations": 4,
+        "observations_bound": 4,
+        "observations_unbound": 0,
+        "sources": 10
+      },
+      "legacy_crosswalk": {
+        "closes": true,
+        "legacy_nodes_read": 103,
+        "matched": 5,
+        "skipped_unmatched": 17,
+        "skipped_without_coordinates": 0,
+        "skipped_without_subtype": 81
+      },
+      "offshore": {
+        "derived_geometries": 0,
+        "features": 6,
+        "features_by_status": {
+          "CANDIDATE": 1,
+          "PROVISIONAL_DISCOVERY": 5,
+          "REJECTED": 0,
+          "SUPERSEDED": 0,
+          "UNDER_REVIEW": 0,
+          "VERIFIED": 0
+        },
+        "observations": 6,
+        "observations_bound": 6,
+        "observations_unbound": 0,
+        "sources": 184
+      },
+      "provisional_seeds": 5,
+      "relationships": 0
+    },
+    "benchmark_environment": {
+      "numpy": "2.4.6",
+      "platform": "Linux-6.18.44-fc-v470-x86_64-with-glibc2.39",
+      "processor_count": 4,
+      "python": "3.12.3",
+      "scikit_image": "0.26.0",
+      "scipy": "1.17.1"
+    },
+    "basin_delineation": [
+      {
+        "cells": 262144,
+        "best_seconds": 0.2394,
+        "cells_per_second": 1095004,
+        "peak_traced_mb": 35.11
+      },
+      {
+        "cells": 1048576,
+        "best_seconds": 0.779,
+        "cells_per_second": 1346054,
+        "peak_traced_mb": 139.36
+      },
+      {
+        "cells": 4194304,
+        "best_seconds": 2.7366,
+        "cells_per_second": 1532670,
+        "peak_traced_mb": 555.47
+      }
+    ],
+    "tiling": {
+      "operation": "position_index(radius=8 cells)",
+      "peak_memory_ratio_tiled_over_untiled": 0.23,
+      "results_identical": true,
+      "shape": [
+        2048,
+        2048
+      ],
+      "tiled_512_halo_9": {
+        "best_s": 1.4244,
+        "median_s": 1.5768,
+        "peak_traced_mb": 47.33,
+        "repeats": 2
+      },
+      "untiled": {
+        "best_s": 1.8322,
+        "median_s": 1.8707,
+        "peak_traced_mb": 205.53,
+        "repeats": 2
+      }
+    },
+    "registry_ingest_features_per_second": 8159,
+    "query_latency_ms_5000_features": {
+      "bbox_100": {
+        "median_ms": 31.74,
+        "p95_ms": 33.41,
+        "samples": 30
+      },
+      "evidence": {
+        "median_ms": 3.16,
+        "p95_ms": 3.35,
+        "samples": 30
+      },
+      "page_100": {
+        "median_ms": 15.21,
+        "p95_ms": 16.41,
+        "samples": 30
+      }
+    },
+    "before_after": [
+      {
+        "measure": "delineate_depressions, 262,144 cells (best of 3)",
+        "before": 0.3833,
+        "after": 0.3242,
+        "unit": "s",
+        "improvement_factor": 1.18
+      },
+      {
+        "measure": "detect_inland, 262,144 cells (best of 3)",
+        "before": 0.3668,
+        "after": 0.2758,
+        "unit": "s",
+        "improvement_factor": 1.33
+      },
+      {
+        "measure": "delineate_depressions, 1,048,576 cells (best of 3)",
+        "before": 2.0531,
+        "after": 0.8163,
+        "unit": "s",
+        "improvement_factor": 2.52
+      },
+      {
+        "measure": "detect_inland, 1,048,576 cells (best of 3)",
+        "before": 1.8806,
+        "after": 0.7155,
+        "unit": "s",
+        "improvement_factor": 2.63
+      },
+      {
+        "measure": "registry ingest with rule checks, 2,000 features",
+        "before": 1938,
+        "after": 8323,
+        "unit": "features/s",
+        "improvement_factor": 4.29
+      },
+      {
+        "measure": "service query: feature page of 100 (median), 2,000 features",
+        "before": 52.34,
+        "after": 6.1,
+        "unit": "ms",
+        "improvement_factor": 8.58
+      },
+      {
+        "measure": "service query: bounding-box page of 100 (median), 2,000 features",
+        "before": 56.48,
+        "after": 12.06,
+        "unit": "ms",
+        "improvement_factor": 4.68
+      },
+      {
+        "measure": "service query: evidence for one feature (median), 2,000 features",
+        "before": 0.77,
+        "after": 1.25,
+        "unit": "ms",
+        "improvement_factor": 0.62
+      },
+      {
+        "measure": "load and verify registry document, 2,000 features",
+        "before": 0.1796,
+        "after": 0.2514,
+        "unit": "s",
+        "improvement_factor": 0.71
+      }
+    ],
+    "schema_files": 87,
+    "source_discovery": {
+      "run_id": "2026-11-16",
+      "discovered_utc": "2026-11-16T23:20:38+00:00",
+      "authorization": {
+        "granted_by": "repository owner, explicit in-session authorisation of 2026-11-16",
+        "level": "METADATA_DISCOVERY",
+        "max_requests_per_target": 15,
+        "max_total_requests": 150
+      },
+      "totals": {
+        "inconsistent_rows_within_run": 0,
+        "provider_runs": 48,
+        "provider_runs_by_state": {
+          "PASS": 29,
+          "ZERO": 19
+        },
+        "query_scoped_attribute_keys": [
+          "fileCount",
+          "fileSizeSum",
+          "fileStatsByCat",
+          "pointCount"
+        ],
+        "requests": 48,
+        "response_bytes": 3150503,
+        "sources": 180,
+        "sources_by_namespace": {
+          "access_point.inland": 3,
+          "access_point.offshore": 177
+        },
+        "sources_by_provider": {
+          "NCEI_MULTIBEAM_CATALOG": 40,
+          "NCEI_SOUNDING_CATALOG": 105,
+          "NOS_BAG_INVENTORY": 25,
+          "USIEI_BATHYMETRIC_LIDAR": 1,
+          "USIEI_TOPOBATHY_LIDAR": 6,
+          "USIEI_TOPOGRAPHIC_LIDAR": 3
+        },
+        "sources_stating_a_vertical_datum_field": 10,
+        "sources_with_data_access_uri": 33,
+        "sources_with_query_scoped_attributes": 26,
+        "sources_with_stable_identifier": 180,
+        "targets": 10,
+        "vertical_datum_placeholders": 8
+      },
+      "catalogue_content_sha256": "7a5d418ae74cab2e8b816cf3e4d76a458dc0cf361ad2466f6153a7024f63d3c3"
+    },
+    "real_survey": {
+      "run_id": "2026-11-17",
+      "report_content_sha256": "9ce35e4eaa5db8a427d069cfef86674310f9a0a0ac19f339619a3f9a6f3060b5",
+      "products": [
+        {
+          "epoch": "2018",
+          "size_bytes": 332533267,
+          "sha256": "a798473f09726437e9641bfed2c1cb584c176888595bba46348cda7caf83c9c5",
+          "detections": 17,
+          "assertions_by_tier": {
+            "SUPPORTING": 34
+          },
+          "datum": "NAVD88",
+          "datum_plausibility": "IMPLAUSIBLE_FOR_REGION"
+        },
+        {
+          "epoch": "2024",
+          "size_bytes": 383650591,
+          "sha256": "a5a8e6091415d88d991c4248a877b65e6020f0f7af810109063413c23d3be63c",
+          "detections": 19,
+          "assertions_by_tier": {
+            "CANDIDATE": 38
+          },
+          "datum": "NAVD88",
+          "datum_plausibility": "IMPLAUSIBLE_FOR_REGION"
+        }
+      ],
+      "bytes_downloaded": 716183858,
+      "byte_ceiling": 800000000,
+      "replicated": 13,
+      "earlier_detections": 17,
+      "later_detections": 19,
+      "elevation_difference_later_minus_earlier": {
+        "cells_compared": 1000000,
+        "max_absolute_m": 3.425,
+        "mean_m": 0.0076,
+        "median_absolute_m": 0.077,
+        "median_m": -0.0103,
+        "p95_absolute_m": 0.4356,
+        "within_0_3_m_fraction": 0.8869
+      },
+      "registry_changes": 0
+    },
+    "reference_comparison": {
+      "run_id": "2026-11-17-karst-map",
+      "report_content_sha256": "c7e9943e4dde0a3925c12c1b7585573540e024e43a99f6290df8dcf273ff9f8a",
+      "evaluation_state": "REFERENCE_COMPARED",
+      "epochs": {
+        "2018": {
+          "outlines_scored": 137,
+          "surface_agreement": [
+            {
+              "displaced_fraction": 0.75,
+              "displaced_fraction_within_positional_offset": 0.9922,
+              "displaced_on_a_depression": 96,
+              "displaced_outlines": 128,
+              "fraction": 0.854,
+              "fraction_within_positional_offset": 1.0,
+              "min_depth_m": 1,
+              "outlines": 137,
+              "outlines_on_a_depression": 117
+            },
+            {
+              "displaced_fraction": 0.7188,
+              "displaced_fraction_within_positional_offset": 0.9845,
+              "displaced_on_a_depression": 92,
+              "displaced_outlines": 128,
+              "fraction": 0.8467,
+              "fraction_within_positional_offset": 1.0,
+              "min_depth_m": 2,
+              "outlines": 137,
+              "outlines_on_a_depression": 116
+            },
+            {
+              "displaced_fraction": 0.6797,
+              "displaced_fraction_within_positional_offset": 0.9845,
+              "displaced_on_a_depression": 87,
+              "displaced_outlines": 128,
+              "fraction": 0.8029,
+              "fraction_within_positional_offset": 1.0,
+              "min_depth_m": 5,
+              "outlines": 137,
+              "outlines_on_a_depression": 110
+            },
+            {
+              "displaced_fraction": 0.5625,
+              "displaced_fraction_within_positional_offset": 0.9767,
+              "displaced_on_a_depression": 72,
+              "displaced_outlines": 128,
+              "fraction": 0.7226,
+              "fraction_within_positional_offset": 1.0,
+              "min_depth_m": 10,
+              "outlines": 137,
+              "outlines_on_a_depression": 99
+            },
+            {
+              "displaced_fraction": 0.2812,
+              "displaced_fraction_within_positional_offset": 0.8372,
+              "displaced_on_a_depression": 36,
+              "displaced_outlines": 128,
+              "fraction": 0.5693,
+              "fraction_within_positional_offset": 0.9854,
+              "min_depth_m": 20,
+              "outlines": 137,
+              "outlines_on_a_depression": 78
+            },
+            {
+              "displaced_fraction": 0.1641,
+              "displaced_fraction_within_positional_offset": 0.5116,
+              "displaced_on_a_depression": 21,
+              "displaced_outlines": 128,
+              "fraction": 0.365,
+              "fraction_within_positional_offset": 0.8905,
+              "min_depth_m": 30,
+              "outlines": 137,
+              "outlines_on_a_depression": 50
+            }
+          ],
+          "object_detection": [
+            {
+              "detections": 974,
+              "displaced_found": 68,
+              "displaced_fraction": 0.5397,
+              "displaced_labels": 126,
+              "found_fraction": 0.4453,
+              "labels": 137,
+              "labels_found": 61,
+              "min_depth_m": 1
+            },
+            {
+              "detections": 787,
+              "displaced_found": 67,
+              "displaced_fraction": 0.5317,
+              "displaced_labels": 126,
+              "found_fraction": 0.4307,
+              "labels": 137,
+              "labels_found": 59,
+              "min_depth_m": 2
+            },
+            {
+              "detections": 587,
+              "displaced_found": 63,
+              "displaced_fraction": 0.5,
+              "displaced_labels": 126,
+              "found_fraction": 0.4161,
+              "labels": 137,
+              "labels_found": 57,
+              "min_depth_m": 5
+            },
+            {
+              "detections": 427,
+              "displaced_found": 56,
+              "displaced_fraction": 0.4444,
+              "displaced_labels": 126,
+              "found_fraction": 0.4161,
+              "labels": 137,
+              "labels_found": 57,
+              "min_depth_m": 10
+            },
+            {
+              "detections": 228,
+              "displaced_found": 39,
+              "displaced_fraction": 0.3095,
+              "displaced_labels": 126,
+              "found_fraction": 0.4015,
+              "labels": 137,
+              "labels_found": 55,
+              "min_depth_m": 20
+            },
+            {
+              "detections": 104,
+              "displaced_found": 19,
+              "displaced_fraction": 0.1508,
+              "displaced_labels": 126,
+              "found_fraction": 0.3212,
+              "labels": 137,
+              "labels_found": 44,
+              "min_depth_m": 30
+            }
+          ],
+          "labels_missed_by_reason": {
+            "INSIDE_A_LARGER_BASIN": 72,
+            "NO_BASIN_WITHIN_MATCH_RADIUS": 4
+          }
+        },
+        "2024": {
+          "outlines_scored": 139,
+          "surface_agreement": [
+            {
+              "displaced_fraction": 0.7462,
+              "displaced_fraction_within_positional_offset": 0.9847,
+              "displaced_on_a_depression": 97,
+              "displaced_outlines": 130,
+              "fraction": 0.8417,
+              "fraction_within_positional_offset": 1.0,
+              "min_depth_m": 1,
+              "outlines": 139,
+              "outlines_on_a_depression": 117
+            },
+            {
+              "displaced_fraction": 0.7154,
+              "displaced_fraction_within_positional_offset": 0.9771,
+              "displaced_on_a_depression": 93,
+              "displaced_outlines": 130,
+              "fraction": 0.8417,
+              "fraction_within_positional_offset": 1.0,
+              "min_depth_m": 2,
+              "outlines": 139,
+              "outlines_on_a_depression": 117
+            },
+            {
+              "displaced_fraction": 0.6769,
+              "displaced_fraction_within_positional_offset": 0.9771,
+              "displaced_on_a_depression": 88,
+              "displaced_outlines": 130,
+              "fraction": 0.7986,
+              "fraction_within_positional_offset": 1.0,
+              "min_depth_m": 5,
+              "outlines": 139,
+              "outlines_on_a_depression": 111
+            },
+            {
+              "displaced_fraction": 0.5692,
+              "displaced_fraction_within_positional_offset": 0.9695,
+              "displaced_on_a_depression": 74,
+              "displaced_outlines": 130,
+              "fraction": 0.7194,
+              "fraction_within_positional_offset": 0.9928,
+              "min_depth_m": 10,
+              "outlines": 139,
+              "outlines_on_a_depression": 100
+            },
+            {
+              "displaced_fraction": 0.2769,
+              "displaced_fraction_within_positional_offset": 0.8397,
+              "displaced_on_a_depression": 36,
+              "displaced_outlines": 130,
+              "fraction": 0.5683,
+              "fraction_within_positional_offset": 0.9784,
+              "min_depth_m": 20,
+              "outlines": 139,
+              "outlines_on_a_depression": 79
+            },
+            {
+              "displaced_fraction": 0.1615,
+              "displaced_fraction_within_positional_offset": 0.5115,
+              "displaced_on_a_depression": 21,
+              "displaced_outlines": 130,
+              "fraction": 0.3669,
+              "fraction_within_positional_offset": 0.8777,
+              "min_depth_m": 30,
+              "outlines": 139,
+              "outlines_on_a_depression": 51
+            }
+          ],
+          "object_detection": [
+            {
+              "detections": 1258,
+              "displaced_found": 69,
+              "displaced_fraction": 0.5391,
+              "displaced_labels": 128,
+              "found_fraction": 0.446,
+              "labels": 139,
+              "labels_found": 62,
+              "min_depth_m": 1
+            },
+            {
+              "detections": 963,
+              "displaced_found": 67,
+              "displaced_fraction": 0.5234,
+              "displaced_labels": 128,
+              "found_fraction": 0.4388,
+              "labels": 139,
+              "labels_found": 61,
+              "min_depth_m": 2
+            },
+            {
+              "detections": 654,
+              "displaced_found": 62,
+              "displaced_fraction": 0.4844,
+              "displaced_labels": 128,
+              "found_fraction": 0.4245,
+              "labels": 139,
+              "labels_found": 59,
+              "min_depth_m": 5
+            },
+            {
+              "detections": 446,
+              "displaced_found": 55,
+              "displaced_fraction": 0.4297,
+              "displaced_labels": 128,
+              "found_fraction": 0.4101,
+              "labels": 139,
+              "labels_found": 57,
+              "min_depth_m": 10
+            },
+            {
+              "detections": 235,
+              "displaced_found": 40,
+              "displaced_fraction": 0.3125,
+              "displaced_labels": 128,
+              "found_fraction": 0.3957,
+              "labels": 139,
+              "labels_found": 55,
+              "min_depth_m": 20
+            },
+            {
+              "detections": 109,
+              "displaced_found": 20,
+              "displaced_fraction": 0.1562,
+              "displaced_labels": 128,
+              "found_fraction": 0.3165,
+              "labels": 139,
+              "labels_found": 44,
+              "min_depth_m": 30
+            }
+          ],
+          "labels_missed_by_reason": {
+            "INSIDE_A_LARGER_BASIN": 73,
+            "NO_BASIN_WITHIN_MATCH_RADIUS": 4
+          }
+        }
+      },
+      "thresholds_changed": false,
+      "registry_changes": 0
+    }
+  },
+  "artifacts": [
+    {
+      "path": "registry/access_points/inland.json",
+      "sha256": "11e6e8cd8c12daf3b8f11af85c5964fe952df5903125020dde739340cb5f07b3"
+    },
+    {
+      "path": "registry/access_points/offshore.json",
+      "sha256": "fee8df22cd21483ab83338f944adb3d3f1ff64ca69ba8c1f299bd5af008ead7a"
+    },
+    {
+      "path": "registry/access_points/relationships.json",
+      "sha256": "ae241ecf2ff315f4d195fce1b8c1a324f9603358ac6916aa7f61f395ace277f5"
+    },
+    {
+      "path": "registry/access_points/build_manifest.json",
+      "sha256": "7d0b2c95221b3d48a85fad59b68d23f375b6613bf1ff384fb494bf33089a08af"
+    },
+    {
+      "path": "evidence/access_points/baseline_manifest_v1.json",
+      "sha256": "b17ec07fa2dff19e3e49089fd11154f8906364eccb7db2c1a8dd4b3d953ff98a"
+    },
+    {
+      "path": "evidence/access_points/artifact_manifest_v1.json",
+      "sha256": "75f8af6b8a5cab3d6ce8dacca8098fe3e7bd9c1f09b7eac4547283563e1f31cc"
+    },
+    {
+      "path": "evidence/access_points/benchmark_v1.json",
+      "sha256": "85924c958af9b7065e2faff4f0c7588c557d472ac4ef48cf7179292da4685afc"
+    },
+    {
+      "path": "evidence/access_points/benchmark_comparison_v1.json",
+      "sha256": "2d5eba27086b6a9631c7606ff4bb3fdf26657ba211d45bfbbeaa83912ac584a4"
+    },
+    {
+      "path": "evidence/access_points/cross_repository_verification_v1.json",
+      "sha256": "faa4b02b9d237f550ec524647366246c53e0e7a75696a59dd4f565487eebe6c2"
+    },
+    {
+      "path": "schemas/access_point_registry.schema.json",
+      "sha256": "1b5f209f59fc3d1867395c5f21f13638519ab78d9dca54d43528f581b9054751"
+    },
+    {
+      "path": "schemas/access_point_relationship_ledger.schema.json",
+      "sha256": "970beab065f054d05ad9a4b03dfd53e39b57157a607bed55f35511189ec64867"
+    },
+    {
+      "path": "schemas/access_point_certification_report.schema.json",
+      "sha256": "0e2eecf9040d403d23ee3990c07ce67d7ff9bee0ebca70c38e0c3973e893a1b9"
+    },
+    {
+      "path": "evidence/access_points/certification_report_v1.json",
+      "sha256": "e6e71ddbf4a1b4fb2f674d9856d457bbf8c3cc436b90d1f43ca6504447d063d8"
+    },
+    {
+      "path": "evidence/access_points/source_discovery/CURRENT.json",
+      "sha256": "afb9f4719f5f9a743ba99edfbbff9b44d1252107d24c81c3d65fb6261abab718"
+    },
+    {
+      "path": "evidence/access_points/source_discovery/2026-11-16/source_catalogue.json",
+      "sha256": "280d9635f2c9a9094acefe2b11b7109ba0f421ee1f1a69b29a234714cea8ef26"
+    },
+    {
+      "path": "evidence/access_points/source_discovery/2026-11-16/comparison_with_guayama_receipt.json",
+      "sha256": "c7711d627ef6fa485e750e98902736795daf51c5aa61ec07c016d020cad12368"
+    },
+    {
+      "path": "configs/access_point_discovery_corridors.yaml",
+      "sha256": "f024f4c21e15b8604c125b7dc6b1cb257578a64a016b7616882abe84e86c946d"
+    },
+    {
+      "path": "evidence/access_points/certification_report_v2.json",
+      "sha256": "4f5e80b8e0e02a3f0f2630dc5ecb2bc52eed4d5a8222d7935cde3bcd911d668d"
+    },
+    {
+      "path": "evidence/access_points/real_survey/CURRENT.json",
+      "sha256": "901a65728571d7e3e7f992d9c11492949d67f3c752ce459af73700a3601fb0bf"
+    },
+    {
+      "path": "evidence/access_points/real_survey/2026-11-17/processing_report.json",
+      "sha256": "4daf4398df659bb018b36c2bf40d8e95b29acf0431596e78a0890e64decf234a"
+    },
+    {
+      "path": "evidence/access_points/real_survey/2026-11-17/wide_window.json",
+      "sha256": "afe5d6b3eb592a92d788cdce30a35cba0deb55ee33636c49e5658bc2418268ad"
+    },
+    {
+      "path": "evidence/access_points/real_survey/2026-11-17/subsets/window_2018.tif",
+      "sha256": "be767ba0c14ca86fe1dfc8daec609e9472a16be1ee10baaad24ea4ef2a71cf8d"
+    },
+    {
+      "path": "evidence/access_points/real_survey/2026-11-17/subsets/window_2024.tif",
+      "sha256": "2159ae6a6a4d71e67ad696cde1e376007def53889a347b92a258c50945430716"
+    },
+    {
+      "path": "configs/access_point_survey_runs.yaml",
+      "sha256": "3e7c5f62338daaae8d98e20ec287394a1e71c6baed9ffbee2f4fcf018bcb5626"
+    },
+    {
+      "path": "evidence/access_points/certification_report_v3.json",
+      "sha256": "9ce8427fd99ea79abee3a7d7a606ddb167149c0085f26d7067942da1da1e5514"
+    },
+    {
+      "path": "configs/access_point_reference_sets.yaml",
+      "sha256": "7e5537802f0df686dc57b3f4c8faaacb10778c31322fddca18186ad7059d827c"
+    },
+    {
+      "path": "evidence/access_points/reference/usgs_karst_map/sinkholes_30m.geojson",
+      "sha256": "d2b4bdc8131af836aba05e7ee34fdf9128badb954e7a4b486a206b7992973ca4"
+    },
+    {
+      "path": "evidence/access_points/reference/usgs_karst_map/sinkholes_5_30m.geojson",
+      "sha256": "fec19a28001a72def117f9699790da372fee80c64d02f455475d8f960d7b0396"
+    },
+    {
+      "path": "evidence/access_points/reference/pr_planning_board/g15_geologia_carso_limite.zip",
+      "sha256": "877fddfaac5d148dff055c11bffaab16deff3fb7a5ae14154708d030023df5a6"
+    },
+    {
+      "path": "evidence/access_points/validation/CURRENT.json",
+      "sha256": "74b9c8da65b28fdbe10e62f724c696968f4d3525189131386aa1683b0eff4324"
+    },
+    {
+      "path": "evidence/access_points/validation/2026-11-17-karst-map/validation_report.json",
+      "sha256": "8963d96257a50cb312cb2d1c3cda9c4c6ba66cfe861f4fe227e55be666dfae08"
+    },
+    {
+      "path": "evidence/access_points/validation/2026-11-17-karst-map/tile_evaluation.json",
+      "sha256": "0a1658eb64fba0dadceea9eba38cc80b6945384f36cbc351297ca30946b0ce0f"
+    },
+    {
+      "path": "evidence/access_points/validation/2026-11-17-karst-map/subsets/window_2024.tif",
+      "sha256": "f300ef1a3aec631bd15c8f3ad1b5255b02de5e54fea2d270f07617a1e2dbce96"
+    }
+  ],
+  "independent_review": {
+    "performed": false,
+    "reviewer": null,
+    "statement": "No independent review has been performed. The author of the code produced this report and cannot certify it."
+  },
+  "production_authorized": false
+}
