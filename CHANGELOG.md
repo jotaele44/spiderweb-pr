@@ -23,6 +23,17 @@ GitHub Release using the matching section below (T6-53).
   as outer ones, so numerical residue on a rim is not counted as water.
 
 ### Added
+- **Access-point records exported to the federation hub**, by the repository
+  owner's decision of 2026-11-20. `scripts/federation_export.py` gains an opt-in
+  `--access-point-registries` lane (`spiderweb/access_points/hub_export.py`), and
+  the `export_canonical` command in `federation.json` passes it. Records that are
+  candidates or better (today 4 inland, 1 off-shore) become entities with a
+  CANDIDATE, producer-local identity, an INTERPRETIVE class and, where their own
+  observation states one, a representative point marked as having an assumed
+  coordinate system; provisional seeds, detections and relationships are not
+  exported. The producer entity schema gains three entity types and an optional
+  `attributes` object. The hub's `validate-package` returns VALID for the
+  production package; nothing reaches the hub until this is merged.
 - **A search for an independent second seabed survey**
   (`spiderweb/access_points/replication.py`,
   `scripts/search_access_point_replication.py`). Two metadata requests and one

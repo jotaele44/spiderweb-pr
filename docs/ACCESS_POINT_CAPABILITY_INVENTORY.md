@@ -33,7 +33,7 @@ numpy 2.4.6, scipy 1.17.1, shapely 2.1.2, rasterio 1.5.2):
 
 The 52 skips are optional dependencies, absent local services and
 operator-local data. Results after the change are in
-`evidence/access_points/certification_report_v10.json` (versions 1 to 9 are the
+`evidence/access_points/certification_report_v11.json` (versions 1 to 10 are the
 report as it stood at earlier points).
 
 ## 2. What existed in this repository
@@ -132,7 +132,7 @@ correlates across producers — that is the hub's role.
 | aguayluz-pr | 19,757 utility assets, 16,064 located: 126 groundwater wells, 1,085 stream gauges, 11,199 water-quality sites, 5 tide gauges, 95 wastewater plants, 223 reservoirs. No aquifer polygons, hydrostratigraphic units, sinkholes or submarine discharge data. Hydro tracing tested only on synthetic input | Monitoring sites and water assets, as context, from its exported `entities` stream | **BLOCKED**: no exported package is committed at the audited commit. The reader is written and tested on synthetic packages | FACT |
 | moneysweep-pr | Exported package: 4,508 sources, 207 entities, 66 relationships. No coordinates anywhere. 8 projects, 4 properties, 3 contracts. No marine or underground construction records | Projects, properties and contracts, as documentary context | **PASS** (verified run): package closes; 15 context records; 0 placeable; furthest lifecycle state documents can show is CONTRACTED | COMPUTED |
 | skywatcher-pr | Exported package of 3 observations. Owns the airspace meaning of ILAP. Its terrain helpers return hardcoded depths in places; its change-detection modules score human-supplied signals and read no pixels | Nothing for access points. Package integrity verified | **NOT CONSUMED**; integration preconditions in its own decision record are unmet | COMPUTED |
-| thehub-pr | Artifact-only federation; free-string entity types; point-or-municipality geometry only; shared acquisition service (decision record 0006) exists as contracts and offline validators, not as a service | Export contract and identifier rule, when export is authorised | **OPEN**: nothing is exported | FACT |
+| thehub-pr | Artifact-only federation; free-string entity types; point-or-municipality geometry only; shared acquisition service (decision record 0006) exists as contracts and offline validators, not as a service | Export contract and identifier rule | **PROVISIONAL**: export authorised on 2026-11-20 and implemented (candidate records only, each a candidate identity); the production package validates as VALID under the hub's own validator; nothing reaches the hub until merged | FACT |
 
 The verified run is recorded in
 `evidence/access_points/cross_repository_verification_v1.json`.

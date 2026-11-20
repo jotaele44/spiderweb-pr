@@ -6,7 +6,8 @@
   "head_sha": null,
   "changes": {
     "contracts": [
-      "access-point-registry/1.0 (repository-local; not a federation contract)"
+      "access-point-registry/1.0 (repository-local; not a federation contract)",
+      "federation_export_manifest@1 (unchanged): candidate access-point records travel in the existing sources, entities and relationships streams as new entity types (inland_access_point, offshore_access_point, access_point_registry)"
     ],
     "schemas": [
       "schemas/access_point_registry.schema.json",
@@ -16,7 +17,8 @@
     "geometry_semantics": [
       "no existing semantics changed",
       "new repository-local records keep CANDIDATE_NOT_IDENTITY as the default for any proximity relation",
-      "a record without a registered source carries no geometry"
+      "a record without a registered source carries no geometry",
+      "an exported access-point location is a REPRESENTATIVE_POINT from the record's own observation; where the source never declared its coordinate system the method says LEGACY_REGISTRY_POINT_CRS_ASSUMED"
     ],
     "crs": [
       "no change; OGC:CRS84 remains the interchange CRS",
@@ -30,7 +32,7 @@
     {
       "repo": "spiderweb-pr",
       "impact": "OPTIONAL",
-      "reason": "new registries, API routes and map panel are additive; code relying on a placeholder vertical datum being accepted by gebco.marine_evidence will now fail closed",
+      "reason": "new registries, API routes and map panel are additive; code relying on a placeholder vertical datum being accepted by gebco.marine_evidence will now fail closed; scripts/federation_export.py gains an opt-in --access-point-registries lane, which the export_canonical command in federation.json now passes, so the hub (thehub-pr) receives candidate access-point records; the hub needs no schema or ingest change and validate-package returns VALID",
       "migration": null
     },
     {
@@ -62,6 +64,6 @@
     "performance": "OPEN",
     "desktop": "OPEN",
     "ios": "OPEN",
-    "federation": "BLOCKED"
+    "federation": "OPEN"
   }
 }

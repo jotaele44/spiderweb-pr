@@ -183,6 +183,21 @@
         "tests/test_access_points_replication.py",
         "docs/ACCESS_POINT_REGISTRIES.md"
       ]
+    },
+    {
+      "date": "2026-11-20",
+      "summary": "Exported access-point registry records to the federation hub, by the repository owner's in-session authorisation of 2026-11-20 (spiderweb/access_points/hub_export.py; an opt-in --access-point-registries lane in scripts/federation_export.py, now passed by export_canonical in federation.json, with a drift-reconciliation receipt in governance/federation_compatibility.json). Records with status CANDIDATE or better are exported as inland_access_point / offshore_access_point entities with identity_state CANDIDATE and identity_scope PRODUCER_LOCAL, epistemic_class INTERPRETIVE, and a REPRESENTATIVE_POINT location only where the record's own observation states a point (method LEGACY_REGISTRY_POINT_CRS_ASSUMED where the source never declared its CRS); one access_point_registry entity and source per registry, with reported_by links. Provisional seeds, detections and relationships are not exported. schemas/federation_entity.schema.json gains three entity types and an optional attributes object (additive). The production package with the lane validates as VALID under thehub-pr's validate-package at origin/main 95c6c99; no hub code changes. Nothing is delivered until the branch is merged. Release state is recorded in evidence/access_points/certification_report_v11.json.",
+      "files": [
+        "spiderweb/access_points/hub_export.py",
+        "scripts/federation_export.py",
+        "federation.json",
+        "governance/federation_compatibility.json",
+        "schemas/federation_entity.schema.json",
+        "reports/federation_spatial_impact_access_points_v1.json",
+        "tests/test_access_points_hub_export.py",
+        "docs/ACCESS_POINT_REGISTRIES.md",
+        "docs/REPO_BOUNDARY.md"
+      ]
     }
   ]
 }

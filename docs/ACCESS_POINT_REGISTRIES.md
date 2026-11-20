@@ -683,14 +683,43 @@ surveyed window, and the nearest is 2.6 km away. That agrees with the two
 surveys, which found only shallow basins there. Nothing was attached to the
 record.
 
+## Export to the federation hub
+
+Authorised by the repository owner on 2026-11-20. The hub (thehub-pr) runs this
+repository's `export_canonical` command from `federation.json`, which now passes
+`--access-point-registries registry/access_points` to
+`scripts/federation_export.py`. The lane
+(`spiderweb/access_points/hub_export.py`) reads the two committed registry
+documents, refusing one that does not match its content hash, and adds rows to
+the existing `sources`, `entities` and `relationships` streams. No stream and
+no hub schema or hub code changes. This repository's own producer schema
+(`schemas/federation_entity.schema.json`) gains the three new entity types and an
+optional `attributes` object; the hub's schemas already accept both.
+
+| What | How it is exported |
+|---|---|
+| Records with status CANDIDATE, UNDER_REVIEW or VERIFIED | One entity each: `inland_access_point` or `offshore_access_point`, with the feature id, class, status, tier per evidence dimension, ladder rung and the registry document's content hash as attributes. Today: 4 inland and 1 off-shore, all CANDIDATE |
+| Identity | `identity_state CANDIDATE`, `identity_scope PRODUCER_LOCAL` on every record: the hub's correlation can never read a record as the same thing as another producer's |
+| Class | `epistemic_class INTERPRETIVE`: a record is the registry's interpretation of its sources |
+| Position | A `location` only where the record's own observation states a point, as a `REPRESENTATIVE_POINT`. Where the source never declared its coordinate system the method says `LEGACY_REGISTRY_POINT_CRS_ASSUMED` (all five today) |
+| Confidence | Required by the hub's schema: 0.3 for CANDIDATE, 0.5 UNDER_REVIEW, 0.9 VERIFIED. An ordering by status, not a probability |
+| The registries themselves | One `sources` row and one `access_point_registry` entity per registry; each record links to it with `reported_by` |
+| Not exported | PROVISIONAL_DISCOVERY seeds (5 today: no evidence, no coordinates), REJECTED and SUPERSEDED records, survey detections, relationships between records |
+
+The package built with the lane from `exports/real` in production mode passed
+the hub's own `validate-package` (hub `origin/main` at 95c6c99) as VALID, with
+0 synthetic rows, and the extended command passes the hub's command allow-list.
+Nothing reaches the hub until this branch is merged and the hub next runs the
+command.
+
 ## What this change deliberately does not do
 
 | Not done | Why |
 |---|---|
-| Export access-point records to the federation hub | External federation activation was not authorised; the export script, its schemas and its golden files are untouched |
 | Register a vector-tile source | The tile publication contract pins the source set; records are served as GeoJSON |
 | Add a write or review API | The backend has no authentication |
-| Download survey products in bulk | A product is fetched only by its exact address, under a separate grant with a byte ceiling; two tiles have been fetched that way |
+| Download survey products in bulk | A product is fetched only by its exact address, under a separate grant with a byte ceiling; two elevation tiles and two seabed survey files have been fetched that way |
+| Export detections, provisional seeds or relationships to the hub | Only registry records that are candidates or better are exported, each as a candidate identity (see "Export to the federation hub") |
 | Correlate records across producers | That is the hub's role; other producers' records are read as context only |
 | Change production | Nothing was deployed and no data store was written |
 
@@ -701,7 +730,7 @@ record.
 | Frontend client | Additive | New panel; existing calls unchanged |
 | Desktop launcher | Additive | New routes resolve ahead of the page catch-all (tested) |
 | Production app | Additive | Same application object; no new dependency |
-| Federation hub | None | Nothing new is exported |
+| Federation hub | Additive | Candidate access-point records arrive as new entity types in the existing canonical streams once the export command carries the lane; no schema or ingest change (see "Export to the federation hub") |
 | Sibling producers | None | No shared contract, schema or identifier rule changed |
 | Code using the marine evidence gates | Stricter | A placeholder datum no longer counts as a stated datum; see the scientific method document |
 

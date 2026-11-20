@@ -5,9 +5,9 @@ BASE COMMIT: cb5aa8eb726ba882b410bcfe0a402799af86ed5a (audited); main merged in 
 SOURCE-DISCOVERY WORK: based on main at 9c37b42926e6d401e80598221162a4664f2202d0
 NAMESPACES: access_point.inland (INAP) / access_point.offshore (OFAP)
 IDENTITY DEFAULT: CANDIDATE_NOT_IDENTITY
-RECORDS EXPORTED TO THE HUB: NONE
+RECORDS EXPORTED TO THE HUB: CANDIDATE RECORDS ONLY, ONCE MERGED (4 INLAND, 1 OFF-SHORE)
 INDEPENDENT REVIEW: NOT PERFORMED
-MACHINE-READABLE REPORT: evidence/access_points/certification_report_v10.json
+MACHINE-READABLE REPORT: evidence/access_points/certification_report_v11.json
 
 PURPOSE
 
@@ -158,7 +158,8 @@ OPEN BEFORE ANY RELEASE
    - Live source discovery ran once (2026-11-16, 180 sources listed). It lists
      surveys; it downloaded none, and no record cites one yet.
    - aguayluz-pr has no committed export package to read.
-   - Nothing is exported to the hub; export was not authorised.
+   - Export to the hub is authorised (2026-11-20) and implemented: candidate records
+     only, each a candidate identity. It reaches the hub only after this is merged.
    - Three naming questions for the owners are open (see the terminology decision).
 
 ROLLBACK
