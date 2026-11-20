@@ -1,0 +1,43 @@
+# Crosswalk from the legacy node registry to the access-point registries.
+#
+# The legacy file is read, never edited, renamed or migrated.  Each legacy node
+# that matches a rule below becomes ONE candidate observation in the named
+# registry, citing the legacy file (with its SHA-256) as its source and keeping
+# the legacy node id, name and type verbatim.
+#
+#   * A crosswalked record is a CANDIDATE.  The legacy registry is an analytic
+#     compilation, not a survey: it cannot support more than "a source lists
+#     something here".
+#   * Coordinates are copied exactly as the legacy file gives them, with the
+#     legacy coordinate method.  Their accuracy is not known and is recorded as
+#     unknown.
+#   * Rules match the pair (type, subtype) exactly.  Nothing is matched by name
+#     or by substring, and legacy nodes without a subtype are not crosswalked.
+#   * Which side of the coast a node lies on has not been tested: no coastline
+#     version is registered yet.  The registry named here follows the legacy
+#     type label only.
+version: access_point_legacy_crosswalk_v1
+legacy_file: configs/ilap_registry.yaml
+legacy_namespace: analytic.ilap_infrastructure_linked
+generated_utc: "2026-11-15T00:00:00Z"
+rules:
+  - legacy_type: Hydro
+    legacy_subtype: Sinkhole
+    registry: access_point.inland
+    feature_class: SINKHOLE
+  - legacy_type: Hydro
+    legacy_subtype: Spring
+    registry: access_point.inland
+    feature_class: SPRING
+  - legacy_type: Hydro
+    legacy_subtype: Tunnel
+    registry: access_point.inland
+    feature_class: ENGINEERED_UNDERGROUND_STRUCTURE
+  - legacy_type: Quarry
+    legacy_subtype: Terraced
+    registry: access_point.inland
+    feature_class: SURFACE_EXCAVATION
+  - legacy_type: Coastal
+    legacy_subtype: SGD
+    registry: access_point.offshore
+    feature_class: SUBMARINE_SPRING

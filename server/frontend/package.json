@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint src vite.config.ts vitest.config.ts",
     "lint:fix": "eslint src vite.config.ts vitest.config.ts --fix",
+    "visual:iphone": "node scripts/capture-spatial-iphone-baselines.mjs",
     "postinstall": "node scripts/copy-cesium-assets.mjs"
   },
   "dependencies": {
@@ -44,7 +45,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.11.0",
     "jsdom": "^30.0.1",
-    "playwright": "1.56.1",
+    "playwright": "1.65.0",
     "typescript-eslint": "^8.68.0",
     "vitest": "^4.1.11"
   },

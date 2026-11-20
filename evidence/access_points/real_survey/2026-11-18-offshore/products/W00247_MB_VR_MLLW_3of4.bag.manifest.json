@@ -1,0 +1,22 @@
+{
+  "filename": "W00247_MB_VR_MLLW_3of4.bag",
+  "headers": {
+    "content-length": "6935533",
+    "date": "Wed, 18 Nov 2026 15:00:54 GMT",
+    "last-modified": "Wed, 13 Jul 2022 18:38:28 GMT"
+  },
+  "products_version": "access-point-products/1.0",
+  "request": {
+    "metadata_uri": "https://www.ngdc.noaa.gov/nos/W00001-W02000/W00247.html",
+    "native_identifier": "NOS:BAG:W00247:3of4",
+    "provider": "NOS_BAG_PRODUCT",
+    "published": null,
+    "size_bytes": null,
+    "title": "W00247_MB_VR_MLLW_3of4.bag (NOS hydrographic survey W00247, multibeam, variable resolution, MLLW)",
+    "url": "https://data.ngdc.noaa.gov/platforms/ocean/nos/coast/W00001-W02000/W00247/BAG/W00247_MB_VR_MLLW_3of4.bag"
+  },
+  "response_sha256": "b0daca032ae10b91245fffb738c0de48dbb9e75d53759672d40842d5151565e8",
+  "response_size": 6935533,
+  "retrieved_utc": "2026-11-18T15:00:55+00:00",
+  "schema": "access_point_product_manifest/1.0"
+}

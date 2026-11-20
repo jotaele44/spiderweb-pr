@@ -35,6 +35,169 @@
         ".federation/docs-sync.json",
         "governance/change_log.json"
       ]
+    },
+    {
+      "date": "2026-11-15",
+      "summary": "Added the Inland and Off-Shore Access Point registries (spiderweb/access_points), their read-only /v1/access-points API and map workspace, three JSON schemas, the committed registry documents and their deterministic builder. Hardened three pre-existing gates so that a placeholder vertical datum no longer counts as a stated datum, a rootless direct observation no longer outranks a rooted one, and an undeclared datum no longer passes datum policy. No record is exported to the hub, no tile source is registered, no write endpoint exists and federation.json is unchanged. The acronyms ILAP and OSAP keep their existing meanings; the new registries use the namespaces access_point.inland and access_point.offshore (docs/ACCESS_POINT_TERMINOLOGY_DECISION.md). Release state is recorded in evidence/access_points/certification_report_v1.json: software tested, science exploratory, production not authorised.",
+      "files": [
+        "spiderweb/access_points/",
+        "server/backend/access_points_api.py",
+        "server/frontend/src/spatial/accessPoints/",
+        "schemas/access_point_registry.schema.json",
+        "registry/access_points/",
+        "gebco/marine_evidence.py",
+        "source_adapters/ncei_coastal_dem/datum_policy.py",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
+    },
+    {
+      "date": "2026-11-16",
+      "summary": "Added planned, bounded, metadata-only source-discovery runs for the access-point registries (spiderweb/access_points/discovery.py, scripts/discover_access_point_sources.py) and the search boxes they use (configs/access_point_discovery_corridors.yaml). A search box is never a feature position: the corridor file is refused if it states a coordinate, a depth or a feature, and the five off-shore seeds stay without geometry. The registry builder now reads the sealed source catalogue of the current run, when one is committed, and registers its surveys as references only. A live transport with a generic user agent, a response-header allow-list and redirect refusal was added. One run was executed on 2026-11-16 under an explicit grant from the repository owner (48 metadata requests to three public NOAA catalogue hosts, 180 surveys listed, exact response bytes kept under evidence/access_points/source_discovery/2026-11-16); the registries now hold those surveys as references and no feature, status or coordinate changed. The elevation-inventory adapter now cites only a real address where the inventory publishes an HTML fragment. No data product is downloaded by any code path, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v2.json.",
+      "files": [
+        "spiderweb/access_points/discovery.py",
+        "spiderweb/access_points/acquisition.py",
+        "spiderweb/access_points/seeding.py",
+        "spiderweb/access_points/monitoring.py",
+        "scripts/discover_access_point_sources.py",
+        "configs/access_point_discovery_corridors.yaml",
+        "docs/ACCESS_POINT_REGISTRIES.md",
+        "evidence/access_points/source_discovery/",
+        "evidence/access_points/certification_report_v2.json",
+        "registry/access_points/"
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "summary": "Added real-survey processing for the access-point registries. A named survey product can be fetched only by exact address under a separate PRODUCT_DOWNLOAD grant that bounds files and bytes, with the size checked before any byte is read (spiderweb/access_points/products.py); there is no bulk path. Two USGS 1 m elevation tiles were fetched under an explicit owner grant (716 MB of an 800 MB ceiling), kept outside the repository, and registered in the Inland registry by the SHA-256 of the full file; they are grids and are not direct measurements. A declared run (configs/access_point_survey_runs.yaml) cut a 1 km window around the registered point of INAP-PR-000003, found closed basins in both surveys and compared them; the committed report is reproduced from committed evidence. A stated vertical datum is now checked for regional plausibility and an implausible one blocks joins to other references. No feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v3.json.",
+      "files": [
+        "spiderweb/access_points/products.py",
+        "spiderweb/access_points/survey.py",
+        "spiderweb/access_points/survey_run.py",
+        "spiderweb/access_points/acquisition.py",
+        "spiderweb/access_points/vertical.py",
+        "spiderweb/access_points/seeding.py",
+        "scripts/process_access_point_survey.py",
+        "configs/access_point_survey_runs.yaml",
+        "evidence/access_points/real_survey/",
+        "registry/access_points/",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
+    },
+    {
+      "date": "2026-11-18",
+      "summary": "Added published reference maps to the access-point registries and compared the closed-basin detector with one. A reference set is held by the SHA-256 of its exact bytes and read only with a bound coordinate reference system (spiderweb/access_points/reference.py, configs/access_point_reference_sets.yaml); three sets supplied by the repository owner are committed (USGS Karst Map sinkhole outlines and sinkhole areas, PR Planning Board northern karst limit) and registered in the Inland registry as held sources that are not direct measurements. A new evaluation state, REFERENCE_COMPARED, labels a comparison with a published map and is distinct from MEASURED, which stays reserved for field truth. The comparison (spiderweb/access_points/validation.py) used the elevation tiles already held; nothing was downloaded. No detection threshold, feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v4.json.",
+      "files": [
+        "spiderweb/access_points/reference.py",
+        "spiderweb/access_points/validation.py",
+        "spiderweb/access_points/detection.py",
+        "spiderweb/access_points/seeding.py",
+        "scripts/validate_access_point_detector.py",
+        "configs/access_point_reference_sets.yaml",
+        "evidence/access_points/reference/",
+        "evidence/access_points/validation/",
+        "registry/access_points/",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
+      ]
+    },
+    {
+      "date": "2026-11-18",
+      "summary": "Added an opt-in nested-basin mode to the shared closed-basin delineation of the access-point registries (spiderweb/access_points/raster.py, detection.py). It reports basins inside a compound depression, each with its hierarchy level, its parent and a lower-bound depth; containment is recorded on the detection and is never written to the relationship ledger. The mode is off by default: outer basins, their measurements, their identifiers and every committed report are unchanged, which tests and the two earlier reproducibility checks confirm. A second declared validation run compared both modes against the USGS karst map on the tiles already held, with the reading rule fixed in advance; nothing was downloaded. No detection threshold, feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v5.json.",
+      "files": [
+        "spiderweb/access_points/raster.py",
+        "spiderweb/access_points/detection.py",
+        "spiderweb/access_points/validation.py",
+        "configs/access_point_reference_sets.yaml",
+        "scripts/benchmark_access_points.py",
+        "evidence/access_points/validation/",
+        "evidence/access_points/benchmark_v2.json",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
+      ]
+    },
+    {
+      "date": "2026-11-18",
+      "summary": "Made nested basins the default of the access-point detectors (spiderweb/access_points/detection.py), by the repository owner's decision after the comparison with the USGS karst map. The low-level delineation keeps nesting off unless asked; a declared survey run must state parameters.nested, and the committed run of 2026-11-17 is pinned to outer basins only so its report still reproduces; validation runs state both their baseline and their candidate detector, so a comparison does not move when a default does. Nested basins now apply the same depth floor as outer basins. Added an optional single-pit rule (pit_area_jump), measured it against the nested detector on the held tiles with the reading rule fixed in advance, found no gain, and left it off. Nothing was downloaded. No detection threshold, feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v6.json.",
+      "files": [
+        "spiderweb/access_points/detection.py",
+        "spiderweb/access_points/raster.py",
+        "spiderweb/access_points/validation.py",
+        "spiderweb/access_points/survey_run.py",
+        "configs/access_point_survey_runs.yaml",
+        "configs/access_point_reference_sets.yaml",
+        "evidence/access_points/validation/",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md"
+      ]
+    },
+    {
+      "date": "2026-11-19",
+      "summary": "Processed the first seabed survey for the Off-Shore Access Point registry (spiderweb/access_points/bathymetry_run.py, survey.py; scripts/process_access_point_seabed.py; seabed_runs in configs/access_point_survey_runs.yaml). One metadata request froze the landing page of NOS survey W00247 and one gridded survey file (6,935,533 bytes) was fetched under an explicit product grant of one file and 8 MB; it is held outside the repository and its SHA-256 equals the August 2026 receipt for the same file. Only its 64 m base grid is read. The run names no target record and states no position; the product's own per-cell uncertainty is used and the report counts the cells where the minimum depth cannot be resolved (56%). Three closed seabed depressions were found and are reported as shapes at EXPLORATORY state; none is attached to a record. The file is registered in the Off-Shore registry as a held, hashed grid, not a direct measurement. No feature, observation or status changed, no seed gained a coordinate, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v7.json.",
+      "files": [
+        "spiderweb/access_points/bathymetry_run.py",
+        "spiderweb/access_points/survey.py",
+        "spiderweb/access_points/seeding.py",
+        "spiderweb/access_points/raster.py",
+        "scripts/process_access_point_seabed.py",
+        "configs/access_point_survey_runs.yaml",
+        "evidence/access_points/real_survey/2026-11-18-offshore/",
+        "registry/access_points/",
+        "tests/test_access_points_seabed.py",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
+    },
+    {
+      "date": "2026-11-19",
+      "summary": "Read the finer grids of the held seabed survey file (NOS W00247, file 3 of 4) at 8 m cells, with no download and no network request (spiderweb/access_points/survey.py, bathymetry_run.py; two runs under seabed_runs in configs/access_point_survey_runs.yaml). GDAL's resampled mode fills each cell with the mean elevation and the largest uncertainty of the finer-grid nodes in it; every one of 319,157 cells was recomputed from all 809,925 nodes and agrees. The three depressions of the base-grid run persist by a rule fixed in advance; the comparison is labelled a consistency check on the same soundings, not replication. One small steep object found with the smaller declared area floor is flagged as a possible refinement artefact; node-level examination points to a seam between finer grids. The seabed pointer, the base-grid report and the registries are unchanged; no feature, observation or status changed, nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v8.json.",
+      "files": [
+        "spiderweb/access_points/survey.py",
+        "spiderweb/access_points/bathymetry_run.py",
+        "scripts/process_access_point_seabed.py",
+        "configs/access_point_survey_runs.yaml",
+        "evidence/access_points/real_survey/2026-11-19-offshore-8m/",
+        "evidence/access_points/real_survey/2026-11-19-offshore-8m-small/",
+        "tests/test_access_points_seabed.py",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "summary": "Added a seam test for depressions read from the finer grids of a variable-resolution seabed survey file (spiderweb/access_points/survey.py, bathymetry_run.py), written before it was applied, and recorded the repository owner's decision to keep the Planning Board karst-limit layer in the repository. The test finds a planted seam on synthetic surfaces. Applied to both committed 8 m seabed runs it classifies every outer depression as NOT_SEAM_LIKE, including the small steep object previously read as a probable seam from a single profile; that reading is withdrawn in the docs and the object stays flagged and unexplained. The result is informational and changes no tier. No download, no network request; the seabed pointer, the base-grid report and the registry features are unchanged; nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v9.json.",
+      "files": [
+        "spiderweb/access_points/survey.py",
+        "spiderweb/access_points/bathymetry_run.py",
+        "evidence/access_points/real_survey/2026-11-19-offshore-8m/",
+        "evidence/access_points/real_survey/2026-11-19-offshore-8m-small/",
+        "tests/test_access_points_seabed.py",
+        "configs/access_point_reference_sets.yaml",
+        "docs/ACCESS_POINT_SCIENTIFIC_METHOD.md",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "summary": "Searched for an independent second survey of the seabed depressions found in NOS W00247 (spiderweb/access_points/replication.py, scripts/search_access_point_replication.py, replication_searches in configs/access_point_survey_runs.yaml), under the repository owner's grant of 2026-11-20: two metadata requests (the H12935 landing page and one NCEI multibeam-footprint query) and one download (H12935_MB_VR_MLLW.bag, 37,801,093 bytes, held outside the repository). H12935 has no soundings within 11 km of the depressions; the independent cruises whose footprints contain them hold raw pings only; the one processed grid crossing W00247 reaches nothing shallower than 448 m. The sealed report's outcome is BLOCKED; no raw soundings were processed. Added parameter matching for a horizontal CRS that a file gives without an EPSG code, with the basis recorded. No feature, observation or status changed; nothing is exported to the hub and federation.json is unchanged. Release state is recorded in evidence/access_points/certification_report_v10.json.",
+      "files": [
+        "spiderweb/access_points/replication.py",
+        "spiderweb/access_points/survey.py",
+        "scripts/search_access_point_replication.py",
+        "configs/access_point_survey_runs.yaml",
+        "evidence/access_points/real_survey/2026-11-20-offshore-replication/",
+        "tests/test_access_points_replication.py",
+        "docs/ACCESS_POINT_REGISTRIES.md"
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "summary": "Exported access-point registry records to the federation hub, by the repository owner's in-session authorisation of 2026-11-20 (spiderweb/access_points/hub_export.py; an opt-in --access-point-registries lane in scripts/federation_export.py, now passed by export_canonical in federation.json, with a drift-reconciliation receipt in governance/federation_compatibility.json). Records with status CANDIDATE or better are exported as inland_access_point / offshore_access_point entities with identity_state CANDIDATE and identity_scope PRODUCER_LOCAL, epistemic_class INTERPRETIVE, and a REPRESENTATIVE_POINT location only where the record's own observation states a point (method LEGACY_REGISTRY_POINT_CRS_ASSUMED where the source never declared its CRS); one access_point_registry entity and source per registry, with reported_by links. Provisional seeds, detections and relationships are not exported. schemas/federation_entity.schema.json gains three entity types and an optional attributes object (additive). The production package with the lane validates as VALID under thehub-pr's validate-package at origin/main 95c6c99; no hub code changes. Nothing is delivered until the branch is merged. Release state is recorded in evidence/access_points/certification_report_v11.json.",
+      "files": [
+        "spiderweb/access_points/hub_export.py",
+        "scripts/federation_export.py",
+        "federation.json",
+        "governance/federation_compatibility.json",
+        "schemas/federation_entity.schema.json",
+        "reports/federation_spatial_impact_access_points_v1.json",
+        "tests/test_access_points_hub_export.py",
+        "docs/ACCESS_POINT_REGISTRIES.md",
+        "docs/REPO_BOUNDARY.md"
+      ]
     }
   ]
 }

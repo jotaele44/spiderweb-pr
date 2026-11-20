@@ -1,0 +1,97 @@
+{
+  "content_sha256": "9385d93844895da7d59dab162bb153791657b01e49e963f598c3adca8a67baf6",
+  "epochs": {
+    "2018": {
+      "deep_basins": 3,
+      "deep_threshold_m": 10.0,
+      "deepest_m": 12.03,
+      "detection_count": 60,
+      "nearest_deep_basins": [
+        {
+          "adjoins_edge": false,
+          "area_m2": 32548.0,
+          "distance_to_point_m": 1369.8,
+          "max_depth_m": 11.06,
+          "native_record_id": "closed-basin-delineation@723544.500000,2033536.500000"
+        },
+        {
+          "adjoins_edge": false,
+          "area_m2": 48614.0,
+          "distance_to_point_m": 1702.4,
+          "max_depth_m": 12.03,
+          "native_record_id": "closed-basin-delineation@724025.500000,2033643.500000"
+        },
+        {
+          "adjoins_edge": false,
+          "area_m2": 14266.0,
+          "distance_to_point_m": 1737.1,
+          "max_depth_m": 10.05,
+          "native_record_id": "closed-basin-delineation@724264.500000,2033480.500000"
+        }
+      ],
+      "note": "a basin cut by the window edge or by an area the product does not cover is not closed inside the window and is not reported; absence here is absence of a basin closed within the covered part",
+      "parent_sha256": "a798473f09726437e9641bfed2c1cb584c176888595bba46348cda7caf83c9c5",
+      "point_inside_any_basin_bbox": true,
+      "shape": [
+        3000,
+        3000
+      ],
+      "valid_cell_fraction": 0.7719
+    },
+    "2024": {
+      "deep_basins": 5,
+      "deep_threshold_m": 10.0,
+      "deepest_m": 16.54,
+      "detection_count": 118,
+      "nearest_deep_basins": [
+        {
+          "adjoins_edge": false,
+          "area_m2": 4078.0,
+          "distance_to_point_m": 1274.0,
+          "max_depth_m": 10.92,
+          "native_record_id": "closed-basin-delineation@723202.500033,2031012.500024"
+        },
+        {
+          "adjoins_edge": false,
+          "area_m2": 12181.0,
+          "distance_to_point_m": 1358.9,
+          "max_depth_m": 11.86,
+          "native_record_id": "closed-basin-delineation@723662.500033,2031077.500024"
+        },
+        {
+          "adjoins_edge": false,
+          "area_m2": 32699.0,
+          "distance_to_point_m": 1370.3,
+          "max_depth_m": 11.03,
+          "native_record_id": "closed-basin-delineation@723543.500033,2033537.500024"
+        },
+        {
+          "adjoins_edge": false,
+          "area_m2": 6663.0,
+          "distance_to_point_m": 1521.8,
+          "max_depth_m": 16.54,
+          "native_record_id": "closed-basin-delineation@722167.500033,2031009.500024"
+        },
+        {
+          "adjoins_edge": false,
+          "area_m2": 49379.0,
+          "distance_to_point_m": 1704.3,
+          "max_depth_m": 12.87,
+          "native_record_id": "closed-basin-delineation@724031.500033,2033641.500024"
+        }
+      ],
+      "note": "a basin cut by the window edge or by an area the product does not cover is not closed inside the window and is not reported; absence here is absence of a basin closed within the covered part",
+      "parent_sha256": "a5a8e6091415d88d991c4248a877b65e6020f0f7af810109063413c23d3be63c",
+      "point_inside_any_basin_bbox": true,
+      "shape": [
+        3000,
+        3000
+      ],
+      "valid_cell_fraction": 1.0
+    }
+  },
+  "half_size_m": 1500,
+  "reproducible_from": "the held products named by parent_sha256; not from the repository alone",
+  "run_id": "2026-11-17",
+  "schema": "access_point_survey_wide_window/1.0"
+}

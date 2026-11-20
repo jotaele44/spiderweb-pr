@@ -1,0 +1,1057 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "access_point_registry",
+  "title": "Access-point registry document",
+  "description": "One hash-sealed registry document: either Inland Access Points or Off-Shore Access Points, never both. Produced by spiderweb.access_points.registry.AccessPointRegistry.to_document. A record here is a candidate unless its status says VERIFIED; a provisional record with no registered source carries no coordinates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "contract_version",
+    "rules_version",
+    "namespace",
+    "registry_code",
+    "producer_identity",
+    "sources",
+    "observations",
+    "derived_geometries",
+    "features",
+    "counts",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "access_point_registry/1.0"
+    },
+    "contract_version": {
+      "type": "string"
+    },
+    "rules_version": {
+      "type": "string"
+    },
+    "namespace": {
+      "enum": [
+        "access_point.inland",
+        "access_point.offshore"
+      ]
+    },
+    "registry_code": {
+      "enum": [
+        "INAP",
+        "OFAP"
+      ]
+    },
+    "producer_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "provider",
+          "title",
+          "product_stage",
+          "coverage_state",
+          "provenance_state",
+          "parent_source_ids"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^APSRC-[0-9a-f]{16}$"
+          },
+          "provider": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "native_identifier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_uri": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "manifestation_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "retrieved_utc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "published_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "survey_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lineage_root_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parent_source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^APSRC-[0-9a-f]{16}$"
+            }
+          },
+          "product_stage": {
+            "enum": [
+              "RAW_OBSERVATION",
+              "PROCESSED_OBSERVATION",
+              "GRID",
+              "DERIVED_PRODUCT",
+              "VISUALIZATION"
+            ]
+          },
+          "sensor_type": {
+            "enum": [
+              "MULTIBEAM_ECHOSOUNDER",
+              "SINGLE_BEAM_ECHOSOUNDER",
+              "BATHYMETRIC_LIDAR",
+              "TOPOBATHYMETRIC_LIDAR",
+              "SATELLITE_DERIVED_BATHYMETRY",
+              "HYDROGRAPHIC_SOUNDINGS",
+              "SIDE_SCAN_SONAR",
+              "SONAR_BACKSCATTER",
+              "SUBBOTTOM_PROFILER",
+              "SEISMIC_REFLECTION",
+              "ROV",
+              "AUV",
+              "COASTAL_DEM",
+              "NAUTICAL_CHART",
+              "DERIVED_BATHYMETRIC_GRID",
+              "VISUALIZATION",
+              null
+            ]
+          },
+          "coverage_state": {
+            "enum": [
+              "DIRECTLY_OBSERVED",
+              "INTERPOLATED",
+              "EXTRAPOLATED",
+              "REMOTE_DERIVED",
+              "GENERALIZED",
+              "NULL_EMPTY",
+              "UNKNOWN"
+            ]
+          },
+          "provenance_state": {
+            "enum": [
+              "REGISTERED",
+              "REFERENCED_ONLY",
+              "UNREGISTERED"
+            ]
+          },
+          "license_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "provenance_state": {
+                  "const": "REGISTERED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "manifestation_sha256": {
+                  "type": "string"
+                },
+                "retrieved_utc": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "observation_id",
+          "namespace",
+          "source_id",
+          "native_record_id",
+          "geometry_basis",
+          "geometry",
+          "claim_class"
+        ],
+        "properties": {
+          "observation_id": {
+            "type": "string",
+            "pattern": "^(INAP|OFAP)-OBS-[0-9a-f]{16}$"
+          },
+          "namespace": {
+            "enum": [
+              "access_point.inland",
+              "access_point.offshore"
+            ]
+          },
+          "source_id": {
+            "type": "string",
+            "pattern": "^APSRC-[0-9a-f]{16}$"
+          },
+          "native_record_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "geometry_basis": {
+            "enum": [
+              "MEASURED",
+              "SOURCE_DIGITIZED",
+              "DERIVED_FROM_RASTER",
+              "GEOREGISTERED_IMAGE",
+              "LOCALITY_LABEL_ONLY",
+              "NONE"
+            ]
+          },
+          "raw_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "raw_attributes": {
+            "type": "object"
+          },
+          "geometry": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "type",
+                  "coordinates"
+                ],
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "Point",
+                      "MultiPoint",
+                      "LineString",
+                      "MultiLineString",
+                      "Polygon",
+                      "MultiPolygon"
+                    ]
+                  },
+                  "coordinates": {
+                    "type": "array",
+                    "minItems": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "horizontal_crs": {
+            "enum": [
+              "OGC:CRS84",
+              null
+            ]
+          },
+          "horizontal_uncertainty_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "value_m": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "vertical_reference": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "horizontal_crs",
+              "depth_positive"
+            ],
+            "properties": {
+              "horizontal_crs": {
+                "type": "string",
+                "minLength": 1
+              },
+              "vertical_crs": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "vertical_datum": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "tidal_datum": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "depth_positive": {
+                "enum": [
+                  "up",
+                  "down"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "vertical_uncertainty_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "observed_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "discovered_utc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "claim_class": {
+            "enum": [
+              "FACT",
+              "COMPUTED",
+              "BINDING",
+              "INFERENCE",
+              "ASSUMPTION",
+              "HYPOTHESIS",
+              "UNKNOWN"
+            ]
+          },
+          "locality_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "geometry_basis": {
+                  "enum": [
+                    "LOCALITY_LABEL_ONLY",
+                    "NONE"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "geometry": {
+                  "type": "null"
+                },
+                "horizontal_crs": {
+                  "type": "null"
+                },
+                "horizontal_uncertainty_m": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "geometry": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "geometry"
+              ]
+            },
+            "then": {
+              "properties": {
+                "horizontal_crs": {
+                  "const": "OGC:CRS84"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "value_m": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "value_m"
+              ]
+            },
+            "then": {
+              "properties": {
+                "vertical_reference": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "vertical_reference"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "derived_geometries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "geometry_id",
+          "observation_ids",
+          "method",
+          "method_version",
+          "geometry",
+          "geometry_logical_sha256",
+          "modeled"
+        ],
+        "properties": {
+          "geometry_id": {
+            "type": "string",
+            "pattern": "^APGEO-[0-9a-f]{16}$"
+          },
+          "observation_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^(INAP|OFAP)-OBS-[0-9a-f]{16}$"
+            }
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1
+          },
+          "method_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "geometry": {
+            "type": "object",
+            "required": [
+              "type",
+              "coordinates"
+            ],
+            "properties": {
+              "type": {
+                "enum": [
+                  "Point",
+                  "MultiPoint",
+                  "LineString",
+                  "MultiLineString",
+                  "Polygon",
+                  "MultiPolygon"
+                ]
+              },
+              "coordinates": {
+                "type": "array",
+                "minItems": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "geometry_logical_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "horizontal_uncertainty_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "modeled": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "feature_id",
+          "namespace",
+          "feature_class",
+          "status",
+          "observation_ids",
+          "assertions"
+        ],
+        "properties": {
+          "feature_id": {
+            "type": "string",
+            "pattern": "^(INAP|OFAP)-PR-[0-9]{6}$"
+          },
+          "namespace": {
+            "enum": [
+              "access_point.inland",
+              "access_point.offshore"
+            ]
+          },
+          "feature_class": {
+            "enum": [
+              "BLUE_HOLE_CANDIDATE",
+              "CAVE_ENTRANCE",
+              "CLOSED_DEPRESSION",
+              "CONDUIT_PORTAL",
+              "ENGINEERED_OUTFALL",
+              "ENGINEERED_SEABED_STRUCTURE",
+              "ENGINEERED_SHAFT",
+              "ENGINEERED_UNDERGROUND_STRUCTURE",
+              "ESCARPMENT",
+              "MINE_ADIT",
+              "MINE_SHAFT",
+              "SEAFLOOR_DEPRESSION",
+              "SEAFLOOR_LINEAMENT",
+              "SHELF_EDGE_NOTCH",
+              "SINKHOLE",
+              "SPRING",
+              "SUBMARINE_CAVE_ENTRANCE",
+              "SUBMARINE_LANDSLIDE_SCAR",
+              "SUBMARINE_SPRING",
+              "SUBMERGED_KARST_SURFACE",
+              "SURFACE_EXCAVATION",
+              "SURVEY_ARTIFACT",
+              "SWALLOW_HOLE",
+              "TUNNEL_PORTAL",
+              "UNCLASSIFIED_ANOMALY",
+              "UTILITY_LANDING"
+            ]
+          },
+          "status": {
+            "enum": [
+              "PROVISIONAL_DISCOVERY",
+              "CANDIDATE",
+              "UNDER_REVIEW",
+              "VERIFIED",
+              "REJECTED",
+              "SUPERSEDED"
+            ]
+          },
+          "observation_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(INAP|OFAP)-OBS-[0-9a-f]{16}$"
+            }
+          },
+          "assertions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "dimension",
+                "tier",
+                "claim_class",
+                "basis",
+                "statement",
+                "adjudication"
+              ],
+              "properties": {
+                "dimension": {
+                  "enum": [
+                    "EXISTENCE",
+                    "MORPHOLOGY",
+                    "NATURAL_OR_ARTIFICIAL_ORIGIN",
+                    "PHYSICAL_OPENING",
+                    "ACCESSIBILITY",
+                    "FUNCTION",
+                    "CONNECTIVITY",
+                    "TEMPORAL_VALIDITY"
+                  ]
+                },
+                "tier": {
+                  "enum": [
+                    "UNRESOLVED",
+                    "CANDIDATE",
+                    "SUPPORTING",
+                    "DIRECT",
+                    "CONTRADICTED"
+                  ]
+                },
+                "claim_class": {
+                  "enum": [
+                    "FACT",
+                    "COMPUTED",
+                    "BINDING",
+                    "INFERENCE",
+                    "ASSUMPTION",
+                    "HYPOTHESIS",
+                    "UNKNOWN"
+                  ]
+                },
+                "basis": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "statement": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "observation_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(INAP|OFAP)-OBS-[0-9a-f]{16}$"
+                  }
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^APSRC-[0-9a-f]{16}$"
+                  }
+                },
+                "method": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "method_version": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "valid_from": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "valid_to": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "adjudication": {
+                  "enum": [
+                    "UNREVIEWED",
+                    "PROPOSED",
+                    "ACCEPTED",
+                    "REJECTED",
+                    "CONTRADICTED",
+                    "UNRESOLVED"
+                  ]
+                },
+                "adjudicated_by": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "adjudicated_utc": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "connectivity_kind": {
+                  "enum": [
+                    "GEOLOGICAL_CONTINUITY",
+                    "HYDRAULIC_CONNECTION",
+                    "ENGINEERED_CONNECTIVITY",
+                    "HUMAN_ACCESSIBILITY",
+                    null
+                  ]
+                },
+                "origin": {
+                  "enum": [
+                    "NATURAL",
+                    "ARTIFICIAL",
+                    "MODIFIED_NATURAL",
+                    "UNDETERMINED",
+                    null
+                  ]
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "dimension": {
+                        "const": "CONNECTIVITY"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "connectivity_kind": {
+                        "enum": [
+                          "GEOLOGICAL_CONTINUITY",
+                          "HYDRAULIC_CONNECTION",
+                          "ENGINEERED_CONNECTIVITY",
+                          "HUMAN_ACCESSIBILITY"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "connectivity_kind"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "adjudication": {
+                        "enum": [
+                          "ACCEPTED",
+                          "REJECTED"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "adjudicated_by": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "adjudicated_utc": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "adjudicated_by",
+                      "adjudicated_utc"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "geometry_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^APGEO-[0-9a-f]{16}$"
+          },
+          "provisional_labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "raw_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(INAP|OFAP)-PR-[0-9]{6}$"
+            }
+          },
+          "created_utc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated_utc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sources",
+        "observations",
+        "observations_bound",
+        "observations_unbound",
+        "derived_geometries",
+        "features",
+        "features_by_status"
+      ],
+      "properties": {
+        "sources": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observations_bound": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observations_unbound": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "derived_geometries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "features": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "features_by_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "PROVISIONAL_DISCOVERY",
+            "CANDIDATE",
+            "UNDER_REVIEW",
+            "VERIFIED",
+            "REJECTED",
+            "SUPERSEDED"
+          ],
+          "properties": {
+            "PROVISIONAL_DISCOVERY": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "CANDIDATE": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "UNDER_REVIEW": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "VERIFIED": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "REJECTED": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "SUPERSEDED": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "namespace": {
+            "const": "access_point.inland"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "registry_code": {
+            "const": "INAP"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "properties": {
+                "feature_id": {
+                  "pattern": "^INAP-PR-[0-9]{6}$"
+                },
+                "namespace": {
+                  "const": "access_point.inland"
+                },
+                "feature_class": {
+                  "enum": [
+                    "CLOSED_DEPRESSION",
+                    "SINKHOLE",
+                    "SWALLOW_HOLE",
+                    "SPRING",
+                    "CAVE_ENTRANCE",
+                    "MINE_ADIT",
+                    "MINE_SHAFT",
+                    "SURFACE_EXCAVATION",
+                    "TUNNEL_PORTAL",
+                    "ENGINEERED_SHAFT",
+                    "CONDUIT_PORTAL",
+                    "ENGINEERED_UNDERGROUND_STRUCTURE",
+                    "UNCLASSIFIED_ANOMALY"
+                  ]
+                },
+                "observation_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^INAP-OBS-[0-9a-f]{16}$"
+                  }
+                }
+              }
+            }
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "properties": {
+                "observation_id": {
+                  "pattern": "^INAP-OBS-[0-9a-f]{16}$"
+                },
+                "namespace": {
+                  "const": "access_point.inland"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "namespace": {
+            "const": "access_point.offshore"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "registry_code": {
+            "const": "OFAP"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "properties": {
+                "feature_id": {
+                  "pattern": "^OFAP-PR-[0-9]{6}$"
+                },
+                "namespace": {
+                  "const": "access_point.offshore"
+                },
+                "feature_class": {
+                  "enum": [
+                    "SEAFLOOR_DEPRESSION",
+                    "BLUE_HOLE_CANDIDATE",
+                    "SUBMARINE_CAVE_ENTRANCE",
+                    "SUBMARINE_SPRING",
+                    "SUBMERGED_KARST_SURFACE",
+                    "ESCARPMENT",
+                    "SHELF_EDGE_NOTCH",
+                    "SEAFLOOR_LINEAMENT",
+                    "SUBMARINE_LANDSLIDE_SCAR",
+                    "ENGINEERED_OUTFALL",
+                    "ENGINEERED_SEABED_STRUCTURE",
+                    "UTILITY_LANDING",
+                    "SURVEY_ARTIFACT",
+                    "UNCLASSIFIED_ANOMALY"
+                  ]
+                },
+                "observation_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^OFAP-OBS-[0-9a-f]{16}$"
+                  }
+                }
+              }
+            }
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "properties": {
+                "observation_id": {
+                  "pattern": "^OFAP-OBS-[0-9a-f]{16}$"
+                },
+                "namespace": {
+                  "const": "access_point.offshore"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
