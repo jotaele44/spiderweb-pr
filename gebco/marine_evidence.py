@@ -100,6 +100,43 @@ class GeomorphologyClass(StrEnum):
     UNRESOLVED_MORPHOLOGY = "UNRESOLVED_MORPHOLOGY"
 
 
+# Strings that occupy a datum field without naming a datum.  Compared after
+# lower-casing and collapsing punctuation to single spaces.
+VERTICAL_REFERENCE_PLACEHOLDERS: frozenset[str] = frozenset(
+    {
+        "",
+        "unknown",
+        "unk",
+        "not provided",
+        "not available",
+        "not applicable",
+        "user specified",
+        "user defined",
+        "source dependent",
+        "other",
+        "none",
+        "null",
+        "n a",
+        "na",
+        "unspecified",
+        "undefined",
+        "tbd",
+        "various",
+        "mixed",
+        "see metadata",
+        "local",
+    }
+)
+
+
+def _fold_reference(value: str) -> str:
+    return " ".join("".join(ch if ch.isalnum() else " " for ch in value.lower()).split())
+
+
+def _names_a_reference(value: str | None) -> bool:
+    return isinstance(value, str) and _fold_reference(value) not in VERTICAL_REFERENCE_PLACEHOLDERS
+
+
 @dataclass(frozen=True, slots=True)
 class VerticalReference:
     """Horizontal/vertical reference identity for a depth observation.
@@ -132,7 +169,17 @@ class VerticalReference:
         )
 
     def is_fully_bound(self) -> bool:
-        return bool(self.vertical_crs or self.vertical_datum or self.tidal_datum)
+        """True when at least one field actually names a vertical reference.
+
+        Sources sometimes publish a placeholder in the datum field ("Not
+        Provided", "User Specified", "Unknown").  A placeholder names nothing,
+        so it does not bind the reference.
+        """
+
+        return any(
+            _names_a_reference(value)
+            for value in (self.vertical_crs, self.vertical_datum, self.tidal_datum)
+        )
 
     def exactly_compatible_with(self, other: "VerticalReference") -> bool:
         return self.is_fully_bound() and other.is_fully_bound() and self.key == other.key
@@ -297,7 +344,10 @@ def classify_feature_evidence(
     if len(direct_roots) >= 2 and len(direct_sensors) >= 2:
         return EvidenceState.MULTISENSOR_CONFIRMED
     if direct:
-        if len(direct_roots) == 1:
+        # One acquisition root, or none that can be named, is single-sensor
+        # support at most.  An observation without a root cannot rank above
+        # one whose root is known.
+        if len(direct_roots) <= 1:
             return EvidenceState.SINGLE_SENSOR_SUPPORTED
         return EvidenceState.DIRECT_SENSOR_CONFIRMED
 

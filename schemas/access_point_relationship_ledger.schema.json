@@ -1,0 +1,447 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "access_point_relationship_ledger",
+  "title": "Access-point relationship ledger",
+  "description": "Typed, evidenced relationships between access-point records, including those that cross the two registries. Produced by spiderweb.access_points.relationships.RelationshipLedger.to_document. Proximity is discovery, never identity or connectivity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "contract_version",
+    "producer_identity",
+    "sources",
+    "relationships",
+    "counts",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "access_point_relationships/1.0"
+    },
+    "contract_version": {
+      "type": "string"
+    },
+    "producer_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "provider",
+          "title",
+          "product_stage",
+          "coverage_state",
+          "provenance_state",
+          "parent_source_ids"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^APSRC-[0-9a-f]{16}$"
+          },
+          "provider": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "native_identifier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_uri": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "manifestation_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "retrieved_utc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "published_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "survey_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lineage_root_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parent_source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^APSRC-[0-9a-f]{16}$"
+            }
+          },
+          "product_stage": {
+            "enum": [
+              "RAW_OBSERVATION",
+              "PROCESSED_OBSERVATION",
+              "GRID",
+              "DERIVED_PRODUCT",
+              "VISUALIZATION"
+            ]
+          },
+          "sensor_type": {
+            "enum": [
+              "MULTIBEAM_ECHOSOUNDER",
+              "SINGLE_BEAM_ECHOSOUNDER",
+              "BATHYMETRIC_LIDAR",
+              "TOPOBATHYMETRIC_LIDAR",
+              "SATELLITE_DERIVED_BATHYMETRY",
+              "HYDROGRAPHIC_SOUNDINGS",
+              "SIDE_SCAN_SONAR",
+              "SONAR_BACKSCATTER",
+              "SUBBOTTOM_PROFILER",
+              "SEISMIC_REFLECTION",
+              "ROV",
+              "AUV",
+              "COASTAL_DEM",
+              "NAUTICAL_CHART",
+              "DERIVED_BATHYMETRIC_GRID",
+              "VISUALIZATION",
+              null
+            ]
+          },
+          "coverage_state": {
+            "enum": [
+              "DIRECTLY_OBSERVED",
+              "INTERPOLATED",
+              "EXTRAPOLATED",
+              "REMOTE_DERIVED",
+              "GENERALIZED",
+              "NULL_EMPTY",
+              "UNKNOWN"
+            ]
+          },
+          "provenance_state": {
+            "enum": [
+              "REGISTERED",
+              "REFERENCED_ONLY",
+              "UNREGISTERED"
+            ]
+          },
+          "license_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "provenance_state": {
+                  "const": "REGISTERED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "manifestation_sha256": {
+                  "type": "string"
+                },
+                "retrieved_utc": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relationship_id",
+          "relationship_type",
+          "source",
+          "target",
+          "claim_class",
+          "tier",
+          "basis",
+          "statement",
+          "adjudication"
+        ],
+        "properties": {
+          "relationship_id": {
+            "type": "string",
+            "pattern": "^APREL-[0-9a-f]{16}$"
+          },
+          "relationship_type": {
+            "enum": [
+              "SAME_VERIFIED_PHYSICAL_FEATURE",
+              "DOCUMENTED_ENGINEERED_CONNECTION",
+              "MEASURED_HYDRAULIC_CONNECTION",
+              "VERIFIED_GEOLOGICAL_CONTINUITY",
+              "SHARED_GEOLOGICAL_UNIT",
+              "SPATIAL_ADJACENCY",
+              "HYPOTHESIZED_CONNECTION",
+              "CONTRADICTORY_RELATIONSHIP",
+              "UNRESOLVED_RELATIONSHIP"
+            ]
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "namespace",
+              "identifier"
+            ],
+            "properties": {
+              "namespace": {
+                "enum": [
+                  "access_point.inland",
+                  "access_point.offshore",
+                  "aviation.ilap_path",
+                  "investigation.ilap_area",
+                  "investigation.ilap_cluster",
+                  "analytic.ilap_infrastructure_linked",
+                  "source.fic_osap",
+                  "terrain.ilap_score",
+                  "source.ferrocarril_ilap",
+                  "enrichment.ilap_context"
+                ]
+              },
+              "identifier": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "target": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "namespace",
+              "identifier"
+            ],
+            "properties": {
+              "namespace": {
+                "enum": [
+                  "access_point.inland",
+                  "access_point.offshore",
+                  "aviation.ilap_path",
+                  "investigation.ilap_area",
+                  "investigation.ilap_cluster",
+                  "analytic.ilap_infrastructure_linked",
+                  "source.fic_osap",
+                  "terrain.ilap_score",
+                  "source.ferrocarril_ilap",
+                  "enrichment.ilap_context"
+                ]
+              },
+              "identifier": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "claim_class": {
+            "enum": [
+              "FACT",
+              "COMPUTED",
+              "BINDING",
+              "INFERENCE",
+              "ASSUMPTION",
+              "HYPOTHESIS",
+              "UNKNOWN"
+            ]
+          },
+          "tier": {
+            "enum": [
+              "UNRESOLVED",
+              "CANDIDATE",
+              "SUPPORTING",
+              "DIRECT",
+              "CONTRADICTED"
+            ]
+          },
+          "basis": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^APSRC-[0-9a-f]{16}$"
+            }
+          },
+          "observation_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "connectivity_kind": {
+            "enum": [
+              "GEOLOGICAL_CONTINUITY",
+              "HYDRAULIC_CONNECTION",
+              "ENGINEERED_CONNECTIVITY",
+              "HUMAN_ACCESSIBILITY",
+              null
+            ]
+          },
+          "valid_from": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "valid_to": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "adjudication": {
+            "enum": [
+              "UNREVIEWED",
+              "PROPOSED",
+              "ACCEPTED",
+              "REJECTED",
+              "CONTRADICTED",
+              "UNRESOLVED"
+            ]
+          },
+          "adjudicated_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "adjudicated_utc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contradicts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^APREL-[0-9a-f]{16}$"
+            }
+          },
+          "distance_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "relationship_type": {
+                  "const": "CONTRADICTORY_RELATIONSHIP"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "contradicts": {
+                  "type": "array",
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "contradicts"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "relationship_type": {
+                  "const": "HYPOTHESIZED_CONNECTION"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "connectivity_kind": {
+                  "enum": [
+                    "GEOLOGICAL_CONTINUITY",
+                    "HYDRAULIC_CONNECTION",
+                    "ENGINEERED_CONNECTIVITY",
+                    "HUMAN_ACCESSIBILITY"
+                  ]
+                }
+              },
+              "required": [
+                "connectivity_kind"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relationships",
+        "sources"
+      ],
+      "properties": {
+        "relationships": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sources": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
