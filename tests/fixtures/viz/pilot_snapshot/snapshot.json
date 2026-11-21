@@ -1,0 +1,84 @@
+{
+ "crs": "EPSG:4326",
+ "extent": [
+  -66.2,
+  18.0,
+  -66.0,
+  18.2
+ ],
+ "layers": [
+  {
+   "bytes": 1187,
+   "crs": "EPSG:4326",
+   "kind": "connections",
+   "layer_id": "connections_fixture",
+   "path": "layers/connections.json",
+   "sha256": "b6e4759a88188fedd75d740e35080c2cfb5b50859123c675173e354675a32c40",
+   "source": {
+    "authority": "synthetic fixture",
+    "license": "CC0-1.0"
+   },
+   "vertical_datum": null
+  },
+  {
+   "bytes": 2023,
+   "crs": "EPSG:4326",
+   "kind": "raster_dem",
+   "layer_id": "dem_fixture",
+   "path": "layers/dem.json",
+   "sha256": "fe0d1206eb88c8929b2bd6377dc69429f9f80311a552668681168be5fb6c466f",
+   "source": {
+    "authority": "synthetic fixture",
+    "license": "CC0-1.0"
+   },
+   "vertical_datum": "NAVD88"
+  },
+  {
+   "bytes": 1662,
+   "crs": "EPSG:4326",
+   "kind": "hydro_network",
+   "layer_id": "hydro_fixture",
+   "path": "layers/hydro.json",
+   "sha256": "df8fd94d84d8860a21fbd3ab570a7b196eb8179e782081d27d94e9a66c31cdf7",
+   "source": {
+    "authority": "synthetic fixture",
+    "license": "CC0-1.0"
+   },
+   "vertical_datum": null
+  },
+  {
+   "bytes": 636,
+   "crs": "EPSG:4326",
+   "kind": "waterbody",
+   "layer_id": "waterbody_fixture",
+   "path": "layers/waterbody.json",
+   "sha256": "1b224cded87e55b6511b42d8143c32b90b923a91c5439d00f01b006ac8bb5a3a",
+   "source": {
+    "authority": "synthetic fixture",
+    "license": "CC0-1.0"
+   },
+   "vertical_datum": null
+  },
+  {
+   "bytes": 1085,
+   "crs": "EPSG:4326",
+   "kind": "wells",
+   "layer_id": "wells_fixture",
+   "path": "layers/wells.json",
+   "sha256": "1957a9151d15b6b8abf8b17045cd04c5e556418dd814e9d37b0f67657910dffc",
+   "source": {
+    "authority": "synthetic fixture",
+    "license": "CC0-1.0"
+   },
+   "vertical_datum": null
+  }
+ ],
+ "schema": "viz_snapshot/v1",
+ "snapshot_id": "pilot_fixture",
+ "units": {
+  "horizontal": "degree",
+  "vertical": "m"
+ },
+ "version": "1.0.0",
+ "vertical_datum": "NAVD88"
+}

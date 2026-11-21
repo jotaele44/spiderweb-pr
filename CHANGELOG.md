@@ -10,6 +10,14 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- **Geospatial Visualization Engine (`viz_engine/`, fixture-only).** Renders a top-down
+  map, a vertical cross-section and a bounded glTF 3D scene from frozen, sha256-pinned
+  snapshots, with a machine-readable receipt per artifact and byte-reproducible
+  output. Connections are drawn only according to their evidence class; validation
+  gates (CRS/datum/unit mismatch, reversed flow, disconnected segments, missing raster
+  coverage, unsupported connections, duplicate or merged IDs) mark a run `FAIL` and
+  block publication export. Certified against a synthetic snapshot only; no real-data
+  adapter and no production wiring. See `docs/GEOSPATIAL_VISUALIZATION_ENGINE.md`.
 - **NOAA aerial imagery on the Spatial map.** The backend renders map tiles and
   image footprints from NOAA's public Emergency Response Imagery bucket
   (`noaa-eri-pds`) for 15 Puerto Rico / USVI flights — 2022 and 2024 pre-event

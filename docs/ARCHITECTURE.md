@@ -39,6 +39,7 @@ spiderweb-pr/
 ├── dashboard/                    Generated branding derivatives only (no UI)
 ├── docs/                         Runbooks, data policy, boundary docs
 ├── gebco/                        Optional bathymetry / terrain package
+├── viz_engine/                   Fixture-certified map / section / 3D renderer with receipts (not activated; see GEOSPATIAL_VISUALIZATION_ENGINE.md)
 ├── earthgpt/                     Optional satellite anomaly-detection package
 └── llm/                          Optional local RAG / PRUAP text-query package
 ```

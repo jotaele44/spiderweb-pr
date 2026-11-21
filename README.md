@@ -100,7 +100,7 @@ python run_all.py --db flight_database.db --validate
 
 ## Documentation
 
-[Docs index](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Execution Guide](docs/EXECUTION_GUIDE.md) · [Testing](docs/TESTING.md) · [Data Policy](docs/DATA_POLICY.md) · [Repo boundary](docs/REPO_BOUNDARY.md) · [Roadmap (V2)](docs/NEXT_100_TASKS_V2.md) · [Task Ledger](docs/ROI_TASK_LEDGER.md) · [Changelog](CHANGELOG.md)
+[Docs index](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Visualization engine](docs/GEOSPATIAL_VISUALIZATION_ENGINE.md) · [Execution Guide](docs/EXECUTION_GUIDE.md) · [Testing](docs/TESTING.md) · [Data Policy](docs/DATA_POLICY.md) · [Repo boundary](docs/REPO_BOUNDARY.md) · [Roadmap (V2)](docs/NEXT_100_TASKS_V2.md) · [Task Ledger](docs/ROI_TASK_LEDGER.md) · [Changelog](CHANGELOG.md)
 
 ## USGS OFR 98-038 Puerto Rico geology / mineral layers
 
