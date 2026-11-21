@@ -50,7 +50,7 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "@cesium/engine": "26.2.0",
-    "@cesium/widgets": "16.1.1"
+    "@cesium/engine": "26.5.0",
+    "@cesium/widgets": "16.3.1"
   }
 }
