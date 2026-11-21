@@ -34,6 +34,30 @@ Cesium.Ion.defaultAccessToken = CESIUM_ION_TOKEN;
 const ZOOM0_ALTITUDE_M = 40_000_000;
 const GOOGLE_TILESET_LOAD_TIMEOUT_MS = 15_000;
 
+// createGooglePhotorealistic3DTileset keeps one module-level cached ion resource
+// (asset 2275207) and hands that same Resource object to every
+// Cesium3DTileset.fromUrl call, so two overlapping calls collide: the second
+// rejects with "The Resource is already being fetched". Overlap happens whenever
+// a runtime is re-created mid-load (React StrictMode in dev; a 2D/3D toggle or
+// tab switch in production), and the live runtime is the one that loses, which
+// would send it to the grid. Chain the calls so each starts only after the
+// previous one has settled. A superseded runtime's tileset is still discarded by
+// the generation guard, and each runtime's own startup timeout bounds its wait.
+let googleTilesetCreation: Promise<unknown> = Promise.resolve();
+
+function createGoogleTileset(): Promise<Cesium.Cesium3DTileset> {
+  const creation = googleTilesetCreation.then(() =>
+    // Fresh option objects per call: Cesium fills defaults into them in place.
+    Cesium.createGooglePhotorealistic3DTileset({
+      onlyUsingWithGoogleGeocoder: true,
+    }, {
+      showCreditsOnScreen: true,
+    }),
+  );
+  googleTilesetCreation = creation.catch(() => undefined);
+  return creation;
+}
+
 function addDeterministicGrid(viewer: Cesium.Viewer): void {
   viewer.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
     cells: 8,
@@ -99,11 +123,7 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
       // The scene exposes no geocoder. If one is added later, Google's usage
       // rules require that it be the Google geocoder; keep this acknowledgment
       // explicit so a Cesium default cannot be introduced silently.
-      void Cesium.createGooglePhotorealistic3DTileset({
-        onlyUsingWithGoogleGeocoder: true,
-      }, {
-        showCreditsOnScreen: true,
-      })
+      void createGoogleTileset()
         .then((tileset) => {
           if (
             this.viewer !== viewer

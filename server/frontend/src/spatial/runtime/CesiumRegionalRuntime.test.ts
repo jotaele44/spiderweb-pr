@@ -110,8 +110,6 @@ vi.mock("cesium", () => {
   };
 });
 
-const { CesiumRegionalRuntime } = await import("./CesiumRegionalRuntime");
-
 const CONFIG = {
   basemapStyle: { version: 8, sources: {}, layers: [] },
   basemapSourceId: "osm",
@@ -121,6 +119,10 @@ const CONFIG = {
 const TIMEOUT_MS = 15_000;
 
 async function start() {
+  // Imported per test after vi.resetModules(): the runtime module keeps the
+  // Google tileset creation chain as module state, which must not leak between
+  // tests (a creation that never settles would block every later one).
+  const { CesiumRegionalRuntime } = await import("./CesiumRegionalRuntime");
   const runtime = new CesiumRegionalRuntime();
   const container = document.createElement("div");
   const onError = vi.fn();
@@ -142,6 +144,7 @@ async function startWithRoot() {
 const marker = (container: HTMLElement): string | undefined => container.dataset.spatialBasemap;
 
 beforeEach(() => {
+  vi.resetModules();
   vi.useFakeTimers();
   vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
   vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => undefined);
@@ -277,5 +280,49 @@ describe("CesiumRegionalRuntime Google provider lifecycle", () => {
     expect(h.createGoogle).not.toHaveBeenCalled();
     expect(viewer.scene.globe.show).toBe(true);
     expect(onError).not.toHaveBeenCalled();
+  });
+  it("never starts two Google tileset creations at once and serves the live runtime", async () => {
+    // React StrictMode in dev (and a 2D/3D toggle mid-load) creates a runtime,
+    // destroys it, and creates another while the first creation is in flight.
+    // Cesium's shared cached ion resource rejects an overlapping call.
+    const first = new h.FakeTileset();
+    const second = new h.FakeTileset();
+    let resolveFirst: (value: unknown) => void = () => undefined;
+    h.createGoogle
+      .mockReturnValueOnce(new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockResolvedValueOnce(second);
+
+    const superseded = await start();
+    superseded.runtime.destroy();
+    const live = await start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.createGoogle).toHaveBeenCalledTimes(1);
+
+    resolveFirst(first);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.createGoogle).toHaveBeenCalledTimes(2);
+    // The superseded runtime's tileset is discarded, the live one is used.
+    expect(first.destroy).toHaveBeenCalled();
+    expect(live.viewer.items).toContain(second);
+
+    second.tileLoad.raise();
+    expect(marker(live.container)).toBe("google-photorealistic");
+    expect(live.onError).not.toHaveBeenCalled();
+  });
+
+  it("does not let a rejected earlier creation block the next one", async () => {
+    const tileset = new h.FakeTileset();
+    h.createGoogle
+      .mockRejectedValueOnce(new Error("401"))
+      .mockResolvedValueOnce(tileset);
+
+    const failed = await start();
+    const next = await start();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(marker(failed.container)).toBe("grid-fallback");
+    expect(h.createGoogle).toHaveBeenCalledTimes(2);
+    expect(next.viewer.items).toContain(tileset);
+    expect(marker(next.container)).toBe("google-loading");
   });
 });
