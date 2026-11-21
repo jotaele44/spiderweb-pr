@@ -5,6 +5,10 @@ FastAPI orchestration layer for the Puerto Rico Integrated Intelligence System.
 Provides REST endpoints for all PRIIS entities (SQLite-backed), SSE streaming
 for pipeline jobs and RAG queries, and GeoJSON endpoints for spatial layers.
 
+The read-only access-point registry routes (``/v1/access-points/*``) live in
+``server/backend/access_points_api.py`` and are included below. They are the
+only versioned routes in this API; every other route is unversioned.
+
 Start: uvicorn server.backend.main:app --reload --port 8000
 (run from the repo root so relative paths resolve correctly)
 """
@@ -91,6 +95,15 @@ try:
     app.include_router(_eri_router)
 except Exception as exc:  # noqa: BLE001 — log and keep serving
     log.warning("ERI imagery routes unavailable: %s", exc)
+
+# Inland and Off-Shore Access Point registries (/v1/access-points/*), read-only.
+# Guarded the same way: these routes must never take the rest of the API down.
+try:
+    from server.backend.access_points_api import router as _access_points_router
+
+    app.include_router(_access_points_router)
+except Exception as exc:  # noqa: BLE001 — log and keep serving
+    log.warning("access point registry routes unavailable: %s", exc)
 
 # In-memory job registry: job_id → subprocess.Popen
 _jobs: dict = {}
@@ -654,6 +667,72 @@ async def spatial_boundary_geometry(boundary_id: str):
             f"run server/ingestion/ingest_pr_boundaries.py",
         )
     return FileResponse(str(path), media_type="application/geo+json")
+
+# ─── GIS viewer API (/gis/*) ────────────────────────────────────────────────────
+# Identify / search / AOI query / export over the layers this backend already
+# serves at /geo/{layer}.geojson. The catalog is derived from the three layer
+# registries (configs/layer_catalog.yaml, spatial_layer_bindings.yaml,
+# gis_layer_interaction.yaml); see docs/GIS_VIEWER_API.md and
+# schemas/gis_layer_catalog_v1.schema.json / gis_query_v1.schema.json.
+
+from server.backend.gis_api import build_gis_router  # noqa: E402
+from spiderweb.gis_catalog import build_gis_catalog  # noqa: E402
+from spiderweb.gis_location import containing_feature, grid_v2_cursor_lookup  # noqa: E402
+
+GIS_INTERACTION_PATH = ROOT / "configs" / "gis_layer_interaction.yaml"
+_GIS_INTERACTION = _load_spatial_yaml(GIS_INTERACTION_PATH)
+_GIS_DB_LAYERS = {"sites": _sites_from_db, "anomalies": _anomalies_from_db}
+
+
+def _gis_data_available(layer_id: str) -> bool:
+    if layer_id in _GIS_DB_LAYERS:
+        return DB_PATH.exists()
+    return _find_geojson(layer_id) is not None
+
+
+def _gis_catalog() -> dict:
+    if not _LAYER_CATALOG:
+        raise HTTPException(503, "layer catalog unavailable")
+    return build_gis_catalog(
+        _LAYER_CATALOG,
+        _LAYER_BINDING_REGISTRY,
+        _GIS_INTERACTION,
+        data_available=_gis_data_available,
+    )
+
+
+async def _gis_load_features(layer_id: str) -> tuple[list[dict], dict]:
+    db_loader = _GIS_DB_LAYERS.get(layer_id)
+    if db_loader is not None:
+        try:
+            collection = await db_loader()
+        except sqlite3.Error as exc:  # table not migrated/seeded on this deployment
+            log.warning("gis: %s unavailable from priis.db (%s)", layer_id, exc)
+            return [], {"exists": False, "source": "priis.db", "error": str(exc)}
+        return collection["features"], {"exists": True, "source": "priis.db"}
+    path = _find_geojson(layer_id)
+    expected = _LAYER_PATH_OVERRIDES.get(layer_id, ROOT / "data" / f"{layer_id}.geojson")
+    return await _load_geojson_source(path, expected)
+
+
+async def _gis_location_context(lon: float, lat: float, loader) -> dict:
+    context: dict = {"grid_v2": grid_v2_cursor_lookup(lon, lat)}
+    for layer_id in ("municipios", "barrios"):
+        features, manifest = await loader(layer_id)
+        context[layer_id[:-1]] = (
+            containing_feature(features, lon, lat) if manifest.get("exists") else None
+        )
+    return context
+
+
+app.include_router(
+    build_gis_router(
+        producer_repo="spiderweb-pr",
+        catalog_provider=_gis_catalog,
+        feature_loader=_gis_load_features,
+        location_context=_gis_location_context,
+    )
+)
 
 # ─── RAG / Query ───────────────────────────────────────────────────────────────
 

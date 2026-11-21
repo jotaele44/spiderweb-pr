@@ -1,0 +1,65 @@
+# Search areas for metadata-only source discovery.
+#
+# A corridor is a box in which the public catalogues are asked "which surveys
+# do you list here?".  It is NOT the position of a feature:
+#
+#   * Each corridor below was drawn by an analyst from a locality NAME (the
+#     only thing an off-shore seed states).  That is an ASSUMPTION about where
+#     to look, recorded as such.  It is deliberately generous.
+#   * A corridor never gives a seed a coordinate, a depth or an extent.  The
+#     seeds in configs/access_point_seeds.yaml stay without geometry, and the
+#     registry builder does not read this file.
+#   * Whether a listed survey actually covers the place a seed refers to cannot
+#     be known until the seed's screenshot is registered.  Until then a
+#     corridor result is a source denominator for planning, nothing more.
+#   * No corridor can be certified.  Each is a DISCOVERY_CORRIDOR in the sense
+#     of pipeline.marine_reference_run.GeometryRole.
+#
+# Features that already carry a registered point (the legacy crosswalk) are not
+# listed here: their search box is computed from that point and the half-width
+# below, so no second coordinate is typed by hand.
+version: access_point_discovery_corridors_v1
+point_buffer_half_width_deg: 0.05
+corridors:
+  - corridor_id: northwest_aguadilla_discovery_v1
+    registry: access_point.offshore
+    locality: Northwest Aguadilla
+    seed_label: OSAP-SEED-001
+    bbox: [-67.45, 18.40, -67.10, 18.70]
+    provenance: >-
+      Analyst-defined source-discovery corridor over the waters north-west of
+      Aguadilla, drawn from the locality name alone; not a seed position.
+  - corridor_id: desecheo_discovery_v1
+    registry: access_point.offshore
+    locality: Desecheo
+    seed_label: OSAP-SEED-002
+    bbox: [-67.62, 18.27, -67.34, 18.50]
+    provenance: >-
+      Analyst-defined source-discovery corridor around Desecheo island and its
+      insular slope, drawn from the locality name alone; not a seed position.
+  - corridor_id: southwestern_offshore_discovery_v1
+    registry: access_point.offshore
+    locality: Southwestern offshore PR
+    seed_label: OSAP-SEED-003
+    bbox: [-67.50, 17.60, -66.90, 18.05]
+    provenance: >-
+      Analyst-defined source-discovery corridor over the south-western shelf
+      and slope, drawn from the locality name alone; not a seed position.
+  - corridor_id: guayama_punta_tuna_discovery_v0_1
+    registry: access_point.offshore
+    locality: Guayama / southeastern PR
+    seed_label: OSAP-SEED-004
+    # Identical to pipeline.marine_reference_run.GUAYAMA_PUNTA_TUNA_DISCOVERY_V0_1,
+    # so this run can be compared with the August source-denominator receipt.
+    bbox: [-66.20, 17.50, -65.80, 18.05]
+    provenance: >-
+      Existing analyst-defined corridor covering the Guayama-Punta Tuna
+      south-coast sector, reused unchanged; not a seed position.
+  - corridor_id: southern_vieques_discovery_v1
+    registry: access_point.offshore
+    locality: Southern Vieques
+    seed_label: OSAP-SEED-005
+    bbox: [-65.65, 17.85, -65.20, 18.15]
+    provenance: >-
+      Analyst-defined source-discovery corridor south of Vieques, drawn from
+      the locality name alone; not a seed position.

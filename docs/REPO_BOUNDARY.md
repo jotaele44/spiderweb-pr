@@ -15,7 +15,15 @@ doesn't drift back into split authority with the hub.
 - The **federation producer**: `federation/export_writer.py` + `federation/envelope.py`
   emit a validated evidence envelope; `scripts/federation_export.py` projects it to the
   Hub's canonical `{entities, sources, relationships}` (geometry carried on entities).
-  Validated by `scripts/validate_export.py`; declared in `federation.json`.
+  Validated by `scripts/validate_export.py`; declared in `federation.json`. The same
+  package carries `source_monitors` (thehub-pr ADR 0013): one row per source in
+  `manifests/pr_hydrography/source_registry.csv` and
+  `configs/missing_persons_sources.yaml`, never one marked `federation_eligible: false`.
+  With `--access-point-registries registry/access_points` (passed by the
+  `export_canonical` command in `federation.json`) it also carries the inland and
+  off-shore access-point records that are candidates or better, each with a
+  candidate, producer-local identity (`spiderweb/access_points/hub_export.py`;
+  `docs/ACCESS_POINT_REGISTRIES.md`, "Export to the federation hub").
 - **Site imagery observations** (implemented offline; live acquisition is a fail-closed
   stub): provisional dated-scene timelines for sites that another producer registers,
   built by `spiderweb/site_timeline/` and exported as hub `observations` rows only when

@@ -28,6 +28,8 @@
 | vector tiles | planned v1 extension | producer | producer | producer | shared serving contract |
 | aerial imagery display | NOAA ERI tiles + footprints rendered by the backend, shown on the diagnostic map (added after the pinned baseline above) | not assessed | not assessed | not assessed | repo-local for now; hub ADR 0006 places imagery-provider access in `thehub-pr` |
 | offline package | `fedgeopack/1.0` | `fedgeopack/1.0` | `fedgeopack/1.0` | `fedgeopack/1.0` | shared contract |
+| viewer API (catalog/identify/search/AOI query/export) | `gis-layer-catalog/1.0` + `gis-query/1.0` | planned mirror | planned mirror | planned mirror | Spiderweb-authored contract; producers mirror ([GIS_VIEWER_API.md](GIS_VIEWER_API.md)) |
+| hypothetical scenario results | n/a | n/a | planned (`gis-scenario-result/1.0`) | planned (`gis-scenario-result/1.0`) | always `HYPOTHESIS`, never persisted |
 
 ## Duplication rules
 

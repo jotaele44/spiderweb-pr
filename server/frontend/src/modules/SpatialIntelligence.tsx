@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import type { Feature, GeoJSON, Point } from "geojson";
 import * as maplibregl from "maplibre-gl";
 import { point } from "@turf/helpers";
@@ -13,13 +13,19 @@ import {
   martinTileUrlTemplate,
 } from "../config";
 import { useSpatialRuntime } from "../spatial/runtime/useSpatialRuntime";
+import { readSpatialMode, writeSpatialMode } from "../spatial/config/spatialModePreference";
 import { BASEMAP_ID, DEFAULT_REGIONAL_SCENE_CONFIG } from "../spatial/config/regionalScene";
 import { CompareOverlay } from "../spatial/imagery/CompareOverlay";
 import { CoordinateReadout } from "../spatial/imagery/CoordinateReadout";
 import { ImageryPanel } from "../spatial/imagery/ImageryPanel";
 import { useImageryController } from "../spatial/imagery/useImageryController";
+import { AccessPointsPanel } from "../spatial/accessPoints/AccessPointsPanel";
+import { useAccessPointsController } from "../spatial/accessPoints/useAccessPointsController";
+import { ControlCrossSection } from "../spatial/transect/ControlCrossSection";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 import { useSpatialTools, SpatialToolsPanel } from "./SpatialToolsPanel";
+import { GisViewerControls, useGisViewer } from "./GisViewerControls";
+import { createGisClient } from "../spatial/gis/gisApi";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type PointLayerKey = "gazetteer_pr_domestic_names";
@@ -418,9 +424,7 @@ export function SpatialIntelligence({
   leftCollapsed?: boolean;
   rightCollapsed?: boolean;
 }) {
-  const [spatialMode, setSpatialMode] = useState<SpatialRuntimeMode>(
-    () => (localStorage.getItem("priis_spatial_mode") === "cesium" ? "cesium" : "maplibre"),
-  );
+  const [spatialMode, setSpatialMode] = useState<SpatialRuntimeMode>(readSpatialMode);
   const {
     hostRef,
     mapRef,
@@ -441,6 +445,12 @@ export function SpatialIntelligence({
     ready: mapReady && activeMode === "maplibre",
     basemapLayerId: BASEMAP_ID,
     clickSuppressedRef: spatialToolActiveRef,
+  });
+  // Inland and Off-Shore Access Point registries. MapLibre-only, like imagery:
+  // in 3D mode mapRef is null, nothing is drawn, and the panel says so.
+  const accessPoints = useAccessPointsController({
+    mapRef,
+    ready: mapReady && activeMode === "maplibre",
   });
   const densityGeoidsRef = useRef<Set<string>>(new Set());
   const [layerStatus, setLayerStatus] = useState<Partial<Record<BackendLayerKey, LayerStatus>>>({});
@@ -571,9 +581,46 @@ export function SpatialIntelligence({
       return map.querySourceFeatures("geo-gazetteer_pr_domestic_names") as unknown as Feature<Point>[];
     },
   }), [data.sites, layers.gazetteer_pr_domestic_names, mapRef]);
+  // Backend GIS API (/gis/*): identify, search, polygon query/export, catalog.
+  // Queries run against exactly the catalog layers switched on above.
+  const gisClient = useMemo(() => createGisClient(API_BASE), []);
+  const activeBackendLayers = useMemo(
+    () => BACKEND_LAYER_KEYS.filter((key) => layers[key]),
+    [layers],
+  );
+  const gisSourceIdFor = useCallback(
+    (layerId: string) => (layerId === "municipios" ? municipiosSourceId : isBackendKey(layerId as LayerKey) ? `geo-${layerId}` : null),
+    [municipiosSourceId],
+  );
+  const applyGisLayerVisibility = useCallback((visible: Record<string, boolean>) => {
+    setLayers((current) => {
+      const next = { ...current };
+      for (const [layerId, on] of Object.entries(visible)) {
+        if (isBackendKey(layerId as LayerKey)) next[layerId as BackendLayerKey] = on;
+      }
+      return next;
+    });
+  }, []);
+  const gisViewer = useGisViewer({
+    mapRef,
+    mapReady,
+    client: gisClient,
+    producerRepo: "spiderweb-pr",
+    homeView: DEFAULT_REGIONAL_SCENE_CONFIG.initialView,
+    activeLayers: activeBackendLayers,
+    sourceIdFor: gisSourceIdFor,
+    applyLayerVisibility: applyGisLayerVisibility,
+  });
+  const gisCatalog = gisViewer.catalog;
+  const spatialToolsGis = useMemo(() => ({
+    client: gisClient,
+    activeLayers: () => activeBackendLayers,
+    exportable: (layerId: string) => gisCatalog?.layers.find((layer) => layer.layer_id === layerId)?.exportable ?? false,
+  }), [activeBackendLayers, gisCatalog, gisClient]);
+
   // Only attaches when the MapLibre (2D) runtime is active — mapRef stays
   // null in Cesium mode, so these tools simply don't render there yet.
-  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef });
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef, gis: spatialToolsGis });
 
   // Gazetteer-density choropleth: off by default, and only meaningful with
   // the municipios boundary layer itself on (there's nothing to shade
@@ -743,7 +790,7 @@ export function SpatialIntelligence({
   // falls back to MapLibre, we still remember "cesium" was requested so the
   // next visit retries it rather than silently sticking on the fallback.
   useEffect(() => {
-    localStorage.setItem("priis_spatial_mode", spatialMode);
+    writeSpatialMode(spatialMode);
   }, [spatialMode]);
 
   // "L" toggles the layer panel. Ignore while typing in an input/textarea.
@@ -775,6 +822,14 @@ export function SpatialIntelligence({
           <span className="subtle">MapLibre layer control · contract, infrastructure, anomaly convergence · NOAA aerial imagery</span>
         </div>
         <div className="row">
+          <button
+            className="act"
+            onClick={() => runtimeRef.current?.resetView({ animate: true })}
+            title="Recenter on Puerto Rico"
+            aria-label="Recenter map on Puerto Rico"
+          >
+            Recenter PR
+          </button>
           <button
             className="act"
             data-on={!layerPanelCollapsed}
@@ -851,6 +906,8 @@ export function SpatialIntelligence({
         <aside className="layer-panel">
           {activeMode === "maplibre" && (
             <>
+              <GisViewerControls {...gisViewer} />
+              <div className="hr" />
               <SpatialToolsPanel {...spatialTools} />
               <div className="hr" />
             </>
@@ -905,7 +962,16 @@ export function SpatialIntelligence({
             <>
               <div className="hr" />
               <ImageryPanel {...imagery.panelProps} />
+              <div className="hr" />
+              <AccessPointsPanel controller={accessPoints} />
+              <div className="hr" />
+              <ControlCrossSection />
             </>
+          )}
+          {activeMode !== "maplibre" && (
+            <p className="ap-note" role="note">
+              Access-point layers are drawn in the 2D map only. Switch to 2D to see them.
+            </p>
           )}
           <div className="hr" />
           <h2>Top spatial anomalies</h2>

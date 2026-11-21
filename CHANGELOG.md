@@ -9,6 +9,19 @@ GitHub Release using the matching section below (T6-53).
 
 ## [Unreleased]
 
+### Fixed
+- The elevation-inventory adapter stored the inventory's HTML "link" fragments
+  and prose as if they were addresses. It now cites only a real address and
+  keeps the published field verbatim (`spiderweb/access_points/acquisition.py`).
+
+### Changed
+- **Nested basins are now the access-point detectors' default**, by the
+  repository owner's decision after the comparison with the USGS karst map.
+  The low-level delineation still nests only when asked; a declared survey run
+  must now state `parameters.nested`; the run of 2026-11-17 is pinned to outer
+  basins only and still reproduces. Nested basins now use the same depth floor
+  as outer ones, so numerical residue on a rim is not counted as water.
+
 ### Added
 - **Geospatial Visualization Engine (`viz_engine/`, fixture-only).** Renders a top-down
   map, a vertical cross-section and a bounded glTF 3D scene from frozen, sha256-pinned
@@ -18,6 +31,141 @@ GitHub Release using the matching section below (T6-53).
   coverage, unsupported connections, duplicate or merged IDs) mark a run `FAIL` and
   block publication export. Certified against a synthetic snapshot only; no real-data
   adapter and no production wiring. See `docs/GEOSPATIAL_VISUALIZATION_ENGINE.md`.
+- **Access-point records exported to the federation hub**, by the repository
+  owner's decision of 2026-11-20. `scripts/federation_export.py` gains an opt-in
+  `--access-point-registries` lane (`spiderweb/access_points/hub_export.py`), and
+  the `export_canonical` command in `federation.json` passes it. Records that are
+  candidates or better (today 4 inland, 1 off-shore) become entities with a
+  CANDIDATE, producer-local identity, an INTERPRETIVE class and, where their own
+  observation states one, a representative point marked as having an assumed
+  coordinate system; provisional seeds, detections and relationships are not
+  exported. The producer entity schema gains three entity types and an optional
+  `attributes` object. The hub's `validate-package` returns VALID for the
+  production package; nothing reaches the hub until this is merged.
+- **A search for an independent second seabed survey**
+  (`spiderweb/access_points/replication.py`,
+  `scripts/search_access_point_replication.py`). Two metadata requests and one
+  37.8 MB download under the owner's grant. The one gridded survey whose
+  catalogue box overlapped the depressions (NOS H12935, 2016) has no soundings
+  within 11 km of them; the independent cruises whose footprints cross them hold
+  raw pings only; the one processed grid nearby reaches nothing shallower than
+  448 m. Outcome BLOCKED, recorded in a sealed report. A horizontal coordinate
+  system with no EPSG code is now matched by its parameters, and the basis is
+  recorded.
+- **A seam test for depressions read from finer grids** (`survey.seam_test`),
+  written before it was applied: narrow and grid-aligned, a level step across
+  the axis along most of the length, and the step continuing past both ends.
+  It finds a planted seam. Applied to both 8 m runs, it calls every outer
+  depression NOT_SEAM_LIKE, including the 15 m object, whose earlier reading as
+  a seam (from one profile) is withdrawn. Informational; no tier changes.
+- **The seabed survey file read again from its finer grids.** A run may now
+  state `resolution_m`; a variable-resolution survey file is then read from its
+  finer grids resampled to that cell size (mean elevation and largest
+  uncertainty of the nodes in each cell; empty where none; nothing
+  interpolated). Every cell is recomputed from the nodes at extract time, and
+  extract stops on any disagreement. Two runs at 8 m read the file already held
+  (no download): all three base-grid depressions persist by a rule fixed in
+  advance; 8 and 10 depressions are reported at the two declared area floors;
+  one small steep object is flagged as a possible artefact. Runs can reuse another run's
+  evidence and subset, and are compared with an earlier run; only
+  `--set-current` moves the seabed pointer. No registry change.
+- **First seabed survey through the access-point pipeline.** One gridded
+  multibeam survey file (NOS W00247, file 3 of 4; 6.9 MB, fetched under an
+  explicit grant of one file and held outside the repository) is read, bound to
+  the tidal datum it states and searched for closed depressions
+  (`spiderweb/access_points/bathymetry_run.py`,
+  `scripts/process_access_point_seabed.py`, `seabed_runs` in
+  `configs/access_point_survey_runs.yaml`). Its hash and statistics equal the
+  August 2026 receipt for the same file. The run names no target record and
+  states no position. It uses the product's own uncertainty for every cell and
+  reports what that hides: over 56% of the covered cells a 2 m depression could
+  not be reported. Three shallow, flat-floored depressions (2.8 to 6.5 m) were
+  found in the 64 m base grid; they are shapes, classed EXPLORATORY, and none
+  is attached to a record. Only the base grid is read; the file's finer grids
+  are not. The file is registered in the Off-Shore registry as a held, hashed
+  grid. No feature, observation or status changed and no seed gained a
+  coordinate.
+- **A second, optional rule for a single pit under a broad bowl**
+  (`pit_area_jump`). It was measured on the same tile against the nested
+  detector and did not help: 80 more objects, none of the three remaining
+  mapped sinkholes recovered. It is off by default.
+- **Nested basins in the access-point detector (opt-in).** A compound
+  depression — several hollows sharing one rim — was reported as one basin. With
+  `nested=True` the shared delineation (`spiderweb/access_points/raster.py`) also
+  reports the basins inside it, each with its level, its parent and a depth that
+  is a lower bound good to one step. Off by default: outer basins, identifiers
+  and every committed report are unchanged. Compared against the USGS karst map
+  on the same tile, with the reading rule fixed in advance, the share of mapped
+  sinkholes reported as objects at 30 m rises from 32% to 61% while the
+  displaced control rises from 16% to 28%; 70 of the 73 sinkholes that lay
+  inside a larger basin are now reported. The object count triples. See
+  sections 3 and 6 of `docs/ACCESS_POINT_SCIENTIFIC_METHOD.md`.
+- **Comparison of the access-point detector with a published sinkhole map.**
+  Reference maps are now held by the hash of their exact bytes and read only
+  with a coordinate reference system bound to them
+  (`spiderweb/access_points/reference.py`,
+  `configs/access_point_reference_sets.yaml`); three were supplied by the
+  repository owner and are committed. `validation.py` and
+  `scripts/validate_access_point_detector.py` compare the closed-basin detector
+  with 139 sinkholes the USGS Karst Map of Puerto Rico places inside the held
+  elevation tile, at several depths and against a displaced control. The result
+  is labelled REFERENCE_COMPARED, a new evaluation state that is never field
+  accuracy: within the map's stated 100 m tolerance, 88% of mapped sinkholes
+  are closed depressions at least 30 m deep (51% by chance), and the detector
+  reports 32% of them as separate objects because it does not resolve basins
+  nested inside a larger one. No threshold and no registry record changed. See
+  section 6 of `docs/ACCESS_POINT_SCIENTIFIC_METHOD.md`.
+- **Real-survey processing for the access-point registries.** A named survey
+  product can now be fetched under its own grant that bounds files and bytes
+  (`spiderweb/access_points/products.py`), read, bound to the vertical datum it
+  states, and searched for closed basins (`survey.py`, `survey_run.py`,
+  `scripts/process_access_point_survey.py`). One run is committed: two
+  independent 1 m LiDAR elevation tiles over the registered point of
+  `INAP-PR-000003`, fetched under an explicit owner grant (716 MB of an 800 MB
+  ceiling; the tiles stay outside the repository, their hashes and a 1 km window
+  are committed). 13 of 17 closed basins are seen by both surveys. A stated
+  vertical datum is now checked for regional plausibility: both tiles say
+  NAVD88, which is not realised in Puerto Rico. No registry record changed. See
+  "Real-survey processing" in `docs/ACCESS_POINT_REGISTRIES.md`.
+- **Planned source-discovery runs for the access-point registries.**
+  `scripts/discover_access_point_sources.py` plans (offline), runs (only under
+  an explicit grant) and re-checks (offline) a metadata-only query of the public
+  survey catalogues over declared search boxes. Search boxes for the five
+  off-shore seeds live in `configs/access_point_discovery_corridors.yaml`; a box
+  says where to look and can never give a seed a position. A run keeps the exact
+  response bytes and writes a sealed source catalogue, which
+  `scripts/build_access_point_registries.py` now reads to register the listed
+  surveys as references. One run was executed on 2026-11-16 under an explicit
+  owner grant (48 requests, 180 surveys listed, exact responses kept); the
+  registries now hold those surveys as citations. No survey product was
+  downloaded and no feature, status or coordinate changed. See "Source
+  discovery runs" in `docs/ACCESS_POINT_REGISTRIES.md`.
+- **Inland and Off-Shore Access Point registries.** A new package,
+  `spiderweb/access_points/`, holds two independent registries of candidate
+  geographic features on one shared evidence foundation. Each record states,
+  separately for existence, morphology, origin, physical opening,
+  accessibility, function, connectivity and temporal validity, how well the
+  claim is supported; the code keeps "anomaly", "feature", "opening", "passage"
+  and "connection" apart and has no automatic promotion. Includes a
+  vertical-datum contract, shared terrain and bathymetry processing with
+  closed-basin delineation, typed relationships with path verification,
+  cross-coastal transects, default-deny metadata discovery, and a read-only
+  reader for other producers' exported packages. Read-only API under
+  `GET /v1/access-points/*` (`server/backend/access_points_api.py`) and an
+  Access points group on the Spatial map. The registries hold 5 candidate
+  records crosswalked from the legacy node registry and 5 provisional
+  off-shore records that carry no coordinates. Nothing is exported to the hub.
+  The acronyms ILAP and OSAP already mean other things here and are not used
+  as identifiers; see `docs/ACCESS_POINT_TERMINOLOGY_DECISION.md`. Start at
+  `docs/ACCESS_POINT_REGISTRIES.md`.
+- **Federation `source_monitors` stream (thehub-pr ADR 0013).**
+  `scripts/federation_export.py` now writes `source_monitors.jsonl`. It has one row per
+  source in `manifests/pr_hydrography/source_registry.csv` and
+  `configs/missing_persons_sources.yaml`, and never one marked
+  `federation_eligible: false`. Each row carries the declared status and cadence the Hub
+  already showed, plus when the source last succeeded. That time is read only from run
+  receipts in `data/source_run_state.json`. None exist yet, so every source is
+  `NOT_RECORDED`. `prii-export-utils` is pinned to thehub-pr `0f62e4b` (0.2.0).
 - **NOAA aerial imagery on the Spatial map.** The backend renders map tiles and
   image footprints from NOAA's public Emergency Response Imagery bucket
   (`noaa-eri-pds`) for 15 Puerto Rico / USVI flights — 2022 and 2024 pre-event
@@ -46,6 +194,16 @@ GitHub Release using the matching section below (T6-53).
   layered on later. `linkage_group_id` is a consolidation-only output column
   (`CONSOLIDATED_COLUMNS`); the per-source harvester `CANONICAL_COLUMNS` contract
   is untouched.
+
+### Fixed
+- **Vertical-datum and evidence gates no longer accept placeholders.** In
+  `gebco/marine_evidence.py`, a datum field holding "Not Provided", "User
+  Specified" or similar no longer counts as a stated vertical reference, so
+  two surveys that share only such a label can no longer be compared as if on
+  one datum; and a direct observation with no acquisition root no longer ranks
+  above one whose root is known. In
+  `source_adapters/ncei_coastal_dem/datum_policy.py`, a selection whose datum
+  is `source_dependent` now requires review instead of passing as "same datum".
 
 ### Changed
 - **NWI wetlands layer made servable:** `ingest_reference_geo.py` now, by default,

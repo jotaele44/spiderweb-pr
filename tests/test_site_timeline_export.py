@@ -260,6 +260,9 @@ def test_flag_adds_the_lane_and_a_manifest_that_counts_it(tmp_path):
     assert proc.returncode == 0, proc.stderr
     manifest = json.loads((out / "manifest.json").read_text())
     streams = {f["stream"]: f["record_count"] for f in manifest["files"]}
+    # Every package also carries one source_monitors row per registered source.
+    monitors = streams.pop("source_monitors")
+    assert monitors == len(fx.build_source_monitors("2026-01-01T00:00:00Z"))
     assert streams == {"sources": 1, "entities": 2, "observations": 6}
     for f in manifest["files"]:
         digest = hashlib.sha256((out / f["filename"]).read_bytes()).hexdigest()
