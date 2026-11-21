@@ -21,9 +21,11 @@ basemap is exactly `grid`.
 
 With a URL-restricted `VITE_CESIUM_ION_TOKEN`, inspect both viewport profiles
 in a live browser without saving Google imagery. The runtime marker must move
-from `google-loading` to `google-photorealistic` within 15 seconds. A rejected
-or timed-out load switches to `grid-fallback`, reports a basemap error, and
-fails Google-provider approval.
+from `google-loading` to `google-photorealistic` within 15 seconds;
+`google-photorealistic` means the first tile's content has loaded, not merely
+that the tileset's root resolved. A rejected or timed-out load, or a tile
+failure before any content has loaded, switches to `grid-fallback`, reports a
+basemap error, and fails Google-provider approval.
 
 Approve only when all of these are visible in portrait and landscape:
 
