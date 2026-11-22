@@ -9,6 +9,13 @@ GitHub Release using the matching section below (T6-53).
 
 ## [Unreleased]
 
+### Notes
+- The search for an independent second seabed survey has one lead left: NCCOS
+  processed grids at NCEI (accessions 0131855 and 0128255). Five metadata
+  requests on 2026-11-20 all failed (HTTP 503, 502, timeout), so nothing was
+  learned or frozen; the lead is paused and recorded in
+  `docs/ACCESS_POINT_REGISTRIES.md`. No code or data changed.
+
 ### Fixed
 - **The hub's federation ingest could not run this repository's export.** Since
   the access-point lane was added to `export_canonical`, every thehub-pr ingest
