@@ -713,6 +713,13 @@ no hub schema or hub code changes. This repository's own producer schema
 (`schemas/federation_entity.schema.json`) gains the three new entity types and an
 optional `attributes` object; the hub's schemas already accept both.
 
+The hub runs that command with only its own packages installed: the hub and
+`prii-export-utils`, not numpy, scipy, shapely or xarray. The lane must import
+without them. `gebco` and `spiderweb.subsurface` therefore load their raster and
+geometry modules on first use, and `tests/test_federation_export_hub_env.py` runs
+the `export_canonical` command with every base dependency the hub does not install
+blocked.
+
 | What | How it is exported |
 |---|---|
 | Records with status CANDIDATE, UNDER_REVIEW or VERIFIED | One entity each: `inland_access_point` or `offshore_access_point`, with the feature id, class, status, tier per evidence dimension, ladder rung and the registry document's content hash as attributes. Today: 4 inland and 1 off-shore, all CANDIDATE |
