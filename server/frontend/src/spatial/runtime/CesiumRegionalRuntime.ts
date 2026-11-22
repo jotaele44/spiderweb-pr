@@ -34,6 +34,30 @@ Cesium.Ion.defaultAccessToken = CESIUM_ION_TOKEN;
 const ZOOM0_ALTITUDE_M = 40_000_000;
 const GOOGLE_TILESET_LOAD_TIMEOUT_MS = 15_000;
 
+// createGooglePhotorealistic3DTileset keeps one module-level cached ion resource
+// (asset 2275207) and hands that same Resource object to every
+// Cesium3DTileset.fromUrl call, so two overlapping calls collide: the second
+// rejects with "The Resource is already being fetched". Overlap happens whenever
+// a runtime is re-created mid-load (React StrictMode in dev; a 2D/3D toggle or
+// tab switch in production), and the live runtime is the one that loses, which
+// would send it to the grid. Chain the calls so each starts only after the
+// previous one has settled. A superseded runtime's tileset is still discarded by
+// the generation guard, and each runtime's own startup timeout bounds its wait.
+let googleTilesetCreation: Promise<unknown> = Promise.resolve();
+
+function createGoogleTileset(): Promise<Cesium.Cesium3DTileset> {
+  const creation = googleTilesetCreation.then(() =>
+    // Fresh option objects per call: Cesium fills defaults into them in place.
+    Cesium.createGooglePhotorealistic3DTileset({
+      onlyUsingWithGoogleGeocoder: true,
+    }, {
+      showCreditsOnScreen: true,
+    }),
+  );
+  googleTilesetCreation = creation.catch(() => undefined);
+  return creation;
+}
+
 function addDeterministicGrid(viewer: Cesium.Viewer): void {
   viewer.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
     cells: 8,
@@ -65,6 +89,8 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
   private basemapFailed = false;
   private providerLoadTimeout: number | null = null;
   private providerLoadGeneration = 0;
+  private providerTileset: Cesium.Cesium3DTileset | null = null;
+  private detachTilesetListeners: (() => void) | null = null;
   private readonly basemapErrorListeners = new Set<() => void>();
 
   initialize(container: HTMLElement, config: SpatialSceneConfig): Promise<void> {
@@ -97,11 +123,7 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
       // The scene exposes no geocoder. If one is added later, Google's usage
       // rules require that it be the Google geocoder; keep this acknowledgment
       // explicit so a Cesium default cannot be introduced silently.
-      void Cesium.createGooglePhotorealistic3DTileset({
-        onlyUsingWithGoogleGeocoder: true,
-      }, {
-        showCreditsOnScreen: true,
-      })
+      void createGoogleTileset()
         .then((tileset) => {
           if (
             this.viewer !== viewer
@@ -112,9 +134,11 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
             tileset.destroy();
             return;
           }
-          this.clearProviderLoadTimeout();
+          // The root tileset resolving only proves the ion endpoint answered.
+          // Keep the startup timeout armed and the marker at google-loading
+          // until a tile's content has actually loaded; see watchProviderTileset.
           viewer.scene.primitives.add(tileset);
-          container.dataset.spatialBasemap = "google-photorealistic";
+          this.watchProviderTileset(viewer, container, tileset, loadGeneration);
           viewer.scene.requestRender();
         })
         .catch(() => this.activateGridFallback(viewer, container, loadGeneration));
@@ -194,6 +218,9 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
 
   destroy(): void {
     this.clearProviderLoadTimeout();
+    this.detachTilesetListeners?.();
+    this.detachTilesetListeners = null;
+    this.providerTileset = null;
     this.providerLoadGeneration += 1;
     if (this.firstFrame !== null) window.cancelAnimationFrame(this.firstFrame);
     this.firstFrame = null;
@@ -278,6 +305,62 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
     this.providerLoadTimeout = null;
   }
 
+  /**
+   * Decides when the Google provider counts as usable. Cesium reports tile
+   * content failures only through `tileFailed` (never by rejecting the
+   * already-resolved creation promise), so without these listeners failing or
+   * stalled content would leave an empty scene with the globe hidden.
+   *
+   * - first `tileLoad`: content is rendering, so mark google-photorealistic and
+   *   stop the startup timeout. No primitives are touched here: Cesium raises
+   *   `tileLoad` during tileset traversal.
+   * - `tileFailed` before any content loaded: fail closed to the grid.
+   * - `tileFailed` after content loaded: individual tiles fail routinely and the
+   *   scene is still usable, so the listeners are already detached and Cesium's
+   *   default console logging applies.
+   * - neither event: the startup timeout (still armed) falls back to the grid.
+   */
+  private watchProviderTileset(
+    viewer: Cesium.Viewer,
+    container: HTMLElement,
+    tileset: Cesium.Cesium3DTileset,
+    loadGeneration: number,
+  ): void {
+    const onTileLoad = (): void => {
+      if (
+        this.viewer !== viewer
+        || viewer.isDestroyed()
+        || loadGeneration !== this.providerLoadGeneration
+        || this.basemapFailed
+      ) return;
+      this.detachTilesetListeners?.();
+      this.detachTilesetListeners = null;
+      this.clearProviderLoadTimeout();
+      container.dataset.spatialBasemap = "google-photorealistic";
+      viewer.scene.requestRender();
+    };
+    const onTileFailed = (): void => {
+      this.activateGridFallback(viewer, container, loadGeneration);
+    };
+    tileset.tileLoad.addEventListener(onTileLoad);
+    tileset.tileFailed.addEventListener(onTileFailed);
+    this.providerTileset = tileset;
+    this.detachTilesetListeners = () => {
+      tileset.tileLoad.removeEventListener(onTileLoad);
+      tileset.tileFailed.removeEventListener(onTileFailed);
+    };
+  }
+
+  private removeProviderTileset(viewer: Cesium.Viewer): void {
+    this.detachTilesetListeners?.();
+    this.detachTilesetListeners = null;
+    const tileset = this.providerTileset;
+    this.providerTileset = null;
+    if (!tileset || viewer.isDestroyed()) return;
+    if (!tileset.isDestroyed()) viewer.scene.primitives.remove(tileset);
+    if (!tileset.isDestroyed()) tileset.destroy();
+  }
+
   private activateGridFallback(
     viewer: Cesium.Viewer,
     container: HTMLElement,
@@ -290,6 +373,7 @@ export class CesiumRegionalRuntime implements SpatialRuntime {
       || this.basemapFailed
     ) return;
     this.clearProviderLoadTimeout();
+    this.removeProviderTileset(viewer);
     viewer.scene.globe.show = true;
     addDeterministicGrid(viewer);
     container.dataset.spatialBasemap = "grid-fallback";
