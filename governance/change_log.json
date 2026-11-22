@@ -206,6 +206,14 @@
         "docs/ACCESS_POINT_REGISTRIES.md",
         "CHANGELOG.md"
       ]
+    },
+    {
+      "date": "2026-11-22",
+      "summary": "Retried the paused NCCOS lead in the search for an independent second seabed survey: one metadata request to each of the NCEI landing pages for accessions 0131855 and 0128255, under the repository owner's grant of 2026-11-22. Both failed with HTTP 503, making seven failed requests in all. Nothing was frozen and no other host was used; the lead stays paused. Documentation only; no code, data, registry record or hub export changed.",
+      "files": [
+        "docs/ACCESS_POINT_REGISTRIES.md",
+        "CHANGELOG.md"
+      ]
     }
   ]
 }

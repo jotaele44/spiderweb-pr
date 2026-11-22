@@ -10,6 +10,10 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Notes
+- The NCCOS lead (NCEI accessions 0131855 and 0128255) was retried on
+  2026-11-22 under a new grant of two metadata requests. Both failed with HTTP
+  503, making seven failed requests in all. Nothing was frozen; the lead stays
+  paused (`docs/ACCESS_POINT_REGISTRIES.md`). No code or data changed.
 - The search for an independent second seabed survey has one lead left: NCCOS
   processed grids at NCEI (accessions 0131855 and 0128255). Five metadata
   requests on 2026-11-20 all failed (HTTP 503, 502, timeout), so nothing was

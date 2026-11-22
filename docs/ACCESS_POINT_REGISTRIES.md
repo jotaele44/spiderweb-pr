@@ -657,10 +657,15 @@ A web search found two NCEI accessions that might bear on it:
 - **0128255**: the 2014 Nancy Foster survey around St. Croix, which probably
   lies off the Puerto Rico shelf.
 
-Five metadata requests to their NCEI landing pages, made on 2026-11-20 under the
-owner's grants in two attempts about an hour apart, all failed (HTTP 503, 502 or
-a timeout). Nothing was frozen and nothing is known about their coverage. No
-other host was used. The lead resumes only with a new grant.
+Seven metadata requests to their NCEI landing pages have all failed:
+
+- five on 2026-11-20, in two attempts about an hour apart (HTTP 503, 502 or a
+  timeout);
+- two on 2026-11-22, one per page, both HTTP 503.
+
+Each was made under a grant from the repository owner. Nothing was frozen and
+nothing is known about the pages' coverage. No other host was used. The lead
+resumes only with a new grant.
 
 ## Reference maps and the comparison with them
 
