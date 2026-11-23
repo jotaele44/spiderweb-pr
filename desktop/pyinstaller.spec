@@ -64,6 +64,7 @@ a = Analysis(
         "prii_desktop.launcher",
         "prii_desktop.appserver",
         "prii_desktop.config",
+        "prii_desktop.launchpad",
         # Pulls the shared setup runtime into the frozen bundle. PyInstaller
         # cannot see it: it is reached only through DesktopConfig, never imported
         # by name here. thehub-pr's validate_desktop_branding.py also asserts

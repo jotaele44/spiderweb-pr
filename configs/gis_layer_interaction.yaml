@@ -1,0 +1,71 @@
+# Viewer interaction metadata for layers already named in configs/layer_catalog.yaml.
+#
+# Third registry alongside layer_catalog.yaml (folder tree / visibility gate) and
+# spatial_layer_bindings.yaml (rendering binding). spiderweb/gis_catalog.py joins
+# all three into the gis-layer-catalog/1.0 document served at GET /gis/catalog
+# (schemas/gis_layer_catalog_v1.schema.json). Every layer_id below must exist in
+# layer_catalog.yaml; enforced by tests/test_gis_catalog.py.
+#
+# Field names are the properties the backing GeoJSON actually carries:
+#   TIGER geographies -> GEOID / NAME (server/ingestion/ingest_tiger_pr.py)
+#   natural-features gazetteer -> registry/natural_features/pr_natural_features.geojson
+#   nid_dams / wetlands -> server/ingestion/ingest_reference_geo.py
+#   sites / anomalies -> server/backend/main.py _sites_from_db / _anomalies_from_db
+#
+# min_zoom / max_zoom are deliberately omitted, for the same reason
+# spatial_layer_bindings.yaml omits camera heights: zoom thresholds are tuned
+# against rendered output, not picked in the abstract.
+#
+# Layers not listed here still appear in /gis/catalog with empty identify/search
+# field lists (identify shows every property; the layer is not searchable).
+version: gis_layer_interaction_v0_1
+
+defaults:
+  query_modes: [point, radius, bbox, polygon]
+
+layers:
+  municipios:
+    geometry_types: [Polygon, MultiPolygon]
+    identify_fields: [NAME, GEOID]
+    search_fields: [NAME, GEOID]
+    default_visible: true
+  tracts:
+    geometry_types: [Polygon, MultiPolygon]
+    identify_fields: [NAME, GEOID]
+    search_fields: [GEOID, NAME]
+  places:
+    geometry_types: [Polygon, MultiPolygon]
+    identify_fields: [NAME, GEOID]
+    search_fields: [NAME, GEOID]
+  barrios:
+    geometry_types: [Polygon, MultiPolygon]
+    identify_fields: [NAME, GEOID]
+    search_fields: [NAME, GEOID]
+  puma:
+    geometry_types: [Polygon, MultiPolygon]
+    identify_fields: [NAME, GEOID]
+    search_fields: [NAME, GEOID]
+  gazetteer_pr_domestic_names:
+    geometry_types: [Point]
+    identify_fields: [canonical_name, feature_class, feature_type, municipality, gnis_id, canonical_id]
+    search_fields: [canonical_name, normalized_name, gnis_id]
+    classification: {field: feature_class, method: categorical}
+  nid_dams:
+    geometry_types: [Point]
+    identify_fields: [name, nid_id, primary_purpose, hazard_potential, year_completed, primary_owner_type]
+    search_fields: [name, nid_id]
+    classification: {field: hazard_potential, method: categorical}
+  wetlands_nwi_prvi:
+    geometry_types: [Polygon, MultiPolygon]
+    identify_fields: [wetland_type, attribute, acres, objectid]
+    search_fields: []
+    classification: {field: wetland_type, method: categorical}
+  sites:
+    geometry_types: [Point]
+    identify_fields: [name, kind, infrastructure_class, id]
+    search_fields: [name]
+  anomalies:
+    geometry_types: [Point]
+    identify_fields: [title, band, score, id]
+    search_fields: [title]
+    classification: {field: band, method: categorical}

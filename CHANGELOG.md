@@ -9,7 +9,37 @@ GitHub Release using the matching section below (T6-53).
 
 ## [Unreleased]
 
+### Notes
+- The NCCOS lead is closed. On 2026-11-23, under a grant of four metadata
+  requests, NCEI's geoportal service returned the ISO records for accessions
+  0131855 and 0128255; the landing-page route still returned HTTP 503. Neither
+  stated bounding box contains the W00247 depressions or the 15 m object, so
+  no grid was downloaded. 0131855's abstract names W00247, but its box lies
+  north-east of Puerto Rico: a contradiction in the record, noted in
+  `docs/ACCESS_POINT_REGISTRIES.md`. The two records are frozen under
+  `evidence/access_points/real_survey/2026-11-23-nccos-metadata/`. No code or
+  registry record changed.
+- The NCCOS lead (NCEI accessions 0131855 and 0128255) was retried on
+  2026-11-22 under a new grant of two metadata requests. Both failed with HTTP
+  503, making seven failed requests in all. Nothing was frozen; the lead stays
+  paused (`docs/ACCESS_POINT_REGISTRIES.md`). No code or data changed.
+- The search for an independent second seabed survey has one lead left: NCCOS
+  processed grids at NCEI (accessions 0131855 and 0128255). Five metadata
+  requests on 2026-11-20 all failed (HTTP 503, 502, timeout), so nothing was
+  learned or frozen; the lead is paused and recorded in
+  `docs/ACCESS_POINT_REGISTRIES.md`. No code or data changed.
+
 ### Fixed
+- **The hub's federation ingest could not run this repository's export.** Since
+  the access-point lane was added to `export_canonical`, every thehub-pr ingest
+  failed at "Fetch producers and run their exports" with `No module named
+  'numpy'`. The hub runs the export with only its own packages, and the lane
+  reached numpy and scipy through `gebco/__init__.py` and shapely through
+  `spiderweb/subsurface/__init__.py`. Both packages now load those modules on
+  first use, and `spiderweb/subsurface/evidence.py` imports shapely only for type
+  checking. The exported records are unchanged. `tests/test_federation_export_hub_env.py`
+  runs the `export_canonical` command with every base dependency the hub does not
+  install blocked.
 - The elevation-inventory adapter stored the inventory's HTML "link" fragments
   and prose as if they were addresses. It now cites only a real address and
   keeps the published field verbatim (`spiderweb/access_points/acquisition.py`).

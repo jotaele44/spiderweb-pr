@@ -111,7 +111,7 @@ jobs:
         run: |
           command -v uv >/dev/null 2>&1 || python -m pip install -q uv
           uv pip install --system -c constraints.txt -e ".[airspace,earthgpt,server,dev]"
-          uv pip install --system "prii-desktop @ git+https://github.com/jotaele44/thehub-pr.git@f2b81769924689b4d959554928810b1d7b7ef3d6#subdirectory=packages/prii_desktop"
+          uv pip install --system "prii-desktop @ git+https://github.com/jotaele44/thehub-pr.git@dc79dc003815432b3f8bfc8f9bff532f6c47e622#subdirectory=packages/prii_desktop"
 
       - name: Syntax check all Python modules
         run: find . -path ./.git -prune -o -path ./.claude -prune -o -path ./docs/legacy -prune -o -name "*.py" -print -exec python -m py_compile {} +
