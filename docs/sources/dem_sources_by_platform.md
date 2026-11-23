@@ -232,8 +232,8 @@ depends on elevation data too.
   10-20 m DEM error moves a pixel 1.3-2.6 m. That is below the scenes' own model
   RMSE and well under a 30 m pixel.
 
-The catalog records this as `usgs_gls2000_dem` with a `consumed_by` entry for
-`configs/remote_monitoring/providers.yaml#landsat_archive` and
+The catalog records this as `usgs_gls2000_dem` with a `consumed_by` entry for the
+`landsat_archive` provider in `configs/remote_monitoring/providers.yaml`, with
 `dependency_kind: geolocation`. It is not an acquisition root, so it does not make
 Landsat and SRTM dependent measurements.
 
