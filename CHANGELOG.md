@@ -21,6 +21,16 @@ GitHub Release using the matching section below (T6-53).
   `docs/ACCESS_POINT_REGISTRIES.md`. No code or data changed.
 
 ### Fixed
+- **The hub's federation ingest could not run this repository's export.** Since
+  the access-point lane was added to `export_canonical`, every thehub-pr ingest
+  failed at "Fetch producers and run their exports" with `No module named
+  'numpy'`. The hub runs the export with only its own packages, and the lane
+  reached numpy and scipy through `gebco/__init__.py` and shapely through
+  `spiderweb/subsurface/__init__.py`. Both packages now load those modules on
+  first use, and `spiderweb/subsurface/evidence.py` imports shapely only for type
+  checking. The exported records are unchanged. `tests/test_federation_export_hub_env.py`
+  runs the `export_canonical` command with every base dependency the hub does not
+  install blocked.
 - The elevation-inventory adapter stored the inventory's HTML "link" fragments
   and prose as if they were addresses. It now cites only a real address and
   keeps the published field verbatim (`spiderweb/access_points/acquisition.py`).
