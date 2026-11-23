@@ -645,6 +645,23 @@ be evidence, so none was made, and the depressions stay unreplicated. Footprint
 polygons are where a cruise ran its sonar, generalised; they are not coverage
 of any one point.
 
+**One lead is open and paused: processed grids from NOAA's NCCOS programme.**
+A web search found two NCEI accessions that might bear on it:
+
+- **0131855**: NCCOS's own processing of the 2013 Nancy Foster survey,
+  project M-I907-NF-13, the project W00247's processing report also names. It
+  includes an 8 m grid. These are probably the same soundings gridded
+  separately, so it could not replicate the depressions. If it covers them, it
+  could still show whether the unexplained 15 m object is an artefact of one
+  gridding.
+- **0128255**: the 2014 Nancy Foster survey around St. Croix, which probably
+  lies off the Puerto Rico shelf.
+
+Five metadata requests to their NCEI landing pages, made on 2026-11-20 under the
+owner's grants in two attempts about an hour apart, all failed (HTTP 503, 502 or
+a timeout). Nothing was frozen and nothing is known about their coverage. No
+other host was used. The lead resumes only with a new grant.
+
 ## Reference maps and the comparison with them
 
 A reference set is somebody else's map. It is declared in
@@ -695,6 +712,13 @@ the existing `sources`, `entities` and `relationships` streams. No stream and
 no hub schema or hub code changes. This repository's own producer schema
 (`schemas/federation_entity.schema.json`) gains the three new entity types and an
 optional `attributes` object; the hub's schemas already accept both.
+
+The hub runs that command with only its own packages installed: the hub and
+`prii-export-utils`, not numpy, scipy, shapely or xarray. The lane must import
+without them. `gebco` and `spiderweb.subsurface` therefore load their raster and
+geometry modules on first use, and `tests/test_federation_export_hub_env.py` runs
+the `export_canonical` command with every base dependency the hub does not install
+blocked.
 
 | What | How it is exported |
 |---|---|
