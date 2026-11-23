@@ -53,6 +53,14 @@ GitHub Release using the matching section below (T6-53).
   as outer ones, so numerical residue on a rim is not counted as water.
 
 ### Added
+- **Geospatial Visualization Engine (`viz_engine/`, fixture-only).** Renders a top-down
+  map, a vertical cross-section and a bounded glTF 3D scene from frozen, sha256-pinned
+  snapshots, with a machine-readable receipt per artifact and byte-reproducible
+  output. Connections are drawn only according to their evidence class; validation
+  gates (CRS/datum/unit mismatch, reversed flow, disconnected segments, missing raster
+  coverage, unsupported connections, duplicate or merged IDs) mark a run `FAIL` and
+  block publication export. Certified against a synthetic snapshot only; no real-data
+  adapter and no production wiring. See `docs/GEOSPATIAL_VISUALIZATION_ENGINE.md`.
 - **Access-point records exported to the federation hub**, by the repository
   owner's decision of 2026-11-20. `scripts/federation_export.py` gains an opt-in
   `--access-point-registries` lane (`spiderweb/access_points/hub_export.py`), and
