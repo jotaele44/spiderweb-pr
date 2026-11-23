@@ -9,6 +9,33 @@ GitHub Release using the matching section below (T6-53).
 
 ## [Unreleased]
 
+### Added
+- DEM sources broken down by acquisition platform
+  (`docs/sources/dem_sources_by_platform.md`). The catalog
+  `data_sources/elevation/dem_platform_catalog.yml` holds 30 products in four
+  classes (spaceborne, airborne, shipborne, compiled). All 65 elevation
+  registrations in 21 files are accounted for as aliases or classified
+  non-products, and five conflicts between registries are recorded.
+  `source_adapters/dem_platform` adds the merge policy: sources stay in separate
+  layers unless they share platform class, surface model and a declared vertical
+  datum. Independence is decided on canonical acquisition roots.
+- NASA SRTMGL1 v003 adapter (`source_adapters/nasa_srtmgl1`,
+  `docs/source_adapters/nasa_srtmgl1.md`) for the six Puerto Rico tiles, fetched
+  from LP DAAC with an Earthdata Login bearer token. Measured on 2026-11-23 from
+  SRTMGL1N: 99.979% of land samples are SRTM radar measurements, with 1,668 ASTER
+  fill samples and one NED fill sample. Receipt under
+  `evidence/dem_sources/srtmgl1_pr_2026-11-23/`.
+- OpenTopography Global DEM adapter (`source_adapters/opentopography_globaldem`,
+  `docs/source_adapters/opentopography_globaldem.md`) for SRTMGL1, NASADEM, COP30
+  and AW3D30. The API key is a query parameter, so it is redacted from every
+  recorded URL.
+
+### Changed
+- `tools/pr_dem_one_tile_pilot.py` refuses a tile whose native pixel is coarser
+  than `--target-resolution-m`, unless `--allow-coarse-source` is given; the
+  manifest records `native_resolution_m` and `coarse_source_override`.
+  `tools/pr_dem_batch_runner.py` forwards the flag.
+
 ### Notes
 - The NCCOS lead is closed. On 2026-11-23, under a grant of four metadata
   requests, NCEI's geoportal service returned the ISO records for accessions
