@@ -5,9 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import IntEnum, StrEnum
 import math
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
-from shapely.geometry.base import BaseGeometry
+if TYPE_CHECKING:  # annotations only; callers pass shapely geometries
+    from shapely.geometry.base import BaseGeometry
 
 
 class EvidenceTier(IntEnum):
