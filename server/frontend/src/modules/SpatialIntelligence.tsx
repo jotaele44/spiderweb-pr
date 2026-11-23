@@ -826,7 +826,7 @@ export function SpatialIntelligence({
             className="act"
             onClick={() => runtimeRef.current?.resetView({ animate: true })}
             title="Recenter on Puerto Rico"
-            aria-label="Recenter map on Puerto Rico"
+            aria-label="Recenter PR: recenter the map on Puerto Rico"
           >
             Recenter PR
           </button>

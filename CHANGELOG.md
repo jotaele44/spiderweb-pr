@@ -10,6 +10,19 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Notes
+- The NCCOS lead is closed. On 2026-11-23, under a grant of four metadata
+  requests, NCEI's geoportal service returned the ISO records for accessions
+  0131855 and 0128255; the landing-page route still returned HTTP 503. Neither
+  stated bounding box contains the W00247 depressions or the 15 m object, so
+  no grid was downloaded. 0131855's abstract names W00247, but its box lies
+  north-east of Puerto Rico: a contradiction in the record, noted in
+  `docs/ACCESS_POINT_REGISTRIES.md`. The two records are frozen under
+  `evidence/access_points/real_survey/2026-11-23-nccos-metadata/`. No code or
+  registry record changed.
+- The NCCOS lead (NCEI accessions 0131855 and 0128255) was retried on
+  2026-11-22 under a new grant of two metadata requests. Both failed with HTTP
+  503, making seven failed requests in all. Nothing was frozen; the lead stays
+  paused (`docs/ACCESS_POINT_REGISTRIES.md`). No code or data changed.
 - The search for an independent second seabed survey has one lead left: NCCOS
   processed grids at NCEI (accessions 0131855 and 0128255). Five metadata
   requests on 2026-11-20 all failed (HTTP 503, 502, timeout), so nothing was
