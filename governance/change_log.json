@@ -206,6 +206,23 @@
         "docs/ACCESS_POINT_REGISTRIES.md",
         "CHANGELOG.md"
       ]
+    },
+    {
+      "date": "2026-11-22",
+      "summary": "Retried the paused NCCOS lead in the search for an independent second seabed survey: one metadata request to each of the NCEI landing pages for accessions 0131855 and 0128255, under the repository owner's grant of 2026-11-22. Both failed with HTTP 503, making seven failed requests in all. Nothing was frozen and no other host was used; the lead stays paused. Documentation only; no code, data, registry record or hub export changed.",
+      "files": [
+        "docs/ACCESS_POINT_REGISTRIES.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "date": "2026-11-23",
+      "summary": "Closed the NCCOS lead in the search for an independent second seabed survey. Under the repository owner's grant of four metadata requests, NCEI's geoportal service returned the ISO metadata records for accessions 0131855 and 0128255 (the landing-page route returned HTTP 503); both are frozen with manifests. Neither stated bounding box contains the W00247 depressions or the 15 m object, so no grid was downloaded. The 0131855 record contradicts itself: its abstract names surveys W00246 and W00247, but its box lies north-east of Puerto Rico. The contradiction is recorded, not resolved. No code, registry record or hub export changed.",
+      "files": [
+        "docs/ACCESS_POINT_REGISTRIES.md",
+        "CHANGELOG.md",
+        "evidence/access_points/real_survey/2026-11-23-nccos-metadata/"
+      ]
     }
   ]
 }
