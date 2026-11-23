@@ -198,6 +198,14 @@
         "docs/ACCESS_POINT_REGISTRIES.md",
         "docs/REPO_BOUNDARY.md"
       ]
+    },
+    {
+      "date": "2026-11-20",
+      "summary": "Recorded a paused lead in the search for an independent second seabed survey: two NCEI accessions holding NOAA NCCOS processed grids (0131855, 2013, probably the same soundings as NOS W00247; 0128255, 2014, St. Croix). Five metadata requests to their landing pages, under the repository owner's grants of 2026-11-20 in two attempts, all failed with HTTP 503, 502 or a timeout; nothing was frozen and no other host was used. Documentation only; no code, data, registry record or hub export changed.",
+      "files": [
+        "docs/ACCESS_POINT_REGISTRIES.md",
+        "CHANGELOG.md"
+      ]
     }
   ]
 }

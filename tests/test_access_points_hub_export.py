@@ -179,8 +179,27 @@ def test_a_registry_document_that_fails_its_hash_stops_the_export(tmp_path):
         lane(tmp_path)
 
 
+class _SteppingClock:
+    """Stands in for the export script's ``datetime``: each run is a second later.
+
+    Two runs of the export are never guaranteed to fall in the same second, so
+    a test that compares their output must not depend on when they ran.
+    """
+
+    _tick = 0
+
+    @classmethod
+    def now(cls, tz=None):
+        from datetime import datetime as real
+        from datetime import timedelta
+
+        cls._tick += 1
+        return real(2026, 11, 20, 0, 0, 0, tzinfo=tz) + timedelta(seconds=cls._tick)
+
+
 def _run(argv, monkeypatch, capsys):
     monkeypatch.setattr("sys.argv", ["federation_export.py", *argv])
+    monkeypatch.setattr(FX, "datetime", _SteppingClock)
     code = FX.main()
     return code, capsys.readouterr()
 
@@ -227,15 +246,23 @@ def test_without_the_flag_the_package_is_unchanged_and_with_it_has_no_synthetic_
         for line in (tmp_path / "with" / "entities.jsonl").read_text().splitlines()
     ]
     assert not [r for r in rows if r.get("synthetic")]
-    # Rows already in the package are unchanged by the lane.
-    before = {
-        json.loads(line)["entity_id"]: line
-        for line in (tmp_path / "without" / "entities.jsonl").read_text().splitlines()
-    }
-    after = {
-        json.loads(line)["entity_id"]: line
-        for line in (tmp_path / "with" / "entities.jsonl").read_text().splitlines()
-    }
+
+    # Rows already in the package are unchanged by the lane, apart from the
+    # time each run stamps on them (its manifest's created_at).
+    def rows_without_run_time(folder):
+        now = json.loads((folder / "manifest.json").read_text())["created_at"]
+        out = {}
+        for line in (folder / "entities.jsonl").read_text().splitlines():
+            row = json.loads(line)
+            assert row["extracted_at"] == now
+            row.pop("extracted_at")
+            if row.get("created_at") == now:
+                row.pop("created_at")
+            out[row["entity_id"]] = row
+        return out
+
+    before = rows_without_run_time(tmp_path / "without")
+    after = rows_without_run_time(tmp_path / "with")
     assert {k: after[k] for k in before} == before
 
 

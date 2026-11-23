@@ -41,7 +41,7 @@ vi.mock("maplibre-gl", () => {
     }
   }
   // The module does `import * as maplibregl`, so these must be named exports.
-  return { Marker: FakeMarker, Map: class {}, NavigationControl: class {} };
+  return { Marker: FakeMarker, Map: class {}, NavigationControl: class {}, ScaleControl: class {} };
 });
 
 // A distinct fake map per boot, mirroring how a 2D/3D switch swaps
@@ -58,6 +58,10 @@ function makeFakeRuntime() {
     once: vi.fn(),
     getSource: () => undefined,
     getStyle: () => undefined,
+    // GisViewerControls binds a scale bar; getCenter/getZoom below also
+    // serve its starting-extent record.
+    addControl: vi.fn(),
+    removeControl: vi.fn(),
     // Read by the coordinate readout and the URL-fragment writer.
     getLayer: () => undefined,
     getZoom: () => 8.4,
