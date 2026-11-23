@@ -8,8 +8,31 @@ import turfDistance from "@turf/distance";
 import turfCircle from "@turf/circle";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import turfNearestPoint from "@turf/nearest-point";
+import type { GisClient, IdentifyResponse, QueryResponse } from "../spatial/gis/gisApi";
+import { drawPolygonCollection, formatArea, polygonFromVertices, ringAreaM2 } from "../spatial/gis/measure";
+import { googleMapsPointUrl, googleStreetViewUrl } from "../spatial/gis/externalLinks";
+import { downloadBlob } from "../spatial/gis/printMap";
 
-export type ToolMode = "off" | "measure" | "buffer" | "nearest";
+export type ToolMode = "off" | "measure" | "area" | "buffer" | "nearest" | "identify" | "query";
+const CLIENT_MODES: ToolMode[] = ["off", "measure", "area", "buffer", "nearest"];
+const SERVER_MODES: ToolMode[] = ["identify", "query"];
+
+/**
+ * Backend-backed tools (identify, polygon query/export) — present only when the
+ * host passes a GIS client. `activeLayers` returns the catalog layer ids the
+ * user currently has switched on; queries run against exactly those.
+ */
+export interface SpatialToolsGisOptions {
+  client: GisClient;
+  activeLayers: () => string[];
+  exportable: (layerId: string) => boolean;
+}
+
+type RemoteState<T> =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; data: T }
+  | { status: "error"; message: string };
 type Position = [number, number];
 
 interface QueryEvidence {
@@ -36,6 +59,7 @@ type NearestResult = QueryEvidence & {
 const MEASURE_SOURCE = "tool-measure-line";
 const BUFFER_SOURCE = "tool-buffer-circle";
 const NEAREST_SOURCE = "tool-nearest-highlight";
+const DRAW_SOURCE = "tool-draw-polygon";
 const BUFFER_RADII_KM = [1, 5, 10, 25];
 const EMPTY_COLLECTION: FeatureCollection = { type: "FeatureCollection", features: [] };
 
@@ -163,8 +187,9 @@ export function useSpatialTools(opts: {
   mapReady: boolean;
   targets: Record<string, () => Feature[]>;
   interactionLockRef: MutableRefObject<boolean>;
+  gis?: SpatialToolsGisOptions;
 }) {
-  const { interactionLockRef, mapRef, mapReady, targets } = opts;
+  const { gis, interactionLockRef, mapRef, mapReady, targets } = opts;
   const targetKeys = Object.keys(targets);
   const [mode, setMode] = useState<ToolMode>("off");
   const [targetKey, setTargetKey] = useState(targetKeys[0] ?? "");
@@ -174,6 +199,10 @@ export function useSpatialTools(opts: {
   const [bufferResult, setBufferResult] = useState<BufferResult | null>(null);
   const [nearestOrigin, setNearestOrigin] = useState<Position | null>(null);
   const [nearestResult, setNearestResult] = useState<NearestResult | null>(null);
+  const [drawVertices, setDrawVertices] = useState<Position[]>([]);
+  const [identifyState, setIdentifyState] = useState<RemoteState<IdentifyResponse>>({ status: "idle" });
+  const [queryState, setQueryState] = useState<RemoteState<QueryResponse>>({ status: "idle" });
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     interactionLockRef.current = mode !== "off";
@@ -190,6 +219,16 @@ export function useSpatialTools(opts: {
       ensureLineSource(map, MEASURE_SOURCE, "#facc15");
       ensureFillSource(map, BUFFER_SOURCE, "#38bdf8");
       ensureLineSource(map, NEAREST_SOURCE, "#f472b6");
+      ensureFillSource(map, DRAW_SOURCE, "#a3e635");
+      if (!map.getLayer(`${DRAW_SOURCE}-points`)) {
+        map.addLayer({
+          id: `${DRAW_SOURCE}-points`,
+          type: "circle",
+          source: DRAW_SOURCE,
+          filter: ["==", ["geometry-type"], "Point"],
+          paint: { "circle-radius": 4, "circle-color": "#a3e635" },
+        });
+      }
     }
     if (map.isStyleLoaded()) setup();
     else map.once("styledata", setup);
@@ -201,10 +240,55 @@ export function useSpatialTools(opts: {
     setBufferResult(null);
     setNearestOrigin(null);
     setNearestResult(null);
+    setDrawVertices([]);
+    setIdentifyState({ status: "idle" });
+    setQueryState({ status: "idle" });
+    setExportError(null);
     const map = mapRef.current;
     setSourceData(map, MEASURE_SOURCE, EMPTY_COLLECTION);
     setSourceData(map, BUFFER_SOURCE, EMPTY_COLLECTION);
     setSourceData(map, NEAREST_SOURCE, EMPTY_COLLECTION);
+    setSourceData(map, DRAW_SOURCE, EMPTY_COLLECTION);
+  };
+
+  const runIdentify = useCallback((lngLat: Position) => {
+    if (!gis) return;
+    setIdentifyState({ status: "loading" });
+    gis.client
+      .identify(lngLat[0], lngLat[1], gis.activeLayers())
+      .then((data) => setIdentifyState({ status: "ready", data }))
+      .catch((error: unknown) => setIdentifyState({ status: "error", message: error instanceof Error ? error.message : String(error) }));
+  }, [gis]);
+
+  const runPolygonQuery = () => {
+    const polygon = polygonFromVertices(drawVertices);
+    if (!gis || !polygon) return;
+    const layers = gis.activeLayers();
+    if (layers.length === 0) {
+      setQueryState({ status: "error", message: "Switch on at least one catalog layer to query." });
+      return;
+    }
+    setQueryState({ status: "loading" });
+    setExportError(null);
+    gis.client
+      .queryPolygon(polygon, layers)
+      .then((data) => setQueryState({ status: "ready", data }))
+      .catch((error: unknown) => setQueryState({ status: "error", message: error instanceof Error ? error.message : String(error) }));
+  };
+
+  const exportPolygonQuery = (format: "geojson" | "csv") => {
+    const polygon = polygonFromVertices(drawVertices);
+    if (!gis || !polygon || queryState.status !== "ready") return;
+    const layers = queryState.data.layers.map((layer) => layer.layer_id).filter((layerId) => gis.exportable(layerId));
+    if (layers.length === 0) {
+      setExportError("None of the queried layers is exportable (only PUBLIC layers are).");
+      return;
+    }
+    setExportError(null);
+    gis.client
+      .exportPolygon(polygon, layers, format)
+      .then((blob) => downloadBlob(blob, `gis-export.${format === "csv" ? "csv" : "geojson"}`))
+      .catch((error: unknown) => setExportError(error instanceof Error ? error.message : String(error)));
   };
 
   const setModeAndReset = (next: ToolMode) => {
@@ -282,6 +366,19 @@ export function useSpatialTools(opts: {
     const lngLat: Position = [event.lngLat.lng, event.lngLat.lat];
     if (!finitePosition(lngLat)) return;
 
+    if (mode === "area" || mode === "query") {
+      setDrawVertices((previous) => {
+        const next = [...previous, lngLat];
+        setSourceData(map, DRAW_SOURCE, drawPolygonCollection(next));
+        return next;
+      });
+      if (mode === "query") setQueryState({ status: "idle" });
+      return;
+    }
+    if (mode === "identify") {
+      runIdentify(lngLat);
+      return;
+    }
     if (mode === "measure") {
       setMeasurePoints((previous) => {
         const next = [...previous, lngLat];
@@ -315,9 +412,20 @@ export function useSpatialTools(opts: {
     ? turfLength({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: measurePoints } }, { units: "kilometers" })
     : 0;
 
+  const drawAreaM2 = drawVertices.length >= 3 ? ringAreaM2(drawVertices) : 0;
+
   return {
     mode,
     setMode: setModeAndReset,
+    gisEnabled: Boolean(gis),
+    exportable: gis?.exportable ?? (() => false),
+    drawVertices,
+    drawAreaM2,
+    identifyState,
+    queryState,
+    exportError,
+    runPolygonQuery,
+    exportPolygonQuery,
     targetKey,
     setTargetKey: setTargetAndRecompute,
     targetKeys,
@@ -342,14 +450,110 @@ function EvidenceReadout({ result }: { result: QueryEvidence }) {
   );
 }
 
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "object") return JSON.stringify(value);
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return value.toString();
+  return "—";
+}
+
+/** Location-context values: boundary {name,id}, grid lookup {status,cell_ids}, or null. */
+function locationText(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value !== "object") return formatValue(value);
+  const record = value as Record<string, unknown>;
+  if (Array.isArray(record.cell_ids)) {
+    const cells = record.cell_ids as unknown[];
+    return cells.length ? `${cells.map(String).join(", ")} (${formatValue(record.binding)})` : formatValue(record.status);
+  }
+  if ("name" in record) return `${formatValue(record.name)} (${formatValue(record.id)})`;
+  return formatValue(value);
+}
+
+function IdentifyReadout({ state }: { state: RemoteState<IdentifyResponse> }) {
+  if (state.status === "idle") return <p>Click the map to identify features in the active catalog layers.</p>;
+  if (state.status === "loading") return <p>Identifying…</p>;
+  if (state.status === "error") return <p role="alert">Identify failed: {state.message}</p>;
+  const { point: clicked, hits, location } = state.data;
+  return (
+    <div className="tools-readout">
+      <p>
+        Point {clicked.lat.toFixed(6)}, {clicked.lon.toFixed(6)} ·{" "}
+        <a href={googleMapsPointUrl(clicked.lon, clicked.lat)} target="_blank" rel="noreferrer noopener">Google Maps</a> ·{" "}
+        <a href={googleStreetViewUrl(clicked.lon, clicked.lat)} target="_blank" rel="noreferrer noopener">Street View</a>
+      </p>
+      {Object.entries(location).map(([key, value]) => (
+        <p key={key}>{key}: {locationText(value)}</p>
+      ))}
+      {hits.length === 0 && <p>No features within {state.data.tolerance_m} m.</p>}
+      {hits.map((hit, index) => (
+        <details key={`${hit.layer_id}-${hit.feature_id ?? index}`} open={index === 0}>
+          <summary>{hit.layer_id} · {hit.feature_id ?? "unidentified"} · {hit.distance_m} m</summary>
+          <dl>
+            {Object.entries(hit.properties).map(([key, value]) => (
+              <div key={key}><dt>{key}</dt><dd>{formatValue(value)}</dd></div>
+            ))}
+          </dl>
+        </details>
+      ))}
+      <p>Spatial relation only · evidence {state.data.evidence_state} · identity effect NONE</p>
+    </div>
+  );
+}
+
+function QueryReadout({ state, exportable, onExport, exportError }: {
+  state: RemoteState<QueryResponse>;
+  exportable: (layerId: string) => boolean;
+  onExport: (format: "geojson" | "csv") => void;
+  exportError: string | null;
+}) {
+  if (state.status === "idle") return null;
+  if (state.status === "loading") return <p>Querying…</p>;
+  if (state.status === "error") return <p role="alert">Query failed: {state.message}</p>;
+  const anyExportable = state.data.layers.some((layer) => exportable(layer.layer_id));
+  return (
+    <div className="tools-readout">
+      <p><strong>{state.data.total_matched}</strong> feature{state.data.total_matched === 1 ? "" : "s"} in the polygon</p>
+      {state.data.layers.map((layer) => (
+        <p key={layer.layer_id}>
+          {layer.layer_id}: {layer.matched_count}{layer.truncated ? ` (first ${layer.returned_count} returned)` : ""}
+          {layer.excluded_count > 0 ? ` · ${layer.excluded_count} without usable geometry` : ""}
+          {layer.error ? ` · ${layer.error}` : ""}
+          {exportable(layer.layer_id) ? "" : " · not exportable"}
+        </p>
+      ))}
+      <p>Evidence {state.data.evidence_state} · identity effect NONE</p>
+      {anyExportable && (
+        <div className="row">
+          <button className="navbtn" onClick={() => onExport("geojson")}>Export GeoJSON</button>
+          <button className="navbtn" onClick={() => onExport("csv")}>Export CSV</button>
+        </div>
+      )}
+      {exportError && <p role="alert">Export failed: {exportError}</p>}
+    </div>
+  );
+}
+
+const MODE_LABEL: Record<ToolMode, string> = {
+  off: "Off",
+  measure: "Measure",
+  area: "Area",
+  buffer: "Buffer",
+  nearest: "Nearest",
+  identify: "Identify",
+  query: "Polygon query",
+};
+
 export function SpatialToolsPanel(state: ReturnType<typeof useSpatialTools>) {
-  const { mode, setMode, targetKey, setTargetKey, targetKeys, measureLengthKm, measurePoints, bufferRadiusKm, setBufferRadiusKm, bufferResult, nearestResult, clearAll } = state;
+  const { mode, setMode, targetKey, setTargetKey, targetKeys, measureLengthKm, measurePoints, bufferRadiusKm, setBufferRadiusKm, bufferResult, nearestResult, clearAll, gisEnabled, exportable, drawVertices, drawAreaM2, identifyState, queryState, exportError, runPolygonQuery, exportPolygonQuery } = state;
+  const modes = gisEnabled ? [...CLIENT_MODES, ...SERVER_MODES] : CLIENT_MODES;
 
   return (
     <div className="tools-panel">
       <h2>Spatial tools</h2>
       <div className="row">
-        {(["off", "measure", "buffer", "nearest"] as ToolMode[]).map((candidateMode) => (
+        {modes.map((candidateMode) => (
           <button
             key={candidateMode}
             className="navbtn"
@@ -357,7 +561,7 @@ export function SpatialToolsPanel(state: ReturnType<typeof useSpatialTools>) {
             aria-pressed={mode === candidateMode}
             onClick={() => setMode(candidateMode)}
           >
-            {candidateMode === "off" ? "Off" : candidateMode[0].toUpperCase() + candidateMode.slice(1)}
+            {MODE_LABEL[candidateMode]}
           </button>
         ))}
       </div>
@@ -377,6 +581,23 @@ export function SpatialToolsPanel(state: ReturnType<typeof useSpatialTools>) {
           {measurePoints.length >= 2 && (
             <p><strong>{measureLengthKm.toFixed(2)} km</strong> · {(measureLengthKm * 0.621371).toFixed(2)} mi</p>
           )}
+        </div>
+      )}
+      {mode === "area" && (
+        <div className="tools-readout">
+          <p>Click to add polygon vertices; area updates after the third point.</p>
+          {drawVertices.length >= 3 && <p><strong>{formatArea(drawAreaM2)}</strong></p>}
+        </div>
+      )}
+      {mode === "identify" && <IdentifyReadout state={identifyState} />}
+      {mode === "query" && (
+        <div className="tools-readout">
+          <p>Click to add polygon vertices, then run the query against the active catalog layers.</p>
+          {drawVertices.length >= 3 && <p>{formatArea(drawAreaM2)}</p>}
+          <button className="navbtn" disabled={drawVertices.length < 3 || queryState.status === "loading"} onClick={runPolygonQuery}>
+            Run query
+          </button>
+          <QueryReadout state={queryState} exportable={exportable} onExport={exportPolygonQuery} exportError={exportError} />
         </div>
       )}
       {mode === "buffer" && (
