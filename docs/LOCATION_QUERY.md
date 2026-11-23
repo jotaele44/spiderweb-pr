@@ -22,6 +22,11 @@ Modes:
 
 The JSON schema is `schemas/location_query.schema.json`.
 
+The same geometry vocabulary is reused by the viewer-side feature query
+(`POST /gis/query`, `schemas/gis_query_v1.schema.json`), which reads features
+Spiderweb already holds rather than planning acquisition; see
+[GIS_VIEWER_API.md](GIS_VIEWER_API.md).
+
 Example:
 
 ```json

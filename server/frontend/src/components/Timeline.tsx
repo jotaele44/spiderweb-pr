@@ -93,7 +93,7 @@ export function Timeline({
               <button
                 onClick={() => setSelection({ kind: "event", id: item.id })}
                 title={`${item.id} · ${item.label} · ${item.at}`}
-                aria-label={`Event ${item.id}: ${item.label} on ${item.at}`}
+                aria-label={`${item.tier ? `${item.tier} ` : ""}${item.id} event: ${item.label} on ${item.at}`}
               >
                 {item.tier ? <TierBadge tier={item.tier} /> : null} {item.id}
               </button>
