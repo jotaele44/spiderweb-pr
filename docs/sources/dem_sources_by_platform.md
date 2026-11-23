@@ -243,7 +243,8 @@ Landsat and SRTM dependent measurements.
   `sensor_type`. Adding members means regenerating the hashed access-point registries.
 - No EGM96 to PRVD02 or NAVD88 transformation is registered, so SRTM, NASADEM and
   the PRVD02 or NAVD88 products stay in separate layers.
-- The vertical datums of COP30 and AW3D30 were not stated in the metadata checked.
+- The vertical datums of COP30 and AW3D30 were not stated in the metadata checked. The
+  COP30 GeoTIFF fetched on 2026-11-23 states none either (EPSG:4326, no vertical CRS).
 - The platform used to orthorectify Sentinel-2 L1C is not recorded.
 
 ## Related

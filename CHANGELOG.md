@@ -28,7 +28,9 @@ GitHub Release using the matching section below (T6-53).
 - OpenTopography Global DEM adapter (`source_adapters/opentopography_globaldem`,
   `docs/source_adapters/opentopography_globaldem.md`) for SRTMGL1, NASADEM, COP30
   and AW3D30. The API key is a query parameter, so it is redacted from every
-  recorded URL.
+  recorded URL. COP30 was fetched for Puerto Rico on 2026-11-23 (receipt under
+  `evidence/dem_sources/cop30_pr_2026-11-23/`): 1 arc-second, EPSG:4326, no
+  vertical CRS declared, heights up to 1,328.8 m at the Cerro de Punta summit.
 
 ### Changed
 - `tools/pr_dem_one_tile_pilot.py` refuses a tile whose native pixel is coarser

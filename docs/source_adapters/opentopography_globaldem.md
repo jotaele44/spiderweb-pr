@@ -66,3 +66,23 @@ and code are tracked.
 SRTMGL1 and NASADEM heights are on EGM96. The vertical datums of COP30 and AW3D30
 were not stated in the metadata checked, so the catalog records them as
 `undeclared`, and the merge policy holds any selection that includes them for review.
+The fetched COP30 GeoTIFF does not state one either: its CRS is EPSG:4326 with no
+vertical or compound CRS.
+
+## Observed fetch (2026-11-23)
+
+COP30 for the Puerto Rico AOI (receipt: `evidence/dem_sources/cop30_pr_2026-11-23/`):
+
+| Measure | Value |
+| --- | --- |
+| File | 43,254,754 bytes, sha256 `c94a3c7060d64a2f…` (full hash in the receipt) |
+| Grid | 9,900 x 2,520 samples at 1 arc-second, EPSG:4326, pixel-is-point, LZW cloud-optimized GeoTIFF |
+| Nodata | none declared; every sample has a value |
+| Heights | -8.8 m to 1,328.8 m; the maximum is at the Cerro de Punta summit |
+| Recorded request | `API_Key=REDACTED`; the key appears in no receipt file |
+
+At the Cerro de Punta summit (GNIS 1609905, 18.172281, -66.5916862) the nearest
+COP30 sample reads 1,328.29 m and the nearest SRTMGL1 sample 1,325 m (EGM96).
+TheHub's CUDEM reader gives 1,322.7 m (PRVD02) at the same point. The sources use
+different or undeclared datums and different epochs, so these differences are not
+terrain change.

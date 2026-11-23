@@ -124,3 +124,18 @@ def test_cli_fetch_exit_codes(monkeypatch, tmp_path: Path, capsys) -> None:
     assert cli.main(["fetch", "--demtype", "COP30", "--cache-dir", str(tmp_path)]) == 2
     assert cli.main(["fetch", "--demtype", "COP30", "--cache-dir", str(tmp_path), "--acknowledge-no-commit"]) == 2
     assert "OPENTOPOGRAPHY_API_KEY" in capsys.readouterr().err
+
+
+def test_cop30_receipt_is_redacted_and_consistent() -> None:
+    receipt = Path(__file__).resolve().parents[1] / "evidence" / "dem_sources" / "cop30_pr_2026-11-23"
+    prov = json.loads((receipt / "provenance.json").read_text())
+    stats = json.loads((receipt / "raster_stats.json").read_text())
+    (row,) = prov["files"]
+    assert row["demtype"] == "COP30" and row["catalog_source_id"] == "copernicus_glo30_dem"
+    assert "API_Key=REDACTED" in row["request_url"]
+    assert parse_qs(urlsplit(row["request_url"]).query)["API_Key"] == ["REDACTED"]
+    assert stats["file_name"] == row["file_name"]
+    assert stats["crs"] == "EPSG:4326" and stats["vertical_crs_declared"] is None
+    assert stats["width"] * stats["height"] == stats["samples"] == 9900 * 2520
+    assert stats["pixel_size_deg"][0] * 3600 == pytest.approx(1.0)
+    assert 1300 < stats["max_m"] < 1350

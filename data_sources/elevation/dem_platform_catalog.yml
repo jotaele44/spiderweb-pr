@@ -190,7 +190,7 @@
         "OpenTopography (ESA PRISM, GLO-30 DGED 2023_1)"
       ],
       "platform_status": "verified",
-      "notes": "",
+      "notes": "Fetched for the Puerto Rico AOI on 2026-11-23 through OpenTopography (receipt: evidence/dem_sources/cop30_pr_2026-11-23/): 9900 x 2520 samples at 1 arc-second, EPSG:4326, heights -8.8 to 1328.8 m. At the Cerro de Punta summit (GNIS 1609905) it reads 1328.29 m, against 1325 m in SRTMGL1 (EGM96).",
       "source_id": "copernicus_glo30_dem",
       "name": "Copernicus GLO-30 Digital Elevation Model",
       "platform_class": "spaceborne",
@@ -200,7 +200,7 @@
         "end": "2015-07-01"
       },
       "vertical_datum": "undeclared",
-      "vertical_datum_as_stated": "not stated in the metadata checked",
+      "vertical_datum_as_stated": "not stated in the metadata checked, nor in the fetched GeoTIFF (EPSG:4326, no vertical CRS)",
       "horizontal_datum": "WGS84",
       "native_resolution": "1 arc-second (about 30 m)",
       "acquisition_roots": [
