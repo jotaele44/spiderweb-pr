@@ -58,8 +58,10 @@ missing key; 3 key refused (HTTP 401 or 403); 4 other request failure.
 ## Repository policy
 
 GeoTIFFs stay in `data/opentopography/cache/`, which is git-ignored, with a
-`provenance.json` of sha256, size and the redacted request. Only the configuration
-and code are tracked.
+`provenance.json` of sha256, size and the redacted request. Fetching one demtype
+keeps the records of the others while their files are still cached with the same
+sha256 (`source_adapters/cache_provenance.py`). Only the configuration and code are
+tracked.
 
 ## Datums
 

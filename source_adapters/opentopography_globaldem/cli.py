@@ -15,11 +15,12 @@ import json
 import sys
 from pathlib import Path
 
+from ..cache_provenance import merge_rows, previous_rows
 from .client import (
+    REDACTED,
     OpenTopographyAuthError,
     OpenTopographyKeyMissing,
     OpenTopographyRequestError,
-    REDACTED,
     api_key,
     build_request_url,
     demtypes,
@@ -76,6 +77,7 @@ def run_fetch(args: argparse.Namespace) -> int:
         rows.append(row)
         print(f"{demtype:8s} {row['file_size_bytes']:>12,d} B  sha256 {row['sha256'][:16]}…  -> {dest}")
     out = cache / "provenance.json"
+    rows = merge_rows(previous_rows(out), rows, cache)
     out.write_text(json.dumps({"adapter": "opentopography_globaldem", "files": rows}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"provenance -> {out}")
     return 0

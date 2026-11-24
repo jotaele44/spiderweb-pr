@@ -37,7 +37,7 @@ def test_single_verified_source_passes(products: dict) -> None:
 
 
 def test_spaceborne_and_airborne_stay_separate(products: dict) -> None:
-    result = evaluate_platform_mix([products["nasa_srtmgl1_v003"], products["usgs_3dep_1m_pr_prvi_f_2018"]])
+    result = evaluate_platform_mix([products["nasa_srtmgl1_v003"], products["usgs_3dep_1m_pr_prvi_2018"]])
     assert result.merge_policy == "separate_layers_until_harmonization"
     assert result.review_status == "review_required"
     joined = " | ".join(result.reasons)
@@ -47,7 +47,7 @@ def test_spaceborne_and_airborne_stay_separate(products: dict) -> None:
 
 
 def test_two_lidar_epochs_on_one_datum_pass(products: dict) -> None:
-    result = evaluate_platform_mix([products["usgs_3dep_1m_pr_prvi_f_2018"], products["usgs_3dep_1m_pr_puertoricousvi_d24"]])
+    result = evaluate_platform_mix([products["usgs_3dep_1m_pr_prvi_2018"], products["usgs_3dep_1m_pr_puertoricousvi_d24"]])
     assert result.review_status == "pass"
     assert result.merge_policy == "same_platform_class_same_surface_same_datum"
 
@@ -95,12 +95,12 @@ def test_srtm_and_nasadem_are_not_independent(products: dict) -> None:
 
 
 def test_srtm_and_3dep_2018_are_independent(products: dict) -> None:
-    assert independent(products["nasa_srtmgl1_v003"], products["usgs_3dep_1m_pr_prvi_f_2018"])
+    assert independent(products["nasa_srtmgl1_v003"], products["usgs_3dep_1m_pr_prvi_2018"])
     assert independent(products["nasa_srtmgl1_v003"], products["copernicus_glo30_dem"])
 
 
 def test_3dep_2018_dem_shares_its_lidar_root(products: dict) -> None:
-    shared = shared_acquisition_roots(products["usgs_3dep_1m_pr_prvi_f_2018"], products["usgs_lidar_2018_hurricane_maria"])
+    shared = shared_acquisition_roots(products["usgs_3dep_1m_pr_prvi_2018"], products["usgs_lidar_2018_hurricane_maria"])
     assert shared == ("usiei:933E88E7-A131-40E5-8BAA-C9575216E040",)
 
 

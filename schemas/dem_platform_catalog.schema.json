@@ -504,7 +504,8 @@
                 "enum": [
                   "equals",
                   "present",
-                  "absent"
+                  "absent",
+                  "abs_at_most"
                 ]
               }
             }

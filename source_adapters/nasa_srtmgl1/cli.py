@@ -14,6 +14,7 @@ import json
 import sys
 from pathlib import Path
 
+from ..cache_provenance import merge_rows, previous_rows
 from .composition import composition
 from .fetch import EarthdataLoginRequired, download, token_from_env, utc_now
 from .fetch_plan import DEFAULT_CACHE_DIR, build_fetch_plan, select_tiles
@@ -74,6 +75,7 @@ def fetch(args: argparse.Namespace) -> int:
         row.update({"product": task["product"], "tile_id": task["tile_id"]})
         rows.append(row)
         print(f"{task['product']:9s} {task['tile_id']}  {row['file_size_bytes']:>10,d} B  sha256 {row['sha256'][:16]}…")
+    rows = merge_rows(previous_rows(cache / PROVENANCE_NAME), rows, cache)
     write_json(cache / PROVENANCE_NAME, build_provenance(rows, generated_at=utc_now()))
     print(f"provenance -> {cache / PROVENANCE_NAME}")
     return 0

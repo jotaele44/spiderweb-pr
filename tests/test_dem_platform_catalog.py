@@ -49,9 +49,9 @@ def test_every_registration_is_accounted_for(catalog: dict) -> None:
 def test_universe_counts_are_pinned(catalog: dict) -> None:
     # Pinned so a new registration shows up as a reviewed change, not silently.
     universe = registration_universe()
-    assert len(universe) == 65
-    assert len({r.path for r in universe}) == 21
-    assert sum(len(p["aliases"]) for p in catalog["products"]) == 46
+    assert len(universe) == 71
+    assert len({r.path for r in universe}) == 22
+    assert sum(len(p["aliases"]) for p in catalog["products"]) == 52
     assert len(catalog["non_product_registrations"]) == 19
 
 
@@ -63,7 +63,7 @@ def test_known_duplicates_collapse_to_one_product(catalog: dict) -> None:
         ("data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv", "puerto_rico_cudem_13"),
         ("pipeline/pr_marine_datasets.py", "9524"),
     }
-    assert len(products["usgs_3dep_1m_pr_prvi_f_2018"]["aliases"]) == 5
+    assert len(products["usgs_3dep_1m_pr_prvi_2018"]["aliases"]) == 10
 
 
 def test_alias_paths_exist(catalog: dict) -> None:
@@ -87,6 +87,20 @@ def test_registry_conflicts_still_hold(catalog: dict) -> None:
                 f"{conflict['conflict_id']}: {obs['path']} {obs['id']} no longer shows this; "
                 "if the conflict was fixed, mark it resolved in the catalog"
             )
+
+
+def test_observation_checks_on_lidar_config_and_receipt(tmp_path: Path) -> None:
+    config = {"sites": [{"site_id": "s1", "lidar_2018": [{"project": "PR_PRVI_A_2018", "stated_vertical_datum": "NAVD88"}],
+                         "lidar_d24": {"project": "PR_PuertoRicoUSVI_D24", "stated_vertical_datum": "NAVD88"}}]}
+    receipt = {"datum_test_lidar_2018_minus_cudem_ninth_low_slope": {"s1": {"median_m": -0.12}, "s2": None}}
+    (tmp_path / "tiles.json").write_text(json.dumps(config))
+    (tmp_path / "comparison.json").write_text(json.dumps(receipt))
+    assert check_observation({"path": "tiles.json", "id": "PR_PRVI_A_2018", "field": "stated_vertical_datum",
+                              "value": "NAVD88", "check": "equals"}, tmp_path)
+    near = {"path": "comparison.json", "id": "s1", "field": "median_m", "check": "abs_at_most"}
+    assert check_observation({**near, "value": 0.15}, tmp_path)
+    assert not check_observation({**near, "value": 0.1}, tmp_path)
+    assert not check_observation({**near, "id": "s2", "value": 0.15}, tmp_path)  # no test at that site
 
 
 def test_sensor_types_use_the_existing_vocabulary(catalog: dict) -> None:

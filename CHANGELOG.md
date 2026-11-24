@@ -10,12 +10,23 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- Every gridded DEM compared against 3DEP 1 m lidar at eight stratified sites
+  (`docs/sources/dem_lidar_comparison.md`, `scripts/run_dem_vs_3dep_lidar.py`,
+  sites in `data_sources/elevation/lidar_comparison_tiles.json`, receipt under
+  `evidence/dem_sources/lidar_comparison_2026-11-24/`). Lidar is averaged onto each
+  DEM's own grid and moved to its datum through GEOID18, a NAD83(2011) to ITRF2014
+  Helmert at the survey epoch and EGM96 or EGM2008. Median DEM minus lidar: NASADEM
+  +1.88 m, SRTMGL1 +3.63 m, AW3D30 +4.16 m, COP30 +4.39 m, CUDEM 1/9" -0.02 m;
+  D24 minus 2018 lidar -0.14 m. The 3DEP tiles state NAVD88 but agree with CUDEM
+  (PRVD02) to within 0.062 m, recorded as conflict `3dep_vertical_datum_label`; the
+  conflict checker gains an `abs_at_most` check. The 2018 3DEP product is now
+  `usgs_3dep_1m_pr_prvi_2018` (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018).
 - DEM sources broken down by acquisition platform
   (`docs/sources/dem_sources_by_platform.md`). The catalog
   `data_sources/elevation/dem_platform_catalog.yml` holds 30 products in four
-  classes (spaceborne, airborne, shipborne, compiled). All 65 elevation
-  registrations in 21 files are accounted for as aliases or classified
-  non-products, and five conflicts between registries are recorded.
+  classes (spaceborne, airborne, shipborne, compiled). All 71 elevation
+  registrations in 22 files are accounted for as aliases or classified
+  non-products, and six conflicts between registries are recorded.
   `source_adapters/dem_platform` adds the merge policy: sources stay in separate
   layers unless they share platform class, surface model and a declared vertical
   datum. Independence is decided on canonical acquisition roots.
@@ -67,6 +78,10 @@ GitHub Release using the matching section below (T6-53).
   `docs/ACCESS_POINT_REGISTRIES.md`. No code or data changed.
 
 ### Fixed
+- Rerunning the SRTMGL1 or OpenTopography `fetch` no longer drops earlier records
+  from the cache's `provenance.json`: cache hits keep their download time and host
+  while the sha256 is unchanged, and records outside a narrower selection are kept
+  (`source_adapters/cache_provenance.py`).
 - **The hub's federation ingest could not run this repository's export.** Since
   the access-point lane was added to `export_canonical`, every thehub-pr ingest
   failed at "Fetch producers and run their exports" with `No module named

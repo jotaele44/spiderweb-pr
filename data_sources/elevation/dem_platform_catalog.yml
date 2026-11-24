@@ -325,9 +325,9 @@
         "USGS The National Map (prd-tnm S3)"
       ],
       "platform_status": "verified",
-      "notes": "PRVI_1m_DEM_2018 in the spatial-dataset and location-query registries is matched to this product by label (2018 PR/USVI 1 m DEM) and resolution; its catalog binding is still open there.",
-      "source_id": "usgs_3dep_1m_pr_prvi_f_2018",
-      "name": "USGS 3DEP 1 m DEM, PR_PRVI_F_2018",
+      "notes": "PRVI_1m_DEM_2018 in the spatial-dataset and location-query registries is matched to this product by label (2018 PR/USVI 1 m DEM) and resolution; its catalog binding is still open there. The 2018 1 m DEM is published as TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018; their collection windows (A: 2018-05-13 to 2018-06-08; D, E, H: 2018-04-17 to 2019-04-18) fall inside the 2018 Hurricane Maria lidar collection, so they are one product (T2).",
+      "source_id": "usgs_3dep_1m_pr_prvi_2018",
+      "name": "USGS 3DEP 1 m DEM, 2018 (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018)",
       "platform_class": "airborne",
       "surface_model": "bare_earth",
       "acquisition_window": {
@@ -369,12 +369,54 @@
           "path": "configs/location_query_providers.json",
           "id": "PRVI_1m_DEM_2018",
           "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_A_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_D_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_E_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_F_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_H_2018",
+          "authority": false
         }
       ],
       "platform_basis": {
         "evidence_tier": "T1",
         "source": "USGS 1 m DEM abstract: produced exclusively from lidar; lineage root is the 2018 Hurricane Maria lidar (USIEI Lidar-Topo, QL1)",
         "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "USGS ScienceBase item metadata of the 2018 tiles (projects A, D, E, F, H) in data_sources/elevation/lidar_comparison_tiles.json",
+            "location": "item body text",
+            "statement": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+          },
+          {
+            "source": "DEM vs 3DEP lidar comparison: 2018 lidar minus CUDEM 1/9\" (PRVD02), slopes under 5 degrees",
+            "location": "datum_test_lidar_2018_minus_cudem_ninth_low_slope",
+            "statement": "Medians -0.015 to +0.062 m at eight sites; the heights behave as PRVD02 (registry conflict 3dep_vertical_datum_label)."
+          }
+        ],
+        "receipt": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+        "checked": "2026-11-24"
       }
     },
     {
@@ -425,12 +467,34 @@
           "path": "registry/access_points/inland.json",
           "id": "APSRC-cd2b7cf792cf01c2",
           "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PuertoRicoUSVI_D24",
+          "authority": false
         }
       ],
       "platform_basis": {
         "evidence_tier": "T1",
         "source": "ScienceBase item 6a753f0e1ba49b79d0c347d8: USGS standard one-meter DEMs are produced exclusively from lidar",
         "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "USGS ScienceBase item metadata of the D24 tiles in data_sources/elevation/lidar_comparison_tiles.json",
+            "location": "item body text",
+            "statement": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+          },
+          {
+            "source": "DEM vs 3DEP lidar comparison: 2018 lidar minus CUDEM 1/9\" (PRVD02), slopes under 5 degrees",
+            "location": "datum_test_lidar_2018_minus_cudem_ninth_low_slope",
+            "statement": "Medians -0.015 to +0.062 m at eight sites; the heights behave as PRVD02 (registry conflict 3dep_vertical_datum_label)."
+          }
+        ],
+        "receipt": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+        "checked": "2026-11-24"
       }
     },
     {
@@ -1818,6 +1882,111 @@
           "field": "tile_count",
           "value": 25,
           "check": "equals"
+        }
+      ]
+    },
+    {
+      "conflict_id": "3dep_vertical_datum_label",
+      "status": "open",
+      "description": "The ScienceBase metadata of every 3DEP 1 m tile used in the lidar comparison (2018 projects A, D, E, F, H, and D24) says the heights are referenced to NAVD88, USGS's programme-wide wording; NAVD88 is not defined in Puerto Rico. Over low-slope cells the 2018 lidar agrees with CUDEM 1/9\" (PRVD02) at all eight sites, medians -0.015 to +0.062 m, so the heights behave as PRVD02. The catalog keeps the stated NAVD88.",
+      "observations": [
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_A_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_D_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_E_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_F_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_H_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PuertoRicoUSVI_D24",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "north_karst_hatillo",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "central_cordillera_cerro_de_punta",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "el_yunque",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "dry_south_guanica",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "urban_san_juan",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "west_mayaguez",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "east_central_cayey",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "northeast_carolina",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
         }
       ]
     }

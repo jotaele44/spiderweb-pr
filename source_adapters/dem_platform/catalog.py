@@ -70,6 +70,9 @@ EXTRACTORS: dict[str, Callable[[str], set[str]]] = {
     "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv": _csv_ids,
     "data_sources/nasa/srtmgl1.yml": lambda t: _json_records(t, "datasets", "dataset_key"),
     "data_sources/opentopography/globaldem.yml": lambda t: _json_records(t, "demtypes", "demtype"),
+    "data_sources/elevation/lidar_comparison_tiles.json": lambda t: {
+        part["project"] for site in json.loads(t)["sites"] for part in site["lidar_2018"] + [site["lidar_d24"]]
+    },
     "pipeline/pr_marine_datasets.py": _regex(r'dataset_id="(\w+)"'),
     "registry/spatial/source_manifestations.json": lambda t: _json_records(
         t, "manifestations", "Dataset_ID", lambda r: r.get("Source_Family") == "USGS_3DEP"
@@ -193,12 +196,32 @@ def account(catalog: Mapping, root: Path = REPO_ROOT) -> Accounting:
 
 # -- record lookups used for datum parity and conflict checks ---------------------
 
+LIDAR_DATUM_TEST = "datum_test_lidar_2018_minus_cudem_ninth_low_slope"
+
+
 def records(path: str, root: Path = REPO_ROOT) -> dict[str, dict]:
-    """Records of a JSON dataset manifest (by dataset_key) or the NCEI CSV (by dataset_id)."""
+    """Records of a file a conflict observation points at.
+
+    - the NCEI CSV, by dataset_id;
+    - a JSON dataset manifest, by dataset_key;
+    - the lidar comparison tile config, by TNM project (one record per project; its tiles agree);
+    - the lidar comparison receipt, by site_id (that site's lidar-versus-CUDEM datum test).
+    """
     text = (root / path).read_text(encoding="utf-8")
     if path.endswith(".csv"):
         return {row["dataset_id"]: row for row in csv.DictReader(io.StringIO(text))}
-    return {d["dataset_key"]: d for d in json.loads(text)["datasets"]}
+    data = json.loads(text)
+    if "datasets" in data:
+        return {d["dataset_key"]: d for d in data["datasets"]}
+    if LIDAR_DATUM_TEST in data:
+        return {site: summary for site, summary in data[LIDAR_DATUM_TEST].items() if summary}
+    if "sites" in data:
+        found: dict[str, dict] = {}
+        for site in data["sites"]:
+            for part in site["lidar_2018"] + [site["lidar_d24"]]:
+                found.setdefault(part["project"], part)
+        return found
+    raise ValueError(f"{path}: no records this checker knows how to read")
 
 
 def check_observation(obs: Mapping, root: Path = REPO_ROOT) -> bool:
@@ -207,7 +230,12 @@ def check_observation(obs: Mapping, root: Path = REPO_ROOT) -> bool:
         return obs["id"] in found
     if obs["check"] == "absent":
         return obs["id"] not in found
-    return obs["id"] in found and found[obs["id"]].get(obs["field"]) == obs["value"]
+    if obs["id"] not in found:
+        return False
+    value = found[obs["id"]].get(obs["field"])
+    if obs["check"] == "abs_at_most":
+        return isinstance(value, (int, float)) and abs(value) <= obs["value"]
+    return value == obs["value"]
 
 
 DATUM_MANIFESTS = (

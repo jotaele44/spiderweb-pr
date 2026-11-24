@@ -66,6 +66,11 @@ python -m source_adapters.nasa_srtmgl1.cli fetch \
 `--hgt-only` and `--num-only` fetch one product. Cached files are hashed again
 rather than downloaded, unless `--force` is given.
 
+The cache's `provenance.json` is merged across runs (`source_adapters/cache_provenance.py`).
+A file served from the cache keeps its original download record (time and final host)
+while its sha256 is unchanged, and records for files outside a narrower selection
+are kept while those files are still cached.
+
 Per-tile source composition:
 
 ```bash

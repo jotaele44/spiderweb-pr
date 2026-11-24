@@ -11,7 +11,7 @@ The catalog is `data_sources/elevation/dem_platform_catalog.yml`, checked agains
 
 ```bash
 python -m source_adapters.dem_platform.cli summary
-python -m source_adapters.dem_platform.cli check --sources nasa_srtmgl1_v003,usgs_3dep_1m_pr_prvi_f_2018
+python -m source_adapters.dem_platform.cli check --sources nasa_srtmgl1_v003,usgs_3dep_1m_pr_prvi_2018
 ```
 
 ## Why platform matters
@@ -37,15 +37,16 @@ fails when a registration is unaccounted for or a catalog reference goes stale.
 
 | Measure | Count |
 |---|---|
-| Registrations | 65 in 21 files |
-| Aliases of products | 46 |
+| Registrations | 71 in 22 files |
+| Aliases of products | 52 |
 | Distinct products | 30 |
 | Non-product registrations | 19 |
 | Accounted for | 100.0% |
 
 Several registrations name the same product. CUDEM 1/3 arc-second (m9524), for
 example, appears in the NCEI YAML, the NCEI priority CSV and the marine dataset
-registry; 3DEP 1 m PR_PRVI_F_2018 appears in five places. Each is one entry here.
+registry; the 2018 3DEP 1 m DEM appears in ten places (five registries and five TNM
+projects named in the lidar comparison's tile list). Each is one entry here.
 
 The off-shore access-point registry (`registry/access_points/offshore.json`, 185
 hydrographic records) already records the acquisition method per record in
@@ -80,7 +81,7 @@ a source; otherwise the entry would be `unverified`, which fails closed.
 | `usace_fema_topobathy_dem_2018_8571` | 2018 USACE FEMA Topobathy Lidar DEM: Puerto Rico | not named | LIDAR (Topobathymetric Lidar) | topobathymetric | undeclared | T2 |
 | `usace_lidar_2004_pr` | 2004 USACE Lidar: Puerto Rico | not named | LIDAR (Lidar-Topo) | point cloud | undeclared | T2 |
 | `usace_ncmp_topobathy_dem_2016_5154` | 2016 USACE NCMP Topobathy Lidar DEM: Puerto Rico | not named | LIDAR (Topobathymetric Lidar) | topobathymetric | PRVD02 | T2 |
-| `usgs_3dep_1m_pr_prvi_f_2018` | USGS 3DEP 1 m DEM, PR_PRVI_F_2018 | not named | LIDAR (Lidar-Topo) | bare earth | NAVD88 | T1 |
+| `usgs_3dep_1m_pr_prvi_2018` | USGS 3DEP 1 m DEM, 2018 (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018) | not named | LIDAR (Lidar-Topo) | bare earth | NAVD88 | T1 |
 | `usgs_3dep_1m_pr_puertoricousvi_d24` | USGS 3DEP 1 m DEM, PR_PuertoRicoUSVI_D24 | not named | LIDAR (Lidar-Topo) | bare earth | NAVD88 | T1 |
 | `usgs_lidar_2018_hurricane_maria` | 2018 Hurricane Maria PR and USVI Lidar | not named | LIDAR (Lidar-Topo) | point cloud | NAVD88 | T2 |
 
@@ -148,6 +149,7 @@ checks that each observation still holds; when one is fixed, mark the conflict
 | `ncei_dataset_ids` | The YAML and CSV name 8 of their 9 shared products differently; only san_juan_19_prvd02_2015 matches. |
 | `ncei_usvi_csv_only` | The St Croix and St Thomas/St John DEMs are in the CSV but not in the YAML manifest. |
 | `cudem_m9525_tile_count` | The YAML says CUDEM m9525 has 25 tiles. TheHub's reader (thehub-pr docs/federation/DIGITAL_TWIN_V1.md) copied urllist9525.txt verbatim and found 26. |
+| `3dep_vertical_datum_label` | The ScienceBase metadata of every 3DEP 1 m tile used in the lidar comparison (2018 projects A, D, E, F, H, and D24) says the heights are referenced to NAVD88, USGS's programme-wide wording; NAVD88 is not defined in Puerto Rico. Over low-slope cells the 2018 lidar agrees with CUDEM 1/9" (PRVD02) at all eight sites, medians -0.015 to +0.062 m, so the heights behave as PRVD02. The catalog keeps the stated NAVD88. |
 
 ## Merge policy and independence
 
@@ -249,6 +251,32 @@ the datum does not explain why COP30 stands higher than SRTM; surface, epoch and
 processing differences do. COP30 with SRTM is still held for review, now only for
 "mixed vertical datums: EGM2008, EGM96".
 
+## Compared against 3DEP lidar
+
+Every gridded DEM was compared against the 2018 3DEP 1 m bare-earth lidar at eight
+sites chosen for terrain variety (2026-11-24; method, per-site and per-slope tables
+in [`dem_lidar_comparison.md`](dem_lidar_comparison.md); receipt
+`evidence/dem_sources/lidar_comparison_2026-11-24/`). Differences are DEM minus lidar,
+with the lidar moved to each DEM's vertical datum:
+
+| DEM | Platform | Samples | Median | NMAD | Within 5 m |
+| --- | --- | --- | --- | --- | --- |
+| SRTMGL1 | spaceborne radar, 2000 | 542,832 | +3.63 m | 4.48 m | 58.9% |
+| NASADEM | spaceborne radar, 2000, reprocessed | 542,832 | +1.88 m | 4.35 m | 66.7% |
+| COP30 | spaceborne radar, 2011-2015 | 542,832 | +4.39 m | 5.58 m | 53.2% |
+| AW3D30 | spaceborne optical, 2006-2011 | 539,334 | +4.16 m | 5.25 m | 54.6% |
+| CUDEM 1/9" | compiled | 44,172,974 | -0.02 m | 0.26 m | 99.1% |
+| 3DEP D24 | airborne lidar, 2023-2025 | 537,099 | -0.14 m | 0.17 m | 99.95% |
+
+The spaceborne surfaces stand above bare earth because they see canopy and roofs,
+and the difference grows with slope and forest cover. NASADEM is the closest of them;
+COP30 is the closest on flat ground and the farthest on steep slopes. CUDEM 1/9"
+matches the lidar to centimetres, which suggests it includes this lidar (its metadata
+names no source surveys). The 3DEP metadata says NAVD88, but against CUDEM (PRVD02)
+the 2018 heights agree to -0.015 to +0.062 m (median, low slopes) at all eight sites.
+This is recorded as conflict `3dep_vertical_datum_label`. It is not an independent
+tie to PRVD02 benchmarks. D24 reads 0.14 m below 2018, more on steep slopes.
+
 ## Landsat terrain correction: a geolocation dependency
 
 Landsat Level-1 products are terrain-corrected with a DEM, so Landsat imagery
@@ -280,8 +308,10 @@ Landsat and SRTM dependent measurements.
 
 - `SensorType` has no land members, and the inland access-point records have no
   `sensor_type`. Adding members means regenerating the hashed access-point registries.
-- No EGM96 to PRVD02 or NAVD88 transformation is registered, so SRTM, NASADEM and
-  the PRVD02 or NAVD88 products stay in separate layers.
+- No EGM96 to PRVD02 transformation is registered in the merge policy, so SRTM,
+  NASADEM and the PRVD02 or NAVD88 products stay in separate layers. The lidar
+  comparison script applies one explicitly (GEOID18, NAD83(2011) to ITRF2014 at the
+  survey epoch, then EGM96 or EGM2008) for measurement only.
 - No EGM2008 to EGM96 conversion is applied in the catalog's merge policy, so COP30
   stays a separate layer from SRTM, NASADEM and AW3D30.
 - AW3D30's datum is cited from its distributor, not yet from JAXA's own document.
@@ -291,4 +321,5 @@ Landsat and SRTM dependent measurements.
 
 - `docs/source_adapters/nasa_srtmgl1.md`: SRTMGL1 adapter (LP DAAC).
 - `docs/source_adapters/opentopography_globaldem.md`: OpenTopography adapter.
+- `docs/sources/dem_lidar_comparison.md`: every DEM compared against 3DEP lidar.
 - `docs/sources/noaa_ncei_coastal_dems.md`: NOAA/NCEI coastal DEMs.
