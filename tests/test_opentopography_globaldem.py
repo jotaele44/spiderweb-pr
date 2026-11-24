@@ -139,3 +139,39 @@ def test_cop30_receipt_is_redacted_and_consistent() -> None:
     assert stats["width"] * stats["height"] == stats["samples"] == 9900 * 2520
     assert stats["pixel_size_deg"][0] * 3600 == pytest.approx(1.0)
     assert 1300 < stats["max_m"] < 1350
+
+
+EVIDENCE = Path(__file__).resolve().parents[1] / "evidence" / "dem_sources"
+
+
+@pytest.mark.parametrize(
+    ("demtype", "folder", "source_id"),
+    [("AW3D30", "aw3d30_pr_2026-11-24", "jaxa_aw3d30"), ("NASADEM", "nasadem_pr_2026-11-24", "nasa_nasadem_hgt_v001")],
+)
+def test_aw3d30_and_nasadem_receipts(demtype: str, folder: str, source_id: str) -> None:
+    prov = json.loads((EVIDENCE / folder / "provenance.json").read_text())
+    stats = json.loads((EVIDENCE / folder / "raster_stats.json").read_text())
+    (row,) = prov["files"]
+    assert row["demtype"] == demtype and row["catalog_source_id"] == source_id
+    assert parse_qs(urlsplit(row["request_url"]).query)["API_Key"] == ["REDACTED"]
+    assert stats["file_name"] == row["file_name"]
+    assert stats["crs"] == "EPSG:4326" and stats["vertical_crs_declared"] is None
+    assert stats["width"] * stats["height"] == stats["samples"] == 9900 * 2520
+    assert stats["nodata_samples"] == 0
+    assert 1300 < stats["summit_point"]["value_m"] < 1350
+
+
+def test_four_source_comparison_supports_the_shared_root() -> None:
+    comp = json.loads((EVIDENCE / "spaceborne_pr_2026-11-24" / "comparison.json").read_text())
+    pairs = comp["pairs"]
+    assert set(pairs) == {"NASADEM", "COP30", "AW3D30"}
+    for pair in pairs.values():
+        assert pair["samples"] + pair["land_samples_excluded"] == comp["land_samples"]
+        assert pair["minus"] == "SRTMGL1"
+    # AW3D30 is pixel-is-area: it must be compared at its own sample centres.
+    assert pairs["AW3D30"]["reference_sampling"].startswith("bilinear")
+    assert pairs["NASADEM"]["reference_sampling"].startswith("nearest")
+    # NASADEM shares SRTM's Shuttle root; COP30 and AW3D30 do not.
+    assert pairs["NASADEM"]["std_m"] * 2 < pairs["COP30"]["std_m"]
+    assert pairs["NASADEM"]["std_m"] * 2 < pairs["AW3D30"]["std_m"]
+    assert comp["grid"]["offset_from_srtm_sample_lines_arcsec"] == pytest.approx([180.0, 1620.0], abs=1e-3)

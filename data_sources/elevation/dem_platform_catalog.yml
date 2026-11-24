@@ -122,7 +122,7 @@
         "NASA LP DAAC (Earthdata Cloud)"
       ],
       "platform_status": "verified",
-      "notes": "CMR names the platform OV-105 (Endeavour); SRTMGL1's record names it STS-99. It is the same 2000 flight, so both carry the root srtm:sts-99:2000-02.",
+      "notes": "CMR names the platform OV-105 (Endeavour); SRTMGL1's record names it STS-99. It is the same 2000 flight, so both carry the root srtm:sts-99:2000-02. Fetched for the Puerto Rico AOI on 2026-11-24 through OpenTopography (receipt: evidence/dem_sources/nasadem_pr_2026-11-24/): int16, 1 arc-second on SRTM's sample lines; the GeoTIFF declares no vertical CRS, which does not contradict CMR's EGM96. Against SRTMGL1 over 9,887,061 land samples: median -2 m, standard deviation 1.754 m, 98.528% within 5 m, much tighter than COP30 or AW3D30, as the shared root predicts.",
       "source_id": "nasa_nasadem_hgt_v001",
       "name": "NASADEM Merged DEM Global 1 arc-second v001",
       "platform_class": "spaceborne",
@@ -190,7 +190,7 @@
         "OpenTopography (ESA PRISM, GLO-30 DGED 2023_1)"
       ],
       "platform_status": "verified",
-      "notes": "Fetched for the Puerto Rico AOI on 2026-11-23 through OpenTopography (receipt: evidence/dem_sources/cop30_pr_2026-11-23/): 9900 x 2520 samples at 1 arc-second, EPSG:4326, heights -8.8 to 1328.8 m. At the Cerro de Punta summit (GNIS 1609905) it reads 1328.29 m, against 1325 m in SRTMGL1 (EGM96).",
+      "notes": "Fetched for the Puerto Rico AOI on 2026-11-23 through OpenTopography (receipt: evidence/dem_sources/cop30_pr_2026-11-23/): 9900 x 2520 samples at 1 arc-second, EPSG:4326, heights -8.8 to 1328.8 m. At the Cerro de Punta summit (GNIS 1609905) it reads 1328.29 m, against 1325 m in SRTMGL1 (EGM96). Against SRTMGL1 over 9,887,061 land samples: median 1.132 m, standard deviation 4.854 m (evidence/dem_sources/spaceborne_pr_2026-11-24/comparison.json).",
       "source_id": "copernicus_glo30_dem",
       "name": "Copernicus GLO-30 Digital Elevation Model",
       "platform_class": "spaceborne",
@@ -242,7 +242,7 @@
         "OpenTopography"
       ],
       "platform_status": "verified",
-      "notes": "",
+      "notes": "Fetched for the Puerto Rico AOI on 2026-11-24 through OpenTopography (receipt: evidence/dem_sources/aw3d30_pr_2026-11-24/): int16, 1 arc-second, pixel-is-area, so its sample centres sit half an arc-second east and south of SRTM's; heights -104 to 1329 m. Against SRTMGL1 interpolated to its centres over 9,858,637 land samples: median 0.5 m, standard deviation 4.602 m (evidence/dem_sources/spaceborne_pr_2026-11-24/comparison.json).",
       "source_id": "jaxa_aw3d30",
       "name": "ALOS World 3D 30 m (AW3D30)",
       "platform_class": "spaceborne",
@@ -252,7 +252,7 @@
         "end": "2011-01-01"
       },
       "vertical_datum": "undeclared",
-      "vertical_datum_as_stated": "not stated in the metadata checked",
+      "vertical_datum_as_stated": "not stated in the metadata checked, nor in the fetched GeoTIFF (EPSG:4326, no vertical CRS)",
       "horizontal_datum": "WGS84",
       "native_resolution": "1 arc-second (about 30 m)",
       "acquisition_roots": [

@@ -31,6 +31,10 @@ GitHub Release using the matching section below (T6-53).
   recorded URL. COP30 was fetched for Puerto Rico on 2026-11-23 (receipt under
   `evidence/dem_sources/cop30_pr_2026-11-23/`): 1 arc-second, EPSG:4326, no
   vertical CRS declared, heights up to 1,328.8 m at the Cerro de Punta summit.
+  AW3D30 and NASADEM followed on 2026-11-24, and the four spaceborne DEMs were
+  compared over SRTM land samples (`evidence/dem_sources/spaceborne_pr_2026-11-24/`):
+  NASADEM differs from SRTMGL1 with a 1.754 m standard deviation, against
+  4.854 m for COP30 and 4.602 m for AW3D30, as their shared Shuttle root predicts.
 
 ### Changed
 - `tools/pr_dem_one_tile_pilot.py` refuses a tile whose native pixel is coarser

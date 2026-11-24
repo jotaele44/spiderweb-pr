@@ -69,20 +69,54 @@ were not stated in the metadata checked, so the catalog records them as
 The fetched COP30 GeoTIFF does not state one either: its CRS is EPSG:4326 with no
 vertical or compound CRS.
 
-## Observed fetch (2026-11-23)
+## Observed fetches
 
-COP30 for the Puerto Rico AOI (receipt: `evidence/dem_sources/cop30_pr_2026-11-23/`):
+All three were fetched for the Puerto Rico AOI through this adapter. Each recorded
+request reads `API_Key=REDACTED`, and the key appears in no receipt file. No sample
+in any file is nodata (NASADEM declares -32768 but never uses it), and no file
+declares a vertical CRS: all three are EPSG:4326 only.
 
-| Measure | Value |
-| --- | --- |
-| File | 43,254,754 bytes, sha256 `c94a3c7060d64a2f…` (full hash in the receipt) |
-| Grid | 9,900 x 2,520 samples at 1 arc-second, EPSG:4326, pixel-is-point, LZW cloud-optimized GeoTIFF |
-| Nodata | none declared; every sample has a value |
-| Heights | -8.8 m to 1,328.8 m; the maximum is at the Cerro de Punta summit |
-| Recorded request | `API_Key=REDACTED`; the key appears in no receipt file |
+| demtype | File | Grid | Heights |
+| --- | --- | --- | --- |
+| COP30 (2026-11-23) | 43,254,754 B, sha256 `c94a3c7060d64a2f…` | float32, 9,900 x 2,520 at 1 arc-second, pixel-is-point | -8.84 to 1,328.76 m |
+| AW3D30 (2026-11-24) | 11,115,033 B, sha256 `8372dac38f6b56e1…` | int16, 9,900 x 2,520 at 1 arc-second, pixel-is-area | -104 to 1329 m |
+| NASADEM (2026-11-24) | 10,951,851 B, sha256 `3f6c0ea5d10e839d…` | int16, 9,900 x 2,520 at 1 arc-second, pixel-is-area (tag), on SRTM sample lines | -47 to 1327 m |
 
-At the Cerro de Punta summit (GNIS 1609905, 18.172281, -66.5916862) the nearest
-COP30 sample reads 1,328.29 m and the nearest SRTMGL1 sample 1,325 m (EGM96).
-TheHub's CUDEM reader gives 1,322.7 m (PRVD02) at the same point. The sources use
-different or undeclared datums and different epochs, so these differences are not
-terrain change.
+Receipts: `evidence/dem_sources/cop30_pr_2026-11-23/`,
+`evidence/dem_sources/aw3d30_pr_2026-11-24/` and
+`evidence/dem_sources/nasadem_pr_2026-11-24/`.
+
+**Grid registration.** SRTMGL1, NASADEM and COP30 samples fall on whole
+arc-seconds. AW3D30 is pixel-is-area: its sample centres sit half an arc-second east
+and south of the others (about 21 m diagonally). Comparing AW3D30 sample for sample
+with SRTM by index would compare shifted points; the comparison below interpolates
+SRTM to AW3D30's own centres.
+
+## Four spaceborne sources compared (2026-11-24)
+
+Differences from SRTMGL1 over 9,887,061 SRTM land samples (SRTMGL1N
+above 10). Receipt: `evidence/dem_sources/spaceborne_pr_2026-11-24/comparison.json`.
+
+| Minus SRTMGL1 | Samples | Median | Mean | Std dev | MAD | 95th pct abs | Within 1 m | Within 5 m |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NASADEM | 9,887,061 | -2 m | -1.742 m | 1.754 m | 1 m | 4 m | 41.059% | 98.528% |
+| COP30 | 9,887,061 | 1.132 m | 1.523 m | 4.854 m | 2.824 m | 10.35 m | 19.805% | 73.054% |
+| AW3D30 | 9,858,637 | 0.5 m | 0.937 m | 4.602 m | 2.001 m | 9.5 m | 30.661% | 79.798% |
+
+NASADEM, reprocessed from the same 2000 Shuttle flight, agrees with SRTMGL1 about
+2.7 times more tightly than COP30 (TanDEM-X) or AW3D30 (ALOS PRISM). That is what the
+catalog's shared acquisition root predicts. NASADEM also sits about 2 m lower than
+SRTMGL1 on average.
+
+At the Cerro de Punta summit (GNIS 1609905, 18.172281, -66.5916862):
+
+| Source | Height | Vertical datum |
+| --- | --- | --- |
+| SRTMGL1 | 1325 m | EGM96 |
+| NASADEM | 1323 m | EGM96 (CMR) |
+| COP30 | 1328.29 m | undeclared |
+| AW3D30 | 1328 m | undeclared |
+
+TheHub's CUDEM reader gives 1,322.7 m (PRVD02) at the same point. The sources differ
+in vertical datum, epoch (2000, 2006-2011, 2011-2015) and surface (C-band and X-band
+radar, optical first surface), so these differences are not terrain change.

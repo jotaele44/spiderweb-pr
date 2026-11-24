@@ -210,6 +210,23 @@ single-platform product.
 | 201-224 | SRTM, value minus 200 swaths | srtm_measured |
 | anything else | not in the table | unmapped (counted, never guessed) |
 
+## Four spaceborne sources compared
+
+SRTMGL1, NASADEM, COP30 and AW3D30 were compared over 9,887,061 SRTM
+land samples on a common 1 arc-second grid (2026-11-24, receipt
+`evidence/dem_sources/spaceborne_pr_2026-11-24/comparison.json`). Standard deviation
+of the difference from SRTMGL1:
+
+| Source | Shares SRTM's root | Std dev | Within 5 m |
+| --- | --- | --- | --- |
+| NASADEM | yes (same 2000 flight) | 1.754 m | 98.528% |
+| COP30 | no (TanDEM-X, 2011-2015) | 4.854 m | 73.054% |
+| AW3D30 | no (ALOS PRISM, 2006-2011) | 4.602 m | 79.798% |
+
+The source that shares SRTM's root agrees with it about 2.7 times more tightly, as
+the independence rule assumes. Details, the grid-registration note for AW3D30 and
+the summit heights are in `docs/source_adapters/opentopography_globaldem.md`.
+
 ## Landsat terrain correction: a geolocation dependency
 
 Landsat Level-1 products are terrain-corrected with a DEM, so Landsat imagery
@@ -243,8 +260,8 @@ Landsat and SRTM dependent measurements.
   `sensor_type`. Adding members means regenerating the hashed access-point registries.
 - No EGM96 to PRVD02 or NAVD88 transformation is registered, so SRTM, NASADEM and
   the PRVD02 or NAVD88 products stay in separate layers.
-- The vertical datums of COP30 and AW3D30 were not stated in the metadata checked. The
-  COP30 GeoTIFF fetched on 2026-11-23 states none either (EPSG:4326, no vertical CRS).
+- The vertical datums of COP30 and AW3D30 were not stated in the metadata checked, and
+  neither fetched GeoTIFF states one (EPSG:4326, no vertical CRS).
 - The platform used to orthorectify Sentinel-2 L1C is not recorded.
 
 ## Related
