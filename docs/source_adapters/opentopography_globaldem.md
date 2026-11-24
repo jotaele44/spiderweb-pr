@@ -63,11 +63,19 @@ and code are tracked.
 
 ## Datums
 
-SRTMGL1 and NASADEM heights are on EGM96. The vertical datums of COP30 and AW3D30
-were not stated in the metadata checked, so the catalog records them as
-`undeclared`, and the merge policy holds any selection that includes them for review.
-The fetched COP30 GeoTIFF does not state one either: its CRS is EPSG:4326 with no
-vertical or compound CRS.
+| demtype | Vertical datum | Basis |
+| --- | --- | --- |
+| `SRTMGL1` | EGM96 (EPSG 5773) | NASA CMR; OpenTopography catalogue |
+| `NASADEM` | EGM96 (EPSG 5773) | NASA CMR; OpenTopography catalogue |
+| `COP30` | EGM2008 (EPSG 3855) | ESA Copernicus DEM Product Handbook issue 5.0, page 13; OpenTopography catalogue |
+| `AW3D30` | EGM96 (EPSG 5773) | OpenTopography catalogue and its AW3D30_E description; JAXA's product description could not be retrieved (HTTP 404) |
+
+OpenTopography gives the datum in each dataset's structured `spatialCoverage` fields
+("Vertical Coordinates", "EPSG (Vertical)"), not in the description text. None of the
+fetched GeoTIFFs states a vertical CRS (all are EPSG:4326 only), and neither does ESA's
+own COP30 tile. Over Puerto Rico, EGM2008 and EGM96 differ by -0.95 to +1.09 m. Details
+and sources: `docs/sources/dem_sources_by_platform.md` and
+`evidence/dem_sources/vertical_datums_2026-11-24/datum_check.json`.
 
 ## Observed fetches
 
@@ -114,9 +122,12 @@ At the Cerro de Punta summit (GNIS 1609905, 18.172281, -66.5916862):
 | --- | --- | --- |
 | SRTMGL1 | 1325 m | EGM96 |
 | NASADEM | 1323 m | EGM96 (CMR) |
-| COP30 | 1328.29 m | undeclared |
-| AW3D30 | 1328 m | undeclared |
+| COP30 | 1328.29 m (1329.05 m on EGM96) | EGM2008 |
+| AW3D30 | 1328 m | EGM96 |
 
-TheHub's CUDEM reader gives 1,322.7 m (PRVD02) at the same point. The sources differ
-in vertical datum, epoch (2000, 2006-2011, 2011-2015) and surface (C-band and X-band
-radar, optical first surface), so these differences are not terrain change.
+TheHub's CUDEM reader gives 1,322.7 m (PRVD02) at the same point. Here EGM2008 sits
+0.76 m above EGM96, so COP30 reads 1,329.05 m on SRTM's datum. The sources still differ
+in epoch (2000, 2006-2011, 2011-2015) and surface (C-band and X-band radar, optical
+first surface), so these differences are not terrain change. The comparison table
+above uses the heights as published; putting COP30 on EGM96 moves its median from
+1.14 m to 1.38 m and leaves its spread unchanged.

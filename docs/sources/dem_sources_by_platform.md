@@ -19,7 +19,7 @@ python -m source_adapters.dem_platform.cli check --sources nasa_srtmgl1_v003,usg
 | Platform | Surface it measures | Typical datum here | Example |
 |---|---|---|---|
 | Spaceborne radar interferometry | A radar scattering surface between canopy top and ground | EGM96 | SRTM (February 2000) |
-| Spaceborne optical stereo | The first visible surface: canopy and roofs | not stated | AW3D30 (2006-2011) |
+| Spaceborne optical stereo | The first visible surface: canopy and roofs | EGM96 | AW3D30 (2006-2011) |
 | Airborne lidar | Bare earth (classified DEM) or every return (point cloud) | NAVD88 | 3DEP 1 m (2018, 2024) |
 | Shipborne multibeam sonar | Seafloor depth | MLLW | NOS BAG W00247 |
 | Compiled | Whatever the constituents measured | PRVD02, MHW, MSL | NCEI CUDEM, GEBCO |
@@ -65,8 +65,8 @@ a source; otherwise the entry would be `unverified`, which fails closed.
 
 | Source | Name | Platform | Instrument (technique) | Surface | Vertical datum | Basis |
 |---|---|---|---|---|---|---|
-| `copernicus_glo30_dem` | Copernicus GLO-30 Digital Elevation Model | TanDEM-X | X-band SAR (Radar Interferometry) | radar scattering surface | undeclared | T1 |
-| `jaxa_aw3d30` | ALOS World 3D 30 m (AW3D30) | ALOS | PRISM (Optical Stereo Photogrammetry) | first surface | undeclared | T1 |
+| `copernicus_glo30_dem` | Copernicus GLO-30 Digital Elevation Model | TanDEM-X | X-band SAR (Radar Interferometry) | radar scattering surface | EGM2008 | T1 |
+| `jaxa_aw3d30` | ALOS World 3D 30 m (AW3D30) | ALOS | PRISM (Optical Stereo Photogrammetry) | first surface | EGM96 | T1 |
 | `nasa_nasadem_hgt_v001` | NASADEM Merged DEM Global 1 arc-second v001 | OV-105 | SRTM (Radar Interferometry) | radar scattering surface | EGM96 | T1 |
 | `nasa_srtmgl1_v003` | NASA SRTM Global 1 arc-second v003 (SRTMGL1) | STS-99 | SRTM (Radar Interferometry) | radar scattering surface | EGM96 | T1 |
 
@@ -157,7 +157,9 @@ checks that each observation still holds; when one is fixed, mark the conflict
 - **Several sources.** Pass only when they share one platform class, one surface
   model and one declared vertical datum, and none is compiled. Anything else gives
   `separate_layers_until_harmonization` with `review_required`.
-- **Undeclared datum.** `undeclared` always needs review (COP30, AW3D30, the 2004 USACE lidar).
+- **Undeclared datum.** `undeclared` always needs review (for example the 2004 USACE lidar,
+  whose datum is "User Specified"). COP30 (EGM2008) and AW3D30 (EGM96) now have cited
+  datums; see [Vertical datums of COP30 and AW3D30](#vertical-datums-of-cop30-and-aw3d30).
 
 `shared_acquisition_roots()` decides whether two sources can corroborate each
 other. Roots are canonical ids, not platform names: NASA's CMR records name the
@@ -227,6 +229,26 @@ The source that shares SRTM's root agrees with it about 2.7 times more tightly, 
 the independence rule assumes. Details, the grid-registration note for AW3D30 and
 the summit heights are in `docs/source_adapters/opentopography_globaldem.md`.
 
+### Vertical datums of COP30 and AW3D30
+
+Checked on 2026-11-24 (receipt `evidence/dem_sources/vertical_datums_2026-11-24/datum_check.json`).
+No file states a vertical CRS, including ESA's own tile on its public bucket, so the
+datums rest on documentation:
+
+| Source | Datum | Basis (T1) |
+| --- | --- | --- |
+| COP30 | EGM2008 (EPSG 3855) | ESA Copernicus DEM Product Handbook, issue 5.0, page 13: "The vertical reference datum is the Earth Gravitational Model 2008 (EGM2008; EPSG 3855)." OpenTopography's catalogue gives the same. |
+| AW3D30 | EGM96 (EPSG 5773) | OpenTopography's catalogue ("WGS84 Ellipsoid/EGM1996 Geoid", EPSG 5773) and its ellipsoidal AW3D30_E, "converted ... using the EGM96 geoid model". JAXA's product description returned HTTP 404 from this network, so the producer's own wording is not quoted. |
+
+The same catalogue gives NASADEM and SRTMGL1 as EGM96, matching NASA CMR.
+
+Over Puerto Rico's land samples the two geoids differ by -0.95 to +1.09 m (mean
++0.31 m; NGA grids through PROJ). Putting COP30 on EGM96 moves the median COP30 minus
+SRTMGL1 difference from 1.14 m to 1.38 m and leaves the 4.84 m spread unchanged. So
+the datum does not explain why COP30 stands higher than SRTM; surface, epoch and
+processing differences do. COP30 with SRTM is still held for review, now only for
+"mixed vertical datums: EGM2008, EGM96".
+
 ## Landsat terrain correction: a geolocation dependency
 
 Landsat Level-1 products are terrain-corrected with a DEM, so Landsat imagery
@@ -260,8 +282,9 @@ Landsat and SRTM dependent measurements.
   `sensor_type`. Adding members means regenerating the hashed access-point registries.
 - No EGM96 to PRVD02 or NAVD88 transformation is registered, so SRTM, NASADEM and
   the PRVD02 or NAVD88 products stay in separate layers.
-- The vertical datums of COP30 and AW3D30 were not stated in the metadata checked, and
-  neither fetched GeoTIFF states one (EPSG:4326, no vertical CRS).
+- No EGM2008 to EGM96 conversion is applied in the catalog's merge policy, so COP30
+  stays a separate layer from SRTM, NASADEM and AW3D30.
+- AW3D30's datum is cited from its distributor, not yet from JAXA's own document.
 - The platform used to orthorectify Sentinel-2 L1C is not recorded.
 
 ## Related

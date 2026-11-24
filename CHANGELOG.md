@@ -35,6 +35,10 @@ GitHub Release using the matching section below (T6-53).
   compared over SRTM land samples (`evidence/dem_sources/spaceborne_pr_2026-11-24/`):
   NASADEM differs from SRTMGL1 with a 1.754 m standard deviation, against
   4.854 m for COP30 and 4.602 m for AW3D30, as their shared Shuttle root predicts.
+  COP30's vertical datum is now recorded as EGM2008 (ESA Copernicus DEM Product
+  Handbook) and AW3D30's as EGM96 (OpenTopography distributor metadata; JAXA's
+  document returned HTTP 404). Over Puerto Rico the two geoids differ by -0.95 to
+  +1.09 m; receipt `evidence/dem_sources/vertical_datums_2026-11-24/`.
 
 ### Changed
 - `tools/pr_dem_one_tile_pilot.py` refuses a tile whose native pixel is coarser

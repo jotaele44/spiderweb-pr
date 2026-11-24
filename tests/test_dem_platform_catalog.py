@@ -138,3 +138,32 @@ def test_doc_lists_every_product_and_conflict(catalog: dict) -> None:
         assert f"`{product['source_id']}`" in text, product["source_id"]
     for conflict in catalog["registry_conflicts"]:
         assert f"`{conflict['conflict_id']}`" in text, conflict["conflict_id"]
+
+
+def test_cop30_and_aw3d30_datums_are_cited(catalog: dict) -> None:
+    products = products_by_id(catalog)
+    receipt_path = REPO_ROOT / "evidence" / "dem_sources" / "vertical_datums_2026-11-24" / "datum_check.json"
+    receipt = json.loads(receipt_path.read_text())
+    for sid, datum, epsg in (("copernicus_glo30_dem", "EGM2008", "3855"), ("jaxa_aw3d30", "EGM96", "5773")):
+        product = products[sid]
+        basis = product["vertical_datum_basis"]
+        assert product["vertical_datum"] == datum
+        assert basis["evidence_tier"] == "T1"
+        assert (REPO_ROOT / basis["receipt"]) == receipt_path
+        assert any(epsg in s["statement"] for s in basis["sources"]), sid
+    assert any("ESA" in s["source"] for s in products["copernicus_glo30_dem"]["vertical_datum_basis"]["sources"])
+    assert products["jaxa_aw3d30"]["vertical_datum_basis"]["not_retrieved"]
+    assert receipt["findings"]["COP30"]["vertical_datum"] == "EGM2008"
+    assert receipt["findings"]["AW3D30"]["vertical_datum"] == "EGM96"
+
+
+def test_geoid_offset_receipt_is_consistent() -> None:
+    receipt = json.loads((REPO_ROOT / "evidence" / "dem_sources" / "vertical_datums_2026-11-24" / "datum_check.json").read_text())
+    geo = receipt["geoid_offset"]
+    dn = geo["geoid_difference_N_egm2008_minus_N_egm96_m"]
+    assert dn["min"] <= dn["mean"] <= dn["max"] and abs(dn["max"]) < 2 and abs(dn["min"]) < 2
+    assert "EGM2008 height (1)" in geo["transformation"] and "EGM96 height (1)" in geo["transformation"]
+    before, after = geo["cop30_minus_srtmgl1_as_published"], geo["cop30_on_egm96_minus_srtmgl1"]
+    # A geoid shift moves the offset, not the spread.
+    assert after["std_m"] == pytest.approx(before["std_m"], abs=0.05)
+    assert after["median_m"] > before["median_m"]

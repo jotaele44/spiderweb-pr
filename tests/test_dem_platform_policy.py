@@ -59,9 +59,22 @@ def test_compiled_products_are_never_merged_as_independent(products: dict) -> No
 
 
 def test_undeclared_datum_fails_closed(products: dict) -> None:
-    result = evaluate_platform_mix([products["copernicus_glo30_dem"]])
+    # The 2004 USACE lidar states "User Specified"; its datum is not known.
+    result = evaluate_platform_mix([products["usace_lidar_2004_pr"]])
     assert result.review_status == "review_required"
     assert any("vertical datum undeclared" in r for r in result.reasons)
+
+
+def test_cop30_and_srtm_differ_only_by_geoid(products: dict) -> None:
+    # Both are spaceborne radar surfaces; only the geoid differs (EGM2008 vs EGM96).
+    result = evaluate_platform_mix([products["copernicus_glo30_dem"], products["nasa_srtmgl1_v003"]])
+    assert result.review_status == "review_required"
+    assert result.reasons == ("mixed vertical datums: EGM2008, EGM96",)
+
+
+def test_aw3d30_alone_passes_now_its_datum_is_known(products: dict) -> None:
+    result = evaluate_platform_mix([products["jaxa_aw3d30"]])
+    assert (result.merge_policy, result.review_status) == ("single_source", "pass")
 
 
 def test_unverified_platform_fails_closed(products: dict) -> None:

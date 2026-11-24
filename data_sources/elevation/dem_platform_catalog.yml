@@ -24,7 +24,7 @@
       "control": "Data used to adjust or calibrate heights.",
       "geolocation": "Data used only to place pixels (terrain correction)."
     },
-    "vertical_datum": "Normalised labels: EGM96, PRVD02, NAVD88, MHW, MLLW, MSL (assumed), undeclared. vertical_datum_as_stated keeps the source's own words."
+    "vertical_datum": "Normalised labels: EGM96, EGM2008, PRVD02, NAVD88, MHW, MLLW, MSL (assumed), undeclared. vertical_datum_as_stated keeps the source's own words; vertical_datum_basis, where present, cites them."
   },
   "products": [
     {
@@ -199,8 +199,8 @@
         "start": "2011-01-01",
         "end": "2015-07-01"
       },
-      "vertical_datum": "undeclared",
-      "vertical_datum_as_stated": "not stated in the metadata checked, nor in the fetched GeoTIFF (EPSG:4326, no vertical CRS)",
+      "vertical_datum": "EGM2008",
+      "vertical_datum_as_stated": "EGM2008 (EPSG 3855), per ESA's Copernicus DEM Product Handbook and OpenTopography; the GeoTIFF itself declares no vertical CRS",
       "horizontal_datum": "WGS84",
       "native_resolution": "1 arc-second (about 30 m)",
       "acquisition_roots": [
@@ -220,6 +220,23 @@
         "evidence_tier": "T1",
         "source": "OpenTopography catalogue OTSDEM.032021.4326.3 (doi:10.5069/G9028PQB): DSM derived from WorldDEM, based on TanDEM-X radar data",
         "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "ESA Copernicus DEM Product Handbook GEO1988-CopernicusDEM-SPE-002 issue 5.0",
+            "location": "page 13",
+            "statement": "The vertical reference datum is the Earth Gravitational Model 2008 (EGM2008; EPSG 3855)."
+          },
+          {
+            "source": "OpenTopography otCatalog COP30 (OTSDEM.032021.4326.3)",
+            "location": "spatialCoverage: Vertical Coordinates, EPSG (Vertical)",
+            "statement": "WGS84 Ellipsoid/EGM2008 Geoid; 3855"
+          }
+        ],
+        "receipt": "evidence/dem_sources/vertical_datums_2026-11-24/datum_check.json",
+        "checked": "2026-11-24"
       }
     },
     {
@@ -251,8 +268,8 @@
         "start": "2006-01-01",
         "end": "2011-01-01"
       },
-      "vertical_datum": "undeclared",
-      "vertical_datum_as_stated": "not stated in the metadata checked, nor in the fetched GeoTIFF (EPSG:4326, no vertical CRS)",
+      "vertical_datum": "EGM96",
+      "vertical_datum_as_stated": "EGM96 (EPSG 5773), per OpenTopography's distributor metadata; JAXA's product description could not be retrieved; the GeoTIFF declares no vertical CRS",
       "horizontal_datum": "WGS84",
       "native_resolution": "1 arc-second (about 30 m)",
       "acquisition_roots": [
@@ -272,6 +289,26 @@
         "evidence_tier": "T1",
         "source": "OpenTopography catalogue OTALOS.112016.4326.2 (doi:10.5069/G94M92HB): DSM from ALOS PRISM, 2006-2011",
         "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "OpenTopography otCatalog AW3D30 (OTALOS.112016.4326.2)",
+            "location": "spatialCoverage: Vertical Coordinates, EPSG (Vertical)",
+            "statement": "WGS84 Ellipsoid/EGM1996 Geoid; 5773"
+          },
+          {
+            "source": "OpenTopography otCatalog AW3D30_E (OTALOS.082017.4326.1)",
+            "location": "description",
+            "statement": "This dataset was converted from the orthometric version using the EGM96 geoid model"
+          }
+        ],
+        "not_retrieved": [
+          "JAXA EORC AW3D30 product description (v4.1 and earlier): HTTP 404 on 2026-11-24"
+        ],
+        "receipt": "evidence/dem_sources/vertical_datums_2026-11-24/datum_check.json",
+        "checked": "2026-11-24"
       }
     },
     {
