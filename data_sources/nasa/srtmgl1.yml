@@ -1,0 +1,396 @@
+{
+  "manifest_version": "1.0.0",
+  "source_family": "NASA_LPDAAC_SRTMGL1",
+  "active_vector": "DEM_SOURCES_BY_ACQUISITION_PLATFORM",
+  "evidence_tier": "T1",
+  "repo_policy": {
+    "commit_policy": "source_manifest_and_code_only",
+    "do_not_commit": [
+      "*.hgt",
+      "*.hgt.zip",
+      "*.num",
+      "*.num.zip",
+      "*.tif",
+      "*.tiff",
+      "cache/",
+      "outputs/",
+      "downloads/"
+    ],
+    "allowed_outputs": [
+      "provenance and composition reports under ignored outputs/ or the cache directory at runtime",
+      "source manifests",
+      "schemas",
+      "tests"
+    ]
+  },
+  "source_snapshots": [
+    {
+      "title": "srtm30m_bounding_boxes.json",
+      "source_type": "operator_upload_geojson",
+      "evidence_tier": "T1",
+      "role": "granule_footprint_snapshot",
+      "feature_count": 14295,
+      "sha256": "cd60ad7148738aac240996d1a630c8508b112cbf8d755d1b37665958703ff504",
+      "notes": "Earthdata Search export of SRTMGL1 v003 granule footprints; its only property is dataFile. Not committed. Compared with CMR on 2026-11-23: CMR lists 14,297 granules and the snapshot lacks S29W055 and S56W072, both outside the Puerto Rico AOI. The six AOI footprints match CMR to 1e-8 degrees."
+    },
+    {
+      "title": "CMR collection C2763266360-LPCLOUD (UMM-C) and its granules (UMM-G)",
+      "source_type": "nasa_cmr_metadata",
+      "evidence_tier": "T1",
+      "role": "collection_and_granule_metadata",
+      "url": "https://cmr.earthdata.nasa.gov/search/collections.umm_json?concept_id=C2763266360-LPCLOUD",
+      "checked": "2026-11-23"
+    },
+    {
+      "title": "The Shuttle Radar Topography Mission (SRTM) Collection User Guide, revised October 2015",
+      "source_type": "provider_document",
+      "evidence_tier": "T1",
+      "role": "file_format_and_num_code_reference",
+      "url": "https://lpdaac.usgs.gov/documents/179/SRTM_User_Guide_V3.pdf",
+      "checked": "2026-11-23"
+    }
+  ],
+  "collection": {
+    "short_name": "SRTMGL1",
+    "version": "003",
+    "concept_id": "C2763266360-LPCLOUD",
+    "doi": "10.5067/MEASURES/SRTM/SRTMGL1.003",
+    "platform": {
+      "short_name": "STS-99",
+      "long_name": "Space Transport System STS-99",
+      "gcmd_type": "Space Stations/Crewed Spacecraft"
+    },
+    "instrument": {
+      "short_name": "SRTM",
+      "long_name": "Shuttle Radar Topography Mission",
+      "composed_of": "SRTM C-BAND RADAR",
+      "technique": "Radar Interferometry"
+    },
+    "acquisition_window": {
+      "start": "2000-02-11T00:00:00Z",
+      "end": "2000-02-21T23:59:59Z"
+    },
+    "granule_count_live": 14297,
+    "void_fill": "Version 3 fills SRTM voids primarily from ASTER GDEM2 and secondarily from GMTED2010, or NED for the United States (User Guide V3). The source of each pixel is recorded in SRTMGL1N.",
+    "num_companion": {
+      "short_name": "SRTMGL1N",
+      "version": "003",
+      "concept_id": "C2763266368-LPCLOUD",
+      "doi": "10.5067/MEaSUREs/SRTM/SRTMGL1N.003"
+    }
+  },
+  "aoi": {
+    "aoi_id": "puerto_rico_with_offshore_islands",
+    "bbox_wsen": [
+      -67.95,
+      17.85,
+      -65.2,
+      18.55
+    ],
+    "notes": "Main island plus Mona, Desecheo, Vieques and Culebra. Tiles are selected on their true grid extent, not the CMR footprint, which is padded by one arc-second on each side."
+  },
+  "catalog_coverage": {
+    "expected_universe_definition": "SRTMGL1 v003 granules whose grid extent intersects the Puerto Rico AOI.",
+    "snapshot_rows_reviewed": 14295,
+    "live_catalog_rows": 14297,
+    "missing_from_snapshot": [
+      "S29W055",
+      "S56W072"
+    ],
+    "pr_relevant_rows_located": 6,
+    "located_dataset_keys": [
+      "srtmgl1_v003_pr"
+    ],
+    "located_tile_ids": [
+      "N17W066",
+      "N17W067",
+      "N17W068",
+      "N18W066",
+      "N18W067",
+      "N18W068"
+    ],
+    "coverage_status": "checked_2026-11-23: all 6 AOI tiles are in both the uploaded snapshot and live CMR",
+    "coverage_percent_against_uploaded_snapshot": 100,
+    "coverage_percent_against_live_cmr": 100
+  },
+  "datasets": [
+    {
+      "dataset_key": "srtmgl1_v003_pr",
+      "name": "NASA SRTM Global 1 arc-second v003, Puerto Rico tiles",
+      "year": 2000,
+      "status_in_snapshot": "present_6_of_6_aoi_tiles",
+      "primary": false,
+      "role": "spaceborne_insar_reference_epoch_2000",
+      "vertical_datum": "EGM96 geoid (WGS84/EGM96)",
+      "horizontal_datum": "WGS84",
+      "horizontal_crs_epsg": 4326,
+      "spatial_resolution": "1 arc-second",
+      "resolution_meters_approx": {
+        "north_south": 30.75,
+        "east_west": 29.38,
+        "at_latitude": 18.25
+      },
+      "surface_model": "radar_scattering_surface",
+      "format": "SRTM HGT in ZIP; 3601 x 3601 big-endian int16 metres; edge rows and columns are shared with the neighbouring tile",
+      "access_method": "NASA Earthdata Cloud (LP DAAC) HTTPS with an Earthdata Login bearer token",
+      "grid_shape": {
+        "lat": 3601,
+        "lon": 3601
+      },
+      "bounds_wgs84": {
+        "min_lat": 16.999861111,
+        "max_lat": 19.000138889,
+        "min_lon": -68.000138889,
+        "max_lon": -64.999861111
+      },
+      "bounds_note": "Union of the six tiles' true grid extents (whole degrees plus or minus half an arc-second).",
+      "tiles": [
+        {
+          "tile_id": "N17W066",
+          "granule_ur": "N17W066.SRTMGL1.hgt",
+          "granule_concept_id": "G2821071689-LPCLOUD",
+          "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N17W066.SRTMGL1.hgt/N17W066.SRTMGL1.hgt.zip",
+          "s3_url": "s3://lp-prod-protected/SRTMGL1.003/N17W066.SRTMGL1.hgt/N17W066.SRTMGL1.hgt.zip",
+          "size_mb": 0.0654774,
+          "production_datetime": "2014-11-18T17:03:44.000Z",
+          "cmr_footprint_wsen": [
+            -66.00027778,
+            16.99972222,
+            -64.99972222,
+            18.00027778
+          ],
+          "grid_extent_wsen": [
+            -66.000138889,
+            16.999861111,
+            -64.999861111,
+            18.000138889
+          ],
+          "snapshot_footprint_matches_cmr": true,
+          "num": {
+            "granule_ur": "N17W066.SRTMGL1N.num",
+            "granule_concept_id": "G2822588973-LPCLOUD",
+            "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N17W066.SRTMGL1N.num/N17W066.SRTMGL1N.num.zip",
+            "s3_url": "s3://lp-prod-protected/SRTMGL1N.003/N17W066.SRTMGL1N.num/N17W066.SRTMGL1N.num.zip",
+            "size_mb": 0.0142393,
+            "production_datetime": "2014-11-18T16:48:03.000Z"
+          }
+        },
+        {
+          "tile_id": "N17W067",
+          "granule_ur": "N17W067.SRTMGL1.hgt",
+          "granule_concept_id": "G2821072426-LPCLOUD",
+          "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N17W067.SRTMGL1.hgt/N17W067.SRTMGL1.hgt.zip",
+          "s3_url": "s3://lp-prod-protected/SRTMGL1.003/N17W067.SRTMGL1.hgt/N17W067.SRTMGL1.hgt.zip",
+          "size_mb": 0.35449,
+          "production_datetime": "2014-11-18T17:03:44.000Z",
+          "cmr_footprint_wsen": [
+            -67.00027778,
+            16.99972222,
+            -65.99972222,
+            18.00027778
+          ],
+          "grid_extent_wsen": [
+            -67.000138889,
+            16.999861111,
+            -65.999861111,
+            18.000138889
+          ],
+          "snapshot_footprint_matches_cmr": true,
+          "num": {
+            "granule_ur": "N17W067.SRTMGL1N.num",
+            "granule_concept_id": "G2822606506-LPCLOUD",
+            "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N17W067.SRTMGL1N.num/N17W067.SRTMGL1N.num.zip",
+            "s3_url": "s3://lp-prod-protected/SRTMGL1N.003/N17W067.SRTMGL1N.num/N17W067.SRTMGL1N.num.zip",
+            "size_mb": 0.0296555,
+            "production_datetime": "2014-11-18T16:48:03.000Z"
+          }
+        },
+        {
+          "tile_id": "N17W068",
+          "granule_ur": "N17W068.SRTMGL1.hgt",
+          "granule_concept_id": "G2821073699-LPCLOUD",
+          "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N17W068.SRTMGL1.hgt/N17W068.SRTMGL1.hgt.zip",
+          "s3_url": "s3://lp-prod-protected/SRTMGL1.003/N17W068.SRTMGL1.hgt/N17W068.SRTMGL1.hgt.zip",
+          "size_mb": 0.117626,
+          "production_datetime": "2014-11-18T17:03:44.000Z",
+          "cmr_footprint_wsen": [
+            -68.00027778,
+            16.99972222,
+            -66.99972222,
+            18.00027778
+          ],
+          "grid_extent_wsen": [
+            -68.000138889,
+            16.999861111,
+            -66.999861111,
+            18.000138889
+          ],
+          "snapshot_footprint_matches_cmr": true,
+          "num": {
+            "granule_ur": "N17W068.SRTMGL1N.num",
+            "granule_concept_id": "G2822618230-LPCLOUD",
+            "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N17W068.SRTMGL1N.num/N17W068.SRTMGL1N.num.zip",
+            "s3_url": "s3://lp-prod-protected/SRTMGL1N.003/N17W068.SRTMGL1N.num/N17W068.SRTMGL1N.num.zip",
+            "size_mb": 0.0241489,
+            "production_datetime": "2014-11-18T16:48:03.000Z"
+          }
+        },
+        {
+          "tile_id": "N18W066",
+          "granule_ur": "N18W066.SRTMGL1.hgt",
+          "granule_concept_id": "G2821071885-LPCLOUD",
+          "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N18W066.SRTMGL1.hgt/N18W066.SRTMGL1.hgt.zip",
+          "s3_url": "s3://lp-prod-protected/SRTMGL1.003/N18W066.SRTMGL1.hgt/N18W066.SRTMGL1.hgt.zip",
+          "size_mb": 1.73254,
+          "production_datetime": "2014-11-18T17:03:46.000Z",
+          "cmr_footprint_wsen": [
+            -66.00027778,
+            17.99972222,
+            -64.99972222,
+            19.00027778
+          ],
+          "grid_extent_wsen": [
+            -66.000138889,
+            17.999861111,
+            -64.999861111,
+            19.000138889
+          ],
+          "snapshot_footprint_matches_cmr": true,
+          "num": {
+            "granule_ur": "N18W066.SRTMGL1N.num",
+            "granule_concept_id": "G2822589022-LPCLOUD",
+            "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N18W066.SRTMGL1N.num/N18W066.SRTMGL1N.num.zip",
+            "s3_url": "s3://lp-prod-protected/SRTMGL1N.003/N18W066.SRTMGL1N.num/N18W066.SRTMGL1N.num.zip",
+            "size_mb": 0.047102,
+            "production_datetime": "2014-11-18T16:48:04.000Z"
+          }
+        },
+        {
+          "tile_id": "N18W067",
+          "granule_ur": "N18W067.SRTMGL1.hgt",
+          "granule_concept_id": "G2821072348-LPCLOUD",
+          "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N18W067.SRTMGL1.hgt/N18W067.SRTMGL1.hgt.zip",
+          "s3_url": "s3://lp-prod-protected/SRTMGL1.003/N18W067.SRTMGL1.hgt/N18W067.SRTMGL1.hgt.zip",
+          "size_mb": 6.04628,
+          "production_datetime": "2014-11-18T17:03:46.000Z",
+          "cmr_footprint_wsen": [
+            -67.00027778,
+            17.99972222,
+            -65.99972222,
+            19.00027778
+          ],
+          "grid_extent_wsen": [
+            -67.000138889,
+            17.999861111,
+            -65.999861111,
+            19.000138889
+          ],
+          "snapshot_footprint_matches_cmr": true,
+          "num": {
+            "granule_ur": "N18W067.SRTMGL1N.num",
+            "granule_concept_id": "G2822601117-LPCLOUD",
+            "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N18W067.SRTMGL1N.num/N18W067.SRTMGL1N.num.zip",
+            "s3_url": "s3://lp-prod-protected/SRTMGL1N.003/N18W067.SRTMGL1N.num/N18W067.SRTMGL1N.num.zip",
+            "size_mb": 0.11797,
+            "production_datetime": "2014-11-18T16:48:04.000Z"
+          }
+        },
+        {
+          "tile_id": "N18W068",
+          "granule_ur": "N18W068.SRTMGL1.hgt",
+          "granule_concept_id": "G2821073330-LPCLOUD",
+          "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N18W068.SRTMGL1.hgt/N18W068.SRTMGL1.hgt.zip",
+          "s3_url": "s3://lp-prod-protected/SRTMGL1.003/N18W068.SRTMGL1.hgt/N18W068.SRTMGL1.hgt.zip",
+          "size_mb": 1.27497,
+          "production_datetime": "2014-11-18T17:03:46.000Z",
+          "cmr_footprint_wsen": [
+            -68.00027778,
+            17.99972222,
+            -66.99972222,
+            19.00027778
+          ],
+          "grid_extent_wsen": [
+            -68.000138889,
+            17.999861111,
+            -66.999861111,
+            19.000138889
+          ],
+          "snapshot_footprint_matches_cmr": true,
+          "num": {
+            "granule_ur": "N18W068.SRTMGL1N.num",
+            "granule_concept_id": "G2822620899-LPCLOUD",
+            "https_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N18W068.SRTMGL1N.num/N18W068.SRTMGL1N.num.zip",
+            "s3_url": "s3://lp-prod-protected/SRTMGL1N.003/N18W068.SRTMGL1N.num/N18W068.SRTMGL1N.num.zip",
+            "size_mb": 0.0379295,
+            "production_datetime": "2014-11-18T16:48:04.000Z"
+          }
+        }
+      ],
+      "allowed_inference": [
+        "terrain_context_epoch_2000",
+        "cross_platform_comparison_after_datum_harmonization"
+      ],
+      "disallowed_inference_without_additional_evidence": [
+        "bare_earth_claims_under_canopy",
+        "sub_30m_feature_detection",
+        "subsurface_access",
+        "covert_infrastructure",
+        "UAP_or_USO_claim_confirmation"
+      ],
+      "validation": {
+        "metadata_status": "registered_from_cmr_2026-11-23",
+        "live_catalog_checked": "2026-11-23",
+        "raster_minmax_status": "observed_2026-11-23",
+        "num_composition_status": "observed_2026-11-23",
+        "promotion_status": "source_metadata_registered",
+        "receipt": "evidence/dem_sources/srtmgl1_pr_2026-11-23"
+      },
+      "observed_composition": {
+        "basis": "SRTMGL1N v003 NUM values for the six tiles, classified by SRTM User Guide V3 Table 2 (T1, observed 2026-11-23)",
+        "land_samples": 9906422,
+        "land_category_counts": {
+          "srtm_measured": 9904326,
+          "srtm_interpolated": 398,
+          "aster_gdem2": 1668,
+          "ned": 1,
+          "gmted2010": 0,
+          "cded": 0,
+          "nga_undisclosed": 29
+        },
+        "land_share_percent": {
+          "srtm_measured": 99.9788,
+          "srtm_interpolated": 0.004,
+          "aster_gdem2": 0.0168,
+          "ned": 0.0,
+          "gmted2010": 0.0,
+          "cded": 0.0,
+          "nga_undisclosed": 0.0003
+        },
+        "void_samples": 0,
+        "max_height_m": 1328,
+        "notes": "Edge rows and columns shared between neighbouring tiles are counted once per tile, as published."
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "gap_id": "SRTMGL1_GAP_001",
+      "description": "The share of each tile measured by SRTM radar, rather than filled from ASTER, NED or GMTED, is unknown until the SRTMGL1N files are read.",
+      "closure_action": "Fetch the six NUM files and run `python -m source_adapters.nasa_srtmgl1.cli composition`.",
+      "status": "closed_2026-11-23",
+      "closure_note": "Measured: 99.9788% of land samples are SRTM radar measurements; ASTER GDEM2 fill 0.0168%, NED fill 1 sample(s). Receipt: evidence/dem_sources/srtmgl1_pr_2026-11-23."
+    },
+    {
+      "gap_id": "SRTMGL1_GAP_002",
+      "description": "Heights are on the EGM96 geoid. No EGM96 to PRVD02 or NAVD88 transformation is registered, so SRTM is never merged with Puerto Rico datum products.",
+      "closure_action": "Register a vertical transformation with provenance before any cross-datum merge."
+    },
+    {
+      "gap_id": "SRTMGL1_GAP_003",
+      "description": "LP DAAC serves the tiles only to Earthdata Login users.",
+      "closure_action": "Provide an Earthdata Login bearer token, either as a network secret for data.lpdaac.earthdatacloud.nasa.gov or in EARTHDATA_TOKEN.",
+      "status": "closed_2026-11-23",
+      "closure_note": "An Earthdata Login bearer token is saved as a network secret for data.lpdaac.earthdatacloud.nasa.gov; all twelve files were fetched through the adapter."
+    }
+  ]
+}

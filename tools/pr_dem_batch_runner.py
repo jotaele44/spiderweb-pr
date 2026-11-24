@@ -174,6 +174,8 @@ def run_one_tile(repo_root: Path, tile_path: Path, output_dir: Path, args: argpa
         cmd.append("--no-reproject")
     if args.assume_source_crs:
         cmd += ["--assume-source-crs", str(args.assume_source_crs)]
+    if getattr(args, "allow_coarse_source", False):
+        cmd.append("--allow-coarse-source")
     proc = subprocess.run(cmd, text=True)
     return int(proc.returncode)
 
@@ -289,6 +291,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--assume-source-crs",
         default=None,
         help="Forwarded to the pilot: CRS to assume when a tile has no embedded CRS.",
+    )
+    p.add_argument(
+        "--allow-coarse-source",
+        action="store_true",
+        help="Forwarded to the pilot: run tiles whose native pixel is coarser than "
+        "--target-resolution-m instead of refusing them.",
     )
     return p
 
