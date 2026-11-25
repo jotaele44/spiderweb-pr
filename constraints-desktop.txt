@@ -158,7 +158,7 @@ propcache==0.5.2
 protobuf==7.35.1
 psutil==7.2.2
 py-key-value-aio==0.4.5
-pyarrow==25.0.0
+pyarrow==26.0.1
 pybase64==1.4.3
 pycparser==3.0
 pydantic==2.13.4
