@@ -70,6 +70,8 @@ outputs/pr_dem_one_tile_pilot/pr_dem_one_tile_manifest.json
 
 The one-tile pilot is intentionally bounded. It reads one DEM tile, downsamples it, extracts flat terrain patches with steeper surrounding terrain, and writes component-score columns.
 
+The pilot refuses a tile whose native pixel is coarser than `--target-resolution-m` (for example 30 m SRTM, COP30 or AW3D30 against the 5 m default). On such a tile a single pixel covers about 900 m², so the 100 m² minimum patch area and the slope thresholds would describe sub-pixel features. `--allow-coarse-source` runs it anyway; the manifest then records `native_resolution_m` and `coarse_source_override: true`. The batch runner forwards the flag. Which sources are fine enough is listed in `docs/sources/dem_sources_by_platform.md`.
+
 ## Phase 3 — Score-sum sanity check
 
 Goal: verify additive score integrity.
