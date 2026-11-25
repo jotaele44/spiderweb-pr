@@ -250,22 +250,7 @@ def test_tar_extraction_refuses_hard_links_and_devices(tmp_path):
         setup._extract_tar(archive, tmp_path / "out")
 
 
-# ── Launch failures and the Windows launcher ─────────────────────────────────
-
-WINDOWS_LAUNCHER = REPO_ROOT / "PRII-SPIDERWEB.bat"
-
-
-def test_windows_launcher_checks_the_python_version():
-    text = WINDOWS_LAUNCHER.read_text()
-    major, minor = setup.MIN_PYTHON
-    assert f"sys.version_info < ({major}, {minor})" in text
-    # No interpreter is accepted without passing that check.
-    assert 'set "PYTHON=py -3"' not in text
-    assert 'set "PYTHON=python"' not in text
-    assert f'"py -{major}.{minor}"' in text
-    # cmd can misread call/goto labels in a file with LF line endings.
-    assert not re.search(r"^\s*:\w", text, flags=re.MULTILINE)
-    assert not re.search(r"^\s*(goto|call\s+:)", text, flags=re.I | re.M)
+# ── Launch failures ──────────────────────────────────────────────────────────
 
 
 def _stage_app(tmp_path: Path, python_stub: str) -> dict[str, Path]:

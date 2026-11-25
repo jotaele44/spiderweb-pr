@@ -8,9 +8,6 @@ Double-click the launcher for your system in the repo root:
 | Windows | `PRII-SPIDERWEB.bat` |
 | Linux | `PRII-SPIDERWEB.sh` |
 
-Each launcher uses the newest installed Python that is 3.11 or later, not
-simply the first `python` it finds.
-
 The **first run** needs an internet connection once: it creates a private
 `.venv`, installs the desktop-scoped Python dependencies, and builds the
 Vite single-page app under `server/frontend`. It requires
