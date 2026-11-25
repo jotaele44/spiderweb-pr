@@ -357,14 +357,15 @@ def open_opendap(opendap_url: str, attempts: int = 5, wait_s: float = 10.0):
     """Open an OPeNDAP dataset, retrying the THREDDS server's transient 503s with backoff."""
     import netCDF4
 
-    for attempt in range(1, attempts + 1):
+    if attempts < 1:
+        raise ValueError(f"attempts must be at least 1, got {attempts}")
+    for attempt in range(1, attempts):
         try:
             return netCDF4.Dataset(opendap_url)
         except OSError as exc:
-            if attempt == attempts:
-                raise
             print(f"  {opendap_url.rsplit('/', 1)[-1]}: {exc.__class__.__name__}, retry {attempt}/{attempts - 1}", flush=True)
             time.sleep(wait_s * 2 ** (attempt - 1))
+    return netCDF4.Dataset(opendap_url)  # last attempt: its error propagates
 
 
 def ncei_extents(ncei: dict) -> dict:

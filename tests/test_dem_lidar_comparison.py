@@ -98,6 +98,49 @@ def test_chain_offset_composes_the_three_shifts() -> None:
     assert seen["epoch"] == 2018.79
 
 
+class _FlakyDataset:
+    """Stand-in for netCDF4.Dataset that fails a set number of times, then opens."""
+
+    def __init__(self, failures: int) -> None:
+        self.failures, self.calls = failures, 0
+
+    def __call__(self, url):
+        self.calls += 1
+        if self.calls <= self.failures:
+            raise OSError("NetCDF: DAP server error")
+        return f"dataset:{url}"
+
+
+@pytest.fixture
+def fake_netcdf(monkeypatch):
+    import sys
+    import types
+
+    module = types.ModuleType("netCDF4")
+    monkeypatch.setitem(sys.modules, "netCDF4", module)
+    return module
+
+
+def test_open_opendap_retries_then_opens(fake_netcdf) -> None:
+    fake_netcdf.Dataset = _FlakyDataset(failures=2)
+    assert mod.open_opendap("https://example.invalid/x.nc", attempts=3, wait_s=0) == "dataset:https://example.invalid/x.nc"
+    assert fake_netcdf.Dataset.calls == 3
+
+
+def test_open_opendap_raises_after_the_last_attempt(fake_netcdf) -> None:
+    fake_netcdf.Dataset = _FlakyDataset(failures=99)
+    with pytest.raises(OSError):
+        mod.open_opendap("https://example.invalid/x.nc", attempts=3, wait_s=0)
+    assert fake_netcdf.Dataset.calls == 3
+
+
+def test_open_opendap_refuses_zero_attempts(fake_netcdf) -> None:
+    fake_netcdf.Dataset = _FlakyDataset(failures=0)
+    with pytest.raises(ValueError):
+        mod.open_opendap("https://example.invalid/x.nc", attempts=0, wait_s=0)
+    assert fake_netcdf.Dataset.calls == 0
+
+
 def test_config_sites_and_tiles() -> None:
     cfg = json.loads(CONFIG.read_text())
     assert len(cfg["sites"]) == 8
