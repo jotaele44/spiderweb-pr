@@ -1,0 +1,312 @@
+{
+  "adapter": "nasa_srtmgl1",
+  "basis": "SRTMGL1N v003 NUM values classified by SRTM User Guide V3, Table 2",
+  "generated_at": "2026-11-23T21:39:07Z",
+  "tiles": [
+    {
+      "category_counts": {
+        "aster_gdem2": 0,
+        "cded": 0,
+        "gmted2010": 0,
+        "ned": 0,
+        "nga_undisclosed": 0,
+        "srtm_interpolated": 0,
+        "srtm_measured": 35574,
+        "unmapped": 0,
+        "water": 12931627
+      },
+      "heights": {
+        "max_m": 490,
+        "min_m": -1,
+        "samples": 12967201,
+        "void_samples": 0
+      },
+      "land_samples": 35574,
+      "land_share_percent": {
+        "aster_gdem2": 0.0,
+        "cded": 0.0,
+        "gmted2010": 0.0,
+        "ned": 0.0,
+        "nga_undisclosed": 0.0,
+        "srtm_interpolated": 0.0,
+        "srtm_measured": 100.0
+      },
+      "num_file": "N17W066.SRTMGL1N.num.zip",
+      "num_value_histogram": {
+        "1": 626,
+        "2": 12931001,
+        "201": 3300,
+        "202": 24344,
+        "203": 7930
+      },
+      "platform_share_percent": {
+        "compiled": 0.0,
+        "spaceborne_insar": 100.0,
+        "spaceborne_optical_stereo": 0.0
+      },
+      "samples": 12967201,
+      "tile_id": "N17W066",
+      "unmapped_samples": 0,
+      "water_samples": 12931627
+    },
+    {
+      "category_counts": {
+        "aster_gdem2": 49,
+        "cded": 0,
+        "gmted2010": 0,
+        "ned": 0,
+        "nga_undisclosed": 0,
+        "srtm_interpolated": 15,
+        "srtm_measured": 485991,
+        "unmapped": 0,
+        "water": 12481146
+      },
+      "heights": {
+        "max_m": 317,
+        "min_m": -38,
+        "samples": 12967201,
+        "void_samples": 0
+      },
+      "land_samples": 486055,
+      "land_share_percent": {
+        "aster_gdem2": 0.0101,
+        "cded": 0.0,
+        "gmted2010": 0.0,
+        "ned": 0.0,
+        "nga_undisclosed": 0.0,
+        "srtm_interpolated": 0.0031,
+        "srtm_measured": 99.9868
+      },
+      "num_file": "N17W067.SRTMGL1N.num.zip",
+      "num_value_histogram": {
+        "1": 31644,
+        "103": 6,
+        "104": 2,
+        "105": 7,
+        "106": 7,
+        "107": 13,
+        "108": 11,
+        "109": 3,
+        "11": 15,
+        "2": 12449502,
+        "201": 472,
+        "202": 285490,
+        "203": 200029
+      },
+      "platform_share_percent": {
+        "compiled": 0.0,
+        "spaceborne_insar": 99.9899,
+        "spaceborne_optical_stereo": 0.0101
+      },
+      "samples": 12967201,
+      "tile_id": "N17W067",
+      "unmapped_samples": 0,
+      "water_samples": 12481146
+    },
+    {
+      "category_counts": {
+        "aster_gdem2": 0,
+        "cded": 0,
+        "gmted2010": 0,
+        "ned": 0,
+        "nga_undisclosed": 0,
+        "srtm_interpolated": 2,
+        "srtm_measured": 112033,
+        "unmapped": 0,
+        "water": 12855166
+      },
+      "heights": {
+        "max_m": 299,
+        "min_m": -22,
+        "samples": 12967201,
+        "void_samples": 0
+      },
+      "land_samples": 112035,
+      "land_share_percent": {
+        "aster_gdem2": 0.0,
+        "cded": 0.0,
+        "gmted2010": 0.0,
+        "ned": 0.0,
+        "nga_undisclosed": 0.0,
+        "srtm_interpolated": 0.0018,
+        "srtm_measured": 99.9982
+      },
+      "num_file": "N17W068.SRTMGL1N.num.zip",
+      "num_value_histogram": {
+        "1": 66377,
+        "11": 2,
+        "2": 12788789,
+        "201": 670,
+        "202": 92678,
+        "203": 18685
+      },
+      "platform_share_percent": {
+        "compiled": 0.0,
+        "spaceborne_insar": 100.0,
+        "spaceborne_optical_stereo": 0.0
+      },
+      "samples": 12967201,
+      "tile_id": "N17W068",
+      "unmapped_samples": 0,
+      "water_samples": 12855166
+    },
+    {
+      "category_counts": {
+        "aster_gdem2": 24,
+        "cded": 0,
+        "gmted2010": 0,
+        "ned": 0,
+        "nga_undisclosed": 29,
+        "srtm_interpolated": 66,
+        "srtm_measured": 1788478,
+        "unmapped": 0,
+        "water": 11178604
+      },
+      "heights": {
+        "max_m": 1048,
+        "min_m": -21,
+        "samples": 12967201,
+        "void_samples": 0
+      },
+      "land_samples": 1788597,
+      "land_share_percent": {
+        "aster_gdem2": 0.0013,
+        "cded": 0.0,
+        "gmted2010": 0.0,
+        "ned": 0.0,
+        "nga_undisclosed": 0.0016,
+        "srtm_interpolated": 0.0037,
+        "srtm_measured": 99.9933
+      },
+      "num_file": "N18W066.SRTMGL1N.num.zip",
+      "num_value_histogram": {
+        "1": 8330,
+        "101": 24,
+        "11": 66,
+        "2": 11170274,
+        "201": 18792,
+        "202": 1714242,
+        "203": 54986,
+        "204": 458,
+        "31": 29
+      },
+      "platform_share_percent": {
+        "compiled": 0.0016,
+        "spaceborne_insar": 99.997,
+        "spaceborne_optical_stereo": 0.0013
+      },
+      "samples": 12967201,
+      "tile_id": "N18W066",
+      "unmapped_samples": 0,
+      "water_samples": 11178604
+    },
+    {
+      "category_counts": {
+        "aster_gdem2": 1461,
+        "cded": 0,
+        "gmted2010": 0,
+        "ned": 1,
+        "nga_undisclosed": 0,
+        "srtm_interpolated": 299,
+        "srtm_measured": 6156249,
+        "unmapped": 0,
+        "water": 6809191
+      },
+      "heights": {
+        "max_m": 1328,
+        "min_m": -22,
+        "samples": 12967201,
+        "void_samples": 0
+      },
+      "land_samples": 6158010,
+      "land_share_percent": {
+        "aster_gdem2": 0.0237,
+        "cded": 0.0,
+        "gmted2010": 0.0,
+        "ned": 0.0,
+        "nga_undisclosed": 0.0,
+        "srtm_interpolated": 0.0049,
+        "srtm_measured": 99.9714
+      },
+      "num_file": "N18W067.SRTMGL1N.num.zip",
+      "num_value_histogram": {
+        "1": 64023,
+        "101": 274,
+        "102": 489,
+        "103": 436,
+        "104": 170,
+        "105": 70,
+        "106": 22,
+        "11": 299,
+        "2": 6745168,
+        "201": 37243,
+        "202": 3905827,
+        "203": 2157497,
+        "204": 55682,
+        "51": 1
+      },
+      "platform_share_percent": {
+        "compiled": 0.0,
+        "spaceborne_insar": 99.9763,
+        "spaceborne_optical_stereo": 0.0237
+      },
+      "samples": 12967201,
+      "tile_id": "N18W067",
+      "unmapped_samples": 0,
+      "water_samples": 6809191
+    },
+    {
+      "category_counts": {
+        "aster_gdem2": 134,
+        "cded": 0,
+        "gmted2010": 0,
+        "ned": 0,
+        "nga_undisclosed": 0,
+        "srtm_interpolated": 16,
+        "srtm_measured": 1326001,
+        "unmapped": 0,
+        "water": 11641050
+      },
+      "heights": {
+        "max_m": 731,
+        "min_m": -18,
+        "samples": 12967201,
+        "void_samples": 0
+      },
+      "land_samples": 1326151,
+      "land_share_percent": {
+        "aster_gdem2": 0.0101,
+        "cded": 0.0,
+        "gmted2010": 0.0,
+        "ned": 0.0,
+        "nga_undisclosed": 0.0,
+        "srtm_interpolated": 0.0012,
+        "srtm_measured": 99.9887
+      },
+      "num_file": "N18W068.SRTMGL1N.num.zip",
+      "num_value_histogram": {
+        "1": 85436,
+        "103": 1,
+        "104": 12,
+        "105": 34,
+        "106": 47,
+        "107": 40,
+        "11": 16,
+        "2": 11555612,
+        "201": 75791,
+        "202": 1224529,
+        "203": 25681,
+        "5": 2
+      },
+      "platform_share_percent": {
+        "compiled": 0.0,
+        "spaceborne_insar": 99.9899,
+        "spaceborne_optical_stereo": 0.0101
+      },
+      "samples": 12967201,
+      "tile_id": "N18W068",
+      "unmapped_samples": 0,
+      "water_samples": 11641050
+    }
+  ]
+}

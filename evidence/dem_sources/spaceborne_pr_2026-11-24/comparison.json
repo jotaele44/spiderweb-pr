@@ -1,0 +1,95 @@
+{
+  "aoi_wsen": [
+    -67.95,
+    17.85,
+    -65.2,
+    18.55
+  ],
+  "caveat": "Nearest samples on a common 1 arc-second grid, no resampling. The sources differ in vertical datum (EGM96 or undeclared), epoch (2000, 2006-2011, 2011-2015) and surface (C-band and X-band radar, optical first surface), so differences are not terrain change.",
+  "datums": {
+    "AW3D30": "undeclared in metadata checked and in the file",
+    "COP30": "undeclared in metadata checked and in the file",
+    "NASADEM": "EGM96 (CMR)",
+    "SRTMGL1": "EGM96"
+  },
+  "generated": "2026-11-24",
+  "grid": {
+    "alignment_vs_cop30_arcsec": {
+      "AW3D30": [
+        0.50004,
+        -0.50004
+      ],
+      "COP30": [
+        0.0,
+        0.0
+      ],
+      "NASADEM": [
+        4e-05,
+        -4e-05
+      ]
+    },
+    "height": 2520,
+    "offset_from_srtm_sample_lines_arcsec": [
+      179.99996,
+      1619.99996
+    ],
+    "pixel_centre_origin_lon_lat": [
+      -67.950000011,
+      18.550000011
+    ],
+    "pixel_size_arcsec": 1.0,
+    "width": 9900
+  },
+  "land_mask": "SRTMGL1N NUM value above 10 (land, per SRTM User Guide V3) and a non-void SRTMGL1 sample",
+  "land_samples": 9887061,
+  "pairs": {
+    "AW3D30": {
+      "land_samples_excluded": 28424,
+      "mad_m": 2.001,
+      "mean_m": 0.937,
+      "median_m": 0.5,
+      "minus": "SRTMGL1",
+      "p95_abs_m": 9.5,
+      "reference_sampling": "bilinear at offset (0.500, 0.500) arcsec east/south; all four neighbours land",
+      "samples": 9858637,
+      "std_m": 4.602,
+      "within_1m_percent": 30.661,
+      "within_5m_percent": 79.798
+    },
+    "COP30": {
+      "land_samples_excluded": 0,
+      "mad_m": 2.824,
+      "mean_m": 1.523,
+      "median_m": 1.132,
+      "minus": "SRTMGL1",
+      "p95_abs_m": 10.35,
+      "reference_sampling": "nearest (sample centres coincide)",
+      "samples": 9887061,
+      "std_m": 4.854,
+      "within_1m_percent": 19.805,
+      "within_5m_percent": 73.054
+    },
+    "NASADEM": {
+      "land_samples_excluded": 0,
+      "mad_m": 1.0,
+      "mean_m": -1.742,
+      "median_m": -2.0,
+      "minus": "SRTMGL1",
+      "p95_abs_m": 4.0,
+      "reference_sampling": "nearest (sample centres coincide)",
+      "samples": 9887061,
+      "std_m": 1.754,
+      "within_1m_percent": 41.059,
+      "within_5m_percent": 98.528
+    }
+  },
+  "summit": {
+    "aw3d30_m": 1328.0,
+    "cop30_m": 1328.29,
+    "lat": 18.172281,
+    "lon": -66.5916862,
+    "name": "Cerro de Punta summit, GNIS 1609905",
+    "nasadem_m": 1323.0,
+    "srtmgl1_m": 1325.0
+  }
+}

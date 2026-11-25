@@ -1,0 +1,23 @@
+{
+  "adapter": "opentopography_globaldem",
+  "files": [
+    {
+      "accessed_at": "2026-11-24T12:34:33Z",
+      "bbox_wsen": [
+        -67.95,
+        17.85,
+        -65.2,
+        18.55
+      ],
+      "catalog_source_id": "jaxa_aw3d30",
+      "content_type": "application/octet-stream",
+      "demtype": "AW3D30",
+      "file_name": "AW3D30_-67.95_17.85_-65.2_18.55.tif",
+      "file_size_bytes": 11115033,
+      "opentopography_id": "OTALOS.112016.4326.2",
+      "raw_commit_allowed": false,
+      "request_url": "https://portal.opentopography.org/API/globaldem?demtype=AW3D30&south=17.85&north=18.55&west=-67.95&east=-65.2&outputFormat=GTiff&API_Key=REDACTED",
+      "sha256": "8372dac38f6b56e106ab2d9f15bd8f210975e8ce459122efc0379f400e31bbbb"
+    }
+  ]
+}

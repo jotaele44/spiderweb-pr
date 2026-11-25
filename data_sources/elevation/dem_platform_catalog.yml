@@ -1,0 +1,1994 @@
+{
+  "catalog_version": "1.0.0",
+  "active_vector": "DEM_SOURCES_BY_ACQUISITION_PLATFORM",
+  "checked": "2026-11-23",
+  "vocabulary": {
+    "platform_class": {
+      "spaceborne": "Measured from orbit or a crewed spacecraft (GCMD Space-based Platforms).",
+      "airborne": "Measured from aircraft (GCMD Air-based Platforms).",
+      "shipborne": "Measured from ships (GCMD Water-based Platforms).",
+      "compiled": "Assembled from several sources; constituents may be listed in acquisition_roots."
+    },
+    "surface_model": {
+      "radar_scattering_surface": "Radar interferometry: a surface between canopy top and ground.",
+      "first_surface": "Optical stereo: the first visible surface, including canopy and buildings.",
+      "bare_earth": "Ground surface with vegetation and buildings removed.",
+      "point_cloud": "Unclassified or classified lidar returns, not a grid.",
+      "bathymetric": "Seafloor depths.",
+      "topobathymetric": "Land and seafloor in one surface.",
+      "mixed": "Several surface types combined."
+    },
+    "root_kind": {
+      "measurement": "The acquisition that measured the heights.",
+      "fill": "Another source used to fill gaps in the surface.",
+      "control": "Data used to adjust or calibrate heights.",
+      "geolocation": "Data used only to place pixels (terrain correction)."
+    },
+    "vertical_datum": "Normalised labels: EGM96, EGM2008, PRVD02, NAVD88, MHW, MLLW, MSL (assumed), undeclared. vertical_datum_as_stated keeps the source's own words; vertical_datum_basis, where present, cites them."
+  },
+  "products": [
+    {
+      "platforms": [
+        {
+          "short_name": "STS-99",
+          "long_name": "Space Transport System STS-99",
+          "gcmd_type": "Space Stations/Crewed Spacecraft"
+        }
+      ],
+      "instruments": [
+        {
+          "short_name": "SRTM",
+          "technique": "Radar Interferometry"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NASA LP DAAC (Earthdata Cloud)",
+        "OpenTopography"
+      ],
+      "platform_status": "verified",
+      "notes": "Observed over the six Puerto Rico tiles on 2026-11-23 (SRTMGL1N): 99.979% of land samples measured by SRTM, 0.017% ASTER GDEM2 fill, 0.004% SRTM interpolation, 29 samples NGA fill, 1 sample NED fill. Receipt: evidence/dem_sources/srtmgl1_pr_2026-11-23/composition.json.",
+      "source_id": "nasa_srtmgl1_v003",
+      "name": "NASA SRTM Global 1 arc-second v003 (SRTMGL1)",
+      "platform_class": "spaceborne",
+      "surface_model": "radar_scattering_surface",
+      "acquisition_window": {
+        "start": "2000-02-11",
+        "end": "2000-02-21"
+      },
+      "vertical_datum": "EGM96",
+      "vertical_datum_as_stated": "EGM96 geoid (WGS84/EGM96)",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1 arc-second (about 30 m)",
+      "acquisition_roots": [
+        {
+          "root_id": "srtm:sts-99:2000-02",
+          "kind": "measurement"
+        },
+        {
+          "root_id": "aster:terra:gdem2",
+          "kind": "fill"
+        },
+        {
+          "root_id": "usgs:ned",
+          "kind": "fill"
+        },
+        {
+          "root_id": "usgs:gmted2010",
+          "kind": "fill"
+        },
+        {
+          "root_id": "nga:undisclosed",
+          "kind": "fill"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/nasa/srtmgl1.yml",
+          "id": "srtmgl1_v003_pr",
+          "authority": true
+        },
+        {
+          "path": "data_sources/opentopography/globaldem.yml",
+          "id": "SRTMGL1",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "CMR collection C2763266360-LPCLOUD (Platforms, Instruments); SRTM User Guide V3",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [
+        {
+          "short_name": "OV-105",
+          "long_name": "Endeavour Space Shuttle",
+          "gcmd_type": "Space Stations/Crewed Spacecraft"
+        }
+      ],
+      "instruments": [
+        {
+          "short_name": "SRTM",
+          "technique": "Radar Interferometry"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "OpenTopography",
+        "NASA LP DAAC (Earthdata Cloud)"
+      ],
+      "platform_status": "verified",
+      "notes": "CMR names the platform OV-105 (Endeavour); SRTMGL1's record names it STS-99. It is the same 2000 flight, so both carry the root srtm:sts-99:2000-02. Fetched for the Puerto Rico AOI on 2026-11-24 through OpenTopography (receipt: evidence/dem_sources/nasadem_pr_2026-11-24/): int16, 1 arc-second on SRTM's sample lines; the GeoTIFF declares no vertical CRS, which does not contradict CMR's EGM96. Against SRTMGL1 over 9,887,061 land samples: median -2 m, standard deviation 1.754 m, 98.528% within 5 m, much tighter than COP30 or AW3D30, as the shared root predicts.",
+      "source_id": "nasa_nasadem_hgt_v001",
+      "name": "NASADEM Merged DEM Global 1 arc-second v001",
+      "platform_class": "spaceborne",
+      "surface_model": "radar_scattering_surface",
+      "acquisition_window": {
+        "start": "2000-02-11",
+        "end": "2000-02-21"
+      },
+      "vertical_datum": "EGM96",
+      "vertical_datum_as_stated": "WGS84/EGM96",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1 arc-second (about 30 m)",
+      "acquisition_roots": [
+        {
+          "root_id": "srtm:sts-99:2000-02",
+          "kind": "measurement"
+        },
+        {
+          "root_id": "aster:terra:gdem2",
+          "kind": "fill"
+        },
+        {
+          "root_id": "alos:prism:2006-2011",
+          "kind": "fill"
+        },
+        {
+          "root_id": "usgs:ned",
+          "kind": "fill"
+        },
+        {
+          "root_id": "icesat:glas",
+          "kind": "control"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/opentopography/globaldem.yml",
+          "id": "NASADEM",
+          "authority": true
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "CMR collection C2763264762-LPCLOUD; OpenTopography catalogue OTSDEM.032021.4326.2",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [
+        {
+          "short_name": "TanDEM-X",
+          "long_name": "TanDEM-X mission (DLR / Airbus Defence and Space)",
+          "gcmd_type": null
+        }
+      ],
+      "instruments": [
+        {
+          "short_name": "X-band SAR",
+          "technique": "Radar Interferometry"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "OpenTopography (ESA PRISM, GLO-30 DGED 2023_1)"
+      ],
+      "platform_status": "verified",
+      "notes": "Fetched for the Puerto Rico AOI on 2026-11-23 through OpenTopography (receipt: evidence/dem_sources/cop30_pr_2026-11-23/): 9900 x 2520 samples at 1 arc-second, EPSG:4326, heights -8.8 to 1328.8 m. At the Cerro de Punta summit (GNIS 1609905) it reads 1328.29 m, against 1325 m in SRTMGL1 (EGM96). Against SRTMGL1 over 9,887,061 land samples: median 1.132 m, standard deviation 4.854 m (evidence/dem_sources/spaceborne_pr_2026-11-24/comparison.json).",
+      "source_id": "copernicus_glo30_dem",
+      "name": "Copernicus GLO-30 Digital Elevation Model",
+      "platform_class": "spaceborne",
+      "surface_model": "radar_scattering_surface",
+      "acquisition_window": {
+        "start": "2011-01-01",
+        "end": "2015-07-01"
+      },
+      "vertical_datum": "EGM2008",
+      "vertical_datum_as_stated": "EGM2008 (EPSG 3855), per ESA's Copernicus DEM Product Handbook and OpenTopography; the GeoTIFF itself declares no vertical CRS",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1 arc-second (about 30 m)",
+      "acquisition_roots": [
+        {
+          "root_id": "tandem-x:worlddem:2011-2015",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/opentopography/globaldem.yml",
+          "id": "COP30",
+          "authority": true
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "OpenTopography catalogue OTSDEM.032021.4326.3 (doi:10.5069/G9028PQB): DSM derived from WorldDEM, based on TanDEM-X radar data",
+        "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "ESA Copernicus DEM Product Handbook GEO1988-CopernicusDEM-SPE-002 issue 5.0",
+            "location": "page 13",
+            "statement": "The vertical reference datum is the Earth Gravitational Model 2008 (EGM2008; EPSG 3855)."
+          },
+          {
+            "source": "OpenTopography otCatalog COP30 (OTSDEM.032021.4326.3)",
+            "location": "spatialCoverage: Vertical Coordinates, EPSG (Vertical)",
+            "statement": "WGS84 Ellipsoid/EGM2008 Geoid; 3855"
+          }
+        ],
+        "receipt": "evidence/dem_sources/vertical_datums_2026-11-24/datum_check.json",
+        "checked": "2026-11-24"
+      }
+    },
+    {
+      "platforms": [
+        {
+          "short_name": "ALOS",
+          "long_name": "Advanced Land Observing Satellite \"DAICHI\"",
+          "gcmd_type": null
+        }
+      ],
+      "instruments": [
+        {
+          "short_name": "PRISM",
+          "technique": "Optical Stereo Photogrammetry"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "OpenTopography"
+      ],
+      "platform_status": "verified",
+      "notes": "Fetched for the Puerto Rico AOI on 2026-11-24 through OpenTopography (receipt: evidence/dem_sources/aw3d30_pr_2026-11-24/): int16, 1 arc-second, pixel-is-area, so its sample centres sit half an arc-second east and south of SRTM's; heights -104 to 1329 m. Against SRTMGL1 interpolated to its centres over 9,858,637 land samples: median 0.5 m, standard deviation 4.602 m (evidence/dem_sources/spaceborne_pr_2026-11-24/comparison.json).",
+      "source_id": "jaxa_aw3d30",
+      "name": "ALOS World 3D 30 m (AW3D30)",
+      "platform_class": "spaceborne",
+      "surface_model": "first_surface",
+      "acquisition_window": {
+        "start": "2006-01-01",
+        "end": "2011-01-01"
+      },
+      "vertical_datum": "EGM96",
+      "vertical_datum_as_stated": "EGM96 (EPSG 5773), per OpenTopography's distributor metadata; JAXA's product description could not be retrieved; the GeoTIFF declares no vertical CRS",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1 arc-second (about 30 m)",
+      "acquisition_roots": [
+        {
+          "root_id": "alos:prism:2006-2011",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/opentopography/globaldem.yml",
+          "id": "AW3D30",
+          "authority": true
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "OpenTopography catalogue OTALOS.112016.4326.2 (doi:10.5069/G94M92HB): DSM from ALOS PRISM, 2006-2011",
+        "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "OpenTopography otCatalog AW3D30 (OTALOS.112016.4326.2)",
+            "location": "spatialCoverage: Vertical Coordinates, EPSG (Vertical)",
+            "statement": "WGS84 Ellipsoid/EGM1996 Geoid; 5773"
+          },
+          {
+            "source": "OpenTopography otCatalog AW3D30_E (OTALOS.082017.4326.1)",
+            "location": "description",
+            "statement": "This dataset was converted from the orthometric version using the EGM96 geoid model"
+          }
+        ],
+        "not_retrieved": [
+          "JAXA EORC AW3D30 product description (v4.1 and earlier): HTTP 404 on 2026-11-24"
+        ],
+        "receipt": "evidence/dem_sources/vertical_datums_2026-11-24/datum_check.json",
+        "checked": "2026-11-24"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Lidar-Topo"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "USGS The National Map (prd-tnm S3)"
+      ],
+      "platform_status": "verified",
+      "notes": "PRVI_1m_DEM_2018 in the spatial-dataset and location-query registries is matched to this product by label (2018 PR/USVI 1 m DEM) and resolution; its catalog binding is still open there. The 2018 1 m DEM is published as TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018; their collection windows (A: 2018-05-13 to 2018-06-08; D, E, H: 2018-04-17 to 2019-04-18) fall inside the 2018 Hurricane Maria lidar collection, so they are one product (T2).",
+      "source_id": "usgs_3dep_1m_pr_prvi_2018",
+      "name": "USGS 3DEP 1 m DEM, 2018 (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018)",
+      "platform_class": "airborne",
+      "surface_model": "bare_earth",
+      "acquisition_window": {
+        "start": "2018-04-17",
+        "end": "2019-04-19"
+      },
+      "vertical_datum": "NAVD88",
+      "vertical_datum_as_stated": "NAVD88 (product abstract sentence; no structured element)",
+      "horizontal_datum": "NAD83 (UTM)",
+      "native_resolution": "1 m",
+      "acquisition_roots": [
+        {
+          "root_id": "usiei:933E88E7-A131-40E5-8BAA-C9575216E040",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "registry/spatial/source_manifestations.json",
+          "id": "USGS_3DEP_1M_PR_PRVI_2018",
+          "authority": false
+        },
+        {
+          "path": "configs/access_point_survey_runs.yaml",
+          "id": "TNM:5eb61d7d82ce25b5135ae912",
+          "authority": false
+        },
+        {
+          "path": "registry/access_points/inland.json",
+          "id": "APSRC-3b3ad6e4d294703e",
+          "authority": false
+        },
+        {
+          "path": "configs/spatial_dataset_providers.json",
+          "id": "PRVI_1m_DEM_2018",
+          "authority": false
+        },
+        {
+          "path": "configs/location_query_providers.json",
+          "id": "PRVI_1m_DEM_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_A_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_D_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_E_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_F_2018",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_H_2018",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "USGS 1 m DEM abstract: produced exclusively from lidar; lineage root is the 2018 Hurricane Maria lidar (USIEI Lidar-Topo, QL1)",
+        "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "USGS ScienceBase item metadata of the 2018 tiles (projects A, D, E, F, H) in data_sources/elevation/lidar_comparison_tiles.json",
+            "location": "item body text",
+            "statement": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+          },
+          {
+            "source": "DEM vs 3DEP lidar comparison: 2018 lidar minus CUDEM 1/9\" (PRVD02), slopes under 5 degrees",
+            "location": "datum_test_lidar_2018_minus_cudem_ninth_low_slope",
+            "statement": "Medians -0.015 to +0.062 m at eight sites; the heights behave as PRVD02 (registry conflict 3dep_vertical_datum_label)."
+          }
+        ],
+        "receipt": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+        "checked": "2026-11-24"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Lidar-Topo"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "USGS The National Map (prd-tnm S3)"
+      ],
+      "platform_status": "verified",
+      "notes": "No lidar collection project is registered for D24, so its root is the TNM item itself.",
+      "source_id": "usgs_3dep_1m_pr_puertoricousvi_d24",
+      "name": "USGS 3DEP 1 m DEM, PR_PuertoRicoUSVI_D24",
+      "platform_class": "airborne",
+      "surface_model": "bare_earth",
+      "acquisition_window": {
+        "start": "2023-12-27",
+        "end": "2025-03-20"
+      },
+      "vertical_datum": "NAVD88",
+      "vertical_datum_as_stated": "NAVD88 (product abstract sentence; no structured element)",
+      "horizontal_datum": "NAD83 (UTM)",
+      "native_resolution": "1 m",
+      "acquisition_roots": [
+        {
+          "root_id": "tnm:6a753f0e1ba49b79d0c347d8",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "registry/spatial/source_manifestations.json",
+          "id": "USGS_3DEP_1M_PR_PuertoRicoUSVI_D24",
+          "authority": false
+        },
+        {
+          "path": "configs/access_point_survey_runs.yaml",
+          "id": "TNM:6a753f0e1ba49b79d0c347d8",
+          "authority": false
+        },
+        {
+          "path": "registry/access_points/inland.json",
+          "id": "APSRC-cd2b7cf792cf01c2",
+          "authority": false
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PuertoRicoUSVI_D24",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "ScienceBase item 6a753f0e1ba49b79d0c347d8: USGS standard one-meter DEMs are produced exclusively from lidar",
+        "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "USGS ScienceBase item metadata of the D24 tiles in data_sources/elevation/lidar_comparison_tiles.json",
+            "location": "item body text",
+            "statement": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+          },
+          {
+            "source": "DEM vs 3DEP lidar comparison: 2018 lidar minus CUDEM 1/9\" (PRVD02), slopes under 5 degrees",
+            "location": "datum_test_lidar_2018_minus_cudem_ninth_low_slope",
+            "statement": "Medians -0.015 to +0.062 m at eight sites; the heights behave as PRVD02 (registry conflict 3dep_vertical_datum_label)."
+          }
+        ],
+        "receipt": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+        "checked": "2026-11-24"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Lidar-Topo"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA InPort / US Interagency Elevation Inventory"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "usace_lidar_2004_pr",
+      "name": "2004 USACE Lidar: Puerto Rico",
+      "platform_class": "airborne",
+      "surface_model": "point_cloud",
+      "acquisition_window": {
+        "start": "2004-01-10",
+        "end": "2004-02-08"
+      },
+      "vertical_datum": "undeclared",
+      "vertical_datum_as_stated": "User Specified (USIEI)",
+      "horizontal_datum": "User Specified (USIEI)",
+      "native_resolution": "2 m point spacing",
+      "acquisition_roots": [
+        {
+          "root_id": "usiei:FDF80EC1-0960-48F9-9D01-17834E0A701D",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "registry/access_points/inland.json",
+          "id": "APSRC-31527110cad2b0a4",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "USIEI attributes SourceDataType Lidar-Topo, QL7, vertical RMSE 6.07 cm (evidence/access_points/source_discovery/2026-11-16/raw/point_buffer_inap_pr_000003/USIEI_TOPOGRAPHIC_LIDAR_00.bin); the aircraft is not named",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Lidar-Topo"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA InPort / US Interagency Elevation Inventory"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "pr_commonwealth_lidar_2016",
+      "name": "2016 Commonwealth of Puerto Rico Project Lidar",
+      "platform_class": "airborne",
+      "surface_model": "point_cloud",
+      "acquisition_window": {
+        "start": "2015-09-19",
+        "end": "2017-03-16"
+      },
+      "vertical_datum": "NAVD88",
+      "vertical_datum_as_stated": "NAVD88 (USIEI)",
+      "horizontal_datum": "NAD83",
+      "native_resolution": "0.7 m point spacing",
+      "acquisition_roots": [
+        {
+          "root_id": "usiei:5D816592-6817-452A-B5D6-EFF421B3434C",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "registry/access_points/inland.json",
+          "id": "APSRC-c343e7e1b43a7506",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "USIEI attributes SourceDataType Lidar-Topo, QL2, vertical RMSE 9.3 cm (evidence/access_points/source_discovery/2026-11-16/raw/point_buffer_inap_pr_000003/USIEI_TOPOGRAPHIC_LIDAR_00.bin); the aircraft is not named",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Lidar-Topo"
+        }
+      ],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA InPort / US Interagency Elevation Inventory"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "usgs_lidar_2018_hurricane_maria",
+      "name": "2018 Hurricane Maria PR and USVI Lidar",
+      "platform_class": "airborne",
+      "surface_model": "point_cloud",
+      "acquisition_window": {
+        "start": "2018-04-17",
+        "end": "2019-04-19"
+      },
+      "vertical_datum": "NAVD88",
+      "vertical_datum_as_stated": "NAVD88 (USIEI)",
+      "horizontal_datum": "NAD83",
+      "native_resolution": "0.35 m point spacing",
+      "acquisition_roots": [
+        {
+          "root_id": "usiei:933E88E7-A131-40E5-8BAA-C9575216E040",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "registry/access_points/inland.json",
+          "id": "APSRC-657ccd080cbc6d30",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "USIEI attributes SourceDataType Lidar-Topo, QL1, vertical RMSE 7.2 cm (evidence/access_points/source_discovery/2026-11-16/raw/point_buffer_inap_pr_000003/USIEI_TOPOGRAPHIC_LIDAR_00.bin); the aircraft is not named",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Topobathymetric Lidar"
+        }
+      ],
+      "sensor_type": "TOPOBATHYMETRIC_LIDAR",
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA OCM Digital Coast"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "noaa_ngs_topobathy_lidar_2019_9390",
+      "name": "2019 NOAA NGS Topobathy Lidar: Puerto Rico",
+      "platform_class": "airborne",
+      "surface_model": "point_cloud",
+      "acquisition_window": {
+        "start": "2019",
+        "end": "2019"
+      },
+      "vertical_datum": "undeclared",
+      "vertical_datum_as_stated": "not stated in the registry",
+      "horizontal_datum": "undeclared",
+      "native_resolution": "point cloud",
+      "acquisition_roots": [
+        {
+          "root_id": "noaa:ngs:topobathy-lidar:2019",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "pipeline/pr_marine_datasets.py",
+          "id": "9390",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "Provider title (topobathy lidar) in pipeline/pr_marine_datasets.py; the aircraft is not named",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Topobathymetric Lidar"
+        }
+      ],
+      "sensor_type": "TOPOBATHYMETRIC_LIDAR",
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA OCM Digital Coast"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "noaa_ngs_topobathy_dem_2015_6211",
+      "name": "2015 NOAA NGS Topobathy Lidar DEM: Puerto Rico",
+      "platform_class": "airborne",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": "2015",
+        "end": "2015"
+      },
+      "vertical_datum": "undeclared",
+      "vertical_datum_as_stated": "not stated in the registry",
+      "horizontal_datum": "undeclared",
+      "native_resolution": "not stated",
+      "acquisition_roots": [
+        {
+          "root_id": "noaa:ngs:topobathy-lidar:2015",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "pipeline/pr_marine_datasets.py",
+          "id": "6211",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "Provider title (topobathy lidar) in pipeline/pr_marine_datasets.py; the aircraft is not named",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Topobathymetric Lidar"
+        }
+      ],
+      "sensor_type": "TOPOBATHYMETRIC_LIDAR",
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA OCM Digital Coast"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "usace_ncmp_topobathy_dem_2016_5154",
+      "name": "2016 USACE NCMP Topobathy Lidar DEM: Puerto Rico",
+      "platform_class": "airborne",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": "2016",
+        "end": "2016"
+      },
+      "vertical_datum": "PRVD02",
+      "vertical_datum_as_stated": "PRVD02 (distribution name and registry note)",
+      "horizontal_datum": "undeclared",
+      "native_resolution": "not stated",
+      "acquisition_roots": [
+        {
+          "root_id": "usace:ncmp:topobathy-lidar:2016",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "pipeline/pr_marine_datasets.py",
+          "id": "5154",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "Provider title (topobathy lidar) in pipeline/pr_marine_datasets.py; the aircraft is not named",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [
+        {
+          "short_name": "LIDAR",
+          "technique": "Topobathymetric Lidar"
+        }
+      ],
+      "sensor_type": "TOPOBATHYMETRIC_LIDAR",
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA OCM Digital Coast"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "usace_fema_topobathy_dem_2018_8571",
+      "name": "2018 USACE FEMA Topobathy Lidar DEM: Puerto Rico",
+      "platform_class": "airborne",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": "2018",
+        "end": "2018"
+      },
+      "vertical_datum": "undeclared",
+      "vertical_datum_as_stated": "not stated in the registry",
+      "horizontal_datum": "undeclared",
+      "native_resolution": "1 m",
+      "acquisition_roots": [
+        {
+          "root_id": "usace:fema:topobathy-lidar:2018",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "pipeline/pr_marine_datasets.py",
+          "id": "8571",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "Provider title (topobathy lidar) in pipeline/pr_marine_datasets.py; the aircraft is not named",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [
+        {
+          "short_name": "NOAA Ship NANCY FOSTER (R352)",
+          "long_name": null,
+          "gcmd_type": "Ships"
+        }
+      ],
+      "instruments": [
+        {
+          "short_name": "MBES",
+          "technique": "Multibeam Echosounder"
+        }
+      ],
+      "sensor_type": "MULTIBEAM_ECHOSOUNDER",
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "nos_bag_w00247",
+      "name": "NOS hydrographic survey W00247 BAG (3 of 4)",
+      "platform_class": "shipborne",
+      "surface_model": "bathymetric",
+      "acquisition_window": {
+        "start": "2013",
+        "end": "2013"
+      },
+      "vertical_datum": "MLLW",
+      "vertical_datum_as_stated": "MLLW (structured element in the product)",
+      "horizontal_datum": "NAD83 / UTM zone 20N",
+      "native_resolution": "64 m base grid, variable resolution",
+      "acquisition_roots": [
+        {
+          "root_id": "nos:bag:W00247",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "configs/access_point_survey_runs.yaml",
+          "id": "NOS:BAG:W00247:3of4",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "NOS BAG inventory record, frozen at evidence/access_points/source_discovery/2026-11-16/raw/southern_vieques_discovery_v1/NOS_BAG_INVENTORY_00.bin; the echosounder model is not stated",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [
+        {
+          "short_name": "NOAA Ship NANCY FOSTER (R352)",
+          "long_name": null,
+          "gcmd_type": "Ships"
+        }
+      ],
+      "instruments": [
+        {
+          "short_name": "MBES",
+          "technique": "Multibeam Echosounder"
+        }
+      ],
+      "sensor_type": "MULTIBEAM_ECHOSOUNDER",
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "nos_bag_h12935",
+      "name": "NOS hydrographic survey H12935 BAG",
+      "platform_class": "shipborne",
+      "surface_model": "bathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MLLW",
+      "vertical_datum_as_stated": "MLLW (file name)",
+      "horizontal_datum": "NAD83 / UTM zone 20N",
+      "native_resolution": "variable resolution",
+      "acquisition_roots": [
+        {
+          "root_id": "nos:bag:H12935",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "configs/access_point_survey_runs.yaml",
+          "id": "NOS:BAG:H12935",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "NOS BAG inventory record, frozen at evidence/access_points/source_discovery/2026-11-16/raw/southern_vieques_discovery_v1/NOS_BAG_INVENTORY_00.bin; the echosounder model is not stated",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [
+        {
+          "short_name": "NOAA Ship OKEANOS EXPLORER (R337)",
+          "long_name": null,
+          "gcmd_type": "Ships"
+        }
+      ],
+      "instruments": [
+        {
+          "short_name": "Kongsberg EM302",
+          "technique": "Multibeam Echosounder"
+        }
+      ],
+      "sensor_type": "MULTIBEAM_ECHOSOUNDER",
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "okeanos_ex1502l3_multibeam",
+      "name": "Okeanos Explorer EX1502L3 multibeam grid (50 m)",
+      "platform_class": "shipborne",
+      "surface_model": "bathymetric",
+      "acquisition_window": {
+        "start": "2015",
+        "end": "2015"
+      },
+      "vertical_datum": "undeclared",
+      "vertical_datum_as_stated": "unresolved in this repository",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "50 m",
+      "acquisition_roots": [
+        {
+          "root_id": "ncei:multibeam:EX1502L3",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "scripts/run_ex1502l3_w00247_valid_overlap.py",
+          "id": "EX1502L3",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "NCEI multibeam footprints, frozen at evidence/access_points/real_survey/2026-11-20-offshore-replication/catalogue/ncei_multibeam_footprints.bin",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [
+        {
+          "short_name": "NOAA Ship OKEANOS EXPLORER (R337)",
+          "long_name": null,
+          "gcmd_type": "Ships"
+        }
+      ],
+      "instruments": [
+        {
+          "short_name": "MBES",
+          "technique": "Multibeam Echosounder"
+        }
+      ],
+      "sensor_type": "MULTIBEAM_ECHOSOUNDER",
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI"
+      ],
+      "platform_status": "verified",
+      "notes": "",
+      "source_id": "okeanos_ex1811_multibeam",
+      "name": "Okeanos Explorer EX1811 multibeam XYZ (100 m)",
+      "platform_class": "shipborne",
+      "surface_model": "bathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "undeclared",
+      "vertical_datum_as_stated": "unknown per NCEI collection metadata",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "100 m",
+      "acquisition_roots": [
+        {
+          "root_id": "ncei:multibeam:EX1811",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "scripts/run_ex1811_xyz_intersection.py",
+          "id": "EX1811",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NCEI archive path platforms/ocean/ships/okeanos_explorer/EX1811 names the ship; no instrument is stated",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Constituent surveys are not enumerated in this repository.",
+      "source_id": "ncei_san_juan_19_prvd02_2015",
+      "name": "NCEI San Juan 1/9 arc-second DEM (2015)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "PRVD02",
+      "vertical_datum_as_stated": "Puerto Rico Vertical Datum of 2002",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/9 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:san_juan_19_prvd02_2015",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "san_juan_19_prvd02_2015",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "san_juan_19_prvd02_2015",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Constituent surveys are not enumerated in this repository.",
+      "source_id": "ncei_arecibo_2007",
+      "name": "NCEI Arecibo 1/3 arc-second DEM (2007)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MHW",
+      "vertical_datum_as_stated": "Mean High Water",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:arecibo_2007",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "arecibo_2007",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "arecibo_13_mhw_2007",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Constituent surveys are not enumerated in this repository.",
+      "source_id": "ncei_fajardo_2007",
+      "name": "NCEI Fajardo 1/3 arc-second DEM (2007)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MHW",
+      "vertical_datum_as_stated": "Mean High Water",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:fajardo_2007",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "fajardo_2007",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "fajardo_13_mhw_2007",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Constituent surveys are not enumerated in this repository.",
+      "source_id": "ncei_guayama_2007",
+      "name": "NCEI Guayama 1/3 arc-second DEM (2007)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MHW",
+      "vertical_datum_as_stated": "Mean High Water",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:guayama_2007",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "guayama_2007",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "guayama_13_mhw_2007",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Constituent surveys are not enumerated in this repository.",
+      "source_id": "ncei_mayaguez_2006",
+      "name": "NCEI Mayaguez 1/3 arc-second DEM (2006)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MHW",
+      "vertical_datum_as_stated": "Mean High Water",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:mayaguez_2006",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "mayaguez_2006",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "mayaguez_13_mhw_2006",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Constituent surveys are not enumerated in this repository.",
+      "source_id": "ncei_mayaguez_2007",
+      "name": "NCEI Mayaguez 1/3 arc-second DEM (2007)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MHW",
+      "vertical_datum_as_stated": "Mean High Water",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:mayaguez_2007",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "mayaguez_2007",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "mayaguez_13_mhw_2007",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Constituent surveys are not enumerated in this repository.",
+      "source_id": "ncei_ponce_2007",
+      "name": "NCEI Ponce 1/3 arc-second DEM (2007)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MHW",
+      "vertical_datum_as_stated": "Mean High Water",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:ponce_2007",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "ponce_2007",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "ponce_13_mhw_2007",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Registered only in the NCEI priority CSV (U.S. Virgin Islands); see registry conflict ncei_usvi_csv_only.",
+      "source_id": "ncei_st_croix_13_mhw_2014",
+      "name": "NCEI St Croix 1/3 arc-second DEM (2014)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MHW",
+      "vertical_datum_as_stated": "MHW",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:st_croix_13_mhw_2014",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "st_croix_13_mhw_2014",
+          "authority": true
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NCEI THREDDS"
+      ],
+      "platform_status": "verified",
+      "notes": "Registered only in the NCEI priority CSV (U.S. Virgin Islands); see registry conflict ncei_usvi_csv_only.",
+      "source_id": "ncei_st_thomas_st_john_13_mhw_2014",
+      "name": "NCEI St Thomas and St John 1/3 arc-second DEM (2014)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "MHW",
+      "vertical_datum_as_stated": "MHW",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:st_thomas_st_john_13_mhw_2014",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "st_thomas_st_john_13_mhw_2014",
+          "authority": true
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T2",
+        "source": "NOAA NCEI coastal DEM programme: each DEM is compiled from multiple source datasets (bathymetric, topographic and lidar)",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NOS Coastal Lidar public data set (S3)"
+      ],
+      "platform_status": "verified",
+      "notes": "The CSV registry records a different id and vertical datum for this product; see registry_conflicts.",
+      "source_id": "ncei_puerto_rico_cudem_ninth_9525",
+      "name": "NOAA NCEI CUDEM Puerto Rico 1/9 arc-second (m9525, 2022)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "PRVD02",
+      "vertical_datum_as_stated": "Puerto Rico Vertical Datum of 2002",
+      "horizontal_datum": "NAD83",
+      "native_resolution": "1/9 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:puerto_rico_cudem_ninth_9525",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "puerto_rico_cudem_ninth_9525",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "puerto_rico_cudem_19",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "NOAA NCEI CUDEM provider metadata (registered in data_sources/noaa/ncei_coastal_dems.yml): continuously updated bathymetric-topographic compilation",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "NOAA NOS Coastal Lidar public data set (S3)"
+      ],
+      "platform_status": "verified",
+      "notes": "The CSV registry records a different id and vertical datum for this product; see registry_conflicts.",
+      "source_id": "ncei_puerto_rico_cudem_third_9524",
+      "name": "NOAA NCEI CUDEM Puerto Rico 1/3 arc-second (m9524, 2022)",
+      "platform_class": "compiled",
+      "surface_model": "topobathymetric",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "PRVD02",
+      "vertical_datum_as_stated": "Puerto Rico Vertical Datum of 2002",
+      "horizontal_datum": "NAD83",
+      "native_resolution": "1/3 arc-second",
+      "acquisition_roots": [
+        {
+          "root_id": "compiled:ncei:puerto_rico_cudem_third_9524",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "puerto_rico_cudem_third_9524",
+          "authority": true
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "puerto_rico_cudem_13",
+          "authority": false
+        },
+        {
+          "path": "pipeline/pr_marine_datasets.py",
+          "id": "9524",
+          "authority": false
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "NOAA NCEI CUDEM provider metadata (registered in data_sources/noaa/ncei_coastal_dems.yml): continuously updated bathymetric-topographic compilation",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [],
+      "distribution_hosts": [
+        "GEBCO / BODC",
+        "OpenTopography"
+      ],
+      "platform_status": "verified",
+      "notes": "Its land heights rest on SRTM15+, which is built from SRTM, so GEBCO and SRTMGL1 are not independent on land.",
+      "source_id": "gebco_2023",
+      "name": "GEBCO_2023 Grid",
+      "platform_class": "compiled",
+      "surface_model": "mixed",
+      "acquisition_window": {
+        "start": "2000-02-11",
+        "end": "2023-04-01"
+      },
+      "vertical_datum": "MSL (assumed)",
+      "vertical_datum_as_stated": "mean_sea_level_assumed (gebco/terrain.py)",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "15 arc-seconds",
+      "acquisition_roots": [
+        {
+          "root_id": "srtm:sts-99:2000-02",
+          "kind": "measurement"
+        },
+        {
+          "root_id": "sio:srtm15plus:v2.5.5",
+          "kind": "measurement"
+        },
+        {
+          "root_id": "sio:gravity-predicted-depth:v32",
+          "kind": "measurement"
+        },
+        {
+          "root_id": "seabed2030:regional-grids",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [
+        {
+          "path": "gebco/io.py",
+          "id": "GEBCO 2023",
+          "authority": true
+        }
+      ],
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "OpenTopography catalogue OTSDEM.122023.4326.1 (doi:10.5069/G9D21VTT): between 50 S and 60 N GEBCO_2023 uses SRTM15+ V2.5.5 as its base",
+        "checked": "2026-11-23"
+      }
+    },
+    {
+      "platforms": [],
+      "instruments": [],
+      "sensor_type": null,
+      "consumed_by": [
+        {
+          "provider_ref": "configs/remote_monitoring/providers.yaml#landsat_archive",
+          "products": [
+            "L1TP",
+            "L1GT",
+            "L2SP"
+          ],
+          "dependency_kind": "geolocation",
+          "evidence": "MTL DATA_SOURCE_ELEVATION = \"GLS2000\" in LC08_L1TP_005047_20241225_20250103_02_T1 and LC09_L1TP_005048_20241217_20241217_02_T1 (checked 2026-11-23)"
+        }
+      ],
+      "distribution_hosts": [],
+      "platform_status": "verified",
+      "notes": "Collection 1 wording lists SRTM, NED, CDED, DTED, GTOPO30 and GIMP as its sources; the current Collection 2 page lists ArcticDEM, NPI, CDEM, AK_NED, GIMP, SNF, NED, GMTED, NASADEM and RAMP V2. Which constituent covers Puerto Rico is not published. Landsat OLI views at most 7.5 degrees off nadir, so a 10-20 m DEM error moves pixels 1.3-2.6 m: a geolocation dependency, not a shared height measurement.",
+      "source_id": "usgs_gls2000_dem",
+      "name": "USGS GLS2000 elevation data (Landsat terrain correction)",
+      "platform_class": "compiled",
+      "surface_model": "mixed",
+      "acquisition_window": {
+        "start": null,
+        "end": null
+      },
+      "vertical_datum": "undeclared",
+      "vertical_datum_as_stated": "not published",
+      "horizontal_datum": "WGS84",
+      "native_resolution": "not published",
+      "acquisition_roots": [
+        {
+          "root_id": "usgs:gls2000-dem",
+          "kind": "measurement"
+        }
+      ],
+      "aliases": [],
+      "registration_status": "catalog_only",
+      "platform_basis": {
+        "evidence_tier": "T1",
+        "source": "Landsat Collection 2 MTL files (two 2024 Puerto Rico scenes); USGS Landsat Levels of Processing page",
+        "checked": "2026-11-23"
+      }
+    }
+  ],
+  "non_product_registrations": [
+    {
+      "path": "data_sources/noaa/ncei_coastal_dems.yml",
+      "id": "puerto_rico_2017",
+      "classification": "planned_not_acquired",
+      "reason": "Planned PR-wide NCEI DEM; never published (NOAA_NCEI_DEM_GAP_001)."
+    },
+    {
+      "path": "configs/location_query_providers.json",
+      "id": "USGS_3DEP_1M",
+      "classification": "access_service",
+      "reason": "Queries TNM 1 m DEM products; the products it returns are the usgs_3dep_1m_* entries."
+    },
+    {
+      "path": "configs/remote_monitoring/providers.yaml",
+      "id": "usgs_3dep_lidar",
+      "classification": "provider_capability",
+      "reason": "Remote-monitoring capability flag for 3DEP terrain; binds no product."
+    },
+    {
+      "path": "configs/remote_monitoring/providers.yaml",
+      "id": "usgs_reservoir_bathymetry",
+      "classification": "provider_capability",
+      "reason": "Remote-monitoring capability flag; binds no product."
+    },
+    {
+      "path": "registry/access_points/offshore.json",
+      "id": "sources",
+      "classification": "survey_registry",
+      "reason": "185 hydrographic records with their own sensor_type (183 of 185 set); acquisition method is already recorded per record."
+    },
+    {
+      "path": "spiderweb/access_points/products.py",
+      "id": "USGS_TNM_ELEVATION_PRODUCTS",
+      "classification": "access_service",
+      "reason": "TNM products API client; returns usgs_3dep_1m_* products."
+    },
+    {
+      "path": "pipeline/marine_lidar_sources.py",
+      "id": "USInteragencyElevInventory",
+      "classification": "inventory_service",
+      "reason": "US Interagency Elevation Inventory map service (discovery only)."
+    },
+    {
+      "path": "pipeline/marine_sources.py",
+      "id": "next-catalogs",
+      "classification": "inventory_service",
+      "reason": "NCEI multibeam and sounding catalogues (discovery only)."
+    },
+    {
+      "path": "pipeline/marine_sources.py",
+      "id": "nos_hydro_dynamic",
+      "classification": "inventory_service",
+      "reason": "NOS BAG layer (discovery only)."
+    },
+    {
+      "path": "server/frontend/src/modules/SpatialIntelligence.tsx",
+      "id": "terrarium",
+      "classification": "display_only",
+      "reason": "AWS Terrarium hillshade tiles composite SRTM, 3DEP, GMTED and ETOPO1 with per-tile datums; display only."
+    },
+    {
+      "path": "server/frontend/src/spatial/runtime/CesiumRegionalRuntime.ts",
+      "id": "createGooglePhotorealistic3DTileset",
+      "classification": "display_only",
+      "reason": "Google Photorealistic 3D Tiles: photogrammetric mesh, display only."
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "id": "USIEI_TOPOGRAPHIC_LIDAR",
+      "classification": "inventory_service",
+      "reason": "Access-point discovery provider; the records it finds are registered in registry/access_points/*.json."
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "id": "USIEI_TOPOBATHY_LIDAR",
+      "classification": "inventory_service",
+      "reason": "Access-point discovery provider; the records it finds are registered in registry/access_points/*.json."
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "id": "USIEI_BATHYMETRIC_LIDAR",
+      "classification": "inventory_service",
+      "reason": "Access-point discovery provider; the records it finds are registered in registry/access_points/*.json."
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "id": "USIEI_IFSAR",
+      "classification": "inventory_service",
+      "reason": "Access-point discovery provider; the records it finds are registered in registry/access_points/*.json."
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "id": "USIEI_OTHER_BATHYMETRIC",
+      "classification": "inventory_service",
+      "reason": "Access-point discovery provider; the records it finds are registered in registry/access_points/*.json."
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "id": "NCEI_MULTIBEAM_CATALOG",
+      "classification": "inventory_service",
+      "reason": "Access-point discovery provider; the records it finds are registered in registry/access_points/*.json."
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "id": "NCEI_SOUNDING_CATALOG",
+      "classification": "inventory_service",
+      "reason": "Access-point discovery provider; the records it finds are registered in registry/access_points/*.json."
+    },
+    {
+      "path": "spiderweb/access_points/acquisition.py",
+      "id": "NOS_BAG_INVENTORY",
+      "classification": "inventory_service",
+      "reason": "Access-point discovery provider; the records it finds are registered in registry/access_points/*.json."
+    }
+  ],
+  "registry_conflicts": [
+    {
+      "conflict_id": "ncei_cudem_vertical_datum",
+      "status": "open",
+      "description": "The NCEI YAML gives both CUDEM products PRVD02 (from provider metadata); the priority CSV gives source_dependent.",
+      "observations": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "puerto_rico_cudem_ninth_9525",
+          "field": "vertical_datum",
+          "value": "Puerto Rico Vertical Datum of 2002",
+          "check": "equals"
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "puerto_rico_cudem_19",
+          "field": "vertical_datum",
+          "value": "source_dependent",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "puerto_rico_cudem_third_9524",
+          "field": "vertical_datum",
+          "value": "Puerto Rico Vertical Datum of 2002",
+          "check": "equals"
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "puerto_rico_cudem_13",
+          "field": "vertical_datum",
+          "value": "source_dependent",
+          "check": "equals"
+        }
+      ]
+    },
+    {
+      "conflict_id": "ncei_cudem_horizontal_datum",
+      "status": "open",
+      "description": "The NCEI YAML gives CUDEM NAD83 (EPSG:4269); the priority CSV gives WGS84.",
+      "observations": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "puerto_rico_cudem_ninth_9525",
+          "field": "horizontal_datum",
+          "value": "NAD83",
+          "check": "equals"
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "puerto_rico_cudem_19",
+          "field": "horizontal_datum",
+          "value": "WGS84",
+          "check": "equals"
+        }
+      ]
+    },
+    {
+      "conflict_id": "ncei_dataset_ids",
+      "status": "open",
+      "description": "The YAML and CSV name 8 of their 9 shared products differently; only san_juan_19_prvd02_2015 matches.",
+      "observations": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "arecibo_2007",
+          "field": "dataset_key",
+          "value": null,
+          "check": "present"
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "arecibo_13_mhw_2007",
+          "field": "dataset_id",
+          "value": null,
+          "check": "present"
+        },
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "puerto_rico_cudem_ninth_9525",
+          "field": "dataset_key",
+          "value": null,
+          "check": "present"
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "puerto_rico_cudem_19",
+          "field": "dataset_id",
+          "value": null,
+          "check": "present"
+        }
+      ]
+    },
+    {
+      "conflict_id": "ncei_usvi_csv_only",
+      "status": "open",
+      "description": "The St Croix and St Thomas/St John DEMs are in the CSV but not in the YAML manifest.",
+      "observations": [
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "st_croix_13_mhw_2014",
+          "field": "dataset_id",
+          "value": null,
+          "check": "present"
+        },
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "st_croix_13_mhw_2014",
+          "field": "dataset_key",
+          "value": null,
+          "check": "absent"
+        },
+        {
+          "path": "data/ncei_coastal_dem/registry/ncei_coastal_dem_priority_datasets.csv",
+          "id": "st_thomas_st_john_13_mhw_2014",
+          "field": "dataset_id",
+          "value": null,
+          "check": "present"
+        },
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "st_thomas_st_john_13_mhw_2014",
+          "field": "dataset_key",
+          "value": null,
+          "check": "absent"
+        }
+      ]
+    },
+    {
+      "conflict_id": "cudem_m9525_tile_count",
+      "status": "open",
+      "description": "The YAML says CUDEM m9525 has 25 tiles. TheHub's reader (thehub-pr docs/federation/DIGITAL_TWIN_V1.md) copied urllist9525.txt verbatim and found 26.",
+      "observations": [
+        {
+          "path": "data_sources/noaa/ncei_coastal_dems.yml",
+          "id": "puerto_rico_cudem_ninth_9525",
+          "field": "tile_count",
+          "value": 25,
+          "check": "equals"
+        }
+      ]
+    },
+    {
+      "conflict_id": "3dep_vertical_datum_label",
+      "status": "open",
+      "description": "The ScienceBase metadata of every 3DEP 1 m tile used in the lidar comparison (2018 projects A, D, E, F, H, and D24) says the heights are referenced to NAVD88, USGS's programme-wide wording; NAVD88 is not defined in Puerto Rico. Over low-slope cells the 2018 lidar agrees with CUDEM 1/9\" (PRVD02) at all eight sites, medians -0.015 to +0.062 m, so the heights behave as PRVD02. The catalog keeps the stated NAVD88.",
+      "observations": [
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_A_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_D_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_E_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_F_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_H_2018",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PuertoRicoUSVI_D24",
+          "field": "stated_vertical_datum",
+          "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "north_karst_hatillo",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "central_cordillera_cerro_de_punta",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "el_yunque",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "dry_south_guanica",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "urban_san_juan",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "west_mayaguez",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "east_central_cayey",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "id": "northeast_carolina",
+          "field": "median_m",
+          "value": 0.15,
+          "check": "abs_at_most"
+        }
+      ]
+    }
+  ]
+}
