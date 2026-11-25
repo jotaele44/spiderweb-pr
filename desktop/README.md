@@ -148,6 +148,15 @@ The one thing it cannot install is Python itself: when no Python 3.11+ is
 found it opens the python.org download page and waits for the installer to
 be run.
 
+## If the app does not start
+
+When a set-up checkout fails to start — typically after an update changed its
+dependencies — `PRII-SPIDERWEB.app` does not fail silently. It saves the
+output to `~/Library/Logs/PRII-Spiderweb/launch.log`, opens the same setup
+window, reinstalls, and then starts the app from that window so that a
+second failure is shown there. A normal quit, a force quit, or a stop after
+the app has been running for a couple of minutes does not trigger this.
+
 ## If the app says it is running from a temporary copy
 
 Opening `PRII-SPIDERWEB.app` straight out of an unzipped download makes
