@@ -1,8 +1,8 @@
 #!/bin/bash
 # macOS .app launcher for the PRII desktop wrapper. Self-locating: resolves the
 # repo root from this bundle's own path. Once setup is complete it opens the
-# app directly; until then it hands over to a Terminal window that runs the
-# one-time setup and reopens this app when it is done.
+# app directly; until then, or when the app fails to start, it hands over to a
+# Terminal window that runs setup and starts the app when it is done.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../../.." && pwd)"
@@ -31,16 +31,34 @@ cd "$REPO"
 
 # Same three things desktop/setup.py's is_complete() checks. Testing them here
 # means a set-up checkout starts without needing a system Python at all.
+SETUP="$HERE/../Resources/first-run-setup.command"
+LOG_DIR="$HOME/Library/Logs/PRII-Spiderweb"
+mkdir -p "$LOG_DIR" 2>/dev/null || LOG_DIR="${TMPDIR:-/tmp}"
+
 if [ -f desktop/.setup-complete ] && [ -x .venv/bin/python ] \
   && [ -f server/frontend/dist/index.html ]; then
-  exec .venv/bin/python desktop/launch.py
+  # Not `exec`: Finder discards this launcher's output, so a start that fails
+  # before any window exists (a dependency missing after an update, an import
+  # error) would otherwise leave nothing on screen. Keep the output, and on a
+  # failure hand over to the setup window, which reinstalls and then starts
+  # the app where its output can be read.
+  status=0
+  SECONDS=0
+  .venv/bin/python desktop/launch.py >"$LOG_DIR/launch.log" 2>&1 || status=$?
+  # A clean exit, being killed by a signal (force quit, logout), or stopping
+  # after it had been running for a while is not a failed start; the log stays
+  # for reference and nothing is repaired.
+  if [ "$status" -eq 0 ] || [ "$status" -gt 128 ] || [ "$SECONDS" -ge 120 ]; then
+    exit 0
+  fi
+  echo "$status" >"$LOG_DIR/launch-failed" 2>/dev/null || true
+  rm -f desktop/.setup-complete
 fi
 
-# Not set up yet (or setup was left half-done). Finder discards this launcher's
+# Not set up yet, setup was left half-done, or the app just failed to start. Finder discards this launcher's
 # output and gives it a minimal PATH, so run setup where the person can watch
 # it: a Terminal window, which also loads their normal shell environment.
 # `open -a Terminal <file>` needs no Automation permission.
-SETUP="$HERE/../Resources/first-run-setup.command"
 chmod +x "$SETUP" 2>/dev/null || true
 if ! open -a Terminal "$SETUP"; then
   notify "Could not open a Terminal window to finish first-run setup.\n\nDouble-click PRII-SPIDERWEB.command in $REPO instead."

@@ -6,6 +6,7 @@ import hashlib
 import io
 import os
 import re
+import shutil
 import subprocess
 import tarfile
 import tomllib
@@ -45,6 +46,9 @@ def test_app_launcher_runs_setup_itself():
     # It must hand over to the setup window, never tell the user to run setup.
     assert 'open -a Terminal "$SETUP"' in text
     assert "python3 desktop/setup.py" not in text
+    # A failed start must be noticed, so the launch is not exec'd away.
+    assert "exec .venv/bin/python" not in text
+    assert "launch.log" in text and "launch-failed" in text
     assert "Open Terminal" not in text
     assert "desktop/setup.py" in APP_SETUP.read_text()
 
@@ -244,3 +248,110 @@ def test_tar_extraction_refuses_hard_links_and_devices(tmp_path):
         tf.addfile(info)
     with pytest.raises(SystemExit, match="unexpected"):
         setup._extract_tar(archive, tmp_path / "out")
+
+
+# ── Launch failures ──────────────────────────────────────────────────────────
+
+
+def _stage_app(tmp_path: Path, python_stub: str) -> dict[str, Path]:
+    """A throwaway set-up checkout with the real bundle and stubbed tools."""
+    repo = tmp_path / "checkout"
+    shutil.copytree(REPO_ROOT / "PRII-SPIDERWEB.app", repo / "PRII-SPIDERWEB.app")
+    (repo / "desktop").mkdir()
+    (repo / "desktop" / "setup.py").write_text("")
+    (repo / "desktop" / "launch.py").write_text("")
+    (repo / "desktop" / ".setup-complete").write_text("ok\n")
+    (repo / "server" / "frontend" / "dist").mkdir(parents=True)
+    (repo / "server" / "frontend" / "dist" / "index.html").write_text("")
+    venv_bin = repo / ".venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    (venv_bin / "python").write_text(f"#!/bin/sh\n{python_stub}\n")
+    (venv_bin / "python").chmod(0o755)
+
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    calls = tmp_path / "open-calls.txt"
+    (tools / "open").write_text(f'#!/bin/sh\necho "$@" >> "{calls}"\n')
+    (tools / "osascript").write_text("#!/bin/sh\nexit 0\n")
+    for tool in tools.iterdir():
+        tool.chmod(0o755)
+    home = tmp_path / "home"
+    home.mkdir()
+    return {"repo": repo, "tools": tools, "calls": calls, "home": home}
+
+
+def _run_app_launcher(stage: dict[str, Path]) -> subprocess.CompletedProcess:
+    launcher = stage["repo"] / "PRII-SPIDERWEB.app" / "Contents" / "MacOS"
+    env = {
+        "HOME": str(stage["home"]),
+        "PATH": f"{stage['tools']}{os.pathsep}{os.environ['PATH']}",
+    }
+    return subprocess.run(
+        ["bash", str(launcher / "PRII-SPIDERWEB")],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+
+@pytest.mark.skipif(os.name == "nt", reason="bash launcher")
+def test_app_launcher_repairs_after_a_failed_start(tmp_path):
+    stage = _stage_app(tmp_path, 'echo "ModuleNotFoundError: prii_desktop" >&2; exit 1')
+    result = _run_app_launcher(stage)
+    assert result.returncode == 0, result.stderr
+
+    logs = stage["home"] / "Library" / "Logs" / "PRII-Spiderweb"
+    assert "ModuleNotFoundError" in (logs / "launch.log").read_text()
+    assert (logs / "launch-failed").is_file()
+    # Removing the marker is what makes setup reinstall on the next pass.
+    assert not (stage["repo"] / "desktop" / ".setup-complete").exists()
+    opened = stage["calls"].read_text()
+    assert opened.startswith("-a Terminal ")
+    assert opened.strip().endswith("first-run-setup.command")
+
+
+@pytest.mark.skipif(os.name == "nt", reason="bash launcher")
+@pytest.mark.parametrize("stub", ["exit 0", "kill -TERM $$"])
+def test_app_launcher_leaves_a_normal_exit_alone(tmp_path, stub):
+    stage = _stage_app(tmp_path, stub)
+    result = _run_app_launcher(stage)
+    assert result.returncode == 0, result.stderr
+    assert (stage["repo"] / "desktop" / ".setup-complete").exists()
+    assert not stage["calls"].exists()
+    logs = stage["home"] / "Library" / "Logs" / "PRII-Spiderweb"
+    assert not (logs / "launch-failed").exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="bash launcher")
+def test_setup_window_starts_the_app_itself_after_a_repair(tmp_path):
+    """After a failed start the app must not be reopened via the launcher,
+    or a persistent failure would loop app -> repair -> app with no output."""
+    stage = _stage_app(tmp_path, 'echo "started $@"; exit 0')
+    logs = stage["home"] / "Library" / "Logs" / "PRII-Spiderweb"
+    logs.mkdir(parents=True)
+    (logs / "launch-failed").write_text("1\n")
+    (logs / "launch.log").write_text("ImportError: boom\n")
+    # A system Python that passes the version check and "runs setup".
+    (stage["tools"] / "python3").write_text("#!/bin/sh\nexit 0\n")
+    (stage["tools"] / "python3").chmod(0o755)
+    for name in ("python3.14", "python3.13", "python3.12", "python3.11"):
+        shutil.copy(stage["tools"] / "python3", stage["tools"] / name)
+
+    script = stage["repo"] / "PRII-SPIDERWEB.app" / "Contents" / "Resources"
+    result = subprocess.run(
+        ["bash", str(script / "first-run-setup.command")],
+        env={
+            "HOME": str(stage["home"]),
+            "PATH": f"{stage['tools']}{os.pathsep}{os.environ['PATH']}",
+        },
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "ImportError: boom" in result.stdout  # the earlier failure is shown
+    assert "started desktop/launch.py" in result.stdout
+    assert not (logs / "launch-failed").exists()
+    assert not stage["calls"].exists()  # the app was not reopened via `open`
