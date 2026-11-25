@@ -25,8 +25,8 @@ export function resolvePresets(
   stack: readonly Preset[],
 ): { contractVersion: typeof CONTRACT_VERSION; layers: Record<string, VisualPatch>; trace: Record<string, Record<string, string>> } {
   const known = new Set(knownLayers);
-  const layers: Record<string, VisualPatch> = Object.create(null);
-  const trace: Record<string, Record<string, string>> = Object.create(null);
+  const layers: Record<string, VisualPatch> = Object.create(null) as Record<string, VisualPatch>;
+  const trace: Record<string, Record<string, string>> = Object.create(null) as Record<string, Record<string, string>>;
   const seen = new Set<string>();
   for (const preset of stack) {
     if (!preset.id || !preset.version || seen.has(preset.id)) throw new Error("invalid or duplicate preset");
@@ -39,7 +39,7 @@ export function resolvePresets(
         if (!(fields as readonly string[]).includes(key)) throw new Error("unsupported visual property");
       }
       const target = layers[id] ?? (layers[id] = {});
-      const sources = trace[id] ?? (trace[id] = Object.create(null));
+      const sources = trace[id] ?? (trace[id] = Object.create(null) as Record<string, string>);
       for (const key of fields) {
         if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
         const value = patch[key];
