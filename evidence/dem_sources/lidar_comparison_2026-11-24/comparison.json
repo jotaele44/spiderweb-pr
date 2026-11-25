@@ -1,0 +1,4903 @@
+{
+  "generated": "2026-11-24",
+  "method": {
+    "reference": "3DEP 1 m lidar, 2018 collection (TNM projects PR_PRVI_A-H_2018), averaged from its 1 m pixels onto each DEM's own grid; cells need at least 90% valid lidar pixels",
+    "difference": "DEM minus lidar, with the lidar moved to the DEM's vertical datum",
+    "lidar_vertical_datum_assumed": "PRVD02 (tile metadata says NAVD88, USGS's programme wording; tested against CUDEM)",
+    "lidar_horizontal": "NAD83(2011) geographic; DEM grids are WGS 84 / ITRF. The 1-2 m horizontal difference is under a tenth of a 30 m cell and is not corrected.",
+    "datum_chain": {
+      "prvd02_to_nad83_ellipsoid": "Inverse of NAD83(2011) to PRVD02 height (2) (with axis order normalized for visualization)",
+      "nad83_2011_to_itrf2014": "Conversion from NAD83(2011) (geog3D) to NAD83(2011) (geocentric) + Inverse of ITRF2014 to NAD83(2011) (1) + Conversion from ITRF2014 (geocentric) to ITRF2014 (geog3D) (with axis order normalized for visualization)",
+      "wgs84_to_egm96": "WGS 84 to EGM96 height (1) (with axis order normalized for visualization)",
+      "wgs84_to_egm2008": "WGS 84 to EGM2008 height (1) (with axis order normalized for visualization)",
+      "itrf2014_as_wgs84": "ITRF2014 ellipsoidal heights are used as WGS 84 (G2139); the two agree at centimetre level"
+    },
+    "epochs": {
+      "2018": 2018.79,
+      "d24": 2024.6
+    },
+    "slope_classes_deg": [
+      "0-5",
+      "5-15",
+      "15-30",
+      "30-90"
+    ]
+  },
+  "overall": {
+    "copernicus_glo30_dem": {
+      "overall": {
+        "samples": 542832,
+        "mean_m": 6.463,
+        "median_m": 4.394,
+        "std_m": 6.301,
+        "nmad_m": 5.575,
+        "rmse_m": 9.026,
+        "p95_abs_m": 18.587,
+        "within_1m_percent": 18.96,
+        "within_5m_percent": 53.18
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 166110,
+          "mean_m": 2.315,
+          "median_m": 1.307,
+          "std_m": 3.313,
+          "nmad_m": 1.593,
+          "rmse_m": 4.042,
+          "p95_abs_m": 9.369,
+          "within_1m_percent": 40.8,
+          "within_5m_percent": 87.05
+        },
+        "5-15": {
+          "samples": 151636,
+          "mean_m": 5.768,
+          "median_m": 3.914,
+          "std_m": 5.576,
+          "nmad_m": 4.245,
+          "rmse_m": 8.023,
+          "p95_abs_m": 17.26,
+          "within_1m_percent": 15.64,
+          "within_5m_percent": 58.09
+        },
+        "15-30": {
+          "samples": 188350,
+          "mean_m": 9.473,
+          "median_m": 9.15,
+          "std_m": 6.112,
+          "nmad_m": 6.921,
+          "rmse_m": 11.274,
+          "p95_abs_m": 19.941,
+          "within_1m_percent": 5.57,
+          "within_5m_percent": 27.37
+        },
+        "30-90": {
+          "samples": 36584,
+          "mean_m": 12.688,
+          "median_m": 12.827,
+          "std_m": 7.235,
+          "nmad_m": 6.482,
+          "rmse_m": 14.606,
+          "p95_abs_m": 23.491,
+          "within_1m_percent": 2.38,
+          "within_5m_percent": 11.82
+        }
+      },
+      "sites": [
+        "north_karst_hatillo",
+        "central_cordillera_cerro_de_punta",
+        "el_yunque",
+        "dry_south_guanica",
+        "urban_san_juan",
+        "west_mayaguez",
+        "east_central_cayey",
+        "northeast_carolina"
+      ]
+    },
+    "jaxa_aw3d30": {
+      "overall": {
+        "samples": 539334,
+        "mean_m": 5.924,
+        "median_m": 4.156,
+        "std_m": 6.61,
+        "nmad_m": 5.253,
+        "rmse_m": 8.876,
+        "p95_abs_m": 18.793,
+        "within_1m_percent": 14.59,
+        "within_5m_percent": 54.64
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 165303,
+          "mean_m": 2.849,
+          "median_m": 2.084,
+          "std_m": 3.999,
+          "nmad_m": 2.605,
+          "rmse_m": 4.91,
+          "p95_abs_m": 10.081,
+          "within_1m_percent": 25.32,
+          "within_5m_percent": 81.32
+        },
+        "5-15": {
+          "samples": 150550,
+          "mean_m": 5.35,
+          "median_m": 3.843,
+          "std_m": 6.218,
+          "nmad_m": 4.696,
+          "rmse_m": 8.202,
+          "p95_abs_m": 17.881,
+          "within_1m_percent": 14.31,
+          "within_5m_percent": 57.92
+        },
+        "15-30": {
+          "samples": 187061,
+          "mean_m": 8.253,
+          "median_m": 7.536,
+          "std_m": 7.019,
+          "nmad_m": 7.217,
+          "rmse_m": 10.834,
+          "p95_abs_m": 20.422,
+          "within_1m_percent": 7.38,
+          "within_5m_percent": 34.86
+        },
+        "30-90": {
+          "samples": 36302,
+          "mean_m": 10.317,
+          "median_m": 10.715,
+          "std_m": 8.379,
+          "nmad_m": 8.023,
+          "rmse_m": 13.291,
+          "p95_abs_m": 22.466,
+          "within_1m_percent": 4.03,
+          "within_5m_percent": 21.41
+        }
+      },
+      "sites": [
+        "north_karst_hatillo",
+        "central_cordillera_cerro_de_punta",
+        "el_yunque",
+        "dry_south_guanica",
+        "urban_san_juan",
+        "west_mayaguez",
+        "east_central_cayey",
+        "northeast_carolina"
+      ]
+    },
+    "lidar_d24_minus_2018_1arcsec": {
+      "overall": {
+        "samples": 537099,
+        "mean_m": -0.158,
+        "median_m": -0.136,
+        "std_m": 0.528,
+        "nmad_m": 0.166,
+        "rmse_m": 0.551,
+        "p95_abs_m": 0.576,
+        "within_1m_percent": 99.06,
+        "within_5m_percent": 99.95
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 160470,
+          "mean_m": -0.063,
+          "median_m": -0.066,
+          "std_m": 0.314,
+          "nmad_m": 0.119,
+          "rmse_m": 0.321,
+          "p95_abs_m": 0.535,
+          "within_1m_percent": 99.44,
+          "within_5m_percent": 99.96
+        },
+        "5-15": {
+          "samples": 151587,
+          "mean_m": -0.145,
+          "median_m": -0.129,
+          "std_m": 0.795,
+          "nmad_m": 0.148,
+          "rmse_m": 0.808,
+          "p95_abs_m": 0.517,
+          "within_1m_percent": 99.28,
+          "within_5m_percent": 99.95
+        },
+        "15-30": {
+          "samples": 188347,
+          "mean_m": -0.228,
+          "median_m": -0.209,
+          "std_m": 0.337,
+          "nmad_m": 0.17,
+          "rmse_m": 0.407,
+          "p95_abs_m": 0.614,
+          "within_1m_percent": 98.77,
+          "within_5m_percent": 99.96
+        },
+        "30-90": {
+          "samples": 36584,
+          "mean_m": -0.267,
+          "median_m": -0.234,
+          "std_m": 0.617,
+          "nmad_m": 0.194,
+          "rmse_m": 0.673,
+          "p95_abs_m": 0.718,
+          "within_1m_percent": 98.04,
+          "within_5m_percent": 99.84
+        }
+      },
+      "sites": [
+        "north_karst_hatillo",
+        "central_cordillera_cerro_de_punta",
+        "el_yunque",
+        "dry_south_guanica",
+        "urban_san_juan",
+        "west_mayaguez",
+        "east_central_cayey",
+        "northeast_carolina"
+      ]
+    },
+    "nasa_nasadem_hgt_v001": {
+      "overall": {
+        "samples": 542832,
+        "mean_m": 2.803,
+        "median_m": 1.88,
+        "std_m": 5.96,
+        "nmad_m": 4.352,
+        "rmse_m": 6.586,
+        "p95_abs_m": 13.932,
+        "within_1m_percent": 19.32,
+        "within_5m_percent": 66.69
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 166110,
+          "mean_m": 1.373,
+          "median_m": 1.003,
+          "std_m": 3.313,
+          "nmad_m": 2.329,
+          "rmse_m": 3.586,
+          "p95_abs_m": 7.438,
+          "within_1m_percent": 31.89,
+          "within_5m_percent": 88.37
+        },
+        "5-15": {
+          "samples": 151636,
+          "mean_m": 2.467,
+          "median_m": 1.861,
+          "std_m": 5.61,
+          "nmad_m": 4.515,
+          "rmse_m": 6.128,
+          "p95_abs_m": 12.906,
+          "within_1m_percent": 17.65,
+          "within_5m_percent": 67.19
+        },
+        "15-30": {
+          "samples": 188350,
+          "mean_m": 3.831,
+          "median_m": 3.385,
+          "std_m": 6.754,
+          "nmad_m": 6.253,
+          "rmse_m": 7.765,
+          "p95_abs_m": 15.655,
+          "within_1m_percent": 11.71,
+          "within_5m_percent": 52.27
+        },
+        "30-90": {
+          "samples": 36584,
+          "mean_m": 5.399,
+          "median_m": 4.972,
+          "std_m": 9.477,
+          "nmad_m": 7.986,
+          "rmse_m": 10.907,
+          "p95_abs_m": 20.788,
+          "within_1m_percent": 8.3,
+          "within_5m_percent": 40.33
+        }
+      },
+      "sites": [
+        "north_karst_hatillo",
+        "central_cordillera_cerro_de_punta",
+        "el_yunque",
+        "dry_south_guanica",
+        "urban_san_juan",
+        "west_mayaguez",
+        "east_central_cayey",
+        "northeast_carolina"
+      ]
+    },
+    "nasa_srtmgl1_v003": {
+      "overall": {
+        "samples": 542832,
+        "mean_m": 4.528,
+        "median_m": 3.628,
+        "std_m": 5.865,
+        "nmad_m": 4.478,
+        "rmse_m": 7.41,
+        "p95_abs_m": 15.356,
+        "within_1m_percent": 13.47,
+        "within_5m_percent": 58.86
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 166110,
+          "mean_m": 2.76,
+          "median_m": 2.464,
+          "std_m": 3.254,
+          "nmad_m": 2.591,
+          "rmse_m": 4.267,
+          "p95_abs_m": 8.277,
+          "within_1m_percent": 20.14,
+          "within_5m_percent": 80.5
+        },
+        "5-15": {
+          "samples": 151636,
+          "mean_m": 4.227,
+          "median_m": 3.694,
+          "std_m": 5.436,
+          "nmad_m": 4.499,
+          "rmse_m": 6.886,
+          "p95_abs_m": 14.09,
+          "within_1m_percent": 12.62,
+          "within_5m_percent": 58.68
+        },
+        "15-30": {
+          "samples": 188350,
+          "mean_m": 5.703,
+          "median_m": 5.222,
+          "std_m": 6.562,
+          "nmad_m": 6.113,
+          "rmse_m": 8.694,
+          "p95_abs_m": 17.163,
+          "within_1m_percent": 9.54,
+          "within_5m_percent": 44.91
+        },
+        "30-90": {
+          "samples": 36584,
+          "mean_m": 7.756,
+          "median_m": 7.257,
+          "std_m": 9.273,
+          "nmad_m": 7.827,
+          "rmse_m": 12.089,
+          "p95_abs_m": 22.638,
+          "within_1m_percent": 6.82,
+          "within_5m_percent": 33.04
+        }
+      },
+      "sites": [
+        "north_karst_hatillo",
+        "central_cordillera_cerro_de_punta",
+        "el_yunque",
+        "dry_south_guanica",
+        "urban_san_juan",
+        "west_mayaguez",
+        "east_central_cayey",
+        "northeast_carolina"
+      ]
+    },
+    "ncei_arecibo_2007": {
+      "overall": {
+        "samples": 539174,
+        "mean_m": 0.305,
+        "median_m": 0.146,
+        "std_m": 9.844,
+        "nmad_m": 3.696,
+        "rmse_m": 9.849,
+        "p95_abs_m": 19.704,
+        "within_1m_percent": 24.55,
+        "within_5m_percent": 70.62
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 306626,
+          "mean_m": 0.468,
+          "median_m": 0.178,
+          "std_m": 4.684,
+          "nmad_m": 2.362,
+          "rmse_m": 4.707,
+          "p95_abs_m": 8.473,
+          "within_1m_percent": 34.45,
+          "within_5m_percent": 87.44
+        },
+        "5-15": {
+          "samples": 147774,
+          "mean_m": 0.207,
+          "median_m": 0.157,
+          "std_m": 9.478,
+          "nmad_m": 5.925,
+          "rmse_m": 9.48,
+          "p95_abs_m": 19.131,
+          "within_1m_percent": 14.4,
+          "within_5m_percent": 58.62
+        },
+        "15-30": {
+          "samples": 64136,
+          "mean_m": -0.27,
+          "median_m": -0.658,
+          "std_m": 15.827,
+          "nmad_m": 11.22,
+          "rmse_m": 15.83,
+          "p95_abs_m": 31.602,
+          "within_1m_percent": 7.47,
+          "within_5m_percent": 35.09
+        },
+        "30-90": {
+          "samples": 20614,
+          "mean_m": 0.388,
+          "median_m": 0.022,
+          "std_m": 27.991,
+          "nmad_m": 22.617,
+          "rmse_m": 27.994,
+          "p95_abs_m": 60.195,
+          "within_1m_percent": 3.26,
+          "within_5m_percent": 16.95
+        }
+      },
+      "sites": [
+        "north_karst_hatillo"
+      ]
+    },
+    "ncei_fajardo_2007": {
+      "overall": {
+        "samples": 462886,
+        "mean_m": 0.72,
+        "median_m": 0.22,
+        "std_m": 4.815,
+        "nmad_m": 2.85,
+        "rmse_m": 4.868,
+        "p95_abs_m": 9.497,
+        "within_1m_percent": 30.89,
+        "within_5m_percent": 80.87
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 24569,
+          "mean_m": -0.111,
+          "median_m": -0.373,
+          "std_m": 5.663,
+          "nmad_m": 0.681,
+          "rmse_m": 5.664,
+          "p95_abs_m": 2.887,
+          "within_1m_percent": 70.52,
+          "within_5m_percent": 98.29
+        },
+        "5-15": {
+          "samples": 90018,
+          "mean_m": 0.375,
+          "median_m": -0.05,
+          "std_m": 4.651,
+          "nmad_m": 1.752,
+          "rmse_m": 4.667,
+          "p95_abs_m": 6.923,
+          "within_1m_percent": 44.14,
+          "within_5m_percent": 90.47
+        },
+        "15-30": {
+          "samples": 240050,
+          "mean_m": 0.82,
+          "median_m": 0.437,
+          "std_m": 4.456,
+          "nmad_m": 3.097,
+          "rmse_m": 4.531,
+          "p95_abs_m": 9.359,
+          "within_1m_percent": 27.45,
+          "within_5m_percent": 80.65
+        },
+        "30-90": {
+          "samples": 108085,
+          "mean_m": 0.976,
+          "median_m": 0.736,
+          "std_m": 5.431,
+          "nmad_m": 4.522,
+          "rmse_m": 5.518,
+          "p95_abs_m": 11.452,
+          "within_1m_percent": 18.48,
+          "within_5m_percent": 69.42
+        }
+      },
+      "sites": [
+        "el_yunque"
+      ]
+    },
+    "ncei_mayaguez_2006": {
+      "overall": {
+        "samples": 608226,
+        "mean_m": 0.799,
+        "median_m": 0.648,
+        "std_m": 1.302,
+        "nmad_m": 0.378,
+        "rmse_m": 1.527,
+        "p95_abs_m": 2.986,
+        "within_1m_percent": 73.19,
+        "within_5m_percent": 98.47
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 296146,
+          "mean_m": 0.594,
+          "median_m": 0.61,
+          "std_m": 0.958,
+          "nmad_m": 0.234,
+          "rmse_m": 1.127,
+          "p95_abs_m": 1.568,
+          "within_1m_percent": 84.7,
+          "within_5m_percent": 99.46
+        },
+        "5-15": {
+          "samples": 145574,
+          "mean_m": 0.711,
+          "median_m": 0.634,
+          "std_m": 1.27,
+          "nmad_m": 0.394,
+          "rmse_m": 1.456,
+          "p95_abs_m": 2.564,
+          "within_1m_percent": 75.56,
+          "within_5m_percent": 98.76
+        },
+        "15-30": {
+          "samples": 140883,
+          "mean_m": 1.115,
+          "median_m": 0.862,
+          "std_m": 1.581,
+          "nmad_m": 0.812,
+          "rmse_m": 1.935,
+          "p95_abs_m": 4.068,
+          "within_1m_percent": 53.78,
+          "within_5m_percent": 97.34
+        },
+        "30-90": {
+          "samples": 25599,
+          "mean_m": 1.934,
+          "median_m": 1.513,
+          "std_m": 2.082,
+          "nmad_m": 1.521,
+          "rmse_m": 2.842,
+          "p95_abs_m": 5.826,
+          "within_1m_percent": 33.44,
+          "within_5m_percent": 91.64
+        }
+      },
+      "sites": [
+        "west_mayaguez"
+      ]
+    },
+    "ncei_mayaguez_2007": {
+      "overall": {
+        "samples": 608226,
+        "mean_m": -0.382,
+        "median_m": -0.59,
+        "std_m": 2.737,
+        "nmad_m": 0.914,
+        "rmse_m": 2.764,
+        "p95_abs_m": 5.855,
+        "within_1m_percent": 55.16,
+        "within_5m_percent": 93.6
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 296146,
+          "mean_m": -0.623,
+          "median_m": -0.617,
+          "std_m": 1.405,
+          "nmad_m": 0.57,
+          "rmse_m": 1.537,
+          "p95_abs_m": 2.323,
+          "within_1m_percent": 69.95,
+          "within_5m_percent": 98.6
+        },
+        "5-15": {
+          "samples": 145574,
+          "mean_m": -0.556,
+          "median_m": -0.61,
+          "std_m": 2.618,
+          "nmad_m": 1.16,
+          "rmse_m": 2.676,
+          "p95_abs_m": 5.347,
+          "within_1m_percent": 51.43,
+          "within_5m_percent": 94.4
+        },
+        "15-30": {
+          "samples": 140883,
+          "mean_m": 0.05,
+          "median_m": -0.433,
+          "std_m": 3.923,
+          "nmad_m": 2.245,
+          "rmse_m": 3.923,
+          "p95_abs_m": 8.789,
+          "within_1m_percent": 34.01,
+          "within_5m_percent": 85.94
+        },
+        "30-90": {
+          "samples": 25599,
+          "mean_m": 1.018,
+          "median_m": 0.273,
+          "std_m": 5.259,
+          "nmad_m": 3.923,
+          "rmse_m": 5.357,
+          "p95_abs_m": 11.755,
+          "within_1m_percent": 21.65,
+          "within_5m_percent": 73.38
+        }
+      },
+      "sites": [
+        "west_mayaguez"
+      ]
+    },
+    "ncei_ponce_2007": {
+      "overall": {
+        "samples": 385354,
+        "mean_m": 0.636,
+        "median_m": 0.374,
+        "std_m": 1.748,
+        "nmad_m": 1.161,
+        "rmse_m": 1.86,
+        "p95_abs_m": 4.035,
+        "within_1m_percent": 56.43,
+        "within_5m_percent": 97.58
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 156873,
+          "mean_m": 0.317,
+          "median_m": 0.163,
+          "std_m": 1.328,
+          "nmad_m": 0.729,
+          "rmse_m": 1.365,
+          "p95_abs_m": 2.943,
+          "within_1m_percent": 70.61,
+          "within_5m_percent": 98.98
+        },
+        "5-15": {
+          "samples": 140886,
+          "mean_m": 0.843,
+          "median_m": 0.607,
+          "std_m": 1.625,
+          "nmad_m": 1.297,
+          "rmse_m": 1.83,
+          "p95_abs_m": 3.938,
+          "within_1m_percent": 52.76,
+          "within_5m_percent": 98.14
+        },
+        "15-30": {
+          "samples": 72767,
+          "mean_m": 0.866,
+          "median_m": 0.698,
+          "std_m": 2.177,
+          "nmad_m": 1.911,
+          "rmse_m": 2.343,
+          "p95_abs_m": 4.804,
+          "within_1m_percent": 39.27,
+          "within_5m_percent": 95.67
+        },
+        "30-90": {
+          "samples": 14782,
+          "mean_m": 0.92,
+          "median_m": 0.79,
+          "std_m": 3.255,
+          "nmad_m": 3.036,
+          "rmse_m": 3.383,
+          "p95_abs_m": 6.8,
+          "within_1m_percent": 25.4,
+          "within_5m_percent": 86.65
+        }
+      },
+      "sites": [
+        "dry_south_guanica"
+      ]
+    },
+    "ncei_puerto_rico_cudem_ninth_9525": {
+      "overall": {
+        "samples": 44172974,
+        "mean_m": 0.08,
+        "median_m": -0.016,
+        "std_m": 2.89,
+        "nmad_m": 0.258,
+        "rmse_m": 2.891,
+        "p95_abs_m": 1.374,
+        "within_1m_percent": 90.82,
+        "within_5m_percent": 99.12
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 12868381,
+          "mean_m": 0.384,
+          "median_m": -0.014,
+          "std_m": 5.241,
+          "nmad_m": 0.073,
+          "rmse_m": 5.255,
+          "p95_abs_m": 1.879,
+          "within_1m_percent": 93.68,
+          "within_5m_percent": 97.02
+        },
+        "5-15": {
+          "samples": 8838724,
+          "mean_m": -0.024,
+          "median_m": -0.016,
+          "std_m": 0.365,
+          "nmad_m": 0.173,
+          "rmse_m": 0.366,
+          "p95_abs_m": 0.6,
+          "within_1m_percent": 98.32,
+          "within_5m_percent": 99.99
+        },
+        "15-30": {
+          "samples": 13296526,
+          "mean_m": -0.053,
+          "median_m": -0.025,
+          "std_m": 0.599,
+          "nmad_m": 0.459,
+          "rmse_m": 0.601,
+          "p95_abs_m": 1.112,
+          "within_1m_percent": 93.26,
+          "within_5m_percent": 99.99
+        },
+        "30-90": {
+          "samples": 9167155,
+          "mean_m": -0.056,
+          "median_m": -0.035,
+          "std_m": 0.923,
+          "nmad_m": 0.842,
+          "rmse_m": 0.924,
+          "p95_abs_m": 1.785,
+          "within_1m_percent": 76.05,
+          "within_5m_percent": 99.95
+        }
+      },
+      "sites": [
+        "north_karst_hatillo",
+        "central_cordillera_cerro_de_punta",
+        "el_yunque",
+        "dry_south_guanica",
+        "urban_san_juan",
+        "west_mayaguez",
+        "east_central_cayey",
+        "northeast_carolina"
+      ]
+    },
+    "ncei_puerto_rico_cudem_third_9524": {
+      "overall": {
+        "samples": 0
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 0
+        },
+        "5-15": {
+          "samples": 0
+        },
+        "15-30": {
+          "samples": 0
+        },
+        "30-90": {
+          "samples": 0
+        }
+      },
+      "sites": [
+        "urban_san_juan"
+      ]
+    },
+    "ncei_san_juan_19_prvd02_2015": {
+      "overall": {
+        "samples": 2804456,
+        "mean_m": -1.134,
+        "median_m": -0.299,
+        "std_m": 2.518,
+        "nmad_m": 0.214,
+        "rmse_m": 2.761,
+        "p95_abs_m": 7.725,
+        "within_1m_percent": 79.98,
+        "within_5m_percent": 93.09
+      },
+      "by_slope_class_deg": {
+        "0-5": {
+          "samples": 2460146,
+          "mean_m": -1.234,
+          "median_m": -0.303,
+          "std_m": 2.613,
+          "nmad_m": 0.207,
+          "rmse_m": 2.889,
+          "p95_abs_m": 8.152,
+          "within_1m_percent": 78.71,
+          "within_5m_percent": 92.42
+        },
+        "5-15": {
+          "samples": 278998,
+          "mean_m": -0.369,
+          "median_m": -0.248,
+          "std_m": 1.335,
+          "nmad_m": 0.245,
+          "rmse_m": 1.385,
+          "p95_abs_m": 1.734,
+          "within_1m_percent": 91.22,
+          "within_5m_percent": 98.44
+        },
+        "15-30": {
+          "samples": 54621,
+          "mean_m": -0.641,
+          "median_m": -0.239,
+          "std_m": 2.055,
+          "nmad_m": 0.413,
+          "rmse_m": 2.152,
+          "p95_abs_m": 4.512,
+          "within_1m_percent": 82.8,
+          "within_5m_percent": 95.27
+        },
+        "30-90": {
+          "samples": 10442,
+          "mean_m": -0.638,
+          "median_m": -0.312,
+          "std_m": 2.104,
+          "nmad_m": 0.803,
+          "rmse_m": 2.199,
+          "p95_abs_m": 4.848,
+          "within_1m_percent": 65.63,
+          "within_5m_percent": 95.19
+        }
+      },
+      "sites": [
+        "urban_san_juan"
+      ]
+    }
+  },
+  "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+    "north_karst_hatillo": {
+      "samples": 2654677,
+      "mean_m": 0.043,
+      "median_m": -0.004,
+      "std_m": 0.506,
+      "nmad_m": 0.058,
+      "rmse_m": 0.507,
+      "p95_abs_m": 0.261,
+      "within_1m_percent": 97.63,
+      "within_5m_percent": 99.77
+    },
+    "central_cordillera_cerro_de_punta": {
+      "samples": 457120,
+      "mean_m": 0.009,
+      "median_m": 0.002,
+      "std_m": 0.27,
+      "nmad_m": 0.151,
+      "rmse_m": 0.27,
+      "p95_abs_m": 0.596,
+      "within_1m_percent": 99.25,
+      "within_5m_percent": 100.0
+    },
+    "el_yunque": {
+      "samples": 238258,
+      "mean_m": -0.005,
+      "median_m": -0.002,
+      "std_m": 0.151,
+      "nmad_m": 0.068,
+      "rmse_m": 0.151,
+      "p95_abs_m": 0.204,
+      "within_1m_percent": 99.95,
+      "within_5m_percent": 99.96
+    },
+    "dry_south_guanica": {
+      "samples": 1374335,
+      "mean_m": 0.163,
+      "median_m": 0.024,
+      "std_m": 0.704,
+      "nmad_m": 0.056,
+      "rmse_m": 0.722,
+      "p95_abs_m": 1.04,
+      "within_1m_percent": 94.86,
+      "within_5m_percent": 99.41
+    },
+    "urban_san_juan": {
+      "samples": 2462323,
+      "mean_m": 0.714,
+      "median_m": 0.062,
+      "std_m": 2.231,
+      "nmad_m": 0.079,
+      "rmse_m": 2.342,
+      "p95_abs_m": 5.087,
+      "within_1m_percent": 87.34,
+      "within_5m_percent": 94.95
+    },
+    "west_mayaguez": {
+      "samples": 2649247,
+      "mean_m": 0.113,
+      "median_m": 0.021,
+      "std_m": 0.671,
+      "nmad_m": 0.071,
+      "rmse_m": 0.68,
+      "p95_abs_m": 0.336,
+      "within_1m_percent": 97.53,
+      "within_5m_percent": 99.51
+    },
+    "east_central_cayey": {
+      "samples": 685421,
+      "mean_m": -1.778,
+      "median_m": -0.015,
+      "std_m": 5.627,
+      "nmad_m": 0.149,
+      "rmse_m": 5.901,
+      "p95_abs_m": 16.981,
+      "within_1m_percent": 84.67,
+      "within_5m_percent": 88.73
+    },
+    "northeast_carolina": {
+      "samples": 2347000,
+      "mean_m": -2.609,
+      "median_m": -0.004,
+      "std_m": 11.294,
+      "nmad_m": 0.059,
+      "rmse_m": 11.591,
+      "p95_abs_m": 17.092,
+      "within_1m_percent": 91.73,
+      "within_5m_percent": 93.42
+    }
+  },
+  "sites": [
+    {
+      "site_id": "north_karst_hatillo",
+      "box_nad83": [
+        -66.9154,
+        18.439311,
+        -66.822857,
+        18.52756
+      ],
+      "results": {
+        "nasa_srtmgl1_v003": {
+          "overall": {
+            "samples": 59738,
+            "mean_m": 3.712,
+            "median_m": 3.32,
+            "std_m": 3.867,
+            "nmad_m": 2.654,
+            "rmse_m": 5.36,
+            "p95_abs_m": 9.873,
+            "within_1m_percent": 11.74,
+            "within_5m_percent": 72.68
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 35634,
+              "mean_m": 3.133,
+              "median_m": 3.041,
+              "std_m": 2.42,
+              "nmad_m": 2.195,
+              "rmse_m": 3.959,
+              "p95_abs_m": 6.926,
+              "within_1m_percent": 12.05,
+              "within_5m_percent": 81.58
+            },
+            "5-15": {
+              "samples": 17673,
+              "mean_m": 3.934,
+              "median_m": 3.68,
+              "std_m": 4.005,
+              "nmad_m": 3.173,
+              "rmse_m": 5.614,
+              "p95_abs_m": 10.246,
+              "within_1m_percent": 12.3,
+              "within_5m_percent": 65.52
+            },
+            "15-30": {
+              "samples": 5319,
+              "mean_m": 5.742,
+              "median_m": 5.118,
+              "std_m": 6.487,
+              "nmad_m": 5.444,
+              "rmse_m": 8.663,
+              "p95_abs_m": 17.274,
+              "within_1m_percent": 8.87,
+              "within_5m_percent": 45.89
+            },
+            "30-90": {
+              "samples": 1103,
+              "mean_m": 9.069,
+              "median_m": 8.651,
+              "std_m": 10.016,
+              "nmad_m": 8.505,
+              "rmse_m": 13.512,
+              "p95_abs_m": 26.17,
+              "within_1m_percent": 6.8,
+              "within_5m_percent": 28.83
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.439
+        },
+        "nasa_nasadem_hgt_v001": {
+          "overall": {
+            "samples": 59738,
+            "mean_m": 1.287,
+            "median_m": 0.956,
+            "std_m": 3.88,
+            "nmad_m": 2.508,
+            "rmse_m": 4.088,
+            "p95_abs_m": 7.829,
+            "within_1m_percent": 29.0,
+            "within_5m_percent": 87.86
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 35634,
+              "mean_m": 0.757,
+              "median_m": 0.752,
+              "std_m": 2.377,
+              "nmad_m": 1.99,
+              "rmse_m": 2.495,
+              "p95_abs_m": 4.696,
+              "within_1m_percent": 34.57,
+              "within_5m_percent": 95.94
+            },
+            "5-15": {
+              "samples": 17673,
+              "mean_m": 1.462,
+              "median_m": 1.18,
+              "std_m": 4.088,
+              "nmad_m": 3.146,
+              "rmse_m": 4.341,
+              "p95_abs_m": 8.113,
+              "within_1m_percent": 23.66,
+              "within_5m_percent": 83.25
+            },
+            "15-30": {
+              "samples": 5319,
+              "mean_m": 3.176,
+              "median_m": 2.402,
+              "std_m": 6.736,
+              "nmad_m": 5.473,
+              "rmse_m": 7.447,
+              "p95_abs_m": 15.425,
+              "within_1m_percent": 14.01,
+              "within_5m_percent": 59.41
+            },
+            "30-90": {
+              "samples": 1103,
+              "mean_m": 6.495,
+              "median_m": 5.733,
+              "std_m": 9.621,
+              "nmad_m": 8.508,
+              "rmse_m": 11.608,
+              "p95_abs_m": 22.79,
+              "within_1m_percent": 7.34,
+              "within_5m_percent": 38.08
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.439
+        },
+        "copernicus_glo30_dem": {
+          "overall": {
+            "samples": 59738,
+            "mean_m": 2.883,
+            "median_m": 1.549,
+            "std_m": 3.82,
+            "nmad_m": 1.895,
+            "rmse_m": 4.786,
+            "p95_abs_m": 10.774,
+            "within_1m_percent": 35.8,
+            "within_5m_percent": 81.98
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 35634,
+              "mean_m": 1.602,
+              "median_m": 1.105,
+              "std_m": 2.14,
+              "nmad_m": 1.299,
+              "rmse_m": 2.673,
+              "p95_abs_m": 5.375,
+              "within_1m_percent": 46.59,
+              "within_5m_percent": 94.31
+            },
+            "5-15": {
+              "samples": 17673,
+              "mean_m": 3.394,
+              "median_m": 2.329,
+              "std_m": 3.548,
+              "nmad_m": 2.444,
+              "rmse_m": 4.91,
+              "p95_abs_m": 10.148,
+              "within_1m_percent": 24.73,
+              "within_5m_percent": 76.45
+            },
+            "15-30": {
+              "samples": 5319,
+              "mean_m": 7.569,
+              "median_m": 7.031,
+              "std_m": 5.117,
+              "nmad_m": 4.832,
+              "rmse_m": 9.136,
+              "p95_abs_m": 17.069,
+              "within_1m_percent": 7.67,
+              "within_5m_percent": 33.69
+            },
+            "30-90": {
+              "samples": 1103,
+              "mean_m": 13.487,
+              "median_m": 12.51,
+              "std_m": 6.254,
+              "nmad_m": 5.208,
+              "rmse_m": 14.867,
+              "p95_abs_m": 23.846,
+              "within_1m_percent": 0.54,
+              "within_5m_percent": 4.99
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.282
+        },
+        "lidar_d24_minus_2018_1arcsec": {
+          "overall": {
+            "samples": 58549,
+            "mean_m": -0.03,
+            "median_m": -0.025,
+            "std_m": 0.278,
+            "nmad_m": 0.095,
+            "rmse_m": 0.28,
+            "p95_abs_m": 0.326,
+            "within_1m_percent": 99.39,
+            "within_5m_percent": 99.96
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 34498,
+              "mean_m": -0.002,
+              "median_m": -0.01,
+              "std_m": 0.266,
+              "nmad_m": 0.078,
+              "rmse_m": 0.266,
+              "p95_abs_m": 0.287,
+              "within_1m_percent": 99.42,
+              "within_5m_percent": 99.96
+            },
+            "5-15": {
+              "samples": 17632,
+              "mean_m": -0.046,
+              "median_m": -0.043,
+              "std_m": 0.287,
+              "nmad_m": 0.107,
+              "rmse_m": 0.291,
+              "p95_abs_m": 0.335,
+              "within_1m_percent": 99.44,
+              "within_5m_percent": 99.94
+            },
+            "15-30": {
+              "samples": 5316,
+              "mean_m": -0.118,
+              "median_m": -0.108,
+              "std_m": 0.294,
+              "nmad_m": 0.119,
+              "rmse_m": 0.317,
+              "p95_abs_m": 0.406,
+              "within_1m_percent": 99.23,
+              "within_5m_percent": 99.96
+            },
+            "30-90": {
+              "samples": 1103,
+              "mean_m": -0.204,
+              "median_m": -0.174,
+              "std_m": 0.257,
+              "nmad_m": 0.129,
+              "rmse_m": 0.328,
+              "p95_abs_m": 0.652,
+              "within_1m_percent": 98.55,
+              "within_5m_percent": 100.0
+            }
+          },
+          "cells_beyond_1m": 357
+        },
+        "jaxa_aw3d30": {
+          "overall": {
+            "samples": 59391,
+            "mean_m": 1.663,
+            "median_m": 1.057,
+            "std_m": 4.093,
+            "nmad_m": 2.213,
+            "rmse_m": 4.418,
+            "p95_abs_m": 9.529,
+            "within_1m_percent": 32.78,
+            "within_5m_percent": 87.08
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 35564,
+              "mean_m": 1.0,
+              "median_m": 0.843,
+              "std_m": 2.517,
+              "nmad_m": 1.766,
+              "rmse_m": 2.709,
+              "p95_abs_m": 4.977,
+              "within_1m_percent": 38.24,
+              "within_5m_percent": 95.05
+            },
+            "5-15": {
+              "samples": 17478,
+              "mean_m": 1.726,
+              "median_m": 1.149,
+              "std_m": 4.152,
+              "nmad_m": 2.611,
+              "rmse_m": 4.496,
+              "p95_abs_m": 9.197,
+              "within_1m_percent": 29.31,
+              "within_5m_percent": 84.82
+            },
+            "15-30": {
+              "samples": 5255,
+              "mean_m": 4.503,
+              "median_m": 3.518,
+              "std_m": 6.826,
+              "nmad_m": 5.796,
+              "rmse_m": 8.178,
+              "p95_abs_m": 16.855,
+              "within_1m_percent": 13.4,
+              "within_5m_percent": 53.95
+            },
+            "30-90": {
+              "samples": 1081,
+              "mean_m": 8.665,
+              "median_m": 9.48,
+              "std_m": 10.199,
+              "nmad_m": 7.592,
+              "rmse_m": 13.383,
+              "p95_abs_m": 23.432,
+              "within_1m_percent": 4.07,
+              "within_5m_percent": 22.48
+            }
+          },
+          "grid": "1 arc-second, edges on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.439
+        },
+        "ncei_puerto_rico_cudem_ninth_9525": {
+          "overall": {
+            "samples": 4855277,
+            "mean_m": -0.032,
+            "median_m": 0.0,
+            "std_m": 0.425,
+            "nmad_m": 0.089,
+            "rmse_m": 0.426,
+            "p95_abs_m": 0.491,
+            "within_1m_percent": 98.17,
+            "within_5m_percent": 99.87
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2654677,
+              "mean_m": -0.043,
+              "median_m": 0.004,
+              "std_m": 0.506,
+              "nmad_m": 0.058,
+              "rmse_m": 0.507,
+              "p95_abs_m": 0.261,
+              "within_1m_percent": 97.63,
+              "within_5m_percent": 99.77
+            },
+            "5-15": {
+              "samples": 1351698,
+              "mean_m": -0.006,
+              "median_m": -0.007,
+              "std_m": 0.169,
+              "nmad_m": 0.117,
+              "rmse_m": 0.169,
+              "p95_abs_m": 0.302,
+              "within_1m_percent": 99.76,
+              "within_5m_percent": 100.0
+            },
+            "15-30": {
+              "samples": 623217,
+              "mean_m": -0.03,
+              "median_m": -0.032,
+              "std_m": 0.299,
+              "nmad_m": 0.261,
+              "rmse_m": 0.3,
+              "p95_abs_m": 0.587,
+              "within_1m_percent": 99.44,
+              "within_5m_percent": 100.0
+            },
+            "30-90": {
+              "samples": 225566,
+              "mean_m": -0.077,
+              "median_m": -0.061,
+              "std_m": 0.663,
+              "nmad_m": 0.524,
+              "rmse_m": 0.668,
+              "p95_abs_m": 1.231,
+              "within_1m_percent": 91.44,
+              "within_5m_percent": 99.92
+            }
+          },
+          "grid": "CUDEM lattice, 0.1111 arc-seconds",
+          "tiles": [
+            "ncei19_n18x50_w067x00_2022v2.tif",
+            "ncei19_n18x75_w067x00_2022v2.tif"
+          ]
+        },
+        "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+          "samples": 2654677,
+          "mean_m": 0.043,
+          "median_m": -0.004,
+          "std_m": 0.506,
+          "nmad_m": 0.058,
+          "rmse_m": 0.507,
+          "p95_abs_m": 0.261,
+          "within_1m_percent": 97.63,
+          "within_5m_percent": 99.77
+        },
+        "lidar_d24_minus_2018_ninth_arcsec": {
+          "overall": {
+            "samples": 4757268,
+            "mean_m": -0.028,
+            "median_m": -0.02,
+            "std_m": 0.387,
+            "nmad_m": 0.105,
+            "rmse_m": 0.388,
+            "p95_abs_m": 0.529,
+            "within_1m_percent": 98.35,
+            "within_5m_percent": 99.93
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2559895,
+              "mean_m": 0.009,
+              "median_m": -0.006,
+              "std_m": 0.293,
+              "nmad_m": 0.085,
+              "rmse_m": 0.293,
+              "p95_abs_m": 0.405,
+              "within_1m_percent": 98.81,
+              "within_5m_percent": 99.97
+            },
+            "5-15": {
+              "samples": 1349712,
+              "mean_m": -0.038,
+              "median_m": -0.028,
+              "std_m": 0.387,
+              "nmad_m": 0.112,
+              "rmse_m": 0.388,
+              "p95_abs_m": 0.545,
+              "within_1m_percent": 98.53,
+              "within_5m_percent": 99.94
+            },
+            "15-30": {
+              "samples": 622234,
+              "mean_m": -0.093,
+              "median_m": -0.073,
+              "std_m": 0.468,
+              "nmad_m": 0.141,
+              "rmse_m": 0.477,
+              "p95_abs_m": 0.662,
+              "within_1m_percent": 97.86,
+              "within_5m_percent": 99.87
+            },
+            "30-90": {
+              "samples": 225427,
+              "mean_m": -0.204,
+              "median_m": -0.141,
+              "std_m": 0.796,
+              "nmad_m": 0.208,
+              "rmse_m": 0.822,
+              "p95_abs_m": 1.17,
+              "within_1m_percent": 93.46,
+              "within_5m_percent": 99.56
+            }
+          },
+          "cells_beyond_1m": 78473
+        },
+        "ncei_arecibo_2007": {
+          "overall": {
+            "samples": 539174,
+            "mean_m": 0.305,
+            "median_m": 0.146,
+            "std_m": 9.844,
+            "nmad_m": 3.696,
+            "rmse_m": 9.849,
+            "p95_abs_m": 19.704,
+            "within_1m_percent": 24.55,
+            "within_5m_percent": 70.62
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 306626,
+              "mean_m": 0.468,
+              "median_m": 0.178,
+              "std_m": 4.684,
+              "nmad_m": 2.362,
+              "rmse_m": 4.707,
+              "p95_abs_m": 8.473,
+              "within_1m_percent": 34.45,
+              "within_5m_percent": 87.44
+            },
+            "5-15": {
+              "samples": 147774,
+              "mean_m": 0.207,
+              "median_m": 0.157,
+              "std_m": 9.478,
+              "nmad_m": 5.925,
+              "rmse_m": 9.48,
+              "p95_abs_m": 19.131,
+              "within_1m_percent": 14.4,
+              "within_5m_percent": 58.62
+            },
+            "15-30": {
+              "samples": 64136,
+              "mean_m": -0.27,
+              "median_m": -0.658,
+              "std_m": 15.827,
+              "nmad_m": 11.22,
+              "rmse_m": 15.83,
+              "p95_abs_m": 31.602,
+              "within_1m_percent": 7.47,
+              "within_5m_percent": 35.09
+            },
+            "30-90": {
+              "samples": 20614,
+              "mean_m": 0.388,
+              "median_m": 0.022,
+              "std_m": 27.991,
+              "nmad_m": 22.617,
+              "rmse_m": 27.994,
+              "p95_abs_m": 60.195,
+              "within_1m_percent": 3.26,
+              "within_5m_percent": 16.95
+            }
+          },
+          "grid": "NCEI lat/lon grid, 0.3333 arc-seconds",
+          "vertical_datum": "Mean High Water",
+          "datum_note": "uncorrected: Mean High Water against lidar PRVD02; the median is the MHW offset plus any bias"
+        }
+      }
+    },
+    {
+      "site_id": "central_cordillera_cerro_de_punta",
+      "box_nad83": [
+        -66.635072,
+        18.165063,
+        -66.542824,
+        18.253174
+      ],
+      "results": {
+        "nasa_srtmgl1_v003": {
+          "overall": {
+            "samples": 105244,
+            "mean_m": 6.93,
+            "median_m": 6.261,
+            "std_m": 7.563,
+            "nmad_m": 6.565,
+            "rmse_m": 10.258,
+            "p95_abs_m": 19.945,
+            "within_1m_percent": 7.77,
+            "within_5m_percent": 38.88
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 4781,
+              "mean_m": 4.693,
+              "median_m": 4.088,
+              "std_m": 4.969,
+              "nmad_m": 3.385,
+              "rmse_m": 6.834,
+              "p95_abs_m": 13.869,
+              "within_1m_percent": 8.58,
+              "within_5m_percent": 58.94
+            },
+            "5-15": {
+              "samples": 22557,
+              "mean_m": 6.161,
+              "median_m": 5.719,
+              "std_m": 6.65,
+              "nmad_m": 6.338,
+              "rmse_m": 9.066,
+              "p95_abs_m": 17.785,
+              "within_1m_percent": 8.9,
+              "within_5m_percent": 42.28
+            },
+            "15-30": {
+              "samples": 57888,
+              "mean_m": 6.836,
+              "median_m": 6.262,
+              "std_m": 6.96,
+              "nmad_m": 6.344,
+              "rmse_m": 9.756,
+              "p95_abs_m": 19.073,
+              "within_1m_percent": 7.88,
+              "within_5m_percent": 39.09
+            },
+            "30-90": {
+              "samples": 20018,
+              "mean_m": 8.601,
+              "median_m": 8.114,
+              "std_m": 10.01,
+              "nmad_m": 8.215,
+              "rmse_m": 13.198,
+              "p95_abs_m": 24.793,
+              "within_1m_percent": 5.99,
+              "within_5m_percent": 29.63
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.933
+        },
+        "nasa_nasadem_hgt_v001": {
+          "overall": {
+            "samples": 105244,
+            "mean_m": 3.944,
+            "median_m": 3.306,
+            "std_m": 7.71,
+            "nmad_m": 6.671,
+            "rmse_m": 8.66,
+            "p95_abs_m": 17.323,
+            "within_1m_percent": 11.48,
+            "within_5m_percent": 50.55
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 4781,
+              "mean_m": 1.711,
+              "median_m": 1.08,
+              "std_m": 5.191,
+              "nmad_m": 3.459,
+              "rmse_m": 5.466,
+              "p95_abs_m": 11.669,
+              "within_1m_percent": 23.72,
+              "within_5m_percent": 74.13
+            },
+            "5-15": {
+              "samples": 22557,
+              "mean_m": 3.214,
+              "median_m": 2.863,
+              "std_m": 6.845,
+              "nmad_m": 6.528,
+              "rmse_m": 7.562,
+              "p95_abs_m": 15.153,
+              "within_1m_percent": 11.57,
+              "within_5m_percent": 51.9
+            },
+            "15-30": {
+              "samples": 57888,
+              "mean_m": 3.864,
+              "median_m": 3.289,
+              "std_m": 7.064,
+              "nmad_m": 6.426,
+              "rmse_m": 8.051,
+              "p95_abs_m": 16.391,
+              "within_1m_percent": 11.62,
+              "within_5m_percent": 52.1
+            },
+            "30-90": {
+              "samples": 20018,
+              "mean_m": 5.535,
+              "median_m": 5.117,
+              "std_m": 10.23,
+              "nmad_m": 8.325,
+              "rmse_m": 11.632,
+              "p95_abs_m": 22.301,
+              "within_1m_percent": 8.03,
+              "within_5m_percent": 38.92
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.933
+        },
+        "copernicus_glo30_dem": {
+          "overall": {
+            "samples": 105244,
+            "mean_m": 9.735,
+            "median_m": 9.321,
+            "std_m": 6.887,
+            "nmad_m": 8.015,
+            "rmse_m": 11.925,
+            "p95_abs_m": 21.063,
+            "within_1m_percent": 6.73,
+            "within_5m_percent": 30.38
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 4781,
+              "mean_m": 4.109,
+              "median_m": 2.424,
+              "std_m": 4.721,
+              "nmad_m": 2.789,
+              "rmse_m": 6.259,
+              "p95_abs_m": 14.984,
+              "within_1m_percent": 26.69,
+              "within_5m_percent": 72.16
+            },
+            "5-15": {
+              "samples": 22557,
+              "mean_m": 7.426,
+              "median_m": 5.868,
+              "std_m": 5.997,
+              "nmad_m": 6.15,
+              "rmse_m": 9.545,
+              "p95_abs_m": 18.664,
+              "within_1m_percent": 10.24,
+              "within_5m_percent": 45.01
+            },
+            "15-30": {
+              "samples": 57888,
+              "mean_m": 9.85,
+              "median_m": 9.522,
+              "std_m": 6.274,
+              "nmad_m": 7.421,
+              "rmse_m": 11.678,
+              "p95_abs_m": 20.442,
+              "within_1m_percent": 5.11,
+              "within_5m_percent": 27.45
+            },
+            "30-90": {
+              "samples": 20018,
+              "mean_m": 13.347,
+              "median_m": 13.784,
+              "std_m": 7.938,
+              "nmad_m": 6.648,
+              "rmse_m": 15.529,
+              "p95_abs_m": 24.539,
+              "within_1m_percent": 2.7,
+              "within_5m_percent": 12.36
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.412
+        },
+        "lidar_d24_minus_2018_1arcsec": {
+          "overall": {
+            "samples": 105244,
+            "mean_m": -0.145,
+            "median_m": -0.152,
+            "std_m": 0.255,
+            "nmad_m": 0.169,
+            "rmse_m": 0.293,
+            "p95_abs_m": 0.49,
+            "within_1m_percent": 99.62,
+            "within_5m_percent": 99.98
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 4781,
+              "mean_m": -0.056,
+              "median_m": -0.066,
+              "std_m": 0.288,
+              "nmad_m": 0.106,
+              "rmse_m": 0.293,
+              "p95_abs_m": 0.452,
+              "within_1m_percent": 99.33,
+              "within_5m_percent": 99.92
+            },
+            "5-15": {
+              "samples": 22557,
+              "mean_m": -0.116,
+              "median_m": -0.117,
+              "std_m": 0.236,
+              "nmad_m": 0.144,
+              "rmse_m": 0.263,
+              "p95_abs_m": 0.437,
+              "within_1m_percent": 99.66,
+              "within_5m_percent": 99.97
+            },
+            "15-30": {
+              "samples": 57888,
+              "mean_m": -0.15,
+              "median_m": -0.161,
+              "std_m": 0.242,
+              "nmad_m": 0.164,
+              "rmse_m": 0.285,
+              "p95_abs_m": 0.472,
+              "within_1m_percent": 99.7,
+              "within_5m_percent": 99.99
+            },
+            "30-90": {
+              "samples": 20018,
+              "mean_m": -0.184,
+              "median_m": -0.204,
+              "std_m": 0.291,
+              "nmad_m": 0.2,
+              "rmse_m": 0.344,
+              "p95_abs_m": 0.575,
+              "within_1m_percent": 99.41,
+              "within_5m_percent": 99.98
+            }
+          },
+          "cells_beyond_1m": 400
+        },
+        "jaxa_aw3d30": {
+          "overall": {
+            "samples": 104596,
+            "mean_m": 9.248,
+            "median_m": 8.45,
+            "std_m": 7.565,
+            "nmad_m": 7.982,
+            "rmse_m": 11.948,
+            "p95_abs_m": 21.676,
+            "within_1m_percent": 5.31,
+            "within_5m_percent": 31.91
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 4818,
+              "mean_m": 5.165,
+              "median_m": 3.814,
+              "std_m": 5.125,
+              "nmad_m": 2.377,
+              "rmse_m": 7.276,
+              "p95_abs_m": 16.797,
+              "within_1m_percent": 4.84,
+              "within_5m_percent": 66.11
+            },
+            "5-15": {
+              "samples": 22363,
+              "mean_m": 7.826,
+              "median_m": 6.096,
+              "std_m": 7.018,
+              "nmad_m": 6.143,
+              "rmse_m": 10.512,
+              "p95_abs_m": 20.88,
+              "within_1m_percent": 6.56,
+              "within_5m_percent": 41.79
+            },
+            "15-30": {
+              "samples": 57543,
+              "mean_m": 9.381,
+              "median_m": 8.685,
+              "std_m": 7.239,
+              "nmad_m": 7.78,
+              "rmse_m": 11.849,
+              "p95_abs_m": 21.471,
+              "within_1m_percent": 5.46,
+              "within_5m_percent": 30.11
+            },
+            "30-90": {
+              "samples": 19872,
+              "mean_m": 11.452,
+              "median_m": 12.498,
+              "std_m": 8.745,
+              "nmad_m": 7.871,
+              "rmse_m": 14.41,
+              "p95_abs_m": 23.116,
+              "within_1m_percent": 3.59,
+              "within_5m_percent": 17.72
+            }
+          },
+          "grid": "1 arc-second, edges on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.934
+        },
+        "ncei_puerto_rico_cudem_ninth_9525": {
+          "overall": {
+            "samples": 8536450,
+            "mean_m": -0.002,
+            "median_m": -0.008,
+            "std_m": 0.78,
+            "nmad_m": 0.673,
+            "rmse_m": 0.78,
+            "p95_abs_m": 1.562,
+            "within_1m_percent": 82.14,
+            "within_5m_percent": 99.98
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 457120,
+              "mean_m": -0.009,
+              "median_m": -0.002,
+              "std_m": 0.27,
+              "nmad_m": 0.151,
+              "rmse_m": 0.27,
+              "p95_abs_m": 0.596,
+              "within_1m_percent": 99.25,
+              "within_5m_percent": 100.0
+            },
+            "5-15": {
+              "samples": 957388,
+              "mean_m": 0.001,
+              "median_m": -0.007,
+              "std_m": 0.458,
+              "nmad_m": 0.385,
+              "rmse_m": 0.458,
+              "p95_abs_m": 0.941,
+              "within_1m_percent": 96.02,
+              "within_5m_percent": 100.0
+            },
+            "15-30": {
+              "samples": 2971374,
+              "mean_m": -0.007,
+              "median_m": -0.012,
+              "std_m": 0.624,
+              "nmad_m": 0.602,
+              "rmse_m": 0.624,
+              "p95_abs_m": 1.233,
+              "within_1m_percent": 89.38,
+              "within_5m_percent": 100.0
+            },
+            "30-90": {
+              "samples": 4150568,
+              "mean_m": 0.003,
+              "median_m": -0.01,
+              "std_m": 0.957,
+              "nmad_m": 0.939,
+              "rmse_m": 0.957,
+              "p95_abs_m": 1.827,
+              "within_1m_percent": 71.88,
+              "within_5m_percent": 99.95
+            }
+          },
+          "grid": "CUDEM lattice, 0.1111 arc-seconds",
+          "tiles": [
+            "ncei19_n18x25_w066x75_2022v2.tif",
+            "ncei19_n18x50_w066x75_2022v2.tif"
+          ]
+        },
+        "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+          "samples": 457120,
+          "mean_m": 0.009,
+          "median_m": 0.002,
+          "std_m": 0.27,
+          "nmad_m": 0.151,
+          "rmse_m": 0.27,
+          "p95_abs_m": 0.596,
+          "within_1m_percent": 99.25,
+          "within_5m_percent": 100.0
+        },
+        "lidar_d24_minus_2018_ninth_arcsec": {
+          "overall": {
+            "samples": 8536450,
+            "mean_m": -0.145,
+            "median_m": -0.137,
+            "std_m": 0.438,
+            "nmad_m": 0.22,
+            "rmse_m": 0.461,
+            "p95_abs_m": 0.825,
+            "within_1m_percent": 97.05,
+            "within_5m_percent": 99.95
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 457120,
+              "mean_m": -0.036,
+              "median_m": -0.052,
+              "std_m": 0.407,
+              "nmad_m": 0.091,
+              "rmse_m": 0.408,
+              "p95_abs_m": 0.629,
+              "within_1m_percent": 98.11,
+              "within_5m_percent": 99.84
+            },
+            "5-15": {
+              "samples": 957388,
+              "mean_m": -0.095,
+              "median_m": -0.08,
+              "std_m": 0.352,
+              "nmad_m": 0.153,
+              "rmse_m": 0.365,
+              "p95_abs_m": 0.674,
+              "within_1m_percent": 98.18,
+              "within_5m_percent": 99.98
+            },
+            "15-30": {
+              "samples": 2971374,
+              "mean_m": -0.144,
+              "median_m": -0.137,
+              "std_m": 0.377,
+              "nmad_m": 0.2,
+              "rmse_m": 0.404,
+              "p95_abs_m": 0.737,
+              "within_1m_percent": 97.92,
+              "within_5m_percent": 99.97
+            },
+            "30-90": {
+              "samples": 4150568,
+              "mean_m": -0.168,
+              "median_m": -0.174,
+              "std_m": 0.494,
+              "nmad_m": 0.263,
+              "rmse_m": 0.521,
+              "p95_abs_m": 0.918,
+              "within_1m_percent": 96.05,
+              "within_5m_percent": 99.93
+            }
+          },
+          "cells_beyond_1m": 251871
+        }
+      },
+      "summit_check": {
+        "lon": -66.591667,
+        "lat": 18.172222,
+        "lidar_2018_prvd02_m": 1330.55,
+        "lidar_2018_egm96_m": 1331.77,
+        "offset_prvd02_to_egm96_m": 1.214,
+        "offset_prvd02_to_egm2008_m": 0.456,
+        "nasa_srtmgl1_v003_m": 1325.0,
+        "nasa_nasadem_hgt_v001_m": 1323.0,
+        "copernicus_glo30_dem_m": 1328.29
+      }
+    },
+    {
+      "site_id": "el_yunque",
+      "box_nad83": [
+        -65.783067,
+        18.242973,
+        -65.691295,
+        18.33059
+      ],
+      "results": {
+        "nasa_srtmgl1_v003": {
+          "overall": {
+            "samples": 51256,
+            "mean_m": 6.562,
+            "median_m": 5.997,
+            "std_m": 6.964,
+            "nmad_m": 6.921,
+            "rmse_m": 9.568,
+            "p95_abs_m": 18.536,
+            "within_1m_percent": 10.25,
+            "within_5m_percent": 41.89
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2897,
+              "mean_m": 2.478,
+              "median_m": 1.491,
+              "std_m": 4.381,
+              "nmad_m": 3.202,
+              "rmse_m": 5.034,
+              "p95_abs_m": 11.28,
+              "within_1m_percent": 27.17,
+              "within_5m_percent": 77.05
+            },
+            "5-15": {
+              "samples": 14195,
+              "mean_m": 5.17,
+              "median_m": 4.13,
+              "std_m": 6.815,
+              "nmad_m": 6.326,
+              "rmse_m": 8.554,
+              "p95_abs_m": 16.876,
+              "within_1m_percent": 14.48,
+              "within_5m_percent": 52.85
+            },
+            "15-30": {
+              "samples": 28771,
+              "mean_m": 7.41,
+              "median_m": 7.031,
+              "std_m": 6.678,
+              "nmad_m": 6.481,
+              "rmse_m": 9.975,
+              "p95_abs_m": 18.965,
+              "within_1m_percent": 7.24,
+              "within_5m_percent": 35.18
+            },
+            "30-90": {
+              "samples": 5340,
+              "mean_m": 7.921,
+              "median_m": 7.933,
+              "std_m": 8.417,
+              "nmad_m": 7.873,
+              "rmse_m": 11.558,
+              "p95_abs_m": 21.644,
+              "within_1m_percent": 5.96,
+              "within_5m_percent": 29.63
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.508
+        },
+        "nasa_nasadem_hgt_v001": {
+          "overall": {
+            "samples": 51256,
+            "mean_m": 6.295,
+            "median_m": 5.751,
+            "std_m": 6.893,
+            "nmad_m": 6.772,
+            "rmse_m": 9.335,
+            "p95_abs_m": 18.172,
+            "within_1m_percent": 10.36,
+            "within_5m_percent": 42.87
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2897,
+              "mean_m": 2.393,
+              "median_m": 1.489,
+              "std_m": 4.299,
+              "nmad_m": 3.149,
+              "rmse_m": 4.92,
+              "p95_abs_m": 10.978,
+              "within_1m_percent": 26.99,
+              "within_5m_percent": 77.18
+            },
+            "5-15": {
+              "samples": 14195,
+              "mean_m": 4.919,
+              "median_m": 3.869,
+              "std_m": 6.77,
+              "nmad_m": 6.193,
+              "rmse_m": 8.368,
+              "p95_abs_m": 16.486,
+              "within_1m_percent": 14.82,
+              "within_5m_percent": 53.63
+            },
+            "15-30": {
+              "samples": 28771,
+              "mean_m": 7.121,
+              "median_m": 6.755,
+              "std_m": 6.603,
+              "nmad_m": 6.397,
+              "rmse_m": 9.711,
+              "p95_abs_m": 18.53,
+              "within_1m_percent": 7.29,
+              "within_5m_percent": 36.53
+            },
+            "30-90": {
+              "samples": 5340,
+              "mean_m": 7.628,
+              "median_m": 7.722,
+              "std_m": 8.366,
+              "nmad_m": 7.708,
+              "rmse_m": 11.322,
+              "p95_abs_m": 21.097,
+              "within_1m_percent": 5.97,
+              "within_5m_percent": 29.61
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.508
+        },
+        "copernicus_glo30_dem": {
+          "overall": {
+            "samples": 51256,
+            "mean_m": 11.411,
+            "median_m": 11.93,
+            "std_m": 6.863,
+            "nmad_m": 7.225,
+            "rmse_m": 13.316,
+            "p95_abs_m": 21.852,
+            "within_1m_percent": 7.57,
+            "within_5m_percent": 20.48
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2897,
+              "mean_m": 4.58,
+              "median_m": 1.825,
+              "std_m": 5.86,
+              "nmad_m": 3.091,
+              "rmse_m": 7.438,
+              "p95_abs_m": 17.343,
+              "within_1m_percent": 42.32,
+              "within_5m_percent": 65.59
+            },
+            "5-15": {
+              "samples": 14195,
+              "mean_m": 8.928,
+              "median_m": 8.391,
+              "std_m": 7.308,
+              "nmad_m": 8.929,
+              "rmse_m": 11.537,
+              "p95_abs_m": 20.383,
+              "within_1m_percent": 13.94,
+              "within_5m_percent": 36.21
+            },
+            "15-30": {
+              "samples": 28771,
+              "mean_m": 12.701,
+              "median_m": 12.967,
+              "std_m": 5.931,
+              "nmad_m": 5.853,
+              "rmse_m": 14.017,
+              "p95_abs_m": 22.125,
+              "within_1m_percent": 2.17,
+              "within_5m_percent": 10.89
+            },
+            "30-90": {
+              "samples": 5340,
+              "mean_m": 14.8,
+              "median_m": 14.998,
+              "std_m": 6.251,
+              "nmad_m": 5.931,
+              "rmse_m": 16.066,
+              "p95_abs_m": 24.615,
+              "within_1m_percent": 0.77,
+              "within_5m_percent": 5.64
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.374
+        },
+        "lidar_d24_minus_2018_1arcsec": {
+          "overall": {
+            "samples": 51256,
+            "mean_m": -0.322,
+            "median_m": -0.291,
+            "std_m": 1.316,
+            "nmad_m": 0.214,
+            "rmse_m": 1.355,
+            "p95_abs_m": 0.816,
+            "within_1m_percent": 97.29,
+            "within_5m_percent": 99.97
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2897,
+              "mean_m": -0.099,
+              "median_m": -0.073,
+              "std_m": 0.247,
+              "nmad_m": 0.213,
+              "rmse_m": 0.267,
+              "p95_abs_m": 0.536,
+              "within_1m_percent": 99.72,
+              "within_5m_percent": 100.0
+            },
+            "5-15": {
+              "samples": 14195,
+              "mean_m": -0.242,
+              "median_m": -0.245,
+              "std_m": 2.426,
+              "nmad_m": 0.201,
+              "rmse_m": 2.438,
+              "p95_abs_m": 0.697,
+              "within_1m_percent": 98.79,
+              "within_5m_percent": 99.99
+            },
+            "15-30": {
+              "samples": 28771,
+              "mean_m": -0.363,
+              "median_m": -0.315,
+              "std_m": 0.347,
+              "nmad_m": 0.202,
+              "rmse_m": 0.502,
+              "p95_abs_m": 0.847,
+              "within_1m_percent": 96.73,
+              "within_5m_percent": 99.98
+            },
+            "30-90": {
+              "samples": 5340,
+              "mean_m": -0.44,
+              "median_m": -0.39,
+              "std_m": 0.488,
+              "nmad_m": 0.254,
+              "rmse_m": 0.657,
+              "p95_abs_m": 0.991,
+              "within_1m_percent": 95.07,
+              "within_5m_percent": 99.87
+            }
+          },
+          "cells_beyond_1m": 1388
+        },
+        "jaxa_aw3d30": {
+          "overall": {
+            "samples": 50910,
+            "mean_m": 7.5,
+            "median_m": 6.915,
+            "std_m": 7.807,
+            "nmad_m": 7.758,
+            "rmse_m": 10.826,
+            "p95_abs_m": 20.276,
+            "within_1m_percent": 8.84,
+            "within_5m_percent": 37.78
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2904,
+              "mean_m": 3.135,
+              "median_m": 1.848,
+              "std_m": 7.292,
+              "nmad_m": 3.579,
+              "rmse_m": 7.938,
+              "p95_abs_m": 12.932,
+              "within_1m_percent": 23.55,
+              "within_5m_percent": 72.93
+            },
+            "5-15": {
+              "samples": 14056,
+              "mean_m": 5.833,
+              "median_m": 4.49,
+              "std_m": 7.842,
+              "nmad_m": 6.975,
+              "rmse_m": 9.774,
+              "p95_abs_m": 18.774,
+              "within_1m_percent": 12.49,
+              "within_5m_percent": 49.51
+            },
+            "15-30": {
+              "samples": 28601,
+              "mean_m": 8.515,
+              "median_m": 8.209,
+              "std_m": 7.354,
+              "nmad_m": 7.388,
+              "rmse_m": 11.251,
+              "p95_abs_m": 20.728,
+              "within_1m_percent": 6.27,
+              "within_5m_percent": 30.65
+            },
+            "30-90": {
+              "samples": 5309,
+              "mean_m": 8.822,
+              "median_m": 8.819,
+              "std_m": 8.701,
+              "nmad_m": 7.996,
+              "rmse_m": 12.391,
+              "p95_abs_m": 22.942,
+              "within_1m_percent": 4.9,
+              "within_5m_percent": 25.99
+            }
+          },
+          "grid": "1 arc-second, edges on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.508
+        },
+        "ncei_puerto_rico_cudem_ninth_9525": {
+          "overall": {
+            "samples": 4178096,
+            "mean_m": -0.018,
+            "median_m": -0.002,
+            "std_m": 0.523,
+            "nmad_m": 0.375,
+            "rmse_m": 0.524,
+            "p95_abs_m": 1.082,
+            "within_1m_percent": 93.65,
+            "within_5m_percent": 99.98
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 238258,
+              "mean_m": 0.005,
+              "median_m": 0.002,
+              "std_m": 0.151,
+              "nmad_m": 0.068,
+              "rmse_m": 0.151,
+              "p95_abs_m": 0.204,
+              "within_1m_percent": 99.95,
+              "within_5m_percent": 99.96
+            },
+            "5-15": {
+              "samples": 728495,
+              "mean_m": 0.009,
+              "median_m": 0.008,
+              "std_m": 0.232,
+              "nmad_m": 0.184,
+              "rmse_m": 0.232,
+              "p95_abs_m": 0.427,
+              "within_1m_percent": 99.92,
+              "within_5m_percent": 99.99
+            },
+            "15-30": {
+              "samples": 1902888,
+              "mean_m": -0.009,
+              "median_m": -0.005,
+              "std_m": 0.423,
+              "nmad_m": 0.399,
+              "rmse_m": 0.423,
+              "p95_abs_m": 0.834,
+              "within_1m_percent": 97.91,
+              "within_5m_percent": 99.99
+            },
+            "30-90": {
+              "samples": 1307712,
+              "mean_m": -0.049,
+              "median_m": -0.026,
+              "std_m": 0.758,
+              "nmad_m": 0.713,
+              "rmse_m": 0.76,
+              "p95_abs_m": 1.464,
+              "within_1m_percent": 82.81,
+              "within_5m_percent": 99.97
+            }
+          },
+          "grid": "CUDEM lattice, 0.1111 arc-seconds",
+          "tiles": [
+            "ncei19_n18x25_w065x75_2022v2.tif",
+            "ncei19_n18x25_w066x00_2022v2.tif",
+            "ncei19_n18x50_w065x75_2022v2.tif",
+            "ncei19_n18x50_w066x00_2022v2.tif"
+          ]
+        },
+        "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+          "samples": 238258,
+          "mean_m": -0.005,
+          "median_m": -0.002,
+          "std_m": 0.151,
+          "nmad_m": 0.068,
+          "rmse_m": 0.151,
+          "p95_abs_m": 0.204,
+          "within_1m_percent": 99.95,
+          "within_5m_percent": 99.96
+        },
+        "lidar_d24_minus_2018_ninth_arcsec": {
+          "overall": {
+            "samples": 4178096,
+            "mean_m": -0.309,
+            "median_m": -0.256,
+            "std_m": 2.66,
+            "nmad_m": 0.301,
+            "rmse_m": 2.678,
+            "p95_abs_m": 1.15,
+            "within_1m_percent": 92.93,
+            "within_5m_percent": 99.9
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 238258,
+              "mean_m": 0.031,
+              "median_m": -0.039,
+              "std_m": 5.608,
+              "nmad_m": 0.184,
+              "rmse_m": 5.608,
+              "p95_abs_m": 0.665,
+              "within_1m_percent": 98.55,
+              "within_5m_percent": 99.95
+            },
+            "5-15": {
+              "samples": 728495,
+              "mean_m": -0.21,
+              "median_m": -0.171,
+              "std_m": 2.4,
+              "nmad_m": 0.247,
+              "rmse_m": 2.409,
+              "p95_abs_m": 0.889,
+              "within_1m_percent": 96.49,
+              "within_5m_percent": 99.95
+            },
+            "15-30": {
+              "samples": 1902888,
+              "mean_m": -0.3,
+              "median_m": -0.258,
+              "std_m": 2.867,
+              "nmad_m": 0.268,
+              "rmse_m": 2.882,
+              "p95_abs_m": 1.06,
+              "within_1m_percent": 94.17,
+              "within_5m_percent": 99.93
+            },
+            "30-90": {
+              "samples": 1307712,
+              "mean_m": -0.443,
+              "median_m": -0.356,
+              "std_m": 0.652,
+              "nmad_m": 0.357,
+              "rmse_m": 0.789,
+              "p95_abs_m": 1.448,
+              "within_1m_percent": 88.12,
+              "within_5m_percent": 99.83
+            }
+          },
+          "cells_beyond_1m": 295570
+        },
+        "ncei_fajardo_2007": {
+          "overall": {
+            "samples": 462886,
+            "mean_m": 0.72,
+            "median_m": 0.22,
+            "std_m": 4.815,
+            "nmad_m": 2.85,
+            "rmse_m": 4.868,
+            "p95_abs_m": 9.497,
+            "within_1m_percent": 30.89,
+            "within_5m_percent": 80.87
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 24569,
+              "mean_m": -0.111,
+              "median_m": -0.373,
+              "std_m": 5.663,
+              "nmad_m": 0.681,
+              "rmse_m": 5.664,
+              "p95_abs_m": 2.887,
+              "within_1m_percent": 70.52,
+              "within_5m_percent": 98.29
+            },
+            "5-15": {
+              "samples": 90018,
+              "mean_m": 0.375,
+              "median_m": -0.05,
+              "std_m": 4.651,
+              "nmad_m": 1.752,
+              "rmse_m": 4.667,
+              "p95_abs_m": 6.923,
+              "within_1m_percent": 44.14,
+              "within_5m_percent": 90.47
+            },
+            "15-30": {
+              "samples": 240050,
+              "mean_m": 0.82,
+              "median_m": 0.437,
+              "std_m": 4.456,
+              "nmad_m": 3.097,
+              "rmse_m": 4.531,
+              "p95_abs_m": 9.359,
+              "within_1m_percent": 27.45,
+              "within_5m_percent": 80.65
+            },
+            "30-90": {
+              "samples": 108085,
+              "mean_m": 0.976,
+              "median_m": 0.736,
+              "std_m": 5.431,
+              "nmad_m": 4.522,
+              "rmse_m": 5.518,
+              "p95_abs_m": 11.452,
+              "within_1m_percent": 18.48,
+              "within_5m_percent": 69.42
+            }
+          },
+          "grid": "NCEI lat/lon grid, 0.3333 arc-seconds",
+          "vertical_datum": "Mean High Water",
+          "datum_note": "uncorrected: Mean High Water against lidar PRVD02; the median is the MHW offset plus any bias"
+        }
+      }
+    },
+    {
+      "site_id": "dry_south_guanica",
+      "box_nad83": [
+        -66.921856,
+        17.897361,
+        -66.829568,
+        17.985649
+      ],
+      "results": {
+        "nasa_srtmgl1_v003": {
+          "overall": {
+            "samples": 42574,
+            "mean_m": 4.318,
+            "median_m": 4.121,
+            "std_m": 3.232,
+            "nmad_m": 2.744,
+            "rmse_m": 5.394,
+            "p95_abs_m": 9.81,
+            "within_1m_percent": 10.42,
+            "within_5m_percent": 62.58
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 18169,
+              "mean_m": 3.882,
+              "median_m": 3.82,
+              "std_m": 2.605,
+              "nmad_m": 2.338,
+              "rmse_m": 4.675,
+              "p95_abs_m": 8.172,
+              "within_1m_percent": 12.86,
+              "within_5m_percent": 69.7
+            },
+            "5-15": {
+              "samples": 16825,
+              "mean_m": 4.381,
+              "median_m": 4.253,
+              "std_m": 3.033,
+              "nmad_m": 2.714,
+              "rmse_m": 5.328,
+              "p95_abs_m": 9.448,
+              "within_1m_percent": 8.24,
+              "within_5m_percent": 61.05
+            },
+            "15-30": {
+              "samples": 6628,
+              "mean_m": 4.998,
+              "median_m": 4.872,
+              "std_m": 4.186,
+              "nmad_m": 3.828,
+              "rmse_m": 6.519,
+              "p95_abs_m": 11.96,
+              "within_1m_percent": 9.41,
+              "within_5m_percent": 50.83
+            },
+            "30-90": {
+              "samples": 934,
+              "mean_m": 6.944,
+              "median_m": 6.793,
+              "std_m": 6.299,
+              "nmad_m": 5.679,
+              "rmse_m": 9.375,
+              "p95_abs_m": 17.635,
+              "within_1m_percent": 7.6,
+              "within_5m_percent": 34.48
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.693
+        },
+        "nasa_nasadem_hgt_v001": {
+          "overall": {
+            "samples": 42574,
+            "mean_m": 1.392,
+            "median_m": 1.121,
+            "std_m": 3.16,
+            "nmad_m": 2.458,
+            "rmse_m": 3.453,
+            "p95_abs_m": 7.061,
+            "within_1m_percent": 30.06,
+            "within_5m_percent": 87.92
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 18169,
+              "mean_m": 1.072,
+              "median_m": 0.857,
+              "std_m": 2.32,
+              "nmad_m": 1.83,
+              "rmse_m": 2.556,
+              "p95_abs_m": 5.11,
+              "within_1m_percent": 38.24,
+              "within_5m_percent": 94.5
+            },
+            "5-15": {
+              "samples": 16825,
+              "mean_m": 1.381,
+              "median_m": 1.246,
+              "std_m": 3.081,
+              "nmad_m": 2.666,
+              "rmse_m": 3.376,
+              "p95_abs_m": 6.738,
+              "within_1m_percent": 26.85,
+              "within_5m_percent": 87.92
+            },
+            "15-30": {
+              "samples": 6628,
+              "mean_m": 1.975,
+              "median_m": 1.821,
+              "std_m": 4.283,
+              "nmad_m": 3.905,
+              "rmse_m": 4.716,
+              "p95_abs_m": 9.286,
+              "within_1m_percent": 18.38,
+              "within_5m_percent": 74.46
+            },
+            "30-90": {
+              "samples": 934,
+              "mean_m": 3.712,
+              "median_m": 3.737,
+              "std_m": 6.276,
+              "nmad_m": 5.733,
+              "rmse_m": 7.292,
+              "p95_abs_m": 14.565,
+              "within_1m_percent": 10.49,
+              "within_5m_percent": 54.93
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.693
+        },
+        "copernicus_glo30_dem": {
+          "overall": {
+            "samples": 42574,
+            "mean_m": 2.983,
+            "median_m": 2.699,
+            "std_m": 2.267,
+            "nmad_m": 2.274,
+            "rmse_m": 3.747,
+            "p95_abs_m": 7.019,
+            "within_1m_percent": 21.22,
+            "within_5m_percent": 83.14
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 18169,
+              "mean_m": 2.186,
+              "median_m": 1.816,
+              "std_m": 1.877,
+              "nmad_m": 1.855,
+              "rmse_m": 2.881,
+              "p95_abs_m": 5.456,
+              "within_1m_percent": 35.42,
+              "within_5m_percent": 92.34
+            },
+            "5-15": {
+              "samples": 16825,
+              "mean_m": 3.136,
+              "median_m": 2.971,
+              "std_m": 1.871,
+              "nmad_m": 1.865,
+              "rmse_m": 3.652,
+              "p95_abs_m": 6.308,
+              "within_1m_percent": 11.67,
+              "within_5m_percent": 84.56
+            },
+            "15-30": {
+              "samples": 6628,
+              "mean_m": 4.238,
+              "median_m": 4.12,
+              "std_m": 2.682,
+              "nmad_m": 2.674,
+              "rmse_m": 5.015,
+              "p95_abs_m": 8.673,
+              "within_1m_percent": 8.77,
+              "within_5m_percent": 62.87
+            },
+            "30-90": {
+              "samples": 934,
+              "mean_m": 6.878,
+              "median_m": 7.188,
+              "std_m": 3.509,
+              "nmad_m": 2.758,
+              "rmse_m": 7.722,
+              "p95_abs_m": 12.023,
+              "within_1m_percent": 4.07,
+              "within_5m_percent": 22.16
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.421
+        },
+        "lidar_d24_minus_2018_1arcsec": {
+          "overall": {
+            "samples": 41696,
+            "mean_m": -0.102,
+            "median_m": -0.128,
+            "std_m": 0.208,
+            "nmad_m": 0.075,
+            "rmse_m": 0.232,
+            "p95_abs_m": 0.334,
+            "within_1m_percent": 99.83,
+            "within_5m_percent": 100.0
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 17302,
+              "mean_m": -0.048,
+              "median_m": -0.112,
+              "std_m": 0.293,
+              "nmad_m": 0.088,
+              "rmse_m": 0.297,
+              "p95_abs_m": 0.83,
+              "within_1m_percent": 99.64,
+              "within_5m_percent": 100.0
+            },
+            "5-15": {
+              "samples": 16825,
+              "mean_m": -0.135,
+              "median_m": -0.134,
+              "std_m": 0.093,
+              "nmad_m": 0.067,
+              "rmse_m": 0.164,
+              "p95_abs_m": 0.255,
+              "within_1m_percent": 99.99,
+              "within_5m_percent": 100.0
+            },
+            "15-30": {
+              "samples": 6628,
+              "mean_m": -0.148,
+              "median_m": -0.139,
+              "std_m": 0.084,
+              "nmad_m": 0.068,
+              "rmse_m": 0.17,
+              "p95_abs_m": 0.277,
+              "within_1m_percent": 99.97,
+              "within_5m_percent": 100.0
+            },
+            "30-90": {
+              "samples": 934,
+              "mean_m": -0.202,
+              "median_m": -0.171,
+              "std_m": 0.182,
+              "nmad_m": 0.113,
+              "rmse_m": 0.272,
+              "p95_abs_m": 0.379,
+              "within_1m_percent": 99.57,
+              "within_5m_percent": 100.0
+            }
+          },
+          "cells_beyond_1m": 69
+        },
+        "jaxa_aw3d30": {
+          "overall": {
+            "samples": 42269,
+            "mean_m": 4.603,
+            "median_m": 4.08,
+            "std_m": 3.366,
+            "nmad_m": 3.138,
+            "rmse_m": 5.703,
+            "p95_abs_m": 10.697,
+            "within_1m_percent": 11.0,
+            "within_5m_percent": 59.53
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 18116,
+              "mean_m": 3.516,
+              "median_m": 3.119,
+              "std_m": 2.777,
+              "nmad_m": 2.851,
+              "rmse_m": 4.48,
+              "p95_abs_m": 8.618,
+              "within_1m_percent": 19.72,
+              "within_5m_percent": 72.22
+            },
+            "5-15": {
+              "samples": 16657,
+              "mean_m": 5.013,
+              "median_m": 4.553,
+              "std_m": 3.062,
+              "nmad_m": 2.93,
+              "rmse_m": 5.874,
+              "p95_abs_m": 10.409,
+              "within_1m_percent": 4.1,
+              "within_5m_percent": 55.03
+            },
+            "15-30": {
+              "samples": 6584,
+              "mean_m": 6.15,
+              "median_m": 6.044,
+              "std_m": 4.096,
+              "nmad_m": 4.26,
+              "rmse_m": 7.389,
+              "p95_abs_m": 12.656,
+              "within_1m_percent": 5.36,
+              "within_5m_percent": 40.7
+            },
+            "30-90": {
+              "samples": 906,
+              "mean_m": 7.587,
+              "median_m": 7.883,
+              "std_m": 5.198,
+              "nmad_m": 4.99,
+              "rmse_m": 9.197,
+              "p95_abs_m": 14.64,
+              "within_1m_percent": 3.97,
+              "within_5m_percent": 24.83
+            }
+          },
+          "grid": "1 arc-second, edges on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.694
+        },
+        "ncei_puerto_rico_cudem_ninth_9525": {
+          "overall": {
+            "samples": 3471962,
+            "mean_m": -0.088,
+            "median_m": -0.031,
+            "std_m": 0.495,
+            "nmad_m": 0.109,
+            "rmse_m": 0.503,
+            "p95_abs_m": 0.636,
+            "within_1m_percent": 97.53,
+            "within_5m_percent": 99.76
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 1374335,
+              "mean_m": -0.163,
+              "median_m": -0.024,
+              "std_m": 0.704,
+              "nmad_m": 0.056,
+              "rmse_m": 0.722,
+              "p95_abs_m": 1.04,
+              "within_1m_percent": 94.86,
+              "within_5m_percent": 99.41
+            },
+            "5-15": {
+              "samples": 1244635,
+              "mean_m": -0.04,
+              "median_m": -0.043,
+              "std_m": 0.142,
+              "nmad_m": 0.114,
+              "rmse_m": 0.148,
+              "p95_abs_m": 0.29,
+              "within_1m_percent": 99.96,
+              "within_5m_percent": 100.0
+            },
+            "15-30": {
+              "samples": 687184,
+              "mean_m": -0.043,
+              "median_m": -0.05,
+              "std_m": 0.308,
+              "nmad_m": 0.292,
+              "rmse_m": 0.311,
+              "p95_abs_m": 0.615,
+              "within_1m_percent": 99.73,
+              "within_5m_percent": 100.0
+            },
+            "30-90": {
+              "samples": 165643,
+              "mean_m": 0.002,
+              "median_m": 0.012,
+              "std_m": 0.634,
+              "nmad_m": 0.56,
+              "rmse_m": 0.634,
+              "p95_abs_m": 1.132,
+              "within_1m_percent": 92.35,
+              "within_5m_percent": 99.96
+            }
+          },
+          "grid": "CUDEM lattice, 0.1111 arc-seconds",
+          "tiles": [
+            "ncei19_n18x00_w067x00_2022v2.tif"
+          ]
+        },
+        "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+          "samples": 1374335,
+          "mean_m": 0.163,
+          "median_m": 0.024,
+          "std_m": 0.704,
+          "nmad_m": 0.056,
+          "rmse_m": 0.722,
+          "p95_abs_m": 1.04,
+          "within_1m_percent": 94.86,
+          "within_5m_percent": 99.41
+        },
+        "lidar_d24_minus_2018_ninth_arcsec": {
+          "overall": {
+            "samples": 3400498,
+            "mean_m": -0.096,
+            "median_m": -0.128,
+            "std_m": 0.255,
+            "nmad_m": 0.083,
+            "rmse_m": 0.273,
+            "p95_abs_m": 0.592,
+            "within_1m_percent": 99.61,
+            "within_5m_percent": 100.0
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 1302974,
+              "mean_m": -0.018,
+              "median_m": -0.106,
+              "std_m": 0.344,
+              "nmad_m": 0.098,
+              "rmse_m": 0.344,
+              "p95_abs_m": 0.83,
+              "within_1m_percent": 99.41,
+              "within_5m_percent": 100.0
+            },
+            "5-15": {
+              "samples": 1244634,
+              "mean_m": -0.139,
+              "median_m": -0.136,
+              "std_m": 0.138,
+              "nmad_m": 0.073,
+              "rmse_m": 0.196,
+              "p95_abs_m": 0.276,
+              "within_1m_percent": 99.75,
+              "within_5m_percent": 100.0
+            },
+            "15-30": {
+              "samples": 687184,
+              "mean_m": -0.145,
+              "median_m": -0.139,
+              "std_m": 0.113,
+              "nmad_m": 0.075,
+              "rmse_m": 0.184,
+              "p95_abs_m": 0.281,
+              "within_1m_percent": 99.88,
+              "within_5m_percent": 100.0
+            },
+            "30-90": {
+              "samples": 165643,
+              "mean_m": -0.194,
+              "median_m": -0.172,
+              "std_m": 0.357,
+              "nmad_m": 0.116,
+              "rmse_m": 0.406,
+              "p95_abs_m": 0.429,
+              "within_1m_percent": 98.99,
+              "within_5m_percent": 99.95
+            }
+          },
+          "cells_beyond_1m": 13352
+        },
+        "ncei_ponce_2007": {
+          "overall": {
+            "samples": 385354,
+            "mean_m": 0.636,
+            "median_m": 0.374,
+            "std_m": 1.748,
+            "nmad_m": 1.161,
+            "rmse_m": 1.86,
+            "p95_abs_m": 4.035,
+            "within_1m_percent": 56.43,
+            "within_5m_percent": 97.58
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 156873,
+              "mean_m": 0.317,
+              "median_m": 0.163,
+              "std_m": 1.328,
+              "nmad_m": 0.729,
+              "rmse_m": 1.365,
+              "p95_abs_m": 2.943,
+              "within_1m_percent": 70.61,
+              "within_5m_percent": 98.98
+            },
+            "5-15": {
+              "samples": 140886,
+              "mean_m": 0.843,
+              "median_m": 0.607,
+              "std_m": 1.625,
+              "nmad_m": 1.297,
+              "rmse_m": 1.83,
+              "p95_abs_m": 3.938,
+              "within_1m_percent": 52.76,
+              "within_5m_percent": 98.14
+            },
+            "15-30": {
+              "samples": 72767,
+              "mean_m": 0.866,
+              "median_m": 0.698,
+              "std_m": 2.177,
+              "nmad_m": 1.911,
+              "rmse_m": 2.343,
+              "p95_abs_m": 4.804,
+              "within_1m_percent": 39.27,
+              "within_5m_percent": 95.67
+            },
+            "30-90": {
+              "samples": 14782,
+              "mean_m": 0.92,
+              "median_m": 0.79,
+              "std_m": 3.255,
+              "nmad_m": 3.036,
+              "rmse_m": 3.383,
+              "p95_abs_m": 6.8,
+              "within_1m_percent": 25.4,
+              "within_5m_percent": 86.65
+            }
+          },
+          "grid": "NCEI lat/lon grid, 0.3333 arc-seconds",
+          "vertical_datum": "Mean High Water",
+          "datum_note": "uncorrected: Mean High Water against lidar PRVD02; the median is the MHW offset plus any bias"
+        }
+      }
+    },
+    {
+      "site_id": "urban_san_juan",
+      "box_nad83": [
+        -66.123063,
+        18.426566,
+        -66.031095,
+        18.514275
+      ],
+      "results": {
+        "nasa_srtmgl1_v003": {
+          "overall": {
+            "samples": 34433,
+            "mean_m": 1.877,
+            "median_m": 1.188,
+            "std_m": 3.47,
+            "nmad_m": 2.365,
+            "rmse_m": 3.945,
+            "p95_abs_m": 8.252,
+            "within_1m_percent": 30.89,
+            "within_5m_percent": 84.94
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 32651,
+              "mean_m": 1.914,
+              "median_m": 1.199,
+              "std_m": 3.397,
+              "nmad_m": 2.295,
+              "rmse_m": 3.899,
+              "p95_abs_m": 8.088,
+              "within_1m_percent": 31.54,
+              "within_5m_percent": 85.53
+            },
+            "5-15": {
+              "samples": 1618,
+              "mean_m": 1.328,
+              "median_m": 1.058,
+              "std_m": 4.528,
+              "nmad_m": 3.963,
+              "rmse_m": 4.719,
+              "p95_abs_m": 9.789,
+              "within_1m_percent": 18.67,
+              "within_5m_percent": 74.47
+            },
+            "15-30": {
+              "samples": 147,
+              "mean_m": -0.126,
+              "median_m": 0.152,
+              "std_m": 4.87,
+              "nmad_m": 5.007,
+              "rmse_m": 4.872,
+              "p95_abs_m": 8.671,
+              "within_1m_percent": 18.37,
+              "within_5m_percent": 66.67
+            },
+            "30-90": {
+              "samples": 0
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": -0.3
+        },
+        "nasa_nasadem_hgt_v001": {
+          "overall": {
+            "samples": 34433,
+            "mean_m": 2.343,
+            "median_m": 1.738,
+            "std_m": 3.417,
+            "nmad_m": 2.274,
+            "rmse_m": 4.143,
+            "p95_abs_m": 8.779,
+            "within_1m_percent": 28.91,
+            "within_5m_percent": 82.84
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 32651,
+              "mean_m": 2.379,
+              "median_m": 1.747,
+              "std_m": 3.35,
+              "nmad_m": 2.205,
+              "rmse_m": 4.109,
+              "p95_abs_m": 8.732,
+              "within_1m_percent": 29.47,
+              "within_5m_percent": 83.38
+            },
+            "5-15": {
+              "samples": 1618,
+              "mean_m": 1.789,
+              "median_m": 1.594,
+              "std_m": 4.396,
+              "nmad_m": 3.979,
+              "rmse_m": 4.746,
+              "p95_abs_m": 9.507,
+              "within_1m_percent": 18.42,
+              "within_5m_percent": 73.24
+            },
+            "15-30": {
+              "samples": 147,
+              "mean_m": 0.697,
+              "median_m": 0.768,
+              "std_m": 4.656,
+              "nmad_m": 4.983,
+              "rmse_m": 4.708,
+              "p95_abs_m": 8.599,
+              "within_1m_percent": 16.33,
+              "within_5m_percent": 65.99
+            },
+            "30-90": {
+              "samples": 0
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": -0.3
+        },
+        "copernicus_glo30_dem": {
+          "overall": {
+            "samples": 34433,
+            "mean_m": 1.966,
+            "median_m": 1.301,
+            "std_m": 2.524,
+            "nmad_m": 1.481,
+            "rmse_m": 3.199,
+            "p95_abs_m": 7.134,
+            "within_1m_percent": 42.34,
+            "within_5m_percent": 89.22
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 32651,
+              "mean_m": 1.963,
+              "median_m": 1.3,
+              "std_m": 2.504,
+              "nmad_m": 1.429,
+              "rmse_m": 3.182,
+              "p95_abs_m": 7.091,
+              "within_1m_percent": 42.57,
+              "within_5m_percent": 89.44
+            },
+            "5-15": {
+              "samples": 1618,
+              "mean_m": 2.075,
+              "median_m": 1.421,
+              "std_m": 2.878,
+              "nmad_m": 2.557,
+              "rmse_m": 3.548,
+              "p95_abs_m": 7.904,
+              "within_1m_percent": 38.13,
+              "within_5m_percent": 84.73
+            },
+            "15-30": {
+              "samples": 147,
+              "mean_m": 1.461,
+              "median_m": 1.426,
+              "std_m": 2.804,
+              "nmad_m": 2.587,
+              "rmse_m": 3.162,
+              "p95_abs_m": 6.44,
+              "within_1m_percent": 30.61,
+              "within_5m_percent": 87.76
+            },
+            "30-90": {
+              "samples": 0
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.348
+        },
+        "lidar_d24_minus_2018_1arcsec": {
+          "overall": {
+            "samples": 31399,
+            "mean_m": -0.029,
+            "median_m": -0.069,
+            "std_m": 0.294,
+            "nmad_m": 0.065,
+            "rmse_m": 0.295,
+            "p95_abs_m": 0.521,
+            "within_1m_percent": 99.21,
+            "within_5m_percent": 99.97
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 29642,
+              "mean_m": -0.027,
+              "median_m": -0.068,
+              "std_m": 0.284,
+              "nmad_m": 0.063,
+              "rmse_m": 0.285,
+              "p95_abs_m": 0.514,
+              "within_1m_percent": 99.34,
+              "within_5m_percent": 99.97
+            },
+            "5-15": {
+              "samples": 1610,
+              "mean_m": -0.087,
+              "median_m": -0.086,
+              "std_m": 0.406,
+              "nmad_m": 0.13,
+              "rmse_m": 0.415,
+              "p95_abs_m": 0.598,
+              "within_1m_percent": 97.02,
+              "within_5m_percent": 100.0
+            },
+            "15-30": {
+              "samples": 147,
+              "mean_m": 0.01,
+              "median_m": -0.044,
+              "std_m": 0.627,
+              "nmad_m": 0.142,
+              "rmse_m": 0.627,
+              "p95_abs_m": 0.574,
+              "within_1m_percent": 97.96,
+              "within_5m_percent": 99.32
+            },
+            "30-90": {
+              "samples": 0
+            }
+          },
+          "cells_beyond_1m": 248
+        },
+        "jaxa_aw3d30": {
+          "overall": {
+            "samples": 34172,
+            "mean_m": 2.678,
+            "median_m": 1.671,
+            "std_m": 4.221,
+            "nmad_m": 2.619,
+            "rmse_m": 4.999,
+            "p95_abs_m": 9.592,
+            "within_1m_percent": 29.56,
+            "within_5m_percent": 82.07
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 32391,
+              "mean_m": 2.761,
+              "median_m": 1.752,
+              "std_m": 4.188,
+              "nmad_m": 2.563,
+              "rmse_m": 5.017,
+              "p95_abs_m": 9.631,
+              "within_1m_percent": 29.76,
+              "within_5m_percent": 82.16
+            },
+            "5-15": {
+              "samples": 1623,
+              "mean_m": 1.32,
+              "median_m": 0.634,
+              "std_m": 4.53,
+              "nmad_m": 3.344,
+              "rmse_m": 4.718,
+              "p95_abs_m": 8.981,
+              "within_1m_percent": 25.82,
+              "within_5m_percent": 80.78
+            },
+            "15-30": {
+              "samples": 140,
+              "mean_m": -0.591,
+              "median_m": -0.491,
+              "std_m": 4.223,
+              "nmad_m": 3.881,
+              "rmse_m": 4.265,
+              "p95_abs_m": 8.17,
+              "within_1m_percent": 22.86,
+              "within_5m_percent": 74.29
+            },
+            "30-90": {
+              "samples": 2,
+              "mean_m": -2.742,
+              "median_m": -2.742,
+              "std_m": 1.239,
+              "nmad_m": 1.836,
+              "rmse_m": 3.009,
+              "p95_abs_m": 3.857,
+              "within_1m_percent": 0.0,
+              "within_5m_percent": 100.0
+            }
+          },
+          "grid": "1 arc-second, edges on whole arc-seconds",
+          "lidar_datum_offset_mean_m": -0.3
+        },
+        "ncei_puerto_rico_cudem_ninth_9525": {
+          "overall": {
+            "samples": 2806652,
+            "mean_m": -0.638,
+            "median_m": -0.062,
+            "std_m": 2.107,
+            "nmad_m": 0.086,
+            "rmse_m": 2.202,
+            "p95_abs_m": 4.24,
+            "within_1m_percent": 88.42,
+            "within_5m_percent": 95.55
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2462323,
+              "mean_m": -0.714,
+              "median_m": -0.062,
+              "std_m": 2.231,
+              "nmad_m": 0.079,
+              "rmse_m": 2.342,
+              "p95_abs_m": 5.087,
+              "within_1m_percent": 87.34,
+              "within_5m_percent": 94.95
+            },
+            "5-15": {
+              "samples": 278972,
+              "mean_m": -0.062,
+              "median_m": -0.053,
+              "std_m": 0.383,
+              "nmad_m": 0.149,
+              "rmse_m": 0.388,
+              "p95_abs_m": 0.574,
+              "within_1m_percent": 97.95,
+              "within_5m_percent": 99.95
+            },
+            "15-30": {
+              "samples": 54717,
+              "mean_m": -0.19,
+              "median_m": -0.107,
+              "std_m": 0.741,
+              "nmad_m": 0.368,
+              "rmse_m": 0.765,
+              "p95_abs_m": 1.477,
+              "within_1m_percent": 91.69,
+              "within_5m_percent": 99.72
+            },
+            "30-90": {
+              "samples": 10464,
+              "mean_m": -0.323,
+              "median_m": -0.296,
+              "std_m": 1.066,
+              "nmad_m": 0.736,
+              "rmse_m": 1.114,
+              "p95_abs_m": 2.424,
+              "within_1m_percent": 72.51,
+              "within_5m_percent": 99.97
+            }
+          },
+          "grid": "CUDEM lattice, 0.1111 arc-seconds",
+          "tiles": [
+            "ncei19_n18x50_w066x25_2022v2.tif"
+          ]
+        },
+        "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+          "samples": 2462323,
+          "mean_m": 0.714,
+          "median_m": 0.062,
+          "std_m": 2.231,
+          "nmad_m": 0.079,
+          "rmse_m": 2.342,
+          "p95_abs_m": 5.087,
+          "within_1m_percent": 87.34,
+          "within_5m_percent": 94.95
+        },
+        "lidar_d24_minus_2018_ninth_arcsec": {
+          "overall": {
+            "samples": 2567172,
+            "mean_m": -0.023,
+            "median_m": -0.069,
+            "std_m": 0.388,
+            "nmad_m": 0.071,
+            "rmse_m": 0.388,
+            "p95_abs_m": 0.54,
+            "within_1m_percent": 98.67,
+            "within_5m_percent": 99.91
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2223865,
+              "mean_m": -0.008,
+              "median_m": -0.067,
+              "std_m": 0.333,
+              "nmad_m": 0.066,
+              "rmse_m": 0.333,
+              "p95_abs_m": 0.54,
+              "within_1m_percent": 99.22,
+              "within_5m_percent": 99.94
+            },
+            "5-15": {
+              "samples": 278555,
+              "mean_m": -0.101,
+              "median_m": -0.09,
+              "std_m": 0.548,
+              "nmad_m": 0.124,
+              "rmse_m": 0.557,
+              "p95_abs_m": 0.828,
+              "within_1m_percent": 96.37,
+              "within_5m_percent": 99.84
+            },
+            "15-30": {
+              "samples": 54305,
+              "mean_m": -0.18,
+              "median_m": -0.102,
+              "std_m": 0.761,
+              "nmad_m": 0.228,
+              "rmse_m": 0.782,
+              "p95_abs_m": 1.487,
+              "within_1m_percent": 91.58,
+              "within_5m_percent": 99.69
+            },
+            "30-90": {
+              "samples": 10446,
+              "mean_m": -0.381,
+              "median_m": -0.092,
+              "std_m": 1.37,
+              "nmad_m": 0.385,
+              "rmse_m": 1.422,
+              "p95_abs_m": 3.33,
+              "within_1m_percent": 80.05,
+              "within_5m_percent": 98.14
+            }
+          },
+          "cells_beyond_1m": 34215
+        },
+        "ncei_puerto_rico_cudem_third_9524": {
+          "overall": {
+            "samples": 0
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 0
+            },
+            "5-15": {
+              "samples": 0
+            },
+            "15-30": {
+              "samples": 0
+            },
+            "30-90": {
+              "samples": 0
+            }
+          },
+          "grid": "CUDEM lattice, 0.3333 arc-seconds",
+          "tiles": [
+            "ncei13_n18x75_w066x25_2022v1.tif"
+          ]
+        },
+        "ncei_san_juan_19_prvd02_2015": {
+          "overall": {
+            "samples": 2804456,
+            "mean_m": -1.134,
+            "median_m": -0.299,
+            "std_m": 2.518,
+            "nmad_m": 0.214,
+            "rmse_m": 2.761,
+            "p95_abs_m": 7.725,
+            "within_1m_percent": 79.98,
+            "within_5m_percent": 93.09
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2460146,
+              "mean_m": -1.234,
+              "median_m": -0.303,
+              "std_m": 2.613,
+              "nmad_m": 0.207,
+              "rmse_m": 2.889,
+              "p95_abs_m": 8.152,
+              "within_1m_percent": 78.71,
+              "within_5m_percent": 92.42
+            },
+            "5-15": {
+              "samples": 278999,
+              "mean_m": -0.369,
+              "median_m": -0.248,
+              "std_m": 1.335,
+              "nmad_m": 0.245,
+              "rmse_m": 1.385,
+              "p95_abs_m": 1.734,
+              "within_1m_percent": 91.22,
+              "within_5m_percent": 98.44
+            },
+            "15-30": {
+              "samples": 54620,
+              "mean_m": -0.641,
+              "median_m": -0.239,
+              "std_m": 2.055,
+              "nmad_m": 0.413,
+              "rmse_m": 2.152,
+              "p95_abs_m": 4.512,
+              "within_1m_percent": 82.8,
+              "within_5m_percent": 95.27
+            },
+            "30-90": {
+              "samples": 10442,
+              "mean_m": -0.638,
+              "median_m": -0.312,
+              "std_m": 2.104,
+              "nmad_m": 0.803,
+              "rmse_m": 2.199,
+              "p95_abs_m": 4.848,
+              "within_1m_percent": 65.63,
+              "within_5m_percent": 95.19
+            }
+          },
+          "grid": "NCEI lat/lon grid, 0.1111 arc-seconds",
+          "vertical_datum": "Puerto Rico Vertical Datum of 2002",
+          "datum_note": "no conversion: PRVD02 against lidar PRVD02"
+        }
+      }
+    },
+    {
+      "site_id": "west_mayaguez",
+      "box_nad83": [
+        -67.202297,
+        18.171199,
+        -67.109719,
+        18.259623
+      ],
+      "results": {
+        "nasa_srtmgl1_v003": {
+          "overall": {
+            "samples": 67490,
+            "mean_m": 4.4,
+            "median_m": 3.431,
+            "std_m": 4.854,
+            "nmad_m": 3.51,
+            "rmse_m": 6.551,
+            "p95_abs_m": 13.943,
+            "within_1m_percent": 14.11,
+            "within_5m_percent": 64.59
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 34218,
+              "mean_m": 3.03,
+              "median_m": 2.663,
+              "std_m": 3.144,
+              "nmad_m": 2.42,
+              "rmse_m": 4.367,
+              "p95_abs_m": 8.579,
+              "within_1m_percent": 18.28,
+              "within_5m_percent": 79.81
+            },
+            "5-15": {
+              "samples": 20165,
+              "mean_m": 4.893,
+              "median_m": 4.141,
+              "std_m": 5.181,
+              "nmad_m": 4.18,
+              "rmse_m": 7.127,
+              "p95_abs_m": 14.682,
+              "within_1m_percent": 11.53,
+              "within_5m_percent": 56.93
+            },
+            "15-30": {
+              "samples": 12453,
+              "mean_m": 7.168,
+              "median_m": 6.598,
+              "std_m": 6.296,
+              "nmad_m": 5.876,
+              "rmse_m": 9.541,
+              "p95_abs_m": 18.392,
+              "within_1m_percent": 7.25,
+              "within_5m_percent": 36.87
+            },
+            "30-90": {
+              "samples": 650,
+              "mean_m": 8.174,
+              "median_m": 7.85,
+              "std_m": 8.138,
+              "nmad_m": 7.563,
+              "rmse_m": 11.534,
+              "p95_abs_m": 20.887,
+              "within_1m_percent": 4.77,
+              "within_5m_percent": 32.0
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.768
+        },
+        "nasa_nasadem_hgt_v001": {
+          "overall": {
+            "samples": 67490,
+            "mean_m": 3.094,
+            "median_m": 2.097,
+            "std_m": 4.907,
+            "nmad_m": 3.498,
+            "rmse_m": 5.801,
+            "p95_abs_m": 12.819,
+            "within_1m_percent": 22.1,
+            "within_5m_percent": 72.79
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 34218,
+              "mean_m": 1.685,
+              "median_m": 1.297,
+              "std_m": 3.164,
+              "nmad_m": 2.378,
+              "rmse_m": 3.585,
+              "p95_abs_m": 7.397,
+              "within_1m_percent": 30.2,
+              "within_5m_percent": 87.82
+            },
+            "5-15": {
+              "samples": 20165,
+              "mean_m": 3.612,
+              "median_m": 2.825,
+              "std_m": 5.281,
+              "nmad_m": 4.292,
+              "rmse_m": 6.398,
+              "p95_abs_m": 13.702,
+              "within_1m_percent": 16.36,
+              "within_5m_percent": 65.57
+            },
+            "15-30": {
+              "samples": 12453,
+              "mean_m": 5.93,
+              "median_m": 5.304,
+              "std_m": 6.305,
+              "nmad_m": 5.883,
+              "rmse_m": 8.655,
+              "p95_abs_m": 17.243,
+              "within_1m_percent": 9.9,
+              "within_5m_percent": 45.03
+            },
+            "30-90": {
+              "samples": 650,
+              "mean_m": 6.875,
+              "median_m": 6.577,
+              "std_m": 8.076,
+              "nmad_m": 7.484,
+              "rmse_m": 10.606,
+              "p95_abs_m": 19.11,
+              "within_1m_percent": 6.92,
+              "within_5m_percent": 37.38
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.768
+        },
+        "copernicus_glo30_dem": {
+          "overall": {
+            "samples": 67490,
+            "mean_m": 5.303,
+            "median_m": 2.869,
+            "std_m": 5.807,
+            "nmad_m": 3.6,
+            "rmse_m": 7.864,
+            "p95_abs_m": 17.738,
+            "within_1m_percent": 25.0,
+            "within_5m_percent": 63.07
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 34218,
+              "mean_m": 2.924,
+              "median_m": 1.385,
+              "std_m": 4.034,
+              "nmad_m": 1.663,
+              "rmse_m": 4.982,
+              "p95_abs_m": 12.449,
+              "within_1m_percent": 39.91,
+              "within_5m_percent": 81.38
+            },
+            "5-15": {
+              "samples": 20165,
+              "mean_m": 6.131,
+              "median_m": 4.125,
+              "std_m": 5.703,
+              "nmad_m": 4.263,
+              "rmse_m": 8.374,
+              "p95_abs_m": 18.239,
+              "within_1m_percent": 13.07,
+              "within_5m_percent": 56.3
+            },
+            "15-30": {
+              "samples": 12453,
+              "mean_m": 10.146,
+              "median_m": 9.649,
+              "std_m": 6.353,
+              "nmad_m": 7.629,
+              "rmse_m": 11.971,
+              "p95_abs_m": 20.861,
+              "within_1m_percent": 4.38,
+              "within_5m_percent": 26.27
+            },
+            "30-90": {
+              "samples": 650,
+              "mean_m": 12.102,
+              "median_m": 11.755,
+              "std_m": 6.857,
+              "nmad_m": 7.106,
+              "rmse_m": 13.91,
+              "p95_abs_m": 22.502,
+              "within_1m_percent": 4.77,
+              "within_5m_percent": 14.77
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.388
+        },
+        "lidar_d24_minus_2018_1arcsec": {
+          "overall": {
+            "samples": 66858,
+            "mean_m": -0.189,
+            "median_m": -0.169,
+            "std_m": 0.42,
+            "nmad_m": 0.125,
+            "rmse_m": 0.46,
+            "p95_abs_m": 0.579,
+            "within_1m_percent": 99.32,
+            "within_5m_percent": 99.84
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 33590,
+              "mean_m": -0.137,
+              "median_m": -0.133,
+              "std_m": 0.408,
+              "nmad_m": 0.094,
+              "rmse_m": 0.43,
+              "p95_abs_m": 0.512,
+              "within_1m_percent": 99.44,
+              "within_5m_percent": 99.89
+            },
+            "5-15": {
+              "samples": 20165,
+              "mean_m": -0.218,
+              "median_m": -0.199,
+              "std_m": 0.368,
+              "nmad_m": 0.128,
+              "rmse_m": 0.428,
+              "p95_abs_m": 0.585,
+              "within_1m_percent": 99.25,
+              "within_5m_percent": 99.85
+            },
+            "15-30": {
+              "samples": 12453,
+              "mean_m": -0.275,
+              "median_m": -0.28,
+              "std_m": 0.508,
+              "nmad_m": 0.165,
+              "rmse_m": 0.578,
+              "p95_abs_m": 0.659,
+              "within_1m_percent": 99.1,
+              "within_5m_percent": 99.69
+            },
+            "30-90": {
+              "samples": 650,
+              "mean_m": -0.318,
+              "median_m": -0.27,
+              "std_m": 0.19,
+              "nmad_m": 0.14,
+              "rmse_m": 0.371,
+              "p95_abs_m": 0.666,
+              "within_1m_percent": 99.23,
+              "within_5m_percent": 100.0
+            }
+          },
+          "cells_beyond_1m": 457
+        },
+        "jaxa_aw3d30": {
+          "overall": {
+            "samples": 67072,
+            "mean_m": 6.854,
+            "median_m": 4.784,
+            "std_m": 6.25,
+            "nmad_m": 3.819,
+            "rmse_m": 9.276,
+            "p95_abs_m": 20.263,
+            "within_1m_percent": 6.84,
+            "within_5m_percent": 52.39
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 33991,
+              "mean_m": 4.547,
+              "median_m": 3.667,
+              "std_m": 4.205,
+              "nmad_m": 2.437,
+              "rmse_m": 6.194,
+              "p95_abs_m": 13.695,
+              "within_1m_percent": 10.09,
+              "within_5m_percent": 70.49
+            },
+            "5-15": {
+              "samples": 20104,
+              "mean_m": 7.704,
+              "median_m": 5.669,
+              "std_m": 6.264,
+              "nmad_m": 3.921,
+              "rmse_m": 9.929,
+              "p95_abs_m": 21.259,
+              "within_1m_percent": 3.76,
+              "within_5m_percent": 42.33
+            },
+            "15-30": {
+              "samples": 12357,
+              "mean_m": 11.499,
+              "median_m": 10.57,
+              "std_m": 7.507,
+              "nmad_m": 8.065,
+              "rmse_m": 13.733,
+              "p95_abs_m": 24.254,
+              "within_1m_percent": 3.09,
+              "within_5m_percent": 20.87
+            },
+            "30-90": {
+              "samples": 617,
+              "mean_m": 13.239,
+              "median_m": 13.574,
+              "std_m": 8.66,
+              "nmad_m": 7.837,
+              "rmse_m": 15.82,
+              "p95_abs_m": 26.272,
+              "within_1m_percent": 2.59,
+              "within_5m_percent": 13.61
+            }
+          },
+          "grid": "1 arc-second, edges on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.768
+        },
+        "ncei_puerto_rico_cudem_ninth_9525": {
+          "overall": {
+            "samples": 5477960,
+            "mean_m": -0.052,
+            "median_m": -0.018,
+            "std_m": 0.582,
+            "nmad_m": 0.148,
+            "rmse_m": 0.584,
+            "p95_abs_m": 0.879,
+            "within_1m_percent": 96.25,
+            "within_5m_percent": 99.76
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2649247,
+              "mean_m": -0.113,
+              "median_m": -0.021,
+              "std_m": 0.671,
+              "nmad_m": 0.071,
+              "rmse_m": 0.68,
+              "p95_abs_m": 0.336,
+              "within_1m_percent": 97.53,
+              "within_5m_percent": 99.51
+            },
+            "5-15": {
+              "samples": 1191110,
+              "mean_m": -0.008,
+              "median_m": -0.011,
+              "std_m": 0.221,
+              "nmad_m": 0.179,
+              "rmse_m": 0.221,
+              "p95_abs_m": 0.429,
+              "within_1m_percent": 99.85,
+              "within_5m_percent": 100.0
+            },
+            "15-30": {
+              "samples": 1195953,
+              "mean_m": 0.015,
+              "median_m": 0.015,
+              "std_m": 0.466,
+              "nmad_m": 0.47,
+              "rmse_m": 0.466,
+              "p95_abs_m": 0.896,
+              "within_1m_percent": 97.07,
+              "within_5m_percent": 100.0
+            },
+            "30-90": {
+              "samples": 441573,
+              "mean_m": 0.022,
+              "median_m": 0.027,
+              "std_m": 0.854,
+              "nmad_m": 0.903,
+              "rmse_m": 0.854,
+              "p95_abs_m": 1.558,
+              "within_1m_percent": 76.61,
+              "within_5m_percent": 99.97
+            }
+          },
+          "grid": "CUDEM lattice, 0.1111 arc-seconds",
+          "tiles": [
+            "ncei19_n18x25_w067x25_2022v2.tif",
+            "ncei19_n18x50_w067x25_2022v2.tif"
+          ]
+        },
+        "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+          "samples": 2649247,
+          "mean_m": 0.113,
+          "median_m": 0.021,
+          "std_m": 0.671,
+          "nmad_m": 0.071,
+          "rmse_m": 0.68,
+          "p95_abs_m": 0.336,
+          "within_1m_percent": 97.53,
+          "within_5m_percent": 99.51
+        },
+        "lidar_d24_minus_2018_ninth_arcsec": {
+          "overall": {
+            "samples": 5425350,
+            "mean_m": -0.187,
+            "median_m": -0.152,
+            "std_m": 0.498,
+            "nmad_m": 0.143,
+            "rmse_m": 0.532,
+            "p95_abs_m": 0.786,
+            "within_1m_percent": 97.59,
+            "within_5m_percent": 99.83
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2596743,
+              "mean_m": -0.12,
+              "median_m": -0.121,
+              "std_m": 0.449,
+              "nmad_m": 0.094,
+              "rmse_m": 0.464,
+              "p95_abs_m": 0.597,
+              "within_1m_percent": 99.05,
+              "within_5m_percent": 99.89
+            },
+            "5-15": {
+              "samples": 1191073,
+              "mean_m": -0.193,
+              "median_m": -0.16,
+              "std_m": 0.482,
+              "nmad_m": 0.134,
+              "rmse_m": 0.52,
+              "p95_abs_m": 0.786,
+              "within_1m_percent": 97.31,
+              "within_5m_percent": 99.8
+            },
+            "15-30": {
+              "samples": 1195953,
+              "mean_m": -0.265,
+              "median_m": -0.248,
+              "std_m": 0.585,
+              "nmad_m": 0.21,
+              "rmse_m": 0.642,
+              "p95_abs_m": 0.921,
+              "within_1m_percent": 96.01,
+              "within_5m_percent": 99.71
+            },
+            "30-90": {
+              "samples": 441573,
+              "mean_m": -0.358,
+              "median_m": -0.303,
+              "std_m": 0.49,
+              "nmad_m": 0.257,
+              "rmse_m": 0.607,
+              "p95_abs_m": 1.068,
+              "within_1m_percent": 94.0,
+              "within_5m_percent": 99.9
+            }
+          },
+          "cells_beyond_1m": 130903
+        },
+        "ncei_mayaguez_2006": {
+          "overall": {
+            "samples": 608226,
+            "mean_m": 0.799,
+            "median_m": 0.648,
+            "std_m": 1.302,
+            "nmad_m": 0.378,
+            "rmse_m": 1.527,
+            "p95_abs_m": 2.986,
+            "within_1m_percent": 73.19,
+            "within_5m_percent": 98.47
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 296146,
+              "mean_m": 0.594,
+              "median_m": 0.61,
+              "std_m": 0.958,
+              "nmad_m": 0.234,
+              "rmse_m": 1.127,
+              "p95_abs_m": 1.568,
+              "within_1m_percent": 84.7,
+              "within_5m_percent": 99.46
+            },
+            "5-15": {
+              "samples": 145574,
+              "mean_m": 0.711,
+              "median_m": 0.634,
+              "std_m": 1.27,
+              "nmad_m": 0.394,
+              "rmse_m": 1.456,
+              "p95_abs_m": 2.564,
+              "within_1m_percent": 75.56,
+              "within_5m_percent": 98.76
+            },
+            "15-30": {
+              "samples": 140883,
+              "mean_m": 1.115,
+              "median_m": 0.862,
+              "std_m": 1.581,
+              "nmad_m": 0.812,
+              "rmse_m": 1.935,
+              "p95_abs_m": 4.068,
+              "within_1m_percent": 53.78,
+              "within_5m_percent": 97.34
+            },
+            "30-90": {
+              "samples": 25599,
+              "mean_m": 1.934,
+              "median_m": 1.513,
+              "std_m": 2.082,
+              "nmad_m": 1.521,
+              "rmse_m": 2.842,
+              "p95_abs_m": 5.826,
+              "within_1m_percent": 33.44,
+              "within_5m_percent": 91.64
+            }
+          },
+          "grid": "NCEI lat/lon grid, 0.3333 arc-seconds",
+          "vertical_datum": "Mean High Water",
+          "datum_note": "uncorrected: Mean High Water against lidar PRVD02; the median is the MHW offset plus any bias"
+        },
+        "ncei_mayaguez_2007": {
+          "overall": {
+            "samples": 608226,
+            "mean_m": -0.382,
+            "median_m": -0.59,
+            "std_m": 2.737,
+            "nmad_m": 0.914,
+            "rmse_m": 2.764,
+            "p95_abs_m": 5.855,
+            "within_1m_percent": 55.16,
+            "within_5m_percent": 93.6
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 296146,
+              "mean_m": -0.623,
+              "median_m": -0.617,
+              "std_m": 1.405,
+              "nmad_m": 0.57,
+              "rmse_m": 1.537,
+              "p95_abs_m": 2.323,
+              "within_1m_percent": 69.94,
+              "within_5m_percent": 98.6
+            },
+            "5-15": {
+              "samples": 145574,
+              "mean_m": -0.556,
+              "median_m": -0.61,
+              "std_m": 2.618,
+              "nmad_m": 1.16,
+              "rmse_m": 2.676,
+              "p95_abs_m": 5.347,
+              "within_1m_percent": 51.43,
+              "within_5m_percent": 94.4
+            },
+            "15-30": {
+              "samples": 140883,
+              "mean_m": 0.05,
+              "median_m": -0.433,
+              "std_m": 3.923,
+              "nmad_m": 2.245,
+              "rmse_m": 3.923,
+              "p95_abs_m": 8.789,
+              "within_1m_percent": 34.01,
+              "within_5m_percent": 85.94
+            },
+            "30-90": {
+              "samples": 25599,
+              "mean_m": 1.018,
+              "median_m": 0.273,
+              "std_m": 5.259,
+              "nmad_m": 3.923,
+              "rmse_m": 5.357,
+              "p95_abs_m": 11.755,
+              "within_1m_percent": 21.65,
+              "within_5m_percent": 73.38
+            }
+          },
+          "grid": "NCEI lat/lon grid, 0.3333 arc-seconds",
+          "vertical_datum": "Mean High Water",
+          "datum_note": "uncorrected: Mean High Water against lidar PRVD02; the median is the MHW offset plus any bias"
+        }
+      }
+    },
+    {
+      "site_id": "east_central_cayey",
+      "box_nad83": [
+        -66.164039,
+        18.068401,
+        -66.072114,
+        18.156254
+      ],
+      "results": {
+        "nasa_srtmgl1_v003": {
+          "overall": {
+            "samples": 77733,
+            "mean_m": 2.663,
+            "median_m": 1.918,
+            "std_m": 5.993,
+            "nmad_m": 5.577,
+            "rmse_m": 6.558,
+            "p95_abs_m": 13.613,
+            "within_1m_percent": 14.94,
+            "within_5m_percent": 60.67
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 8229,
+              "mean_m": 0.667,
+              "median_m": 0.201,
+              "std_m": 3.968,
+              "nmad_m": 2.747,
+              "rmse_m": 4.024,
+              "p95_abs_m": 8.946,
+              "within_1m_percent": 25.02,
+              "within_5m_percent": 84.46
+            },
+            "5-15": {
+              "samples": 21623,
+              "mean_m": 1.918,
+              "median_m": 1.115,
+              "std_m": 5.92,
+              "nmad_m": 5.226,
+              "rmse_m": 6.223,
+              "p95_abs_m": 13.328,
+              "within_1m_percent": 16.41,
+              "within_5m_percent": 64.13
+            },
+            "15-30": {
+              "samples": 42240,
+              "mean_m": 3.224,
+              "median_m": 2.789,
+              "std_m": 6.124,
+              "nmad_m": 6.041,
+              "rmse_m": 6.921,
+              "p95_abs_m": 13.898,
+              "within_1m_percent": 12.8,
+              "within_5m_percent": 55.85
+            },
+            "30-90": {
+              "samples": 5596,
+              "mean_m": 4.253,
+              "median_m": 4.1,
+              "std_m": 6.641,
+              "nmad_m": 6.432,
+              "rmse_m": 7.886,
+              "p95_abs_m": 15.64,
+              "within_1m_percent": 10.49,
+              "within_5m_percent": 48.43
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 1.114
+        },
+        "nasa_nasadem_hgt_v001": {
+          "overall": {
+            "samples": 77733,
+            "mean_m": 1.243,
+            "median_m": 0.603,
+            "std_m": 6.25,
+            "nmad_m": 5.753,
+            "rmse_m": 6.372,
+            "p95_abs_m": 12.996,
+            "within_1m_percent": 14.8,
+            "within_5m_percent": 60.88
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 8229,
+              "mean_m": -0.378,
+              "median_m": -0.743,
+              "std_m": 4.231,
+              "nmad_m": 2.897,
+              "rmse_m": 4.248,
+              "p95_abs_m": 9.144,
+              "within_1m_percent": 26.61,
+              "within_5m_percent": 82.27
+            },
+            "5-15": {
+              "samples": 21623,
+              "mean_m": 0.598,
+              "median_m": -0.06,
+              "std_m": 6.251,
+              "nmad_m": 5.58,
+              "rmse_m": 6.279,
+              "p95_abs_m": 12.93,
+              "within_1m_percent": 14.61,
+              "within_5m_percent": 61.7
+            },
+            "15-30": {
+              "samples": 42240,
+              "mean_m": 1.695,
+              "median_m": 1.355,
+              "std_m": 6.384,
+              "nmad_m": 6.224,
+              "rmse_m": 6.605,
+              "p95_abs_m": 13.199,
+              "within_1m_percent": 13.05,
+              "within_5m_percent": 57.33
+            },
+            "30-90": {
+              "samples": 5596,
+              "mean_m": 2.734,
+              "median_m": 2.643,
+              "std_m": 6.947,
+              "nmad_m": 6.462,
+              "rmse_m": 7.466,
+              "p95_abs_m": 14.764,
+              "within_1m_percent": 11.33,
+              "within_5m_percent": 52.79
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 1.114
+        },
+        "copernicus_glo30_dem": {
+          "overall": {
+            "samples": 77733,
+            "mean_m": 7.43,
+            "median_m": 6.943,
+            "std_m": 5.721,
+            "nmad_m": 6.875,
+            "rmse_m": 9.378,
+            "p95_abs_m": 17.41,
+            "within_1m_percent": 11.79,
+            "within_5m_percent": 39.54
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 8229,
+              "mean_m": 3.074,
+              "median_m": 2.019,
+              "std_m": 3.786,
+              "nmad_m": 2.156,
+              "rmse_m": 4.876,
+              "p95_abs_m": 11.789,
+              "within_1m_percent": 29.49,
+              "within_5m_percent": 79.6
+            },
+            "5-15": {
+              "samples": 21623,
+              "mean_m": 5.908,
+              "median_m": 4.541,
+              "std_m": 5.393,
+              "nmad_m": 5.314,
+              "rmse_m": 7.999,
+              "p95_abs_m": 16.292,
+              "within_1m_percent": 17.03,
+              "within_5m_percent": 52.69
+            },
+            "15-30": {
+              "samples": 42240,
+              "mean_m": 8.669,
+              "median_m": 8.625,
+              "std_m": 5.576,
+              "nmad_m": 6.15,
+              "rmse_m": 10.308,
+              "p95_abs_m": 17.938,
+              "within_1m_percent": 6.85,
+              "within_5m_percent": 28.28
+            },
+            "30-90": {
+              "samples": 5596,
+              "mean_m": 10.398,
+              "median_m": 10.522,
+              "std_m": 5.384,
+              "nmad_m": 5.194,
+              "rmse_m": 11.709,
+              "p95_abs_m": 19.042,
+              "within_1m_percent": 2.54,
+              "within_5m_percent": 14.55
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.456
+        },
+        "lidar_d24_minus_2018_1arcsec": {
+          "overall": {
+            "samples": 77733,
+            "mean_m": -0.261,
+            "median_m": -0.221,
+            "std_m": 0.302,
+            "nmad_m": 0.188,
+            "rmse_m": 0.399,
+            "p95_abs_m": 0.696,
+            "within_1m_percent": 98.07,
+            "within_5m_percent": 99.98
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 8229,
+              "mean_m": -0.122,
+              "median_m": -0.083,
+              "std_m": 0.191,
+              "nmad_m": 0.065,
+              "rmse_m": 0.227,
+              "p95_abs_m": 0.48,
+              "within_1m_percent": 99.57,
+              "within_5m_percent": 100.0
+            },
+            "5-15": {
+              "samples": 21623,
+              "mean_m": -0.219,
+              "median_m": -0.176,
+              "std_m": 0.299,
+              "nmad_m": 0.187,
+              "rmse_m": 0.37,
+              "p95_abs_m": 0.654,
+              "within_1m_percent": 98.55,
+              "within_5m_percent": 99.98
+            },
+            "15-30": {
+              "samples": 42240,
+              "mean_m": -0.297,
+              "median_m": -0.257,
+              "std_m": 0.304,
+              "nmad_m": 0.171,
+              "rmse_m": 0.425,
+              "p95_abs_m": 0.726,
+              "within_1m_percent": 97.82,
+              "within_5m_percent": 99.98
+            },
+            "30-90": {
+              "samples": 5596,
+              "mean_m": -0.349,
+              "median_m": -0.271,
+              "std_m": 0.336,
+              "nmad_m": 0.164,
+              "rmse_m": 0.484,
+              "p95_abs_m": 0.915,
+              "within_1m_percent": 95.94,
+              "within_5m_percent": 100.0
+            }
+          },
+          "cells_beyond_1m": 1500
+        },
+        "jaxa_aw3d30": {
+          "overall": {
+            "samples": 77198,
+            "mean_m": 6.118,
+            "median_m": 4.929,
+            "std_m": 6.495,
+            "nmad_m": 6.695,
+            "rmse_m": 8.922,
+            "p95_abs_m": 17.997,
+            "within_1m_percent": 14.89,
+            "within_5m_percent": 49.44
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 8086,
+              "mean_m": 2.533,
+              "median_m": 1.37,
+              "std_m": 4.159,
+              "nmad_m": 2.609,
+              "rmse_m": 4.869,
+              "p95_abs_m": 11.214,
+              "within_1m_percent": 30.95,
+              "within_5m_percent": 78.68
+            },
+            "5-15": {
+              "samples": 21594,
+              "mean_m": 4.76,
+              "median_m": 2.775,
+              "std_m": 6.232,
+              "nmad_m": 4.971,
+              "rmse_m": 7.842,
+              "p95_abs_m": 17.222,
+              "within_1m_percent": 21.01,
+              "within_5m_percent": 61.08
+            },
+            "15-30": {
+              "samples": 41875,
+              "mean_m": 7.234,
+              "median_m": 6.704,
+              "std_m": 6.57,
+              "nmad_m": 7.205,
+              "rmse_m": 9.772,
+              "p95_abs_m": 18.532,
+              "within_1m_percent": 9.79,
+              "within_5m_percent": 39.98
+            },
+            "30-90": {
+              "samples": 5603,
+              "mean_m": 8.211,
+              "median_m": 7.799,
+              "std_m": 6.665,
+              "nmad_m": 6.926,
+              "rmse_m": 10.575,
+              "p95_abs_m": 19.289,
+              "within_1m_percent": 6.03,
+              "within_5m_percent": 32.88
+            }
+          },
+          "grid": "1 arc-second, edges on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 1.114
+        },
+        "ncei_puerto_rico_cudem_ninth_9525": {
+          "overall": {
+            "samples": 6388086,
+            "mean_m": 0.002,
+            "median_m": -0.046,
+            "std_m": 2.14,
+            "nmad_m": 0.582,
+            "rmse_m": 2.14,
+            "p95_abs_m": 2.357,
+            "within_1m_percent": 81.66,
+            "within_5m_percent": 98.74
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 685421,
+              "mean_m": 1.778,
+              "median_m": 0.015,
+              "std_m": 5.627,
+              "nmad_m": 0.149,
+              "rmse_m": 5.901,
+              "p95_abs_m": 16.981,
+              "within_1m_percent": 84.67,
+              "within_5m_percent": 88.73
+            },
+            "5-15": {
+              "samples": 1096293,
+              "mean_m": -0.115,
+              "median_m": -0.022,
+              "std_m": 0.795,
+              "nmad_m": 0.35,
+              "rmse_m": 0.803,
+              "p95_abs_m": 1.491,
+              "within_1m_percent": 91.15,
+              "within_5m_percent": 99.91
+            },
+            "15-30": {
+              "samples": 2851503,
+              "mean_m": -0.219,
+              "median_m": -0.098,
+              "std_m": 0.898,
+              "nmad_m": 0.63,
+              "rmse_m": 0.924,
+              "p95_abs_m": 1.959,
+              "within_1m_percent": 84.09,
+              "within_5m_percent": 99.98
+            },
+            "30-90": {
+              "samples": 1753987,
+              "mean_m": -0.258,
+              "median_m": -0.144,
+              "std_m": 1.098,
+              "nmad_m": 0.938,
+              "rmse_m": 1.127,
+              "p95_abs_m": 2.385,
+              "within_1m_percent": 70.61,
+              "within_5m_percent": 99.92
+            }
+          },
+          "grid": "CUDEM lattice, 0.1111 arc-seconds",
+          "tiles": [
+            "ncei19_n18x25_w066x25_2022v2.tif"
+          ]
+        },
+        "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+          "samples": 685421,
+          "mean_m": -1.778,
+          "median_m": -0.015,
+          "std_m": 5.627,
+          "nmad_m": 0.149,
+          "rmse_m": 5.901,
+          "p95_abs_m": 16.981,
+          "within_1m_percent": 84.67,
+          "within_5m_percent": 88.73
+        },
+        "lidar_d24_minus_2018_ninth_arcsec": {
+          "overall": {
+            "samples": 6388086,
+            "mean_m": -0.266,
+            "median_m": -0.188,
+            "std_m": 0.468,
+            "nmad_m": 0.217,
+            "rmse_m": 0.538,
+            "p95_abs_m": 0.997,
+            "within_1m_percent": 95.03,
+            "within_5m_percent": 99.93
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 685421,
+              "mean_m": -0.089,
+              "median_m": -0.067,
+              "std_m": 0.31,
+              "nmad_m": 0.063,
+              "rmse_m": 0.323,
+              "p95_abs_m": 0.53,
+              "within_1m_percent": 98.72,
+              "within_5m_percent": 99.95
+            },
+            "5-15": {
+              "samples": 1096293,
+              "mean_m": -0.181,
+              "median_m": -0.112,
+              "std_m": 0.436,
+              "nmad_m": 0.158,
+              "rmse_m": 0.472,
+              "p95_abs_m": 0.823,
+              "within_1m_percent": 96.78,
+              "within_5m_percent": 99.92
+            },
+            "15-30": {
+              "samples": 2851503,
+              "mean_m": -0.277,
+              "median_m": -0.212,
+              "std_m": 0.442,
+              "nmad_m": 0.212,
+              "rmse_m": 0.521,
+              "p95_abs_m": 0.961,
+              "within_1m_percent": 95.43,
+              "within_5m_percent": 99.95
+            },
+            "30-90": {
+              "samples": 1753987,
+              "mean_m": -0.37,
+              "median_m": -0.277,
+              "std_m": 0.544,
+              "nmad_m": 0.252,
+              "rmse_m": 0.658,
+              "p95_abs_m": 1.26,
+              "within_1m_percent": 91.84,
+              "within_5m_percent": 99.91
+            }
+          },
+          "cells_beyond_1m": 317642
+        }
+      }
+    },
+    {
+      "site_id": "northeast_carolina",
+      "box_nad83": [
+        -66.066583,
+        18.247524,
+        -65.974636,
+        18.335306
+      ],
+      "results": {
+        "nasa_srtmgl1_v003": {
+          "overall": {
+            "samples": 104364,
+            "mean_m": 4.005,
+            "median_m": 3.159,
+            "std_m": 5.022,
+            "nmad_m": 3.899,
+            "rmse_m": 6.424,
+            "p95_abs_m": 13.197,
+            "within_1m_percent": 15.76,
+            "within_5m_percent": 64.25
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 29531,
+              "mean_m": 2.54,
+              "median_m": 2.092,
+              "std_m": 3.182,
+              "nmad_m": 2.262,
+              "rmse_m": 4.071,
+              "p95_abs_m": 8.384,
+              "within_1m_percent": 23.73,
+              "within_5m_percent": 83.81
+            },
+            "5-15": {
+              "samples": 36980,
+              "mean_m": 3.869,
+              "median_m": 3.321,
+              "std_m": 4.685,
+              "nmad_m": 3.985,
+              "rmse_m": 6.076,
+              "p95_abs_m": 12.43,
+              "within_1m_percent": 14.43,
+              "within_5m_percent": 63.65
+            },
+            "15-30": {
+              "samples": 34904,
+              "mean_m": 5.049,
+              "median_m": 4.583,
+              "std_m": 5.7,
+              "nmad_m": 5.298,
+              "rmse_m": 7.614,
+              "p95_abs_m": 14.985,
+              "within_1m_percent": 11.12,
+              "within_5m_percent": 50.83
+            },
+            "30-90": {
+              "samples": 2943,
+              "mean_m": 8.038,
+              "median_m": 7.197,
+              "std_m": 8.991,
+              "nmad_m": 6.657,
+              "rmse_m": 12.06,
+              "p95_abs_m": 19.788,
+              "within_1m_percent": 7.27,
+              "within_5m_percent": 34.49
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.175
+        },
+        "nasa_nasadem_hgt_v001": {
+          "overall": {
+            "samples": 104364,
+            "mean_m": 2.505,
+            "median_m": 1.781,
+            "std_m": 5.368,
+            "nmad_m": 4.231,
+            "rmse_m": 5.924,
+            "p95_abs_m": 12.185,
+            "within_1m_percent": 20.13,
+            "within_5m_percent": 68.94
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 29531,
+              "mean_m": 1.16,
+              "median_m": 0.599,
+              "std_m": 3.698,
+              "nmad_m": 2.511,
+              "rmse_m": 3.875,
+              "p95_abs_m": 8.117,
+              "within_1m_percent": 32.69,
+              "within_5m_percent": 86.74
+            },
+            "5-15": {
+              "samples": 36980,
+              "mean_m": 2.542,
+              "median_m": 2.095,
+              "std_m": 5.022,
+              "nmad_m": 4.314,
+              "rmse_m": 5.629,
+              "p95_abs_m": 11.625,
+              "within_1m_percent": 17.85,
+              "within_5m_percent": 68.42
+            },
+            "15-30": {
+              "samples": 34904,
+              "mean_m": 3.368,
+              "median_m": 3.109,
+              "std_m": 6.043,
+              "nmad_m": 5.451,
+              "rmse_m": 6.919,
+              "p95_abs_m": 13.726,
+              "within_1m_percent": 12.9,
+              "within_5m_percent": 56.65
+            },
+            "30-90": {
+              "samples": 2943,
+              "mean_m": 5.297,
+              "median_m": 4.582,
+              "std_m": 9.988,
+              "nmad_m": 7.273,
+              "rmse_m": 11.305,
+              "p95_abs_m": 19.015,
+              "within_1m_percent": 8.49,
+              "within_5m_percent": 42.58
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.175
+        },
+        "copernicus_glo30_dem": {
+          "overall": {
+            "samples": 104364,
+            "mean_m": 5.716,
+            "median_m": 3.995,
+            "std_m": 5.737,
+            "nmad_m": 5.227,
+            "rmse_m": 8.099,
+            "p95_abs_m": 16.858,
+            "within_1m_percent": 20.03,
+            "within_5m_percent": 55.4
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 29531,
+              "mean_m": 2.215,
+              "median_m": 0.993,
+              "std_m": 3.861,
+              "nmad_m": 1.586,
+              "rmse_m": 4.451,
+              "p95_abs_m": 11.095,
+              "within_1m_percent": 41.47,
+              "within_5m_percent": 85.58
+            },
+            "5-15": {
+              "samples": 36980,
+              "mean_m": 5.759,
+              "median_m": 4.003,
+              "std_m": 5.505,
+              "nmad_m": 4.588,
+              "rmse_m": 7.967,
+              "p95_abs_m": 16.884,
+              "within_1m_percent": 16.66,
+              "within_5m_percent": 56.63
+            },
+            "15-30": {
+              "samples": 34904,
+              "mean_m": 8.238,
+              "median_m": 7.881,
+              "std_m": 5.71,
+              "nmad_m": 6.221,
+              "rmse_m": 10.023,
+              "p95_abs_m": 18.169,
+              "within_1m_percent": 6.96,
+              "within_5m_percent": 32.15
+            },
+            "30-90": {
+              "samples": 2943,
+              "mean_m": 10.403,
+              "median_m": 10.731,
+              "std_m": 5.46,
+              "nmad_m": 4.752,
+              "rmse_m": 11.749,
+              "p95_abs_m": 18.531,
+              "within_1m_percent": 2.41,
+              "within_5m_percent": 12.81
+            }
+          },
+          "grid": "1 arc-second, centres on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.345
+        },
+        "lidar_d24_minus_2018_1arcsec": {
+          "overall": {
+            "samples": 104364,
+            "mean_m": -0.127,
+            "median_m": -0.093,
+            "std_m": 0.463,
+            "nmad_m": 0.179,
+            "rmse_m": 0.481,
+            "p95_abs_m": 0.505,
+            "within_1m_percent": 99.41,
+            "within_5m_percent": 99.91
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 29531,
+              "mean_m": -0.077,
+              "median_m": 0.001,
+              "std_m": 0.302,
+              "nmad_m": 0.107,
+              "rmse_m": 0.312,
+              "p95_abs_m": 0.86,
+              "within_1m_percent": 99.42,
+              "within_5m_percent": 99.99
+            },
+            "5-15": {
+              "samples": 36980,
+              "mean_m": -0.095,
+              "median_m": -0.077,
+              "std_m": 0.325,
+              "nmad_m": 0.151,
+              "rmse_m": 0.338,
+              "p95_abs_m": 0.426,
+              "within_1m_percent": 99.36,
+              "within_5m_percent": 99.93
+            },
+            "15-30": {
+              "samples": 34904,
+              "mean_m": -0.182,
+              "median_m": -0.175,
+              "std_m": 0.399,
+              "nmad_m": 0.157,
+              "rmse_m": 0.438,
+              "p95_abs_m": 0.465,
+              "within_1m_percent": 99.63,
+              "within_5m_percent": 99.94
+            },
+            "30-90": {
+              "samples": 2943,
+              "mean_m": -0.394,
+              "median_m": -0.171,
+              "std_m": 1.828,
+              "nmad_m": 0.147,
+              "rmse_m": 1.87,
+              "p95_abs_m": 0.546,
+              "within_1m_percent": 97.21,
+              "within_5m_percent": 98.44
+            }
+          },
+          "cells_beyond_1m": 617
+        },
+        "jaxa_aw3d30": {
+          "overall": {
+            "samples": 103726,
+            "mean_m": 5.102,
+            "median_m": 3.201,
+            "std_m": 5.882,
+            "nmad_m": 4.283,
+            "rmse_m": 7.786,
+            "p95_abs_m": 17.075,
+            "within_1m_percent": 17.68,
+            "within_5m_percent": 61.55
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 29433,
+              "mean_m": 2.486,
+              "median_m": 1.723,
+              "std_m": 3.82,
+              "nmad_m": 2.002,
+              "rmse_m": 4.557,
+              "p95_abs_m": 10.174,
+              "within_1m_percent": 27.81,
+              "within_5m_percent": 85.96
+            },
+            "5-15": {
+              "samples": 36675,
+              "mean_m": 4.769,
+              "median_m": 2.976,
+              "std_m": 5.735,
+              "nmad_m": 3.877,
+              "rmse_m": 7.459,
+              "p95_abs_m": 16.871,
+              "within_1m_percent": 18.54,
+              "within_5m_percent": 65.14
+            },
+            "15-30": {
+              "samples": 34706,
+              "mean_m": 7.244,
+              "median_m": 6.423,
+              "std_m": 6.339,
+              "nmad_m": 6.531,
+              "rmse_m": 9.626,
+              "p95_abs_m": 18.587,
+              "within_1m_percent": 9.51,
+              "within_5m_percent": 40.86
+            },
+            "30-90": {
+              "samples": 2912,
+              "mean_m": 10.204,
+              "median_m": 9.841,
+              "std_m": 6.352,
+              "nmad_m": 5.545,
+              "rmse_m": 12.02,
+              "p95_abs_m": 20.352,
+              "within_1m_percent": 1.89,
+              "within_5m_percent": 16.24
+            }
+          },
+          "grid": "1 arc-second, edges on whole arc-seconds",
+          "lidar_datum_offset_mean_m": 0.175
+        },
+        "ncei_puerto_rico_cudem_ninth_9525": {
+          "overall": {
+            "samples": 8458491,
+            "mean_m": 0.724,
+            "median_m": 0.001,
+            "std_m": 6.073,
+            "nmad_m": 0.207,
+            "rmse_m": 6.116,
+            "p95_abs_m": 0.954,
+            "within_1m_percent": 95.42,
+            "within_5m_percent": 98.17
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2347000,
+              "mean_m": 2.609,
+              "median_m": 0.004,
+              "std_m": 11.294,
+              "nmad_m": 0.059,
+              "rmse_m": 11.591,
+              "p95_abs_m": 17.092,
+              "within_1m_percent": 91.73,
+              "within_5m_percent": 93.42
+            },
+            "5-15": {
+              "samples": 1990133,
+              "mean_m": -0.003,
+              "median_m": -0.007,
+              "std_m": 0.19,
+              "nmad_m": 0.156,
+              "rmse_m": 0.19,
+              "p95_abs_m": 0.381,
+              "within_1m_percent": 99.92,
+              "within_5m_percent": 100.0
+            },
+            "15-30": {
+              "samples": 3009690,
+              "mean_m": 0.002,
+              "median_m": -0.002,
+              "std_m": 0.392,
+              "nmad_m": 0.38,
+              "rmse_m": 0.392,
+              "p95_abs_m": 0.774,
+              "within_1m_percent": 98.59,
+              "within_5m_percent": 100.0
+            },
+            "30-90": {
+              "samples": 1111642,
+              "mean_m": 0.003,
+              "median_m": -0.005,
+              "std_m": 0.699,
+              "nmad_m": 0.686,
+              "rmse_m": 0.699,
+              "p95_abs_m": 1.318,
+              "within_1m_percent": 86.55,
+              "within_5m_percent": 99.97
+            }
+          },
+          "grid": "CUDEM lattice, 0.1111 arc-seconds",
+          "tiles": [
+            "ncei19_n18x25_w066x00_2022v2.tif",
+            "ncei19_n18x25_w066x25_2022v2.tif",
+            "ncei19_n18x50_w066x00_2022v2.tif",
+            "ncei19_n18x50_w066x25_2022v2.tif"
+          ]
+        },
+        "datum_test_lidar_2018_minus_cudem_ninth_low_slope": {
+          "samples": 2347000,
+          "mean_m": -2.609,
+          "median_m": -0.004,
+          "std_m": 11.294,
+          "nmad_m": 0.059,
+          "rmse_m": 11.591,
+          "p95_abs_m": 17.092,
+          "within_1m_percent": 91.73,
+          "within_5m_percent": 93.42
+        },
+        "lidar_d24_minus_2018_ninth_arcsec": {
+          "overall": {
+            "samples": 8458491,
+            "mean_m": -0.127,
+            "median_m": -0.065,
+            "std_m": 0.569,
+            "nmad_m": 0.187,
+            "rmse_m": 0.583,
+            "p95_abs_m": 0.81,
+            "within_1m_percent": 98.01,
+            "within_5m_percent": 99.88
+          },
+          "by_slope_class_deg": {
+            "0-5": {
+              "samples": 2347000,
+              "mean_m": -0.07,
+              "median_m": 0.009,
+              "std_m": 0.398,
+              "nmad_m": 0.102,
+              "rmse_m": 0.404,
+              "p95_abs_m": 0.86,
+              "within_1m_percent": 98.58,
+              "within_5m_percent": 99.96
+            },
+            "5-15": {
+              "samples": 1990133,
+              "mean_m": -0.079,
+              "median_m": -0.038,
+              "std_m": 0.512,
+              "nmad_m": 0.145,
+              "rmse_m": 0.518,
+              "p95_abs_m": 0.643,
+              "within_1m_percent": 98.25,
+              "within_5m_percent": 99.88
+            },
+            "15-30": {
+              "samples": 3009690,
+              "mean_m": -0.162,
+              "median_m": -0.133,
+              "std_m": 0.511,
+              "nmad_m": 0.208,
+              "rmse_m": 0.536,
+              "p95_abs_m": 0.713,
+              "within_1m_percent": 98.0,
+              "within_5m_percent": 99.91
+            },
+            "30-90": {
+              "samples": 1111642,
+              "mean_m": -0.238,
+              "median_m": -0.173,
+              "std_m": 0.961,
+              "nmad_m": 0.242,
+              "rmse_m": 0.99,
+              "p95_abs_m": 0.876,
+              "within_1m_percent": 96.41,
+              "within_5m_percent": 99.66
+            }
+          },
+          "cells_beyond_1m": 168110
+        }
+      }
+    }
+  ]
+}

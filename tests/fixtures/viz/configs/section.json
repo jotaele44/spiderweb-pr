@@ -1,0 +1,16 @@
+{
+ "title": "Synthetic pilot: section A-A'",
+ "transect": [
+  [
+   -66.1,
+   18.19
+  ],
+  [
+   -66.1,
+   18.016
+  ]
+ ],
+ "vertical_exaggeration": 12,
+ "buffer_m": 2500,
+ "samples": 90
+}

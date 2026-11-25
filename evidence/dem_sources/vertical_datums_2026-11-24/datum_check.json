@@ -1,0 +1,164 @@
+{
+  "checked": "2026-11-24",
+  "question": "Vertical datums of Copernicus GLO-30 (COP30) and ALOS World 3D 30 m (AW3D30)",
+  "findings": {
+    "COP30": {
+      "vertical_datum": "EGM2008",
+      "epsg_vertical": 3855,
+      "evidence_tier": "T1"
+    },
+    "AW3D30": {
+      "vertical_datum": "EGM96",
+      "epsg_vertical": 5773,
+      "evidence_tier": "T1",
+      "note": "Distributor metadata only; the producer's (JAXA) product description could not be retrieved."
+    }
+  },
+  "sources": [
+    {
+      "source": "ESA, Copernicus DEM Product Handbook, GEO1988-CopernicusDEM-SPE-002, issue 5.0 (PDF created 2022-11-29)",
+      "url": "https://dataspace.copernicus.eu/sites/default/files/media/files/2024-06/geo1988-copernicusdem-spe-002_producthandbook_i5.0.pdf",
+      "sha256": "b5a0b027bddef7122e39de368dba9cf10adce8631a2e3026d246b4be98c3f0c4",
+      "applies_to": "COP30",
+      "statements": [
+        {
+          "location": "page 13",
+          "text": "The vertical reference datum is the Earth Gravitational Model 2008 (EGM2008; EPSG 3855)."
+        },
+        {
+          "location": "page 10 (Coordinate Reference System table)",
+          "text": "Horizontal WGS84-G1150 (EPSG 4326) ... Vertical EGM2008 (EPSG 3855)"
+        },
+        {
+          "location": "page 11 (Coordinate Reference System table)",
+          "text": "ETRS89-GRS80 ... Vertical EGM2008 (EPSG 3855)"
+        }
+      ]
+    },
+    {
+      "source": "OpenTopography otCatalog, dataset COP30 (OTSDEM.032021.4326.3, doi:10.5069/G9028PQB), spatialCoverage.additionalProperty",
+      "url": "https://portal.opentopography.org/API/otCatalog?productFormat=Raster&minx=-66.6&miny=18.1&maxx=-66.5&maxy=18.2&detail=true&outputFormat=json&include_federated=false",
+      "applies_to": "COP30",
+      "statements": [
+        {
+          "location": "Vertical Coordinates",
+          "text": "WGS84 Ellipsoid/EGM2008 Geoid"
+        },
+        {
+          "location": "EPSG (Vertical)",
+          "text": "3855"
+        }
+      ]
+    },
+    {
+      "source": "OpenTopography otCatalog, dataset COP30_E (OTSDEM.112026.4326.1), description",
+      "url": "https://portal.opentopography.org/API/otCatalog?productFormat=Raster&minx=-66.6&miny=18.1&maxx=-66.5&maxy=18.2&detail=true&outputFormat=json&include_federated=false",
+      "applies_to": "COP30",
+      "statements": [
+        {
+          "location": "description",
+          "text": "This dataset was converted from the orthometric version using the EGM2008 geoid model"
+        }
+      ]
+    },
+    {
+      "source": "OpenTopography otCatalog, dataset AW3D30 (OTALOS.112016.4326.2, doi:10.5069/G94M92HB), spatialCoverage.additionalProperty",
+      "url": "https://portal.opentopography.org/API/otCatalog?productFormat=Raster&minx=-66.6&miny=18.1&maxx=-66.5&maxy=18.2&detail=true&outputFormat=json&include_federated=false",
+      "applies_to": "AW3D30",
+      "statements": [
+        {
+          "location": "Vertical Coordinates",
+          "text": "WGS84 Ellipsoid/EGM1996 Geoid"
+        },
+        {
+          "location": "EPSG (Vertical)",
+          "text": "5773"
+        }
+      ]
+    },
+    {
+      "source": "OpenTopography otCatalog, dataset AW3D30_E (OTALOS.082017.4326.1), description",
+      "url": "https://portal.opentopography.org/API/otCatalog?productFormat=Raster&minx=-66.6&miny=18.1&maxx=-66.5&maxy=18.2&detail=true&outputFormat=json&include_federated=false",
+      "applies_to": "AW3D30",
+      "statements": [
+        {
+          "location": "description",
+          "text": "This dataset was converted from the orthometric version using the EGM96 geoid model"
+        }
+      ]
+    },
+    {
+      "source": "OpenTopography otCatalog, datasets NASADEM and SRTM_GL1 (consistency check)",
+      "url": "https://portal.opentopography.org/API/otCatalog?productFormat=Raster&minx=-66.6&miny=18.1&maxx=-66.5&maxy=18.2&detail=true&outputFormat=json&include_federated=false",
+      "applies_to": "consistency",
+      "statements": [
+        {
+          "location": "Vertical Coordinates / EPSG (Vertical)",
+          "text": "WGS84 Ellipsoid/EGM1996 Geoid / 5773, matching NASA CMR (WGS84/EGM96)"
+        }
+      ]
+    }
+  ],
+  "not_retrieved": [
+    {
+      "source": "JAXA EORC, AW3D30 product descriptions (v2.2, v3.1, v3.2, v4.0, v4.1) and the AW3D30 dataset page",
+      "urls": [
+        "https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/data/aw3d30v4.1_product_e_1.0.pdf",
+        "https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/data/aw3d30v4.0_product_e_1.0.pdf",
+        "https://www.eorc.jaxa.jp/ALOS/en/aw3d30/aw3d30v31_product_e_a.pdf",
+        "https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30_e"
+      ],
+      "result": "HTTP 404 from this network on 2026-11-24, for both a plain HTTPS client and the session's web-fetch tool",
+      "secondary_note": "Search-result excerpts (T4, not read directly) attribute to these documents: elevation converted from the ellipsoidal height based on ITRF97 and GRS80 using the EGM96 geoid model, with the Japanese geoid (GSI) used for tiles over Japan."
+    }
+  ],
+  "file_headers": {
+    "note": "No file states a vertical CRS, so the datum rests on documentation, not the data.",
+    "checks": [
+      {
+        "file": "ESA tile Copernicus_DSM_COG_10_N18_00_W067_00_DEM.tif (s3://copernicus-dem-30m, read by HTTP range)",
+        "crs": "EPSG:4326",
+        "vertical_crs": null,
+        "tags": {
+          "AREA_OR_POINT": "Point"
+        }
+      },
+      {
+        "file": "COP30_-67.95_17.85_-65.2_18.55.tif (OpenTopography)",
+        "crs": "EPSG:4326",
+        "vertical_crs": null
+      },
+      {
+        "file": "AW3D30_-67.95_17.85_-65.2_18.55.tif (OpenTopography)",
+        "crs": "EPSG:4326",
+        "vertical_crs": null
+      }
+    ]
+  },
+  "geoid_offset": {
+    "method": "Every 10th row and column of the 1 arc-second grid, SRTM land samples only (SRTMGL1N > 10), 98,862 samples. N(EGM2008) - N(EGM96) from PROJ 9.8.1 (pyproj 3.8.0) grids us_nga_egm08_25.tif and us_nga_egm96_15.tif (cdn.proj.org), as the EGM96 height of a point at EGM2008 height 0. COP30 on EGM96 = COP30 + that difference.",
+    "transformation": "Inverse of WGS 84 to EGM2008 height (1) + WGS 84 to EGM96 height (1) (with axis order normalized for visualization)",
+    "samples": 98862,
+    "geoid_difference_N_egm2008_minus_N_egm96_m": {
+      "min": -0.952,
+      "max": 1.085,
+      "mean": 0.314
+    },
+    "summit_geoid_difference_m": 0.757,
+    "cop30_minus_srtmgl1_as_published": {
+      "mean_m": 1.536,
+      "median_m": 1.137,
+      "std_m": 4.843,
+      "mad_m": 2.823,
+      "within_1m_percent": 19.917
+    },
+    "cop30_on_egm96_minus_srtmgl1": {
+      "mean_m": 1.85,
+      "median_m": 1.378,
+      "std_m": 4.838,
+      "mad_m": 2.827,
+      "within_1m_percent": 19.95
+    }
+  },
+  "interpretation": "Over Puerto Rico the EGM2008 and EGM96 geoids differ by -0.95 to +1.09 m (mean +0.31 m). Re-expressing COP30 on EGM96 raises the COP30 - SRTMGL1 median from 1.14 m to 1.38 m and leaves the spread unchanged, so the datum difference does not explain COP30 standing higher than SRTM; surface, epoch and processing differences do."
+}

@@ -1,0 +1,23 @@
+{
+  "adapter": "opentopography_globaldem",
+  "files": [
+    {
+      "accessed_at": "2026-11-24T12:34:45Z",
+      "bbox_wsen": [
+        -67.95,
+        17.85,
+        -65.2,
+        18.55
+      ],
+      "catalog_source_id": "nasa_nasadem_hgt_v001",
+      "content_type": "application/octet-stream",
+      "demtype": "NASADEM",
+      "file_name": "NASADEM_-67.95_17.85_-65.2_18.55.tif",
+      "file_size_bytes": 10951851,
+      "opentopography_id": "OTSDEM.032021.4326.2",
+      "raw_commit_allowed": false,
+      "request_url": "https://portal.opentopography.org/API/globaldem?demtype=NASADEM&south=17.85&north=18.55&west=-67.95&east=-65.2&outputFormat=GTiff&API_Key=REDACTED",
+      "sha256": "3f6c0ea5d10e839d7d5396fb9d07072128a76ddeb6cf8eaa8608d0361538d599"
+    }
+  ]
+}
