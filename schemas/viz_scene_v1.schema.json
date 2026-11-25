@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/viz_scene_v1.schema.json",
+  "title": "Visualization engine scene / render configuration",
+  "description": "User-selectable controls: region, layers, transect, vertical exaggeration, measurement date.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "title": {"type": "string"},
+    "extent": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4},
+    "layers": {"type": "array", "items": {"enum": ["terrain", "waterbody", "hydro_network", "wells", "connections"]}},
+    "width": {"type": "integer", "minimum": 200, "maximum": 4000},
+    "date": {"type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "vertical_exaggeration": {"type": "number", "exclusiveMinimum": 0, "maximum": 50},
+    "transect": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}
+    },
+    "buffer_m": {"type": "number", "exclusiveMinimum": 0},
+    "samples": {"type": "integer", "minimum": 2, "maximum": 2000}
+  }
+}

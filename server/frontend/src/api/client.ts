@@ -6,6 +6,7 @@
 import type { PriisData } from "../types/priis";
 import { priisData } from "../data/mockData";
 import { API_BASE as BASE } from "../config";
+import { loadLocalDataset } from './localDataset';
 import {
   parseArray,
   AgencySchema, VendorSchema, SiteSchema, ContractSchema,
@@ -98,12 +99,18 @@ function deriveWatchlist(
 }
 
 /** Fetch PriisData, falling back to the bundled mock when the server is down. */
-export async function fetchPriisDataWithFallback(): Promise<{ data: PriisData; live: boolean }> {
+export async function fetchPriisDataWithFallback(): Promise<{ data: PriisData; live: boolean; sourceKind: 'live' | 'demo'; savedAt?: string }> {
+  if (!navigator.onLine) {
+    const saved = await loadLocalDataset();
+    if (saved) return { data: saved.data, live: false, sourceKind: saved.sourceKind, savedAt: saved.savedAt };
+  }
   try {
     const data = await fetchPriisData();
-    return { data, live: true };
+    return { data, live: true, sourceKind: 'live' };
   } catch {
-    return { data: priisData, live: false };
+    const saved = await loadLocalDataset();
+    if (saved) return { data: saved.data, live: false, sourceKind: saved.sourceKind, savedAt: saved.savedAt };
+    return { data: priisData, live: false, sourceKind: 'demo' };
   }
 }
 

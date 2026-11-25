@@ -1,0 +1,23 @@
+{
+  "adapter": "opentopography_globaldem",
+  "files": [
+    {
+      "accessed_at": "2026-11-23T23:02:09Z",
+      "bbox_wsen": [
+        -67.95,
+        17.85,
+        -65.2,
+        18.55
+      ],
+      "catalog_source_id": "copernicus_glo30_dem",
+      "content_type": "application/octet-stream",
+      "demtype": "COP30",
+      "file_name": "COP30_-67.95_17.85_-65.2_18.55.tif",
+      "file_size_bytes": 43254754,
+      "opentopography_id": "OTSDEM.032021.4326.3",
+      "raw_commit_allowed": false,
+      "request_url": "https://portal.opentopography.org/API/globaldem?demtype=COP30&south=17.85&north=18.55&west=-67.95&east=-65.2&outputFormat=GTiff&API_Key=REDACTED",
+      "sha256": "c94a3c7060d64a2fc2d7b2deb193dbcb3eccda3af656caa11eb2daf6fb99d7e3"
+    }
+  ]
+}

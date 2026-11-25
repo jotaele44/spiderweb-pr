@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/viz_receipt_v1.schema.json",
+  "title": "Visualization engine render receipt",
+  "description": "Machine-readable receipt emitted next to every rendered artifact. A picture is never evidence of a connection; this receipt records what it is built from.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "render_id", "renderer", "view", "config", "inputs", "reference_frame", "features", "evidence_counts", "observation_dates", "processing_steps", "validation", "publication_ready", "output", "receipt_sha256"],
+  "properties": {
+    "schema": {"const": "viz_receipt/v1"},
+    "render_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "renderer": {
+      "type": "object",
+      "required": ["name", "version", "python", "repo_commit"],
+      "properties": {"name": {"type": "string"}, "version": {"type": "string"}, "python": {"type": "string"}, "repo_commit": {"type": "string"}}
+    },
+    "view": {"enum": ["xy", "section", "3d"]},
+    "config": {"type": "object"},
+    "inputs": {
+      "type": "object",
+      "required": ["snapshot_id", "snapshot_version", "manifest_sha256", "layers"],
+      "properties": {
+        "snapshot_id": {"type": "string"},
+        "snapshot_version": {"type": "string"},
+        "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "layers": {
+          "type": "array",
+          "items": {"type": "object", "required": ["layer_id", "kind", "sha256", "source"], "properties": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}
+        }
+      }
+    },
+    "reference_frame": {
+      "type": "object",
+      "required": ["crs", "vertical_datum", "units", "extent"],
+      "properties": {"crs": {"type": "string"}, "vertical_datum": {"type": "string"}, "units": {"type": "object"}, "extent": {"type": "array", "minItems": 4, "maxItems": 4}}
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "layer_id", "evidence", "style"],
+        "properties": {
+          "id": {"type": "string"},
+          "layer_id": {"type": "string"},
+          "evidence": {"enum": ["observed", "inferred", "modeled", "unknown"]},
+          "style": {"type": "string"},
+          "observation_date": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "evidence_counts": {
+      "type": "object",
+      "required": ["observed", "inferred", "modeled", "unknown"],
+      "additionalProperties": false,
+      "properties": {"observed": {"type": "integer"}, "inferred": {"type": "integer"}, "modeled": {"type": "integer"}, "unknown": {"type": "integer"}}
+    },
+    "observation_dates": {"type": "array", "items": {"type": "string"}},
+    "processing_steps": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "validation": {
+      "type": "object",
+      "required": ["status", "issues"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL"]},
+        "issues": {
+          "type": "array",
+          "items": {"type": "object", "required": ["code", "severity", "message", "feature_ids"], "properties": {"severity": {"enum": ["error", "warning"]}}}
+        }
+      }
+    },
+    "publication_ready": {"type": "boolean"},
+    "output": {
+      "type": "object",
+      "required": ["file", "sha256", "bytes"],
+      "properties": {"file": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "bytes": {"type": "integer"}}
+    },
+    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "adapter": "nasa_srtmgl1",
+  "collection": "SRTMGL1 v003 (C2763266360-LPCLOUD) + SRTMGL1N v003 (C2763266368-LPCLOUD)",
+  "files": [
+    {
+      "accessed_at": "2026-11-23T21:38:35Z",
+      "file_name": "N17W066.SRTMGL1.hgt.zip",
+      "file_size_bytes": 68658,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "d0d338c497dedb1af14bf38e2e57c0a4c9db9dd1bb939bc9d9aaf187f0da510c",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N17W066.SRTMGL1.hgt/N17W066.SRTMGL1.hgt.zip",
+      "tile_id": "N17W066"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:33Z",
+      "file_name": "N17W066.SRTMGL1N.num.zip",
+      "file_size_bytes": 14931,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1N",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "01014b3a6b51fbd14f1b15c462e636a92e434b9e742e53e8cedf34619d713f13",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N17W066.SRTMGL1N.num/N17W066.SRTMGL1N.num.zip",
+      "tile_id": "N17W066"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:40Z",
+      "file_name": "N17W067.SRTMGL1.hgt.zip",
+      "file_size_bytes": 371710,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "aa9ede7722d2a241f4530a2b943378c76aafa0ed2be3c35bdf37ea6a844fd73d",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N17W067.SRTMGL1.hgt/N17W067.SRTMGL1.hgt.zip",
+      "tile_id": "N17W067"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:38Z",
+      "file_name": "N17W067.SRTMGL1N.num.zip",
+      "file_size_bytes": 31096,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1N",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "11f4eb08c057931261f2260d83ef9cc4384481b90c4d9bee9b60d59807810897",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N17W067.SRTMGL1N.num/N17W067.SRTMGL1N.num.zip",
+      "tile_id": "N17W067"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:44Z",
+      "file_name": "N17W068.SRTMGL1.hgt.zip",
+      "file_size_bytes": 123340,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "c2c1c53bbbc39b8179767b18f5cd8f6fa459725bc6a83bcc903d61e4dfa6d2ab",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N17W068.SRTMGL1.hgt/N17W068.SRTMGL1.hgt.zip",
+      "tile_id": "N17W068"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:42Z",
+      "file_name": "N17W068.SRTMGL1N.num.zip",
+      "file_size_bytes": 25322,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1N",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "64d2e0b96b1915385f7b58e282f4b6042fed6ffc47cd201e4c8a88f51a2cdc3b",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N17W068.SRTMGL1N.num/N17W068.SRTMGL1N.num.zip",
+      "tile_id": "N17W068"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:48Z",
+      "file_name": "N18W066.SRTMGL1.hgt.zip",
+      "file_size_bytes": 1816696,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "a37b7e4e5253719f28b6fa7b5b6a15f596804d28499df1445820d656dd90902b",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N18W066.SRTMGL1.hgt/N18W066.SRTMGL1.hgt.zip",
+      "tile_id": "N18W066"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:46Z",
+      "file_name": "N18W066.SRTMGL1N.num.zip",
+      "file_size_bytes": 49390,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1N",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "649d66536637d4d8e932ce4190b4ec6a4d817e05369db65609fbc8e03ea5d9a1",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N18W066.SRTMGL1N.num/N18W066.SRTMGL1N.num.zip",
+      "tile_id": "N18W066"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:52Z",
+      "file_name": "N18W067.SRTMGL1.hgt.zip",
+      "file_size_bytes": 6339986,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "5e45f3eb9ccee94fa5265e7d9d0dd238b1956f56ea8b9763fb628d3df65f644c",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N18W067.SRTMGL1.hgt/N18W067.SRTMGL1.hgt.zip",
+      "tile_id": "N18W067"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:50Z",
+      "file_name": "N18W067.SRTMGL1N.num.zip",
+      "file_size_bytes": 123700,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1N",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "974aa5763a551236558510eb096bb88932c6d3178f649c276cf182c1d37b8de6",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N18W067.SRTMGL1N.num/N18W067.SRTMGL1N.num.zip",
+      "tile_id": "N18W067"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:57Z",
+      "file_name": "N18W068.SRTMGL1.hgt.zip",
+      "file_size_bytes": 1336903,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "de42cb53f076c3b3f4cb29659b6d711af4373ac4545d670fe4c47202b1e8e63c",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N18W068.SRTMGL1.hgt/N18W068.SRTMGL1.hgt.zip",
+      "tile_id": "N18W068"
+    },
+    {
+      "accessed_at": "2026-11-23T21:38:55Z",
+      "file_name": "N18W068.SRTMGL1N.num.zip",
+      "file_size_bytes": 39772,
+      "final_host": "d1nklfio7vscoe.cloudfront.net",
+      "product": "SRTMGL1N",
+      "raw_commit_allowed": false,
+      "review_status": "downloaded_local",
+      "sha256": "0a26b01661fc2c879dec281d762d10bd7738ca70ece01a3f6de98c4275b632a0",
+      "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1N.003/N18W068.SRTMGL1N.num/N18W068.SRTMGL1N.num.zip",
+      "tile_id": "N18W068"
+    }
+  ],
+  "generated_at": "2026-11-23T21:38:33Z",
+  "raw_commit_allowed": false
+}
