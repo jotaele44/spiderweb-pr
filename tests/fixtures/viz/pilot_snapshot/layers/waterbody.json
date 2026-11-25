@@ -1,0 +1,46 @@
+{
+ "crs": "EPSG:4326",
+ "features": [
+  {
+   "geometry": {
+    "coordinates": [
+     [
+      [
+       -66.112,
+       18.048
+      ],
+      [
+       -66.088,
+       18.048
+      ],
+      [
+       -66.088,
+       18.024
+      ],
+      [
+       -66.112,
+       18.024
+      ],
+      [
+       -66.112,
+       18.048
+      ]
+     ]
+    ],
+    "type": "Polygon"
+   },
+   "id": "RES_1",
+   "properties": {
+    "evidence": "observed",
+    "observation_date": "2025-03-01"
+   }
+  }
+ ],
+ "kind": "waterbody",
+ "layer_id": "waterbody_fixture",
+ "source": {
+  "authority": "synthetic fixture",
+  "license": "CC0-1.0"
+ },
+ "vertical_datum": null
+}

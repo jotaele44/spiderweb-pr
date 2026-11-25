@@ -42,9 +42,8 @@ export function martinTileUrlTemplate(sourceId: string): string {
  * Raster base-map tile template for the Spatial module.
  *
  * Defaults to public OpenStreetMap tiles. Override with `VITE_TILE_URL` to point
- * a packaged desktop build at a local or self-hosted tile source — the app is
- * otherwise fully offline-capable (fonts are bundled, the fixture dataset is the
- * fallback), and this is the one runtime asset that still requires the network.
+ * a packaged desktop build at a local or self-hosted tile source — fonts and the app shell can be bundled for offline use. Remote map tiles
+ * and server-backed capabilities remain independent network dependencies.
  */
 export const TILE_URL: string =
   import.meta.env.VITE_TILE_URL ?? "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -52,3 +51,11 @@ export const TILE_URL: string =
 /** Attribution shown on the base map. Override alongside `VITE_TILE_URL`. */
 export const TILE_ATTRIBUTION: string =
   import.meta.env.VITE_TILE_ATTRIBUTION ?? "© OpenStreetMap contributors";
+
+/**
+ * Public, application-scoped Cesium ion token used only by the browser's 3D
+ * visualization runtime. Keep empty to retain the deterministic grid shell.
+ * Never reuse a token with asset-write or account-management scopes here.
+ */
+export const CESIUM_ION_TOKEN: string =
+  import.meta.env.VITE_CESIUM_ION_TOKEN?.trim() ?? "";

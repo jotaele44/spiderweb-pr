@@ -163,6 +163,7 @@ include = [
     "llm*",
     "imagery*",
     "spiderweb*",
+    "viz_engine*",
 ]
 
 # ---------------------------------------------------------------------------
@@ -192,6 +193,12 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+# Validation messages are single long f-strings that black cannot split.
+"viz_engine/*" = ["E501"]
+"tests/test_viz_engine*.py" = ["E501"]
+"tests/fixtures/viz/*" = ["E501"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # Default test run excludes integration tests (live external dependencies).
@@ -211,7 +218,8 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["integration", "pipeline", "readiness", "federation", "llm",
-          "earthgpt", "imagery", "spiderweb.subsurface", "provenance_utils", "run_modes", "release_check"]
+          "earthgpt", "imagery", "spiderweb.subsurface", "spiderweb.access_points",
+          "provenance_utils", "run_modes", "release_check"]
 omit = [
     "tests/*",
     "scripts/*",

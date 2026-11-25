@@ -1,0 +1,89 @@
+{
+  "operations": {
+    "prvd02_to_nad83_ellipsoid": "Inverse of NAD83(2011) to PRVD02 height (2) (with axis order normalized for visualization)",
+    "nad83_2011_to_itrf2014": "Conversion from NAD83(2011) (geog3D) to NAD83(2011) (geocentric) + Inverse of ITRF2014 to NAD83(2011) (1) + Conversion from ITRF2014 (geocentric) to ITRF2014 (geog3D) (with axis order normalized for visualization)",
+    "wgs84_to_egm96": "WGS 84 to EGM96 height (1) (with axis order normalized for visualization)",
+    "wgs84_to_egm2008": "WGS 84 to EGM2008 height (1) (with axis order normalized for visualization)",
+    "itrf2014_as_wgs84": "ITRF2014 ellipsoidal heights are used as WGS 84 (G2139); the two agree at centimetre level"
+  },
+  "epochs": {
+    "2018": 2018.79,
+    "d24": 2024.6
+  },
+  "sign": "height on the geoid model = PRVD02 height + offset",
+  "avoided": "PROJ's default NAD83(2011) to WGS 84 (1) is a null transform (0 m, stated accuracy 2 m)",
+  "site_centres": [
+    {
+      "site_id": "north_karst_hatillo",
+      "lon": -66.87,
+      "lat": 18.47,
+      "offset_prvd02_to_egm96_m_2018": 0.519,
+      "offset_prvd02_to_egm2008_m_2018": 0.301,
+      "offset_prvd02_to_egm96_m_d24": 0.519,
+      "offset_prvd02_to_egm2008_m_d24": 0.301
+    },
+    {
+      "site_id": "central_cordillera_cerro_de_punta",
+      "lon": -66.5917,
+      "lat": 18.1723,
+      "offset_prvd02_to_egm96_m_2018": 1.213,
+      "offset_prvd02_to_egm2008_m_2018": 0.456,
+      "offset_prvd02_to_egm96_m_d24": 1.214,
+      "offset_prvd02_to_egm2008_m_d24": 0.457
+    },
+    {
+      "site_id": "el_yunque",
+      "lon": -65.785,
+      "lat": 18.295,
+      "offset_prvd02_to_egm96_m_2018": 0.686,
+      "offset_prvd02_to_egm2008_m_2018": 0.4,
+      "offset_prvd02_to_egm96_m_d24": 0.687,
+      "offset_prvd02_to_egm2008_m_d24": 0.401
+    },
+    {
+      "site_id": "dry_south_guanica",
+      "lon": -66.9,
+      "lat": 17.97,
+      "offset_prvd02_to_egm96_m_2018": 0.779,
+      "offset_prvd02_to_egm2008_m_2018": 0.432,
+      "offset_prvd02_to_egm96_m_d24": 0.779,
+      "offset_prvd02_to_egm2008_m_d24": 0.432
+    },
+    {
+      "site_id": "urban_san_juan",
+      "lon": -66.07,
+      "lat": 18.43,
+      "offset_prvd02_to_egm96_m_2018": -0.039,
+      "offset_prvd02_to_egm2008_m_2018": 0.372,
+      "offset_prvd02_to_egm96_m_d24": -0.038,
+      "offset_prvd02_to_egm2008_m_d24": 0.373
+    },
+    {
+      "site_id": "west_mayaguez",
+      "lon": -67.13,
+      "lat": 18.2,
+      "offset_prvd02_to_egm96_m_2018": 0.927,
+      "offset_prvd02_to_egm2008_m_2018": 0.396,
+      "offset_prvd02_to_egm96_m_d24": 0.927,
+      "offset_prvd02_to_egm2008_m_d24": 0.397
+    },
+    {
+      "site_id": "east_central_cayey",
+      "lon": -66.15,
+      "lat": 18.1,
+      "offset_prvd02_to_egm96_m_2018": 1.191,
+      "offset_prvd02_to_egm2008_m_2018": 0.48,
+      "offset_prvd02_to_egm96_m_d24": 1.192,
+      "offset_prvd02_to_egm2008_m_d24": 0.48
+    },
+    {
+      "site_id": "northeast_carolina",
+      "lon": -66.03,
+      "lat": 18.33,
+      "offset_prvd02_to_egm96_m_2018": 0.281,
+      "offset_prvd02_to_egm2008_m_2018": 0.368,
+      "offset_prvd02_to_egm96_m_d24": 0.281,
+      "offset_prvd02_to_egm2008_m_d24": 0.369
+    }
+  ]
+}

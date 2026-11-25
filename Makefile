@@ -34,6 +34,9 @@ test-prii:
 	python -m pytest tests/test_prii_readiness_engine.py tests/test_cli_readiness.py \
 	  tests/test_schema_validation.py -v
 
+test-viz:  ## Visualization engine contract, determinism and negative gates
+	python -m pytest tests/test_viz_engine.py tests/test_viz_engine_negative.py -v
+
 test-phase1:
 	python -m pytest tests/test_hardening_layer.py tests/test_operational_intelligence.py \
 	  tests/test_calibrate_scoring.py tests/test_manual_review_queue.py -v

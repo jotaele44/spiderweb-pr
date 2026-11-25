@@ -10,7 +10,7 @@
 
 @media (max-width: 767px) {
   .workbench {
-    --cmd-h: 92px;
+    --cmd-h: 132px;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: var(--cmd-h) minmax(0, 1fr) var(--time-h);
     grid-template-areas:
@@ -49,11 +49,12 @@
     order: 2;
     width: 100%;
     min-width: 0;
-    min-height: 48px;
+    min-height: 88px;
     padding: 4px 8px;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .runstate > span {
@@ -145,9 +146,16 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Single-column grid, not display:block: .map-host is absolutely positioned,
+     so the map only has height if its grid row gives .map-col one. */
   .map-shell {
-    display: block !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(240px, 1fr) minmax(0, auto);
     min-width: 0;
+  }
+
+  .map-shell[data-layer-collapsed="true"] .layer-panel {
+    display: none;
   }
 
   .map-shell .layer-panel {
@@ -160,5 +168,21 @@
   .tab,
   .linklike {
     min-height: 44px;
+  }
+}
+
+/* Short landscape (phones on their side). Wider than the 767px breakpoint, so
+   the desktop grid applies; drop the timeline row so the map keeps a usable
+   height. */
+@media (orientation: landscape) and (max-height: 480px) and (min-width: 768px) {
+  .workbench {
+    grid-template-rows: var(--cmd-h) minmax(0, 1fr);
+    grid-template-areas:
+      "cmd cmd cmd"
+      "rail center inspector";
+  }
+
+  .timeline {
+    display: none;
   }
 }

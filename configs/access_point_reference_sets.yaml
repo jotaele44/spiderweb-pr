@@ -1,0 +1,179 @@
+# Published reference datasets used by the access-point registries.
+#
+# A reference set is somebody else's map. It is held by the hash of its exact
+# bytes and read only with a coordinate reference system BOUND here, together
+# with where that binding was read. A set that is not held is recorded by hash
+# for lineage and is never parsed.
+#
+# None of these is field truth. A comparison with them is agreement with another
+# interpretation, which has its own positional error (stated below, in the
+# publisher's words), not field-verified accuracy.
+#
+# These files were supplied by the repository owner on 2026-11-17.
+version: access_point_reference_sets_v1
+sets:
+  - set_id: usgs_karst_sinkholes_over_30m
+    role: LABELS
+    format: geojson
+    held: true
+    path: evidence/access_points/reference/usgs_karst_map/sinkholes_30m.geojson
+    sha256: d2b4bdc8131af836aba05e7ee34fdf9128badb954e7a4b486a206b7992973ca4
+    provider: USGS_KARST_MAP_OF_PUERTO_RICO
+    title: >-
+      Karst Map of Puerto Rico (U.S. Geological Survey Open-File Report, 2010):
+      feature class sinkholes_30m
+    published: "2010"
+    received_utc: "2026-11-17T23:23:00Z"
+    publisher_statement: >-
+      Polygons showing locations of sinkholes deeper than 30 meters in Puerto
+      Rico.
+    label_class: SINKHOLE
+    stated_min_depth_m: 30
+    bound_crs: "EPSG:32161"
+    crs_basis: >-
+      The export declares no coordinate reference system and holds projected
+      metres. The parent database holds the definition
+      NAD_1983_StatePlane_Puerto_Rico_Virgin_Islands_FIPS_5200 and records a
+      projection step dated 2012; its descriptive metadata still names a
+      polyconic projection, which the coordinates cannot be (they are positive
+      and offset by 200,000 m). Coherence check: bound to EPSG:32161, 1,171 of
+      1,173 outlines fall inside the independently published northern karst
+      limit.
+    positional_offset_m: 100
+    positional_basis: >-
+      Publisher's metadata: "Offsets of as much as 100 meters between the karst
+      data and base map topographic features may occur." The outlines were
+      digitised from scanned paper maps at 1:20,000 and 1:140,000; the source
+      map has a 50 m contour interval.
+    parent_sha256: 5cd5c9e455ec9d081c20edd02302b94b1ffa6d01c91ab7bd2d323008c6ddc7cd
+    note: US_GOVERNMENT_PUBLIC_DOMAIN
+
+  - set_id: usgs_karst_sinkhole_areas_5_to_30m
+    role: CONTEXT_AREA
+    format: geojson
+    held: true
+    path: evidence/access_points/reference/usgs_karst_map/sinkholes_5_30m.geojson
+    sha256: fec19a28001a72def117f9699790da372fee80c64d02f455475d8f960d7b0396
+    provider: USGS_KARST_MAP_OF_PUERTO_RICO
+    title: >-
+      Karst Map of Puerto Rico (U.S. Geological Survey Open-File Report, 2010):
+      feature class sinkholes_5_30m
+    published: "2010"
+    received_utc: "2026-11-17T23:23:00Z"
+    publisher_statement: >-
+      Polygons showing areas of sinkholes 5-30 meters deep in Puerto Rico.
+      These are areas, not individual sinkholes.
+    bound_crs: "EPSG:32161"
+    crs_basis: Same parent database and same basis as usgs_karst_sinkholes_over_30m.
+    positional_offset_m: 100
+    positional_basis: Same publisher statement as usgs_karst_sinkholes_over_30m.
+    parent_sha256: 5cd5c9e455ec9d081c20edd02302b94b1ffa6d01c91ab7bd2d323008c6ddc7cd
+    note: US_GOVERNMENT_PUBLIC_DOMAIN
+
+  - set_id: pr_planning_board_northern_karst_limit
+    role: KARST_LIMIT
+    format: shapefile_zip
+    held: true
+    path: evidence/access_points/reference/pr_planning_board/g15_geologia_carso_limite.zip
+    sha256: 877fddfaac5d148dff055c11bffaab16deff3fb7a5ae14154708d030023df5a6
+    provider: PR_PLANNING_BOARD_GEODATA
+    title: >-
+      Northern karst topography limit, layer g15_geologia_carso_limite (Puerto
+      Rico Planning Board, 2010)
+    published: "2010"
+    received_utc: "2026-11-17T23:12:00Z"
+    publisher_statement: >-
+      Northern karst topography. This dataset extends from Rincon (northwest)
+      to Rio Grande (northeast) municipalities. Source: PR Planning Board, 2010.
+    bound_crs: "EPSG:6566"
+    crs_basis: The projection file inside the archive names EPSG:6566.
+    note: >-
+      Government of Puerto Rico open geodata; exported from its map server.
+      Kept in the repository by the repository owner's decision of 2026-11-20;
+      no separate licence text was supplied with the layer.
+
+  - set_id: usgs_karst_lithology
+    role: LITHOLOGY
+    format: opaque
+    held: false
+    sha256: 5c2c9bdce13d92449ecdd06354efe2ca4acc0ffd9cfe8d6b21439e3774707e68
+    provider: USGS_KARST_MAP_OF_PUERTO_RICO
+    title: >-
+      Karst Map of Puerto Rico: feature class Puerto_Rico_karst (805 rock-unit
+      polygons, 3.2 MB export)
+    published: "2010"
+    parent_sha256: 5cd5c9e455ec9d081c20edd02302b94b1ffa6d01c91ab7bd2d323008c6ddc7cd
+    note: Not committed. Used once, from the owner's upload, for the lithology table.
+
+  - set_id: usgs_karst_map_geodatabase
+    role: LINEAGE_ONLY
+    format: opaque
+    held: false
+    sha256: 5cd5c9e455ec9d081c20edd02302b94b1ffa6d01c91ab7bd2d323008c6ddc7cd
+    provider: USGS_KARST_MAP_OF_PUERTO_RICO
+    title: puerto_rico_karst.zip, the personal geodatabase the three exports came from
+    published: "2010"
+    note: Not committed and not parsed. Parent of the three exports.
+
+  - set_id: pr_planning_board_karst_limit_network_link
+    role: LINEAGE_ONLY
+    format: opaque
+    held: false
+    sha256: 3ab4c1346b015462b18e8d7252469fe282203f38ae475c759db17cc8a13228e1
+    provider: PR_PLANNING_BOARD_GEODATA
+    title: KML network link to the same layer on the government map server
+    note: A pointer to a plain-http map service. Recorded by hash only; never fetched.
+
+validation_runs:
+  - run_id: "2026-11-17-karst-map"
+    label_set: usgs_karst_sinkholes_over_30m
+    context_area_set: usgs_karst_sinkhole_areas_5_to_30m
+    karst_limit_set: pr_planning_board_northern_karst_limit
+    survey_run: "2026-11-17"
+    reproducible_epoch: "2024"
+    window_half_size_m: 500
+    cluster_radius_m: 500
+    tile_coarsen_factor: 5
+    depth_thresholds_m: [1, 2, 5, 10, 20, 30]
+    displaced_control_offset_m: 1000
+
+  # The same comparison with nested basins also reported. Same labels, tiles,
+  # thresholds and window; only the detector option differs. The first run
+  # stays as it is and must still reproduce.
+  - run_id: "2026-11-18-karst-map-nested"
+    label_set: usgs_karst_sinkholes_over_30m
+    context_area_set: usgs_karst_sinkhole_areas_5_to_30m
+    karst_limit_set: pr_planning_board_northern_karst_limit
+    survey_run: "2026-11-17"
+    reproducible_epoch: "2024"
+    window_subset_run: "2026-11-17-karst-map"
+    window_half_size_m: 500
+    cluster_radius_m: 500
+    tile_coarsen_factor: 5
+    depth_thresholds_m: [1, 2, 5, 10, 20, 30]
+    displaced_control_offset_m: 1000
+    detector:
+      nested: true
+      nested_level_step_m: 0.5
+
+  # The single-pit rule, measured on top of nested basins: the baseline here is
+  # the nested detector, so the table shows what the second rule adds.
+  - run_id: "2026-11-18-karst-map-pit-rule"
+    label_set: usgs_karst_sinkholes_over_30m
+    context_area_set: usgs_karst_sinkhole_areas_5_to_30m
+    karst_limit_set: pr_planning_board_northern_karst_limit
+    survey_run: "2026-11-17"
+    reproducible_epoch: "2024"
+    window_subset_run: "2026-11-17-karst-map"
+    window_half_size_m: 500
+    cluster_radius_m: 500
+    tile_coarsen_factor: 5
+    depth_thresholds_m: [1, 2, 5, 10, 20, 30]
+    displaced_control_offset_m: 1000
+    baseline_detector:
+      nested: true
+      nested_level_step_m: 0.5
+    detector:
+      nested: true
+      nested_level_step_m: 0.5
+      pit_area_jump: 3.0

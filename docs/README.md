@@ -45,14 +45,19 @@ the relevant subsystem below.
 
 ## Spiderweb language & calibration
 - [SPIDERWEB_LANGUAGE_BRIDGE.md](SPIDERWEB_LANGUAGE_BRIDGE.md)
+- [ACCESS_POINT_TERMINOLOGY_DECISION.md](ACCESS_POINT_TERMINOLOGY_DECISION.md) — why the access-point registries do not use the acronyms ILAP and OSAP
 - [SPIDERWEB_OPERATIONAL_CALIBRATION.md](SPIDERWEB_OPERATIONAL_CALIBRATION.md)
 - [AIRCRAFT_HOME_BASE_INTELLIGENCE.md](AIRCRAFT_HOME_BASE_INTELLIGENCE.md) — retired historical context
 
 ## GIS / DEM / geodata
+- [ACCESS_POINT_REGISTRIES.md](ACCESS_POINT_REGISTRIES.md) — Inland and Off-Shore Access Point registries: evidence rules, relationships, API, map workspace
+- [ACCESS_POINT_SCIENTIFIC_METHOD.md](ACCESS_POINT_SCIENTIFIC_METHOD.md) — terrain and bathymetry processing, candidate discovery, vertical-datum contract, what is not validated
+- [ACCESS_POINT_CAPABILITY_INVENTORY.md](ACCESS_POINT_CAPABILITY_INVENTORY.md) — baseline, capability audit, cross-repository matrix, open defects
 - [GIS_EXPORT_GUIDE.md](GIS_EXPORT_GUIDE.md) — GeoJSON/KML/QGIS consumption
 - [EXTERNAL_AERODROME_LAYER.md](EXTERNAL_AERODROME_LAYER.md)
 - [PR_GEODATA_INTEGRITY_AUDIT.md](PR_GEODATA_INTEGRITY_AUDIT.md)
 - [DUCKDB_SPATIAL.md](DUCKDB_SPATIAL.md) — embedded spatial SQL for ad hoc joins/queries over on-disk GeoJSON
+- [GIS_VIEWER_API.md](GIS_VIEWER_API.md) — `/gis/*` catalog, identify, search, AOI query/export, and the map viewer tools
 - DEM workflow: [PR_DEM_END_TO_END_PROCESS.md](PR_DEM_END_TO_END_PROCESS.md),
   [PR_DEM_ONE_TILE_PILOT.md](PR_DEM_ONE_TILE_PILOT.md),
   [PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md](PR_DEM_REGIONAL_EXPANSION_CONTROLLER.md),
