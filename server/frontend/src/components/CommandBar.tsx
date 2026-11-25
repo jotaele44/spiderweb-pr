@@ -23,6 +23,10 @@ export function CommandBar({
   live = false,
   theme = "dark",
   onToggleTheme,
+  datasetStatus,
+  savingDataset,
+  onSaveDataset,
+  dataLabel,
 }: {
   query: string;
   setQuery: (value: string) => void;
@@ -32,6 +36,10 @@ export function CommandBar({
   live?: boolean;
   theme?: "light" | "dark";
   onToggleTheme?: () => void;
+  datasetStatus?: string;
+  savingDataset?: boolean;
+  onSaveDataset?: () => void;
+  dataLabel?: string;
 }) {
   return (
     <header className="cmdbar">
@@ -48,7 +56,8 @@ export function CommandBar({
         <span className="kbd">ENTER</span>
       </form>
       <div className="runstate">
-        <div className="runstate-actions">
+        <div className="runstate-actions" style={{ flexWrap: "wrap" }}>
+          {onSaveDataset && <button className="act" disabled={savingDataset} onClick={onSaveDataset} title={datasetStatus ?? 'Save this dataset on this device; demo data stays labeled demo'}>SAVE LOCAL COPY</button>}
           {onToggleTheme && (
             <button
               className="act theme-toggle"
@@ -70,8 +79,10 @@ export function CommandBar({
           )}
         </div>
         <span>
-          {live ? "LIVE" : "DEMO"} · {runState === "running" ? "PIPELINE ACTIVE" : "STANDBY"}
+          {dataLabel ?? (live ? "LIVE" : "DEMO")} · {runState === "running" ? "PIPELINE ACTIVE" : "STANDBY"}
         </span>
+        <div data-offline-status-host style={{ order: -1, flex: 1, minWidth: 0 }} />
+        {datasetStatus && <div role="status" style={{ fontSize: 10, overflowWrap: 'anywhere' }}>{datasetStatus}</div>}
       </div>
     </header>
   );

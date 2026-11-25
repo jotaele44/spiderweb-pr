@@ -1,0 +1,74 @@
+{
+  "manifest_version": "1.0.0",
+  "source_family": "OPENTOPOGRAPHY_GLOBALDEM",
+  "active_vector": "DEM_SOURCES_BY_ACQUISITION_PLATFORM",
+  "evidence_tier": "T1",
+  "api": {
+    "endpoint": "https://portal.opentopography.org/API/globaldem",
+    "openapi": "https://portal.opentopography.org/apidocs/openapi.json",
+    "key_parameter": "API_Key",
+    "key_location": "query",
+    "key_env": [
+      "OPENTOPOGRAPHY_API_KEY",
+      "OpenTopography_API_KEY"
+    ],
+    "output_formats": [
+      "GTiff",
+      "AAIGrid",
+      "HFA"
+    ],
+    "checked": "2026-11-23",
+    "notes": "The OpenAPI document declares API_Key as a required query parameter and no header scheme, so the key cannot be injected as a header. It must never be written to a log, manifest or receipt."
+  },
+  "repo_policy": {
+    "commit_policy": "source_manifest_and_code_only",
+    "do_not_commit": [
+      "*.tif",
+      "*.tiff",
+      "*.asc",
+      "*.img",
+      "cache/",
+      "outputs/",
+      "downloads/"
+    ]
+  },
+  "aoi": {
+    "aoi_id": "puerto_rico_with_offshore_islands",
+    "bbox_wsen": [
+      -67.95,
+      17.85,
+      -65.2,
+      18.55
+    ]
+  },
+  "demtypes": [
+    {
+      "demtype": "SRTMGL1",
+      "catalog_source_id": "nasa_srtmgl1_v003",
+      "opentopography_id": "OTSRTM.082015.4326.1",
+      "doi": "10.5069/G9445JDF",
+      "name": "Shuttle Radar Topography Mission (SRTM GL1) Global 30m"
+    },
+    {
+      "demtype": "NASADEM",
+      "catalog_source_id": "nasa_nasadem_hgt_v001",
+      "opentopography_id": "OTSDEM.032021.4326.2",
+      "doi": "10.5069/G93T9FD9",
+      "name": "NASADEM Global Digital Elevation Model"
+    },
+    {
+      "demtype": "COP30",
+      "catalog_source_id": "copernicus_glo30_dem",
+      "opentopography_id": "OTSDEM.032021.4326.3",
+      "doi": "10.5069/G9028PQB",
+      "name": "Copernicus GLO-30 Digital Elevation Model"
+    },
+    {
+      "demtype": "AW3D30",
+      "catalog_source_id": "jaxa_aw3d30",
+      "opentopography_id": "OTALOS.112016.4326.2",
+      "doi": "10.5069/G94M92HB",
+      "name": "ALOS World 3D - 30m"
+    }
+  ]
+}
