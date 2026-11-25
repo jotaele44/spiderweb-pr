@@ -1,0 +1,11 @@
+{
+  "headers": {
+    "Content-Type": "application/xml;charset=UTF-8",
+    "Date": "Mon, 23 Nov 2026 15:42:59 GMT"
+  },
+  "request_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.nodc%3A0128255/xml",
+  "response_sha256": "8b768a8ac0df7a5b0ba41f67c5f30cc9c7546a6249e84617924e925fec403ac1",
+  "response_size": 102569,
+  "retrieved_utc": "2026-11-23T15:42:59.835560+00:00",
+  "status": 200
+}

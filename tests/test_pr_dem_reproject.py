@@ -167,3 +167,57 @@ def test_projected_tile_passes_through_unchanged(tmp_path: Path) -> None:
     assert abs(out_transform.a) == pytest.approx(5.0, abs=0.5)
     rows = pilot.extract_rows(dem, out_transform, crs, tile, _test_args())
     assert rows and rows[0]["area_m2"] >= 100.0
+
+
+# -- coarse-source refusal (DEM platform catalog: SRTM and other 30 m sources) --
+
+def _coarse_utm_tile(tmp_path: Path) -> Path:
+    # A 30 m NAD83 UTM 19N tile, like SRTM or COP30 after reprojection.
+    data = _mesa_dem(n=120)
+    transform = from_origin(200000.0, 2035000.0, 30.0, 30.0)
+    return _write_tif(tmp_path / "dem_utm_30m.tif", data, CRS.from_epsg(26919), transform)
+
+
+def test_read_dem_reports_native_resolution(tmp_path: Path) -> None:
+    tile = _coarse_utm_tile(tmp_path)
+    _, _, _, meta = pilot.read_dem(tile, target_resolution_m=5.0)
+    assert meta["native_resolution"] == pytest.approx(30.0)
+    assert meta["processing_units_metres"] is True
+    assert "30.00 m" in pilot.coarse_source_refusal(meta, 5.0)
+    assert pilot.coarse_source_refusal(meta, 30.0) is None
+
+
+def test_main_refuses_coarse_source(tmp_path: Path) -> None:
+    tile = _coarse_utm_tile(tmp_path)
+    out = tmp_path / "out"
+    with pytest.raises(SystemExit) as excinfo:
+        pilot.main(["--dem-tile", str(tile), "--output-dir", str(out), "--target-resolution-m", "5"])
+    assert "coarser than the target resolution" in str(excinfo.value)
+    assert not (out / "pr_dem_one_tile_manifest.json").exists()
+
+
+def test_main_runs_coarse_source_with_override(tmp_path: Path) -> None:
+    import json
+
+    tile = _coarse_utm_tile(tmp_path)
+    out = tmp_path / "out"
+    rc = pilot.main([
+        "--dem-tile", str(tile), "--output-dir", str(out), "--target-resolution-m", "5",
+        "--allow-coarse-source",
+    ])
+    assert rc == 0
+    manifest = json.loads((out / "pr_dem_one_tile_manifest.json").read_text())
+    assert manifest["coarse_source_override"] is True
+    assert manifest["native_resolution_m"] == pytest.approx(30.0)
+
+
+def test_main_accepts_fine_source_without_override(tmp_path: Path) -> None:
+    import json
+
+    data = _mesa_dem()
+    tile = _write_tif(tmp_path / "dem_utm_1m.tif", data, CRS.from_epsg(26919), from_origin(200000.0, 2035000.0, 1.0, 1.0))
+    out = tmp_path / "out"
+    assert pilot.main(["--dem-tile", str(tile), "--output-dir", str(out), "--target-resolution-m", "5"]) == 0
+    manifest = json.loads((out / "pr_dem_one_tile_manifest.json").read_text())
+    assert manifest["coarse_source_override"] is False
+    assert manifest["native_resolution_m"] == pytest.approx(1.0)

@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import type { Feature, GeoJSON, Point } from "geojson";
 import * as maplibregl from "maplibre-gl";
 import { point } from "@turf/helpers";
@@ -24,6 +24,8 @@ import { useAccessPointsController } from "../spatial/accessPoints/useAccessPoin
 import { ControlCrossSection } from "../spatial/transect/ControlCrossSection";
 import type { SpatialRuntimeMode } from "../spatial/runtime/RuntimeFactory";
 import { useSpatialTools, SpatialToolsPanel } from "./SpatialToolsPanel";
+import { GisViewerControls, useGisViewer } from "./GisViewerControls";
+import { createGisClient } from "../spatial/gis/gisApi";
 
 type PolygonLayerKey = "municipios" | "tracts" | "places" | "barrios";
 type PointLayerKey = "gazetteer_pr_domestic_names";
@@ -579,9 +581,46 @@ export function SpatialIntelligence({
       return map.querySourceFeatures("geo-gazetteer_pr_domestic_names") as unknown as Feature<Point>[];
     },
   }), [data.sites, layers.gazetteer_pr_domestic_names, mapRef]);
+  // Backend GIS API (/gis/*): identify, search, polygon query/export, catalog.
+  // Queries run against exactly the catalog layers switched on above.
+  const gisClient = useMemo(() => createGisClient(API_BASE), []);
+  const activeBackendLayers = useMemo(
+    () => BACKEND_LAYER_KEYS.filter((key) => layers[key]),
+    [layers],
+  );
+  const gisSourceIdFor = useCallback(
+    (layerId: string) => (layerId === "municipios" ? municipiosSourceId : isBackendKey(layerId as LayerKey) ? `geo-${layerId}` : null),
+    [municipiosSourceId],
+  );
+  const applyGisLayerVisibility = useCallback((visible: Record<string, boolean>) => {
+    setLayers((current) => {
+      const next = { ...current };
+      for (const [layerId, on] of Object.entries(visible)) {
+        if (isBackendKey(layerId as LayerKey)) next[layerId as BackendLayerKey] = on;
+      }
+      return next;
+    });
+  }, []);
+  const gisViewer = useGisViewer({
+    mapRef,
+    mapReady,
+    client: gisClient,
+    producerRepo: "spiderweb-pr",
+    homeView: DEFAULT_REGIONAL_SCENE_CONFIG.initialView,
+    activeLayers: activeBackendLayers,
+    sourceIdFor: gisSourceIdFor,
+    applyLayerVisibility: applyGisLayerVisibility,
+  });
+  const gisCatalog = gisViewer.catalog;
+  const spatialToolsGis = useMemo(() => ({
+    client: gisClient,
+    activeLayers: () => activeBackendLayers,
+    exportable: (layerId: string) => gisCatalog?.layers.find((layer) => layer.layer_id === layerId)?.exportable ?? false,
+  }), [activeBackendLayers, gisCatalog, gisClient]);
+
   // Only attaches when the MapLibre (2D) runtime is active — mapRef stays
   // null in Cesium mode, so these tools simply don't render there yet.
-  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef });
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef, gis: spatialToolsGis });
 
   // Gazetteer-density choropleth: off by default, and only meaningful with
   // the municipios boundary layer itself on (there's nothing to shade
@@ -787,7 +826,7 @@ export function SpatialIntelligence({
             className="act"
             onClick={() => runtimeRef.current?.resetView({ animate: true })}
             title="Recenter on Puerto Rico"
-            aria-label="Recenter map on Puerto Rico"
+            aria-label="Recenter PR: recenter the map on Puerto Rico"
           >
             Recenter PR
           </button>
@@ -867,6 +906,8 @@ export function SpatialIntelligence({
         <aside className="layer-panel">
           {activeMode === "maplibre" && (
             <>
+              <GisViewerControls {...gisViewer} />
+              <div className="hr" />
               <SpatialToolsPanel {...spatialTools} />
               <div className="hr" />
             </>

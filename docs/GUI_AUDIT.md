@@ -240,9 +240,12 @@ checkout in this container):
 3. **Net effect for a user:** double-clicking the platform launcher (or
    running the shell script) starts one local, ephemeral-port FastAPI+SPA
    server (SQLite-backed, same demo/live-fallback behavior as dev mode) and
-   opens straight into the Command Center — no manual "start the backend,
-   then start the frontend" steps, and no external network dependency after
-   the one-time setup.
+   opens on the Launch Pad (Guest or Operator, readiness, options), which then
+   opens the Command Center — no manual "start the backend, then start the
+   frontend" steps, and no external network dependency after the one-time
+   setup. "Don't show this again" on the Launch Pad, or `--skip-launchpad`,
+   opens straight into the Command Center; `--launchpad` brings it back; see
+   `desktop/README.md`.
 
 ## 12. Summary
 

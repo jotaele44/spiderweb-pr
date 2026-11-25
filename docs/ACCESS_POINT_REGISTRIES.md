@@ -645,6 +645,62 @@ be evidence, so none was made, and the depressions stay unreplicated. Footprint
 polygons are where a cruise ran its sonar, generalised; they are not coverage
 of any one point.
 
+**The NCCOS lead is closed: neither accession covers the depressions.** A web
+search had found two NCEI accessions holding processed grids from NOAA's NCCOS
+programme that might bear on them:
+
+- **0131855**: NCCOS's own processing of the 2013 Nancy Foster survey,
+  project M-I907-NF-13, the project W00247's processing report also names. It
+  includes an 8 m grid. These are probably the same soundings gridded
+  separately, so it could not replicate the depressions. If it covers them, it
+  could still show whether the unexplained 15 m object is an artefact of one
+  gridding.
+- **0128255**: the 2014 Nancy Foster survey around St. Croix, which probably
+  lies off the Puerto Rico shelf.
+
+Seven metadata requests to their NCEI landing pages have all failed:
+
+- five on 2026-11-20, in two attempts about an hour apart (HTTP 503, 502 or a
+  timeout);
+- two on 2026-11-22, one per page, both HTTP 503.
+
+Each was made under a grant from the repository owner. No other host was used.
+
+On 2026-11-23, under the owner's grant of four metadata requests, the same
+records were read through NCEI's ISO metadata service instead. The landing-page
+route (`/access/metadata/landing-page/bin/iso`) returned HTTP 503 for both. The
+geoportal route (`/metadata/geoportal/rest/metadata/item/…/xml`) returned both
+records, which are frozen with their manifests in
+`evidence/access_points/real_survey/2026-11-23-nccos-metadata/`. What they state:
+
+| Accession | Stated period | Stated bounding box (W, E, S, N) | Depressions | 15 m object |
+| --- | --- | --- | --- | --- |
+| 0131855 | 2013-03-05 to 2013-03-29 | −65.806, −65.460, 18.364, 18.582 | DOES_NOT_COVER | DOES_NOT_COVER |
+| 0128255 | 2014-03-12 to 2014-05-02 | −64.930, −64.424, 17.632, 17.838 | DOES_NOT_COVER | DOES_NOT_COVER |
+
+0128255 is the St. Croix survey (project M1907-NF-14), as expected. 0131855 is
+titled for the "Northeast Grand Reserve", and its box lies north-east of Puerto
+Rico, about 60 km north of the depressions. **Its record contradicts itself:**
+
+- its abstract says it "applies to surveys W00246 and W00247";
+- it places them "near the west coast" of Puerto Rico;
+- yet its box contains neither W00247's seabed south of Vieques nor any west
+  coast.
+
+The classification follows the stated box only; the contradiction is recorded,
+not resolved. Under the owner's grant a grid would have been downloaded only if
+a stated box contained the depressions, so nothing was downloaded.
+
+The lead is closed on the stated metadata. Two questions only NCCOS can answer
+stay open:
+
+- whether 0131855 holds a W00247 grid outside its stated box;
+- whether any NCCOS processed bathymetry from another cruise covers the shelf
+  south of Vieques.
+
+A written inquiry has been drafted for the owner to send; nothing was sent from
+here. Replication stays BLOCKED.
+
 ## Reference maps and the comparison with them
 
 A reference set is somebody else's map. It is declared in
@@ -695,6 +751,13 @@ the existing `sources`, `entities` and `relationships` streams. No stream and
 no hub schema or hub code changes. This repository's own producer schema
 (`schemas/federation_entity.schema.json`) gains the three new entity types and an
 optional `attributes` object; the hub's schemas already accept both.
+
+The hub runs that command with only its own packages installed: the hub and
+`prii-export-utils`, not numpy, scipy, shapely or xarray. The lane must import
+without them. `gebco` and `spiderweb.subsurface` therefore load their raster and
+geometry modules on first use, and `tests/test_federation_export_hub_env.py` runs
+the `export_canonical` command with every base dependency the hub does not install
+blocked.
 
 | What | How it is exported |
 |---|---|

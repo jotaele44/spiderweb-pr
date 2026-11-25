@@ -9,7 +9,89 @@ GitHub Release using the matching section below (T6-53).
 
 ## [Unreleased]
 
+### Added
+- Every gridded DEM compared against 3DEP 1 m lidar at eight stratified sites
+  (`docs/sources/dem_lidar_comparison.md`, `scripts/run_dem_vs_3dep_lidar.py`,
+  sites in `data_sources/elevation/lidar_comparison_tiles.json`, receipt under
+  `evidence/dem_sources/lidar_comparison_2026-11-24/`). Lidar is averaged onto each
+  DEM's own grid and moved to its datum through GEOID18, a NAD83(2011) to ITRF2014
+  Helmert at the survey epoch and EGM96 or EGM2008. Median DEM minus lidar: NASADEM
+  +1.88 m, SRTMGL1 +3.63 m, AW3D30 +4.16 m, COP30 +4.39 m, CUDEM 1/9" -0.02 m;
+  D24 minus 2018 lidar -0.14 m. The 3DEP tiles state NAVD88 but agree with CUDEM
+  (PRVD02) to within 0.062 m, recorded as conflict `3dep_vertical_datum_label`; the
+  conflict checker gains an `abs_at_most` check. The 2018 3DEP product is now
+  `usgs_3dep_1m_pr_prvi_2018` (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018).
+- DEM sources broken down by acquisition platform
+  (`docs/sources/dem_sources_by_platform.md`). The catalog
+  `data_sources/elevation/dem_platform_catalog.yml` holds 30 products in four
+  classes (spaceborne, airborne, shipborne, compiled). All 71 elevation
+  registrations in 22 files are accounted for as aliases or classified
+  non-products, and six conflicts between registries are recorded.
+  `source_adapters/dem_platform` adds the merge policy: sources stay in separate
+  layers unless they share platform class, surface model and a declared vertical
+  datum. Independence is decided on canonical acquisition roots.
+- NASA SRTMGL1 v003 adapter (`source_adapters/nasa_srtmgl1`,
+  `docs/source_adapters/nasa_srtmgl1.md`) for the six Puerto Rico tiles, fetched
+  from LP DAAC with an Earthdata Login bearer token. Measured on 2026-11-23 from
+  SRTMGL1N: 99.979% of land samples are SRTM radar measurements, with 1,668 ASTER
+  fill samples and one NED fill sample. Receipt under
+  `evidence/dem_sources/srtmgl1_pr_2026-11-23/`.
+- OpenTopography Global DEM adapter (`source_adapters/opentopography_globaldem`,
+  `docs/source_adapters/opentopography_globaldem.md`) for SRTMGL1, NASADEM, COP30
+  and AW3D30. The API key is a query parameter, so it is redacted from every
+  recorded URL. COP30 was fetched for Puerto Rico on 2026-11-23 (receipt under
+  `evidence/dem_sources/cop30_pr_2026-11-23/`): 1 arc-second, EPSG:4326, no
+  vertical CRS declared, heights up to 1,328.8 m at the Cerro de Punta summit.
+  AW3D30 and NASADEM followed on 2026-11-24, and the four spaceborne DEMs were
+  compared over SRTM land samples (`evidence/dem_sources/spaceborne_pr_2026-11-24/`):
+  NASADEM differs from SRTMGL1 with a 1.754 m standard deviation, against
+  4.854 m for COP30 and 4.602 m for AW3D30, as their shared Shuttle root predicts.
+  COP30's vertical datum is now recorded as EGM2008 (ESA Copernicus DEM Product
+  Handbook) and AW3D30's as EGM96 (OpenTopography distributor metadata; JAXA's
+  document returned HTTP 404). Over Puerto Rico the two geoids differ by -0.95 to
+  +1.09 m; receipt `evidence/dem_sources/vertical_datums_2026-11-24/`.
+
+### Changed
+- `tools/pr_dem_one_tile_pilot.py` refuses a tile whose native pixel is coarser
+  than `--target-resolution-m`, unless `--allow-coarse-source` is given; the
+  manifest records `native_resolution_m` and `coarse_source_override`.
+  `tools/pr_dem_batch_runner.py` forwards the flag.
+
+### Notes
+- The NCCOS lead is closed. On 2026-11-23, under a grant of four metadata
+  requests, NCEI's geoportal service returned the ISO records for accessions
+  0131855 and 0128255; the landing-page route still returned HTTP 503. Neither
+  stated bounding box contains the W00247 depressions or the 15 m object, so
+  no grid was downloaded. 0131855's abstract names W00247, but its box lies
+  north-east of Puerto Rico: a contradiction in the record, noted in
+  `docs/ACCESS_POINT_REGISTRIES.md`. The two records are frozen under
+  `evidence/access_points/real_survey/2026-11-23-nccos-metadata/`. No code or
+  registry record changed.
+- The NCCOS lead (NCEI accessions 0131855 and 0128255) was retried on
+  2026-11-22 under a new grant of two metadata requests. Both failed with HTTP
+  503, making seven failed requests in all. Nothing was frozen; the lead stays
+  paused (`docs/ACCESS_POINT_REGISTRIES.md`). No code or data changed.
+- The search for an independent second seabed survey has one lead left: NCCOS
+  processed grids at NCEI (accessions 0131855 and 0128255). Five metadata
+  requests on 2026-11-20 all failed (HTTP 503, 502, timeout), so nothing was
+  learned or frozen; the lead is paused and recorded in
+  `docs/ACCESS_POINT_REGISTRIES.md`. No code or data changed.
+
 ### Fixed
+- Rerunning the SRTMGL1 or OpenTopography `fetch` no longer drops earlier records
+  from the cache's `provenance.json`: cache hits keep their download time and host
+  while the sha256 is unchanged, and records outside a narrower selection are kept
+  (`source_adapters/cache_provenance.py`).
+- **The hub's federation ingest could not run this repository's export.** Since
+  the access-point lane was added to `export_canonical`, every thehub-pr ingest
+  failed at "Fetch producers and run their exports" with `No module named
+  'numpy'`. The hub runs the export with only its own packages, and the lane
+  reached numpy and scipy through `gebco/__init__.py` and shapely through
+  `spiderweb/subsurface/__init__.py`. Both packages now load those modules on
+  first use, and `spiderweb/subsurface/evidence.py` imports shapely only for type
+  checking. The exported records are unchanged. `tests/test_federation_export_hub_env.py`
+  runs the `export_canonical` command with every base dependency the hub does not
+  install blocked.
 - The elevation-inventory adapter stored the inventory's HTML "link" fragments
   and prose as if they were addresses. It now cites only a real address and
   keeps the published field verbatim (`spiderweb/access_points/acquisition.py`).
@@ -23,6 +105,14 @@ GitHub Release using the matching section below (T6-53).
   as outer ones, so numerical residue on a rim is not counted as water.
 
 ### Added
+- **Geospatial Visualization Engine (`viz_engine/`, fixture-only).** Renders a top-down
+  map, a vertical cross-section and a bounded glTF 3D scene from frozen, sha256-pinned
+  snapshots, with a machine-readable receipt per artifact and byte-reproducible
+  output. Connections are drawn only according to their evidence class; validation
+  gates (CRS/datum/unit mismatch, reversed flow, disconnected segments, missing raster
+  coverage, unsupported connections, duplicate or merged IDs) mark a run `FAIL` and
+  block publication export. Certified against a synthetic snapshot only; no real-data
+  adapter and no production wiring. See `docs/GEOSPATIAL_VISUALIZATION_ENGINE.md`.
 - **Access-point records exported to the federation hub**, by the repository
   owner's decision of 2026-11-20. `scripts/federation_export.py` gains an opt-in
   `--access-point-registries` lane (`spiderweb/access_points/hub_export.py`), and
