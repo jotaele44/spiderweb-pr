@@ -1,0 +1,386 @@
+{
+  "config_version": "1.0.0",
+  "purpose": "Stratified 3DEP 1 m tiles used to compare every gridded DEM in the platform catalog against airborne bare earth.",
+  "selected": "2026-11-24",
+  "selection_query": "https://tnmaccess.nationalmap.gov/api/v1/products?datasets=Digital Elevation Model (DEM) 1 meter&bbox=<site centre +/- 0.001 deg>",
+  "tnm_tiles_over_pr": 477,
+  "reference_survey": "2018 (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018, one collection: 2018 Hurricane Maria PR and USVI Lidar)",
+  "comparison_survey": "PR_PuertoRicoUSVI_D24 (2023-12-27 to 2025-03-20)",
+  "sites": [
+    {
+      "site_id": "north_karst_hatillo",
+      "name": "North karst belt (Hatillo / Camuy)",
+      "cover": "karst forest and pasture",
+      "centre_lon_lat": [
+        -66.87,
+        18.47
+      ],
+      "tile": "x72y205",
+      "utm_zone": 19,
+      "lidar_2018": [
+        {
+          "project": "PR_PRVI_F_2018",
+          "title": "USGS one meter x72y205 PR PRVI F 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_F_2018/TIFF/USGS_1m_x72y205_PR_PRVI_F_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb61d7d82ce25b5135ae914",
+          "size_bytes": 224366860,
+          "publication_date": "2020-05-06",
+          "head": {
+            "etag": "fa08474a90618a3a2066389456367a59-43",
+            "last_modified": "Sat, 14 Feb 2026 05:31:33 GMT",
+            "content_length": 224366860
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        }
+      ],
+      "lidar_d24": {
+        "project": "PR_PuertoRicoUSVI_D24",
+        "title": "USGS 1 Meter 19 x72y205 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x72y205_PR_PuertoRicoUSVI_D24.tif",
+        "metadata_url": "https://www.sciencebase.gov/catalog/item/6a753f0e1ba49b79d0c347d4",
+        "size_bytes": 222031032,
+        "publication_date": "2026-06-24",
+        "head": {
+          "etag": "0b362cbe7ba6051bd0d4dd833297cc7e-43",
+          "last_modified": "Thu, 06 Aug 2026 20:00:26 GMT",
+          "content_length": 222031032
+        },
+        "stated_vertical_datum": "NAVD88",
+        "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+      }
+    },
+    {
+      "site_id": "central_cordillera_cerro_de_punta",
+      "name": "Central cordillera (Cerro de Punta)",
+      "cover": "steep montane forest",
+      "centre_lon_lat": [
+        -66.5917,
+        18.1723
+      ],
+      "tile": "x75y202",
+      "utm_zone": 19,
+      "lidar_2018": [
+        {
+          "project": "PR_PRVI_D_2018",
+          "title": "USGS one meter x75y202 PR PRVI D 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x75y202_PR_PRVI_D_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb2295d82cefae35a29c551",
+          "size_bytes": 375135020,
+          "publication_date": "2020-05-04",
+          "head": {
+            "etag": "4c582bcc1dd8ae28e991ee6c050e9ac5-72",
+            "last_modified": "Sat, 14 Feb 2026 05:30:52 GMT",
+            "content_length": 375135020
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        }
+      ],
+      "lidar_d24": {
+        "project": "PR_PuertoRicoUSVI_D24",
+        "title": "USGS 1 Meter 19 x75y202 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x75y202_PR_PuertoRicoUSVI_D24.tif",
+        "metadata_url": "https://www.sciencebase.gov/catalog/item/6a753f081ba49b79d0c3478e",
+        "size_bytes": 371485446,
+        "publication_date": "2026-06-24",
+        "head": {
+          "etag": "a37df6da75027009c224716eab7bf4cf-71",
+          "last_modified": "Thu, 06 Aug 2026 19:53:02 GMT",
+          "content_length": 371485446
+        },
+        "stated_vertical_datum": "NAVD88",
+        "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+      }
+    },
+    {
+      "site_id": "el_yunque",
+      "name": "El Yunque (Sierra de Luquillo)",
+      "cover": "tropical rainforest",
+      "centre_lon_lat": [
+        -65.785,
+        18.295
+      ],
+      "tile": "x84y203",
+      "utm_zone": 19,
+      "lidar_2018": [
+        {
+          "project": "PR_PRVI_H_2018",
+          "title": "USGS one meter x84y203 PR PRVI H 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x84y203_PR_PRVI_H_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb37aaf82ce25b513587990",
+          "size_bytes": 204297781,
+          "publication_date": "2020-05-05",
+          "head": {
+            "etag": "7471f0d27f8332f1f9e796ea212beb81",
+            "last_modified": "Sat, 14 Feb 2026 05:34:26 GMT",
+            "content_length": 204297781
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        }
+      ],
+      "lidar_d24": {
+        "project": "PR_PuertoRicoUSVI_D24",
+        "title": "USGS 1 Meter 19 x84y203 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x84y203_PR_PuertoRicoUSVI_D24.tif",
+        "metadata_url": "https://www.sciencebase.gov/catalog/item/6a753ef21ba49b79d0c34698",
+        "size_bytes": 394874905,
+        "publication_date": "2026-06-24",
+        "head": {
+          "etag": "c4a9a664d52ffc5bc37c3dbf2cb5a37b-76",
+          "last_modified": "Thu, 06 Aug 2026 19:55:38 GMT",
+          "content_length": 394874905
+        },
+        "stated_vertical_datum": "NAVD88",
+        "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+      }
+    },
+    {
+      "site_id": "dry_south_guanica",
+      "name": "Dry south coast (Guánica)",
+      "cover": "dry forest and scrub",
+      "centre_lon_lat": [
+        -66.9,
+        17.97
+      ],
+      "tile": "x72y199",
+      "utm_zone": 19,
+      "lidar_2018": [
+        {
+          "project": "PR_PRVI_A_2018",
+          "title": "USGS one meter x72y199 PR PRVI A 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_A_2018/TIFF/USGS_1m_x72y199_PR_PRVI_A_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb2294c82cefae35a29c51d",
+          "size_bytes": 167981404,
+          "publication_date": "2020-04-28",
+          "head": {
+            "etag": "8f982353649d48199a2ca574128240ca",
+            "last_modified": "Sat, 14 Feb 2026 05:25:13 GMT",
+            "content_length": 167981404
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        }
+      ],
+      "lidar_d24": {
+        "project": "PR_PuertoRicoUSVI_D24",
+        "title": "USGS 1 Meter 19 x72y199 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x72y199_PR_PuertoRicoUSVI_D24.tif",
+        "metadata_url": "https://www.sciencebase.gov/catalog/item/6a753f101ba49b79d0c347ec",
+        "size_bytes": 166057557,
+        "publication_date": "2026-06-24",
+        "head": {
+          "etag": "95454ca17c9ad8afcc1bf95654d99589",
+          "last_modified": "Thu, 06 Aug 2026 20:00:19 GMT",
+          "content_length": 166057557
+        },
+        "stated_vertical_datum": "NAVD88",
+        "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+      }
+    },
+    {
+      "site_id": "urban_san_juan",
+      "name": "Urban San Juan",
+      "cover": "dense urban",
+      "centre_lon_lat": [
+        -66.07,
+        18.43
+      ],
+      "tile": "x17y205",
+      "utm_zone": 20,
+      "lidar_2018": [
+        {
+          "project": "PR_PRVI_E_2018",
+          "title": "USGS one meter x17y205 PR PRVI E 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x17y205_PR_PRVI_E_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb379f682ce25b5135878ea",
+          "size_bytes": 132581326,
+          "publication_date": "2020-05-05",
+          "head": {
+            "etag": "c6a7f7abff011d96fc6be46492c466c5",
+            "last_modified": "Sat, 14 Feb 2026 05:30:22 GMT",
+            "content_length": 132581326
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        }
+      ],
+      "lidar_d24": {
+        "project": "PR_PuertoRicoUSVI_D24",
+        "title": "USGS 1 Meter 20 x17y205 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_20_x17y205_PR_PuertoRicoUSVI_D24.tif",
+        "metadata_url": "https://www.sciencebase.gov/catalog/item/6a753f301ba49b79d0c34950",
+        "size_bytes": 132459817,
+        "publication_date": "2026-06-24",
+        "head": {
+          "etag": "6c28ac7ea3f5f8da340956c051dfd96d",
+          "last_modified": "Thu, 06 Aug 2026 20:01:06 GMT",
+          "content_length": 132459817
+        },
+        "stated_vertical_datum": "NAVD88",
+        "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+      }
+    },
+    {
+      "site_id": "west_mayaguez",
+      "name": "West coast (Mayagüez)",
+      "cover": "urban edge, foothills",
+      "centre_lon_lat": [
+        -67.13,
+        18.2
+      ],
+      "tile": "x69y202",
+      "utm_zone": 19,
+      "lidar_2018": [
+        {
+          "project": "PR_PRVI_A_2018",
+          "title": "USGS one meter x69y202 PR PRVI A 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_A_2018/TIFF/USGS_1m_x69y202_PR_PRVI_A_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb2293f82cefae35a29c4ff",
+          "size_bytes": 121109682,
+          "publication_date": "2020-04-28",
+          "head": {
+            "etag": "c3979e0f3f4b1811a99c8db411c8b52d",
+            "last_modified": "Sat, 14 Feb 2026 05:24:51 GMT",
+            "content_length": 121109682
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        },
+        {
+          "project": "PR_PRVI_E_2018",
+          "title": "USGS one meter x69y202 PR PRVI E 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x69y202_PR_PRVI_E_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb37a8782ce25b51358792c",
+          "size_bytes": 166560582,
+          "publication_date": "2020-05-05",
+          "head": {
+            "etag": "abb5e4eb6aa3637e2773cb3effefc1a2",
+            "last_modified": "Sat, 14 Feb 2026 05:30:38 GMT",
+            "content_length": 166560582
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        }
+      ],
+      "lidar_d24": {
+        "project": "PR_PuertoRicoUSVI_D24",
+        "title": "USGS 1 Meter 19 x69y202 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x69y202_PR_PuertoRicoUSVI_D24.tif",
+        "metadata_url": "https://www.sciencebase.gov/catalog/item/6a753f171ba49b79d0c34834",
+        "size_bytes": 281149116,
+        "publication_date": "2026-06-24",
+        "head": {
+          "etag": "de5ee61834fe7a6f6685f02b482b5141-54",
+          "last_modified": "Thu, 06 Aug 2026 19:51:09 GMT",
+          "content_length": 281149116
+        },
+        "stated_vertical_datum": "NAVD88",
+        "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+      }
+    },
+    {
+      "site_id": "east_central_cayey",
+      "name": "East-central (Cayey)",
+      "cover": "mountain agriculture and forest",
+      "centre_lon_lat": [
+        -66.15,
+        18.1
+      ],
+      "tile": "x80y201",
+      "utm_zone": 19,
+      "lidar_2018": [
+        {
+          "project": "PR_PRVI_H_2018",
+          "title": "USGS one meter x80y201 PR PRVI H 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x80y201_PR_PRVI_H_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb37aa382ce25b513587956",
+          "size_bytes": 278314732,
+          "publication_date": "2020-05-05",
+          "head": {
+            "etag": "205b8efa2dc124077d2b8b5af081e322-54",
+            "last_modified": "Sat, 14 Feb 2026 05:33:33 GMT",
+            "content_length": 278314732
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        }
+      ],
+      "lidar_d24": {
+        "project": "PR_PuertoRicoUSVI_D24",
+        "title": "USGS 1 Meter 19 x80y201 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x80y201_PR_PuertoRicoUSVI_D24.tif",
+        "metadata_url": "https://www.sciencebase.gov/catalog/item/6a753efc1ba49b79d0c34702",
+        "size_bytes": 361150542,
+        "publication_date": "2026-06-24",
+        "head": {
+          "etag": "66f02043d4134a8f3e4f13dc45110f29-69",
+          "last_modified": "Thu, 06 Aug 2026 19:54:21 GMT",
+          "content_length": 361150542
+        },
+        "stated_vertical_datum": "NAVD88",
+        "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+      }
+    },
+    {
+      "site_id": "northeast_carolina",
+      "name": "North-east (Carolina), registered D24 tile",
+      "cover": "suburban and lowland",
+      "centre_lon_lat": [
+        -66.03,
+        18.33
+      ],
+      "tile": "x81y203",
+      "utm_zone": 19,
+      "lidar_2018": [
+        {
+          "project": "PR_PRVI_D_2018",
+          "title": "USGS one meter x81y203 PR PRVI D 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x81y203_PR_PRVI_D_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb2297182cefae35a29c5a3",
+          "size_bytes": 309924822,
+          "publication_date": "2020-05-04",
+          "head": {
+            "etag": "c6a7623b4f434a9ecd07e190495c1ff5-60",
+            "last_modified": "Sat, 14 Feb 2026 05:31:27 GMT",
+            "content_length": 309924822
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        },
+        {
+          "project": "PR_PRVI_H_2018",
+          "title": "USGS one meter x81y203 PR PRVI H 2018",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x81y203_PR_PRVI_H_2018.tif",
+          "metadata_url": "https://www.sciencebase.gov/catalog/item/5eb37aa682ce25b513587968",
+          "size_bytes": 92208503,
+          "publication_date": "2020-05-05",
+          "head": {
+            "etag": "00a9840936b6bcb4a64c043996bd721f",
+            "last_modified": "Sat, 14 Feb 2026 05:33:51 GMT",
+            "content_length": 92208503
+          },
+          "stated_vertical_datum": "NAVD88",
+          "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+        }
+      ],
+      "lidar_d24": {
+        "project": "PR_PuertoRicoUSVI_D24",
+        "title": "USGS 1 Meter 19 x81y203 PR_PuertoRicoUSVI_D24",
+        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x81y203_PR_PuertoRicoUSVI_D24.tif",
+        "metadata_url": "https://www.sciencebase.gov/catalog/item/6a753ef91ba49b79d0c346df",
+        "size_bytes": 395515006,
+        "publication_date": "2026-06-24",
+        "head": {
+          "etag": "3fdfb7b1acc2a4beb242d10f537bca90-76",
+          "last_modified": "Thu, 06 Aug 2026 19:54:57 GMT",
+          "content_length": 395515006
+        },
+        "stated_vertical_datum": "NAVD88",
+        "stated_vertical_datum_text": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
+      }
+    }
+  ],
+  "stated_vertical_datum_source": "ScienceBase item JSON (metadata_url + '?format=json'), body text, read 2026-11-24"
+}

@@ -161,6 +161,10 @@ def read_dem(
             "output_height": out_height,
             "output_resolution_x": abs(float(transform.a)),
             "output_resolution_y": abs(float(transform.e)),
+            # Pixel size of the source in processing-CRS units (metres unless
+            # the tile is geographic and --no-reproject was given).
+            "native_resolution": native,
+            "processing_units_metres": not effective_crs.is_geographic,
         }
         return fill_nodata(arr, nodata), transform, crs, meta
 
@@ -338,7 +342,28 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="CRS to assume when a tile has no embedded CRS (e.g. EPSG:4269).",
     )
+    p.add_argument(
+        "--allow-coarse-source",
+        action="store_true",
+        help="Run even when the tile's native pixel is coarser than --target-resolution-m "
+        "(e.g. 30 m SRTM). The area and slope thresholds then describe sub-pixel features.",
+    )
     return p
+
+
+def coarse_source_refusal(meta: Dict[str, object], target_resolution_m: float) -> Optional[str]:
+    """Why a tile is too coarse for the pilot's thresholds, or None if it is not."""
+    native = meta.get("native_resolution")
+    if not meta.get("processing_units_metres") or native is None:
+        return None
+    if float(native) <= float(target_resolution_m):
+        return None
+    return (
+        f"DEM tile is coarser than the target resolution: native pixel {float(native):.2f} m "
+        f"> --target-resolution-m {float(target_resolution_m):g} m. The flat-patch area and slope "
+        "thresholds would describe sub-pixel features. Use a finer source (the 1 m lidar tiles) or "
+        "pass --allow-coarse-source to run anyway."
+    )
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -356,6 +381,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         target_crs=args.target_crs,
         assume_source_crs=args.assume_source_crs,
     )
+    refusal = coarse_source_refusal(meta, args.target_resolution_m)
+    if refusal and not args.allow_coarse_source:
+        raise SystemExit(refusal)
     rows = extract_rows(dem, transform, crs, dem_tile, args)
 
     csv_path = output_dir / "pr_dem_one_tile_candidates.csv"
@@ -367,6 +395,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source_tile": str(dem_tile),
         "dem_metadata": meta,
+        "native_resolution_m": meta["native_resolution"] if meta.get("processing_units_metres") else None,
+        "coarse_source_override": bool(refusal and args.allow_coarse_source),
         "candidate_count": len(rows),
         "score_columns": ["score_flat_patch", "score_edge_contrast", "score_high_local_position"],
         "score_rule": "ILAP_SCORE = score_flat_patch + score_edge_contrast + score_high_local_position",
