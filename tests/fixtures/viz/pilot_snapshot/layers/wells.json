@@ -1,0 +1,62 @@
+{
+ "crs": "EPSG:4326",
+ "features": [
+  {
+   "geometry": {
+    "coordinates": [
+     -66.096,
+     18.068
+    ],
+    "type": "Point"
+   },
+   "id": "W1",
+   "properties": {
+    "depth_ft": 150.0,
+    "depth_reference": "below_land_surface",
+    "depth_to_water_ft": 20.0,
+    "evidence": "observed",
+    "observation_date": "2025-03-01"
+   }
+  },
+  {
+   "geometry": {
+    "coordinates": [
+     -66.104,
+     18.096
+    ],
+    "type": "Point"
+   },
+   "id": "W2",
+   "properties": {
+    "depth_ft": 300.0,
+    "depth_reference": "below_land_surface",
+    "depth_to_water_ft": 60.0,
+    "evidence": "observed",
+    "observation_date": "2025-03-01"
+   }
+  },
+  {
+   "geometry": {
+    "coordinates": [
+     -66.016,
+     18.1
+    ],
+    "type": "Point"
+   },
+   "id": "W3",
+   "properties": {
+    "depth_ft": 100.0,
+    "depth_reference": "below_land_surface",
+    "evidence": "observed",
+    "observation_date": "2025-03-01"
+   }
+  }
+ ],
+ "kind": "wells",
+ "layer_id": "wells_fixture",
+ "source": {
+  "authority": "synthetic fixture",
+  "license": "CC0-1.0"
+ },
+ "vertical_datum": null
+}

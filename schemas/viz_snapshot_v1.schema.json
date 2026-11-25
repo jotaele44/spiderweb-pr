@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/viz_snapshot_v1.schema.json",
+  "title": "Visualization engine input snapshot manifest",
+  "description": "Pins every layer the viz engine may render by SHA-256. Snapshots are read-only to the engine.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "snapshot_id", "version", "crs", "vertical_datum", "units", "extent", "layers"],
+  "properties": {
+    "schema": {"const": "viz_snapshot/v1"},
+    "snapshot_id": {"type": "string", "pattern": "^[a-z0-9_\\-]+$"},
+    "version": {"type": "string", "minLength": 1},
+    "crs": {"type": "string", "minLength": 1},
+    "vertical_datum": {"type": "string", "minLength": 1},
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["horizontal", "vertical"],
+      "properties": {"horizontal": {"type": "string"}, "vertical": {"type": "string"}}
+    },
+    "extent": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4},
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer_id", "kind", "path", "sha256", "bytes", "crs", "vertical_datum", "source"],
+        "properties": {
+          "layer_id": {"type": "string"},
+          "kind": {"enum": ["raster_dem", "hydro_network", "waterbody", "wells", "connections"]},
+          "path": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "bytes": {"type": "integer", "minimum": 0},
+          "crs": {"type": ["string", "null"]},
+          "vertical_datum": {"type": ["string", "null"]},
+          "source": {"type": "object"}
+        }
+      }
+    }
+  }
+}

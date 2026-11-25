@@ -1,0 +1,104 @@
+{
+ "crs": "EPSG:4326",
+ "features": [
+  {
+   "geometry": {
+    "coordinates": [
+     [
+      -66.1,
+      18.176
+     ],
+     [
+      -66.096,
+      18.124
+     ]
+    ],
+    "type": "LineString"
+   },
+   "id": "SEG_1",
+   "properties": {
+    "evidence": "observed",
+    "flow_direction": "digitized_downstream",
+    "from_node": "N1",
+    "observation_date": "2025-03-01",
+    "to_node": "N2"
+   }
+  },
+  {
+   "geometry": {
+    "coordinates": [
+     [
+      -66.096,
+      18.124
+     ],
+     [
+      -66.1,
+      18.084
+     ]
+    ],
+    "type": "LineString"
+   },
+   "id": "SEG_2",
+   "properties": {
+    "evidence": "observed",
+    "flow_direction": "digitized_downstream",
+    "from_node": "N2",
+    "observation_date": "2025-03-01",
+    "to_node": "N3"
+   }
+  },
+  {
+   "geometry": {
+    "coordinates": [
+     [
+      -66.1,
+      18.084
+     ],
+     [
+      -66.1,
+      18.052
+     ]
+    ],
+    "type": "LineString"
+   },
+   "id": "SEG_3",
+   "properties": {
+    "evidence": "observed",
+    "flow_direction": "digitized_downstream",
+    "from_node": "N3",
+    "observation_date": "2025-03-01",
+    "to_node": "RES_1"
+   }
+  },
+  {
+   "geometry": {
+    "coordinates": [
+     [
+      -66.136,
+      18.156
+     ],
+     [
+      -66.096,
+      18.124
+     ]
+    ],
+    "type": "LineString"
+   },
+   "id": "SEG_T",
+   "properties": {
+    "evidence": "observed",
+    "flow_direction": "digitized_downstream",
+    "from_node": "N0",
+    "observation_date": "2025-03-01",
+    "to_node": "N2"
+   }
+  }
+ ],
+ "kind": "hydro_network",
+ "layer_id": "hydro_fixture",
+ "source": {
+  "authority": "synthetic fixture",
+  "license": "CC0-1.0"
+ },
+ "vertical_datum": null
+}

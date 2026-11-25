@@ -1,0 +1,41 @@
+{
+  "area_or_point": "Area",
+  "bounds_wsen": [
+    -67.9501389,
+    17.8501389,
+    -65.2001389,
+    18.5501389
+  ],
+  "crs": "EPSG:4326",
+  "driver": "GTiff",
+  "dtype": "int16",
+  "file_name": "NASADEM_-67.95_17.85_-65.2_18.55.tif",
+  "height": 2520,
+  "max_at_lon_lat": [
+    -66.591944,
+    18.172222
+  ],
+  "max_m": 1327.0,
+  "mean_m": 92.479,
+  "min_m": -47.0,
+  "nodata": -32768.0,
+  "nodata_samples": 0,
+  "origin": [
+    -67.950138889,
+    18.550138889
+  ],
+  "pixel_size_deg": [
+    0.000277778,
+    0.000277778
+  ],
+  "samples": 24948000,
+  "summit_point": {
+    "lat": 18.172281,
+    "lon": -66.5916862,
+    "name": "Cerro de Punta summit, GNIS 1609905",
+    "value_m": 1323.0
+  },
+  "vertical_crs_check": "CRS WKT has no VERT_CS or COMPOUND_CS",
+  "vertical_crs_declared": null,
+  "width": 9900
+}

@@ -32,6 +32,35 @@ First launch also creates a writable workspace and prepares `server/priis.db`
 for the live backend. It seeds the diagnostic dataset only when the database
 is absent; existing user state is left untouched.
 
+## The Launch Pad
+
+`desktop/config.py` declares a **Launch Pad**: a screen the shared desktop
+runtime shows after setup and before Spiderweb starts. On it you choose:
+
+- **Guest or Operator.** Guest is read-only: you can explore every module and
+  ask questions in Query, and the app refuses starting or stopping pipeline
+  and indexing jobs. Operator allows them from this computer and can be
+  protected with a passphrase.
+- **Launch option**: an optional Hugging Face token for the Query module's
+  local language model. It is used for that session and never saved, and only
+  matters in a source checkout with the RAG extras installed.
+
+There is one starting page, the Command Center: the six modules are tabs, not
+separate addresses. The Launch Pad also reports readiness: how many contracts,
+sites and anomalies are in the workspace database (a fresh workspace holds the
+diagnostic seed dataset), and whether the map layer catalog is present. Use the
+**Launch Pad** button beside the gear to come back and change the mode; the app
+restarts on the page. "Don't show this again" on the Launch Pad, or starting
+with `--skip-launchpad`, opens straight into the Command Center with the last
+choices; `--launchpad` shows it again.
+
+Guest mode keeps a shared desktop tidy. It does not stop someone who can already
+run programs under your account.
+
+`requirements-desktop.txt` pins a `prii-desktop` that includes the Launch Pad
+(0.3.0). If you set the app up before that pin moved, run
+`python desktop/setup.py --force` once to install the newer runtime.
+
 ## How it works
 
 - `desktop/config.py` — the only per-repo file (window title, branding,
@@ -118,6 +147,15 @@ output is also saved to `~/Library/Logs/PRII-Spiderweb/setup.log`.
 The one thing it cannot install is Python itself: when no Python 3.11+ is
 found it opens the python.org download page and waits for the installer to
 be run.
+
+## If the app does not start
+
+When a set-up checkout fails to start — typically after an update changed its
+dependencies — `PRII-SPIDERWEB.app` does not fail silently. It saves the
+output to `~/Library/Logs/PRII-Spiderweb/launch.log`, opens the same setup
+window, reinstalls, and then starts the app from that window so that a
+second failure is shown there. A normal quit, a force quit, or a stop after
+the app has been running for a couple of minutes does not trigger this.
 
 ## If the app says it is running from a temporary copy
 
