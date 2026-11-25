@@ -8,6 +8,9 @@ Double-click the launcher for your system in the repo root:
 | Windows | `PRII-SPIDERWEB.bat` |
 | Linux | `PRII-SPIDERWEB.sh` |
 
+Each launcher uses the newest installed Python that is 3.11 or later, not
+simply the first `python` it finds.
+
 The **first run** needs an internet connection once: it creates a private
 `.venv`, installs the desktop-scoped Python dependencies, and builds the
 Vite single-page app under `server/frontend`. It requires
@@ -147,6 +150,15 @@ output is also saved to `~/Library/Logs/PRII-Spiderweb/setup.log`.
 The one thing it cannot install is Python itself: when no Python 3.11+ is
 found it opens the python.org download page and waits for the installer to
 be run.
+
+## If the app does not start
+
+When a set-up checkout fails to start — typically after an update changed its
+dependencies — `PRII-SPIDERWEB.app` does not fail silently. It saves the
+output to `~/Library/Logs/PRII-Spiderweb/launch.log`, opens the same setup
+window, reinstalls, and then starts the app from that window so that a
+second failure is shown there. A normal quit, a force quit, or a stop after
+the app has been running for a couple of minutes does not trigger this.
 
 ## If the app says it is running from a temporary copy
 
