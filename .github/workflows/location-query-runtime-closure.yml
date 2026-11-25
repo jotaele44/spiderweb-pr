@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - location-query-unified-router-v1
+      - location-query-runtime-exact-spatial-v2
   workflow_dispatch:
     inputs:
       run_id:
