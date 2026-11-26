@@ -119,7 +119,7 @@ dem = [
 # engine is the right amount of tooling for ad hoc spatial joins and predicate
 # queries over the existing on-disk GeoJSON artifacts.
 spatial = [
-    "duckdb>=1.1,<2",
+    "duckdb>=1.1,<3",
 ]
 # Convenience union of every runtime subsystem (gebco is already in base).
 all = [
