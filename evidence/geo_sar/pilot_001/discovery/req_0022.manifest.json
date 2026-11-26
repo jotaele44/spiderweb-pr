@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "content-length": "65536",
+    "content-range": "bytes 0-65535/409238854",
+    "content-type": "image/tiff",
+    "date": "Thu, 26 Nov 2026 16:12:37 GMT",
+    "etag": "\"de8f2310ee339d61952ad44ad684ac91-79\"",
+    "last-modified": "Thu, 06 Aug 2026 19:54:57 GMT"
+  },
+  "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x81y204_PR_PuertoRicoUSVI_D24.tif",
+  "response_sha256": "c26976a52460eeb4e56ad0c224c3b03c38ff91e965482f6d56b8ab0fcadd6a8f",
+  "response_size": 65536,
+  "retrieved_utc": "2026-11-26T16:12:37.631434+00:00",
+  "status": 206
+}

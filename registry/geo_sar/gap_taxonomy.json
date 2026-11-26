@@ -1,0 +1,121 @@
+{
+  "schema_version": "spiderweb.geo_sar.gap_taxonomy.v0.1",
+  "status": "CANDIDATE_LOCAL",
+  "federation_status": "No Federation-level gap taxonomy was found in thehub-pr at 36a08974dda53c971c2283f019318e17a14d43df. These codes are a Spiderweb-local candidate offered for adoption, not a Federation standard.",
+  "lifecycle_states": [
+    "OPEN",
+    "IN_PROGRESS",
+    "RESOLVED",
+    "ACCEPTED_LIMITATION",
+    "SUPERSEDED"
+  ],
+  "rule": "A gap describes missing or conflicting evidence. It is never evidence that something is physically absent or undocumented.",
+  "existing_state_vocabularies": [
+    {
+      "path": "spiderweb/subsurface/residuals.py",
+      "symbol": "ResidualState"
+    },
+    {
+      "path": "gebco/marine_evidence.py",
+      "symbol": "CoverageState"
+    }
+  ],
+  "classes": [
+    {
+      "code": "G01",
+      "title": "Source discovery gap",
+      "denominator": "DISCOVERY",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G02",
+      "title": "Dataset registration gap",
+      "denominator": "DISCOVERY",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G03",
+      "title": "Geographic coverage gap",
+      "denominator": "GEOGRAPHIC_COVERAGE",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G04",
+      "title": "Acquisition gap",
+      "denominator": "ACQUISITION",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G05",
+      "title": "Evidence integrity gap",
+      "denominator": "INTEGRITY",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G06",
+      "title": "Temporal coverage gap",
+      "denominator": "GEOGRAPHIC_COVERAGE",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G07",
+      "title": "Resolution inadequacy",
+      "denominator": "COMPARISON",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G08",
+      "title": "Comparison gap",
+      "denominator": "COMPARISON",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G09",
+      "title": "Analytical review gap",
+      "denominator": "REVIEW",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G10",
+      "title": "Source contradiction",
+      "denominator": "REVIEW",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G11",
+      "title": "Geographic feature discrepancy",
+      "denominator": "REVIEW",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G12",
+      "title": "Imagery quality limitation",
+      "denominator": "REVIEW",
+      "default_responsible_repository": "skywatcher-pr"
+    },
+    {
+      "code": "G13",
+      "title": "Documentary evidence gap",
+      "denominator": "REVIEW",
+      "default_responsible_repository": "centinelas-pr"
+    },
+    {
+      "code": "G14",
+      "title": "Independent verification gap",
+      "denominator": "REVIEW",
+      "default_responsible_repository": "spiderweb-pr"
+    },
+    {
+      "code": "G15",
+      "title": "Cross-domain relationship gap",
+      "denominator": "REVIEW",
+      "default_responsible_repository": "thehub-pr"
+    },
+    {
+      "code": "G16",
+      "title": "Restricted or unavailable evidence",
+      "denominator": "ACQUISITION",
+      "default_responsible_repository": "spiderweb-pr"
+    }
+  ]
+}

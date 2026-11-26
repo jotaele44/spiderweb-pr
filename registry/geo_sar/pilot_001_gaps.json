@@ -1,0 +1,238 @@
+{
+  "schema_version": "spiderweb.geo_sar.gap_registry.v0.1",
+  "pilot_id": "GEOSAR-PILOT-001",
+  "taxonomy": "registry/geo_sar/gap_taxonomy.json",
+  "gaps": [
+    {
+      "gap_id": "GEOSAR-PILOT-001-GAP-001",
+      "class": "G04",
+      "title": "No pilot source file is held; three were fetched by an earlier run whose bytes were not kept",
+      "state": "OPEN",
+      "geographic_scope": {
+        "segments": 42,
+        "pilot_id": "GEOSAR-PILOT-001"
+      },
+      "denominator": {
+        "kind": "required_source_assets",
+        "total": 28,
+        "satisfied": 0,
+        "bytes_required": 6601968792
+      },
+      "responsible_repository": "spiderweb-pr",
+      "supporting_evidence": [
+        "registry/geo_sar/pilot_001_asset_ledger.json",
+        "evidence/geo_sar/pilot_001/discovery/discovery_receipt.json",
+        "evidence/dem_sources/lidar_comparison_2026-11-24/tiles_provenance.json"
+      ],
+      "resolution_criteria": "Every required asset is retrieved once, its bytes verified, and bound to its segments with a receipt.",
+      "outstanding_requirements": [
+        "A PRODUCT_DOWNLOAD grant bounding files and bytes",
+        "A retrieval handler for the job ledger",
+        "For the three files with a prior receipt, a re-acquired file must reproduce the recorded SHA-256"
+      ],
+      "history": [
+        {
+          "event": "OPENED",
+          "on": "2026-11-26",
+          "basis": "pilot metadata discovery"
+        },
+        {
+          "event": "REVISED",
+          "on": "2026-11-26",
+          "basis": "reconciled with the elevation lane's lidar comparison of 2026-11-24"
+        }
+      ]
+    },
+    {
+      "gap_id": "GEOSAR-PILOT-001-GAP-002",
+      "class": "G05",
+      "title": "The provider publishes no checksum for these files, and the object tag is not a content hash for most of them",
+      "state": "OPEN",
+      "geographic_scope": {
+        "segments": 42,
+        "pilot_id": "GEOSAR-PILOT-001"
+      },
+      "denominator": {
+        "kind": "acquired_artifacts",
+        "total": 28,
+        "satisfied": 0
+      },
+      "responsible_repository": "spiderweb-pr",
+      "supporting_evidence": [
+        "registry/geo_sar/pilot_001_asset_ledger.json",
+        "evidence/geo_sar/pilot_001/discovery/discovery_receipt.json",
+        "evidence/dem_sources/lidar_comparison_2026-11-24/tiles_provenance.json"
+      ],
+      "resolution_criteria": "Each acquired artifact carries a computed SHA-256 and an independent provider value (catalogue checksum or object ETag semantics confirmed) to compare it with.",
+      "outstanding_requirements": [
+        "16 of 28 object tags are multipart tags, which are not a hash of the content; treat the tag as a change signal only",
+        "Compute SHA-256 at acquisition",
+        "3 of 28 have a SHA-256 from an earlier run to compare against"
+      ],
+      "history": [
+        {
+          "event": "OPENED",
+          "on": "2026-11-26",
+          "basis": "pilot metadata discovery"
+        },
+        {
+          "event": "REVISED",
+          "on": "2026-11-26",
+          "basis": "reconciled with the elevation lane's lidar comparison of 2026-11-24"
+        }
+      ]
+    },
+    {
+      "gap_id": "GEOSAR-PILOT-001-GAP-003",
+      "class": "G03",
+      "title": "Valid-data extent of each file is unknown; footprints are raster extents",
+      "state": "OPEN",
+      "geographic_scope": {
+        "segments": 42,
+        "pilot_id": "GEOSAR-PILOT-001"
+      },
+      "denominator": {
+        "kind": "applicable_geographic_area",
+        "total_m2": 116985962.6,
+        "satisfied_m2": null
+      },
+      "responsible_repository": "spiderweb-pr",
+      "supporting_evidence": [
+        "registry/geo_sar/pilot_001_asset_ledger.json",
+        "evidence/geo_sar/pilot_001/discovery/discovery_receipt.json"
+      ],
+      "resolution_criteria": "Per-file valid-data masks are derived from acquired bytes and segment coverage is recomputed from them.",
+      "outstanding_requirements": [
+        "Acquire the files",
+        "Compute no-data masks"
+      ],
+      "history": [
+        {
+          "event": "OPENED",
+          "on": "2026-11-26",
+          "basis": "pilot metadata discovery"
+        }
+      ]
+    },
+    {
+      "gap_id": "GEOSAR-PILOT-001-GAP-004",
+      "class": "G02",
+      "title": "The 2018 survey is one collection published as several project lots; which part of a tile each lot fills is unknown",
+      "state": "OPEN",
+      "geographic_scope": {
+        "lots": [
+          "D",
+          "E",
+          "G",
+          "H"
+        ],
+        "pilot_id": "GEOSAR-PILOT-001"
+      },
+      "denominator": {
+        "kind": "reviewed_source_universe",
+        "total": 20,
+        "satisfied": 0
+      },
+      "responsible_repository": "spiderweb-pr",
+      "supporting_evidence": [
+        "registry/geo_sar/pilot_001_asset_ledger.json",
+        "evidence/geo_sar/pilot_001/discovery/discovery_receipt.json",
+        "data_sources/elevation/dem_platform_catalog.yml"
+      ],
+      "resolution_criteria": "Lot identity is recorded on each asset and the relationship between lots sharing a tile position (partition, overlap or revision) is established from valid-data extents.",
+      "outstanding_requirements": [
+        "The elevation catalogue already records the lots as projects of one collection; record the lot on each asset",
+        "Establish from valid-data extents whether lots sharing a tile position partition it or overlap",
+        "Resolve gap 003 first"
+      ],
+      "history": [
+        {
+          "event": "OPENED",
+          "on": "2026-11-26",
+          "basis": "pilot metadata discovery"
+        },
+        {
+          "event": "REVISED",
+          "on": "2026-11-26",
+          "basis": "reconciled with the elevation lane's lidar comparison of 2026-11-24"
+        }
+      ]
+    },
+    {
+      "gap_id": "GEOSAR-PILOT-001-GAP-005",
+      "class": "G08",
+      "title": "The two versions have been compared at one of the pilot's four tile positions, on a coarser lattice and not per segment",
+      "state": "OPEN",
+      "geographic_scope": {
+        "segments": 42,
+        "pilot_id": "GEOSAR-PILOT-001"
+      },
+      "denominator": {
+        "kind": "eligible_comparison_requirements",
+        "total": null,
+        "satisfied": 0,
+        "note": "One site-level comparison exists (tile position x81y203, 1/9 arc-second, median -0.07 m). It predates segments and is not bound to any."
+      },
+      "responsible_repository": "spiderweb-pr",
+      "supporting_evidence": [
+        "registry/geo_sar/pilot_001_asset_ledger.json",
+        "evidence/geo_sar/pilot_001/discovery/discovery_receipt.json",
+        "registry/geo_sar/comparison_methods.json",
+        "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+        "docs/sources/dem_lidar_comparison.md"
+      ],
+      "resolution_criteria": "For every segment with both versions acquired, eligibility is evaluated and an eligible comparison or a manual-review record exists.",
+      "outstanding_requirements": [
+        "Resolve gap 001",
+        "Bind the existing site comparison to the segments it covers, or rerun it per segment",
+        "Qualify the existing elevation comparison script as a registered method for version-to-version use",
+        "Vertical datum label is contested (stated NAVD88, behaves as PRVD02): registry conflict 3dep_vertical_datum_label stays open"
+      ],
+      "history": [
+        {
+          "event": "OPENED",
+          "on": "2026-11-26",
+          "basis": "pilot metadata discovery"
+        },
+        {
+          "event": "REVISED",
+          "on": "2026-11-26",
+          "basis": "reconciled with the elevation lane's lidar comparison of 2026-11-24"
+        }
+      ]
+    },
+    {
+      "gap_id": "GEOSAR-PILOT-001-GAP-006",
+      "class": "G02",
+      "title": "Zone 20N files are registered as per-file alternates of zone 19N files, but the two tilings do not correspond file to file",
+      "state": "OPEN",
+      "geographic_scope": {
+        "pilot_id": "GEOSAR-PILOT-001",
+        "assets": 8
+      },
+      "denominator": {
+        "kind": "reviewed_source_universe",
+        "total": 8,
+        "satisfied": 0
+      },
+      "responsible_repository": "spiderweb-pr",
+      "supporting_evidence": [
+        "registry/geo_sar/pilot_001_asset_ledger.json",
+        "registry/spatial/source_manifestations.json",
+        "tests/test_geo_sar_pilot.py"
+      ],
+      "resolution_criteria": "The alternate relationship is recorded between the two collections, or between explicit file sets with computed overlap, and no single zone 20N file is presented as a substitute for a single zone 19N file.",
+      "outstanding_requirements": [
+        "Each zone 19N footprint is split between two zone 20N footprints (largest single share 40 to 59 percent) and the two listed sets share 70.6 percent of their area; decide the unit at which 'alternate' is asserted",
+        "Leave registry/spatial/source_manifestations.json unchanged until that decision"
+      ],
+      "history": [
+        {
+          "event": "OPENED",
+          "on": "2026-11-26",
+          "basis": "exact footprint intersection in EPSG:6566 from header-verified footprints"
+        }
+      ]
+    }
+  ]
+}

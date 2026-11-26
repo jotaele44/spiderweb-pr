@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/geo_sar_comparison_methods.schema.json",
+  "title": "Spiderweb GEO-SAR comparison method registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "rule",
+    "eligibility_classes",
+    "eligibility_checks",
+    "existing_eligibility_code",
+    "methods",
+    "absent_methods"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "spiderweb.geo_sar.comparison_methods.v0.1"
+    },
+    "status": {
+      "enum": [
+        "CANDIDATE",
+        "QUALIFIED"
+      ]
+    },
+    "rule": {
+      "type": "string",
+      "minLength": 1
+    },
+    "eligibility_classes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "ELIGIBLE_AUTOMATED",
+          "MANUAL_REVIEW_ONLY",
+          "ANALYTICALLY_INCOMPATIBLE",
+          "BLOCKED"
+        ]
+      },
+      "minItems": 4,
+      "uniqueItems": true
+    },
+    "eligibility_checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 11,
+      "uniqueItems": true
+    },
+    "existing_eligibility_code": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "symbol"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "symbol": {
+            "type": "string",
+            "minLength": 1
+          },
+          "covers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "absent_methods": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "method_id",
+          "title",
+          "family",
+          "implementation",
+          "method_version",
+          "default_execution",
+          "applies_to",
+          "qualification_state",
+          "limits"
+        ],
+        "properties": {
+          "method_id": {
+            "type": "string",
+            "pattern": "^CM-[A-Z0-9-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "family": {
+            "type": "string",
+            "minLength": 1
+          },
+          "implementation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "symbol"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "symbol": {
+                "type": "string",
+                "minLength": 1
+              },
+              "covers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "method_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default_execution": {
+            "enum": [
+              "AUTOMATED",
+              "MANUAL_REVIEW_ONLY"
+            ]
+          },
+          "applies_to": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "qualification_state": {
+            "enum": [
+              "UNVERIFIED",
+              "PASS",
+              "FAILED",
+              "WITHHELD"
+            ]
+          },
+          "limits": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

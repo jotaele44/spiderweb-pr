@@ -1,0 +1,154 @@
+{
+  "schema_version": "spiderweb.geo_sar.comparison_methods.v0.1",
+  "status": "CANDIDATE",
+  "rule": "A method is listed only if its implementation exists in this repository. Listing is not qualification: no method here has been qualified for geographic segment review.",
+  "eligibility_classes": [
+    "ELIGIBLE_AUTOMATED",
+    "MANUAL_REVIEW_ONLY",
+    "ANALYTICALLY_INCOMPATIBLE",
+    "BLOCKED"
+  ],
+  "eligibility_checks": [
+    "GEOGRAPHIC_OVERLAP",
+    "TEMPORAL_COMPATIBILITY",
+    "COORDINATE_TRANSFORMATION",
+    "DATUM_COMPATIBILITY",
+    "NATIVE_RESOLUTION",
+    "POSITIONAL_UNCERTAINTY",
+    "SEMANTIC_COMPATIBILITY",
+    "SOURCE_INDEPENDENCE",
+    "EVIDENCE_INTEGRITY",
+    "LICENSING_AND_AUTHORIZATION",
+    "REGISTERED_METHOD_VERSION"
+  ],
+  "existing_eligibility_code": [
+    {
+      "path": "spiderweb/site_timeline/epoch.py",
+      "symbol": "classify_epoch",
+      "covers": [
+        "TEMPORAL_COMPATIBILITY"
+      ]
+    },
+    {
+      "path": "spiderweb/site_timeline/timeline.py",
+      "symbol": "compare_pair",
+      "covers": [
+        "GEOGRAPHIC_OVERLAP",
+        "NATIVE_RESOLUTION"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "method_id": "CM-DEM-LIDAR-STATS",
+      "title": "Elevation surfaces against 3DEP lidar, and the 2024 lidar against the 2018 lidar",
+      "family": "RASTER_ALIGNMENT",
+      "implementation": {
+        "path": "scripts/run_dem_vs_3dep_lidar.py",
+        "symbol": "datum_chain"
+      },
+      "method_version": "0.1-as-found",
+      "default_execution": "AUTOMATED",
+      "applies_to": [
+        "CROSS_RESOLUTION",
+        "INDEPENDENT_SOURCE",
+        "SAME_SOURCE_VERSIONS"
+      ],
+      "qualification_state": "UNVERIFIED",
+      "limits": "Run once, 2026-11-24, at eight sites including one pilot tile position; includes the 2024 survey against the 2018 survey. Site-based, not segment-based. Requires an explicit vertical datum chain."
+    },
+    {
+      "method_id": "CM-IMG-CHANGED-FRACTION",
+      "title": "Grayscale changed-pixel fraction between two images",
+      "family": "IMAGERY_PAIR",
+      "implementation": {
+        "path": "imagery/compare.py",
+        "symbol": "changed_fraction"
+      },
+      "method_version": "0.1-as-found",
+      "default_execution": "MANUAL_REVIEW_ONLY",
+      "applies_to": [
+        "SAME_SOURCE_VERSIONS",
+        "HISTORICAL_VS_CONTEMPORARY"
+      ],
+      "qualification_state": "UNVERIFIED",
+      "limits": "Uncalibrated. A screening number, never a finding."
+    },
+    {
+      "method_id": "CM-IMG-PIXEL-DIFFERENCE",
+      "title": "Site timeline pixel-difference metric",
+      "family": "IMAGERY_PAIR",
+      "implementation": {
+        "path": "spiderweb/site_timeline/metrics.py",
+        "symbol": "PixelDifferenceMetric"
+      },
+      "method_version": "0.1-as-found",
+      "default_execution": "MANUAL_REVIEW_ONLY",
+      "applies_to": [
+        "SAME_SOURCE_VERSIONS",
+        "HISTORICAL_VS_CONTEMPORARY"
+      ],
+      "qualification_state": "UNVERIFIED",
+      "limits": "Provisional by the SATIM contract; imagery interpretation belongs to Skywatcher-PR."
+    },
+    {
+      "method_id": "CM-SET-DIFFERENCE",
+      "title": "Identifier set comparison (intersection, only-in-A, only-in-B)",
+      "family": "COVERAGE",
+      "implementation": {
+        "path": "tools/gis_evidence/core.py",
+        "symbol": "set_receipt"
+      },
+      "method_version": "0.1-as-found",
+      "default_execution": "AUTOMATED",
+      "applies_to": [
+        "GEOGRAPHIC_COVERAGE",
+        "ATTRIBUTE_DISAGREEMENT"
+      ],
+      "qualification_state": "UNVERIFIED",
+      "limits": "Compares identities, not geometry."
+    },
+    {
+      "method_id": "CM-DENOMINATOR-DIFF",
+      "title": "Denominator comparison between two enumerations",
+      "family": "COVERAGE",
+      "implementation": {
+        "path": "spiderweb/spatial/archipelago.py",
+        "symbol": "compare_denominators"
+      },
+      "method_version": "0.1-as-found",
+      "default_execution": "AUTOMATED",
+      "applies_to": [
+        "GEOGRAPHIC_COVERAGE"
+      ],
+      "qualification_state": "UNVERIFIED",
+      "limits": "Compares membership only."
+    },
+    {
+      "method_id": "CM-SNAPSHOT-REPLAY",
+      "title": "Replay comparison of two snapshots of one source",
+      "family": "SOURCE_VERSION",
+      "implementation": {
+        "path": "scripts/source_adapters/pr_hydrography/control_plane.py",
+        "symbol": "compare_replays"
+      },
+      "method_version": "0.1-as-found",
+      "default_execution": "AUTOMATED",
+      "applies_to": [
+        "SAME_SOURCE_VERSIONS"
+      ],
+      "qualification_state": "UNVERIFIED",
+      "limits": "Hydrography lane only today."
+    }
+  ],
+  "absent_methods": [
+    "ADJACENT_TILE_CONTINUITY",
+    "VECTOR_GEOMETRY",
+    "FEATURE_PRESENCE_ABSENCE",
+    "OPTICAL_VERSUS_TERRAIN",
+    "IMAGERY_QUALITY_ARTIFACTS",
+    "HYDROLOGICAL_CONSISTENCY",
+    "DOCUMENTARY_GEOGRAPHIC_RECONCILIATION",
+    "CROSS_DOMAIN_RELATIONSHIPS"
+  ]
+}

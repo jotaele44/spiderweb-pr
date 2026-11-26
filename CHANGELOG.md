@@ -10,6 +10,24 @@ GitHub Release using the matching section below (T6-53).
 ## [Unreleased]
 
 ### Added
+- FED-GEO-SAR-001 preparation (`docs/geo_sar/`). A durable job ledger for
+  geographic acquisition work (`spiderweb/geo_sar/jobs.py`, worker
+  `scripts/geo_sar_worker.py`): SQLite, leases with generation fencing,
+  checkpoints, one recorded effect per content hash, append-only history, grants
+  that fail closed. The ten mandatory durability tests pass with real worker
+  processes and `SIGKILL` (`tests/test_geo_sar_job_durability.py`); retrieval is
+  exercised against local files only and unattended-running certification is
+  withheld. A bounded, metadata-only discovery for one pilot extent
+  (`scripts/geo_sar_pilot_discovery.py`): 29 requests under a 150-request grant,
+  every response kept under `evidence/geo_sar/pilot_001/discovery/`, offline
+  replay reproduces `registry/geo_sar/pilot_001_asset_ledger.json`. All 28
+  files of the 2018 and D24 1 m surveys over the extent now have footprints read
+  from the files and are bound to 42 Grid V2 L0 cells; no file was downloaded.
+  Candidate registries for comparison methods and gap classes, with schemas.
+  Six pilot gaps recorded, among them that zone 20N files are not file-for-file
+  alternates of zone 19N files. `tools/source_manifestation_seed.py` gains
+  `footprint_from_header`, split out of `read_geotiff_footprint` without changing
+  its behaviour.
 - Every gridded DEM compared against 3DEP 1 m lidar at eight stratified sites
   (`docs/sources/dem_lidar_comparison.md`, `scripts/run_dem_vs_3dep_lidar.py`,
   sites in `data_sources/elevation/lidar_comparison_tiles.json`, receipt under
