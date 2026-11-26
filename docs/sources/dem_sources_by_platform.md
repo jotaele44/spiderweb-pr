@@ -20,7 +20,7 @@ python -m source_adapters.dem_platform.cli check --sources nasa_srtmgl1_v003,usg
 |---|---|---|---|
 | Spaceborne radar interferometry | A radar scattering surface between canopy top and ground | EGM96 | SRTM (February 2000) |
 | Spaceborne optical stereo | The first visible surface: canopy and roofs | EGM96 | AW3D30 (2006-2011) |
-| Airborne lidar | Bare earth (classified DEM) or every return (point cloud) | NAVD88 | 3DEP 1 m (2018, 2024) |
+| Airborne lidar | Bare earth (classified DEM) or every return (point cloud) | PRVD02, through a geoid model | 3DEP 1 m (2018, 2024) |
 | Shipborne multibeam sonar | Seafloor depth | MLLW | NOS BAG W00247 |
 | Compiled | Whatever the constituents measured | PRVD02, MHW, MSL | NCEI CUDEM, GEBCO |
 
@@ -81,9 +81,9 @@ a source; otherwise the entry would be `unverified`, which fails closed.
 | `usace_fema_topobathy_dem_2018_8571` | 2018 USACE FEMA Topobathy Lidar DEM: Puerto Rico | not named | LIDAR (Topobathymetric Lidar) | topobathymetric | undeclared | T2 |
 | `usace_lidar_2004_pr` | 2004 USACE Lidar: Puerto Rico | not named | LIDAR (Lidar-Topo) | point cloud | undeclared | T2 |
 | `usace_ncmp_topobathy_dem_2016_5154` | 2016 USACE NCMP Topobathy Lidar DEM: Puerto Rico | not named | LIDAR (Topobathymetric Lidar) | topobathymetric | PRVD02 | T2 |
-| `usgs_3dep_1m_pr_prvi_2018` | USGS 3DEP 1 m DEM, 2018 (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018) | not named | LIDAR (Lidar-Topo) | bare earth | NAVD88 | T1 |
-| `usgs_3dep_1m_pr_puertoricousvi_d24` | USGS 3DEP 1 m DEM, PR_PuertoRicoUSVI_D24 | not named | LIDAR (Lidar-Topo) | bare earth | NAVD88 | T1 |
-| `usgs_lidar_2018_hurricane_maria` | 2018 Hurricane Maria PR and USVI Lidar | not named | LIDAR (Lidar-Topo) | point cloud | NAVD88 | T2 |
+| `usgs_3dep_1m_pr_prvi_2018` | USGS 3DEP 1 m DEM, 2018 (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018) | not named | LIDAR (Lidar-Topo) | bare earth | PRVD02 (GEOID12B) | T1 |
+| `usgs_3dep_1m_pr_puertoricousvi_d24` | USGS 3DEP 1 m DEM, PR_PuertoRicoUSVI_D24 | not named | LIDAR (Lidar-Topo) | bare earth | PRVD02 (GEOID18) | T1 |
+| `usgs_lidar_2018_hurricane_maria` | 2018 Hurricane Maria PR and USVI Lidar | not named | LIDAR (Lidar-Topo) | point cloud | PRVD02 (GEOID12B) | T2 |
 
 ### Shipborne (multibeam sonar): 4
 
@@ -149,7 +149,7 @@ checks that each observation still holds; when one is fixed, mark the conflict
 | `ncei_dataset_ids` | The YAML and CSV name 8 of their 9 shared products differently; only san_juan_19_prvd02_2015 matches. |
 | `ncei_usvi_csv_only` | The St Croix and St Thomas/St John DEMs are in the CSV but not in the YAML manifest. |
 | `cudem_m9525_tile_count` | The YAML says CUDEM m9525 has 25 tiles. TheHub's reader (thehub-pr docs/federation/DIGITAL_TWIN_V1.md) copied urllist9525.txt verbatim and found 26. |
-| `3dep_vertical_datum_label` | The ScienceBase metadata of every 3DEP 1 m tile used in the lidar comparison (2018 projects A, D, E, F, H, and D24) says the heights are referenced to NAVD88, USGS's programme-wide wording; NAVD88 is not defined in Puerto Rico. Over low-slope cells the 2018 lidar agrees with CUDEM 1/9" (PRVD02) at all eight sites, medians -0.015 to +0.062 m, so the heights behave as PRVD02. The catalog keeps the stated NAVD88. |
+| `3dep_vertical_datum_label` | The ScienceBase abstract of every 3DEP 1 m tile used in the lidar comparison (2018 projects A, D, E, F, H, and D24) and the 2018 ground control report say the heights are referenced to NAVD88, which is not realized in Puerto Rico. The surveys' project metadata says PRVD02: the 2018 vendor metadata 'PRVD02 (GEOID12B)', the D24 LPC reports 'PRVD02 height - Geoid18'. The heights agree: 2018 lidar minus CUDEM 1/9" (PRVD02) on low slopes has medians -0.015 to +0.062 m at all eight sites, and D24 meets its PRVD02 checkpoints (median -0.006 m). The catalog records PRVD02 with each survey's geoid and keeps the NAVD88 wording in vertical_datum_as_stated. |
 
 ## Merge policy and independence
 
@@ -162,6 +162,14 @@ checks that each observation still holds; when one is fixed, mark the conflict
 - **Undeclared datum.** `undeclared` always needs review (for example the 2004 USACE lidar,
   whose datum is "User Specified"). COP30 (EGM2008) and AW3D30 (EGM96) now have cited
   datums; see [Vertical datums of COP30 and AW3D30](#vertical-datums-of-cop30-and-aw3d30).
+- **One datum, different geoid realizations.** A leveled datum such as PRVD02 is reached
+  from GNSS heights through a hybrid geoid, recorded in the optional `geoid_model`. When
+  sources otherwise pass but use different geoids (or one does not state it), the result
+  is `same_datum_separate_geoid_layers` with `pass` and a note: they stay in one group,
+  one layer per geoid, so the difference between them can be measured before any merge.
+  The 2018 and D24 3DEP DEMs are this case (GEOID12B and GEOID18).
+  `layer_groups()` returns the grouping (platform class, surface, datum) and its layers
+  by geoid; `check --sources` prints both.
 
 `shared_acquisition_roots()` decides whether two sources can corroborate each
 other. Roots are canonical ids, not platform names: NASA's CMR records name the
@@ -254,28 +262,37 @@ processing differences do. COP30 with SRTM is still held for review, now only fo
 ## Compared against 3DEP lidar
 
 Every gridded DEM was compared against the 2018 3DEP 1 m bare-earth lidar at eight
-sites chosen for terrain variety (2026-11-24; method, per-site and per-slope tables
-in [`dem_lidar_comparison.md`](dem_lidar_comparison.md); receipt
-`evidence/dem_sources/lidar_comparison_2026-11-24/`). Differences are DEM minus lidar,
-with the lidar moved to each DEM's vertical datum:
+sites chosen for terrain variety (2026-11-26; method, per-site and per-slope tables
+in [`dem_lidar_comparison.md`](dem_lidar_comparison.md); receipts
+`evidence/dem_sources/lidar_comparison_2026-11-26/` and
+`evidence/dem_sources/3dep_vertical_realization_2026-11-26/`). Differences are DEM minus
+lidar, with the lidar moved to each DEM's vertical datum through its own survey's geoid:
 
 | DEM | Platform | Samples | Median | NMAD | Within 5 m |
 | --- | --- | --- | --- | --- | --- |
-| SRTMGL1 | spaceborne radar, 2000 | 542,832 | +3.63 m | 4.48 m | 58.9% |
-| NASADEM | spaceborne radar, 2000, reprocessed | 542,832 | +1.88 m | 4.35 m | 66.7% |
-| COP30 | spaceborne radar, 2011-2015 | 542,832 | +4.39 m | 5.58 m | 53.2% |
-| AW3D30 | spaceborne optical, 2006-2011 | 539,334 | +4.16 m | 5.25 m | 54.6% |
+| SRTMGL1 | spaceborne radar, 2000 | 542,832 | +3.61 m | 4.48 m | 59.0% |
+| NASADEM | spaceborne radar, 2000, reprocessed | 542,832 | +1.86 m | 4.36 m | 66.8% |
+| COP30 | spaceborne radar, 2011-2015 | 542,832 | +4.38 m | 5.57 m | 53.3% |
+| AW3D30 | spaceborne optical, 2006-2011 | 539,334 | +4.14 m | 5.26 m | 54.7% |
 | CUDEM 1/9" | compiled | 44,172,974 | -0.02 m | 0.26 m | 99.1% |
-| 3DEP D24 | airborne lidar, 2023-2025 | 537,099 | -0.14 m | 0.17 m | 99.95% |
+| 3DEP D24, as published | airborne lidar, 2023-2025 | 537,099 | -0.14 m | 0.17 m | 99.95% |
+| 3DEP D24, on one geoid | airborne lidar, 2023-2025 | 537,099 | -0.15 m | 0.16 m | 99.95% |
 
 The spaceborne surfaces stand above bare earth because they see canopy and roofs,
 and the difference grows with slope and forest cover. NASADEM is the closest of them;
 COP30 is the closest on flat ground and the farthest on steep slopes. CUDEM 1/9"
 matches the lidar to centimetres, which suggests it includes this lidar (its metadata
-names no source surveys). The 3DEP metadata says NAVD88, but against CUDEM (PRVD02)
-the 2018 heights agree to -0.015 to +0.062 m (median, low slopes) at all eight sites.
-This is recorded as conflict `3dep_vertical_datum_label`. It is not an independent
-tie to PRVD02 benchmarks. D24 reads 0.14 m below 2018, more on steep slopes.
+names no source surveys).
+
+**3DEP datum and geoid.** The tile abstracts say NAVD88; the surveys' own project
+metadata says PRVD02, reached through GEOID12B (2018) and GEOID18 (D24). The heights
+agree: against CUDEM (PRVD02) the 2018 lidar is within -0.015 to +0.062 m (median, low
+slopes) at all eight sites, and D24 meets USGS's 91 PRVD02 checkpoints (median
+-0.006 m). The catalog records PRVD02 with each geoid; conflict
+`3dep_vertical_datum_label` keeps the NAVD88 wording on record. D24 reads 0.14 m below
+2018 as published and 0.15 m below on one geoid; the geoid change sets the pattern
+between sites, and about 3 cm of the rest is a 2018 bias at the checkpoints.
+The two surveys are kept as separate layers of one PRVD02 group.
 
 ## Landsat terrain correction: a geolocation dependency
 
@@ -310,8 +327,11 @@ Landsat and SRTM dependent measurements.
   `sensor_type`. Adding members means regenerating the hashed access-point registries.
 - No EGM96 to PRVD02 transformation is registered in the merge policy, so SRTM,
   NASADEM and the PRVD02 or NAVD88 products stay in separate layers. The lidar
-  comparison script applies one explicitly (GEOID18, NAD83(2011) to ITRF2014 at the
-  survey epoch, then EGM96 or EGM2008) for measurement only.
+  comparison script applies one explicitly for measurement only: each survey's own
+  geoid (GEOID12B for 2018, GEOID18 for D24), NAD83(2011) to ITRF2014 at the survey
+  epoch, then EGM96 or EGM2008.
+- The geoid of the 2016 Commonwealth lidar (`pr_commonwealth_lidar_2016`, NAVD88 from
+  the elevation inventory) was not read from its own metadata.
 - No EGM2008 to EGM96 conversion is applied in the catalog's merge policy, so COP30
   stays a separate layer from SRTM, NASADEM and AW3D30.
 - AW3D30's datum is cited from its distributor, not yet from JAXA's own document.

@@ -1,0 +1,230 @@
+{
+  "generated": "2026-11-26",
+  "source": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/",
+  "surveys": {
+    "2018": {
+      "project": "PR_PuertoRico_VirginIslands_2018_D18",
+      "blocks": [
+        {
+          "survey": "2018",
+          "project": "PR_PRVI_A_2018",
+          "files": [
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_A_2018/reports/vendor_provided_xml/DEM_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "1e48975a34a778927d412fb26d975672",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": null,
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            },
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_A_2018/reports/vendor_provided_xml/ClassifiedPointCloud_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "030cdc118e5dc636b3d0bf317debce32",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": "National Geodetic Survey (NGS) Geoid12B",
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            }
+          ],
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID12B"
+          ]
+        },
+        {
+          "survey": "2018",
+          "project": "PR_PRVI_D_2018",
+          "files": [
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_D_2018/reports/vendor_provided_xml/DEM_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "1e48975a34a778927d412fb26d975672",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": null,
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            },
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_D_2018/reports/vendor_provided_xml/ClassifiedPointCloud_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "030cdc118e5dc636b3d0bf317debce32",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": "National Geodetic Survey (NGS) Geoid12B",
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            }
+          ],
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID12B"
+          ]
+        },
+        {
+          "survey": "2018",
+          "project": "PR_PRVI_E_2018",
+          "files": [
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_E_2018/reports/vendor_provided_xml/DEM_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "1e48975a34a778927d412fb26d975672",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": null,
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            },
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_E_2018/reports/vendor_provided_xml/ClassifiedPointCloud_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "030cdc118e5dc636b3d0bf317debce32",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": "National Geodetic Survey (NGS) Geoid12B",
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            }
+          ],
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID12B"
+          ]
+        },
+        {
+          "survey": "2018",
+          "project": "PR_PRVI_F_2018",
+          "files": [
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_F_2018/reports/vendor_provided_xml/DEM_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "1e48975a34a778927d412fb26d975672",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": null,
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            },
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_F_2018/reports/vendor_provided_xml/ClassifiedPointCloud_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "030cdc118e5dc636b3d0bf317debce32",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": "National Geodetic Survey (NGS) Geoid12B",
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            }
+          ],
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID12B"
+          ]
+        },
+        {
+          "survey": "2018",
+          "project": "PR_PRVI_H_2018",
+          "files": [
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_H_2018/reports/vendor_provided_xml/DEM_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "1e48975a34a778927d412fb26d975672",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": null,
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            },
+            {
+              "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_H_2018/reports/vendor_provided_xml/ClassifiedPointCloud_1.3v2_PR_USVI_Lidar_2018.xml",
+              "etag": "030cdc118e5dc636b3d0bf317debce32",
+              "altdatum": "Puerto Rico Vertical Datum of 2002, Geoid 12B",
+              "geoid_element": "National Geodetic Survey (NGS) Geoid12B",
+              "datum_sentence": "vertical datum of PRVD02 (GEOID12B)"
+            }
+          ],
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID12B"
+          ]
+        }
+      ],
+      "geoid_models": [
+        "GEOID12B"
+      ]
+    },
+    "d24": {
+      "project": "PR_PuertoRicoUSVI_D24",
+      "parts": [
+        {
+          "survey": "d24",
+          "part": "PR_PuertoRicoUSVI_1_D24",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRicoUSVI_D24/PR_PuertoRicoUSVI_1_D24/reports/USGS_PR_PuertoRicoUSVI_1_D24_FINAL_LPC_Report.txt",
+          "etag": "93f051fea6ed3c6fa5ca3dc2b67a0032",
+          "vert_cs": "PRVD02 height - Geoid18 (Meters)",
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID18"
+          ]
+        },
+        {
+          "survey": "d24",
+          "part": "PR_PuertoRicoUSVI_2_D24",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRicoUSVI_D24/PR_PuertoRicoUSVI_2_D24/reports/USGS_PR_PuertoRicoUSVI_2_D24_Final_LPC_Report.txt",
+          "etag": "631a410d5cd428a82eb8ebacccc97236",
+          "vert_cs": "PRVD02 height - Geoid18 (Meters)",
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID18"
+          ]
+        },
+        {
+          "survey": "d24",
+          "part": "PR_PuertoRicoUSVI_3_D24",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRicoUSVI_D24/PR_PuertoRicoUSVI_3_D24/reports/USGS_PR_PuertoRicoUSVI_3_D24_FINAL_LPC_Report.txt",
+          "etag": "92e5162b4414cf3e5cb586850a44ece2",
+          "vert_cs": "PRVD02 height - Geoid18 (Meters)",
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID18"
+          ]
+        },
+        {
+          "survey": "d24",
+          "part": "PR_PuertoRicoUSVI_4_D24",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRicoUSVI_D24/PR_PuertoRicoUSVI_4_D24/reports/USGS_PR_PuertoRicoUSVI_4_D24_FINAL_LPC_Report.txt",
+          "etag": "521398a23a47b83301943d4f64efc1fc",
+          "vert_cs": "PRVD02 height - Geoid18 (Meters)",
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID18"
+          ]
+        },
+        {
+          "survey": "d24",
+          "part": "PR_PuertoRicoUSVI_5_D24",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRicoUSVI_D24/PR_PuertoRicoUSVI_5_D24/reports/USGS_PR_PuertoRicoUSVI_5_D24_FINAL_LPC_Report.txt",
+          "etag": "5c84ff13645d09328a15521d7b1c492e",
+          "vert_cs": "VIVD09 height - Geoid18 (Meters)",
+          "vertical_datums": [
+            "VIVD09"
+          ],
+          "geoid_models": [
+            "GEOID18"
+          ]
+        },
+        {
+          "survey": "d24",
+          "part": "PR_PuertoRicoUSVI_6_D24",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRicoUSVI_D24/PR_PuertoRicoUSVI_6_D24/reports/USGS_PR_PuertoRicoUSVI_6_D24_Final_LPC_Report.txt",
+          "etag": "99bfd11dbee68e15b150af514a772fe4",
+          "vert_cs": "PRVD02 height - Geoid18 (Meters)",
+          "vertical_datums": [
+            "PRVD02"
+          ],
+          "geoid_models": [
+            "GEOID18"
+          ]
+        }
+      ],
+      "geoid_models": [
+        "GEOID18"
+      ]
+    }
+  }
+}

@@ -2,8 +2,9 @@
 
 ``summary`` prints the breakdown by acquisition platform and the registration
 accounting; it exits 1 if any registration is unaccounted for or any catalog
-reference is stale. ``check --sources a,b`` prints the merge policy and the
-pairwise independence of the selected products as JSON.
+reference is stale. ``check --sources a,b`` prints the merge policy, the layer
+groups (one layer per geoid realization within a platform/surface/datum group)
+and the pairwise independence of the selected products as JSON.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ import json
 import sys
 
 from .catalog import account, group_by_platform_class, load_catalog, products_by_id
-from .policy import evaluate_platform_mix, pairwise_independence
+from .policy import evaluate_platform_mix, layer_groups, pairwise_independence
 
 
 def summary(_: argparse.Namespace) -> int:
@@ -22,7 +23,8 @@ def summary(_: argparse.Namespace) -> int:
         print(f"{cls} ({len(products)})")
         for p in products:
             status = "" if p["platform_status"] == "verified" else "  [unverified]"
-            print(f"  {p['source_id']:42s} {p['surface_model']:24s} {p['vertical_datum']}{status}")
+            datum = p["vertical_datum"] + (f" ({p['geoid_model']})" if p.get("geoid_model") else "")
+            print(f"  {p['source_id']:42s} {p['surface_model']:24s} {datum}{status}")
     acc = account(catalog).as_dict()
     print(
         f"\nregistrations: {acc['registrations']} in {acc['files']} files; "
@@ -45,7 +47,10 @@ def check(args: argparse.Namespace) -> int:
         print(f"unknown source_id: {', '.join(unknown)}", file=sys.stderr)
         return 2
     selected = [products[i] for i in ids]
-    print(json.dumps({"policy": evaluate_platform_mix(selected).as_dict(), "independence": pairwise_independence(selected)}, indent=2))
+    groups = [{"platform_class": k[0], "surface_model": k[1], "vertical_datum": k[2], "layers_by_geoid": {g: list(ids) for g, ids in v.items()}}
+              for k, v in layer_groups(selected).items()]
+    print(json.dumps({"policy": evaluate_platform_mix(selected).as_dict(), "layer_groups": groups,
+                      "independence": pairwise_independence(selected)}, indent=2))
     return 0
 
 
