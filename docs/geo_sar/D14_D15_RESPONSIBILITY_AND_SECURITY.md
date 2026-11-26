@@ -15,19 +15,19 @@
 
 ### Contracts this work must conform to
 
-All in thehub-pr. Paths are relative to that repository.
+All in thehub-pr, except the last row.
 
 | Contract | Path | Conformance today |
 |---|---|---|
-| Producer manifest and export package | `schemas/repo_federation_manifest.schema.json` | Existing `federation.json` unchanged |
-| Identity | `schemas/contracts/federation_identifier.v1.schema.json` | Not yet bound: pilot asset identifiers are local |
-| Evidence state, object, lineage | `schemas/federation/` | Not yet bound |
-| Access classes | `schemas/contracts/access_classification.v1.schema.json` | Adopted in D15 below |
-| Acquisition rules | `docs/GIS_ACQUISITION_V2.md` | Followed by the discovery contract (D05) |
-| Grid authority pin | `federation/spatial/pr_grid_geographic_v2.pin.json` | Unchanged; segments are Grid V2 cells |
-| Analytical workbench proposal | `docs/governance/FAWS_V0_1_PROPOSAL.md` | Draft there; assigns rendering contracts to this repository |
-| Execution admission | `governance/ecpaf/v2.1/policy.json` | **No route.** See below. |
-| LOCKSTEP bindings | `federation/lockstep-bindings.json` | Unchanged |
+| Producer manifest and export package | `thehub-pr/schemas/repo_federation_manifest.schema.json` | Existing `federation.json` unchanged |
+| Identity | `thehub-pr/schemas/contracts/federation_identifier.v1.schema.json` | Not yet bound: pilot asset identifiers are local |
+| Evidence state, object, lineage | `thehub-pr/schemas/federation/` | Not yet bound |
+| Access classes | `thehub-pr/schemas/contracts/access_classification.v1.schema.json` | Adopted in D15 below |
+| Acquisition rules | `thehub-pr/docs/GIS_ACQUISITION_V2.md` | Followed by the discovery contract (D05) |
+| Grid authority pin | `thehub-pr/federation/spatial/pr_grid_geographic_v2.pin.json` | Unchanged; segments are Grid V2 cells |
+| Analytical workbench proposal | `thehub-pr/docs/governance/FAWS_V0_1_PROPOSAL.md` | Draft there; assigns rendering contracts to this repository |
+| Execution admission | `thehub-pr/governance/ecpaf/v2.1/policy.json` | **No route.** See below. |
+| LOCKSTEP bindings | `thehub-pr/federation/lockstep-bindings.json` | Unchanged |
 | Documentation sync | `.federation/docs-sync.json` | Checked on this change |
 
 ### What governance cannot yet do for this programme

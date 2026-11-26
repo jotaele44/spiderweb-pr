@@ -554,8 +554,10 @@ def discover(
         "limits": [
             "A footprint is the file's raster extent, not the extent of valid data.",
             "This run downloaded no file: data voids are UNVERIFIED.",
-            "A prior_acquisition hash was computed by an earlier run in another lane;"
-            " those bytes are not held here and were not re-verified.",
+            (
+                "A prior_acquisition hash was computed by an earlier run in another lane;"
+                + " those bytes are not held here and were not re-verified."
+            ),
             "Coverage fractions are footprint coverage of a segment, not data coverage.",
         ],
     }
