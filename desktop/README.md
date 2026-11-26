@@ -28,6 +28,53 @@ all other data, tables, and charts keep working. The same holds for the
 from NOAA's public `noaa-eri-pds` bucket, so with no connection the flight
 list still loads but the imagery and its footprints report an error.
 
+The launcher also looks after the installation. When an update changes the
+requirements it reinstalls before starting, and when a set-up app fails to
+start it reinstalls once and tries again, showing the error if that does not
+help. Nothing asks you to type a command. After updating to this launcher,
+an existing installation runs setup once more on its next start.
+
+## Launcher options and preferences
+
+Every launcher accepts the same options (for example
+`./PRII-SPIDERWEB.command --browser`); anything it does not recognise is
+passed on to the app.
+
+| Option | Effect |
+|---|---|
+| `--browser` | Open in the default browser instead of the app window |
+| `--no-window` | Run the server only and print its address |
+| `--reinstall` | Reinstall the components and rebuild the dashboard |
+| `--reset` | Delete `.venv` and `.node` first, then set up again |
+| `--offline` | Never use the network; start with what is installed |
+| `--verbose` | Show the full output of every setup step |
+| `--lang en` / `--lang es` | Language of the launcher's messages |
+| `--version`, `--help` | Version information; the full list |
+
+Messages are in English or Spanish, following the system language unless
+`--lang`, the `PRII_LANG` environment variable or the preferences file says
+otherwise. `PRII_OFFLINE=1` is the same as `--offline`.
+
+Personal choices that should survive updates go in a `launcher.json`
+preferences file, which is never committed (`--help` prints its exact path:
+`~/Library/Application Support/PRII/spiderweb/` on macOS,
+`%APPDATA%\PRII\spiderweb\` on Windows, `~/.config/prii/spiderweb/` on Linux):
+
+```json
+{
+  "language": "es",
+  "window": "browser",
+  "data_home": "~/PRII-data",
+  "check_on_start": false
+}
+```
+
+`check_on_start: false` skips the "did the requirements change" check. An
+unknown key is ignored and a value that is not allowed is reported and
+skipped, so a typo never stops the app from starting.
+
+## First launch
+
 First launch also creates a writable workspace and prepares `server/priis.db`
 for the live backend. It seeds the diagnostic dataset only when the database
 is absent; existing user state is left untouched.
@@ -59,12 +106,14 @@ run programs under your account.
 
 `requirements-desktop.txt` pins a `prii-desktop` that includes the Launch Pad
 (0.3.0). If you set the app up before that pin moved, run
-`python desktop/setup.py --force` once to install the newer runtime.
+`python desktop/setup.py --reinstall` once to install the newer runtime (the
+launcher now does this by itself when the pin changes).
 
 ## How it works
 
 - `desktop/config.py` — the only per-repo file (window title, branding,
-  paths, and the dotted import path of the FastAPI app object). Also flags
+  paths, the dotted import path of the FastAPI app object, and the settings
+  the shared setup reads, such as `MIN_PYTHON` and `EXTRA_BUILD_ENV`). Also flags
   `ATTACH_FRONTEND = True` so the shared runtime serves the built SPA on top
   of the API.
 - `desktop/app_server.py` — the thin Spiderweb adapter that mounts the real
@@ -74,13 +123,15 @@ run programs under your account.
   shared `prii_desktop` runtime, which picks a free port, starts uvicorn,
   and opens a native [pywebview](https://pywebview.flowrl.com/) window
   (falls back to the default browser).
-- `desktop/setup.py` — idempotent one-time setup (`--force` to redo); finds or
-  downloads Node.js for the dashboard build. It
-  installs only the FastAPI-scoped dependencies declared in
-  `requirements-desktop.txt` (`fastapi`, `uvicorn`, `pywebview`,
-  `sse-starlette`, `aiosqlite`, plus the shared `prii-desktop` runtime) — not
-  the full data-pipeline extras (`airspace`/`rag`/`earthgpt`) from the root
-  `requirements.txt`, which the desktop app doesn't need to launch.
+- `desktop/setup.py` — the shared launcher logic, rendered from
+  `thehub-pr/federation-templates/desktop/setup.py` and not edited here:
+  setup, start, repair, options, preferences and languages. The launchers
+  only find a Python and run it. It installs only the FastAPI-scoped
+  dependencies declared in `requirements-desktop.txt` (`fastapi`, `uvicorn`,
+  `pywebview`, `sse-starlette`, `aiosqlite`, plus the shared `prii-desktop`
+  runtime) — not the full data-pipeline extras (`airspace`/`rag`/`earthgpt`)
+  from the root `requirements.txt`, which the desktop app doesn't need to
+  launch.
 
 Native setup, repair, diagnostics, the per-user lock, and the pywebview
 lifecycle itself live in the shared `thehub-pr/packages/prii_desktop`
@@ -89,7 +140,9 @@ runtime that `desktop/launch.py` and `desktop/setup.py` depend on.
 ## Command line
 
 ```bash
-python3 desktop/setup.py          # one-time setup
+python3 desktop/setup.py          # set up if needed (does not start the app)
+python3 desktop/setup.py --launch # set up if needed, then start
+python3 desktop/setup.py --help   # every option
 .venv/bin/python desktop/launch.py            # native window
 .venv/bin/python desktop/launch.py --browser  # browser tab instead
 .venv/bin/python desktop/launch.py --no-window  # server only
@@ -139,23 +192,25 @@ one of the following clears it — you only do this once per download:
 
 ## If first-run setup does not finish
 
-The setup window (`PRII-SPIDERWEB.app/Contents/Resources/first-run-setup.command`)
-never asks for a command. If a step fails — usually no internet connection —
-it names the step and waits; press Return in that window to try again. Its
-output is also saved to `~/Library/Logs/PRII-Spiderweb/setup.log`.
+The setup window never asks for a command. If a step fails — usually no
+internet connection — it names the cause, shows the last lines of the output,
+and waits; press Return in that window to try again. The full output is
+saved to `~/Library/Logs/PRII/spiderweb-pr/setup.log` when started from the
+`.app`, and otherwise to `~/Library/Logs/PRII/spiderweb/` (macOS),
+`%LOCALAPPDATA%\PRII\spiderweb\Logs` (Windows) or
+`~/.local/state/prii/spiderweb/` (Linux).
 
 The one thing it cannot install is Python itself: when no Python 3.11+ is
-found it opens the python.org download page and waits for the installer to
-be run.
+found it says so and opens the python.org download page.
 
 ## If the app does not start
 
-When a set-up checkout fails to start — typically after an update changed its
-dependencies — `PRII-SPIDERWEB.app` does not fail silently. It saves the
-output to `~/Library/Logs/PRII-Spiderweb/launch.log`, opens the same setup
-window, reinstalls, and then starts the app from that window so that a
-second failure is shown there. A normal quit, a force quit, or a stop after
-the app has been running for a couple of minutes does not trigger this.
+When a set-up checkout fails to start, the launcher does not fail silently.
+It keeps the output in `launch.log` beside `setup.log`, reinstalls the
+components, and starts the app again; from the `.app` it opens the setup
+window to do this, so that a second failure is shown there. A normal quit, a
+force quit, or a stop after the app has been running for a couple of minutes
+does not trigger this.
 
 ## If the app says it is running from a temporary copy
 

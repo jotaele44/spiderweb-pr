@@ -1,177 +1,78 @@
-"""First-run setup must finish without asking the user to run anything."""
+"""Spiderweb's side of the shared launcher.
+
+The launchers and desktop/setup.py are rendered from the federation hub
+(thehub-pr/federation-templates), where their behaviour is tested and where
+CI runs them on macOS, Windows and Linux. template-drift.yml keeps the copies
+here identical to those templates. What is tested here is only what this
+repository owns: its settings in desktop/config.py and its dependency pins.
+"""
 
 from __future__ import annotations
 
-import hashlib
-import io
 import os
 import re
-import shutil
 import subprocess
-import tarfile
+import sys
 import tomllib
 from pathlib import Path
 
 import pytest
 
-from desktop import setup
+from desktop import config, setup
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 APP = REPO_ROOT / "PRII-SPIDERWEB.app" / "Contents"
-APP_LAUNCHER = APP / "MacOS" / "PRII-SPIDERWEB"
-APP_SETUP = APP / "Resources" / "first-run-setup.command"
-SHELL_LAUNCHERS = [
-    APP_LAUNCHER,
-    APP_SETUP,
+RENDERED = [
     REPO_ROOT / "PRII-SPIDERWEB.command",
     REPO_ROOT / "PRII-SPIDERWEB.sh",
+    REPO_ROOT / "PRII-SPIDERWEB.bat",
+    APP / "MacOS" / "PRII-SPIDERWEB",
+    APP / "Resources" / "first-run-setup.command",
+    REPO_ROOT / "desktop" / "setup.py",
 ]
 
 
 def test_min_python_matches_project_floor():
     project = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())["project"]
     floor = re.search(r">=\s*(\d+)\.(\d+)", project["requires-python"])
-    assert setup.MIN_PYTHON == (int(floor.group(1)), int(floor.group(2)))
+    assert config.MIN_PYTHON == (int(floor.group(1)), int(floor.group(2)))
+    assert setup.MIN_PYTHON == config.MIN_PYTHON
 
 
-@pytest.mark.parametrize("script", SHELL_LAUNCHERS, ids=lambda p: p.name)
-def test_shell_launchers_parse_and_are_executable(script):
-    shell = "sh" if script.suffix == ".sh" else "bash"
-    assert subprocess.run([shell, "-n", str(script)]).returncode == 0
-    assert os.access(script, os.X_OK)
+def test_shared_setup_reads_this_apps_settings():
+    assert setup.APP_TITLE == config.APP_TITLE
+    assert setup.FRONTEND_DIR == config.FRONTEND_DIR
+    assert setup.DIST_DIR == config.DIST_DIR
+    assert setup.requirement_files() == [REPO_ROOT / "requirements-desktop.txt"]
+    assert setup.CONSTRAINTS == REPO_ROOT / "constraints-desktop.txt"
+    # The desktop build must stay same-origin and use GeoJSON delivery.
+    assert config.EXTRA_BUILD_ENV["VITE_MUNICIPIOS_DELIVERY"] == "geojson"
 
 
-def test_app_launcher_runs_setup_itself():
-    text = APP_LAUNCHER.read_text()
-    # It must hand over to the setup window, never tell the user to run setup.
-    assert 'open -a Terminal "$SETUP"' in text
-    assert "python3 desktop/setup.py" not in text
-    # A failed start must be noticed, so the launch is not exec'd away.
-    assert "exec .venv/bin/python" not in text
-    assert "launch.log" in text and "launch-failed" in text
-    assert "Open Terminal" not in text
-    assert "desktop/setup.py" in APP_SETUP.read_text()
+@pytest.mark.parametrize("path", RENDERED, ids=lambda p: p.name)
+def test_launcher_files_are_the_rendered_ones(path):
+    text = path.read_text(encoding="utf-8")
+    assert "thehub-pr/federation-templates/" in text
+    if path.suffix in (".command", ".sh") or path.suffix == "":
+        assert os.name == "nt" or os.access(path, os.X_OK)
 
 
-@pytest.mark.parametrize("script", SHELL_LAUNCHERS[1:], ids=lambda p: p.name)
-def test_launchers_pick_a_python_that_meets_the_floor(script):
-    text = script.read_text()
-    major, minor = setup.MIN_PYTHON
-    assert f"sys.version_info < ({major}, {minor})" in text
+def test_no_launcher_tells_the_person_to_run_a_command():
+    for path in RENDERED[:5]:
+        text = path.read_text(encoding="utf-8")
+        assert "and run:" not in text
+        assert "python3 desktop/setup.py" not in text
 
 
-def test_git_requirement_becomes_archive_url():
-    rewritten = setup.without_git(setup.REQUIREMENTS.read_text())
-    assert "git+" not in rewritten
-    line = next(ln for ln in rewritten.splitlines() if ln.startswith("prii-desktop"))
-    assert re.fullmatch(
-        r"prii-desktop @ https://github\.com/jotaele44/thehub-pr/archive/"
-        r"[0-9a-f]{40}\.zip#subdirectory=packages/prii_desktop",
-        line,
+def test_setup_answers_without_installing_anything():
+    result = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "desktop" / "setup.py"), "--version"],
+        capture_output=True,
+        text=True,
+        timeout=60,
     )
-    # Everything else is left exactly as written.
-    original = setup.REQUIREMENTS.read_text().splitlines()
-    assert [a for a, b in zip(original, rewritten.splitlines()) if a != b] == [
-        ln for ln in original if ln.startswith("prii-desktop")
-    ]
-
-
-@pytest.mark.parametrize(
-    ("system", "machine", "expected"),
-    [
-        ("Darwin", "arm64", "node-v22.1.0-darwin-arm64.tar.gz"),
-        ("Darwin", "x86_64", "node-v22.1.0-darwin-x64.tar.gz"),
-        ("Linux", "aarch64", "node-v22.1.0-linux-arm64.tar.gz"),
-        ("Windows", "AMD64", "node-v22.1.0-win-x64.zip"),
-    ],
-)
-def test_node_archive_name(system, machine, expected):
-    assert setup.node_archive_name("v22.1.0", system, machine) == expected
-
-
-def test_node_archive_name_rejects_unknown_platform():
-    with pytest.raises(SystemExit):
-        setup.node_archive_name("v22.1.0", "SunOS", "sparc")
-
-
-def _fake_node(tmp_path: Path, name: str = "npm") -> Path:
-    tmp_path.mkdir(parents=True, exist_ok=True)
-    for exe in (name, "node"):
-        path = tmp_path / exe
-        path.write_text("#!/bin/sh\n")
-        path.chmod(0o755)
-    return tmp_path
-
-
-@pytest.mark.skipif(os.name == "nt", reason="POSIX executables")
-def test_resolve_npm_prefers_path_then_version_managers(tmp_path, monkeypatch):
-    on_path = _fake_node(tmp_path / "onpath")
-    home = tmp_path / "home"
-    old = _fake_node(home / ".nvm" / "versions" / "node" / "v9.11.0" / "bin")
-    new = _fake_node(home / ".nvm" / "versions" / "node" / "v22.3.0" / "bin")
-    dirs = [d for d in setup.candidate_node_dirs(home) if home in d.parents]
-    assert dirs[:2] == [new, old]  # newest version first, not lexical order
-
-    monkeypatch.setattr(setup, "candidate_node_dirs", lambda: dirs)
-    monkeypatch.setattr(
-        setup, "install_private_node", lambda: pytest.fail("downloaded")
-    )
-
-    monkeypatch.setenv("PATH", str(on_path))
-    assert setup.resolve_npm() == (str(on_path / "npm"), None)
-
-    monkeypatch.setenv("PATH", str(tmp_path / "empty"))
-    assert setup.resolve_npm() == (str(new / "npm"), new)
-
-
-@pytest.mark.skipif(os.name == "nt", reason="POSIX executables")
-def test_resolve_npm_downloads_when_nothing_is_installed(tmp_path, monkeypatch):
-    private = tmp_path / ".node" / "bin"
-    monkeypatch.setattr(setup, "NODE_DIR", tmp_path / ".node")
-    monkeypatch.setattr(setup, "candidate_node_dirs", lambda: [])
-    monkeypatch.setattr(setup, "install_private_node", lambda: _fake_node(private))
-    monkeypatch.setenv("PATH", str(tmp_path / "empty"))
-    assert setup.resolve_npm() == (str(private / "npm"), private)
-
-
-def _node_tarball(version: str) -> tuple[str, bytes]:
-    name = setup.node_archive_name(version, "Linux", "x86_64")
-    buffer = io.BytesIO()
-    with tarfile.open(fileobj=buffer, mode="w:gz") as tf:
-        for member in ("bin/node", "bin/npm"):
-            info = tarfile.TarInfo(f"{name.removesuffix('.tar.gz')}/{member}")
-            info.mode = 0o755
-            data = b"#!/bin/sh\n"
-            info.size = len(data)
-            tf.addfile(info, io.BytesIO(data))
-    return name, buffer.getvalue()
-
-
-@pytest.mark.skipif(os.name == "nt", reason="POSIX layout")
-@pytest.mark.parametrize("tampered", [False, True])
-def test_private_node_is_checksum_verified(tmp_path, monkeypatch, tampered):
-    name, payload = _node_tarball("v22.9.9")
-    digest = hashlib.sha256(payload).hexdigest()
-    served = payload + b"x" if tampered else payload
-
-    def fake_download(url: str, dest: Path) -> None:
-        if url.endswith("SHASUMS256.txt"):
-            dest.write_text(f"{digest}  {name}\n")
-        else:
-            assert url.endswith(name)
-            dest.write_bytes(served)
-
-    monkeypatch.setattr(setup, "_download", fake_download)
-    monkeypatch.setattr(setup, "NODE_DIR", tmp_path / ".node")
-    monkeypatch.setattr(setup, "node_archive_name", lambda version: name)
-
-    if tampered:
-        with pytest.raises(SystemExit, match="checksum"):
-            setup.install_private_node()
-        assert not (tmp_path / ".node").exists()
-    else:
-        assert setup.install_private_node() == tmp_path / ".node" / "bin"
-        assert (tmp_path / ".node" / "bin" / "npm").is_file()
+    assert result.returncode == 0, result.stderr
+    assert config.APP_TITLE in result.stdout
 
 
 def test_desktop_constraints_agree_with_the_lockfile():
@@ -186,7 +87,7 @@ def test_desktop_constraints_agree_with_the_lockfile():
             name = package["name"].lower().replace("_", "-")
             versions.setdefault(name, set()).add(package["version"])
     drifted = []
-    for line in setup.CONSTRAINTS_DESKTOP.read_text().splitlines():
+    for line in setup.CONSTRAINTS.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
@@ -197,161 +98,3 @@ def test_desktop_constraints_agree_with_the_lockfile():
     assert not drifted, "constraints-desktop.txt disagrees with uv.lock:\n" + "\n".join(
         drifted
     )
-
-
-@pytest.mark.parametrize(
-    ("name", "linkname"),
-    [("../escape", None), ("/abs/escape", None), ("pkg/link", "../../outside")],
-)
-def test_tar_extraction_refuses_entries_outside_the_target(tmp_path, name, linkname):
-    archive = tmp_path / "bad.tar.gz"
-    with tarfile.open(archive, "w:gz") as tf:
-        info = tarfile.TarInfo(name)
-        if linkname:
-            info.type = tarfile.SYMTYPE
-            info.linkname = linkname
-            tf.addfile(info)
-        else:
-            info.size = 1
-            tf.addfile(info, io.BytesIO(b"x"))
-    with pytest.raises(SystemExit, match="unsafe"):
-        setup._extract_tar(archive, tmp_path / "out")
-    assert not (tmp_path / "escape").exists()
-    assert not (tmp_path / "outside").exists()
-
-
-@pytest.mark.skipif(os.name == "nt", reason="POSIX symlinks and modes")
-def test_tar_extraction_keeps_inner_symlinks_and_exec_bits(tmp_path):
-    archive = tmp_path / "ok.tar.gz"
-    with tarfile.open(archive, "w:gz") as tf:
-        script = tarfile.TarInfo("pkg/lib/cli.js")
-        script.mode = 0o755
-        script.size = 2
-        tf.addfile(script, io.BytesIO(b"ok"))
-        link = tarfile.TarInfo("pkg/bin/npm")
-        link.type = tarfile.SYMTYPE
-        link.linkname = "../lib/cli.js"
-        tf.addfile(link)
-    out = tmp_path / "out"
-    setup._extract_tar(archive, out)
-    assert (out / "pkg" / "bin" / "npm").is_symlink()
-    assert (out / "pkg" / "bin" / "npm").read_bytes() == b"ok"
-    assert os.access(out / "pkg" / "lib" / "cli.js", os.X_OK)
-
-
-def test_tar_extraction_refuses_hard_links_and_devices(tmp_path):
-    archive = tmp_path / "odd.tar.gz"
-    with tarfile.open(archive, "w:gz") as tf:
-        info = tarfile.TarInfo("pkg/hard")
-        info.type = tarfile.LNKTYPE
-        info.linkname = "pkg/other"
-        tf.addfile(info)
-    with pytest.raises(SystemExit, match="unexpected"):
-        setup._extract_tar(archive, tmp_path / "out")
-
-
-# ── Launch failures ──────────────────────────────────────────────────────────
-
-
-def _stage_app(tmp_path: Path, python_stub: str) -> dict[str, Path]:
-    """A throwaway set-up checkout with the real bundle and stubbed tools."""
-    repo = tmp_path / "checkout"
-    shutil.copytree(REPO_ROOT / "PRII-SPIDERWEB.app", repo / "PRII-SPIDERWEB.app")
-    (repo / "desktop").mkdir()
-    (repo / "desktop" / "setup.py").write_text("")
-    (repo / "desktop" / "launch.py").write_text("")
-    (repo / "desktop" / ".setup-complete").write_text("ok\n")
-    (repo / "server" / "frontend" / "dist").mkdir(parents=True)
-    (repo / "server" / "frontend" / "dist" / "index.html").write_text("")
-    venv_bin = repo / ".venv" / "bin"
-    venv_bin.mkdir(parents=True)
-    (venv_bin / "python").write_text(f"#!/bin/sh\n{python_stub}\n")
-    (venv_bin / "python").chmod(0o755)
-
-    tools = tmp_path / "tools"
-    tools.mkdir()
-    calls = tmp_path / "open-calls.txt"
-    (tools / "open").write_text(f'#!/bin/sh\necho "$@" >> "{calls}"\n')
-    (tools / "osascript").write_text("#!/bin/sh\nexit 0\n")
-    for tool in tools.iterdir():
-        tool.chmod(0o755)
-    home = tmp_path / "home"
-    home.mkdir()
-    return {"repo": repo, "tools": tools, "calls": calls, "home": home}
-
-
-def _run_app_launcher(stage: dict[str, Path]) -> subprocess.CompletedProcess:
-    launcher = stage["repo"] / "PRII-SPIDERWEB.app" / "Contents" / "MacOS"
-    env = {
-        "HOME": str(stage["home"]),
-        "PATH": f"{stage['tools']}{os.pathsep}{os.environ['PATH']}",
-    }
-    return subprocess.run(
-        ["bash", str(launcher / "PRII-SPIDERWEB")],
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-
-
-@pytest.mark.skipif(os.name == "nt", reason="bash launcher")
-def test_app_launcher_repairs_after_a_failed_start(tmp_path):
-    stage = _stage_app(tmp_path, 'echo "ModuleNotFoundError: prii_desktop" >&2; exit 1')
-    result = _run_app_launcher(stage)
-    assert result.returncode == 0, result.stderr
-
-    logs = stage["home"] / "Library" / "Logs" / "PRII-Spiderweb"
-    assert "ModuleNotFoundError" in (logs / "launch.log").read_text()
-    assert (logs / "launch-failed").is_file()
-    # Removing the marker is what makes setup reinstall on the next pass.
-    assert not (stage["repo"] / "desktop" / ".setup-complete").exists()
-    opened = stage["calls"].read_text()
-    assert opened.startswith("-a Terminal ")
-    assert opened.strip().endswith("first-run-setup.command")
-
-
-@pytest.mark.skipif(os.name == "nt", reason="bash launcher")
-@pytest.mark.parametrize("stub", ["exit 0", "kill -TERM $$"])
-def test_app_launcher_leaves_a_normal_exit_alone(tmp_path, stub):
-    stage = _stage_app(tmp_path, stub)
-    result = _run_app_launcher(stage)
-    assert result.returncode == 0, result.stderr
-    assert (stage["repo"] / "desktop" / ".setup-complete").exists()
-    assert not stage["calls"].exists()
-    logs = stage["home"] / "Library" / "Logs" / "PRII-Spiderweb"
-    assert not (logs / "launch-failed").exists()
-
-
-@pytest.mark.skipif(os.name == "nt", reason="bash launcher")
-def test_setup_window_starts_the_app_itself_after_a_repair(tmp_path):
-    """After a failed start the app must not be reopened via the launcher,
-    or a persistent failure would loop app -> repair -> app with no output."""
-    stage = _stage_app(tmp_path, 'echo "started $@"; exit 0')
-    logs = stage["home"] / "Library" / "Logs" / "PRII-Spiderweb"
-    logs.mkdir(parents=True)
-    (logs / "launch-failed").write_text("1\n")
-    (logs / "launch.log").write_text("ImportError: boom\n")
-    # A system Python that passes the version check and "runs setup".
-    (stage["tools"] / "python3").write_text("#!/bin/sh\nexit 0\n")
-    (stage["tools"] / "python3").chmod(0o755)
-    for name in ("python3.14", "python3.13", "python3.12", "python3.11"):
-        shutil.copy(stage["tools"] / "python3", stage["tools"] / name)
-
-    script = stage["repo"] / "PRII-SPIDERWEB.app" / "Contents" / "Resources"
-    result = subprocess.run(
-        ["bash", str(script / "first-run-setup.command")],
-        env={
-            "HOME": str(stage["home"]),
-            "PATH": f"{stage['tools']}{os.pathsep}{os.environ['PATH']}",
-        },
-        capture_output=True,
-        text=True,
-        stdin=subprocess.DEVNULL,
-        timeout=60,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "ImportError: boom" in result.stdout  # the earlier failure is shown
-    assert "started desktop/launch.py" in result.stdout
-    assert not (logs / "launch-failed").exists()
-    assert not stage["calls"].exists()  # the app was not reopened via `open`

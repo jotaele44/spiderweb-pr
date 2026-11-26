@@ -23,6 +23,10 @@ BRAND_ACCENT = "#ca0c02"
 BRAND_ACCENT_STRONG = "#9f0a02"
 ICON_PATH = REPO_ROOT / "assets" / "branding" / "icon-256.png"
 SETUP_VERSION = 1
+# Read by the shared desktop/setup.py (rendered from the federation hub).
+# Spiderweb's floor is higher than the federation's 3.10 (pyproject.toml).
+MIN_PYTHON = (3, 11)
+NODE_MAJOR = 22
 DATA_ENV_VAR = "SPIDERWEB_DATA_HOME"
 SETUP_ACTION = "desktop.setup_actions:prepare_workspace"
 
