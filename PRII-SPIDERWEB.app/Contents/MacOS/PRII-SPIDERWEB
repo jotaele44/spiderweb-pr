@@ -1,9 +1,11 @@
 #!/bin/bash
-# macOS .app launcher for the PRII desktop wrapper. Self-locating: resolves the
-# repo root from this bundle's own path. Once setup is complete it opens the
-# app directly; until then, or when the app fails to start, it hands over to a
-# Terminal window that runs setup and starts the app when it is done.
-set -euo pipefail
+# Rendered from thehub-pr/federation-templates/PRII-APP.app/Contents/MacOS/PRII-APP
+# — do not hand-edit.
+# macOS .app launcher. Self-locating: resolves the checkout from this bundle's
+# own path. A set-up app is started directly, with no Terminal. When setup is
+# needed, or the app fails to start, it opens a Terminal window that runs
+# desktop/setup.py where its progress can be read.
+set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../../.." && pwd)"
 
@@ -12,55 +14,45 @@ notify() { osascript -e "display dialog \"$1\" buttons {\"OK\"} with title \"Spi
 # Gatekeeper "App Translocation": when a quarantined .app is opened from where
 # it was unzipped, macOS runs it from a read-only disk image under a random
 # /private/var/folders/…/AppTranslocation/ path. Only the bundle is copied
-# there, so the checkout next to it is gone and setup cannot write a .venv.
-# Note that "Open Anyway" permits one launch without clearing the quarantine
-# flag, so it leaves the bundle translocated and lands people here.
+# there, so the checkout next to it is gone and nothing can be installed.
+# "Open Anyway" permits one launch without clearing the quarantine flag, so it
+# leaves the bundle translocated and lands people here.
 case "$HERE" in
   */AppTranslocation/*)
-    notify "macOS is running this app from a temporary read-only copy, so it cannot see the rest of the checkout.\n\nFix it once:\n1. Move the folder that contains this app out of Downloads (or the Trash) — your home folder is fine.\n2. Double-click Fix-Gatekeeper.command in that folder.\n3. Open this app again."
+    notify "macOS is running this app from a temporary read-only copy, so it cannot see the rest of its folder.\n\nFix it once:\n1. Move the folder that contains this app out of Downloads (or the Trash) — your home folder is fine.\n2. Double-click Fix-Gatekeeper.command in that folder.\n3. Open this app again."
     exit 1
     ;;
 esac
 
 if [ ! -f "$REPO/desktop/setup.py" ]; then
-  notify "This app must stay inside its checkout — desktop/setup.py was not found next to it.\n\nLooked in: $REPO\n\nMove PRII-SPIDERWEB.app back beside the checkout's desktop folder and open it from there."
+  notify "This app must stay inside its folder — desktop/setup.py was not found next to it.\n\nLooked in: $REPO\n\nMove PRII-SPIDERWEB.app back beside the desktop folder and open it from there."
   exit 1
 fi
 
-cd "$REPO"
+cd "$REPO" || exit 1
 
-# Same three things desktop/setup.py's is_complete() checks. Testing them here
-# means a set-up checkout starts without needing a system Python at all.
-SETUP="$HERE/../Resources/first-run-setup.command"
-LOG_DIR="$HOME/Library/Logs/PRII-Spiderweb"
-mkdir -p "$LOG_DIR" 2>/dev/null || LOG_DIR="${TMPDIR:-/tmp}"
+# One log folder shared with the setup window, which reads the "start failed"
+# note this launcher's run leaves there.
+export PRII_LOG_DIR="$HOME/Library/Logs/PRII/spiderweb-pr"
+mkdir -p "$PRII_LOG_DIR" 2>/dev/null || export PRII_LOG_DIR="${TMPDIR:-/tmp}"
 
-if [ -f desktop/.setup-complete ] && [ -x .venv/bin/python ] \
-  && [ -f server/frontend/dist/index.html ]; then
-  # Not `exec`: Finder discards this launcher's output, so a start that fails
-  # before any window exists (a dependency missing after an update, an import
-  # error) would otherwise leave nothing on screen. Keep the output, and on a
-  # failure hand over to the setup window, which reinstalls and then starts
-  # the app where its output can be read.
+if [ -f desktop/.setup-complete ] && [ -x .venv/bin/python ]; then
+  # Finder discards this launcher's output, so nothing here may need reading:
+  # --no-prompt makes setup.py return instead of asking, and it reports "this
+  # needs a person" (setup out of date, or the app failed to start) by status.
   status=0
-  SECONDS=0
-  .venv/bin/python desktop/launch.py >"$LOG_DIR/launch.log" 2>&1 || status=$?
-  # A clean exit, being killed by a signal (force quit, logout), or stopping
-  # after it had been running for a while is not a failed start; the log stays
-  # for reference and nothing is repaired.
-  if [ "$status" -eq 0 ] || [ "$status" -gt 128 ] || [ "$SECONDS" -ge 120 ]; then
+  .venv/bin/python desktop/setup.py --launch --no-prompt >"$PRII_LOG_DIR/app.log" 2>&1 || status=$?
+  # Clean exit, or killed by a signal (force quit, logout): nothing to do.
+  if [ "$status" -eq 0 ] || [ "$status" -gt 128 ]; then
     exit 0
   fi
-  echo "$status" >"$LOG_DIR/launch-failed" 2>/dev/null || true
-  rm -f desktop/.setup-complete
 fi
 
-# Not set up yet, setup was left half-done, or the app just failed to start. Finder discards this launcher's
-# output and gives it a minimal PATH, so run setup where the person can watch
-# it: a Terminal window, which also loads their normal shell environment.
-# `open -a Terminal <file>` needs no Automation permission.
+# `open -a Terminal <file>` needs no Automation permission, and Terminal loads
+# the person's normal shell environment, which Finder does not provide.
+SETUP="$HERE/../Resources/first-run-setup.command"
 chmod +x "$SETUP" 2>/dev/null || true
 if ! open -a Terminal "$SETUP"; then
-  notify "Could not open a Terminal window to finish first-run setup.\n\nDouble-click PRII-SPIDERWEB.command in $REPO instead."
+  notify "Could not open a Terminal window to finish setup.\n\nDouble-click PRII-SPIDERWEB.command in $REPO instead."
   exit 1
 fi

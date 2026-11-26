@@ -55,9 +55,11 @@ Cross-producer correlation is owned by the Hub and downstream consumers. Spiderw
 
 ## Desktop app
 
-Double-click launchers at the repo root start the local desktop app (first run
-installs dependencies by itself — on macOS the app opens a Terminal window for
-that step and then reopens — and later runs work offline). This is the diagnostic
+Double-click launchers at the repo root start the local desktop app. The first
+run sets the app up by itself and shows numbered steps (on macOS the app opens
+a Terminal window for that and then reopens); later runs start directly and
+work offline. The launchers are shared across the federation and rendered from
+`thehub-pr`. This is the diagnostic
 dashboard described above (ADR 0001, Phase 2), not the federation's supported
 product surface:
 
