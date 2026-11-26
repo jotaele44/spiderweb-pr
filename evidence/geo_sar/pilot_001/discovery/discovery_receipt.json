@@ -1,0 +1,571 @@
+{
+  "allowed_hosts": [
+    "prd-tnm.s3.amazonaws.com",
+    "tnmaccess.nationalmap.gov"
+  ],
+  "authorization": {
+    "granted_by": "repository owner (session grant 2026-11-26)",
+    "level": "METADATA_DISCOVERY",
+    "max_requests": 150
+  },
+  "bytes_received": 1938598,
+  "data_products_downloaded": 0,
+  "hosts_contacted": [
+    "prd-tnm.s3.amazonaws.com",
+    "tnmaccess.nationalmap.gov"
+  ],
+  "largest_response_bytes": 103590,
+  "pilot_id": "GEOSAR-PILOT-001",
+  "requests": [
+    {
+      "body_file": "req_0000.bin",
+      "byte_range": null,
+      "headers": {
+        "content-length": "103590",
+        "content-type": "application/json",
+        "date": "Thu, 26 Nov 2026 16:12:27 GMT"
+      },
+      "index": 0,
+      "purpose": "catalog",
+      "request_url": "https://tnmaccess.nationalmap.gov/api/v1/products?datasets=Digital+Elevation+Model+%28DEM%29+1+meter&bbox=-66.05%2C18.3%2C-65.95%2C18.4&max=100&outputFormat=JSON",
+      "response_sha256": "cfc28ed554f4574f0d24aa66396ef165067de0135f0350eb82b59b3656ce1301",
+      "response_size": 103590,
+      "retrieved_utc": "2026-11-26T16:12:27.458545+00:00",
+      "status": 200
+    },
+    {
+      "body_file": "req_0001.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/306257039",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:27 GMT",
+        "etag": "\"cc1bb4845df617639b4257e160dc9829-59\"",
+        "last-modified": "Sat, 14 Feb 2026 05:30:10 GMT"
+      },
+      "index": 1,
+      "purpose": "header:USGS_1m_x17y203_PR_PRVI_D_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x17y203_PR_PRVI_D_2018.tif",
+      "response_sha256": "8b558805dff43863493d7733cfd8faf148465328a934684f215c9723ef376333",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:28.025760+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0002.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/63935167",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:28 GMT",
+        "etag": "\"92a82e74f57a233649313c33db942113\"",
+        "last-modified": "Sat, 14 Feb 2026 05:30:12 GMT"
+      },
+      "index": 2,
+      "purpose": "header:USGS_1m_x17y204_PR_PRVI_D_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x17y204_PR_PRVI_D_2018.tif",
+      "response_sha256": "e7a3736a6c5f935760a3e3d78f7090abfe88f6f8dbbea0b67b719362c75bfe11",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:28.572070+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0003.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/309990020",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:28 GMT",
+        "etag": "\"f019f4fc301a5bf7d6bf515c9b9924b6-60\"",
+        "last-modified": "Sat, 14 Feb 2026 05:30:13 GMT"
+      },
+      "index": 3,
+      "purpose": "header:USGS_1m_x18y203_PR_PRVI_D_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x18y203_PR_PRVI_D_2018.tif",
+      "response_sha256": "e55eba703417f87792c249263976c05ac78dda43fd4ab53b41c5df73015a8b7d",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:29.026784+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0004.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/57530434",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:29 GMT",
+        "etag": "\"1feeac56122f188584417ba338061c54\"",
+        "last-modified": "Sat, 14 Feb 2026 05:30:14 GMT"
+      },
+      "index": 4,
+      "purpose": "header:USGS_1m_x18y204_PR_PRVI_D_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x18y204_PR_PRVI_D_2018.tif",
+      "response_sha256": "1ad3661e8f3a7a4bd1ef395fb9559e8ae4ed9518c2f47409781e8cb77c42f143",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:29.461821+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0005.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/309924822",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:29 GMT",
+        "etag": "\"c6a7623b4f434a9ecd07e190495c1ff5-60\"",
+        "last-modified": "Sat, 14 Feb 2026 05:31:27 GMT"
+      },
+      "index": 5,
+      "purpose": "header:USGS_1m_x81y203_PR_PRVI_D_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x81y203_PR_PRVI_D_2018.tif",
+      "response_sha256": "cd4ed3923d559b067298d23b133b3f7e754a3e9ff42c73e533632260ca2a9a77",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:29.901969+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0006.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/57259776",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:30 GMT",
+        "etag": "\"fdd57b4a8cb8dbb65922254844c6e569\"",
+        "last-modified": "Sat, 14 Feb 2026 05:31:28 GMT"
+      },
+      "index": 6,
+      "purpose": "header:USGS_1m_x81y204_PR_PRVI_D_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x81y204_PR_PRVI_D_2018.tif",
+      "response_sha256": "8ebadf3bd68f0cb52c1cafdab66f676e203f600976765f8cdc0ea9fb1c8ccd9b",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:30.346918+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0007.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/303248521",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:30 GMT",
+        "etag": "\"cd46b861df18dee8a96eeb1ba37d0a62-58\"",
+        "last-modified": "Sat, 14 Feb 2026 05:31:31 GMT"
+      },
+      "index": 7,
+      "purpose": "header:USGS_1m_x82y203_PR_PRVI_D_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x82y203_PR_PRVI_D_2018.tif",
+      "response_sha256": "c0a0fa43821d0831b53648beff8f07d27b25384293bad9289b6837b6dd2a51a6",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:30.838451+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0008.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/63165214",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:31 GMT",
+        "etag": "\"6c473370bcb9f91d6bf18716213d62d0\"",
+        "last-modified": "Sat, 14 Feb 2026 05:31:32 GMT"
+      },
+      "index": 8,
+      "purpose": "header:USGS_1m_x82y204_PR_PRVI_D_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_D_2018/TIFF/USGS_1m_x82y204_PR_PRVI_D_2018.tif",
+      "response_sha256": "4805ebd162ddc3eb292b8d82e8c706fc377f572bd7937df380061210e7c81ad9",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:31.286837+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0009.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/114081937",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:31 GMT",
+        "etag": "\"22f13d6cf9ee44045d833f7dac1dfae6\"",
+        "last-modified": "Sat, 14 Feb 2026 05:30:21 GMT"
+      },
+      "index": 9,
+      "purpose": "header:USGS_1m_x17y204_PR_PRVI_E_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x17y204_PR_PRVI_E_2018.tif",
+      "response_sha256": "fb90464b2ca20f9fe799e675ee737690eea1ce0da683f903a6465711be6375d5",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:31.732819+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0010.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/120407718",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:31 GMT",
+        "etag": "\"bacd8d756473ada1ea1684cb8df8a68c\"",
+        "last-modified": "Sat, 14 Feb 2026 05:30:24 GMT"
+      },
+      "index": 10,
+      "purpose": "header:USGS_1m_x18y204_PR_PRVI_E_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x18y204_PR_PRVI_E_2018.tif",
+      "response_sha256": "84c80e6887faabfdc3f25fb054e5f577428c748fda2d8e7cfdf3359b5f91e8db",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:32.163865+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0011.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/114299552",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:32 GMT",
+        "etag": "\"336fcaaca9fc7d51dc260425de3d675e\"",
+        "last-modified": "Sat, 14 Feb 2026 05:30:59 GMT"
+      },
+      "index": 11,
+      "purpose": "header:USGS_1m_x81y204_PR_PRVI_E_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x81y204_PR_PRVI_E_2018.tif",
+      "response_sha256": "82415245601aca385dfe8917d5b416b405ca7d18aa947b288491b4961626bcc0",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:32.595638+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0012.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/130403348",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:32 GMT",
+        "etag": "\"781ebd8ebca5d85085636f42d5633fc1\"",
+        "last-modified": "Sat, 14 Feb 2026 05:31:03 GMT"
+      },
+      "index": 12,
+      "purpose": "header:USGS_1m_x82y204_PR_PRVI_E_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x82y204_PR_PRVI_E_2018.tif",
+      "response_sha256": "9ca206b9520a432775f9a2928ff503f4285a7452b126a37d7c589766124ad445",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:32.973625+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0013.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/246389931",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:33 GMT",
+        "etag": "\"d095c12f5f27c6b87bf3e7a1cb73740a-47\"",
+        "last-modified": "Sat, 14 Feb 2026 05:32:00 GMT"
+      },
+      "index": 13,
+      "purpose": "header:USGS_1m_x17y204_PR_PRVI_G_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_G_2018/TIFF/USGS_1m_x17y204_PR_PRVI_G_2018.tif",
+      "response_sha256": "7e197d4e2d5c3848040818d3eb8ccfc437ef16cd4d4962d875970816e8f583c7",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:33.444505+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0014.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/254528193",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:33 GMT",
+        "etag": "\"ed0393a5c0f9fd530f8c7e905bae1b76-49\"",
+        "last-modified": "Sat, 14 Feb 2026 05:32:00 GMT"
+      },
+      "index": 14,
+      "purpose": "header:USGS_1m_x18y204_PR_PRVI_G_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_G_2018/TIFF/USGS_1m_x18y204_PR_PRVI_G_2018.tif",
+      "response_sha256": "9d65ccd5757148c190a2a327f801df8b1c6e3c67f049d3dd2a26ae27ba593028",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:33.898045+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0015.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/248742868",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:34 GMT",
+        "etag": "\"3accc3f896e2eb897f3391f4d8b1a471-48\"",
+        "last-modified": "Sat, 14 Feb 2026 05:32:16 GMT"
+      },
+      "index": 15,
+      "purpose": "header:USGS_1m_x81y204_PR_PRVI_G_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_G_2018/TIFF/USGS_1m_x81y204_PR_PRVI_G_2018.tif",
+      "response_sha256": "7ba7ca1cf536329b62ca66deec409e300be980cefe77a8b5c78c90eb95784c41",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:34.312268+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0016.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/261047198",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:34 GMT",
+        "etag": "\"1532c64315ff32e1c691ac7f9a07671d-50\"",
+        "last-modified": "Sat, 14 Feb 2026 05:32:16 GMT"
+      },
+      "index": 16,
+      "purpose": "header:USGS_1m_x82y204_PR_PRVI_G_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_G_2018/TIFF/USGS_1m_x82y204_PR_PRVI_G_2018.tif",
+      "response_sha256": "6a0032d9d225c612527cfc9eb70a272b79b2b9d3fc2f08261dd1ac1307ef2962",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:34.794244+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0017.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/101011996",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:35 GMT",
+        "etag": "\"45386c7dab5cce7c9aec4ef4024ed006\"",
+        "last-modified": "Sat, 14 Feb 2026 05:32:43 GMT"
+      },
+      "index": 17,
+      "purpose": "header:USGS_1m_x17y203_PR_PRVI_H_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x17y203_PR_PRVI_H_2018.tif",
+      "response_sha256": "1e5ee0919a51cb0d7f68ff691414ec07f442adfd6e2083fb6893430ad9620b90",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:35.257371+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0018.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/86788540",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:35 GMT",
+        "etag": "\"f10304eeafd7abdc99e64a079378d9a3\"",
+        "last-modified": "Sat, 14 Feb 2026 05:32:50 GMT"
+      },
+      "index": 18,
+      "purpose": "header:USGS_1m_x18y203_PR_PRVI_H_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x18y203_PR_PRVI_H_2018.tif",
+      "response_sha256": "8c9915483b17ad0e74011af08447e4d143cbb1b7a4d2a6e7874c737ae655b45c",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:35.656806+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0019.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/92208503",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:35 GMT",
+        "etag": "\"00a9840936b6bcb4a64c043996bd721f\"",
+        "last-modified": "Sat, 14 Feb 2026 05:33:51 GMT"
+      },
+      "index": 19,
+      "purpose": "header:USGS_1m_x81y203_PR_PRVI_H_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x81y203_PR_PRVI_H_2018.tif",
+      "response_sha256": "26cf62ae36fde41b92c63432ddabbb54e25528a68145944fa97251f1f01cf226",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:36.133494+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0020.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/81555922",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:36 GMT",
+        "etag": "\"c9db0d006caf2680c11a64d04cc56048\"",
+        "last-modified": "Sat, 14 Feb 2026 05:34:04 GMT"
+      },
+      "index": 20,
+      "purpose": "header:USGS_1m_x82y203_PR_PRVI_H_2018",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_H_2018/TIFF/USGS_1m_x82y203_PR_PRVI_H_2018.tif",
+      "response_sha256": "370144dceea0963554a45e8334f405437a59057551048d383661c88798957639",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:36.606710+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0021.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/395515006",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:36 GMT",
+        "etag": "\"3fdfb7b1acc2a4beb242d10f537bca90-76\"",
+        "last-modified": "Thu, 06 Aug 2026 19:54:57 GMT"
+      },
+      "index": 21,
+      "purpose": "header:USGS_1M_19_x81y203_PR_PuertoRicoUSVI_D24",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x81y203_PR_PuertoRicoUSVI_D24.tif",
+      "response_sha256": "3ac0e263895bce23b718ada273c9d0fb9620e9e1685b561abba21aee09e8980b",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:37.096569+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0022.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/409238854",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:37 GMT",
+        "etag": "\"de8f2310ee339d61952ad44ad684ac91-79\"",
+        "last-modified": "Thu, 06 Aug 2026 19:54:57 GMT"
+      },
+      "index": 22,
+      "purpose": "header:USGS_1M_19_x81y204_PR_PuertoRicoUSVI_D24",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x81y204_PR_PuertoRicoUSVI_D24.tif",
+      "response_sha256": "c26976a52460eeb4e56ad0c224c3b03c38ff91e965482f6d56b8ab0fcadd6a8f",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:37.631434+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0023.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/397770101",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:37 GMT",
+        "etag": "\"80c4fa49992c0df8c895246d61003f42-76\"",
+        "last-modified": "Thu, 06 Aug 2026 19:55:26 GMT"
+      },
+      "index": 23,
+      "purpose": "header:USGS_1M_19_x82y203_PR_PuertoRicoUSVI_D24",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x82y203_PR_PuertoRicoUSVI_D24.tif",
+      "response_sha256": "31b8d7981a7fd37baa35ad5d7e0443c1b2e178403d7c833bf14529bae68cd04d",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:38.139748+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0024.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/446317151",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:38 GMT",
+        "etag": "\"6d54cf0a9ab63b4330a9af405e8266be-86\"",
+        "last-modified": "Thu, 06 Aug 2026 19:55:30 GMT"
+      },
+      "index": 24,
+      "purpose": "header:USGS_1M_19_x82y204_PR_PuertoRicoUSVI_D24",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_19_x82y204_PR_PuertoRicoUSVI_D24.tif",
+      "response_sha256": "3dfb4e49689fd287c6c22a8d2091f7d945b8781674753427fcb7bdccc4b5ee64",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:38.616757+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0025.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/398785645",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:38 GMT",
+        "etag": "\"e873bf442314c4351be5c233fcde5ea7-77\"",
+        "last-modified": "Thu, 06 Aug 2026 19:57:33 GMT"
+      },
+      "index": 25,
+      "purpose": "header:USGS_1M_20_x17y203_PR_PuertoRicoUSVI_D24",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_20_x17y203_PR_PuertoRicoUSVI_D24.tif",
+      "response_sha256": "f937bf79b9b5753db2d75a52c84fa11570e2a07b537b79bd84ce4e89b9e144eb",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:39.057258+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0026.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/413696309",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:39 GMT",
+        "etag": "\"28bdeabb4ab010ea25b71e5666f3705b-79\"",
+        "last-modified": "Thu, 06 Aug 2026 19:57:34 GMT"
+      },
+      "index": 26,
+      "purpose": "header:USGS_1M_20_x17y204_PR_PuertoRicoUSVI_D24",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_20_x17y204_PR_PuertoRicoUSVI_D24.tif",
+      "response_sha256": "e82ccfa60b10ce7147910e0baab37936015e58858ce232ed4cb8245b5f66c218",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:39.566291+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0027.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/395464006",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:39 GMT",
+        "etag": "\"bcc251a33112b0e32df3ae854084fc70-76\"",
+        "last-modified": "Thu, 06 Aug 2026 19:57:41 GMT"
+      },
+      "index": 27,
+      "purpose": "header:USGS_1M_20_x18y203_PR_PuertoRicoUSVI_D24",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_20_x18y203_PR_PuertoRicoUSVI_D24.tif",
+      "response_sha256": "f17fb463997ceab43cbaff438582815819a894acb1ed0b82a5fa7fdeaa3e8762",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:40.025975+00:00",
+      "status": 206
+    },
+    {
+      "body_file": "req_0028.bin",
+      "byte_range": "0-65535",
+      "headers": {
+        "content-length": "65536",
+        "content-range": "bytes 0-65535/422405021",
+        "content-type": "image/tiff",
+        "date": "Thu, 26 Nov 2026 16:12:40 GMT",
+        "etag": "\"c260c7da4e43ff8e1b62bf6f88752c84-81\"",
+        "last-modified": "Thu, 06 Aug 2026 19:57:52 GMT"
+      },
+      "index": 28,
+      "purpose": "header:USGS_1M_20_x18y204_PR_PuertoRicoUSVI_D24",
+      "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PuertoRicoUSVI_D24/TIFF/USGS_1M_20_x18y204_PR_PuertoRicoUSVI_D24.tif",
+      "response_sha256": "ea27508efbcf631bd271681d8a55e7ce0b1f9a8788c2facbaf07b3b2d31133d6",
+      "response_size": 65536,
+      "retrieved_utc": "2026-11-26T16:12:40.510728+00:00",
+      "status": 206
+    }
+  ],
+  "requests_made": 29,
+  "schema_version": "spiderweb.geo_sar.discovery_receipt.v0.1"
+}

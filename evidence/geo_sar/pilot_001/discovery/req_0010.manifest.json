@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "content-length": "65536",
+    "content-range": "bytes 0-65535/120407718",
+    "content-type": "image/tiff",
+    "date": "Thu, 26 Nov 2026 16:12:31 GMT",
+    "etag": "\"bacd8d756473ada1ea1684cb8df8a68c\"",
+    "last-modified": "Sat, 14 Feb 2026 05:30:24 GMT"
+  },
+  "request_url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/PR_PRVI_E_2018/TIFF/USGS_1m_x18y204_PR_PRVI_E_2018.tif",
+  "response_sha256": "84c80e6887faabfdc3f25fb054e5f577428c748fda2d8e7cfdf3359b5f91e8db",
+  "response_size": 65536,
+  "retrieved_utc": "2026-11-26T16:12:32.163865+00:00",
+  "status": 206
+}

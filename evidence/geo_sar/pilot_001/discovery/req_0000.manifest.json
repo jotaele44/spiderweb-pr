@@ -1,0 +1,12 @@
+{
+  "headers": {
+    "content-length": "103590",
+    "content-type": "application/json",
+    "date": "Thu, 26 Nov 2026 16:12:27 GMT"
+  },
+  "request_url": "https://tnmaccess.nationalmap.gov/api/v1/products?datasets=Digital+Elevation+Model+%28DEM%29+1+meter&bbox=-66.05%2C18.3%2C-65.95%2C18.4&max=100&outputFormat=JSON",
+  "response_sha256": "cfc28ed554f4574f0d24aa66396ef165067de0135f0350eb82b59b3656ce1301",
+  "response_size": 103590,
+  "retrieved_utc": "2026-11-26T16:12:27.458545+00:00",
+  "status": 200
+}

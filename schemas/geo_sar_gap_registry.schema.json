@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/geo_sar_gap_registry.schema.json",
+  "title": "Spiderweb GEO-SAR gap registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pilot_id",
+    "taxonomy",
+    "gaps"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "spiderweb.geo_sar.gap_registry.v0.1"
+    },
+    "pilot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "taxonomy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "gap_id",
+          "class",
+          "title",
+          "state",
+          "geographic_scope",
+          "denominator",
+          "responsible_repository",
+          "supporting_evidence",
+          "resolution_criteria",
+          "outstanding_requirements",
+          "history"
+        ],
+        "properties": {
+          "gap_id": {
+            "type": "string",
+            "pattern": "^GEOSAR-[A-Z0-9-]+-GAP-[0-9]{3}$"
+          },
+          "class": {
+            "type": "string",
+            "pattern": "^G(0[1-9]|1[0-6])$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "enum": [
+              "OPEN",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "ACCEPTED_LIMITATION",
+              "SUPERSEDED"
+            ]
+          },
+          "geographic_scope": {
+            "type": "object"
+          },
+          "denominator": {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "responsible_repository": {
+            "type": "string",
+            "minLength": 1
+          },
+          "supporting_evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "resolution_criteria": {
+            "type": "string",
+            "minLength": 1
+          },
+          "outstanding_requirements": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "history": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "event",
+                "on"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

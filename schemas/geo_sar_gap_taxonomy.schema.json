@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/geo_sar_gap_taxonomy.schema.json",
+  "title": "Spiderweb GEO-SAR gap taxonomy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "federation_status",
+    "lifecycle_states",
+    "rule",
+    "existing_state_vocabularies",
+    "classes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "spiderweb.geo_sar.gap_taxonomy.v0.1"
+    },
+    "status": {
+      "enum": [
+        "CANDIDATE_LOCAL",
+        "FEDERATION_ADOPTED"
+      ]
+    },
+    "federation_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lifecycle_states": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "rule": {
+      "type": "string",
+      "minLength": 1
+    },
+    "existing_state_vocabularies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "symbol"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "symbol": {
+            "type": "string",
+            "minLength": 1
+          },
+          "covers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "classes": {
+      "type": "array",
+      "minItems": 16,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "title",
+          "denominator",
+          "default_responsible_repository"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^G(0[1-9]|1[0-6])$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "denominator": {
+            "enum": [
+              "DISCOVERY",
+              "GEOGRAPHIC_COVERAGE",
+              "ACQUISITION",
+              "INTEGRITY",
+              "COMPARISON",
+              "REVIEW",
+              "GAP_RESOLUTION",
+              "QUALIFICATION"
+            ]
+          },
+          "default_responsible_repository": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

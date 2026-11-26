@@ -1,0 +1,480 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/geo_sar_asset_ledger.schema.json",
+  "title": "Spiderweb GEO-SAR native asset ledger (pilot)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pilot_id",
+    "pilot_extent",
+    "segmentation",
+    "catalog",
+    "dataset_versions",
+    "registered_before_but_not_listed_now",
+    "assets",
+    "segments",
+    "limits"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "spiderweb.geo_sar.pilot_asset_ledger.v0.1"
+    },
+    "pilot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pilot_extent": {
+      "type": "object",
+      "required": [
+        "bbox_wgs84",
+        "bounds_epsg6566",
+        "area_m2"
+      ]
+    },
+    "segmentation": {
+      "type": "object",
+      "required": [
+        "grid_id",
+        "grid_version",
+        "level",
+        "segment_count",
+        "rule"
+      ]
+    },
+    "catalog": {
+      "type": "object",
+      "required": [
+        "request_url",
+        "snapshot_sha256",
+        "reported_total",
+        "items_returned",
+        "denominator_state"
+      ],
+      "properties": {
+        "denominator_state": {
+          "enum": [
+            "CLOSED",
+            "OPEN"
+          ]
+        }
+      }
+    },
+    "dataset_versions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "dataset_version_id",
+          "asset_count",
+          "header_verified",
+          "native_crs",
+          "total_size_bytes"
+        ]
+      }
+    },
+    "registered_before_but_not_listed_now": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "asset_id",
+          "source_id",
+          "dataset_id",
+          "dataset_version_id",
+          "manifestation_class",
+          "native_identity",
+          "source_provided",
+          "verified",
+          "integrity",
+          "availability",
+          "storage",
+          "discrepancies",
+          "prior_registration",
+          "temporal",
+          "dataset_catalog_id",
+          "prior_acquisition"
+        ],
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dataset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dataset_version_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "manifestation_class": {
+            "enum": [
+              "CANONICAL",
+              "ALTERNATE_COMPLETE",
+              "HISTORICAL"
+            ]
+          },
+          "native_identity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "original_filename",
+              "provider_asset_id",
+              "provider_tile_id",
+              "source_url",
+              "catalog_snapshot_sha256"
+            ],
+            "properties": {
+              "original_filename": {
+                "type": "string",
+                "minLength": 1
+              },
+              "provider_asset_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "provider_tile_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_url": {
+                "type": "string",
+                "pattern": "^https://"
+              },
+              "catalog_snapshot_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "source_provided": {
+            "type": "object",
+            "required": [
+              "bounding_box_wgs84",
+              "size_bytes",
+              "publication_date"
+            ],
+            "properties": {
+              "bounding_box_wgs84": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "size_bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          },
+          "verified": {
+            "type": "object",
+            "required": [
+              "verification_status",
+              "method"
+            ],
+            "properties": {
+              "verification_status": {
+                "enum": [
+                  "UNVERIFIED",
+                  "HEADER_VERIFIED",
+                  "ARTIFACT_VERIFIED"
+                ]
+              },
+              "native_crs": {
+                "type": "string",
+                "pattern": "^EPSG:[0-9]+$"
+              },
+              "native_footprint": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "header_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "integrity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "expected_size_bytes",
+              "expected_checksum",
+              "computed_sha256",
+              "verification_status"
+            ],
+            "properties": {
+              "expected_size_bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "expected_checksum": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "computed_sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "verification_status": {
+                "enum": [
+                  "NOT_ACQUIRED",
+                  "VERIFIED",
+                  "FAILED",
+                  "QUARANTINED"
+                ]
+              }
+            }
+          },
+          "availability": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "discovery_status",
+              "acquisition_status",
+              "licensing_status",
+              "access_restrictions"
+            ],
+            "properties": {
+              "discovery_status": {
+                "type": "string",
+                "minLength": 1
+              },
+              "acquisition_status": {
+                "enum": [
+                  "NOT_ACQUIRED",
+                  "QUEUED",
+                  "PARTIAL",
+                  "ACQUIRED"
+                ]
+              },
+              "licensing_status": {
+                "type": "string",
+                "minLength": 1
+              },
+              "access_restrictions": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "storage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact_id",
+              "local_path"
+            ],
+            "properties": {
+              "artifact_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "local_path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "discrepancies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "prior_registration": {
+            "oneOf": [
+              {
+                "const": "ABSENT"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "registry",
+                  "differences"
+                ]
+              }
+            ]
+          },
+          "dataset_catalog_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "temporal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "observation_start",
+              "observation_end",
+              "publication_date",
+              "source"
+            ],
+            "properties": {
+              "observation_start": {
+                "type": "string",
+                "format": "date"
+              },
+              "observation_end": {
+                "type": "string",
+                "format": "date"
+              },
+              "publication_date": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          },
+          "prior_acquisition": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "receipt",
+                  "site",
+                  "acquired_on",
+                  "computed_sha256",
+                  "bytes",
+                  "object_tag_then",
+                  "object_tag_now",
+                  "object_unchanged_since",
+                  "size_agrees",
+                  "bytes_held_in_this_checkout"
+                ],
+                "properties": {
+                  "receipt": {
+                    "type": "string"
+                  },
+                  "site": {
+                    "type": "string"
+                  },
+                  "acquired_on": {
+                    "type": "string"
+                  },
+                  "computed_sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "bytes": {
+                    "type": "integer"
+                  },
+                  "object_tag_then": {
+                    "type": "string"
+                  },
+                  "object_tag_now": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "object_unchanged_since": {
+                    "type": "boolean"
+                  },
+                  "size_agrees": {
+                    "type": "boolean"
+                  },
+                  "bytes_held_in_this_checkout": {
+                    "const": false
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "segments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "segment_id",
+          "bounds_epsg6566",
+          "fraction_inside_pilot_extent",
+          "dataset_versions"
+        ],
+        "properties": {
+          "segment_id": {
+            "type": "string",
+            "pattern": "^PRG2:L[0-3]:R[0-9]{3}:C[0-9]{4}$"
+          },
+          "bounds_epsg6566": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "fraction_inside_pilot_extent": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+          },
+          "dataset_versions": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    }
+  }
+}

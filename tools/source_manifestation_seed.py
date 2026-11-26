@@ -123,7 +123,17 @@ def read_geotiff_footprint(url: str, *, timeout: int = 120) -> Footprint:
     )
     if response.status_code not in (200, 206):
         raise HeaderError(f"HTTP {response.status_code} reading header of {url}")
-    tags, order = _read_tags(response.content)
+    return footprint_from_header(response.content, label=url)
+
+
+def footprint_from_header(blob: bytes, *, label: str) -> Footprint:
+    """Parse georeferencing from header bytes that were already retrieved.
+
+    Split out so a caller that keeps the exact bytes it fetched can derive the
+    footprint from those same bytes, offline, as often as it likes.
+    """
+    url = label
+    tags, order = _read_tags(blob)
 
     width = (_values(tags, order, TAG_IMAGE_WIDTH) or [None])[0]
     height = (_values(tags, order, TAG_IMAGE_LENGTH) or [None])[0]
