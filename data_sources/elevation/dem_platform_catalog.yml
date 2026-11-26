@@ -24,7 +24,7 @@
       "control": "Data used to adjust or calibrate heights.",
       "geolocation": "Data used only to place pixels (terrain correction)."
     },
-    "vertical_datum": "Normalised labels: EGM96, EGM2008, PRVD02, NAVD88, MHW, MLLW, MSL (assumed), undeclared. vertical_datum_as_stated keeps the source's own words; vertical_datum_basis, where present, cites them."
+    "vertical_datum": "Normalised labels: EGM96, EGM2008, PRVD02, NAVD88, MHW, MLLW, MSL (assumed), undeclared. vertical_datum_as_stated keeps the source's own words; vertical_datum_basis, where present, cites them. geoid_model, where present, names the hybrid geoid through which a survey reached a leveled datum (GEOID12B, GEOID18); two products on one datum through different geoids are kept as separate layers of one group."
   },
   "products": [
     {
@@ -334,8 +334,9 @@
         "start": "2018-04-17",
         "end": "2019-04-19"
       },
-      "vertical_datum": "NAVD88",
-      "vertical_datum_as_stated": "NAVD88 (product abstract sentence; no structured element)",
+      "vertical_datum": "PRVD02",
+      "vertical_datum_as_stated": "NAVD88 in the product abstract and the 2018 ground control report; PRVD02 (GEOID12B) in the vendor metadata",
+      "geoid_model": "GEOID12B",
       "horizontal_datum": "NAD83 (UTM)",
       "native_resolution": "1 m",
       "acquisition_roots": [
@@ -405,18 +406,38 @@
         "evidence_tier": "T1",
         "sources": [
           {
-            "source": "USGS ScienceBase item metadata of the 2018 tiles (projects A, D, E, F, H) in data_sources/elevation/lidar_comparison_tiles.json",
+            "source": "Vendor FGDC metadata of the 2018 collection (https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_<A,D,E,F,H>_2018/reports/vendor_provided_xml/DEM_1.3v2_PR_USVI_Lidar_2018.xml)",
+            "location": "abstract; spref/vertdef/altsys/altdatum",
+            "statement": "vertical datum of PRVD02 (GEOID12B); altdatum: Puerto Rico Vertical Datum of 2002, Geoid 12B"
+          },
+          {
+            "source": "Vendor FGDC metadata of the 2018 classified point cloud (…/reports/vendor_provided_xml/ClassifiedPointCloud_1.3v2_PR_USVI_Lidar_2018.xml, every block)",
+            "location": "lidar/ldrinfo/ldrgeoid",
+            "statement": "National Geodetic Survey (NGS) Geoid12B"
+          },
+          {
+            "source": "2018 ground control report (https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_A_2018/reports/Appendix_B_Ground_Control_Survey_Report.pdf)",
+            "location": "section 1.1",
+            "statement": "Final Vertical elevations are referenced to NAVD88 in meters using Geoid model 2012B (Geoid12B)."
+          },
+          {
+            "source": "USGS ScienceBase item metadata of the 2018 tiles in data_sources/elevation/lidar_comparison_tiles.json",
             "location": "item body text",
             "statement": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
           },
           {
             "source": "DEM vs 3DEP lidar comparison: 2018 lidar minus CUDEM 1/9\" (PRVD02), slopes under 5 degrees",
             "location": "datum_test_lidar_2018_minus_cudem_ninth_low_slope",
-            "statement": "Medians -0.015 to +0.062 m at eight sites; the heights behave as PRVD02 (registry conflict 3dep_vertical_datum_label)."
+            "statement": "Medians -0.015 to +0.062 m at eight sites; the heights behave as PRVD02."
+          },
+          {
+            "source": "D24 NVA checkpoints (USGS, PRVD02 through GEOID18) sampled in both DEMs",
+            "location": "checkpoints.json summary",
+            "statement": "91 NVA checkpoints: D24 minus checkpoint median -0.006 m (RMSE 0.049 m); 2018 minus checkpoint on a GEOID18 basis median +0.029 m."
           }
         ],
-        "receipt": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
-        "checked": "2026-11-24"
+        "receipt": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
+        "checked": "2026-11-26"
       }
     },
     {
@@ -442,8 +463,9 @@
         "start": "2023-12-27",
         "end": "2025-03-20"
       },
-      "vertical_datum": "NAVD88",
-      "vertical_datum_as_stated": "NAVD88 (product abstract sentence; no structured element)",
+      "vertical_datum": "PRVD02",
+      "vertical_datum_as_stated": "NAVD88 in the product abstract; PRVD02 height - Geoid18 in the LPC reports and the report of survey",
+      "geoid_model": "GEOID18",
       "horizontal_datum": "NAD83 (UTM)",
       "native_resolution": "1 m",
       "acquisition_roots": [
@@ -483,18 +505,28 @@
         "evidence_tier": "T1",
         "sources": [
           {
+            "source": "Final LPC report of each D24 part (https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRicoUSVI_D24/PR_PuertoRicoUSVI_<1-6>_D24/reports/USGS_PR_PuertoRicoUSVI_<n>_D24_Final_LPC_Report.txt)",
+            "location": "VERT_CS of the coordinate reference system",
+            "statement": "PRVD02 height - Geoid18 (Meters) (part 5, the Virgin Islands: VIVD09 height - Geoid18)"
+          },
+          {
+            "source": "D24 report of survey (https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRicoUSVI_D24/PR_PuertoRicoUSVI_2_D24/reports/lidar_mapping_report/survey_report/Puerto Rico and USVI USGS report of survey.pdf)",
+            "location": "Control",
+            "statement": "The vertical datum was the Puerto Rico Vertical Datum of 2002 (PRVD02), realized with the GEOID18 geoid model from the National Geodetic Survey (NGS)."
+          },
+          {
             "source": "USGS ScienceBase item metadata of the D24 tiles in data_sources/elevation/lidar_comparison_tiles.json",
             "location": "item body text",
             "statement": "referenced to the North American Vertical Datum of 1988 (NAVD88)"
           },
           {
-            "source": "DEM vs 3DEP lidar comparison: 2018 lidar minus CUDEM 1/9\" (PRVD02), slopes under 5 degrees",
-            "location": "datum_test_lidar_2018_minus_cudem_ninth_low_slope",
-            "statement": "Medians -0.015 to +0.062 m at eight sites; the heights behave as PRVD02 (registry conflict 3dep_vertical_datum_label)."
+            "source": "D24 NVA checkpoints (USGS, PRVD02 through GEOID18) sampled in both DEMs",
+            "location": "checkpoints.json summary",
+            "statement": "91 NVA checkpoints: D24 minus checkpoint median -0.006 m (RMSE 0.049 m); 2018 minus checkpoint on a GEOID18 basis median +0.029 m."
           }
         ],
-        "receipt": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
-        "checked": "2026-11-24"
+        "receipt": "evidence/dem_sources/3dep_vertical_realization_2026-11-26/checkpoints.json",
+        "checked": "2026-11-26"
       }
     },
     {
@@ -612,8 +644,9 @@
         "start": "2018-04-17",
         "end": "2019-04-19"
       },
-      "vertical_datum": "NAVD88",
-      "vertical_datum_as_stated": "NAVD88 (USIEI)",
+      "vertical_datum": "PRVD02",
+      "vertical_datum_as_stated": "NAVD88 (USIEI); PRVD02 (GEOID12B) in the vendor metadata of the classified point cloud",
+      "geoid_model": "GEOID12B",
       "horizontal_datum": "NAD83",
       "native_resolution": "0.35 m point spacing",
       "acquisition_roots": [
@@ -633,6 +666,28 @@
         "evidence_tier": "T2",
         "source": "USIEI attributes SourceDataType Lidar-Topo, QL1, vertical RMSE 7.2 cm (evidence/access_points/source_discovery/2026-11-16/raw/point_buffer_inap_pr_000003/USIEI_TOPOGRAPHIC_LIDAR_00.bin); the aircraft is not named",
         "checked": "2026-11-23"
+      },
+      "vertical_datum_basis": {
+        "evidence_tier": "T1",
+        "sources": [
+          {
+            "source": "Vendor FGDC metadata of the 2018 classified point cloud (…/reports/vendor_provided_xml/ClassifiedPointCloud_1.3v2_PR_USVI_Lidar_2018.xml, every block)",
+            "location": "lidar/ldrinfo/ldrgeoid",
+            "statement": "National Geodetic Survey (NGS) Geoid12B"
+          },
+          {
+            "source": "Vendor FGDC metadata of the 2018 collection (https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_<A,D,E,F,H>_2018/reports/vendor_provided_xml/DEM_1.3v2_PR_USVI_Lidar_2018.xml)",
+            "location": "abstract; spref/vertdef/altsys/altdatum",
+            "statement": "vertical datum of PRVD02 (GEOID12B); altdatum: Puerto Rico Vertical Datum of 2002, Geoid 12B"
+          },
+          {
+            "source": "2018 ground control report (https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/PR_PuertoRico_VirginIslands_2018_D18/PR_PRVI_A_2018/reports/Appendix_B_Ground_Control_Survey_Report.pdf)",
+            "location": "section 1.1",
+            "statement": "Final Vertical elevations are referenced to NAVD88 in meters using Geoid model 2012B (Geoid12B)."
+          }
+        ],
+        "receipt": "evidence/dem_sources/3dep_vertical_realization_2026-11-26/geoid_statements.json",
+        "checked": "2026-11-26"
       }
     },
     {
@@ -1888,13 +1943,27 @@
     {
       "conflict_id": "3dep_vertical_datum_label",
       "status": "open",
-      "description": "The ScienceBase metadata of every 3DEP 1 m tile used in the lidar comparison (2018 projects A, D, E, F, H, and D24) says the heights are referenced to NAVD88, USGS's programme-wide wording; NAVD88 is not defined in Puerto Rico. Over low-slope cells the 2018 lidar agrees with CUDEM 1/9\" (PRVD02) at all eight sites, medians -0.015 to +0.062 m, so the heights behave as PRVD02. The catalog keeps the stated NAVD88.",
+      "description": "The ScienceBase abstract of every 3DEP 1 m tile used in the lidar comparison (2018 projects A, D, E, F, H, and D24) and the 2018 ground control report say the heights are referenced to NAVD88, which is not realized in Puerto Rico. The surveys' project metadata says PRVD02: the 2018 vendor metadata 'PRVD02 (GEOID12B)', the D24 LPC reports 'PRVD02 height - Geoid18'. The heights agree: 2018 lidar minus CUDEM 1/9\" (PRVD02) on low slopes has medians -0.015 to +0.062 m at all eight sites, and D24 meets its PRVD02 checkpoints (median -0.006 m). The catalog records PRVD02 with each survey's geoid and keeps the NAVD88 wording in vertical_datum_as_stated.",
       "observations": [
         {
           "path": "data_sources/elevation/lidar_comparison_tiles.json",
           "id": "PR_PRVI_A_2018",
           "field": "stated_vertical_datum",
           "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_A_2018",
+          "field": "project_vertical_datum",
+          "value": "PRVD02",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_A_2018",
+          "field": "stated_geoid",
+          "value": "GEOID12B",
           "check": "equals"
         },
         {
@@ -1906,9 +1975,37 @@
         },
         {
           "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_D_2018",
+          "field": "project_vertical_datum",
+          "value": "PRVD02",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_D_2018",
+          "field": "stated_geoid",
+          "value": "GEOID12B",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
           "id": "PR_PRVI_E_2018",
           "field": "stated_vertical_datum",
           "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_E_2018",
+          "field": "project_vertical_datum",
+          "value": "PRVD02",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_E_2018",
+          "field": "stated_geoid",
+          "value": "GEOID12B",
           "check": "equals"
         },
         {
@@ -1920,9 +2017,37 @@
         },
         {
           "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_F_2018",
+          "field": "project_vertical_datum",
+          "value": "PRVD02",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_F_2018",
+          "field": "stated_geoid",
+          "value": "GEOID12B",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
           "id": "PR_PRVI_H_2018",
           "field": "stated_vertical_datum",
           "value": "NAVD88",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_H_2018",
+          "field": "project_vertical_datum",
+          "value": "PRVD02",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PRVI_H_2018",
+          "field": "stated_geoid",
+          "value": "GEOID12B",
           "check": "equals"
         },
         {
@@ -1933,56 +2058,70 @@
           "check": "equals"
         },
         {
-          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PuertoRicoUSVI_D24",
+          "field": "project_vertical_datum",
+          "value": "PRVD02",
+          "check": "equals"
+        },
+        {
+          "path": "data_sources/elevation/lidar_comparison_tiles.json",
+          "id": "PR_PuertoRicoUSVI_D24",
+          "field": "stated_geoid",
+          "value": "GEOID18",
+          "check": "equals"
+        },
+        {
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
           "id": "north_karst_hatillo",
           "field": "median_m",
           "value": 0.15,
           "check": "abs_at_most"
         },
         {
-          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
           "id": "central_cordillera_cerro_de_punta",
           "field": "median_m",
           "value": 0.15,
           "check": "abs_at_most"
         },
         {
-          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
           "id": "el_yunque",
           "field": "median_m",
           "value": 0.15,
           "check": "abs_at_most"
         },
         {
-          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
           "id": "dry_south_guanica",
           "field": "median_m",
           "value": 0.15,
           "check": "abs_at_most"
         },
         {
-          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
           "id": "urban_san_juan",
           "field": "median_m",
           "value": 0.15,
           "check": "abs_at_most"
         },
         {
-          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
           "id": "west_mayaguez",
           "field": "median_m",
           "value": 0.15,
           "check": "abs_at_most"
         },
         {
-          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
           "id": "east_central_cayey",
           "field": "median_m",
           "value": 0.15,
           "check": "abs_at_most"
         },
         {
-          "path": "evidence/dem_sources/lidar_comparison_2026-11-24/comparison.json",
+          "path": "evidence/dem_sources/lidar_comparison_2026-11-26/comparison.json",
           "id": "northeast_carolina",
           "field": "median_m",
           "value": 0.15,

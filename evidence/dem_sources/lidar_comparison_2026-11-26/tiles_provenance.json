@@ -7,7 +7,7 @@
       "bytes": 224366860,
       "sha256": "bbe1469f923fb0b722b9e4524a005d64a211c3d41cea0a9ccff9bfc2d13fe0dc",
       "etag": "fa08474a90618a3a2066389456367a59-43",
-      "seconds": 11.4
+      "seconds": 14.8
     },
     {
       "survey": "d24",
@@ -16,7 +16,7 @@
       "bytes": 222031032,
       "sha256": "cd5394cdaed8208efa2404631dc2eee6a3085475bfc2a2fd41f483cbd336a132",
       "etag": "0b362cbe7ba6051bd0d4dd833297cc7e-43",
-      "seconds": 9.1
+      "seconds": 8.6
     }
   ],
   "central_cordillera_cerro_de_punta": [
@@ -27,7 +27,7 @@
       "bytes": 375135020,
       "sha256": "2dd9dd32e414027be4b62b08eb90adbcc877ff7ef92a1e9b8906a8dcc9ef2e50",
       "etag": "4c582bcc1dd8ae28e991ee6c050e9ac5-72",
-      "seconds": 29.5
+      "seconds": 36.5
     },
     {
       "survey": "d24",
@@ -36,7 +36,7 @@
       "bytes": 371485446,
       "sha256": "18b127efc94b86c22b198da65497d85bc445769bf2c125f1b3e79bbef9cf5c12",
       "etag": "a37df6da75027009c224716eab7bf4cf-71",
-      "seconds": 15.8
+      "seconds": 19.6
     }
   ],
   "el_yunque": [
@@ -47,7 +47,7 @@
       "bytes": 204297781,
       "sha256": "c0bfa3fa9112089cc03253d85a70a6c588e6d93da5b78f1cfaf1a3e8dcd7b157",
       "etag": "7471f0d27f8332f1f9e796ea212beb81",
-      "seconds": 8.1
+      "seconds": 8.9
     },
     {
       "survey": "d24",
@@ -56,7 +56,7 @@
       "bytes": 394874905,
       "sha256": "f87efcf81b7be5791a6e1c5d2ac59f8c26c78ff43298e28cc8b3a918b5cebb0b",
       "etag": "c4a9a664d52ffc5bc37c3dbf2cb5a37b-76",
-      "seconds": 44.6
+      "seconds": 55.6
     }
   ],
   "dry_south_guanica": [
@@ -67,7 +67,7 @@
       "bytes": 167981404,
       "sha256": "80342354f9e15c47d6ce798d4a43582df73a64a9284475e959f6caa8ad12258f",
       "etag": "8f982353649d48199a2ca574128240ca",
-      "seconds": 24.0
+      "seconds": 6.9
     },
     {
       "survey": "d24",
@@ -76,7 +76,7 @@
       "bytes": 166057557,
       "sha256": "a7e725b8dcc428bd1cc93866fd9f81d1157d6f5aa236a27884fe27c060f80a3e",
       "etag": "95454ca17c9ad8afcc1bf95654d99589",
-      "seconds": 43.7
+      "seconds": 7.0
     }
   ],
   "urban_san_juan": [
@@ -87,7 +87,7 @@
       "bytes": 132581326,
       "sha256": "9326b37308c1b61bc80f71d26d14788ab69e4fe6b08cbde33feda445d52bc435",
       "etag": "c6a7f7abff011d96fc6be46492c466c5",
-      "seconds": 6.2
+      "seconds": 5.7
     },
     {
       "survey": "d24",
@@ -96,7 +96,7 @@
       "bytes": 132459817,
       "sha256": "56bbb76f3434247a6b9df4893ae846f72609acb15529dca5765d945692517962",
       "etag": "6c28ac7ea3f5f8da340956c051dfd96d",
-      "seconds": 5.8
+      "seconds": 5.5
     }
   ],
   "west_mayaguez": [
@@ -107,7 +107,7 @@
       "bytes": 121109682,
       "sha256": "0571504873f4ebfd8e233e20979038b2aeebd8566216d23c5571ec41b34f4d36",
       "etag": "c3979e0f3f4b1811a99c8db411c8b52d",
-      "seconds": 8.2
+      "seconds": 5.4
     },
     {
       "survey": "2018",
@@ -116,7 +116,7 @@
       "bytes": 166560582,
       "sha256": "a7bc18c8cf0dab36b69d2cbd3b935d52c700e57e6d5a27f2747e46e012ef0761",
       "etag": "abb5e4eb6aa3637e2773cb3effefc1a2",
-      "seconds": 10.9
+      "seconds": 7.2
     },
     {
       "survey": "d24",
@@ -125,7 +125,7 @@
       "bytes": 281149116,
       "sha256": "c04b1432ca571ebe99f5b66e02e3eb2a667288bc1ae1ce9eebd62a2150b14a3c",
       "etag": "de5ee61834fe7a6f6685f02b482b5141-54",
-      "seconds": 19.9
+      "seconds": 20.9
     }
   ],
   "east_central_cayey": [
@@ -136,7 +136,7 @@
       "bytes": 278314732,
       "sha256": "29ef3f698ac671c9115a3f81df4fcdefe2b6fd7759009496dcbf62604ee0687e",
       "etag": "205b8efa2dc124077d2b8b5af081e322-54",
-      "seconds": 14.0
+      "seconds": 20.8
     },
     {
       "survey": "d24",
@@ -145,7 +145,7 @@
       "bytes": 361150542,
       "sha256": "5f1f80b979d1439af126a7980794d94c93a670fda914ae75f39baf2425949251",
       "etag": "66f02043d4134a8f3e4f13dc45110f29-69",
-      "seconds": 45.2
+      "seconds": 82.1
     }
   ],
   "northeast_carolina": [
@@ -156,7 +156,7 @@
       "bytes": 309924822,
       "sha256": "a77ee96d710e736f2d644beb0eaa7437300b75b9469b9746186d8045c6811b49",
       "etag": "c6a7623b4f434a9ecd07e190495c1ff5-60",
-      "seconds": 78.9
+      "seconds": 12.5
     },
     {
       "survey": "2018",
@@ -165,7 +165,7 @@
       "bytes": 92208503,
       "sha256": "e9cd4242846097998d9f7270b2474cdc82ba86457cad77b8d333624f1e324818",
       "etag": "00a9840936b6bcb4a64c043996bd721f",
-      "seconds": 6.5
+      "seconds": 4.2
     },
     {
       "survey": "d24",
@@ -174,7 +174,7 @@
       "bytes": 395515006,
       "sha256": "3265e52fd002e8751f62915e8cc8bc59ab4883241752a3202deef145c88ee7d3",
       "etag": "3fdfb7b1acc2a4beb242d10f537bca90-76",
-      "seconds": 15.7
+      "seconds": 15.5
     }
   ]
 }

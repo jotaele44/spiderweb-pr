@@ -11,16 +11,28 @@ GitHub Release using the matching section below (T6-53).
 
 ### Added
 - Every gridded DEM compared against 3DEP 1 m lidar at eight stratified sites
-  (`docs/sources/dem_lidar_comparison.md`, `scripts/run_dem_vs_3dep_lidar.py`,
-  sites in `data_sources/elevation/lidar_comparison_tiles.json`, receipt under
-  `evidence/dem_sources/lidar_comparison_2026-11-24/`). Lidar is averaged onto each
-  DEM's own grid and moved to its datum through GEOID18, a NAD83(2011) to ITRF2014
-  Helmert at the survey epoch and EGM96 or EGM2008. Median DEM minus lidar: NASADEM
-  +1.88 m, SRTMGL1 +3.63 m, AW3D30 +4.16 m, COP30 +4.39 m, CUDEM 1/9" -0.02 m;
-  D24 minus 2018 lidar -0.14 m. The 3DEP tiles state NAVD88 but agree with CUDEM
-  (PRVD02) to within 0.062 m, recorded as conflict `3dep_vertical_datum_label`; the
-  conflict checker gains an `abs_at_most` check. The 2018 3DEP product is now
-  `usgs_3dep_1m_pr_prvi_2018` (TNM projects PR_PRVI_A_2018 to PR_PRVI_H_2018).
+  (`docs/sources/dem_lidar_comparison.md`, `scripts/run_dem_vs_3dep_lidar.py`, sites
+  in `data_sources/elevation/lidar_comparison_tiles.json`, receipt under
+  `evidence/dem_sources/lidar_comparison_2026-11-26/`). Lidar is averaged onto each
+  DEM's own grid and moved to its datum through its survey's own geoid (GEOID12B for
+  2018, GEOID18 for D24), a NAD83(2011) to ITRF2014 Helmert at the survey epoch and
+  EGM96 or EGM2008. Median DEM minus lidar: NASADEM +1.86 m, SRTMGL1 +3.61 m, AW3D30
+  +4.14 m, COP30 +4.38 m, CUDEM 1/9" -0.02 m; D24 minus 2018 lidar -0.14 m as
+  published and -0.15 m on one geoid. The conflict checker gains an `abs_at_most`
+  check. The 2018 3DEP product is now `usgs_3dep_1m_pr_prvi_2018` (TNM projects
+  PR_PRVI_A_2018 to PR_PRVI_H_2018).
+- Each 3DEP survey's geoid realization, from its own project metadata
+  (`scripts/check_3dep_vertical_realization.py`, receipt under
+  `evidence/dem_sources/3dep_vertical_realization_2026-11-26/`): 2018 is PRVD02
+  through GEOID12B (vendor FGDC metadata of blocks A, D, E, F, H), D24 is PRVD02
+  through GEOID18 (LPC reports of all six parts). The catalog now records PRVD02
+  with a new optional `geoid_model` for the 2018 and D24 DEMs and the 2018 point
+  cloud, keeps the NAVD88 wording as stated, and holds conflict
+  `3dep_vertical_datum_label` open. At USGS's 91 D24 checkpoints, D24 is -0.006 m
+  (median) and 2018 on a GEOID18 basis +0.029 m. The merge policy keeps products on
+  one datum but different geoids in one group as separate layers
+  (`same_datum_separate_geoid_layers`, with `layer_groups()`), so their difference
+  stays measurable.
 - DEM sources broken down by acquisition platform
   (`docs/sources/dem_sources_by_platform.md`). The catalog
   `data_sources/elevation/dem_platform_catalog.yml` holds 30 products in four
@@ -78,6 +90,11 @@ GitHub Release using the matching section below (T6-53).
   `docs/ACCESS_POINT_REGISTRIES.md`. No code or data changed.
 
 ### Fixed
+- The DEM vs 3DEP lidar comparison moved the 2018 lidar off PRVD02 with GEOID18
+  (EPSG:9230), the geoid the D24 survey used, instead of the survey's own GEOID12B
+  (EPSG:7646, which pyproj leaves out as superseded). It now picks each survey's
+  operation from `stated_geoid`, and the comparison was re-run; the 2018 offsets
+  changed by GEOID12B - GEOID18 (-0.08 to +0.13 m at the D24 checkpoints).
 - Rerunning the SRTMGL1 or OpenTopography `fetch` no longer drops earlier records
   from the cache's `provenance.json`: cache hits keep their download time and host
   while the sha256 is unchanged, and records outside a narrower selection are kept

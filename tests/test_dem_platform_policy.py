@@ -8,11 +8,15 @@ import pytest
 
 pytest.importorskip("jsonschema")
 
-from source_adapters.dem_platform.catalog import load_catalog, products_by_id  # noqa: E402
+from source_adapters.dem_platform.catalog import (  # noqa: E402
+    load_catalog,
+    products_by_id,
+)
 from source_adapters.dem_platform.policy import (  # noqa: E402
     evaluate_platform_mix,
     geolocation_dependencies,
     independent,
+    layer_groups,
     pairwise_independence,
     shared_acquisition_roots,
 )
@@ -46,10 +50,47 @@ def test_spaceborne_and_airborne_stay_separate(products: dict) -> None:
     assert "mixed vertical datums" in joined
 
 
-def test_two_lidar_epochs_on_one_datum_pass(products: dict) -> None:
+def test_two_lidar_epochs_stay_separate_layers_of_one_group(products: dict) -> None:
+    # Both are PRVD02, reached through different geoids (2018: GEOID12B, D24: GEOID18).
     result = evaluate_platform_mix([products["usgs_3dep_1m_pr_prvi_2018"], products["usgs_3dep_1m_pr_puertoricousvi_d24"]])
     assert result.review_status == "pass"
+    assert result.merge_policy == "same_datum_separate_geoid_layers"
+    assert result.vertical_datums == ("PRVD02",)
+    assert result.geoid_models == ("GEOID12B", "GEOID18")
+    assert result.reasons == ()
+    assert result.notes and "difference them before any merge" in result.notes[0]
+
+
+def test_same_geoid_products_merge_as_before(products: dict) -> None:
+    d24 = products["usgs_3dep_1m_pr_puertoricousvi_d24"]
+    twin = copy.deepcopy(d24)
+    twin["source_id"] = "d24_twin"
+    result = evaluate_platform_mix([d24, twin])
     assert result.merge_policy == "same_platform_class_same_surface_same_datum"
+    assert result.notes == ()
+
+
+def test_undeclared_geoid_counts_as_a_separate_realization(products: dict) -> None:
+    d24 = products["usgs_3dep_1m_pr_puertoricousvi_d24"]
+    unknown = copy.deepcopy(d24)
+    unknown["source_id"], unknown["geoid_model"] = "d24_unknown_geoid", None
+    result = evaluate_platform_mix([d24, unknown])
+    assert result.merge_policy == "same_datum_separate_geoid_layers"
+    assert result.geoid_models == ("GEOID18", "undeclared")
+
+
+def test_layer_groups_split_by_geoid_within_one_group(products: dict) -> None:
+    selected = [products[i] for i in ("usgs_3dep_1m_pr_prvi_2018", "usgs_3dep_1m_pr_puertoricousvi_d24", "nasa_srtmgl1_v003")]
+    groups = layer_groups(selected)
+    assert groups[("airborne", "bare_earth", "PRVD02")] == {
+        "GEOID12B": ("usgs_3dep_1m_pr_prvi_2018",), "GEOID18": ("usgs_3dep_1m_pr_puertoricousvi_d24",)}
+    assert groups[("spaceborne", "radar_scattering_surface", "EGM96")] == {"undeclared": ("nasa_srtmgl1_v003",)}
+
+
+def test_policy_dict_keeps_its_keys(products: dict) -> None:
+    d = evaluate_platform_mix([products["nasa_srtmgl1_v003"]]).as_dict()
+    assert {"source_ids", "platform_classes", "surface_models", "vertical_datums", "merge_policy", "review_status", "reasons"} <= d.keys()
+    assert d["geoid_models"] == ["undeclared"] and d["notes"] == []
 
 
 def test_compiled_products_are_never_merged_as_independent(products: dict) -> None:

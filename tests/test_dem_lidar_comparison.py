@@ -13,7 +13,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "scripts" / "run_dem_vs_3dep_lidar.py"
 CONFIG = REPO_ROOT / "data_sources" / "elevation" / "lidar_comparison_tiles.json"
-RECEIPT = REPO_ROOT / "evidence" / "dem_sources" / "lidar_comparison_2026-11-24"
+RECEIPT = REPO_ROOT / "evidence" / "dem_sources" / "lidar_comparison_2026-11-26"
 SPACEBORNE = ("nasa_srtmgl1_v003", "nasa_nasadem_hgt_v001", "copernicus_glo30_dem", "jaxa_aw3d30")
 
 
@@ -141,6 +141,20 @@ def test_open_opendap_refuses_zero_attempts(fake_netcdf) -> None:
     assert fake_netcdf.Dataset.calls == 0
 
 
+def test_survey_geoids_come_from_the_config() -> None:
+    cfg = json.loads(CONFIG.read_text())
+    assert mod.survey_geoids(cfg) == {"2018": "GEOID12B", "d24": "GEOID18"}
+    mixed = json.loads(CONFIG.read_text())
+    mixed["sites"][0]["lidar_2018"][0]["stated_geoid"] = "GEOID18"
+    with pytest.raises(ValueError, match="one stated_geoid"):
+        mod.survey_geoids(mixed)
+    unknown = json.loads(CONFIG.read_text())
+    for site in unknown["sites"]:
+        site["lidar_d24"]["stated_geoid"] = "GEOID99"
+    with pytest.raises(ValueError, match="no PRVD02 operation"):
+        mod.survey_geoids(unknown)
+
+
 def test_config_sites_and_tiles() -> None:
     cfg = json.loads(CONFIG.read_text())
     assert len(cfg["sites"]) == 8
@@ -178,8 +192,13 @@ def test_receipt_overall_counts_close(receipt: dict) -> None:
 
 def test_datum_chain_offsets_are_plausible(receipt: dict) -> None:
     chain = json.loads((RECEIPT / "datum_chain.json").read_text())
-    assert "PRVD02 height (2)" in chain["operations"]["prvd02_to_nad83_ellipsoid"]  # the GEOID18 grid operation
+    ops = chain["operations"]
+    assert ops["geoid_by_survey"] == {"2018": "GEOID12B", "d24": "GEOID18"}
+    assert "PRVD02 height (1)" in ops["prvd02_to_nad83_ellipsoid"]["2018"]  # EPSG:7646, GEOID12B
+    assert "PRVD02 height (2)" in ops["prvd02_to_nad83_ellipsoid"]["d24"]   # EPSG:9230, GEOID18
     for row in chain["site_centres"]:
+        # The two geoids differ by centimetres to about a decimetre over Puerto Rico.
+        assert abs(row["prvd02_zero_ellipsoidal_height_m_2018"] - row["prvd02_zero_ellipsoidal_height_m_d24"]) < 0.15, row
         # PRVD02 is local mean sea level (San Juan tide gauge), which EGM2008 models to a few
         # decimetres, so its zero sits within a metre of EGM2008's. PROJ's null NAD83 to WGS 84
         # step would drop the ~1.9 m Helmert shift and put it near +2.2 m instead. EGM96 is
@@ -187,6 +206,21 @@ def test_datum_chain_offsets_are_plausible(receipt: dict) -> None:
         assert 0.0 < row["offset_prvd02_to_egm2008_m_2018"] < 1.0, row
         for model in ("egm96", "egm2008"):
             assert abs(row[f"offset_prvd02_to_{model}_m_2018"] - row[f"offset_prvd02_to_{model}_m_d24"]) < 0.1, row
+
+
+def test_d24_minus_2018_on_one_geoid(receipt: dict) -> None:
+    assert "lidar_d24_minus_2018_same_geoid_1arcsec" in receipt["overall"]
+    for site in receipt["sites"]:
+        g = site["geoid_difference"]
+        assert g["geoids"] == ["GEOID12B", "GEOID18"] and g["min_m"] <= g["mean_m"] <= g["max_m"]
+        assert abs(g["mean_m"]) < 0.15
+        res = site["results"]
+        for grid in ("1arcsec", "ninth_arcsec"):
+            raw, same = res[f"lidar_d24_minus_2018_{grid}"], res[f"lidar_d24_minus_2018_same_geoid_{grid}"]
+            assert same["overall"]["samples"] == raw["overall"]["samples"], (site["site_id"], grid)
+            # One geoid = as published + (GEOID18 - GEOID12B); medians shift by about the site's mean.
+            shifted = raw["overall"]["median_m"] - g["mean_m"]
+            assert abs(same["overall"]["median_m"] - shifted) <= (g["max_m"] - g["min_m"]) + 0.01, (site["site_id"], grid)
 
 
 def test_lidar_heights_behave_as_prvd02(receipt: dict) -> None:

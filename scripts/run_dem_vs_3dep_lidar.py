@@ -11,13 +11,17 @@ own sample positions:
 * CUDEM 1/9" and 1/3": the CUDEM tile lattice;
 * NCEI San Juan 2015 and the 2006-2007 regional DEMs: their own lat/lon grids.
 
-Vertical datum. The lidar metadata says NAVD88, USGS's programme-wide wording;
-NAVD88 is not defined in Puerto Rico and the heights are taken as PRVD02 (the
-CUDEM comparison tests this). For DEMs on a global geoid the lidar is moved with
-an explicit chain: PRVD02 -> NAD83(2011) ellipsoid (GEOID18), NAD83(2011) ->
-ITRF2014 (Helmert, at the survey epoch), ITRF2014 taken as WGS 84, then the
-EGM96 or EGM2008 geoid. PROJ's default NAD83(2011) -> WGS 84 step is a null
-transform and is deliberately not used.
+Vertical datum. The tile abstracts say NAVD88, USGS's programme-wide wording,
+but the surveys' project metadata says PRVD02, reached through a different geoid
+model in each survey: GEOID12B for 2018 and GEOID18 for D24 (``stated_geoid`` in
+the tile config, from scripts/check_3dep_vertical_realization.py). For DEMs on a
+global geoid the lidar is moved with an explicit chain: PRVD02 -> NAD83(2011)
+ellipsoid through that survey's geoid (EPSG:7646 for GEOID12B, which EPSG has
+superseded, or EPSG:9230 for GEOID18), NAD83(2011) -> ITRF2014 (Helmert, at the
+survey epoch), ITRF2014 taken as WGS 84, then the EGM96 or EGM2008 geoid. PROJ's
+default NAD83(2011) -> WGS 84 step is a null transform and is deliberately not
+used. D24 - 2018 is reported as published (both PRVD02) and on one geoid (the
+NAD83(2011) ellipsoidal difference).
 
 Each site is processed independently and saved under ``outputs/lidar_comparison``
 (git-ignored); a re-run skips finished sites. Lidar tiles are downloaded to a
@@ -42,7 +46,7 @@ import tempfile
 import time
 import urllib.request
 from pathlib import Path
-from typing import Callable, Iterable, Sequence
+from typing import Callable, Iterable, NamedTuple, Sequence
 
 import numpy as np
 
@@ -62,6 +66,11 @@ MIN_VALID_FRACTION = 0.9
 SLOPE_CLASSES = ((0.0, 5.0), (5.0, 15.0), (15.0, 30.0), (30.0, 90.0))
 EARTH_RADIUS_M = 6371008.8
 EPOCH = {"2018": 2018.79, "d24": 2024.6}  # mid-collection, decimal years
+# PRVD02 -> NAD83(2011) ellipsoidal height, by the geoid model a survey used.
+GEOID_OPERATIONS = {
+    "GEOID12B": "NAD83(2011) to PRVD02 height (1)",  # EPSG:7646, superseded by 9230
+    "GEOID18": "NAD83(2011) to PRVD02 height (2)",   # EPSG:9230
+}
 USER_AGENT = "spiderweb-pr-dem-lidar-comparison/1.0"
 
 
@@ -149,10 +158,25 @@ def chain_offset(lons, lats, *, to_nad83_ellipsoid: Callable, nad83_to_itrf: Cal
 
 # -- datum chain (PROJ) ------------------------------------------------------------
 
-def _pick(group_src: str, group_dst: str, must_contain: str):
+def survey_geoids(config: dict) -> dict[str, str]:
+    """The one geoid model each survey used, from ``stated_geoid`` in the tile config."""
+    found = {"2018": {p.get("stated_geoid") for s in config["sites"] for p in s["lidar_2018"]},
+             "d24": {s["lidar_d24"].get("stated_geoid") for s in config["sites"]}}
+    out = {}
+    for survey, geoids in found.items():
+        if len(geoids) != 1 or None in geoids:
+            raise ValueError(f"survey {survey}: expected one stated_geoid, found {sorted(map(str, geoids))}")
+        (geoid,) = geoids
+        if geoid not in GEOID_OPERATIONS:
+            raise ValueError(f"survey {survey}: no PRVD02 operation known for {geoid}")
+        out[survey] = geoid
+    return out
+
+
+def _pick(group_src: str, group_dst: str, must_contain: str, allow_superseded: bool = False):
     from pyproj.transformer import TransformerGroup
 
-    group = TransformerGroup(group_src, group_dst, always_xy=True)
+    group = TransformerGroup(group_src, group_dst, always_xy=True, allow_superseded=allow_superseded)
     for t in group.transformers:
         if must_contain in t.description and "ballpark" not in t.description:
             return t
@@ -161,27 +185,36 @@ def _pick(group_src: str, group_dst: str, must_contain: str):
                        f"{[op.name for op in group.unavailable_operations]}")
 
 
-def datum_chain():
+class DatumChain(NamedTuple):
+    offset: Callable        # (lons, lats, model, epoch, survey) -> PRVD02-to-geoid offset grid
+    zero_height: Callable   # (lons, lats, survey) -> NAD83(2011) ellipsoidal height of PRVD02 zero
+    ops: dict
+
+
+def datum_chain(geoids: dict[str, str]) -> DatumChain:
     import pyproj
 
     pyproj.network.set_network_enabled(True)
     ca = "/root/.ccr/ca-bundle.crt"
     if os.path.exists(ca):
         pyproj.network.set_ca_bundle_path(ca)
-    geoid18 = _pick("EPSG:6318+6641", "EPSG:6319", "NAD83(2011) to PRVD02 height (2)")
+    to_ellipsoid = {g: _pick("EPSG:6318+6641", "EPSG:6319", GEOID_OPERATIONS[g], allow_superseded=True)
+                    for g in sorted(set(geoids.values()))}
     helmert = _pick("EPSG:6319", "EPSG:7912", "ITRF2014 to NAD83(2011)")
     egm96 = _pick("EPSG:4979", "EPSG:4326+5773", "WGS 84 to EGM96 height (1)")
     egm08 = _pick("EPSG:4979", "EPSG:4326+3855", "WGS 84 to EGM2008 height (1)")
     ops = {
-        "prvd02_to_nad83_ellipsoid": geoid18.description,
+        "geoid_by_survey": dict(geoids),
+        "prvd02_to_nad83_ellipsoid": {survey: to_ellipsoid[g].description for survey, g in geoids.items()},
         "nad83_2011_to_itrf2014": helmert.description,
         "wgs84_to_egm96": egm96.description,
         "wgs84_to_egm2008": egm08.description,
         "itrf2014_as_wgs84": "ITRF2014 ellipsoidal heights are used as WGS 84 (G2139); the two agree at centimetre level",
     }
 
-    def to_nad83(lons, lats, h):
-        return geoid18.transform(lons, lats, h)[2]
+    def to_nad83_for(survey):
+        tr = to_ellipsoid[geoids[survey]]
+        return lambda lons, lats, h: tr.transform(lons, lats, h)[2]
 
     def to_itrf(lons, lats, h, epoch):
         t = np.full_like(np.asarray(lons, dtype="float64"), epoch)
@@ -191,16 +224,23 @@ def datum_chain():
         tr = egm96 if model == "EGM96" else egm08
         return lambda lons, lats, h: tr.transform(lons, lats, h)[2]
 
-    def offset(lons, lats, model, epoch):
+    def offset(lons, lats, model, epoch, survey):
         lon2, lat2 = np.meshgrid(lons, lats)
-        off = chain_offset(lon2.ravel(), lat2.ravel(), to_nad83_ellipsoid=to_nad83,
+        off = chain_offset(lon2.ravel(), lat2.ravel(), to_nad83_ellipsoid=to_nad83_for(survey),
                            nad83_to_itrf=to_itrf, to_geoid_height=target(model), epoch=epoch)
         off = off.reshape(lat2.shape)
         if not np.isfinite(off).all():
             raise RuntimeError(f"datum chain to {model} returned non-finite values (missing grid?)")
         return off
 
-    return offset, ops
+    def zero_height(lons, lats, survey):
+        lon2, lat2 = np.meshgrid(lons, lats)
+        h = np.asarray(to_nad83_for(survey)(lon2.ravel(), lat2.ravel(), np.zeros(lon2.size)), dtype="float64").reshape(lat2.shape)
+        if not np.isfinite(h).all():
+            raise RuntimeError(f"geoid for survey {survey} returned non-finite values (missing grid?)")
+        return h
+
+    return DatumChain(offset, zero_height, ops)
 
 
 # -- I/O helpers -------------------------------------------------------------------
@@ -430,7 +470,7 @@ def _compare(name, dem, lidar, frac, slope, extra=None):
     return result, diff[keep].astype("float32"), slope[keep].astype("float32")
 
 
-def process_site(site: dict, offset_fn, ncei: dict) -> dict:
+def process_site(site: dict, chain: DatumChain, ncei: dict) -> dict:
     sid = site["site_id"]
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     tmp = Path(tempfile.mkdtemp(prefix=f"lidar_{sid}_", dir=WORK_DIR))
@@ -456,8 +496,11 @@ def process_site(site: dict, offset_fn, ncei: dict) -> dict:
         l18, f18 = aggregate_lidar(paths["2018"], pt, pw, ph)
         ld, fd = aggregate_lidar(paths["d24"], pt, pw, ph)
         slope = slope_degrees(l18, lats, ARCSEC)
-        off96 = offset_fn(lons, lats, "EGM96", EPOCH["2018"])
-        off08 = offset_fn(lons, lats, "EGM2008", EPOCH["2018"])
+        off96 = chain.offset(lons, lats, "EGM96", EPOCH["2018"], "2018")
+        off08 = chain.offset(lons, lats, "EGM2008", EPOCH["2018"], "2018")
+        # Ellipsoidal height of PRVD02 zero for each survey's geoid; D24 - 2018 on one geoid
+        # (the NAD83(2011) ellipsoidal difference) is the published difference plus this shift.
+        geoid_shift = chain.zero_height(lons, lats, "d24") - chain.zero_height(lons, lats, "2018")
         dems = {
             "nasa_srtmgl1_v003": (srtm_on_grid(lons, lats), off96),
             "nasa_nasadem_hgt_v001": (sample_on_grid(OT_CACHE / f"NASADEM_{OT_AOI}.tif", lons, lats), off96),
@@ -475,6 +518,20 @@ def process_site(site: dict, offset_fn, ncei: dict) -> dict:
         }
         arrays["lidar_d24_minus_2018_1arcsec__diff"] = change[np.isfinite(change)].astype("float32")
         arrays["lidar_d24_minus_2018_1arcsec__slope"] = slope[np.isfinite(change)].astype("float32")
+        same = change + geoid_shift
+        results["lidar_d24_minus_2018_same_geoid_1arcsec"] = {
+            "overall": summarize(same), "by_slope_class_deg": by_slope_class(same, slope),
+            "cells_beyond_1m": int(np.sum(np.abs(same[np.isfinite(same)]) > 1.0)),
+            "basis": "NAD83(2011) ellipsoidal heights: each survey's PRVD02 heights plus its own geoid",
+        }
+        arrays["lidar_d24_minus_2018_same_geoid_1arcsec__diff"] = same[np.isfinite(same)].astype("float32")
+        arrays["lidar_d24_minus_2018_same_geoid_1arcsec__slope"] = slope[np.isfinite(same)].astype("float32")
+        geoid_difference = {
+            "geoids": [chain.ops["geoid_by_survey"]["2018"], chain.ops["geoid_by_survey"]["d24"]],
+            "definition": "2018 geoid minus D24 geoid (GEOID12B - GEOID18) over the site's 1 arc-second cells",
+            "mean_m": round(float(np.mean(-geoid_shift)), 4), "min_m": round(float(np.min(-geoid_shift)), 4),
+            "max_m": round(float(np.max(-geoid_shift)), 4),
+        }
         # Summit check (central cordillera only).
         r = int(np.argmin(np.abs(lats - 18.172281))); c = int(np.argmin(np.abs(lons - -66.5916862)))
         point_check = {"lon": round(float(lons[c]), 6), "lat": round(float(lats[r]), 6),
@@ -487,7 +544,7 @@ def process_site(site: dict, offset_fn, ncei: dict) -> dict:
         alons, alats = cell_centres(at, aw, ah)
         la, fa = aggregate_lidar(paths["2018"], at, aw, ah)
         aslope = slope_degrees(la, alats, ARCSEC)
-        aoff = offset_fn(alons, alats, "EGM96", EPOCH["2018"])
+        aoff = chain.offset(alons, alats, "EGM96", EPOCH["2018"], "2018")
         aw3d = sample_on_grid(OT_CACHE / f"AW3D30_{OT_AOI}.tif", alons, alats)
         results["jaxa_aw3d30"], arrays["jaxa_aw3d30__diff"], arrays["jaxa_aw3d30__slope"] = _compare(
             "jaxa_aw3d30", aw3d, la + aoff, fa, aslope,
@@ -514,6 +571,12 @@ def process_site(site: dict, offset_fn, ncei: dict) -> dict:
                     "overall": summarize(ch9), "by_slope_class_deg": by_slope_class(ch9, gslope),
                     "cells_beyond_1m": int(np.sum(np.abs(ch9[np.isfinite(ch9)]) > 1.0)),
                 }
+                same9 = ch9 + (chain.zero_height(glons, glats, "d24") - chain.zero_height(glons, glats, "2018"))
+                results["lidar_d24_minus_2018_same_geoid_ninth_arcsec"] = {
+                    "overall": summarize(same9), "by_slope_class_deg": by_slope_class(same9, gslope),
+                    "cells_beyond_1m": int(np.sum(np.abs(same9[np.isfinite(same9)]) > 1.0)),
+                    "basis": "NAD83(2011) ellipsoidal heights: each survey's PRVD02 heights plus its own geoid",
+                }
 
         # NCEI regional DEMs covering the site.
         extents = ncei_extents(ncei)
@@ -536,7 +599,8 @@ def process_site(site: dict, offset_fn, ncei: dict) -> dict:
         for p in tmp.iterdir():
             p.unlink()
         tmp.rmdir()
-    record = {"site_id": sid, "box_nad83": [round(v, 6) for v in box], "provenance": provenance, "results": results}
+    record = {"site_id": sid, "box_nad83": [round(v, 6) for v in box], "provenance": provenance,
+              "geoid_difference": geoid_difference, "results": results}
     if sid == "central_cordillera_cerro_de_punta":
         record["summit_check"] = point_check
     np.savez_compressed(WORK_DIR / f"{sid}.npz", **arrays)
@@ -546,9 +610,11 @@ def process_site(site: dict, offset_fn, ncei: dict) -> dict:
 
 # -- receipt ---------------------------------------------------------------------------
 
-def write_receipt(config: dict, ops: dict, out_dir: Path, offset_fn=None) -> dict:
+def write_receipt(config: dict, chain: DatumChain, out_dir: Path) -> dict:
+    ops = chain.ops
     sites = [json.loads((WORK_DIR / f"{s['site_id']}.json").read_text()) for s in config["sites"]]
-    names = sorted({k for s in sites for k in s["results"] if not k.startswith(("datum_test", "lidar_d24_minus_2018_ninth"))})
+    names = sorted({k for s in sites for k in s["results"]
+                    if not k.startswith("datum_test") and not k.endswith("ninth_arcsec")})
     overall = {}
     for name in names:
         diffs, slopes = [], []
@@ -567,7 +633,10 @@ def write_receipt(config: dict, ops: dict, out_dir: Path, offset_fn=None) -> dic
         "method": {
             "reference": "3DEP 1 m lidar, 2018 collection (TNM projects PR_PRVI_A-H_2018), averaged from its 1 m pixels onto each DEM's own grid; cells need at least 90% valid lidar pixels",
             "difference": "DEM minus lidar, with the lidar moved to the DEM's vertical datum",
-            "lidar_vertical_datum_assumed": "PRVD02 (tile metadata says NAVD88, USGS's programme wording; tested against CUDEM)",
+            "lidar_vertical_datum": ("PRVD02 per the surveys' project metadata: 2018 through GEOID12B, D24 through GEOID18. "
+                                     "The tile abstracts say NAVD88, USGS's programme wording; the heights are also tested against CUDEM"),
+            "d24_minus_2018": ("as published (both PRVD02, each through its own geoid) and on one geoid "
+                               "(NAD83(2011) ellipsoidal difference, published difference + GEOID18 - GEOID12B)"),
             "lidar_horizontal": "NAD83(2011) geographic; DEM grids are WGS 84 / ITRF. The 1-2 m horizontal difference is under a tenth of a 30 m cell and is not corrected.",
             "datum_chain": ops,
             "epochs": EPOCH,
@@ -575,29 +644,30 @@ def write_receipt(config: dict, ops: dict, out_dir: Path, offset_fn=None) -> dic
         },
         "overall": overall,
         "datum_test_lidar_2018_minus_cudem_ninth_low_slope": datum_test,
-        "sites": [{"site_id": s["site_id"], "box_nad83": s["box_nad83"], "results": s["results"], **({"summit_check": s["summit_check"]} if "summit_check" in s else {})} for s in sites],
+        "sites": [{"site_id": s["site_id"], "box_nad83": s["box_nad83"], "geoid_difference": s["geoid_difference"],
+                   "results": s["results"], **({"summit_check": s["summit_check"]} if "summit_check" in s else {})} for s in sites],
     }
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "comparison.json").write_text(json.dumps(receipt, indent=2) + "\n")
     (out_dir / "tiles_provenance.json").write_text(json.dumps({s["site_id"]: s["provenance"] for s in sites}, indent=2) + "\n")
-    if offset_fn is not None:
-        (out_dir / "datum_chain.json").write_text(json.dumps(datum_chain_record(config, ops, offset_fn), indent=2) + "\n")
+    (out_dir / "datum_chain.json").write_text(json.dumps(datum_chain_record(config, chain), indent=2) + "\n")
     return receipt
 
 
-def datum_chain_record(config: dict, ops: dict, offset_fn) -> dict:
-    """The PROJ operations, the epochs, and the PRVD02-to-geoid offset at each site centre."""
+def datum_chain_record(config: dict, chain: DatumChain) -> dict:
+    """The PROJ operations, the epochs, and the PRVD02-to-geoid offset at each site centre, per survey."""
     rows = []
     for site in config["sites"]:
         lon, lat = site["centre_lon_lat"]
         row = {"site_id": site["site_id"], "lon": lon, "lat": lat}
         for survey, epoch in EPOCH.items():
             for model in ("EGM96", "EGM2008"):
-                off = offset_fn(np.array([lon]), np.array([lat]), model, epoch)
+                off = chain.offset(np.array([lon]), np.array([lat]), model, epoch, survey)
                 row[f"offset_prvd02_to_{model.lower()}_m_{survey}"] = round(float(off[0, 0]), 3)
+            row[f"prvd02_zero_ellipsoidal_height_m_{survey}"] = round(float(chain.zero_height(np.array([lon]), np.array([lat]), survey)[0, 0]), 3)
         rows.append(row)
     return {
-        "operations": ops,
+        "operations": chain.ops,
         "epochs": EPOCH,
         "sign": "height on the geoid model = PRVD02 height + offset",
         "avoided": "PROJ's default NAD83(2011) to WGS 84 (1) is a null transform (0 m, stated accuracy 2 m)",
@@ -610,10 +680,10 @@ def main(argv=None) -> int:
     p.add_argument("--site", action="append", help="site_id to process (repeatable); default all")
     p.add_argument("--force", action="store_true", help="reprocess sites that already have results")
     p.add_argument("--receipt-only", action="store_true")
-    p.add_argument("--receipt-dir", default=str(REPO_ROOT / "evidence" / "dem_sources" / "lidar_comparison_2026-11-24"))
+    p.add_argument("--receipt-dir", default=str(REPO_ROOT / "evidence" / "dem_sources" / "lidar_comparison_2026-11-26"))
     args = p.parse_args(argv)
     config = json.loads(CONFIG_PATH.read_text())
-    offset_fn, ops = datum_chain()
+    chain = datum_chain(survey_geoids(config))
     manifest = json.loads(NCEI_MANIFEST.read_text())
     ncei = {d["dataset_key"]: d for d in manifest["datasets"] if d.get("opendap_url")}
     if not args.receipt_only:
@@ -624,13 +694,13 @@ def main(argv=None) -> int:
                 print(f"{site['site_id']}: done earlier, skipping", flush=True)
                 continue
             t0 = time.time()
-            rec = process_site(site, offset_fn, ncei)
+            rec = process_site(site, chain, ncei)
             print(f"{site['site_id']}: {len(rec['results'])} comparisons in {time.time() - t0:.0f}s", flush=True)
     missing = [s["site_id"] for s in config["sites"] if not (WORK_DIR / f"{s['site_id']}.json").exists()]
     if missing:
         print(f"not writing the receipt yet; sites missing: {', '.join(missing)}", flush=True)
         return 0
-    write_receipt(config, ops, Path(args.receipt_dir), offset_fn)
+    write_receipt(config, chain, Path(args.receipt_dir))
     print(f"receipt -> {args.receipt_dir}", flush=True)
     return 0
 

@@ -181,3 +181,38 @@ def test_geoid_offset_receipt_is_consistent() -> None:
     # A geoid shift moves the offset, not the spread.
     assert after["std_m"] == pytest.approx(before["std_m"], abs=0.05)
     assert after["median_m"] > before["median_m"]
+
+
+def test_3dep_products_record_prvd02_and_their_geoid(catalog: dict) -> None:
+    products = products_by_id(catalog)
+    expected = {
+        "usgs_3dep_1m_pr_prvi_2018": "GEOID12B",
+        "usgs_lidar_2018_hurricane_maria": "GEOID12B",
+        "usgs_3dep_1m_pr_puertoricousvi_d24": "GEOID18",
+    }
+    for sid, geoid in expected.items():
+        p = products[sid]
+        assert (p["vertical_datum"], p["geoid_model"]) == ("PRVD02", geoid), sid
+        assert "NAVD88" in p["vertical_datum_as_stated"], sid  # the stated wording is kept
+        basis = p["vertical_datum_basis"]
+        assert basis["evidence_tier"] == "T1" and (REPO_ROOT / basis["receipt"]).exists(), sid
+        assert any(geoid.lower() in s["statement"].lower().replace(" ", "") for s in basis["sources"]), sid
+
+
+def test_tile_config_geoids_match_the_catalog(catalog: dict) -> None:
+    products = products_by_id(catalog)
+    cfg = json.loads((REPO_ROOT / "data_sources" / "elevation" / "lidar_comparison_tiles.json").read_text())
+    for site in cfg["sites"]:
+        for part in site["lidar_2018"]:
+            assert part["stated_geoid"] == products["usgs_3dep_1m_pr_prvi_2018"]["geoid_model"], part["project"]
+            assert part["project_vertical_datum"] == "PRVD02"
+        assert site["lidar_d24"]["stated_geoid"] == products["usgs_3dep_1m_pr_puertoricousvi_d24"]["geoid_model"]
+
+
+def test_geoid_statements_receipt_names_one_geoid_per_survey() -> None:
+    receipt = REPO_ROOT / "evidence" / "dem_sources" / "3dep_vertical_realization_2026-11-26"
+    stated = json.loads((receipt / "geoid_statements.json").read_text())
+    assert stated["surveys"]["2018"]["geoid_models"] == ["GEOID12B"]
+    assert stated["surveys"]["d24"]["geoid_models"] == ["GEOID18"]
+    assert len(stated["surveys"]["d24"]["parts"]) == 6
+    assert {b["project"] for b in stated["surveys"]["2018"]["blocks"]} == {f"PR_PRVI_{x}_2018" for x in "ADEFH"}

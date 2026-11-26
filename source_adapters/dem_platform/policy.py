@@ -7,6 +7,12 @@ layers unless the selection is one verified platform class, one surface model
 and one declared vertical datum. Compiled products are never merged with others
 as if they were independent measurements.
 
+Two products on one leveled datum can still differ by how they reached it: a
+lidar survey turns GNSS ellipsoidal heights into PRVD02 heights through a hybrid
+geoid model, and the 2018 and D24 surveys used different ones (GEOID12B and
+GEOID18). Such products stay in one group but as separate layers, one per geoid
+realization, so their difference can be measured before anything is merged.
+
 Independence for corroboration is decided on canonical acquisition roots, not on
 platform names: NASA's records call the same 2000 Shuttle flight STS-99
 (SRTMGL1) and OV-105 (NASADEM).
@@ -20,7 +26,12 @@ from typing import Iterable, Mapping, Sequence
 from .catalog import roots_of
 
 UNDECLARED_DATUMS = frozenset({"undeclared"})
+UNDECLARED_GEOID = "undeclared"
 DEPENDENCY_KINDS = ("measurement", "fill")
+
+
+def geoid_of(product: Mapping) -> str:
+    return product.get("geoid_model") or UNDECLARED_GEOID
 
 
 @dataclass(frozen=True)
@@ -32,6 +43,8 @@ class PlatformPolicyResult:
     merge_policy: str
     review_status: str
     reasons: tuple[str, ...]
+    geoid_models: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
         return {k: list(v) if isinstance(v, tuple) else v for k, v in asdict(self).items()}
@@ -42,6 +55,7 @@ def evaluate_platform_mix(products: Sequence[Mapping]) -> PlatformPolicyResult:
     classes = tuple(sorted({p["platform_class"] for p in products}))
     surfaces = tuple(sorted({p["surface_model"] for p in products}))
     datums = tuple(sorted({p["vertical_datum"] for p in products}))
+    geoids = tuple(sorted({geoid_of(p) for p in products}))
     if not products:
         return PlatformPolicyResult((), (), (), (), "no_sources", "review_required", ("no sources selected",))
 
@@ -63,9 +77,23 @@ def evaluate_platform_mix(products: Sequence[Mapping]) -> PlatformPolicyResult:
             reasons.append("mixed vertical datums: " + ", ".join(datums))
 
     if reasons:
-        return PlatformPolicyResult(ids, classes, surfaces, datums, "separate_layers_until_harmonization", "review_required", tuple(reasons))
+        return PlatformPolicyResult(ids, classes, surfaces, datums, "separate_layers_until_harmonization", "review_required",
+                                    tuple(reasons), geoids)
+    if len(products) > 1 and len(geoids) > 1:
+        note = (f"{datums[0]} realized with {', '.join(geoids)}: keep one layer per geoid realization "
+                "and difference them before any merge")
+        return PlatformPolicyResult(ids, classes, surfaces, datums, "same_datum_separate_geoid_layers", "pass", (), geoids, (note,))
     policy = "single_source" if len(products) == 1 else "same_platform_class_same_surface_same_datum"
-    return PlatformPolicyResult(ids, classes, surfaces, datums, policy, "pass", ())
+    return PlatformPolicyResult(ids, classes, surfaces, datums, policy, "pass", (), geoids)
+
+
+def layer_groups(products: Sequence[Mapping]) -> dict[tuple[str, str, str], dict[str, tuple[str, ...]]]:
+    """Group products by (platform class, surface model, vertical datum); within a group, one layer per geoid."""
+    groups: dict[tuple[str, str, str], dict[str, list[str]]] = {}
+    for p in products:
+        key = (p["platform_class"], p["surface_model"], p["vertical_datum"])
+        groups.setdefault(key, {}).setdefault(geoid_of(p), []).append(p["source_id"])
+    return {k: {g: tuple(ids) for g, ids in sorted(layers.items())} for k, layers in sorted(groups.items())}
 
 
 def shared_acquisition_roots(a: Mapping, b: Mapping, kinds: Iterable[str] = DEPENDENCY_KINDS) -> tuple[str, ...]:
