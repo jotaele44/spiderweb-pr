@@ -55,7 +55,7 @@ cycler==0.12.1
 cyclopts==4.22.2
 dnspython==2.8.0
 docstring-parser==0.18.0
-duckdb==1.5.5
+duckdb==2.0.1
 durationpy==0.10
 email-validator==2.3.0
 et-xmlfile==2.0.0
