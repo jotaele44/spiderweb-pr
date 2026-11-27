@@ -105,6 +105,14 @@ try:
 except Exception as exc:  # noqa: BLE001 — log and keep serving
     log.warning("access point registry routes unavailable: %s", exc)
 
+# Bounded read-only GEO-SAR pilot catalog.
+try:
+    from server.backend.geo_sar_api import router as _geo_sar_router
+
+    app.include_router(_geo_sar_router)
+except ImportError as exc:
+    log.warning("GEO-SAR routes unavailable: %s", exc)
+
 # In-memory job registry: job_id → subprocess.Popen
 _jobs: dict = {}
 

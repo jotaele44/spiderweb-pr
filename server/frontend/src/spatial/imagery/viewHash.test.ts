@@ -45,3 +45,9 @@ describe("map view fragment", () => {
     expect(parseViewHash("#map=40/18/-66&op=3")).toEqual({ view: { zoom: 24, lat: 18, lng: -66 }, opacity: 1 });
   });
 });
+
+it("preserves bearing, pitch and layer state across imagery updates", () => {
+  const hash = formatViewHash({ view: { zoom: 12, lat: 18, lng: -66, bearing: 30, pitch: 45 } }, "#layers=roads:1");
+  expect(parseViewHash(hash).view).toEqual({ zoom: 12, lat: 18, lng: -66, bearing: 30, pitch: 45 });
+  expect(new URLSearchParams(hash.slice(1)).get("layers")).toBe("roads:1");
+});

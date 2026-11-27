@@ -1,6 +1,6 @@
 export type EvidenceTier = "T1" | "T2" | "T3" | "T4";
 export type Confidence = 1 | 2 | 3;
-export type ModuleId = "command" | "finance" | "spatial" | "anomaly" | "graph" | "query";
+export type ModuleId = "geo-sar" | "command" | "finance" | "spatial" | "anomaly" | "graph" | "query";
 export type SelectionKind = "agency" | "vendor" | "contract" | "site" | "event" | "anomaly" | "source" | "investigation" | "finding";
 
 export interface Selection {

@@ -13,6 +13,7 @@ import { saveLocalDataset } from './api/localDataset';
 
 // Route-split the modules so heavy dependencies (MapLibre for Spatial, TanStack
 // Table for Finance) load only when their tab is first opened.
+const GeographicResearchWorkbench = lazy(() => import("./modules/GeographicResearchWorkbench").then((m) => ({ default: m.GeographicResearchWorkbench })));
 const CommandCenter = lazy(() => import("./modules/CommandCenter").then((m) => ({ default: m.CommandCenter })));
 const FinanceIntelligence = lazy(() => import("./modules/FinanceIntelligence").then((m) => ({ default: m.FinanceIntelligence })));
 const SpatialIntelligence = lazy(() => import("./modules/SpatialIntelligence").then((m) => ({ default: m.SpatialIntelligence })));
@@ -27,6 +28,7 @@ const tabs: { id: ModuleId; label: string }[] = [
   { id: "anomaly", label: "Anomaly" },
   { id: "graph", label: "Graph" },
   { id: "query", label: "Query" },
+  { id: "geo-sar", label: "Geo-SAR" },
 ];
 
 type RunState = "idle" | "running" | "done" | "error";
@@ -213,6 +215,7 @@ export default function App() {
       return <div className="panel" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)" }}>Loading PRIIS data…</div>;
     }
     switch (moduleId) {
+      case "geo-sar": return <GeographicResearchWorkbench />;
       case "command":  return <CommandCenter data={data} setSelection={setSelection} setModule={setModule} />;
       case "finance":  return <FinanceIntelligence data={data} selection={selection} setSelection={setSelection} />;
       case "spatial":  return <SpatialIntelligence data={data} selection={selection} setSelection={setSelection} leftCollapsed={leftCollapsed} rightCollapsed={rightCollapsed} />;
