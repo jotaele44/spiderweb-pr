@@ -15,6 +15,19 @@
     "reviewed_at": "2026-11-20",
     "reviewed_head": "5d5459ea56c1f6705961a3cce80380108e3194f8",
     "finding": "COMPATIBLE",
+    "rationale": "the export emits the same canonical streams under federation_export_manifest@1; the package now carries 874 non-synthetic rows (0 synthetic) instead of 30 synthetic rows, matching the declared ready_for_hub_live_execution and production_status PRODUCTION; thehub-pr validate-package returns VALID and the command passes the hub fetch allowlist"
+  },
+  "usgs_native_reference_extension": {
+    "reviewed_at": "2026-10-16",
+    "reviewed_head": "f1bbf65782a067351757ab060a53fd729555697a",
+    "finding": "COMPATIBLE",
+    "scope": "Additive diagnostic command and source truth metadata only; existing production command and canonical schemas unchanged",
+    "command": "export_usgs_native_reference",
+    "mode": "test",
+    "proof": "USGS native reference export CI run 38971170303 accepted 3 source and 92 snapshot rows against pinned Hub schemas",
+    "production_export_state": "BLOCKED",
+    "activation_state": "BLOCKED"
+  }
     "rationale": "the lane adds rows to the existing sources, entities and relationships streams under federation_export_manifest@1 with new entity_type values (inland_access_point, offshore_access_point, access_point_registry), which the hub schemas leave free; every record keeps a CANDIDATE, PRODUCER_LOCAL identity; the production package with the lane has 0 synthetic rows and hub validate-package (thehub-pr origin/main 95c6c99) returns VALID; the extended command passes the hub fetch allow-list; without the flag the package is unchanged; this repository's own producer entity schema gains the three entity types and an optional attributes object (additive; the golden package still validates), and the hub's schemas, which leave entity_type free, are unchanged"
   },
   "earlier_drift_reconciliations": [

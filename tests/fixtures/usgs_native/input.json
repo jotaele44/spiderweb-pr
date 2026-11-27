@@ -1,0 +1,143 @@
+{
+  "contract": "prii.usgs-native-producer-input/v1",
+  "producer": "spiderweb-pr",
+  "mode": "test",
+  "source_inventory_sha256": "6ff461dbb66490571b1940a1dd9fec0d356382b96e20a8d8c7a48aa0f35ca383",
+  "assets": [
+    {
+      "asset_id": "6516c8f9d34e5f8ef156488e:1",
+      "source_item_id": "6516c8f9d34e5f8ef156488e",
+      "root_release_ids": [
+        "64a85bf3d34e70357a27ddd5"
+      ],
+      "source_key": "SiteID",
+      "raw_file": "tests/fixtures/usgs_native/6516c8f9d34e5f8ef156488e_1.geojson.gz",
+      "packed_sha256": "b655c247c4a51debbe502d46cfa9ebc8f8471a6add7482ca5d01757da877c081",
+      "raw_sha256": "e87e71beb802db72ab763025e0f3a82c9b56721db977abdb653eafab0fffe662",
+      "source_descriptor_raw": {
+        "cuid": null,
+        "key": null,
+        "bucket": null,
+        "published": false,
+        "node": null,
+        "name": "NSHM2025_EQGeoDB_PRVI_v1.geojson",
+        "title": "",
+        "contentType": "text/plain",
+        "contentEncoding": null,
+        "pathOnDisk": "__disk__40/27/77/402777ee02ea1dfd1a67b2570ea262c266965e8d",
+        "processed": false,
+        "processToken": null,
+        "imageWidth": null,
+        "imageHeight": null,
+        "size": 44357,
+        "dateUploaded": "2024-02-05T17:18:23Z",
+        "originalMetadata": false,
+        "useForPreview": false,
+        "movedToS3": false,
+        "s3Object": null,
+        "checksum": {
+          "value": "7263da80a496971675c8fb77c2689b19",
+          "type": "MD5"
+        },
+        "url": "https://www.sciencebase.gov/catalog/file/get/6516c8f9d34e5f8ef156488e?f=__disk__40%2F27%2F77%2F402777ee02ea1dfd1a67b2570ea262c266965e8d",
+        "downloadUri": "https://www.sciencebase.gov/catalog/file/get/6516c8f9d34e5f8ef156488e?f=__disk__40%2F27%2F77%2F402777ee02ea1dfd1a67b2570ea262c266965e8d",
+        "viewUri": "https://www.sciencebase.gov/catalog/file/get/6516c8f9d34e5f8ef156488e?f=__disk__40%2F27%2F77%2F402777ee02ea1dfd1a67b2570ea262c266965e8d&allowOpen=true"
+      },
+      "retrieval_utc": "2026-10-16T06:08:37.688890+00:00",
+      "expected_features": 51
+    },
+    {
+      "asset_id": "6516caf3d34e5f8ef1564898:1",
+      "source_item_id": "6516caf3d34e5f8ef1564898",
+      "root_release_ids": [
+        "64a85bf3d34e70357a27ddd5"
+      ],
+      "source_key": "PolyID",
+      "raw_file": "tests/fixtures/usgs_native/6516caf3d34e5f8ef1564898_1.geojson.gz",
+      "packed_sha256": "1c154de666b56c03ff9224bd33cfd639557fb6a535d2de151818b5828df82b57",
+      "raw_sha256": "c84b261975627547ca4a6d28b57c83d928b23bd851e2273886a0aafa1929dfa0",
+      "source_descriptor_raw": {
+        "cuid": null,
+        "key": null,
+        "bucket": null,
+        "published": false,
+        "node": null,
+        "name": "NSHM2025_FaultPolygons_PRVI_v1.geojson",
+        "title": "",
+        "contentType": "text/plain",
+        "contentEncoding": null,
+        "pathOnDisk": "__disk__01/79/12/017912cff83902fc5385be7101db7c7c1e8b8236",
+        "processed": false,
+        "processToken": null,
+        "imageWidth": null,
+        "imageHeight": null,
+        "size": 3909,
+        "dateUploaded": "2023-09-29T13:02:40Z",
+        "originalMetadata": false,
+        "useForPreview": false,
+        "movedToS3": false,
+        "s3Object": null,
+        "checksum": {
+          "value": "ad31c5aed7554a9c2c783b9bdd2c46e2",
+          "type": "MD5"
+        },
+        "url": "https://www.sciencebase.gov/catalog/file/get/6516caf3d34e5f8ef1564898?f=__disk__01%2F79%2F12%2F017912cff83902fc5385be7101db7c7c1e8b8236",
+        "downloadUri": "https://www.sciencebase.gov/catalog/file/get/6516caf3d34e5f8ef1564898?f=__disk__01%2F79%2F12%2F017912cff83902fc5385be7101db7c7c1e8b8236",
+        "viewUri": "https://www.sciencebase.gov/catalog/file/get/6516caf3d34e5f8ef1564898?f=__disk__01%2F79%2F12%2F017912cff83902fc5385be7101db7c7c1e8b8236&allowOpen=true"
+      },
+      "retrieval_utc": "2026-10-16T06:08:38.648852+00:00",
+      "expected_features": 6
+    },
+    {
+      "asset_id": "6516cbb8d34e5f8ef156489f:1",
+      "source_item_id": "6516cbb8d34e5f8ef156489f",
+      "root_release_ids": [
+        "64a85bf3d34e70357a27ddd5"
+      ],
+      "source_key": "FaultID",
+      "raw_file": "tests/fixtures/usgs_native/6516cbb8d34e5f8ef156489f_1.geojson.gz",
+      "packed_sha256": "a2c5b7ae3b2e8cef2510e68e98f76b55ad3c7e88772c33387fe78d0871882503",
+      "raw_sha256": "ccf5a830b79abdd7b67b31c34127f82fd3fa5fed17123d50b38205af2e508ebd",
+      "source_descriptor_raw": {
+        "cuid": null,
+        "key": null,
+        "bucket": null,
+        "published": false,
+        "node": null,
+        "name": "NSHM2025_FaultSections_PRVI_v1.geojson",
+        "title": "",
+        "contentType": "text/plain",
+        "contentEncoding": null,
+        "pathOnDisk": "__disk__a2/fe/e3/a2fee39b61d429cfc798781955c57a842f230031",
+        "processed": false,
+        "processToken": null,
+        "imageWidth": null,
+        "imageHeight": null,
+        "size": 33063,
+        "dateUploaded": "2024-01-29T22:11:58Z",
+        "originalMetadata": false,
+        "useForPreview": false,
+        "movedToS3": false,
+        "s3Object": null,
+        "checksum": {
+          "value": "0a837022df13331292994c32020c578c",
+          "type": "MD5"
+        },
+        "url": "https://www.sciencebase.gov/catalog/file/get/6516cbb8d34e5f8ef156489f?f=__disk__a2%2Ffe%2Fe3%2Fa2fee39b61d429cfc798781955c57a842f230031",
+        "downloadUri": "https://www.sciencebase.gov/catalog/file/get/6516cbb8d34e5f8ef156489f?f=__disk__a2%2Ffe%2Fe3%2Fa2fee39b61d429cfc798781955c57a842f230031",
+        "viewUri": "https://www.sciencebase.gov/catalog/file/get/6516cbb8d34e5f8ef156489f?f=__disk__a2%2Ffe%2Fe3%2Fa2fee39b61d429cfc798781955c57a842f230031&allowOpen=true"
+      },
+      "retrieval_utc": "2026-10-16T06:08:39.402356+00:00",
+      "expected_features": 35
+    }
+  ],
+  "open_gates": [
+    "consumer_fitness",
+    "PR_coverage",
+    "geometry_CRS_Z_M",
+    "version_lineage",
+    "usage_constraints",
+    "domain_semantics"
+  ],
+  "activation_state": "BLOCKED"
+}
