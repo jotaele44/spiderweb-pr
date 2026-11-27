@@ -29,10 +29,20 @@ def render_3d(
     dem = snap.layer("raster_dem")
     extra: list[dict[str, Any]] = []
     if dem is None:
+        empty = {
+            "asset": {
+                "version": "2.0",
+                "generator": f"spiderweb-viz-engine/{render_id[:16]}",
+                "extras": {
+                    "render_id": render_id,
+                    "note": "no raster_dem layer; nothing rendered",
+                },
+            }
+        }
         return (
-            None,
+            json.dumps(empty, sort_keys=True, separators=(",", ":")) + "\n",
             [],
-            ["no raster_dem layer"],
+            ["no raster_dem layer; empty scene written"],
             [
                 {
                     "code": "NO_RASTER",
@@ -111,6 +121,8 @@ def render_3d(
             }
         )
     for f in (snap.layer("connections") or {}).get("features", []):
+        if not visible(f, config.get("date")):
+            continue
         p, ev = f["properties"], evidence_of(f)
         colour, _, shown = LINK_STYLE[ev]
         ok = shown and p.get("from_id") in anchors and p.get("to_id") in anchors

@@ -319,3 +319,77 @@ def test_failed_render_changes_render_id_inputs_not_receipt_integrity(snap, tmp_
     bad = render(snap, "xy", cfg("xy"), tmp_path / "bad")
     assert ok.receipt["render_id"] != bad.receipt["render_id"]
     assert bad.receipt["receipt_sha256"] != ok.receipt["receipt_sha256"]
+
+
+def test_export_refuses_when_a_later_render_overwrote_the_files(snap, tmp_path):
+    out = tmp_path / "out"
+    good = render(snap, "xy", cfg("xy"), out)
+    assert good.status == "PASS"
+    bad = render(snap, "xy", {**cfg("xy"), "extent": [-66.3, 18.0, -66.0, 18.2]}, out)
+    assert bad.status == "FAIL"  # same output paths: the files on disk are now the FAIL
+    with pytest.raises(PublicationBlocked, match="no longer matches"):
+        export_publication(good, tmp_path / "pub")
+
+
+def test_feet_based_snapshot_is_rejected_even_when_consistent(snap, tmp_path):
+    edit(snap, "dem.json", lambda d: d.update(unit="ft"))
+    m = load_manifest(snap)
+    freeze_snapshot(
+        snap,
+        snapshot_id=m["snapshot_id"],
+        version=m["version"],
+        crs=m["crs"],
+        vertical_datum=m["vertical_datum"],
+        extent=m["extent"],
+        vertical_unit="ft",
+    )
+    for view in ("section", "3d"):
+        assert_blocked(
+            render(snap, view, cfg(view), tmp_path / view), "UNSUPPORTED_VERTICAL_UNIT"
+        )
+
+
+def test_3d_without_a_raster_fails_validation_instead_of_crashing(snap, tmp_path):
+    (snap / "layers" / "dem.json").unlink()
+    m = load_manifest(snap)
+    freeze_snapshot(
+        snap,
+        snapshot_id=m["snapshot_id"],
+        version=m["version"],
+        crs=m["crs"],
+        vertical_datum=m["vertical_datum"],
+        extent=m["extent"],
+    )
+    res = render(snap, "3d", cfg("3d"), tmp_path)
+    assert_blocked(res, "NO_RASTER")
+    doc = json.loads(res.artifact.read_text())
+    assert doc["asset"]["version"] == "2.0"
+    assert doc["asset"]["extras"]["validation_status"] == "FAIL"
+    code = cli.main(
+        [
+            "render",
+            "--view",
+            "3d",
+            "--snapshot",
+            str(snap),
+            "--config",
+            str(FIX / "configs" / "3d.json"),
+            "--out",
+            str(tmp_path / "cli"),
+        ]
+    )
+    assert code == 3
+
+
+@pytest.mark.parametrize("view", ["xy", "section", "3d"])
+def test_selected_date_also_filters_connections(snap, tmp_path, view):
+    edit(
+        snap,
+        "connections.json",
+        lambda d: feat(d, "C_OBS")["properties"].update(observation_date="2024-01-01"),
+    )
+    res = render(snap, view, {**cfg(view), "date": "2025-03-01"}, tmp_path)
+    ids = {f["id"] for f in res.receipt["features"]}
+    assert "C_OBS" not in ids and "C_INF" in ids
+    kept = render(snap, view, {**cfg(view), "date": "2024-01-01"}, tmp_path / "kept")
+    assert "C_OBS" in {f["id"] for f in kept.receipt["features"]}

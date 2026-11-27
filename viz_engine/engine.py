@@ -101,6 +101,16 @@ def export_publication(result: RenderResult, dest_dir: str | Path) -> Path:
         raise PublicationBlocked(
             f"validation FAIL ({', '.join(codes)}); not exportable as publication"
         )
+    on_disk = json.loads(result.receipt_path.read_text(encoding="utf-8"))
+    artifact_sha = hashlib.sha256(result.artifact.read_bytes()).hexdigest()
+    if (
+        on_disk.get("receipt_sha256") != result.receipt["receipt_sha256"]
+        or artifact_sha != result.receipt["output"]["sha256"]
+    ):
+        raise PublicationBlocked(
+            "artifact or receipt on disk no longer matches the validated render "
+            "(overwritten by a later render?); not exportable as publication"
+        )
     dest = Path(dest_dir)
     dest.mkdir(parents=True, exist_ok=True)
     shutil.copy2(result.artifact, dest / result.artifact.name)

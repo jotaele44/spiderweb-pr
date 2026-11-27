@@ -3,7 +3,8 @@
 Codes: CRS_MISMATCH, DATUM_MISMATCH, UNIT_MISMATCH, DUPLICATE_FEATURE_ID,
 MERGED_ID_WITHOUT_ADJUDICATION, REVERSED_FLOW, DISCONNECTED_SEGMENT,
 MISSING_RASTER_COVERAGE, NO_RASTER, UNSUPPORTED_CONNECTION,
-CONNECTION_ENDPOINT_MISSING, UNKNOWN_EVIDENCE_CLASS, DEPTH_REFERENCE_UNSUPPORTED.
+CONNECTION_ENDPOINT_MISSING, UNKNOWN_EVIDENCE_CLASS, DEPTH_REFERENCE_UNSUPPORTED,
+UNSUPPORTED_VERTICAL_UNIT.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from .snapshot import Snapshot
 Issue = dict[str, Any]
 FLOW_TOLERANCE_M = 1.0
 SUPPORTED_DEPTH_REFERENCE = "below_land_surface"
+SUPPORTED_VERTICAL_UNIT = "m"
 
 
 def issue(
@@ -40,6 +42,14 @@ def evidence_of(feature: dict[str, Any]) -> str:
 def check_reference_frames(snap: Snapshot) -> list[Issue]:
     out: list[Issue] = []
     m = snap.manifest
+    if m["units"]["vertical"] != SUPPORTED_VERTICAL_UNIT:
+        out.append(
+            issue(
+                "UNSUPPORTED_VERTICAL_UNIT",
+                f"snapshot vertical unit {m['units']['vertical']!r}; the renderers "
+                f"compute in {SUPPORTED_VERTICAL_UNIT!r} only and do not convert elevations",
+            )
+        )
     for layer_id, data in sorted(snap.layers.items()):
         if data.get("crs") != m["crs"]:
             out.append(
