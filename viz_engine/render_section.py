@@ -137,6 +137,8 @@ def render_section(
             }
         )
     for f in (snap.layer("connections") or {}).get("features", []):
+        if not visible(f, config.get("date")):
+            continue
         p, ev = f["properties"], evidence_of(f)
         colour, dash, shown = LINK_STYLE[ev]
         in_section = p.get("from_id") in anchor and p.get("to_id") in anchor

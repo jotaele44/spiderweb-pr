@@ -9,6 +9,13 @@ GitHub Release using the matching section below (T6-53).
 
 ## [Unreleased]
 
+### Fixed
+- **Visualization engine review findings.** Publication export now re-verifies the
+  artifact and receipt on disk; a non-metre vertical unit is rejected
+  (`UNSUPPORTED_VERTICAL_UNIT`); a 3D run without a DEM reports `NO_RASTER` instead of
+  crashing; and the selected measurement date also filters connections in the section and
+  3D views. See `docs/GEOSPATIAL_VISUALIZATION_ENGINE.md`.
+
 ### Added
 - FED-GEO-SAR-001 preparation (`docs/geo_sar/`). A durable job ledger for
   geographic acquisition work (`spiderweb/geo_sar/jobs.py`, worker
