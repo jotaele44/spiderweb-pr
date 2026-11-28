@@ -136,7 +136,7 @@ export function useImageryController(opts: {
       const center = map.getCenter();
       const hash = formatViewHash(
         {
-          view: { zoom: map.getZoom(), lat: center.lat, lng: center.lng },
+          view: { zoom: map.getZoom(), lat: center.lat, lng: center.lng, bearing: map.getBearing(), pitch: map.getPitch() },
           imagery: dataset?.id,
           opacity,
           compare: compareDataset?.id,

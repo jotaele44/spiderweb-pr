@@ -166,7 +166,9 @@ export function useGisViewer(options: GisViewerOptions) {
     const map = mapRef.current;
     if (!map) return null;
     const encoded = encodeMapState(currentView(map, layerOpacity));
-    window.history.replaceState(null, "", `#${encoded}`);
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    new URLSearchParams(encoded).forEach((value, key) => params.set(key, value));
+    window.history.replaceState(window.history.state, "", `#${params.toString()}`);
     return window.location.href;
   };
 

@@ -10,7 +10,7 @@
  */
 
 export interface MapViewState {
-  view?: { zoom: number; lat: number; lng: number };
+  view?: { zoom: number; lat: number; lng: number; bearing?: number; pitch?: number };
   /** Imagery dataset id shown on the map. */
   imagery?: string;
   /** Imagery opacity, 0–1. */
@@ -35,9 +35,12 @@ export function parseViewHash(hash: string): MapViewState {
 
   const map = params.get("map");
   if (map) {
-    const [zoom, lat, lng] = map.split("/").map(Number);
+    const [zoom, lat, lng, bearing, pitch] = map.split("/").map(Number);
     if ([zoom, lat, lng].every(Number.isFinite) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
       state.view = { zoom: clamp(zoom, 0, 24), lat, lng };
+      if (Number.isFinite(bearing) && Number.isFinite(pitch)) {
+        state.view.bearing = bearing; state.view.pitch = pitch;
+      }
     }
   }
   const imagery = params.get("eri");
@@ -60,8 +63,8 @@ export function formatViewHash(state: MapViewState, currentHash = ""): string {
   OWN_KEYS.forEach((key) => params.delete(key));
   const own: string[] = [];
   if (state.view) {
-    const { zoom, lat, lng } = state.view;
-    own.push(`map=${zoom.toFixed(2)}/${lat.toFixed(5)}/${lng.toFixed(5)}`);
+    const { zoom, lat, lng, bearing, pitch } = state.view;
+    own.push(`map=${zoom.toFixed(2)}/${lat.toFixed(5)}/${lng.toFixed(5)}${bearing !== undefined && pitch !== undefined ? `/${Math.round(bearing)}/${Math.round(pitch)}` : ""}`);
   }
   if (state.imagery) own.push(`eri=${state.imagery}`);
   if (state.imagery && state.opacity !== undefined && state.opacity < 1) {
