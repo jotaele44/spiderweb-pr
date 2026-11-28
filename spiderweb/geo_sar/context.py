@@ -7,9 +7,7 @@ import json
 import math
 from pathlib import Path
 
-from pyproj import Transformer
-from shapely.geometry import box
-from shapely.ops import transform
+from shapely.geometry import box, shape
 
 ROOT = Path(__file__).resolve().parents[2]
 LEDGER = ROOT / "registry/geo_sar/pilot_001_asset_ledger.json"
@@ -28,6 +26,8 @@ def validate_bbox(bounds):
 
 
 def resolve_context(bounds, ledger_path=LEDGER):
+    from rasterio.warp import transform_geom
+
     bounds = validate_bbox(bounds)
     raw = ledger_path.read_bytes()
     ledger = json.loads(raw)
@@ -49,8 +49,8 @@ def resolve_context(bounds, ledger_path=LEDGER):
             unresolved.append(asset["asset_id"])
             continue
         native_box = box(*native).segmentize(max(native[2] - native[0], 1e-9) / 64)
-        footprint = transform(
-            Transformer.from_crs(crs, "EPSG:4326", always_xy=True).transform, native_box
+        footprint = shape(
+            transform_geom(crs, "EPSG:4326", native_box.__geo_interface__)
         )
         intersection = area.intersection(footprint)
         if intersection.is_empty:
